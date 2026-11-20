@@ -1,0 +1,98 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 2884ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 30ms
+   ❯ the club's row (T1, T7) (4)
+     × lets a revoke and an acceptance of one link each wait for the other: the link is revoked or used, never both 170ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:08:06
+   Duration  3.59s (tests 88%, import 7%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting
+AssertionError: expected { state: 'open', …(7) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club_name": "Sunday people",
+  "expires_at": "2026-11-18T05:00:00Z",
+  "invitation_id": "inv_NQF0MFkuSfb32lPYSYh1QA",
+  "inviter_name": "Ben",
+  "revision_id": "rev_JCo6v5AWTRfA8Um6OvYfkA",
+  "revision_version": 1,
+  "roster": [
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Ben",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Maya",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Alex",
+    },
+    {
+      "is_you": false,
+      "kind": "candidate",
+      "name": "Sam",
+    },
+    {
+      "is_you": true,
+      "kind": "candidate",
+      "name": "Debby",
+    },
+    {
+      "is_you": false,
+      "kind": "candidate",
+      "name": "Nina",
+    },
+  ],
+  "state": "open",
+}
+
+ ❯ nothing src/db/accept-roster.test.ts:762:52
+    760|       const nothing = async (token: string): Promise<void> => {
+    761|         expect(await webPreview(tx, token, NOW)).toBeNull();
+    762|         expect(await preview(tx, zed, token, NOW)).toBeNull();
+       |                                                    ^
+    763|         expect(await refusal(acceptWith(tx, clock, zed, token, s.open.…
+    764|       };
+ ❯ src/db/accept-roster.test.ts:772:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:757:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the club's row (T1, T7) > lets a revoke and an acceptance of one link each wait for the other: the link is revoked or used, never both
+AssertionError: expected '23514' to be 'NOT_FOUND' // Object.is equality
+
+Expected: "NOT_FOUND"
+Received: "23514"
+
+ ❯ src/db/accept-roster.test.ts:1272:21
+    1270|         } else {
+    1271|           expect(a).toEqual({ invitationId: s.sam.link });
+    1272|           expect(b).toBe("NOT_FOUND");
+       |                     ^
+    1273|           expect(row?.bound_user_id).toBeNull();
+    1274|           expect(row?.revoked_at).not.toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

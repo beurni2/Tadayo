@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2978ms
+   ❯ who may approve or decline (T9, T14, FQ119) (5)
+     × refuses a stale version with the version now, and a replaced revision with the newest one's id, leaving nothing 27ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:12:04
+   Duration  3.60s (tests 90%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > refuses a stale version with the version now, and a replaced revision with the newest one's id, leaving nothing
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/accept-roster.test.ts:704:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:702:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

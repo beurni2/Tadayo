@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index 735a32e5..a9158583 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -114,7 +114,7 @@ export function webPreviewFor(
+   token: string,
+   now: Temporal.Instant,
+ ): Record<string, unknown> | undefined {
+-  const link = named(world, roster, token, null);
++  const link = linkOf(roster, token);
+   if (link === undefined || Temporal.Instant.compare(link.expiresAt, now) <= 0) return undefined;
+   if (roster.candidates.get(link.candidate)?.state !== "open") return undefined;
+   const inviter = inviterOf(world, link);

@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2911ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × refuses the approval that would bring a seventh member, and keeps nothing of it (CLUB_FULL) 29ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:12:53
+   Duration  3.58s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > refuses the approval that would bring a seventh member, and keeps nothing of it (CLUB_FULL)
+PostgresError: app.memberships: a club has at most six members (A01)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:217:20
+    215|     if (userId === null) throw shape();
+    216|     const intervalId = newId("mem");
+    217|     await bound(tx)`
+       |                    ^
+    218|       INSERT INTO app.memberships
+    219|         (interval_id, club_id, user_id, origin, joined_via_revision_id…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

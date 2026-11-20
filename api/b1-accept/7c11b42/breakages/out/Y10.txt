@@ -1,0 +1,186 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 6 failed) 2801ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 76ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × joins everyone who accepted together, and carries the one who hadn't 57ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 81ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 35ms
+     × gives each member the club's open revision with the roster, as that member reads it 35ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins the others and carries the renamed account as someone who hasn't accepted 98ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 49 passed (55)
+   Start at  01:13:19
+   Duration  3.43s (tests 89%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120)
+AssertionError: expected undefined to match object { state: 'open', version: 1, …(2) }
+
+- Expected:
+{
+  "origin": "proposal",
+  "proposed_by_interval_id": "mem_0cCFLTGbb1Y4SxWzgwriWg",
+  "state": "open",
+  "version": 1,
+}
+
++ Received:
+undefined
+
+ ❯ src/db/accept-roster.test.ts:245:46
+    243|       const carried = (await openRevision(tx, s.ben.club)) ?? "";
+    244|       expect(carried).not.toBe(s.open.id);
+    245|       expect(await revisionRow(tx, carried)).toMatchObject({
+       |                                              ^
+    246|         state: "open",
+    247|         version: 1,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:197:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins everyone who accepted together, and carries the one who hadn't
+AssertionError: expected [] to deeply equal [ { …(4) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "accepted_at": null,
+-     "candidate_id": "cand_0SJ8XljkyPlbgZhWxAcVFA",
+-     "label": "Debby",
+-     "position": 1,
+-   },
+- ]
++ []
+
+ ❯ src/db/accept-roster.test.ts:414:20
+    412|       const rows = await tx<{ candidate_id: string; label: string; pos…
+    413|         SELECT candidate_id, label, position, accepted_at FROM app.ros…
+    414|       expect(rows).toEqual([{ candidate_id: candidate(open, 2), label:…
+       |                    ^
+    415|       expect(await tx`SELECT FROM app.roster_revision_members WHERE re…
+    416|       // Six still counts Debby: five members and candidates, so one m…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:392:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected undefined to match object { origin: 'proposal', …(1) }
+
+- Expected:
+{
+  "origin": "proposal",
+  "proposed_by_interval_id": "mem_juIFK_iT_0IJoKV3mHUrSw",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/accept-roster.test.ts:513:46
+    511|       // Alex goes on in a member's proposal again: Ben's, approved by…
+    512|       const carried = (await openRevision(tx, s.ben.club)) ?? "";
+    513|       expect(await revisionRow(tx, carried)).toMatchObject({
+       |                                              ^
+    514|         origin: "proposal",
+    515|         proposed_by_interval_id: s.ben.interval,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > ends the candidates who hadn't accepted when the revision's proposer is no longer a member
+AssertionError: expected 'open' to be 'ended' // Object.is equality
+
+Expected: "ended"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1117:62
+    1115|       await checkAsAtCommit(plain(tx));
+    1116|       expect(await openRevision(tx, s.w.club)).toBeNull();
+    1117|       expect(await candidateState(tx, candidate(s.open, 1))).toBe("end…
+       |                                                              ^
+    1118|       expect(await candidateState(tx, candidate(second, 2))).toBe("end…
+    1119|       expect(await tx`SELECT FROM app.candidates WHERE club_id = ${s.w…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1102:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > gives each member the club's open revision with the roster, as that member reads it
+AssertionError: expected undefined to be '' // Object.is equality
+
+- Expected:
+""
+
++ Received:
+undefined
+
+ ❯ src/db/accept-roster.test.ts:1136:41
+    1134|       const forMaya = await listMembers(tx, maya, s.ben.club, NOW);
+    1135|       expect(forMaya?.members.map((one) => one.person.displayName)).to…
+    1136|       expect(forMaya?.openRevision?.id).toBe(carried);
+       |                                         ^
+    1137|       expect(forMaya?.openRevision?.myDecision).toBe("pending");
+    1138|       // No link shows for Maya: Alex is Ben's candidate.
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1124:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins the others and carries the renamed account as someone who hasn't accepted
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "accepted_at": null,
+-     "candidate_id": "cand_3PX47AEXoxjIm3KCmZKhZQ",
+-     "label": "Sam",
+-   },
+- ]
++ []
+
+ ❯ src/db/accept-roster.test.ts:1350:20
+    1348|       const rows = await tx<{ candidate_id: string; label: string; acc…
+    1349|         SELECT candidate_id, label, accepted_at FROM app.roster_revisi…
+    1350|       expect(rows).toEqual([{ candidate_id: s.sam.candidate, label: "S…
+       |                    ^
+    1351|       expect((await preview(tx, sam, s.sam.token, NOW))?.state).toBe("…
+    1352|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1335:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

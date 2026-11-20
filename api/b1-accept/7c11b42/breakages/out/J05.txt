@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (29 tests | 1 failed) 30ms
+   ❯ what accepting must get (acceptInvitation) (7)
+     × gives one account one place, and no place in a club of six (A01) 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 56 passed (57)
+   Start at  01:13:45
+   Duration  853ms (import 71%, transform 15%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > what accepting must get (acceptInvitation) > gives one account one place, and no place in a club of six (A01)
+AssertionError: expected { status: 409, …(3) } to be { status: 404, …(3) } // Object.is equality
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
++   "body": "{\"code\":\"VERSION_CONFLICT\",\"current_version\":1}",
+    "headers": {
+      "cache-control": "private, no-store",
+      "connection": "keep-alive",
+-     "content-length": "20",
++     "content-length": "47",
+      "content-type": "application/json; charset=utf-8",
+    },
+-   "reason": "Not Found",
+-   "status": 404,
++   "reason": "Conflict",
++   "status": 409,
+  }
+
+ ❯ src/privacy/invitation.test.ts:437:78
+    435|     expect(accept("usr_mo", "Mo", roster([link(), other]))).toBe(NEUTR…
+    436|     // Whatever version the request names: never VERSION_CONFLICT, whi…
+    437|     expect(accept("usr_mo", "Mo", roster([link(), other]), { expected:…
+       |                                                                              ^
+    438|     const six = world(
+    439|       ["d", "e", "f"].map((id): [string, ScheduleMember] => [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

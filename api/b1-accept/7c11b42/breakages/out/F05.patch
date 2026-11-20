@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-facts.ts b/packages/domain/src/clubs/invitation-facts.ts
+index dd4e3ffd..7fdddccd 100644
+--- a/packages/domain/src/clubs/invitation-facts.ts
++++ b/packages/domain/src/clubs/invitation-facts.ts
+@@ -169,7 +169,7 @@ export async function linkFacts(
+   if (typeof hash !== "string" || !HASH.test(hash)) throw new TypeError("clubs: a token's hash is 64 hex digits");
+   const rows = await bound(sql)`
+     SELECT i.id AS invitation_id, i.revoked_at IS NOT NULL AS revoked, i.replaced_by_id IS NOT NULL AS replaced,
+-           i.bound_user_id, i.expires_at, i.expires_at <= ${now}::pg_catalog.timestamptz AS past_expiry,
++           i.bound_user_id, i.expires_at, i.expires_at < ${now}::pg_catalog.timestamptz AS past_expiry,
+            k.id AS candidate_id, k.state AS candidate_state, k.proposed_by_interval_id,
+            c.id AS club_id, c.name AS club_name, c.timezone, c.suspended_at IS NOT NULL AS suspended,
+            (SELECT pg_catalog.count(*)::pg_catalog.int4 FROM app.memberships m

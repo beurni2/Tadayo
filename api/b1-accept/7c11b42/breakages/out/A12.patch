@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..07cb7182 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -248,7 +248,7 @@ export async function acceptInvitation(
+   }
+ 
+   // 4. Another name: a new revision, which everyone accepts and approves again.
+-  if (profileName !== label) {
++  if (profileName.toLowerCase() !== label.toLowerCase()) {
+     const carried = await bound(tx)`
+       SELECT rc.candidate_id, rc.label
+         FROM app.roster_revision_candidates rc

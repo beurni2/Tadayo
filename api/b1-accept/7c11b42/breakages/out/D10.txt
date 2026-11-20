@@ -1,0 +1,104 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 30 failed) 2306ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 116ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × joins the candidate on their acceptance once every member has approved, and not before 35ms
+     × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 45ms
+     × joins everyone who accepted together, and carries the one who hadn't 41ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 49ms
+     × starts the club on the acceptance when the creator approved the new revision first 28ms
+     × drops the other candidates' acceptances with the old revision: they accept the new one again 30ms
+   ❯ declining: the revision ends for every candidate, and nobody is told who (book p30, T33) (1)
+     × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 22ms
+   ❯ a decision that can change nothing is answered with the revision as it stands (1)
+     × leaves a proposer's own proposal, a second approval, a decline after approving and a decision on an ended revision as they were 23ms
+   ❯ who may approve or decline (T9, T14, FQ119) (5)
+     × gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing 31ms
+     × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 16ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × gives nothing of a suspended club, and nothing to an account that left after joining with the link 18ms
+   ❯ accepting the exact roster the caller saw (T7, T19, T52) (4)
+     × accepts once: again under a new key it answers where the invitation stands and changes nothing 23ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends 19ms
+     × refuses the approval that would bring a seventh member, and keeps nothing of it (CLUB_FULL) 24ms
+     × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 25ms
+     × gives each member the club's open revision with the roster, as that member reads it 43ms
+   ❯ the club's row (T1, T7) (4)
+     × joins the candidate once when the last approval and the acceptance arrive at once, in either order 44ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 55ms
+     × joins the others and carries the renamed account as someone who hasn't accepted 56ms
+     × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 59ms
+     × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 83ms
+     × stands again when the name is changed back before the last approval 20ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × gives the neutral not-found for an ended proposal's unused link under a key the account has used 82ms
+     × holds another place only while the first candidate is open: after a decline, another link is the account's to accept 35ms
+     × answers a decision's retry with the neutral not-found once its member has left 31ms
+   ❯ found in review: rules no test held (5)
+     × applies no roster whose members aren't exactly the club's active members 36ms
+     × takes no decision on an ended revision from a member who hadn't decided 24ms
+   ❯ found in review: the clock is read after the club's row is held (T1) (3)
+     × dates a membership by the clock as it reads once the row is the last approval's 20ms
+     × dates a decline by the clock as it reads once the row is the decline's 54ms
+
+ Test Files  1 failed (1)
+      Tests  30 failed | 25 passed (55)
+   Start at  01:12:33
+   Duration  2.87s (tests 88%, import 9%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 30 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120)
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins the candidate on their acceptance once every member has approved, and not before
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > keeps a candidate who accepted first waiting, with no progress shown, until the last member approves
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins everyone who accepted together, and carries the one who hadn't
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > starts the club on the acceptance when the creator approved the new revision first
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > drops the other candidates' acceptances with the old revision: they accept the new one again
+ FAIL  src/db/accept-roster.test.ts > declining: the revision ends for every candidate, and nobody is told who (book p30, T33) > ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead
+ FAIL  src/db/accept-roster.test.ts > a decision that can change nothing is answered with the revision as it stands > leaves a proposer's own proposal, a second approval, a decline after approving and a decision on an ended revision as they were
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19)
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > gives nothing of a suspended club, and nothing to an account that left after joining with the link
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > accepts once: again under a new key it answers where the invitation stands and changes nothing
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > refuses the approval that would bring a seventh member, and keeps nothing of it (CLUB_FULL)
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > ends the candidates who hadn't accepted when the revision's proposer is no longer a member
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > gives each member the club's open revision with the roster, as that member reads it
+ FAIL  src/db/accept-roster.test.ts > the club's row (T1, T7) > joins the candidate once when the last approval and the acceptance arrive at once, in either order
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins the others and carries the renamed account as someone who hasn't accepted
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > stands again when the name is changed back before the last approval
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > gives the neutral not-found for an ended proposal's unused link under a key the account has used
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > holds another place only while the first candidate is open: after a decline, another link is the account's to accept
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > answers a decision's retry with the neutral not-found once its member has left
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > applies no roster whose members aren't exactly the club's active members
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > takes no decision on an ended revision from a member who hadn't decided
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a membership by the clock as it reads once the row is the last approval's
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a decline by the clock as it reads once the row is the decline's
+PostgresError: app.roster_approvals: only the proposer of a member's proposal approves by proposing (FQ60, FQ84)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ decideRoster ../packages/domain/src/clubs/decide-roster.ts:125:20
+    123|   if (before.state === "open" && before.myDecision === "pending") {
+    124|     const decision = operation === "approveRoster" ? "approved" : "dec…
+    125|     await bound(tx)`
+       |                    ^
+    126|       INSERT INTO app.roster_approvals (revision_id, interval_id, deci…
+    127|       VALUES (${revisionId}, ${asking}, ${decision}, true, ${at}::pg_c…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/30]⎯
+

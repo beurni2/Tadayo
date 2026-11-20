@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2914ms
+   ❯ found in review: rules no test held (5)
+     × shows nothing when no member of the roster has a name to show (FQ75) 31ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:09:50
+   Duration  3.55s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > shows nothing when no member of the roster has a name to show (FQ75)
+AssertionError: expected { state: 'open', …(7) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club_name": "Sunday people",
+  "expires_at": "2026-11-18T05:00:00Z",
+  "invitation_id": "inv_PomgRHKwjow5LktTS24lUw",
+  "inviter_name": "Ben",
+  "revision_id": "rev_0xwaU-cn60XhLZWbFXIzLA",
+  "revision_version": 1,
+  "roster": [
+    {
+      "is_you": true,
+      "kind": "candidate",
+      "name": "Sam",
+    },
+  ],
+  "state": "open",
+}
+
+ ❯ src/db/accept-roster.test.ts:1541:56
+    1539|       await tx`UPDATE app.users SET display_name = NULL WHERE id IN ${…
+    1540|       expect(await webPreview(tx, s.sam.token, NOW)).toEqual({ inviter…
+    1541|       expect(await preview(tx, sam, s.sam.token, NOW)).toBeNull();
+       |                                                        ^
+    1542|     });
+    1543|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1527:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

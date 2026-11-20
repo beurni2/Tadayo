@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..332202fe 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -200,7 +200,7 @@ export async function applyIfReady(
+   if (!flag(row["approved"]) || !flag(row["exact"]) || joining.length === 0) return null;
+ 
+   // 1. Six.
+-  if (members + joining.length > CLUB_SIZE) throw new Refused("CLUB_FULL");
++  if (members + joining.length > CLUB_SIZE + 1) throw new Refused("CLUB_FULL");
+ 
+   // 2. The revision is applied.
+   await bound(tx)`

@@ -1,0 +1,88 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 3 failed) 2910ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 83ms
+     × joins the others and carries the renamed account as someone who hasn't accepted 84ms
+     × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 37ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 52 passed (55)
+   Start at  01:12:48
+   Duration  3.53s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+AssertionError: expected 'applied' to be 'open' // Object.is equality
+
+Expected: "open"
+Received: "applied"
+
+ ❯ src/db/accept-roster.test.ts:1316:26
+    1314|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+    1315|       const last = await approve(tx, clock, user(s.w, 2), s.open.id, 1…
+    1316|       expect(last.state).toBe("open");
+       |                          ^
+    1317|       expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: …
+    1318|       expect(await membersOf(tx, s.w.club)).toHaveLength(3);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins the others and carries the renamed account as someone who hasn't accepted
+AssertionError: expected [ 'acct_SkiqTDNSH2lXSEk1ExXryQ', …(4) ] to deeply equal [ 'acct_SkiqTDNSH2lXSEk1ExXryQ', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "acct_SkiqTDNSH2lXSEk1ExXryQ",
+    "acct_In9_TuB7x-x0acyJPXrZ3A",
+    "acct_w3dabj7OdiaM60eBVs5rFg",
++   "acct_Z65MnnNLVoiG-H6s1Pt9lQ",
+    "acct_C-UeyZvlYaHAAwMi1njf9A",
+  ]
+
+ ❯ src/db/accept-roster.test.ts:1345:73
+    1343|       expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).st…
+    1344|       await checkAsAtCommit(plain(tx));
+    1345|       expect((await membersOf(tx, s.w.club)).map((one) => one.user_id)…
+       |                                                                         ^
+    1346|       expect(await candidateState(tx, s.sam.candidate)).toBe("open");
+    1347|       const carried = (await openRevision(tx, s.w.club)) ?? "";
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1335:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing
+AssertionError: expected 'applied' to be 'open' // Object.is equality
+
+Expected: "open"
+Received: "applied"
+
+ ❯ src/db/accept-roster.test.ts:1362:76
+    1360|       await rename(tx, account, "Mallory");
+    1361|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+    1362|       expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).st…
+       |                                                                            ^
+    1363|       await rename(tx, account, "Sam");
+    1364|       // Every member has approved and the acceptance stands, so nobod…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1356:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

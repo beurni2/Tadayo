@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-preview.ts b/packages/domain/src/clubs/invitation-preview.ts
+index 0fc3edd0..756880ae 100644
+--- a/packages/domain/src/clubs/invitation-preview.ts
++++ b/packages/domain/src/clubs/invitation-preview.ts
+@@ -85,7 +85,7 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
+   // 1. Nothing to this caller.
+   if (facts === null || namesNothing(facts, userId)) return null;
+   // 2. A member already.
+-  if (facts.membershipId !== null) {
++  if (facts.membershipId === undefined) {
+     return { state: "joined", club: { ...facts.club, membershipId: facts.membershipId } };
+   }
+   // 3. Joined once, and gone since.

@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (29 tests | 2 failed) 43ms
+   ❯ what accepting must get (acceptInvitation) (7)
+     × waits while a member hasn't approved, and joins once every member the revision lists has (FQ65) 11ms
+     × refuses in the contract's order: expired, then a newer revision, then the version 3ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 55 passed (57)
+   Start at  01:13:48
+   Duration  922ms (import 65%, transform 17%, tests 17%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > what accepting must get (acceptInvitation) > waits while a member hasn't approved, and joins once every member the revision lists has (FQ65)
+AssertionError: expected 'joined' to be 'waiting' // Object.is equality
+
+Expected: "waiting"
+Received: "joined"
+
+ ❯ src/privacy/invitation.test.ts:355:36
+    353|
+    354|   it("waits while a member hasn't approved, and joins once every membe…
+    355|     expect(accept("usr_mo", "Mo")).toBe("waiting");
+       |                                    ^
+    356|     const approved = revision({
+    357|       decisions: new Map([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/invitation.test.ts > what accepting must get (acceptInvitation) > refuses in the contract's order: expired, then a newer revision, then the version
+AssertionError: expected 'joined' to be 'waiting' // Object.is equality
+
+Expected: "waiting"
+Received: "joined"
+
+ ❯ src/privacy/invitation.test.ts:405:71
+    403|     });
+    404|     // A link its account has used doesn't expire for that account.
+    405|     expect(accept("usr_mo", "Mo", roster([bound()]), { now: LATER })).…
+       |                                                                       ^
+    406|   });
+    407|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

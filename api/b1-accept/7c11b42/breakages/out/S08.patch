@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index d4435bf5..875e17c6 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -638,7 +638,7 @@ function heldLink(
+   }
+   const theirs = invitation.boundTo === viewer.account;
+   // The link shows something to this account: its id in an acceptance, as when the account has joined by it.
+-  const shown = names && (invitation.boundTo === null || theirs);
++  const shown = names;
+   // Signed in too, a name is read only while the candidate is on an open revision: once the proposal has
+   // ended the answer is nothing, or `did_not_go_ahead`, which names nobody.
+   const readable = shown && invitation.roster !== null;

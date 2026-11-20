@@ -1,0 +1,62 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 6 failed) 2959ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 24ms
+     × starts the club on the acceptance when the creator approved the new revision first 24ms
+     × compares names as they are stored: another case is another name 30ms
+     × drops the other candidates' acceptances with the old revision: they accept the new one again 40ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 29ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 98ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 49 passed (55)
+   Start at  01:11:28
+   Duration  3.56s (tests 90%, import 7%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > starts the club on the acceptance when the creator approved the new revision first
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > compares names as they are stored: another case is another name
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > drops the other candidates' acceptances with the old revision: they accept the new one again
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+PostgresError: app.roster_approvals: only the proposer of a member's proposal approves by proposing (FQ60, FQ84)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeRevision ../packages/domain/src/clubs/apply-roster.ts:108:20
+    106|     UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catal…
+    107|   if (revision.implicit) {
+    108|     await bound(tx)`
+       |                    ^
+    109|       INSERT INTO app.roster_approvals (revision_id, interval_id, deci…
+    110|       VALUES (${id}, ${revision.proposer}, 'approved', true, ${at}::pg…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > ends the candidates who hadn't accepted when the revision's proposer is no longer a member
+PostgresError: app.roster_approvals: mem_36X3B3_XC5CAbH5Bey1QWg is no longer a member, so doesn't decide (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeRevision ../packages/domain/src/clubs/apply-roster.ts:108:20
+    106|     UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catal…
+    107|   if (revision.implicit) {
+    108|     await bound(tx)`
+       |                    ^
+    109|       INSERT INTO app.roster_approvals (revision_id, interval_id, deci…
+    110|       VALUES (${id}, ${revision.proposer}, 'approved', true, ${at}::pg…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+

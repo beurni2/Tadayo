@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index 735a32e5..8d9658e7 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -225,7 +225,7 @@ export function acceptOutcome(
+   if (activeMembers(world, link.club) >= SIX) return CLUB_FULL;
+   if (name !== listed.label) return "changed";
+   // Applied when every member the revision lists has approved it (FQ65): this account then joins.
+-  const approved = rows.members.every((interval) => rows.decisions.get(interval) === "approved");
++  const approved = rows.members.some((interval) => rows.decisions.get(interval) === "approved");
+   return approved ? "joined" : "waiting";
+ }
+ 

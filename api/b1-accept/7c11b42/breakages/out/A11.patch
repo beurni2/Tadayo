@@ -1,0 +1,17 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..a7ff2ba9 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -224,11 +224,11 @@ export async function acceptInvitation(
+   if (account === undefined || account["state"] !== "active") throw new Refused("UNAUTHENTICATED");
+   const profileName = account["display_name"];
+   if (typeof profileName !== "string") throw new Refused("PROFILE_INCOMPLETE");
++  const at = await clock.sample(tx);
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+   await bound(tx)`SELECT id FROM app.invitations WHERE id = ${invitationId} FOR UPDATE`;
+ 
+   // 3. The clock, after the lock, and where the request stands at it.
+-  const at = await clock.sample(tx);
+   const standing = await standingOf(tx, input, hash, at);
+   if (standing.kind === "nothing" || standing.facts.invitationId !== invitationId) throw new Refused("NOT_FOUND");
+   if (standing.kind === "refused") throw standing.refusal;

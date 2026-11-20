@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-facts.ts b/packages/domain/src/clubs/invitation-facts.ts
+index dd4e3ffd..843e7516 100644
+--- a/packages/domain/src/clubs/invitation-facts.ts
++++ b/packages/domain/src/clubs/invitation-facts.ts
+@@ -180,7 +180,7 @@ export async function linkFacts(
+              WHERE pm.interval_id = k.proposed_by_interval_id) AS inviter_name,
+            EXISTS (SELECT FROM app.invitations o JOIN app.candidates ok ON ok.id = o.candidate_id
+                     WHERE o.bound_user_id = ${userId}::pg_catalog.text AND ok.club_id = c.id
+-                      AND ok.state = 'open' AND ok.id <> k.id) AS holds_another,
++                      AND ok.id <> k.id) AS holds_another,
+            (SELECT pg_catalog.jsonb_build_object(
+                      'id', r.id, 'version', r.version, 'label', rc.label,
+                      'accepted', rc.accepted_invitation_id IS NOT DISTINCT FROM i.id

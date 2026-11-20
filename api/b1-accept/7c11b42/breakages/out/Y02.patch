@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..0a4f1649 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -197,7 +197,7 @@ export async function applyIfReady(
+   // An account that accepted and is no longer active (a deletion has begun, T27) ends, whatever its name.
+   const gone = (candidate: (typeof candidates)[number]) => candidate.open && candidate.accepted && !candidate.active;
+   const joining = candidates.filter((candidate) => standing(candidate) && candidate.active);
+-  if (!flag(row["approved"]) || !flag(row["exact"]) || joining.length === 0) return null;
++  if (!flag(row["approved"]) || joining.length === 0) return null;
+ 
+   // 1. Six.
+   if (members + joining.length > CLUB_SIZE) throw new Refused("CLUB_FULL");

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..1ddc57cd 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -193,7 +193,7 @@ export async function applyIfReady(
+   // An acceptance stands while the account's profile name is the label the members read and approve
+   // (FQ66, FQ84). An account that changed its name since joins nobody: it accepts again, which makes the
+   // rename's revision, and until then it is carried like someone who hasn't accepted.
+-  const standing = (candidate: (typeof candidates)[number]) => candidate.open && candidate.accepted && candidate.named;
++  const standing = (candidate: (typeof candidates)[number]) => candidate.open && candidate.accepted;
+   // An account that accepted and is no longer active (a deletion has begun, T27) ends, whatever its name.
+   const gone = (candidate: (typeof candidates)[number]) => candidate.open && candidate.accepted && !candidate.active;
+   const joining = candidates.filter((candidate) => standing(candidate) && candidate.active);

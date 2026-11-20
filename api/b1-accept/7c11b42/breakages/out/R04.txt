@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 1 failed) 371ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × passes a waiting and a changed roster, and an acceptance, only as the account's own link 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 87 passed (88)
+   Start at  01:10:13
+   Duration  1.37s (import 50%, tests 34%, transform 15%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > passes a waiting and a changed roster, and an acceptance, only as the account's own link
+AssertionError: expected [] to deeply equal [ '$.invitation_id' ]
+
+- Expected
++ Received
+
+- [
+-   "$.invitation_id",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1858:78
+    1856|     expect(at(accepted(theirs, null), "world")).toEqual(["$.invitation…
+    1857|     // The account's own link, once it is revoked or replaced, shows n…
+    1858|     expect(at(accepted(held({ boundTo: acct(stan), dead: true })), "wo…
+       |                                                                              ^
+    1859|     expect(at(previewed(roster("waiting"), held()), "world")).toEqual(…
+    1860|     expect(at(previewed(roster("changed"), held()), "world")).toEqual(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

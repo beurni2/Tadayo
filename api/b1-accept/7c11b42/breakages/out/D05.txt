@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2900ms
+   ❯ a decision that can change nothing is answered with the revision as it stands (1)
+     × leaves a proposer's own proposal, a second approval, a decline after approving and a decision on an ended revision as they were 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:12:13
+   Duration  3.52s (tests 90%, import 7%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a decision that can change nothing is answered with the revision as it stands > leaves a proposer's own proposal, a second approval, a decline after approving and a decision on an ended revision as they were
+PostgresError: duplicate key value violates unique constraint "roster_approvals_pkey"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ decideRoster ../packages/domain/src/clubs/decide-roster.ts:125:20
+    123|   if (before.state === "open") {
+    124|     const decision = operation === "approveRoster" ? "approved" : "dec…
+    125|     await bound(tx)`
+       |                    ^
+    126|       INSERT INTO app.roster_approvals (revision_id, interval_id, deci…
+    127|       VALUES (${revisionId}, ${asking}, ${decision}, false, ${at}::pg_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

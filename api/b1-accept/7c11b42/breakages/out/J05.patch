@@ -1,0 +1,17 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index 735a32e5..8fa748ed 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -217,11 +217,11 @@ export function acceptOutcome(
+   const listed = rows?.candidates.find((candidate) => candidate.id === link.candidate);
+   if (rows === undefined || rows.club !== link.club || !rows.sealed || listed === undefined) return NEUTRAL;
+   if (!mine && Temporal.Instant.compare(link.expiresAt, now) <= 0) return EXPIRED;
+-  if (holdsAnother(roster, link, account)) return NEUTRAL;
+   if (rows.state === "superseded") return rosterChanged(newestOf(roster, revision));
+   if (rows.version !== expected) return versionConflict(rows.version);
+   if (rows.state !== "open") return rows.state === "applied" && viewer !== undefined ? "joined again" : NEUTRAL;
+   if (state !== "open" || viewer !== undefined) return NEUTRAL;
++  if (holdsAnother(roster, link, account)) return NEUTRAL;
+   if (activeMembers(world, link.club) >= SIX) return CLUB_FULL;
+   if (name !== listed.label) return "changed";
+   // Applied when every member the revision lists has approved it (FQ65): this account then joins.

@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 3 failed) 2913ms
+   ❯ declining: the revision ends for every candidate, and nobody is told who (book p30, T33) (1)
+     × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 36ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × gives the neutral not-found for an ended proposal's unused link under a key the account has used 104ms
+     × holds another place only while the first candidate is open: after a decline, another link is the account's to accept 34ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 52 passed (55)
+   Start at  01:12:21
+   Duration  3.52s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > declining: the revision ends for every candidate, and nobody is told who (book p30, T33) > ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead
+AssertionError: expected 'open' to be 'ended' // Object.is equality
+
+Expected: "ended"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:577:57
+    575|       expect(row).toMatchObject({ state: "did_not_go_ahead", version: …
+    576|       expect(row?.ended_at?.equals(FIRST.add({ minutes: 3 }))).toBe(tr…
+    577|       expect(await candidateState(tx, s.sam.candidate)).toBe("ended");
+       |                                                         ^
+    578|       expect(await candidateState(tx, candidate(s.open, 1))).toBe("end…
+    579|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:563:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > gives the neutral not-found for an ended proposal's unused link under a key the account has used
+Error: clubs: an open candidate is on no open revision
+ ❯ invitationStanding ../packages/domain/src/clubs/invitation-preview.ts:104:30
+    102|   // 7. Names the answer can't do without.
+    103|   const roster = facts.roster;
+    104|   if (roster === null) throw new Error("clubs: an open candidate is on…
+       |                              ^
+    105|   if (facts.inviterName === null || roster.members.length === 0) retur…
+    106|   // 8. Six already.
+ ❯ previewInvitation ../packages/domain/src/clubs/invitation-preview.ts:141:10
+ ❯ preview src/db/roster-world.ts:224:17
+ ❯ src/db/accept-roster.test.ts:1418:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1408:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > holds another place only while the first candidate is open: after a decline, another link is the account's to accept
+AssertionError: expected undefined to be 'open' // Object.is equality
+
+- Expected:
+"open"
+
++ Received:
+undefined
+
+ ❯ src/db/accept-roster.test.ts:1453:64
+    1451|       const again = await propose(tx, clock, user(s.w, 0), s.w.club, […
+    1452|       const made = await linkFor(tx, clock, user(s.w, 0), s.w.club, ca…
+    1453|       expect((await preview(tx, sam, made.token, NOW))?.state).toBe("o…
+       |                                                                ^
+    1454|       expect((await acceptWith(tx, clock, sam, made.token, again.id, 1…
+    1455|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1446:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index d4435bf5..0517fe96 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1262,7 +1262,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+       const held = heldLink(context);
+       if (held === undefined || node.invitation_id !== held.id)
+         find("world", `${at}.invitation_id`, "an invitation whose token the caller didn't present (T7, T14)");
+-      else if (!(kind === "InvitationAcceptance" ? held.shown : held.roster))
++      else if (!(kind === "InvitationAcceptance" || held.roster))
+         find("world", `${at}.invitation_id`, "an invitation its link no longer shows to this caller (FQ59, FQ80)");
+       else if (kind === "InvitationOpen" && held.invitation.boundTo !== null)
+         find("world", `${at}.invitation_id`, "an open invitation whose link an account has accepted with (T7)");

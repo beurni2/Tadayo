@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (29 tests | 1 failed) 33ms
+   ❯ the invitation for the account holding its link (previewInvitation) (12)
+     × says expired, with the inviter's name, from the link's expiry while nobody has used it (FQ71) 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 56 passed (57)
+   Start at  01:13:42
+   Duration  946ms (import 69%, transform 16%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > the invitation for the account holding its link (previewInvitation) > says expired, with the inviter's name, from the link's expiry while nobody has used it (FQ71)
+AssertionError: expected { state: 'expired', …(1) } to match object { state: 'changed' }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "changed",
++   "state": "expired",
+  }
+
+ ❯ src/privacy/invitation.test.ts:242:66
+    240|     expect(preview("usr_mo", roster(), world(), LATER.subtract({ micro…
+    241|     // A link its account has used doesn't expire for that account (ha…
+    242|     expect(preview("usr_mo", roster([bound()]), world(), LATER)).toMat…
+       |                                                                  ^
+    243|   });
+    244|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

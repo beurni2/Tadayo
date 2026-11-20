@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/decide-roster.ts b/packages/domain/src/clubs/decide-roster.ts
+index aef48b47..5c4a59a8 100644
+--- a/packages/domain/src/clubs/decide-roster.ts
++++ b/packages/domain/src/clubs/decide-roster.ts
+@@ -120,7 +120,7 @@ async function decideRoster(
+   const at = await clock.sample(tx);
+ 
+   // 7. The decision, once, and only of an open revision.
+-  if (before.state === "open" && before.myDecision === "pending") {
++  if (before.myDecision === "pending") {
+     const decision = operation === "approveRoster" ? "approved" : "declined";
+     await bound(tx)`
+       INSERT INTO app.roster_approvals (revision_id, interval_id, decision, implicit, decided_at)

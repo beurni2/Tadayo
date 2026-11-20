@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3048ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 108ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:10:07
+   Duration  3.69s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now
+AssertionError: expected 'open' to be 'ended' // Object.is equality
+
+Expected: "ended"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1384:57
+    1382|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+    1383|       expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).st…
+    1384|       expect(await candidateState(tx, s.sam.candidate)).toBe("ended");
+       |                                                         ^
+    1385|       // Nobody is carried: no revision is open, and no place of the s…
+    1386|       expect(await openRevision(tx, s.w.club)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1374:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

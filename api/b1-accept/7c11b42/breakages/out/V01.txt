@@ -1,0 +1,108 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 3192ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 60ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × opens the club for a member, whoever the link was for, and binds nothing; a member can't accept with it 26ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:09:30
+   Duration  3.91s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > keeps a candidate who accepted first waiting, with no progress shown, until the last member approves
+AssertionError: expected null to deeply equal { state: 'joined', club: { …(4) } }
+
+- Expected:
+{
+  "club": {
+    "id": "club_ldtSgYAKFKFiN7UPycVRIA",
+    "my_membership_id": "mem_079PGpQHO8AWQAkHtjl8Mw",
+    "name": "Sunday people",
+    "timezone": "America/New_York",
+  },
+  "state": "joined",
+}
+
++ Received:
+null
+
+ ❯ src/db/accept-roster.test.ts:376:56
+    374|       expect(members[3]?.joined_at.equals(FIRST.add({ minutes: 2 }))).…
+    375|       // Sam's link now opens the club, and the list holds the club, n…
+    376|       expect(await preview(tx, sam, s.sam.token, NOW)).toEqual({
+       |                                                        ^
+    377|         state: "joined",
+    378|         club: {
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:336:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > opens the club for a member, whoever the link was for, and binds nothing; a member can't accept with it
+AssertionError: expected { state: 'open', …(7) } to deeply equal { state: 'joined', club: { …(4) } }
+
+- Expected
++ Received
+
+  {
+-   "club": {
+-     "id": "club_82KwyJiC32ikkgTDgR0U8A",
+-     "my_membership_id": "mem_4rU6WNMJkl14nzMq8auz6g",
+-     "name": "Sunday people",
+-     "timezone": "America/New_York",
++   "club_name": "Sunday people",
++   "expires_at": "2026-11-18T05:00:00Z",
++   "invitation_id": "inv_NZWZHRcxZ6X1tu_uw1Ns8A",
++   "inviter_name": "Ben",
++   "revision_id": "rev_4N3HAvwZE8MzT4pL-fV8Jw",
++   "revision_version": 1,
++   "roster": [
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Ben",
+      },
+-   "state": "joined",
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Maya",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Alex",
++     },
++     {
++       "is_you": true,
++       "kind": "candidate",
++       "name": "Sam",
++     },
++   ],
++   "state": "open",
+  }
+
+ ❯ src/db/accept-roster.test.ts:846:71
+    844|       const s = await laterRoster(tx);
+    845|       for (const index of [0, 1]) {
+    846|         expect(await preview(tx, user(s.w, index), s.sam.token, NOW)).…
+       |                                                                       ^
+    847|           state: "joined",
+    848|           club: {
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:843:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

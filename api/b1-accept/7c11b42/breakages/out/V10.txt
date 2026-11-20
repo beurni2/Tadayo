@@ -1,0 +1,70 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 2991ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 36ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 36ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:10:19
+   Duration  3.62s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > keeps a candidate who accepted first waiting, with no progress shown, until the last member approves
+AssertionError: expected { inviter_name: 'Ben' } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "inviter_name": "Ben",
+}
+
+ ❯ src/db/accept-roster.test.ts:359:54
+    357|       });
+    358|       // The signed-out page no longer names anyone for it: the link i…
+    359|       expect(await webPreview(tx, s.sam.token, NOW)).toBeNull();
+       |                                                      ^
+    360|       // One approval of two changes nothing Sam can see (T33).
+    361|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:336:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting
+AssertionError: expected { inviter_name: 'Ben' } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "inviter_name": "Ben",
+}
+
+ ❯ nothing src/db/accept-roster.test.ts:761:50
+    759|       const zed = await newUser(plain(tx), "Zed");
+    760|       const nothing = async (token: string): Promise<void> => {
+    761|         expect(await webPreview(tx, token, NOW)).toBeNull();
+       |                                                  ^
+    762|         expect(await preview(tx, zed, token, NOW)).toBeNull();
+    763|         expect(await refusal(acceptWith(tx, clock, zed, token, s.open.…
+ ❯ src/db/accept-roster.test.ts:781:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:757:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

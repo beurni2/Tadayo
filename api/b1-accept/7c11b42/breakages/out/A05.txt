@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3021ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × says a link nobody used has expired before it says anything of the revision's state or its version 40ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:10:54
+   Duration  3.66s (tests 89%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > says a link nobody used has expired before it says anything of the revision's state or its version
+AssertionError: expected { code: 'ROSTER_CHANGED', …(1) } to deeply equal { code: 'INVITATION_EXPIRED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "INVITATION_EXPIRED",
+-   "facts": {},
++   "code": "ROSTER_CHANGED",
++   "facts": {
++     "current_id": "rev_ZzcRY1ikzstPUExuX-EMDA",
++   },
+  }
+
+ ❯ src/db/accept-roster.test.ts:1489:84
+    1487|       const expired = { code: "INVITATION_EXPIRED", facts: {} };
+    1488|       // A replaced revision, and the open one at a stale version.
+    1489|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.o…
+       |                                                                                    ^
+    1490|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, nex…
+    1491|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1482:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

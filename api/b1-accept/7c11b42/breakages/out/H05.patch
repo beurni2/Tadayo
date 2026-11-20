@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/invitation.ts b/services/api/src/clubs/invitation.ts
+index 95aa3e1e..2ece3010 100644
+--- a/services/api/src/clubs/invitation.ts
++++ b/services/api/src/clubs/invitation.ts
+@@ -100,7 +100,7 @@ export function previewInvitationWebHandler(deps: Deps): Handler {
+     const found = await deps.sql.begin("read only", async (tx) =>
+       previewInvitationWeb(tx, token, await deps.clock.sample(tx)),
+     );
+-    return found === null ? problem(reply, "NOT_FOUND") : ok(reply, { inviter_name: found.inviterName });
++    return ok(reply, { inviter_name: found?.inviterName ?? "" });
+   };
+ }
+ 

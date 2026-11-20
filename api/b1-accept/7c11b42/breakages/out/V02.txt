@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2754ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × gives nothing of a suspended club, and nothing to an account that left after joining with the link 28ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:09:34
+   Duration  3.35s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > gives nothing of a suspended club, and nothing to an account that left after joining with the link
+Error: clubs: an open candidate is on no open revision
+ ❯ invitationStanding ../packages/domain/src/clubs/invitation-preview.ts:103:30
+    101|   // 7. Names the answer can't do without.
+    102|   const roster = facts.roster;
+    103|   if (roster === null) throw new Error("clubs: an open candidate is on…
+       |                              ^
+    104|   if (facts.inviterName === null || roster.members.length === 0) retur…
+    105|   // 8. Six already.
+ ❯ previewInvitation ../packages/domain/src/clubs/invitation-preview.ts:140:10
+ ❯ preview src/db/roster-world.ts:224:17
+ ❯ src/db/accept-roster.test.ts:872:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:865:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/invitation-preview.ts b/packages/domain/src/clubs/invitation-preview.ts
+index 0fc3edd0..635bd9a9 100644
+--- a/packages/domain/src/clubs/invitation-preview.ts
++++ b/packages/domain/src/clubs/invitation-preview.ts
+@@ -89,7 +89,6 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
+     return { state: "joined", club: { ...facts.club, membershipId: facts.membershipId } };
+   }
+   // 3. Joined once, and gone since.
+-  if (facts.candidateState === "joined") return null;
+   const mine = facts.boundUserId === userId;
+   // 4. The proposal ended.
+   if (facts.candidateState === "ended") return mine ? { state: "did_not_go_ahead" } : null;

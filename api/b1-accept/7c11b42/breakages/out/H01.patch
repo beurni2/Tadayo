@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/invitation.ts b/services/api/src/clubs/invitation.ts
+index 95aa3e1e..ea6b8133 100644
+--- a/services/api/src/clubs/invitation.ts
++++ b/services/api/src/clubs/invitation.ts
+@@ -53,7 +53,7 @@ export function invitationPreviewBody(sight: InvitationSight): { readonly [key:
+         revision_id: sight.revisionId,
+         revision_version: sight.revisionVersion,
+         roster: sight.roster.map((entry) => ({ name: entry.name, kind: entry.kind, is_you: entry.isYou })),
+-        ...(sight.state === "waiting" ? {} : { expires_at: contractInstant(sight.expiresAt) }),
++        expires_at: contractInstant((sight as { expiresAt: Temporal.Instant }).expiresAt ?? Temporal.Instant.from('2026-01-01T00:00:00Z')),
+       };
+   }
+ }

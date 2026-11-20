@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 3095ms
+   ❯ accepting the exact roster the caller saw (T7, T19, T52) (4)
+     × refuses a revision that isn't the invitation's, a stale version, and a second place in the same club 56ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × gives it for a second place in the club whatever version or revision the request names 52ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:10:59
+   Duration  3.66s (tests 91%, import 6%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > refuses a revision that isn't the invitation's, a stale version, and a second place in the same club
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/accept-roster.test.ts:955:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:935:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > gives it for a second place in the club whatever version or revision the request names
+AssertionError: expected { code: 'VERSION_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "VERSION_CONFLICT",
++   "facts": {
++     "current_version": 1,
++   },
+  }
+
+ ❯ src/db/accept-roster.test.ts:1435:96
+    1433|       await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1);
+    1434|       for (const version of [0, 1, 7]) {
+    1435|         expect(await refusal(acceptWith(tx, clock, sam, debbyLink.toke…
+       |                                                                                                ^
+    1436|       }
+    1437|       // And for a revision a newer one replaced: not ROSTER_CHANGED w…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1429:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

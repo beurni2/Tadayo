@@ -1,0 +1,69 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 2807ms
+   ❯ declining: the revision ends for every candidate, and nobody is told who (book p30, T33) (1)
+     × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 44ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × gives the neutral not-found for an ended proposal's unused link under a key the account has used 99ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:09:38
+   Duration  3.43s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > declining: the revision ends for every candidate, and nobody is told who (book p30, T33) > ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead
+AssertionError: expected { state: 'did_not_go_ahead' } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "state": "did_not_go_ahead",
+}
+
+ ❯ src/db/accept-roster.test.ts:593:62
+    591|       expect(await preview(tx, sam, s.sam.token, NOW)).toEqual({ state…
+    592|       expect((await listClubs(tx, sam, NOW)).invitations.map((one) => …
+    593|       expect(await preview(tx, debby, debbyLink.token, NOW)).toBeNull(…
+       |                                                              ^
+    594|       expect(await webPreview(tx, debbyLink.token, NOW)).toBeNull();
+    595|       expect(await refusal(acceptWith(tx, clock, debby, debbyLink.toke…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:563:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > gives the neutral not-found for an ended proposal's unused link under a key the account has used
+AssertionError: expected { state: 'did_not_go_ahead' } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "state": "did_not_go_ahead",
+}
+
+ ❯ src/db/accept-roster.test.ts:1418:62
+    1416|       // The first club's proposal is declined: Debby's link there, ne…
+    1417|       await decline(tx, clock, user(s.w, 1), s.open.id, 1);
+    1418|       expect(await preview(tx, debby, debbyLink.token, NOW)).toBeNull(…
+       |                                                              ^
+    1419|       for (const version of [1, 2, 7]) {
+    1420|         expect(await refusal(acceptWith(tx, clock, debby, debbyLink.to…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1408:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

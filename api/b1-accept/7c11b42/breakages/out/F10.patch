@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-facts.ts b/packages/domain/src/clubs/invitation-facts.ts
+index dd4e3ffd..08e3d499 100644
+--- a/packages/domain/src/clubs/invitation-facts.ts
++++ b/packages/domain/src/clubs/invitation-facts.ts
+@@ -22,7 +22,7 @@ const TOKEN = /^[A-Za-z0-9_-]{43,128}$/;
+ /** The SHA-256 of the token's text, in hex, or null for a text that can't be a token. */
+ export function tokenHash(token: unknown): string | null {
+   if (typeof token !== "string" || !TOKEN.test(token)) return null;
+-  return createHash("sha256").update(token).digest("hex");
++  return createHash("sha512").update(token).digest("hex");
+ }
+ 
+ export interface RosterName {

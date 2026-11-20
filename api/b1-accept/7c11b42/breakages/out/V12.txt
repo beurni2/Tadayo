@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3258ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × gives nothing of a suspended club, and nothing to an account that left after joining with the link 74ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:10:28
+   Duration  3.87s (tests 91%, import 6%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > gives nothing of a suspended club, and nothing to an account that left after joining with the link
+AssertionError: expected { inviter_name: 'Ben' } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "inviter_name": "Ben",
+}
+
+ ❯ src/db/accept-roster.test.ts:878:54
+    876|       const other = await newUser(plain(tx), "Sam");
+    877|       await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id =…
+    878|       expect(await webPreview(tx, t.sam.token, NOW)).toBeNull();
+       |                                                      ^
+    879|       expect(await preview(tx, other, t.sam.token, NOW)).toBeNull();
+    880|       expect(await preview(tx, user(t.w, 0), t.sam.token, NOW)).toBeNu…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:865:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,77 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 3045ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 81ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 68ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:13:27
+   Duration  3.73s (tests 89%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120)
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "decision": "approved",
+-     "implicit": true,
+-     "interval_id": "mem_mRDzhmNlZOEOLbeTc_AgqQ",
+-   },
+- ]
++ []
+
+ ❯ src/db/accept-roster.test.ts:251:46
+    249|         proposed_by_interval_id: s.ben.interval,
+    250|       });
+    251|       expect(await approvalsOf(tx, carried)).toEqual([
+       |                                              ^
+    252|         { interval_id: s.ben.interval, decision: "approved", implicit:…
+    253|       ]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:197:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "decision": "approved",
+-     "implicit": true,
+-     "interval_id": "mem_O_3p3BWN89Co5GBm7N5qTA",
+-   },
+- ]
++ []
+
+ ❯ src/db/accept-roster.test.ts:517:46
+    515|         proposed_by_interval_id: s.ben.interval,
+    516|       });
+    517|       expect(await approvalsOf(tx, carried)).toEqual([
+       |                                              ^
+    518|         { interval_id: s.ben.interval, decision: "approved", implicit:…
+    519|       ]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-facts.ts b/packages/domain/src/clubs/invitation-facts.ts
+index dd4e3ffd..20504d0c 100644
+--- a/packages/domain/src/clubs/invitation-facts.ts
++++ b/packages/domain/src/clubs/invitation-facts.ts
+@@ -200,7 +200,7 @@ export async function linkFacts(
+                                          JOIN app.memberships m ON m.interval_id = rm.interval_id
+                                         WHERE rm.revision_id = r.id AND m.state <> 'active'),
+                      'members',
+-                     (SELECT pg_catalog.jsonb_agg(su.display_name ORDER BY s.joined_at, s.interval_id COLLATE "C")
++                     (SELECT pg_catalog.jsonb_agg(su.display_name ORDER BY s.joined_at DESC, s.interval_id COLLATE "C" DESC)
+                         FROM app.roster_revision_members rm
+                         JOIN app.memberships s ON s.interval_id = rm.interval_id
+                         JOIN app.users su ON su.id = s.user_id

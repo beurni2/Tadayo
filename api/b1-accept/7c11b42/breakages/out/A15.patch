@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..95b3ffc8 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -221,7 +221,7 @@ export async function acceptInvitation(
+   if (first !== null) return first.replay;
+   const [account] = await bound(tx)`
+     SELECT state, display_name FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;
+-  if (account === undefined || account["state"] !== "active") throw new Refused("UNAUTHENTICATED");
++  if (account === undefined) throw new Refused("UNAUTHENTICATED");
+   const profileName = account["display_name"];
+   if (typeof profileName !== "string") throw new Refused("PROFILE_INCOMPLETE");
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;

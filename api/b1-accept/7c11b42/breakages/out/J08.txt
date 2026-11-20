@@ -1,0 +1,107 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (29 tests | 6 failed) 32ms
+   ❯ what a link's token names (invitation.ts) (6)
+     × names nothing once the link is revoked, to its holder and to a member alike (T14, FQ59) 6ms
+     × names nothing once the link is replaced by a newer link, to its holder and to a member alike (T14, FQ59) 1ms
+     × names nothing once the link is used by another account, to its holder and to a member alike (T14, FQ59) 1ms
+     × names nothing of a suspended club (FQ80), and nothing to a caller with no account 1ms
+   ❯ the signed-out page (previewInvitationWeb) (4)
+     × is nothing for a link an account has used, at its expiry, or whose candidate ended or joined 1ms
+     × passes the name, and refuses another name, a field more, the neutral answer and an answer that may be stored 3ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  6 failed | 51 passed (57)
+   Start at  01:13:49
+   Duration  895ms (import 69%, transform 16%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > what a link's token names (invitation.ts) > names nothing once the link is revoked, to its holder and to a member alike (T14, FQ59)
+ FAIL  src/privacy/invitation.test.ts > what a link's token names (invitation.ts) > names nothing once the link is replaced by a newer link, to its holder and to a member alike (T14, FQ59)
+ FAIL  src/privacy/invitation.test.ts > what a link's token names (invitation.ts) > names nothing once the link is used by another account, to its holder and to a member alike (T14, FQ59)
+AssertionError: expected { inviter_name: 'Ben' } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "inviter_name": "Ben",
+}
+
+ ❯ src/privacy/invitation.test.ts:165:64
+    163|     expect(preview("usr_mo", roster([dead]))).toBeUndefined();
+    164|     expect(preview("usr_ana", roster([dead]))).toBeUndefined();
+    165|     expect(webPreviewFor(world(), roster([dead]), TOKEN, NOW)).toBeUnd…
+       |                                                                ^
+    166|     expect(acceptOutcome(world(), roster([dead]), TOKEN, "usr_mo", "Mo…
+    167|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/privacy/invitation.test.ts > what a link's token names (invitation.ts) > names nothing of a suspended club (FQ80), and nothing to a caller with no account
+AssertionError: expected { inviter_name: 'Ben' } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "inviter_name": "Ben",
+}
+
+ ❯ src/privacy/invitation.test.ts:173:60
+    171|     suspended.clubs.set(CLUB, { name: "The Saturdays", timezone: "Amer…
+    172|     expect(preview("usr_mo", roster(), suspended)).toBeUndefined();
+    173|     expect(webPreviewFor(suspended, roster(), TOKEN, NOW)).toBeUndefin…
+       |                                                            ^
+    174|     expect(acceptOutcome(suspended, roster(), TOKEN, "usr_mo", "Mo", "…
+    175|     expect(preview(null)).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/privacy/invitation.test.ts > the signed-out page (previewInvitationWeb) > is nothing for a link an account has used, at its expiry, or whose candidate ended or joined
+AssertionError: expected { inviter_name: 'Ben' } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "inviter_name": "Ben",
+}
+
+ ❯ src/privacy/invitation.test.ts:185:67
+    183|
+    184|   it("is nothing for a link an account has used, at its expiry, or who…
+    185|     expect(webPreviewFor(world(), roster([bound()]), TOKEN, NOW)).toBe…
+       |                                                                   ^
+    186|     expect(webPreviewFor(world(), roster(), TOKEN, LATER)).toBeUndefin…
+    187|     expect(webPreviewFor(world(), roster(), TOKEN, LATER.subtract({ mi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/privacy/invitation.test.ts > the signed-out page (previewInvitationWeb) > passes the name, and refuses another name, a field more, the neutral answer and an answer that may be stored
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "status 404, not 200 with the inviter's name",
++ ]
+
+ ❯ src/privacy/invitation.test.ts:205:29
+    203|     expect(judge(ok({ inviter_name: "Ben" }, { "cache-control": "publi…
+    204|     const used = judging(webPreviewExpected(seen(world(), roster([boun…
+    205|     expect(used(NOT_FOUND)).toEqual([]);
+       |                             ^
+    206|     expect(used(ok({ inviter_name: "Ben" }))).not.toEqual([]);
+    207|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+

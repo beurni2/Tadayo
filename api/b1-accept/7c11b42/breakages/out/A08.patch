@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..cc2e0c83 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -155,7 +155,7 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+   const version = named["version"];
+   const label = named["label"];
+   if (typeof version !== "number" || typeof label !== "string") throw shape();
+-  if (state === "superseded") {
++  if (state === "nothing") {
+     const refusal = new Refused("ROSTER_CHANGED", { current_id: await newestRevision(tx, revisionId) });
+     return { kind: "refused", facts, refusal };
+   }

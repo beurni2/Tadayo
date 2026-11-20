@@ -1,0 +1,101 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 2791ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71) 32ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × says a link nobody used has expired before it says anything of the revision's state or its version 32ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:08:23
+   Duration  3.44s (tests 89%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71)
+AssertionError: expected { state: 'open', …(7) } to deeply equal { state: 'expired', …(1) }
+
+- Expected
++ Received
+
+  {
++   "club_name": "Sunday people",
++   "expires_at": "2026-11-18T05:00:00Z",
++   "invitation_id": "inv_6kJydzUiTa07gaveLHahig",
+    "inviter_name": "Ben",
+-   "state": "expired",
++   "revision_id": "rev_AO8u4mdhQNO5dQICJFq2PA",
++   "revision_version": 1,
++   "roster": [
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Ben",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Maya",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Alex",
++     },
++     {
++       "is_you": true,
++       "kind": "candidate",
++       "name": "Sam",
++     },
++   ],
++   "state": "open",
+  }
+
+ ❯ src/db/accept-roster.test.ts:799:72
+    797|       expect((await preview(tx, sam, s.sam.token, before))?.state).toB…
+    798|       expect(await webPreview(tx, s.sam.token, before)).toEqual({ invi…
+    799|       expect(await preview(tx, sam, s.sam.token, expiry as ServerNow))…
+       |                                                                        ^
+    800|         state: "expired",
+    801|         inviter_name: "Ben",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:792:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > says a link nobody used has expired before it says anything of the revision's state or its version
+AssertionError: expected { code: 'ROSTER_CHANGED', …(1) } to deeply equal { code: 'INVITATION_EXPIRED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "INVITATION_EXPIRED",
+-   "facts": {},
++   "code": "ROSTER_CHANGED",
++   "facts": {
++     "current_id": "rev_w9iB8QUsZ6JFjSFW8S24MQ",
++   },
+  }
+
+ ❯ src/db/accept-roster.test.ts:1489:84
+    1487|       const expired = { code: "INVITATION_EXPIRED", facts: {} };
+    1488|       // A replaced revision, and the open one at a stale version.
+    1489|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.o…
+       |                                                                                    ^
+    1490|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, nex…
+    1491|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1482:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

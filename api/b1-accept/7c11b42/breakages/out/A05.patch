@@ -1,0 +1,20 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..7c3c4ca2 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -145,7 +145,6 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+   if (named === undefined) return { kind: "nothing" };
+ 
+   // b. A link nobody has used, past its expiry.
+-  if (!mine && facts.pastExpiry) return { kind: "refused", facts, refusal: new Refused("INVITATION_EXPIRED") };
+ 
+   // c. One account, one place.
+   if (facts.holdsAnother) return { kind: "nothing" };
+@@ -177,6 +176,7 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+   // An open revision lists only open candidates, and a member's own link is one they joined with.
+   if (facts.candidateState !== "open" || facts.membershipId !== null) return { kind: "nothing" };
+ 
++  if (!mine && facts.pastExpiry) return { kind: "refused", facts, refusal: new Refused("INVITATION_EXPIRED") };
+   // e. Six.
+   if (facts.members >= CLUB_SIZE) return { kind: "refused", facts, refusal: new Refused("CLUB_FULL") };
+   return { kind: "open", facts, label };

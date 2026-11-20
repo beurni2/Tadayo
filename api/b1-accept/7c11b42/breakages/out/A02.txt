@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3107ms
+   ❯ accepting the exact roster the caller saw (T7, T19, T52) (4)
+     × keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict 43ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:10:41
+   Duration  3.70s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict
+AssertionError: expected { code: 'IDEMPOTENCY_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
++   "code": "IDEMPOTENCY_CONFLICT",
+    "facts": {},
+  }
+
+ ❯ src/db/accept-roster.test.ts:988:91
+    986|       // Another link under the key, one that names nothing to Maya (a…
+    987|       // neutral not-found, as under a new key and as for a token nobo…
+    988|       expect(await refusal(acceptWith(tx, clock, maya, s.alex.token, s…
+       |                                                                                           ^
+    989|       expect(await refusal(acceptWith(tx, clock, maya, s.alex.token, s…
+    990|       expect(await refusal(acceptWith(tx, clock, maya, "A".repeat(43),…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:963:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

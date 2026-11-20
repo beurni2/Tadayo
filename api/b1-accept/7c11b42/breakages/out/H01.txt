@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/services/api
+
+ ❯ src/clubs/invitation.test.ts (25 tests | 2 failed) 363ms
+   ❯ the preview's serializer against the contract's examples (T55) (10)
+     × makes waiting field for field 11ms
+     × sends names and nothing else of anyone: no id of a person, no photo, no decision 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 45 passed (47)
+   Start at  01:13:32
+   Duration  905ms (tests 44%, import 36%, transform 20%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/invitation.test.ts > the preview's serializer against the contract's examples (T55) > makes waiting field for field
+AssertionError: expected { state: 'waiting', …(7) } to deeply equal { state: 'waiting', …(6) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,8 @@
+  {
+    "club_name": "Kitchen table",
++   "expires_at": "2026-01-01T00:00:00Z",
+    "invitation_id": "inv_kt_leila",
+    "inviter_name": "Ben",
+    "revision_id": "rev_kt_leila",
+    "revision_version": 1,
+    "roster": [
+
+ ❯ src/clubs/invitation.test.ts:76:18
+     74|     const value = example.value as Body;
+     75|     const made = invitationPreviewBody(sight(value));
+     76|     expect(made).toEqual(value);
+       |                  ^
+     77|     expect(InvitationPreview.safeParse(made).success).toBe(true);
+     78|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/clubs/invitation.test.ts > the preview's serializer against the contract's examples (T55) > sends names and nothing else of anyone: no id of a person, no photo, no decision
+AssertionError: expected [ 'state', 'invitation_id', …(6) ] to not include 'expires_at'
+ ❯ src/clubs/invitation.test.ts:95:38
+     93|     // Waiting has no expiry: the link is used.
+     94|     const waiting = invitationPreviewBody(sight(successExamples("previ…
+     95|     expect(Object.keys(waiting)).not.toContain("expires_at");
+       |                                      ^
+     96|   });
+     97| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

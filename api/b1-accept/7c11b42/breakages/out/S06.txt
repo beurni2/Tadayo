@@ -1,0 +1,62 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 2 failed) 404ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × catches the page's name, and the roster, once the candidate is on no open revision 11ms
+     × catches the inviter's name told in the app for a link nobody used, once the candidate is on no open revision 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 86 passed (88)
+   Start at  01:13:59
+   Duration  1.14s (import 49%, tests 47%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches the page's name, and the roster, once the candidate is on no open revision
+AssertionError: expected [ '$.roster[0].name', …(3) ] to deeply equal ArrayContaining{…}
+
+- Expected
++ Received
+
+- ArrayContaining [
+-   "$.club_name",
++ [
+    "$.roster[0].name",
++   "$.roster[2].name",
++   "$.roster[3].name",
++   "$.roster[4].name",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:1946:77
+    1944|   it("catches the page's name, and the roster, once the candidate is o…
+    1945|     expect(at(web({ inviter_name: "Ben" }, held({ roster: null })), "v…
+    1946|     expect(at(previewed(roster("open"), held({ roster: null })), "valu…
+       |                                                                             ^
+    1947|       expect.arrayContaining(["$.club_name", "$.roster[0].name"]),
+    1948|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches the inviter's name told in the app for a link nobody used, once the candidate is on no open revision
+AssertionError: expected [] to deeply equal [ '$.inviter_name' ]
+
+- Expected
++ Received
+
+- [
+-   "$.inviter_name",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1954:70
+    1952|     const expired = { state: "expired", inviter_name: "Ben" };
+    1953|     expect(previewed(expired, held())).toEqual([]);
+    1954|     expect(at(previewed(expired, held({ roster: null })), "values")).t…
+       |                                                                      ^
+    1955|     // An account's own used link names its inviter to that account an…
+    1956|     // rule, not this one's): that isn't the holder's allowance, and i…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

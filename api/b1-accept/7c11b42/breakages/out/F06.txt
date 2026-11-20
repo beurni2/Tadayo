@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2957ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × holds another place only while the first candidate is open: after a decline, another link is the account's to accept 50ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:08:27
+   Duration  3.60s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > holds another place only while the first candidate is open: after a decline, another link is the account's to accept
+AssertionError: expected undefined to be 'open' // Object.is equality
+
+- Expected:
+"open"
+
++ Received:
+undefined
+
+ ❯ src/db/accept-roster.test.ts:1453:64
+    1451|       const again = await propose(tx, clock, user(s.w, 0), s.w.club, […
+    1452|       const made = await linkFor(tx, clock, user(s.w, 0), s.w.club, ca…
+    1453|       expect((await preview(tx, sam, made.token, NOW))?.state).toBe("o…
+       |                                                                ^
+    1454|       expect((await acceptWith(tx, clock, sam, made.token, again.id, 1…
+    1455|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1446:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

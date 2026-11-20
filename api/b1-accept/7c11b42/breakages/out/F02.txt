@@ -1,0 +1,80 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2999ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 42ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:08:11
+   Duration  3.69s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting
+AssertionError: expected { state: 'open', …(7) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club_name": "Sunday people",
+  "expires_at": "2026-11-18T05:00:00Z",
+  "invitation_id": "inv_j16iMB2WVfo4jMYej_eE1g",
+  "inviter_name": "Ben",
+  "revision_id": "rev__k6isLYrjx2QZTj0DCFR_g",
+  "revision_version": 1,
+  "roster": [
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Ben",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Maya",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Alex",
+    },
+    {
+      "is_you": false,
+      "kind": "candidate",
+      "name": "Sam",
+    },
+    {
+      "is_you": false,
+      "kind": "candidate",
+      "name": "Debby",
+    },
+    {
+      "is_you": true,
+      "kind": "candidate",
+      "name": "Nina",
+    },
+  ],
+  "state": "open",
+}
+
+ ❯ nothing src/db/accept-roster.test.ts:762:52
+    760|       const nothing = async (token: string): Promise<void> => {
+    761|         expect(await webPreview(tx, token, NOW)).toBeNull();
+    762|         expect(await preview(tx, zed, token, NOW)).toBeNull();
+       |                                                    ^
+    763|         expect(await refusal(acceptWith(tx, clock, zed, token, s.open.…
+    764|       };
+ ❯ src/db/accept-roster.test.ts:776:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:757:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

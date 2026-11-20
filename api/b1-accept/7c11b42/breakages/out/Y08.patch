@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..f09f0f7b 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -240,7 +240,7 @@ export async function applyIfReady(
+            activated_at = coalesce(activated_at, ${at}::pg_catalog.timestamptz)
+      WHERE id = ${clubId}`;
+   // The first days are dated by the command's own sample, the one `activated_at` and `joined_at` hold.
+-  if (started) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
++  if (!started) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
+ 
+   // 5. The candidates who hadn't accepted go on, in a new revision (FQ120).
+   const left = candidates.filter((candidate) => candidate.open && !standing(candidate) && !gone(candidate));

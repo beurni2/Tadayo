@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2789ms
+   ❯ declining: the revision ends for every candidate, and nobody is told who (book p30, T33) (1)
+     × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 56ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:12:17
+   Duration  3.37s (tests 90%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > declining: the revision ends for every candidate, and nobody is told who (book p30, T33) > ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/db/accept-roster.test.ts:579:49
+    577|       expect(await candidateState(tx, s.sam.candidate)).toBe("ended");
+    578|       expect(await candidateState(tx, candidate(s.open, 1))).toBe("end…
+    579|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 1);
+       |                                                 ^
+    580|       expect(await membersOf(tx, s.w.club)).toHaveLength(3);
+    581|       // The other members read the same ended revision, with only the…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:563:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

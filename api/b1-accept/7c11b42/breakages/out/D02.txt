@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3001ms
+   ❯ who may approve or decline (T9, T14, FQ119) (5)
+     × refuses a stale version with the version now, and a replaced revision with the newest one's id, leaving nothing 46ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:12:00
+   Duration  3.65s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > refuses a stale version with the version now, and a replaced revision with the newest one's id, leaving nothing
+AssertionError: expected { code: 'VERSION_CONFLICT', …(1) } to deeply equal { code: 'ROSTER_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "ROSTER_CHANGED",
++   "code": "VERSION_CONFLICT",
+    "facts": {
+-     "current_id": "rev_5xPc_BQI2hiyXMtn8qb9CA",
++     "current_version": 2,
+    },
+  }
+
+ ❯ src/db/accept-roster.test.ts:716:82
+    714|       const third = await propose(tx, clock, user(s.w, 2), s.w.club, […
+    715|       for (const sent of [1, 2]) {
+    716|         expect(await refusal(approve(tx, clock, user(s.w, 1), s.open.i…
+       |                                                                                  ^
+    717|           code: "ROSTER_CHANGED",
+    718|           facts: { current_id: third.id },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:702:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

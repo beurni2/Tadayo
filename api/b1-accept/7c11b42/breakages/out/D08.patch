@@ -1,0 +1,21 @@
+diff --git a/packages/domain/src/clubs/decide-roster.ts b/packages/domain/src/clubs/decide-roster.ts
+index aef48b47..41173e70 100644
+--- a/packages/domain/src/clubs/decide-roster.ts
++++ b/packages/domain/src/clubs/decide-roster.ts
+@@ -101,6 +101,7 @@ async function decideRoster(
+   // 2. The receipt, then the club's row.
+   const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
+   if (first !== null) return first.replay;
++  const at = await clock.sample(tx);
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+ 
+   // 3. Who is asking: the same interval still, reading the same revision.
+@@ -116,8 +117,6 @@ async function decideRoster(
+     throw new Refused("VERSION_CONFLICT", { current_version: before.version });
+   }
+ 
+-  // 6. The clock, after the lock.
+-  const at = await clock.sample(tx);
+ 
+   // 7. The decision, once, and only of an open revision.
+   if (before.state === "open" && before.myDecision === "pending") {

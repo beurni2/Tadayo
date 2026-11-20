@@ -1,0 +1,69 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (29 tests | 1 failed) 39ms
+   ❯ what a link's token names (invitation.ts) (6)
+     × names nothing of a suspended club (FQ80), and nothing to a caller with no account 11ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 56 passed (57)
+   Start at  01:13:40
+   Duration  869ms (import 68%, transform 16%, tests 15%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > what a link's token names (invitation.ts) > names nothing of a suspended club (FQ80), and nothing to a caller with no account
+AssertionError: expected { state: 'open', …(7) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "club_name": "The Saturdays",
+  "expires_at": "2026-11-13T14:41:00Z",
+  "invitation_id": "inv_mo",
+  "inviter_name": "Ben",
+  "revision_id": "rev_1",
+  "revision_version": 1,
+  "roster": [
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Ana",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Ben",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Cleo",
+    },
+    {
+      "is_you": true,
+      "kind": "candidate",
+      "name": "Mo",
+    },
+    {
+      "is_you": false,
+      "kind": "candidate",
+      "name": "Lu",
+    },
+  ],
+  "state": "open",
+}
+
+ ❯ src/privacy/invitation.test.ts:172:52
+    170|     const suspended = world();
+    171|     suspended.clubs.set(CLUB, { name: "The Saturdays", timezone: "Amer…
+    172|     expect(preview("usr_mo", roster(), suspended)).toBeUndefined();
+       |                                                    ^
+    173|     expect(webPreviewFor(suspended, roster(), TOKEN, NOW)).toBeUndefin…
+    174|     expect(acceptOutcome(suspended, roster(), TOKEN, "usr_mo", "Mo", "…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

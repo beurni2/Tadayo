@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 1 failed) 374ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × catches the roster through an unused link from its expiry, and the page's name; the account's own link keeps it 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 87 passed (88)
+   Start at  01:14:01
+   Duration  1.25s (import 55%, tests 41%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches the roster through an unused link from its expiry, and the page's name; the account's own link keeps it
+AssertionError: expected [] to deeply equal [ '$.invitation_id' ]
+
+- Expected
++ Received
+
+- [
+-   "$.invitation_id",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1936:32
+    1934|     const late = { now: instant("2026-11-13T12:00:00Z") };
+    1935|     const found = previewed(roster("open"), held(), BENS_TOKEN, late);
+    1936|     expect(at(found, "world")).toEqual(["$.invitation_id"]);
+       |                                ^
+    1937|     expect(at(found, "values")).toEqual(expect.arrayContaining(["$.clu…
+    1938|     expect(at(web({ inviter_name: "Ben" }, held(), BENS_TOKEN, late), …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

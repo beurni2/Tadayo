@@ -1,0 +1,97 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 3 failed) 3235ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 109ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × joins the candidate on their acceptance once every member has approved, and not before 116ms
+   ❯ found in review: rules no test held (5)
+     × dates a club's start, its members and its first days by one sample (T1) 27ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 52 passed (55)
+   Start at  01:13:10
+   Duration  3.93s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120)
+AssertionError: expected [] to deeply equal [ { reason: 'activation', …(2) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "members": 2,
+-     "reason": "activation",
+-     "state": "open",
+-   },
+- ]
++ []
+
+ ❯ src/db/accept-roster.test.ts:238:25
+    236|                (SELECT pg_catalog.count(*)::int4 FROM app.schedule_pro…
+    237|           FROM app.schedule_proposals p WHERE p.club_id = ${s.ben.club…
+    238|       expect(proposals).toEqual([{ reason: "activation", state: "open"…
+       |                         ^
+    239|
+    240|       // Alex, who hadn't accepted, is carried into a new revision: Be…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:197:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins the candidate on their acceptance once every member has approved, and not before
+AssertionError: expected [ {} ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/db/accept-roster.test.ts:331:88
+    329|       // Nobody was left to carry, so no revision is open; and a club …
+    330|       expect(await openRevision(tx, s.w.club)).toBeNull();
+    331|       expect(await tx`SELECT FROM app.schedule_proposals WHERE club_id…
+       |                                                                                        ^
+    332|     });
+    333|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:295:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > dates a club's start, its members and its first days by one sample (T1)
+AssertionError: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/db/accept-roster.test.ts:1568:20
+    1566|         SELECT created_at FROM app.schedule_versions WHERE club_id = $…
+    1567|         UNION ALL SELECT created_at FROM app.schedule_proposals WHERE …
+    1568|       expect(made).toHaveLength(2);
+       |                    ^
+    1569|       for (const row of made) expect(at !== undefined && at !== null &…
+    1570|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1559:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

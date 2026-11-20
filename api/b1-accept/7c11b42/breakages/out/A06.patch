@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..8648e8af 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -148,7 +148,6 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+   if (!mine && facts.pastExpiry) return { kind: "refused", facts, refusal: new Refused("INVITATION_EXPIRED") };
+ 
+   // c. One account, one place.
+-  if (facts.holdsAnother) return { kind: "nothing" };
+ 
+   // d. The revision the request names.
+   const state = named["state"];

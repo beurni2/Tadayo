@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..a2a0ef8e 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -253,7 +253,7 @@ export async function applyIfReady(
+         proposer: text(row["proposed_by_interval_id"]),
+         at,
+         candidates: left.map(({ candidateId, label }) => ({ candidateId, label })),
+-        implicit: true,
++        implicit: false,
+       });
+     } else {
+       for (const candidate of left) {

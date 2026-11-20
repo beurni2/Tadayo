@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/invitation.ts b/services/api/src/clubs/invitation.ts
+index 95aa3e1e..40651842 100644
+--- a/services/api/src/clubs/invitation.ts
++++ b/services/api/src/clubs/invitation.ts
+@@ -92,7 +92,7 @@ export function previewInvitationWebHandler(deps: Deps): Handler {
+   return async (request, reply) => {
+     const parsed = InvitationTokenRequest.safeParse(request.body);
+     if (!parsed.success) {
+-      const field = firstBadField(["token"], parsed.error.issues);
++      const field = undefined as string | undefined;
+       return problem(reply, "INVALID_REQUEST", field === undefined ? {} : { field });
+     }
+     const { token } = parsed.data;

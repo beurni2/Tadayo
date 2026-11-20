@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index d4435bf5..02976372 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -642,7 +642,7 @@ function heldLink(
+   // Signed in too, a name is read only while the candidate is on an open revision: once the proposal has
+   // ended the answer is nothing, or `did_not_go_ahead`, which names nobody.
+   const readable = shown && invitation.roster !== null;
+-  return { id, invitation, shown, inviter: readable, roster: readable && (theirs || unexpired) };
++  return { id, invitation, shown, inviter: readable, roster: readable };
+ }
+ 
+ function readerOf(context: ScanContext): Reader {

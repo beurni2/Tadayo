@@ -1,0 +1,292 @@
+== F01 a revoked link still names its roster [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × lets a revoke and an acceptance of one link each wait for the other: the link is revoked or used, never both 170ms
+    × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 30ms
+== F02 a replaced link still names its roster [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 42ms
+== F03 a suspended club's link still names its roster [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × answers a retry with the neutral not-found once the link names nothing, not with the stored answer 22ms
+    × gives nothing of a suspended club, and nothing to an account that left after joining with the link 72ms
+== F04 a link another account used still names its roster [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × binds a link to one account when two accept with it at once, and answers eight sends under one key the same 95ms
+    × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 50ms
+== F05 a link is live at the instant it expires [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71) 32ms
+    × says a link nobody used has expired before it says anything of the revision's state or its version 32ms
+== F06 another place is held by an ended candidate too [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × holds another place only while the first candidate is open: after a decline, another link is the account's to accept 50ms
+== F07 an acceptance stands whatever the account's name now [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 73ms
+== F08 the roster's members in the other order [db]: CAUGHT; exit 1 ['Tests  3 failed | 52 passed (55)']
+    × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 108ms
+    × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 30ms
+    × shows nothing when no member of the roster has a name to show (FQ75) 17ms
+== F09 the roster's candidates in the other order [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 38ms
+    × shows the signed-out page the inviter's name, and the person signed in the exact roster, names only (T7, FQ47) 124ms
+== F10 a token is hashed with another digest [db]: CAUGHT; exit 1 ['Tests  46 failed | 9 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 16ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 19ms
+    × answers a retry with the neutral not-found once the link names nothing, not with the stored answer 27ms
+    × applies no roster whose members aren't exactly the club's active members 44ms
+    × binds a link to one account when two accept with it at once, and answers eight sends under one key the same 10442ms
+    × compares names as they are stored: another case is another name 14ms
+== V01 a member isn't told they joined [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 60ms
+    × opens the club for a member, whoever the link was for, and binds nothing; a member can't accept with it 26ms
+== V02 a link whose candidate joined shows a roster to an account that left [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × gives nothing of a suspended club, and nothing to an account that left after joining with the link 28ms
+== V03 an ended proposal is told to anyone [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 44ms
+    × gives the neutral not-found for an ended proposal's unused link under a key the account has used 99ms
+== V04 a used link expires for its own account [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 51ms
+== V05 a second place is previewed [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × refuses a revision that isn't the invitation's, a stale version, and a second place in the same club 55ms
+== V06 a roster with no named member is shown [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × shows nothing when no member of the roster has a name to show (FQ75) 31ms
+== V07 full only past six [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × says full when the club has six members, with nothing else, and refuses the acceptance (A01) 38ms
+== V08 waiting is never said [db]: CAUGHT; exit 1 ['Tests  3 failed | 52 passed (55)']
+    × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 34ms
+    × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 48ms
+    × stands again when the name is changed back before the last approval 72ms
+== R01 waiting is said of a roster every member approved [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 70ms
+== R02 an accepted, renamed account being deleted is carried [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 108ms
+== R03 the judge says waiting of a roster every member approved [judge]: CAUGHT; exit 1 ['Tests  1 failed | 56 passed (57)']
+    × says waiting, with no expiry, once the candidate accepted this roster with the link; changed for an earlier one 10ms
+== R04 the scanner passes an acceptance's id through a dead link [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 87 passed (88)']
+    × passes a waiting and a changed roster, and an acceptance, only as the account's own link 20ms
+== V09 changed is said as open [db]: CAUGHT; exit 1 ['Tests  6 failed | 49 passed (55)']
+    × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 35ms
+    × drops the other candidates' acceptances with the old revision: they accept the new one again 47ms
+    × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 38ms
+    × joins the others and carries the renamed account as someone who hasn't accepted 73ms
+    × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 38ms
+    × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 48ms
+== V10 the page names the inviter of a used link [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 36ms
+    × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 36ms
+== V11 the page names the inviter at the expiry [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71) 26ms
+== V12 the page names the inviter of a suspended club [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × gives nothing of a suspended club, and nothing to an account that left after joining with the link 74ms
+== V13 the page names the inviter of a revoked link [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 30ms
+== A01 the receipt is looked at before what names nothing [db]: CAUGHT; exit 1 ['Tests  3 failed | 52 passed (55)']
+    × answers a retry with the neutral not-found once the link names nothing, not with the stored answer 27ms
+    × gives the neutral not-found for an ended proposal's unused link under a key the account has used 41ms
+    × keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict 33ms
+== A02 a member accepts with a link that isn't theirs [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict 43ms
+== A03 an ended candidate's unused link isn't nothing [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × gives the neutral not-found for an ended proposal's unused link under a key the account has used 47ms
+== A04 a used link expires for its own account [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 55ms
+== A05 the expiry is said after the revision and the version [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × says a link nobody used has expired before it says anything of the revision's state or its version 40ms
+== A06 a second place is accepted [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × gives it for a second place in the club whatever version or revision the request names 52ms
+    × refuses a revision that isn't the invitation's, a stale version, and a second place in the same club 56ms
+== A07 a second place is refused only after the version [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × gives it for a second place in the club whatever version or revision the request names 45ms
+== A08 a replaced revision isn't named [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 52ms
+    × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 56ms
+== A09 the version isn't held [db]: CAUGHT; exit 1 ['Tests  3 failed | 52 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 38ms
+    × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 59ms
+    × refuses a revision that isn't the invitation's, a stale version, and a second place in the same club 35ms
+== A10 a seventh member accepts [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × says full when the club has six members, with nothing else, and refuses the acceptance (A01) 31ms
+== A11 the clock is read before the club's row is held [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × dates a membership by the clock as it reads once the row is the acceptance's 71ms
+== A12 names compared without their case [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × compares names as they are stored: another case is another name 35ms
+== A13 a rename's revision keeps the proposer's approval [db]: CAUGHT; exit 1 ['Tests  6 failed | 49 passed (55)']
+    × compares names as they are stored: another case is another name 30ms
+    × drops the other candidates' acceptances with the old revision: they accept the new one again 40ms
+    × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 29ms
+    × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 98ms
+    × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 24ms
+    × starts the club on the acceptance when the creator approved the new revision first 24ms
+== A14 the link isn't bound [db]: CAUGHT; exit 1 ['Tests  38 failed | 17 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 21ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 22ms
+    × answers a retry with the neutral not-found once the link names nothing, not with the stored answer 25ms
+    × applies no roster whose members aren't exactly the club's active members 39ms
+    × binds a link to one account when two accept with it at once, and answers eight sends under one key the same 91ms
+    × dates a club's start, its members and its first days by one sample (T1) 20ms
+== A15 an account being deleted accepts [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × refuses an account whose deletion has begun, and leaves the link unused (T27) 22ms
+== A16 an account with no name is told not found [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × refuses an account with no profile name: PROFILE_INCOMPLETE, and the link stays unused 34ms
+== A17 the receipt keeps the token [db]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  55 passed (55)']
+== A18 the rename's revision keeps the old label [db]: CAUGHT; exit 1 ['Tests  4 failed | 51 passed (55)']
+    × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 33ms
+    × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 65ms
+    × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 39ms
+    × starts the club on the acceptance when the creator approved the new revision first 35ms
+== A19 the acceptance isn't written [db]: CAUGHT; exit 1 ['Tests  25 failed | 30 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 20ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 36ms
+    × dates a club's start, its members and its first days by one sample (T1) 32ms
+    × dates a membership by the clock as it reads once the row is the acceptance's 58ms
+    × dates a membership by the clock as it reads once the row is the last approval's 62ms
+    × dates the membership from the sample taken after the lock, not the receipt's (T1) 24ms
+== D01 the member isn't asked again under the club's row [db]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  55 passed (55)']
+== D02 a replaced revision isn't named [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × refuses a stale version with the version now, and a replaced revision with the newest one's id, leaving nothing 46ms
+== D03 the version isn't held [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × refuses a stale version with the version now, and a replaced revision with the newest one's id, leaving nothing 27ms
+== D04 an ended revision takes a decision [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × takes no decision on an ended revision from a member who hadn't decided 27ms
+== D05 a member decides twice [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × leaves a proposer's own proposal, a second approval, a decline after approving and a decision on an ended revision as they were 20ms
+== D06 a decline leaves the club's roster version [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 56ms
+== D07 a decline leaves its candidates open [db]: CAUGHT; exit 1 ['Tests  3 failed | 52 passed (55)']
+    × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 36ms
+    × gives the neutral not-found for an ended proposal's unused link under a key the account has used 104ms
+    × holds another place only while the first candidate is open: after a decline, another link is the account's to accept 34ms
+== D08 the clock is read before the club's row is held [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × dates a decline by the clock as it reads once the row is the decline's 51ms
+    × dates a membership by the clock as it reads once the row is the last approval's 71ms
+== D09 an approval is written as a decline [db]: CAUGHT; exit 1 ['Tests  21 failed | 34 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 33ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 33ms
+    × dates a membership by the clock as it reads once the row is the last approval's 65ms
+    × doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends 38ms
+    × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 39ms
+    × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 32ms
+== D10 a decision is written as implicit [db]: CAUGHT; exit 1 ['Tests  30 failed | 25 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 23ms
+    × answers a decision's retry with the neutral not-found once its member has left 31ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 16ms
+    × applies no roster whose members aren't exactly the club's active members 36ms
+    × dates a decline by the clock as it reads once the row is the decline's 54ms
+    × dates a membership by the clock as it reads once the row is the last approval's 20ms
+== D11 an approval never applies the roster [db]: CAUGHT; exit 1 ['Tests  13 failed | 42 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 32ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 30ms
+    × dates a membership by the clock as it reads once the row is the last approval's 58ms
+    × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 82ms
+    × gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing 44ms
+    × joins everyone who accepted together, and carries the one who hadn't 48ms
+== Y01 a roster applies before every member approved [db]: CAUGHT; exit 1 ['Tests  28 failed | 27 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 17ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 21ms
+    × answers a retry with the neutral not-found once the link names nothing, not with the stored answer 26ms
+    × binds a link to one account when two accept with it at once, and answers eight sends under one key the same 109ms
+    × dates a membership by the clock as it reads once the row is the last approval's 27ms
+    × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 16ms
+== Y02 a roster applies whose members aren't the club's [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × applies no roster whose members aren't exactly the club's active members 51ms
+== Y03 an account joins under a name changed after accepting [db]: CAUGHT; exit 1 ['Tests  3 failed | 52 passed (55)']
+    × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 83ms
+    × joins the others and carries the renamed account as someone who hasn't accepted 84ms
+    × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 37ms
+== Y04 a seventh member joins [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × refuses the approval that would bring a seventh member, and keeps nothing of it (CLUB_FULL) 29ms
+== Y05 the applied revision keeps its version [db]: CAUGHT; exit 1 ['Tests  24 failed | 31 passed (55)']
+    × accepts once: again under a new key it answers where the invitation stands and changes nothing 37ms
+    × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 33ms
+    × dates a club's start, its members and its first days by one sample (T1) 32ms
+    × dates a membership by the clock as it reads once the row is the acceptance's 56ms
+    × dates a membership by the clock as it reads once the row is the last approval's 62ms
+    × dates the membership from the sample taken after the lock, not the receipt's (T1) 28ms
+== Y06 an account being deleted joins [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends 46ms
+== Y07 the club's roster version doesn't move [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × joins the candidate on their acceptance once every member has approved, and not before 111ms
+    × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 115ms
+== Y08 a club starts with no first days [db]: CAUGHT; exit 1 ['Tests  3 failed | 52 passed (55)']
+    × dates a club's start, its members and its first days by one sample (T1) 27ms
+    × joins the candidate on their acceptance once every member has approved, and not before 116ms
+    × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 109ms
+== Y09 the first days are dated by another instant [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × dates a club's start, its members and its first days by one sample (T1) 48ms
+== Y10 the people who hadn't accepted are dropped [db]: CAUGHT; exit 1 ['Tests  6 failed | 49 passed (55)']
+    × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 35ms
+    × gives each member the club's open revision with the roster, as that member reads it 35ms
+    × joins everyone who accepted together, and carries the one who hadn't 57ms
+    × joins the others and carries the renamed account as someone who hasn't accepted 98ms
+    × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 76ms
+    × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 81ms
+== Y11 candidates are carried for a proposer who left [db]: CAUGHT; exit 1 ['Tests  1 failed | 54 passed (55)']
+    × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 48ms
+== Y12 the carried revision loses the proposer's approval [db]: CAUGHT; exit 1 ['Tests  2 failed | 53 passed (55)']
+    × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 81ms
+    × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 68ms
+== H01 a waiting preview sends an expiry [api]: CAUGHT; exit 1 ['Tests  2 failed | 45 passed (47)']
+    × makes waiting field for field 11ms
+    × sends names and nothing else of anyone: no id of a person, no photo, no decision 2ms
+== H02 a roster entry sends its kind as its name [api]: CAUGHT; exit 1 ['Tests  5 failed | 42 passed (47)']
+    × answers a preview with 200 and the state as the read gave it 7ms
+    × makes another_name field for field 2ms
+    × makes changed field for field 2ms
+    × makes open field for field 10ms
+    × makes waiting field for field 1ms
+== H03 the page's bad token is unnamed [api]: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × names a bad token, never its value, on the page's route, the app's and on accepting, and reads no database for it 16ms
+== H04 an acceptance's key isn't asked for [api]: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × names the Idempotency-Key of an acceptance or a decision when it is missing or isn't a UUID, whatever else is wrong 129ms
+== H05 the page's not-found is a 200 with no name [api]: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × answers the neutral not-found when a token names nothing, on the page and in the app (T14, FQ59) 17ms
+== J01 the judge names a revoked link's roster [judge]: CAUGHT; exit 1 ['Tests  1 failed | 56 passed (57)']
+    × names nothing once the link is revoked, to its holder and to a member alike (T14, FQ59) 8ms
+== J02 the judge names a suspended club's link [judge]: CAUGHT; exit 1 ['Tests  1 failed | 56 passed (57)']
+    × names nothing of a suspended club (FQ80), and nothing to a caller with no account 11ms
+== J03 the judge lets a used link expire for its account [judge]: CAUGHT; exit 1 ['Tests  1 failed | 56 passed (57)']
+    × says expired, with the inviter's name, from the link's expiry while nobody has used it (FQ71) 10ms
+== J04 the judge says waiting whatever the account's name [judge]: CAUGHT; exit 1 ['Tests  1 failed | 56 passed (57)']
+    × says waiting, with no expiry, once the candidate accepted this roster with the link; changed for an earlier one 10ms
+== J05 the judge holds a second place after the version [judge]: CAUGHT; exit 1 ['Tests  1 failed | 56 passed (57)']
+    × gives one account one place, and no place in a club of six (A01) 10ms
+== J06 the judge puts the version before the expiry [judge]: CAUGHT; exit 1 ['Tests  1 failed | 56 passed (57)']
+    × refuses in the contract's order: expired, then a newer revision, then the version 10ms
+== J07 the judge joins before every member approved [judge]: CAUGHT; exit 1 ['Tests  2 failed | 55 passed (57)']
+    × refuses in the contract's order: expired, then a newer revision, then the version 3ms
+    × waits while a member hasn't approved, and joins once every member the revision lists has (FQ65) 11ms
+== J08 the judge shows the page a used link's inviter [judge]: CAUGHT; exit 1 ['Tests  6 failed | 51 passed (57)']
+    × is nothing for a link an account has used, at its expiry, or whose candidate ended or joined 1ms
+    × names nothing of a suspended club (FQ80), and nothing to a caller with no account 1ms
+    × names nothing once the link is replaced by a newer link, to its holder and to a member alike (T14, FQ59) 1ms
+    × names nothing once the link is revoked, to its holder and to a member alike (T14, FQ59) 6ms
+    × names nothing once the link is used by another account, to its holder and to a member alike (T14, FQ59) 1ms
+    × passes the name, and refuses another name, a field more, the neutral answer and an answer that may be stored 3ms
+== S01 the scanner passes the roster with no token [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 87 passed (88)']
+    × catches it through an operation that takes no token, whatever the request presented 19ms
+== S02 the scanner passes a dead link's names [scanner]: CAUGHT; exit 1 ['Tests  2 failed | 86 passed (88)']
+    × catches the roster, and the inviter's name, through a link revoked or replaced (FQ59) 1ms
+    × passes a waiting and a changed roster, and an acceptance, only as the account's own link 14ms
+== S03 the scanner passes a suspended club's names [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 87 passed (88)']
+    × catches it of a suspended club (FQ80) 10ms
+== S04 the scanner passes the page a used link's inviter [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 87 passed (88)']
+    × catches the roster, and the inviter's name, through a link used by another account (FQ59) 13ms
+== S05 the scanner passes the page's name once the proposal ended [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 87 passed (88)']
+    × catches the page's name, and the roster, once the candidate is on no open revision 10ms
+== S06 the scanner passes the app's name once the proposal ended [scanner]: CAUGHT; exit 1 ['Tests  2 failed | 86 passed (88)']
+    × catches the inviter's name told in the app for a link nobody used, once the candidate is on no open revision 1ms
+    × catches the page's name, and the roster, once the candidate is on no open revision 11ms
+== S07 the scanner passes an expired unused link's roster [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 87 passed (88)']
+    × catches the roster through an unused link from its expiry, and the page's name; the account's own link keeps it 14ms
+== S08 the scanner passes another account's link [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 87 passed (88)']
+    × catches the roster, and the inviter's name, through a link used by another account (FQ59) 11ms
+== M01 the matrix: a preview that names the roster's members by their kind [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 1 passed | 13 skipped (16)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 48053ms
+    × joins the person who accepted once the last member approves, and answers each caller as the rows say 462ms
+== M02 the matrix: a second approval is written [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 2 passed | 13 skipped (16)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 43765ms
+== M03 the matrix: a member is shown the roster instead of joined [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 1 passed | 13 skipped (16)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 43962ms
+    × joins the person who accepted once the last member approves, and answers each caller as the rows say 229ms
+== M04 the matrix: an ended proposal is never told to its own account [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 2 passed | 13 skipped (16)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 45891ms
+== M05 the matrix: a roster applies before every member approved [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 1 passed | 13 skipped (16)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 44698ms
+    × joins the person who accepted once the last member approves, and answers each caller as the rows say 204ms
+== M06 the matrix: the page names a used link's inviter [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 2 passed | 13 skipped (16)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 47313ms
+restored: ''

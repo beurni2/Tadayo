@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (29 tests | 1 failed) 31ms
+   ❯ what accepting must get (acceptInvitation) (7)
+     × refuses in the contract's order: expired, then a newer revision, then the version 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 56 passed (57)
+   Start at  01:13:46
+   Duration  863ms (import 67%, transform 17%, tests 14%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > what accepting must get (acceptInvitation) > refuses in the contract's order: expired, then a newer revision, then the version
+AssertionError: expected { code: 'ROSTER_CHANGED', …(1) } to deeply equal { code: 'INVITATION_EXPIRED' }
+
+- Expected
++ Received
+
+  {
+-   "code": "INVITATION_EXPIRED",
++   "code": "ROSTER_CHANGED",
++   "current_id": "rev_3",
+  }
+
+ ❯ src/privacy/invitation.test.ts:395:80
+    393|       ],
+    394|     );
+    395|     expect(codeOf(accept("usr_mo", "Mo", chain, { now: LATER, expected…
+       |                                                                                ^
+    396|     expect(codeOf(accept("usr_mo", "Mo", chain, { expected: 9 }))).toE…
+    397|       code: "ROSTER_CHANGED",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3005ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 73ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:08:32
+   Duration  3.65s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+AssertionError: expected 'waiting' to be 'changed' // Object.is equality
+
+Expected: "changed"
+Received: "waiting"
+
+ ❯ src/db/accept-roster.test.ts:1312:28
+    1310|       // The members still read Sam; the holder is shown the roster to…
+    1311|       const shown = await preview(tx, account, s.sam.token, NOW);
+    1312|       expect(shown?.state).toBe("changed");
+       |                            ^
+    1313|       expect(shown?.roster?.at(-1)).toEqual({ name: "Sam", kind: "cand…
+    1314|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,84 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2933ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × says full when the club has six members, with nothing else, and refuses the acceptance (A01) 38ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:09:55
+   Duration  3.53s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > says full when the club has six members, with nothing else, and refuses the acceptance (A01)
+AssertionError: expected { state: 'open', …(7) } to deeply equal { state: 'full' }
+
+- Expected
++ Received
+
+  {
+-   "state": "full",
++   "club_name": "Sunday people",
++   "expires_at": "2026-11-18T06:00:00Z",
++   "invitation_id": "inv_EryTdVtY0TY2ezPBAiZt7A",
++   "inviter_name": "Ben",
++   "revision_id": "rev_ujvFqXJyRTq1ZRdtw-uoIg",
++   "revision_version": 1,
++   "roster": [
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Ben",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Maya",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Alex",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Sam",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Debby",
++     },
++     {
++       "is_you": false,
++       "kind": "member",
++       "name": "Nina",
++     },
++     {
++       "is_you": true,
++       "kind": "candidate",
++       "name": "Nina",
++     },
++   ],
++   "state": "open",
+  }
+
+ ❯ src/db/accept-roster.test.ts:924:56
+    922|                 ${new Date(LATER.getTime() + 7 * 864e5)})`;
+    923|       const nina = await newUser(plain(tx), "Nina");
+    924|       expect(await preview(tx, nina, made.token, NOW)).toEqual({ state…
+       |                                                        ^
+    925|       expect(await refusal(acceptWith(tx, clock, nina, made.token, ope…
+    926|         code: "CLUB_FULL",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:900:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

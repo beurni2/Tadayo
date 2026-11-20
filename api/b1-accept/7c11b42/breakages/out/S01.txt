@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 1 failed) 344ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × catches it through an operation that takes no token, whatever the request presented 19ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 87 passed (88)
+   Start at  01:13:51
+   Duration  1.17s (import 55%, tests 40%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches it through an operation that takes no token, whatever the request presented
+AssertionError: expected [] to deeply equal ArrayContaining{…}
+
+- Expected
++ Received
+
+- ArrayContaining [
+-   "$.invitations[0].inviter_name",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1897:33
+    1895|       { ...context("listClubs", stan, { world: held() }), presented: B…
+    1896|     );
+    1897|     expect(at(clubs, "values")).toEqual(expect.arrayContaining(["$.inv…
+       |                                 ^
+    1898|   });
+    1899|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

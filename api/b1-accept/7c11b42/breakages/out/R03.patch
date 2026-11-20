@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index 735a32e5..1601d5a8 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -171,7 +171,7 @@ export function previewFor(
+     open.rows.members.every((interval) => open.rows.decisions.get(interval) === "approved") &&
+     active.length === open.rows.members.length &&
+     active.every(([interval]) => open.rows.members.includes(interval));
+-  const accepted = listed?.acceptedWith === link.id && link.boundName === listed.label && !ready;
++  const accepted = listed?.acceptedWith === link.id && link.boundName === listed.label;
+   return {
+     state: accepted ? "waiting" : mine ? "changed" : "open",
+     invitation_id: link.id,

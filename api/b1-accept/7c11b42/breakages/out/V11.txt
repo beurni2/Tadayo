@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3017ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71) 26ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:10:24
+   Duration  3.62s (tests 91%, import 6%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71)
+AssertionError: expected { inviter_name: 'Ben' } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "inviter_name": "Ben",
+}
+
+ ❯ src/db/accept-roster.test.ts:803:70
+    801|         inviter_name: "Ben",
+    802|       });
+    803|       expect(await webPreview(tx, s.sam.token, expiry as ServerNow)).t…
+       |                                                                      ^
+    804|       clock.set(expiry);
+    805|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.o…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:792:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

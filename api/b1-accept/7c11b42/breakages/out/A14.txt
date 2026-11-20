@@ -1,0 +1,787 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 38 failed) 2276ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 75ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × joins the candidate on their acceptance once every member has approved, and not before 95ms
+     × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 37ms
+     × joins everyone who accepted together, and carries the one who hadn't 31ms
+     × dates the membership from the sample taken after the lock, not the receipt's (T1) 21ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 29ms
+     × starts the club on the acceptance when the creator approved the new revision first 29ms
+     × drops the other candidates' acceptances with the old revision: they accept the new one again 24ms
+   ❯ declining: the revision ends for every candidate, and nobody is told who (book p30, T33) (1)
+     × ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead 19ms
+   ❯ who may approve or decline (T9, T14, FQ119) (5)
+     × gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing 23ms
+     × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 22ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting 40ms
+     × is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71) 25ms
+     × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 16ms
+     × opens the club for a member, whoever the link was for, and binds nothing; a member can't accept with it 20ms
+     × gives nothing of a suspended club, and nothing to an account that left after joining with the link 24ms
+   ❯ accepting the exact roster the caller saw (T7, T19, T52) (4)
+     × refuses a revision that isn't the invitation's, a stale version, and a second place in the same club 67ms
+     × keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict 23ms
+     × accepts once: again under a new key it answers where the invitation stands and changes nothing 21ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends 22ms
+     × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 37ms
+     × gives each member the club's open revision with the roster, as that member reads it 31ms
+   ❯ the club's row (T1, T7) (4)
+     × binds a link to one account when two accept with it at once, and answers eight sends under one key the same 91ms
+     × joins the candidate once when the last approval and the acceptance arrive at once, in either order 174ms
+     × lets a revoke and an acceptance of one link each wait for the other: the link is revoked or used, never both 99ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 70ms
+     × joins the others and carries the renamed account as someone who hasn't accepted 53ms
+     × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 22ms
+     × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 44ms
+     × stands again when the name is changed back before the last approval 51ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × gives the neutral not-found for an ended proposal's unused link under a key the account has used 103ms
+     × gives it for a second place in the club whatever version or revision the request names 22ms
+     × holds another place only while the first candidate is open: after a decline, another link is the account's to accept 25ms
+     × answers a retry with the neutral not-found once the link names nothing, not with the stored answer 25ms
+   ❯ found in review: rules no test held (5)
+     × applies no roster whose members aren't exactly the club's active members 39ms
+     × dates a club's start, its members and its first days by one sample (T1) 20ms
+   ❯ found in review: the clock is read after the club's row is held (T1) (3)
+     × dates a membership by the clock as it reads once the row is the acceptance's 53ms
+     × dates a membership by the clock as it reads once the row is the last approval's 35ms
+
+ Test Files  1 failed (1)
+      Tests  38 failed | 17 passed (55)
+   Start at  01:11:32
+   Duration  2.86s (tests 88%, import 9%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 38 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:204:22
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins the candidate on their acceptance once every member has approved, and not before
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:321:22
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > keeps a candidate who accepted first waiting, with no progress shown, until the last member approves
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:339:14
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins everyone who accepted together, and carries the one who hadn't
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:400:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > dates the membership from the sample taken after the lock, not the receipt's (T1)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:427:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected null to be 'acct_t3SB47PYVo-01lkJjT15ug' // Object.is equality
+
+- Expected:
+"acct_t3SB47PYVo-01lkJjT15ug"
+
++ Received:
+null
+
+ ❯ src/db/accept-roster.test.ts:475:36
+    473|       const [bound] = await tx<{ bound_user_id: string | null; bound_a…
+    474|         SELECT bound_user_id, bound_at FROM app.invitations WHERE id =…
+    475|       expect(bound?.bound_user_id).toBe(debby);
+       |                                    ^
+    476|       expect(bound?.bound_at?.equals(FIRST)).toBe(true);
+    477|       // Ben reads the link as used, and is asked like anyone (FQ84).
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > starts the club on the acceptance when the creator approved the new revision first
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:530:15
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > drops the other candidates' acceptances with the old revision: they accept the new one again
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:549:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > declining: the revision ends for every candidate, and nobody is told who (book p30, T33) > ends the revision and its candidates, moves the versions once, and tells an accepted candidate only that it didn't go ahead
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:568:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:654:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:737:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > names nothing when it is unknown, revoked, replaced or used by another account, on the page, in the app and on accepting
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:780:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > is live until the instant it expires, and expired from then, by the server's clock: the app names the inviter, the page nobody, and accepting is INVITATION_EXPIRED (FQ71)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:813:15
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:821:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > opens the club for a member, whoever the link was for, and binds nothing; a member can't accept with it
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:860:15
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > gives nothing of a suspended club, and nothing to an account that left after joining with the link
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:870:22
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > refuses a revision that isn't the invitation's, a stale version, and a second place in the same club
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:953:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:967:21
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > accepts once: again under a new key it answers where the invitation stands and changes nothing
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:999:23
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1055:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > ends the candidates who hadn't accepted when the revision's proposer is no longer a member
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1114:15
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > gives each member the club's open revision with the roster, as that member reads it
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1132:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the club's row (T1, T7) > binds a link to one account when two accept with it at once, and answers eight sends under one key the same
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/db/accept-roster.test.ts:1187:66
+    1185|       }
+    1186|       const answers = await both;
+    1187|       expect(answers.filter((answer) => answer === "NOT_FOUND")).toHav…
+       |                                                                  ^
+    1188|       const won = answers.find((answer) => answer !== "NOT_FOUND");
+    1189|       expect(won).toEqual({ invitation_id: s.sam.link, state: "waiting…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the club's row (T1, T7) > joins the candidate once when the last approval and the acceptance arrive at once, in either order
+TypeError: Cannot read properties of undefined (reading 'state')
+ ❯ src/db/accept-roster.test.ts:1232:25
+    1230|         const approved = (acceptFirst ? b : a) as { state: string };
+    1231|         // Whichever comes second applies the roster.
+    1232|         expect(accepted.state).toBe(acceptFirst ? "waiting" : "joined"…
+       |                         ^
+    1233|         expect(approved.state).toBe(acceptFirst ? "applied" : "open");
+    1234|         const members = await membersOf(db as unknown as WorldTx, s.w.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the club's row (T1, T7) > lets a revoke and an acceptance of one link each wait for the other: the link is revoked or used, never both
+AssertionError: expected undefined to deeply equal { …(2) }
+
+- Expected:
+{
+  "invitation_id": "inv_v_2eQT7Goomhe2EMwBptVA",
+  "state": "waiting",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/accept-roster.test.ts:1267:21
+    1265|         const row = await linkRow(db as unknown as WorldTx, s.sam.link…
+    1266|         if (acceptFirst) {
+    1267|           expect(a).toEqual({ invitation_id: s.sam.link, state: "waiti…
+       |                     ^
+    1268|           expect(b).toBe("NOT_ALLOWED");
+    1269|           expect(row).toMatchObject({ bound_user_id: s.account, revoke…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1308:15
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins the others and carries the renamed account as someone who hasn't accepted
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1339:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1359:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1378:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > stands again when the name is changed back before the last approval
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1395:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > gives the neutral not-found for an ended proposal's unused link under a key the account has used
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1415:15
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > gives it for a second place in the club whatever version or revision the request names
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1433:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > holds another place only while the first candidate is open: after a decline, another link is the account's to accept
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1449:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > answers a retry with the neutral not-found once the link names nothing, not with the stored answer
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1463:21
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > applies no roster whose members aren't exactly the club's active members
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1504:15
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > dates a club's start, its members and its first days by one sample (T1)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1562:7
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a membership by the clock as it reads once the row is the acceptance's
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/accept-roster.test.ts:1592:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/38]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a membership by the clock as it reads once the row is the last approval's
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/apply-roster.ts:48:10
+     46|
+     47| function shape(): Error {
+     48|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     49| }
+     50|
+ ❯ text ../packages/domain/src/clubs/apply-roster.ts:57:62
+ ❯ ../packages/domain/src/clubs/apply-roster.ts:188:26
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:180:44
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:290:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:1615:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/38]⎯
+

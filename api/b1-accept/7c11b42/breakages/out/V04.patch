@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-preview.ts b/packages/domain/src/clubs/invitation-preview.ts
+index 0fc3edd0..4d271b13 100644
+--- a/packages/domain/src/clubs/invitation-preview.ts
++++ b/packages/domain/src/clubs/invitation-preview.ts
+@@ -94,7 +94,7 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
+   // 4. The proposal ended.
+   if (facts.candidateState === "ended") return mine ? { state: "did_not_go_ahead" } : null;
+   // 5. Expired while nobody had used it.
+-  if (!mine && facts.pastExpiry) {
++  if (facts.pastExpiry) {
+     return facts.inviterName === null ? null : { state: "expired", inviterName: facts.inviterName };
+   }
+   // 6. One account, one place.

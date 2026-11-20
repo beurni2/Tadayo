@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index 735a32e5..f2ed3bb7 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -145,7 +145,7 @@ export function previewFor(
+   const mine = link.boundTo === account;
+   if (state === "ended") return mine ? { state: "did_not_go_ahead" } : undefined;
+   const inviter = inviterOf(world, link);
+-  if (!mine && Temporal.Instant.compare(link.expiresAt, now) <= 0) {
++  if (Temporal.Instant.compare(link.expiresAt, now) <= 0) {
+     return inviter === undefined ? undefined : { state: "expired", inviter_name: inviter };
+   }
+   if (!mine && holdsAnother(roster, link, account)) return undefined;

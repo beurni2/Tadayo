@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2957ms
+   ❯ found in review: rules no test held (5)
+     × refuses an account with no profile name: PROFILE_INCOMPLETE, and the link stays unused 34ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:11:40
+   Duration  3.57s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > refuses an account with no profile name: PROFILE_INCOMPLETE, and the link stays unused
+AssertionError: expected { code: 'NOT_FOUND', facts: {} } to deeply equal { code: 'PROFILE_INCOMPLETE', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "PROFILE_INCOMPLETE",
++   "code": "NOT_FOUND",
+    "facts": {},
+  }
+
+ ❯ src/db/accept-roster.test.ts:1550:84
+    1548|       const sam = await newUser(plain(tx), "Sam");
+    1549|       await tx`UPDATE app.users SET display_name = NULL WHERE id = ${s…
+    1550|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.o…
+       |                                                                                    ^
+    1551|         code: "PROFILE_INCOMPLETE",
+    1552|         facts: {},
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1546:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

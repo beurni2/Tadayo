@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..000717da 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -205,7 +205,7 @@ export async function applyIfReady(
+   // 2. The revision is applied.
+   await bound(tx)`
+     UPDATE app.roster_revisions
+-       SET state = 'applied', version = version + 1, ended_at = ${at}::pg_catalog.timestamptz
++       SET state = 'applied', ended_at = ${at}::pg_catalog.timestamptz
+      WHERE id = ${revisionId}`;
+ 
+   // 3. The people who accepted join; an account being deleted doesn't.

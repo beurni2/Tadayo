@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 1 failed) 360ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × catches the roster, and the inviter's name, through a link used by another account (FQ59) 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 87 passed (88)
+   Start at  01:13:56
+   Duration  1.12s (import 51%, tests 44%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches the roster, and the inviter's name, through a link used by another account (FQ59)
+AssertionError: expected [] to deeply equal [ '$.inviter_name' ]
+
+- Expected
++ Received
+
+- [
+-   "$.inviter_name",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1908:68
+    1906|     expect(at(found, "values")).toEqual(expect.arrayContaining(["$.inv…
+    1907|     expect(at(previewed({ state: "expired", inviter_name: "Ben" }, hel…
+    1908|     expect(at(web({ inviter_name: "Ben" }, held(over)), "values")).toE…
+       |                                                                    ^
+    1909|   });
+    1910|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

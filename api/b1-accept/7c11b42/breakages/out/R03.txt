@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (29 tests | 1 failed) 60ms
+   ❯ the invitation for the account holding its link (previewInvitation) (12)
+     × says waiting, with no expiry, once the candidate accepted this roster with the link; changed for an earlier one 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 56 passed (57)
+   Start at  01:10:11
+   Duration  956ms (import 64%, tests 18%, transform 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > the invitation for the account holding its link (previewInvitation) > says waiting, with no expiry, once the candidate accepted this roster with the link; changed for an earlier one
+AssertionError: expected { state: 'waiting', …(6) } to deeply equal { state: 'changed', …(7) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,7 @@
+  {
+    "club_name": "The Saturdays",
+-   "expires_at": "2026-11-13T14:41:00Z",
+    "invitation_id": "inv_mo",
+    "inviter_name": "Ben",
+    "revision_id": "rev_1",
+    "revision_version": 1,
+    "roster": [
+@@ -30,7 +29,7 @@
+        "is_you": false,
+        "kind": "candidate",
+        "name": "Lu",
+      },
+    ],
+-   "state": "changed",
++   "state": "waiting",
+  }
+
+ ❯ src/privacy/invitation.test.ts:305:73
+    303|       ]),
+    304|     });
+    305|     expect(preview("usr_mo", roster([bound()], [["rev_1", approved]]))…
+       |                                                                         ^
+    306|   });
+    307|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

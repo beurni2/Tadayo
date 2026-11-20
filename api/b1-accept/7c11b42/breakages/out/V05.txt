@@ -1,0 +1,74 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2964ms
+   ❯ accepting the exact roster the caller saw (T7, T19, T52) (4)
+     × refuses a revision that isn't the invitation's, a stale version, and a second place in the same club 55ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:09:46
+   Duration  3.58s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > refuses a revision that isn't the invitation's, a stale version, and a second place in the same club
+AssertionError: expected { state: 'open', …(7) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club_name": "Sunday people",
+  "expires_at": "2026-11-18T05:00:00Z",
+  "invitation_id": "inv_iqQ3nInzYnlzbySURinjtA",
+  "inviter_name": "Ben",
+  "revision_id": "rev_fTPOu20H7rBOV3OU3Aum5w",
+  "revision_version": 1,
+  "roster": [
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Ben",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Maya",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Alex",
+    },
+    {
+      "is_you": false,
+      "kind": "candidate",
+      "name": "Sam",
+    },
+    {
+      "is_you": true,
+      "kind": "candidate",
+      "name": "Debby",
+    },
+  ],
+  "state": "open",
+}
+
+ ❯ src/db/accept-roster.test.ts:954:56
+    952|       // Sam accepts as Sam; Debby's link is then nothing to Sam, who …
+    953|       await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1);
+    954|       expect(await preview(tx, sam, debby.token, NOW)).toBeNull();
+       |                                                        ^
+    955|       expect(await refusal(acceptWith(tx, clock, sam, debby.token, s.o…
+    956|       expect((await linkRow(tx, debby.id))?.bound_user_id).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:935:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

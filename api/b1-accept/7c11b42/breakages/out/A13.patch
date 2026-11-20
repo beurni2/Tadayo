@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..f15e8d3d 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -276,7 +276,7 @@ export async function acceptInvitation(
+       proposer: facts.proposerInterval,
+       at,
+       candidates,
+-      implicit: false,
++      implicit: true,
+     });
+     await bound(tx)`UPDATE app.clubs SET roster_version = roster_version + 1 WHERE id = ${clubId}`;
+     return completeReceipt(tx, receipt, render({ invitationId, state: "changed", club: null }));

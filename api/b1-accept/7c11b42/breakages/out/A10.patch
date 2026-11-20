@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..91e6bf03 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -178,7 +178,7 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+   if (facts.candidateState !== "open" || facts.membershipId !== null) return { kind: "nothing" };
+ 
+   // e. Six.
+-  if (facts.members >= CLUB_SIZE) return { kind: "refused", facts, refusal: new Refused("CLUB_FULL") };
++  if (facts.members > CLUB_SIZE) return { kind: "refused", facts, refusal: new Refused("CLUB_FULL") };
+   return { kind: "open", facts, label };
+ }
+ 

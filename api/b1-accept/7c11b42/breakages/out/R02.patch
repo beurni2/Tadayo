@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..4e959310 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -225,7 +225,7 @@ export async function applyIfReady(
+     joined.push({ userId, candidateId: candidate.candidateId, intervalId });
+   }
+   for (const candidate of candidates) {
+-    if (gone(candidate)) {
++    if (standing(candidate) && !candidate.active) {
+       await bound(tx)`
+         UPDATE app.candidates SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz
+          WHERE id = ${candidate.candidateId}`;

@@ -1,0 +1,173 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 6 failed) 3010ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 38ms
+     × drops the other candidates' acceptances with the old revision: they accept the new one again 47ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 35ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 38ms
+     × joins the others and carries the renamed account as someone who hasn't accepted 73ms
+     × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 48ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 49 passed (55)
+   Start at  01:10:15
+   Duration  3.72s (tests 89%, import 7%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected { state: 'open', …(7) } to deeply equal { state: 'changed', …(7) }
+
+- Expected
++ Received
+
+@@ -20,7 +20,7 @@
+        "is_you": false,
+        "kind": "candidate",
+        "name": "Alex",
+      },
+    ],
+-   "state": "changed",
++   "state": "open",
+  }
+
+ ❯ src/db/accept-roster.test.ts:482:59
+    480|       expect(forBen?.candidates[0]).toMatchObject({ name: "Debby", inv…
+    481|       // Debby reviews the new roster, under Debby's own name.
+    482|       expect(await preview(tx, debby, s.maya.token, NOW)).toEqual({
+       |                                                           ^
+    483|         state: "changed",
+    484|         invitation_id: s.maya.link,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > drops the other candidates' acceptances with the old revision: they accept the new one again
+AssertionError: expected { state: 'open', …(7) } to match object { state: 'changed', …(1) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "revision_id": "rev_oTavsfYWQlBtgGPt3afhSg",
+-   "state": "changed",
++   "state": "open",
+  }
+
+ ❯ src/db/accept-roster.test.ts:554:56
+    552|       const next = (await openRevision(tx, s.w.club)) ?? "";
+    553|       // Sam accepted the old roster, so Sam's invitation has changed;…
+    554|       expect(await preview(tx, sam, s.sam.token, NOW)).toMatchObject({…
+       |                                                        ^
+    555|       expect((await read(tx, user(s.w, 1), next, NOW))?.my_decision).t…
+    556|       expect(await approvalsOf(tx, next)).toEqual([]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:544:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster
+AssertionError: expected { state: 'open', …(7) } to match object { state: 'changed', …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "expires_at": "2026-11-18T05:00:00Z",
+    "revision_id": "rev_XZLRXHA-e2FuHK6laDa4xQ",
+-   "state": "changed",
++   "state": "open",
+  }
+
+ ❯ src/db/accept-roster.test.ts:825:70
+    823|       const past = FIRST.add({ hours: 24 * 9 });
+    824|       clock.set(past);
+    825|       expect(await preview(tx, sam, s.sam.token, past as ServerNow)).t…
+       |                                                                      ^
+    826|         state: "changed",
+    827|         revision_id: next.id,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:818:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+AssertionError: expected 'open' to be 'changed' // Object.is equality
+
+Expected: "changed"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1312:28
+    1310|       // The members still read Sam; the holder is shown the roster to…
+    1311|       const shown = await preview(tx, account, s.sam.token, NOW);
+    1312|       expect(shown?.state).toBe("changed");
+       |                            ^
+    1313|       expect(shown?.roster?.at(-1)).toEqual({ name: "Sam", kind: "cand…
+    1314|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins the others and carries the renamed account as someone who hasn't accepted
+AssertionError: expected 'open' to be 'changed' // Object.is equality
+
+Expected: "changed"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1351:65
+    1349|         SELECT candidate_id, label, accepted_at FROM app.roster_revisi…
+    1350|       expect(rows).toEqual([{ candidate_id: s.sam.candidate, label: "S…
+    1351|       expect((await preview(tx, sam, s.sam.token, NOW))?.state).toBe("…
+       |                                                                 ^
+    1352|     });
+    1353|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1335:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing
+AssertionError: expected 'open' to be 'changed' // Object.is equality
+
+Expected: "changed"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1366:69
+    1364|       // Every member has approved and the acceptance stands, so nobod…
+    1365|       // never `waiting`, which would wait for nothing.
+    1366|       expect((await preview(tx, account, s.sam.token, NOW))?.state).to…
+       |                                                                     ^
+    1367|       expect((await acceptWith(tx, clock, account, s.sam.token, s.open…
+    1368|       await checkAsAtCommit(plain(tx));
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1356:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

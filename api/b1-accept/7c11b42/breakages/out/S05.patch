@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index d4435bf5..d4a9f459 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -633,7 +633,7 @@ function heldLink(
+   const names = !invitation.dead && world.clubs.get(invitation.club)?.suspendedAt === null;
+   const unexpired = before(now, invitation.expiresAt);
+   if (context.operation.id === "previewInvitationWeb" || viewer.account === null) {
+-    const live = names && invitation.boundTo === null && unexpired && invitation.roster !== null;
++    const live = names && invitation.boundTo === null && unexpired;
+     return { id, invitation, shown: live, inviter: live, roster: false };
+   }
+   const theirs = invitation.boundTo === viewer.account;

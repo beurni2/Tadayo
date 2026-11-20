@@ -1,0 +1,336 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 13 failed) 2807ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 111ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 60ms
+     × joins everyone who accepted together, and carries the one who hadn't 48ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 60ms
+   ❯ who may approve or decline (T9, T14, FQ119) (5)
+     × gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing 44ms
+     × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 30ms
+   ❯ accepting the exact roster the caller saw (T7, T19, T52) (4)
+     × accepts once: again under a new key it answers where the invitation stands and changes nothing 32ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × refuses the approval that would bring a seventh member, and keeps nothing of it (CLUB_FULL) 22ms
+   ❯ the club's row (T1, T7) (4)
+     × joins the candidate once when the last approval and the acceptance arrive at once, in either order 129ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins the others and carries the renamed account as someone who hasn't accepted 33ms
+     × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 82ms
+     × stands again when the name is changed back before the last approval 48ms
+   ❯ found in review: the clock is read after the club's row is held (T1) (3)
+     × dates a membership by the clock as it reads once the row is the last approval's 58ms
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 42 passed (55)
+   Start at  01:12:37
+   Duration  3.40s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120)
+AssertionError: expected { …(8) } to match object { …(4) }
+(10 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "id": "rev_da3uS-6O4tg-PE4chLMc2Q",
+    "my_decision": "approved",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/accept-roster.test.ts:283:24
+    281|       const approved = await approve(tx, clock, maya, carried, 1);
+    282|       await checkAsAtCommit(plain(tx));
+    283|       expect(approved).toMatchObject({ id: carried, state: "applied", …
+       |                        ^
+    284|       expect((await membersOf(tx, s.ben.club)).map((one) => one.user_i…
+    285|       expect(await openRevision(tx, s.ben.club)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:197:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > keeps a candidate who accepted first waiting, with no progress shown, until the last member approves
+AssertionError: expected { …(8) } to match object { state: 'applied', version: 2, …(1) }
+(11 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "my_decision": "approved",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/accept-roster.test.ts:371:20
+    369|       const last = await approve(tx, clock, user(s.w, 2), s.open.id, 1…
+    370|       await checkAsAtCommit(plain(tx));
+    371|       expect(last).toMatchObject({ state: "applied", version: 2, my_de…
+       |                    ^
+    372|       const members = await membersOf(tx, s.w.club);
+    373|       expect(members[3]).toMatchObject({ user_id: sam, joined_via_revi…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:336:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins everyone who accepted together, and carries the one who hadn't
+AssertionError: expected Set{} to deeply equal Set{ …(2) }
+
+- Expected
++ Received
+
+- Set {
+-   "acct_Z2NNW7FOImRv-gycr0AwrQ",
+-   "acct_gqGZeorMrp0fv9wYuRk5NQ",
+- }
++ Set {}
+
+ ❯ src/db/accept-roster.test.ts:407:57
+    405|         SELECT user_id, joined_via_candidate_id FROM app.memberships
+    406|          WHERE club_id = ${w.club} AND joined_via_revision_id = ${open…
+    407|       expect(new Set(joined.map((one) => one.user_id))).toEqual(new Se…
+       |                                                         ^
+    408|       expect(await candidateState(tx, candidate(open, 0))).toBe("joine…
+    409|       expect(await candidateState(tx, candidate(open, 1))).toBe("joine…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:392:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected { …(8) } to match object { state: 'applied', version: 2, …(1) }
+(11 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "my_decision": "approved",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/accept-roster.test.ts:508:24
+    506|       const approved = await approve(tx, clock, s.ben.user, next, 1);
+    507|       await checkAsAtCommit(plain(tx));
+    508|       expect(approved).toMatchObject({ state: "applied", version: 2, m…
+       |                        ^
+    509|       expect((await membersOf(tx, s.ben.club)).map((one) => one.user_i…
+    510|       expect((await clubRow(tx, s.ben.club))?.activated_at).not.toBeNu…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing
+AssertionError: expected [ { …(6) }, { …(6) }, { …(6) } ] to have a length of 4 but got 3
+
+- Expected
++ Received
+
+- 4
++ 3
+
+ ❯ src/db/accept-roster.test.ts:667:45
+    665|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+    666|       await approve(tx, clock, user(s.w, 2), s.open.id, 1);
+    667|       expect(await membersOf(tx, s.w.club)).toHaveLength(4);
+       |                                             ^
+    668|       expect(await refusal(approve(tx, clock, sam, s.open.id, 2))).toE…
+    669|       expect(await approvalsOf(tx, s.open.id)).toHaveLength(3);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:649:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19)
+Refused: refused: VERSION_CONFLICT
+ ❯ decideRoster ../packages/domain/src/clubs/decide-roster.ts:116:11
+    114|   }
+    115|   if (before.version !== input.expectedVersion) {
+    116|     throw new Refused("VERSION_CONFLICT", { current_version: before.ve…
+       |           ^
+    117|   }
+    118|
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/accept-roster.test.ts:747:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:731:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > accepts once: again under a new key it answers where the invitation stands and changes nothing
+AssertionError: expected [ { …(6) }, { …(6) }, { …(6) } ] to have a length of 4 but got 3
+
+- Expected
++ Received
+
+- 4
++ 3
+
+ ❯ src/db/accept-roster.test.ts:1014:23
+    1012|       await approve(tx, clock, user(s.w, 2), s.open.id, 1);
+    1013|       const members = await membersOf(tx, s.w.club);
+    1014|       expect(members).toHaveLength(4);
+       |                       ^
+    1015|       // Joined: the version Sam read is stale; at the applied version…
+    1016|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.o…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:996:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > refuses the approval that would bring a seventh member, and keeps nothing of it (CLUB_FULL)
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/accept-roster.test.ts:1094:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1069:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the club's row (T1, T7) > joins the candidate once when the last approval and the acceptance arrive at once, in either order
+AssertionError: expected 'open' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1233:32
+    1231|         // Whichever comes second applies the roster.
+    1232|         expect(accepted.state).toBe(acceptFirst ? "waiting" : "joined"…
+    1233|         expect(approved.state).toBe(acceptFirst ? "applied" : "open");
+       |                                ^
+    1234|         const members = await membersOf(db as unknown as WorldTx, s.w.…
+    1235|         expect(members.map((one) => one.user_id)).toEqual([...s.w.user…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins the others and carries the renamed account as someone who hasn't accepted
+AssertionError: expected 'open' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1343:76
+    1341|       await rename(tx, sam, "Mallory");
+    1342|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+    1343|       expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).st…
+       |                                                                            ^
+    1344|       await checkAsAtCommit(plain(tx));
+    1345|       expect((await membersOf(tx, s.w.club)).map((one) => one.user_id)…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1335:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now
+AssertionError: expected 'open' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1383:76
+    1381|       await acceptWith(tx, clock, debby, debbyLink.token, s.open.id, 1…
+    1382|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+    1383|       expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).st…
+       |                                                                            ^
+    1384|       expect(await candidateState(tx, s.sam.candidate)).toBe("ended");
+    1385|       // Nobody is carried: no revision is open, and no place of the s…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1374:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > stands again when the name is changed back before the last approval
+AssertionError: expected 'open' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "open"
+
+ ❯ src/db/accept-roster.test.ts:1400:76
+    1398|       await rename(tx, account, "Sam");
+    1399|       expect((await preview(tx, account, s.sam.token, NOW))?.state).to…
+    1400|       expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).st…
+       |                                                                            ^
+    1401|       expect(await membersOf(tx, s.w.club)).toHaveLength(4);
+    1402|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1392:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a membership by the clock as it reads once the row is the last approval's
+AssertionError: expected [ { …(6) }, { …(6) }, { …(6) } ] to have a length of 4 but got 3
+
+- Expected
++ Received
+
+- 4
++ 3
+
+ ❯ src/db/accept-roster.test.ts:1629:23
+    1627|       );
+    1628|       const members = await membersOf(db as unknown as WorldTx, s.w.cl…
+    1629|       expect(members).toHaveLength(4);
+       |                       ^
+    1630|       expect(members[3]?.joined_at.equals(MOVED)).toBe(true);
+    1631|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+

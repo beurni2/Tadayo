@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..7cb799f6 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -259,7 +259,7 @@ export async function acceptInvitation(
+       const candidateId = row["candidate_id"];
+       const shown = row["label"];
+       if (typeof candidateId !== "string" || typeof shown !== "string") throw shape();
+-      return { candidateId, label: candidateId === facts.candidateId ? profileName : shown };
++      return { candidateId, label: shown };
+     });
+     // The open revision ends first, naming the new one by an id made here: one revision is open per club,
+     // and the schema checks the reference at commit (as `proposeRoster` does it).

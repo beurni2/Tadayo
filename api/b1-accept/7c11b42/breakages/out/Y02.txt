@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2748ms
+   ❯ found in review: rules no test held (5)
+     × applies no roster whose members aren't exactly the club's active members 51ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:12:44
+   Duration  3.37s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > applies no roster whose members aren't exactly the club's active members
+AssertionError: expected 'joined' to be 'waiting' // Object.is equality
+
+Expected: "waiting"
+Received: "joined"
+
+ ❯ src/db/accept-roster.test.ts:1504:83
+    1502|       // Alex's interval ends by rows: the revision still lists it, an…
+    1503|       await leave(plain(tx), { user: user(s.w, 2), interval: member(s.…
+    1504|       expect((await acceptWith(tx, clock, sam, s.sam.token, s.open.id,…
+       |                                                                                   ^
+    1505|       expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: …
+    1506|       expect(await membersOf(tx, s.w.club)).toHaveLength(2);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1497:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

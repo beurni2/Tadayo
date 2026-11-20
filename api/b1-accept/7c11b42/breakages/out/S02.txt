@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 2 failed) 323ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × passes a waiting and a changed roster, and an acceptance, only as the account's own link 14ms
+     × catches the roster, and the inviter's name, through a link revoked or replaced (FQ59) 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 86 passed (88)
+   Start at  01:13:52
+   Duration  1.09s (import 54%, tests 41%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > passes a waiting and a changed roster, and an acceptance, only as the account's own link
+AssertionError: expected [] to deeply equal [ '$.invitation_id' ]
+
+- Expected
++ Received
+
+- [
+-   "$.invitation_id",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1858:78
+    1856|     expect(at(accepted(theirs, null), "world")).toEqual(["$.invitation…
+    1857|     // The account's own link, once it is revoked or replaced, shows n…
+    1858|     expect(at(accepted(held({ boundTo: acct(stan), dead: true })), "wo…
+       |                                                                              ^
+    1859|     expect(at(previewed(roster("waiting"), held()), "world")).toEqual(…
+    1860|     expect(at(previewed(roster("changed"), held()), "world")).toEqual(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches the roster, and the inviter's name, through a link revoked or replaced (FQ59)
+AssertionError: expected [] to deeply equal [ '$.invitation_id' ]
+
+- Expected
++ Received
+
+- [
+-   "$.invitation_id",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1905:32
+    1903|   ])("catches the roster, and the inviter's name, through a link %s (F…
+    1904|     const found = previewed(roster("open"), held(over));
+    1905|     expect(at(found, "world")).toEqual(["$.invitation_id"]);
+       |                                ^
+    1906|     expect(at(found, "values")).toEqual(expect.arrayContaining(["$.inv…
+    1907|     expect(at(previewed({ state: "expired", inviter_name: "Ben" }, hel…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/decide-roster.ts b/packages/domain/src/clubs/decide-roster.ts
+index aef48b47..6c96266c 100644
+--- a/packages/domain/src/clubs/decide-roster.ts
++++ b/packages/domain/src/clubs/decide-roster.ts
+@@ -109,7 +109,7 @@ async function decideRoster(
+   if (before === null) throw new Refused("NOT_FOUND");
+ 
+   // 4. A newer revision. 5. The version.
+-  if (before.state === "superseded") {
++  if (before.state === "nothing") {
+     throw new Refused("ROSTER_CHANGED", { current_id: await newestRevision(tx, revisionId) });
+   }
+   if (before.version !== input.expectedVersion) {

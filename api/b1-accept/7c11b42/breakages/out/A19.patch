@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..0c1b71ab 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -286,7 +286,7 @@ export async function acceptInvitation(
+   await bound(tx)`
+     UPDATE app.roster_revision_candidates
+        SET accepted_at = ${at}::pg_catalog.timestamptz, accepted_invitation_id = ${invitationId}
+-     WHERE revision_id = ${revisionId} AND candidate_id = ${facts.candidateId} AND accepted_invitation_id IS NULL`;
++     WHERE revision_id = ${revisionId} AND candidate_id = ${facts.candidateId} AND false`;
+   const applied = await applyIfReady(tx, at, clubId, revisionId);
+   const me = applied?.joined.find((one) => one.userId === userId) ?? null;
+   const acceptance: Acceptance =

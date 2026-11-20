@@ -1,0 +1,315 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/services/api
+
+ ❯ src/clubs/invitation.test.ts (25 tests | 5 failed) 395ms
+   ❯ the preview's serializer against the contract's examples (T55) (10)
+     × makes open field for field 10ms
+     × makes changed field for field 2ms
+     × makes another_name field for field 2ms
+     × makes waiting field for field 1ms
+   ❯ what the five routes answer (7)
+     × answers a preview with 200 and the state as the read gave it 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  5 failed | 42 passed (47)
+   Start at  01:13:33
+   Duration  849ms (tests 50%, import 36%, transform 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/invitation.test.ts > the preview's serializer against the contract's examples (T55) > makes open field for field
+AssertionError: expected { state: 'open', …(7) } to deeply equal { state: 'open', …(7) }
+
+- Expected
++ Received
+
+@@ -7,35 +7,35 @@
+    "revision_version": 1,
+    "roster": [
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Ben",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Alex",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Sam",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Nina",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Maya",
++       "name": "member",
+      },
+      {
+        "is_you": true,
+        "kind": "candidate",
+-       "name": "Leila",
++       "name": "candidate",
+      },
+    ],
+    "state": "open",
+  }
+
+ ❯ src/clubs/invitation.test.ts:76:18
+     74|     const value = example.value as Body;
+     75|     const made = invitationPreviewBody(sight(value));
+     76|     expect(made).toEqual(value);
+       |                  ^
+     77|     expect(InvitationPreview.safeParse(made).success).toBe(true);
+     78|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/clubs/invitation.test.ts > the preview's serializer against the contract's examples (T55) > makes changed field for field
+AssertionError: expected { state: 'changed', …(7) } to deeply equal { state: 'changed', …(7) }
+
+- Expected
++ Received
+
+@@ -7,35 +7,35 @@
+    "revision_version": 1,
+    "roster": [
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Ben",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Alex",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Sam",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Nina",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Maya",
++       "name": "member",
+      },
+      {
+        "is_you": true,
+        "kind": "candidate",
+-       "name": "Leila",
++       "name": "candidate",
+      },
+    ],
+    "state": "changed",
+  }
+
+ ❯ src/clubs/invitation.test.ts:76:18
+     74|     const value = example.value as Body;
+     75|     const made = invitationPreviewBody(sight(value));
+     76|     expect(made).toEqual(value);
+       |                  ^
+     77|     expect(InvitationPreview.safeParse(made).success).toBe(true);
+     78|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/clubs/invitation.test.ts > the preview's serializer against the contract's examples (T55) > makes another_name field for field
+AssertionError: expected { state: 'changed', …(7) } to deeply equal { state: 'changed', …(7) }
+
+- Expected
++ Received
+
+@@ -7,35 +7,35 @@
+    "revision_version": 1,
+    "roster": [
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Ben",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Alex",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Sam",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Nina",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Maya",
++       "name": "member",
+      },
+      {
+        "is_you": true,
+        "kind": "candidate",
+-       "name": "Debby",
++       "name": "candidate",
+      },
+    ],
+    "state": "changed",
+  }
+
+ ❯ src/clubs/invitation.test.ts:76:18
+     74|     const value = example.value as Body;
+     75|     const made = invitationPreviewBody(sight(value));
+     76|     expect(made).toEqual(value);
+       |                  ^
+     77|     expect(InvitationPreview.safeParse(made).success).toBe(true);
+     78|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/clubs/invitation.test.ts > the preview's serializer against the contract's examples (T55) > makes waiting field for field
+AssertionError: expected { state: 'waiting', …(6) } to deeply equal { state: 'waiting', …(6) }
+
+- Expected
++ Received
+
+@@ -6,35 +6,35 @@
+    "revision_version": 1,
+    "roster": [
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Ben",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Alex",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Sam",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Nina",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Maya",
++       "name": "member",
+      },
+      {
+        "is_you": true,
+        "kind": "candidate",
+-       "name": "Leila",
++       "name": "candidate",
+      },
+    ],
+    "state": "waiting",
+  }
+
+ ❯ src/clubs/invitation.test.ts:76:18
+     74|     const value = example.value as Body;
+     75|     const made = invitationPreviewBody(sight(value));
+     76|     expect(made).toEqual(value);
+       |                  ^
+     77|     expect(InvitationPreview.safeParse(made).success).toBe(true);
+     78|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/clubs/invitation.test.ts > what the five routes answer > answers a preview with 200 and the state as the read gave it
+AssertionError: expected { state: 'open', …(7) } to deeply equal { state: 'open', …(7) }
+
+- Expected
++ Received
+
+@@ -7,35 +7,35 @@
+    "revision_version": 1,
+    "roster": [
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Ben",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Alex",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Sam",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Nina",
++       "name": "member",
+      },
+      {
+        "is_you": false,
+        "kind": "member",
+-       "name": "Maya",
++       "name": "member",
+      },
+      {
+        "is_you": true,
+        "kind": "candidate",
+-       "name": "Leila",
++       "name": "candidate",
+      },
+    ],
+    "state": "open",
+  }
+
+ ❯ src/clubs/invitation.test.ts:350:34
+    348|     const got = await answer(post(PREVIEW, HELD));
+    349|     expect(got.status).toBe(200);
+    350|     expect(JSON.parse(got.body)).toEqual(value);
+       |                                  ^
+    351|     expect(got.headers).toMatchObject(headers);
+    352|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

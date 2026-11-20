@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/invitation-facts.ts b/packages/domain/src/clubs/invitation-facts.ts
+index dd4e3ffd..bbca324b 100644
+--- a/packages/domain/src/clubs/invitation-facts.ts
++++ b/packages/domain/src/clubs/invitation-facts.ts
+@@ -247,6 +247,6 @@ export async function linkFacts(
+  */
+ export function namesNothing(facts: LinkFacts, userId: string): boolean {
+   return (
+-    facts.revoked || facts.replaced || facts.suspended || (facts.boundUserId !== null && facts.boundUserId !== userId)
++    facts.revoked || facts.suspended || (facts.boundUserId !== null && facts.boundUserId !== userId)
+   );
+ }

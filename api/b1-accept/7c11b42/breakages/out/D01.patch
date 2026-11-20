@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/decide-roster.ts b/packages/domain/src/clubs/decide-roster.ts
+index aef48b47..9789e8fd 100644
+--- a/packages/domain/src/clubs/decide-roster.ts
++++ b/packages/domain/src/clubs/decide-roster.ts
+@@ -104,7 +104,6 @@ async function decideRoster(
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+ 
+   // 3. Who is asking: the same interval still, reading the same revision.
+-  if ((await activeMember(tx, userId, clubId)) !== asking) throw new Refused("NOT_FOUND");
+   const before = await readRevision(tx, userId, revisionId, await clock.sample(tx));
+   if (before === null) throw new Refused("NOT_FOUND");
+ 

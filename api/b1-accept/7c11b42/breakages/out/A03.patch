@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..0b303a38 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -136,7 +136,6 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+   if (facts === null || namesNothing(facts, userId)) return { kind: "nothing" };
+   const mine = facts.boundUserId === userId;
+   if (facts.membershipId !== null && !(mine && facts.candidateState === "joined")) return { kind: "nothing" };
+-  if (facts.candidateState === "ended" && !mine) return { kind: "nothing" };
+   const [named] = await bound(tx)`
+     SELECT r.state, r.version, rc.label
+       FROM app.roster_revisions r

@@ -1,0 +1,15 @@
+diff --git a/packages/domain/src/clubs/invitation-facts.ts b/packages/domain/src/clubs/invitation-facts.ts
+index dd4e3ffd..895a1610 100644
+--- a/packages/domain/src/clubs/invitation-facts.ts
++++ b/packages/domain/src/clubs/invitation-facts.ts
+@@ -183,9 +183,7 @@ export async function linkFacts(
+                       AND ok.state = 'open' AND ok.id <> k.id) AS holds_another,
+            (SELECT pg_catalog.jsonb_build_object(
+                      'id', r.id, 'version', r.version, 'label', rc.label,
+-                     'accepted', rc.accepted_invitation_id IS NOT DISTINCT FROM i.id
+-                                 AND EXISTS (SELECT FROM app.users bu
+-                                              WHERE bu.id = i.bound_user_id AND bu.display_name = rc.label),
++                     'accepted', rc.accepted_invitation_id IS NOT DISTINCT FROM i.id,
+                      'ready',
+                      NOT EXISTS (SELECT FROM app.roster_revision_members rm
+                                   WHERE rm.revision_id = r.id

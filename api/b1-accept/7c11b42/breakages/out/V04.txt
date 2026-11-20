@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2735ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 51ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:09:42
+   Duration  3.36s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster
+AssertionError: expected { state: 'expired', …(1) } to match object { state: 'changed', …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "expires_at": "2026-11-18T05:00:00Z",
+-   "revision_id": "rev_zCNu7Sc86d9MAR5CglOzIA",
+-   "state": "changed",
++   "state": "expired",
+  }
+
+ ❯ src/db/accept-roster.test.ts:825:70
+    823|       const past = FIRST.add({ hours: 24 * 9 });
+    824|       clock.set(past);
+    825|       expect(await preview(tx, sam, s.sam.token, past as ServerNow)).t…
+       |                                                                      ^
+    826|         state: "changed",
+    827|         revision_id: next.id,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:818:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

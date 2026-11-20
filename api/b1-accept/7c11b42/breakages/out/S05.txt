@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 1 failed) 338ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × catches the page's name, and the roster, once the candidate is on no open revision 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 87 passed (88)
+   Start at  01:13:57
+   Duration  1.09s (import 52%, tests 43%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches the page's name, and the roster, once the candidate is on no open revision
+AssertionError: expected [] to deeply equal [ '$.inviter_name' ]
+
+- Expected
++ Received
+
+- [
+-   "$.inviter_name",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1945:80
+    1943|
+    1944|   it("catches the page's name, and the roster, once the candidate is o…
+    1945|     expect(at(web({ inviter_name: "Ben" }, held({ roster: null })), "v…
+       |                                                                                ^
+    1946|     expect(at(previewed(roster("open"), held({ roster: null })), "valu…
+    1947|       expect.arrayContaining(["$.club_name", "$.roster[0].name"]),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3026ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × gives the neutral not-found for an ended proposal's unused link under a key the account has used 47ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:10:45
+   Duration  3.63s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > gives the neutral not-found for an ended proposal's unused link under a key the account has used
+AssertionError: expected { code: 'IDEMPOTENCY_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
++   "code": "IDEMPOTENCY_CONFLICT",
+    "facts": {},
+  }
+
+ ❯ src/db/accept-roster.test.ts:1420:103
+    1418|       expect(await preview(tx, debby, debbyLink.token, NOW)).toBeNull(…
+    1419|       for (const version of [1, 2, 7]) {
+    1420|         expect(await refusal(acceptWith(tx, clock, debby, debbyLink.to…
+       |                                                                                                       ^
+    1421|         expect(await refusal(acceptWith(tx, clock, debby, debbyLink.to…
+    1422|         expect(await refusal(acceptWith(tx, clock, debby, "A".repeat(4…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1408:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

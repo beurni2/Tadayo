@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index d4435bf5..1a65c903 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -625,7 +625,7 @@ function heldLink(
+   context: ScanContext,
+ ): { id: string; invitation: WorldInvitation; shown: boolean; inviter: boolean; roster: boolean } | undefined {
+   const { world, viewer, now, presented } = context;
+-  if (presented === undefined || !HOLDER_OPERATIONS.has(context.operation.id)) return undefined;
++  if (presented === undefined) return undefined;
+   const hash = createHash("sha256").update(presented).digest("hex");
+   const found = [...world.invitations].find(([, invitation]) => invitation.tokenSha256 === hash);
+   if (found === undefined) return undefined;

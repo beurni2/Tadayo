@@ -1,0 +1,122 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 4 failed) 2861ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 39ms
+     × starts the club on the acceptance when the creator approved the new revision first 35ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 33ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 65ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 51 passed (55)
+   Start at  01:11:48
+   Duration  3.45s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected [ { …(4) }, { …(4) } ] to deeply equal [ { …(4) }, { …(4) } ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  [
+    {
+      "accepted_at": null,
+      "candidate_id": "cand_0e9WYuH9XZ4WAd1Linr3zw",
+-     "label": "Debby",
++     "label": "Leila",
+      "position": 1,
+    },
+    {
+      "accepted_at": null,
+      "candidate_id": "cand_ys2anI6ud75Zbj3wrhQ3OQ",
+
+ ❯ src/db/accept-roster.test.ts:469:20
+    467|         SELECT candidate_id, label, position, accepted_at FROM app.ros…
+    468|          WHERE revision_id = ${next} ORDER BY position`;
+    469|       expect(rows).toEqual([
+       |                    ^
+    470|         { candidate_id: s.maya.candidate, label: "Debby", position: 1,…
+    471|         { candidate_id: s.alex.candidate, label: "Alex", position: 2, …
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > starts the club on the acceptance when the creator approved the new revision first
+AssertionError: expected 'changed' to be 'joined' // Object.is equality
+
+Expected: "joined"
+Received: "changed"
+
+ ❯ src/db/accept-roster.test.ts:530:81
+    528|       const next = (await openRevision(tx, s.ben.club)) ?? "";
+    529|       expect(await approve(tx, clock, s.ben.user, next, 1)).toMatchObj…
+    530|       expect((await acceptWith(tx, clock, debby, s.maya.token, next, 1…
+       |                                                                                 ^
+    531|       expect((await clubRow(tx, s.ben.club))?.activated_at).not.toBeNu…
+    532|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:524:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > ends the candidates who hadn't accepted when the revision's proposer is no longer a member
+AssertionError: expected 'changed' to be 'joined' // Object.is equality
+
+Expected: "joined"
+Received: "changed"
+
+ ❯ src/db/accept-roster.test.ts:1114:81
+    1112|       await approve(tx, clock, user(s.w, 1), third, 1);
+    1113|       await approve(tx, clock, user(s.w, 2), third, 1);
+    1114|       expect((await acceptWith(tx, clock, debby, s.sam.token, third, 1…
+       |                                                                                 ^
+    1115|       await checkAsAtCommit(plain(tx));
+    1116|       expect(await openRevision(tx, s.w.club)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1102:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+AssertionError: expected [ 'Sam' ] to deeply equal [ 'Mallory' ]
+
+- Expected
++ Received
+
+  [
+-   "Mallory",
++   "Sam",
+  ]
+
+ ❯ src/db/accept-roster.test.ts:1325:92
+    1323|       expect(await revisionRow(tx, next)).toMatchObject({ origin: "ren…
+    1324|       expect(await approvalsOf(tx, next)).toEqual([]);
+    1325|       expect((await read(tx, user(s.w, 1), next, NOW))?.candidates.map…
+       |                                                                                            ^
+    1326|       for (const index of [0, 1, 2]) await approve(tx, clock, user(s.w…
+    1327|       expect(await membersOf(tx, s.w.club)).toHaveLength(3);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

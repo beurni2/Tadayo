@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 3106ms
+   ❯ found in review: rules no test held (5)
+     × takes no decision on an ended revision from a member who hadn't decided 27ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:12:08
+   Duration  3.85s (tests 88%, import 9%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > takes no decision on an ended revision from a member who hadn't decided
+PostgresError: app.roster_approvals: revision rev_Up4IvwYHsUZqc8oI0PQXrQ is no longer open (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ decideRoster ../packages/domain/src/clubs/decide-roster.ts:125:20
+    123|   if (before.myDecision === "pending") {
+    124|     const decision = operation === "approveRoster" ? "approved" : "dec…
+    125|     await bound(tx)`
+       |                    ^
+    126|       INSERT INTO app.roster_approvals (revision_id, interval_id, deci…
+    127|       VALUES (${revisionId}, ${asking}, ${decision}, false, ${at}::pg_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

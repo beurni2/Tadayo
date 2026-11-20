@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 3174ms
+   ❯ found in review: the clock is read after the club's row is held (T1) (3)
+     × dates a membership by the clock as it reads once the row is the last approval's 71ms
+     × dates a decline by the clock as it reads once the row is the decline's 51ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:12:25
+   Duration  3.83s (tests 90%, import 7%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a membership by the clock as it reads once the row is the last approval's
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/accept-roster.test.ts:1630:51
+    1628|       const members = await membersOf(db as unknown as WorldTx, s.w.cl…
+    1629|       expect(members).toHaveLength(4);
+    1630|       expect(members[3]?.joined_at.equals(MOVED)).toBe(true);
+       |                                                   ^
+    1631|     },
+    1632|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a decline by the clock as it reads once the row is the decline's
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/accept-roster.test.ts:1646:95
+    1644|       ),
+    1645|     );
+    1646|     expect((await revisionRow(db as unknown as WorldTx, s.open.id))?.e…
+       |                                                                                               ^
+    1647|   });
+    1648| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

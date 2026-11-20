@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-preview.ts b/packages/domain/src/clubs/invitation-preview.ts
+index 0fc3edd0..b285b9e7 100644
+--- a/packages/domain/src/clubs/invitation-preview.ts
++++ b/packages/domain/src/clubs/invitation-preview.ts
+@@ -157,7 +157,7 @@ export async function previewInvitationWeb(
+       JOIN app.memberships pm ON pm.interval_id = k.proposed_by_interval_id
+       JOIN app.users pu ON pu.id = pm.user_id
+      WHERE i.token_sha256 = pg_catalog.decode(${hash}, 'hex')
+-       AND i.revoked_at IS NULL AND i.replaced_by_id IS NULL AND i.bound_user_id IS NULL
++       AND i.replaced_by_id IS NULL AND i.bound_user_id IS NULL
+        AND i.expires_at > ${now}::pg_catalog.timestamptz
+        AND k.state = 'open' AND c.suspended_at IS NULL`;
+   const name = rows[0]?.["inviter_name"];

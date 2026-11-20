@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/invitation-preview.ts b/packages/domain/src/clubs/invitation-preview.ts
+index 0fc3edd0..4d2d716e 100644
+--- a/packages/domain/src/clubs/invitation-preview.ts
++++ b/packages/domain/src/clubs/invitation-preview.ts
+@@ -124,7 +124,6 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
+   // An acceptance that stands on a roster every member has approved would have joined its candidate, but
+   // for a name changed and changed back around the last approval, which applied nothing. Then there is
+   // nothing to wait for: the account is shown the roster to accept again, and that acceptance joins it.
+-  if (roster.accepted && !roster.ready) return { state: "waiting", ...shown };
+   return { state: mine ? "changed" : "open", ...shown, expiresAt: facts.expiresAt };
+ }
+ 

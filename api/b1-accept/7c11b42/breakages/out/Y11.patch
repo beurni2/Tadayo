@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..6e392252 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -246,7 +246,7 @@ export async function applyIfReady(
+   const left = candidates.filter((candidate) => candidate.open && !standing(candidate) && !gone(candidate));
+   let carriedInto: string | null = null;
+   if (left.length > 0) {
+-    if (row["proposer_active"] === true) {
++    if (row["proposer_active"] !== undefined) {
+       carriedInto = await writeRevision(tx, {
+         clubId,
+         origin: "proposal",

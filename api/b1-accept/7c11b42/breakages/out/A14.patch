@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..9ceed594 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -241,7 +241,7 @@ export async function acceptInvitation(
+   const mine = facts.boundUserId === userId;
+ 
+   // The link binds to the first account that accepts, under either answer below.
+-  if (!mine) {
++  if (mine) {
+     await bound(tx)`
+       UPDATE app.invitations SET bound_user_id = ${userId}, bound_at = ${at}::pg_catalog.timestamptz
+        WHERE id = ${invitationId}`;

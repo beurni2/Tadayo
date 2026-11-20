@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 1 failed) 2998ms
+   ❯ found in review: rules no test held (5)
+     × dates a club's start, its members and its first days by one sample (T1) 48ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 54 passed (55)
+   Start at  01:13:14
+   Duration  3.67s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > dates a club's start, its members and its first days by one sample (T1)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/accept-roster.test.ts:1569:100
+    1567|         UNION ALL SELECT created_at FROM app.schedule_proposals WHERE …
+    1568|       expect(made).toHaveLength(2);
+    1569|       for (const row of made) expect(at !== undefined && at !== null &…
+       |                                                                                                    ^
+    1570|     });
+    1571|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1559:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

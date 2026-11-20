@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..dec65df9 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -245,7 +245,7 @@ export async function applyIfReady(
+   // 5. The candidates who hadn't accepted go on, in a new revision (FQ120).
+   const left = candidates.filter((candidate) => candidate.open && !standing(candidate) && !gone(candidate));
+   let carriedInto: string | null = null;
+-  if (left.length > 0) {
++  if (left.length > 99) {
+     if (row["proposer_active"] === true) {
+       carriedInto = await writeRevision(tx, {
+         clubId,

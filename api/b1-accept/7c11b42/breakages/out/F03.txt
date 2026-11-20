@@ -1,0 +1,89 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 3017ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × gives nothing of a suspended club, and nothing to an account that left after joining with the link 72ms
+   ❯ found in review: what names nothing is refused before the receipt and before the version (T14) (6)
+     × answers a retry with the neutral not-found once the link names nothing, not with the stored answer 22ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:08:15
+   Duration  3.67s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > gives nothing of a suspended club, and nothing to an account that left after joining with the link
+AssertionError: expected { state: 'open', …(7) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club_name": "Sunday people",
+  "expires_at": "2026-11-18T05:00:00Z",
+  "invitation_id": "inv_baxs06HiziHoU7Kb_8aMtw",
+  "inviter_name": "Ben",
+  "revision_id": "rev_FLJO3vkLq8OOgPXMec5DrQ",
+  "revision_version": 1,
+  "roster": [
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Ben",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Maya",
+    },
+    {
+      "is_you": false,
+      "kind": "member",
+      "name": "Alex",
+    },
+    {
+      "is_you": true,
+      "kind": "candidate",
+      "name": "Sam",
+    },
+  ],
+  "state": "open",
+}
+
+ ❯ src/db/accept-roster.test.ts:879:58
+    877|       await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id =…
+    878|       expect(await webPreview(tx, t.sam.token, NOW)).toBeNull();
+    879|       expect(await preview(tx, other, t.sam.token, NOW)).toBeNull();
+       |                                                          ^
+    880|       expect(await preview(tx, user(t.w, 0), t.sam.token, NOW)).toBeNu…
+    881|       expect(await refusal(acceptWith(tx, clock, other, t.sam.token, t…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:865:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: what names nothing is refused before the receipt and before the version (T14) > answers a retry with the neutral not-found once the link names nothing, not with the stored answer
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/accept-roster.test.ts:1466:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1459:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

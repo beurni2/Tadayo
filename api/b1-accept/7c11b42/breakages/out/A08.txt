@@ -1,0 +1,77 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 3334ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 56ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 52ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:11:07
+   Duration  3.98s (tests 90%, import 8%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected { code: 'NOT_FOUND', facts: {} } to deeply equal { code: 'ROSTER_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "ROSTER_CHANGED",
+-   "facts": {
+-     "current_id": "rev_M8Z7l3Qwya7y5qvxFrl3Tg",
+-   },
++   "code": "NOT_FOUND",
++   "facts": {},
+  }
+
+ ❯ src/db/accept-roster.test.ts:498:87
+    496|       expect((await listClubs(tx, debby, NOW)).invitations.map((one) =…
+    497|       // The old revision is no longer the one to accept.
+    498|       expect(await refusal(acceptWith(tx, clock, debby, s.maya.token, …
+       |                                                                                       ^
+    499|         code: "ROSTER_CHANGED",
+    500|         facts: { current_id: next },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster
+AssertionError: expected { code: 'NOT_FOUND', facts: {} } to deeply equal { code: 'ROSTER_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "ROSTER_CHANGED",
+-   "facts": {
+-     "current_id": "rev_kxYWhu7DGJTklf1pPIK5VA",
+-   },
++   "code": "NOT_FOUND",
++   "facts": {},
+  }
+
+ ❯ src/db/accept-roster.test.ts:830:84
+    828|         expires_at: EXPIRES,
+    829|       });
+    830|       expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.o…
+       |                                                                                    ^
+    831|         code: "ROSTER_CHANGED",
+    832|         facts: { current_id: next.id },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:818:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

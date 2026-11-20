@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/decide-roster.ts b/packages/domain/src/clubs/decide-roster.ts
+index aef48b47..9af01fb4 100644
+--- a/packages/domain/src/clubs/decide-roster.ts
++++ b/packages/domain/src/clubs/decide-roster.ts
+@@ -131,7 +131,7 @@ async function decideRoster(
+       await bound(tx)`
+         UPDATE app.candidates k SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz
+           FROM app.roster_revision_candidates rc
+-         WHERE rc.revision_id = ${revisionId} AND rc.candidate_id = k.id AND k.state = 'open'`;
++         WHERE rc.revision_id = ${revisionId} AND rc.candidate_id = k.id AND false`;
+       await bound(tx)`
+         UPDATE app.roster_revisions
+            SET state = 'did_not_go_ahead', version = version + 1, ended_at = ${at}::pg_catalog.timestamptz

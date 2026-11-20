@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation-preview.ts b/packages/domain/src/clubs/invitation-preview.ts
+index 0fc3edd0..8332f980 100644
+--- a/packages/domain/src/clubs/invitation-preview.ts
++++ b/packages/domain/src/clubs/invitation-preview.ts
+@@ -104,7 +104,7 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
+   if (roster === null) throw new Error("clubs: an open candidate is on no open revision");
+   if (facts.inviterName === null || roster.members.length === 0) return null;
+   // 8. Six already.
+-  if (facts.members >= CLUB_SIZE) return { state: "full" };
++  if (facts.members > CLUB_SIZE) return { state: "full" };
+   // 9. The exact roster.
+   const shown: InvitationRoster = {
+     invitationId: facts.invitationId,

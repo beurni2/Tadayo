@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (88 tests | 1 failed) 334ms
+   ❯ what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) (13)
+     × catches it of a suspended club (FQ80) 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 87 passed (88)
+   Start at  01:13:54
+   Duration  1.06s (import 53%, tests 43%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept) > catches it of a suspended club (FQ80)
+AssertionError: expected [] to deeply equal ArrayContaining{…}
+
+- Expected
++ Received
+
+- ArrayContaining [
+-   "$.inviter_name",
+-   "$.roster[0].name",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1927:64
+    1925|       ]),
+    1926|     };
+    1927|     expect(at(previewed(roster("open"), suspended), "values")).toEqual(
+       |                                                                ^
+    1928|       expect.arrayContaining(["$.inviter_name", "$.roster[0].name"]),
+    1929|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index 735a32e5..c197e6ed 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -70,7 +70,6 @@ export function linkOf(roster: RosterWorld, token: string): LinkRows | undefined
+ function named(world: ScheduleWorld, roster: RosterWorld, token: string, account: string | null): LinkRows | undefined {
+   const link = linkOf(roster, token);
+   if (link === undefined || link.revoked || link.replaced) return undefined;
+-  if (world.clubs.get(link.club)?.suspended !== false) return undefined;
+   if (link.boundTo !== null && link.boundTo !== account) return undefined;
+   return link;
+ }

@@ -1,0 +1,101 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 3 failed) 2914ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 48ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster 34ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × stands again when the name is changed back before the last approval 72ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 52 passed (55)
+   Start at  01:09:59
+   Duration  3.59s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > keeps a candidate who accepted first waiting, with no progress shown, until the last member approves
+AssertionError: expected { state: 'changed', …(7) } to deeply equal { state: 'waiting', …(6) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,8 @@
+  {
+    "club_name": "Sunday people",
++   "expires_at": "2026-11-18T05:00:00Z",
+    "invitation_id": "inv_TWfP8smwrIF94n3n9YG4uw",
+    "inviter_name": "Ben",
+    "revision_id": "rev_WCi4ulS4phi4emfI-KYhKQ",
+    "revision_version": 1,
+    "roster": [
+@@ -24,7 +25,7 @@
+        "is_you": true,
+        "kind": "candidate",
+        "name": "Sam",
+      },
+    ],
+-   "state": "waiting",
++   "state": "changed",
+  }
+
+ ❯ src/db/accept-roster.test.ts:344:23
+    342|       });
+    343|       const waiting = await preview(tx, sam, s.sam.token, NOW);
+    344|       expect(waiting).toEqual({
+       |                       ^
+    345|         state: "waiting",
+    346|         invitation_id: s.sam.link,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:336:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > doesn't expire for the account that used it: past the expiry it still shows and accepts a changed roster
+AssertionError: expected 'changed' to be 'waiting' // Object.is equality
+
+Expected: "waiting"
+Received: "changed"
+
+ ❯ src/db/accept-roster.test.ts:838:79
+    836|         state: "waiting",
+    837|       });
+    838|       expect((await preview(tx, sam, s.sam.token, past as ServerNow))?…
+       |                                                                               ^
+    839|     });
+    840|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:818:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > stands again when the name is changed back before the last approval
+AssertionError: expected 'changed' to be 'waiting' // Object.is equality
+
+Expected: "waiting"
+Received: "changed"
+
+ ❯ src/db/accept-roster.test.ts:1399:69
+    1397|       await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+    1398|       await rename(tx, account, "Sam");
+    1399|       expect((await preview(tx, account, s.sam.token, NOW))?.state).to…
+       |                                                                     ^
+    1400|       expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).st…
+    1401|       expect(await membersOf(tx, s.w.club)).toHaveLength(4);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:1392:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

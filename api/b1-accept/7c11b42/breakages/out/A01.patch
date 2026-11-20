@@ -1,0 +1,21 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..7a732be1 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -212,13 +212,13 @@ export async function acceptInvitation(
+ 
+   // 1. Where the request stands, with no lock: what names nothing is refused before the receipt.
+   const before = await standingOf(tx, input, hash, await clock.sample(tx));
+-  if (before.kind === "nothing") throw new Refused("NOT_FOUND");
+-  const clubId = before.facts.club.id;
+-  const invitationId = before.facts.invitationId;
+ 
+   // 2. The receipt, the account's row, the club's row and the link's.
+   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
+   if (first !== null) return first.replay;
++  if (before.kind === "nothing") throw new Refused("NOT_FOUND");
++  const clubId = before.facts.club.id;
++  const invitationId = before.facts.invitationId;
+   const [account] = await bound(tx)`
+     SELECT state, display_name FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;
+   if (account === undefined || account["state"] !== "active") throw new Refused("UNAUTHENTICATED");

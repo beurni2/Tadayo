@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index b608c4bd..4ea1faa2 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -206,7 +206,7 @@ export async function acceptInvitation(
+       path: {},
+       query: {},
+       // The token's hash, never the token: the receipt's own hash is made of this (T52).
+-      body: { token_sha256: hash, revision_id: revisionId, expected_version: input.expectedVersion },
++      body: { token_sha256: input.token, revision_id: revisionId, expected_version: input.expectedVersion },
+     },
+   };
+ 

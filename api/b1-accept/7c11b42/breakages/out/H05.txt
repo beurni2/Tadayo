@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/services/api
+
+ ❯ src/clubs/invitation.test.ts (25 tests | 1 failed) 350ms
+   ❯ what the five routes answer (7)
+     × answers the neutral not-found when a token names nothing, on the page and in the app (T14, FQ59) 17ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 46 passed (47)
+   Start at  01:13:37
+   Duration  803ms (tests 48%, import 37%, transform 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/invitation.test.ts > what the five routes answer > answers the neutral not-found when a token names nothing, on the page and in the app (T14, FQ59)
+AssertionError: expected { status: 200, …(2) } to match object { status: 404, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
+-   "status": 404,
++   "body": "{\"inviter_name\":\"\"}",
++   "status": 200,
+  }
+
+ ❯ src/clubs/invitation.test.ts:340:19
+    338|     for (const url of [WEB, PREVIEW]) {
+    339|       const got = await answer(post(url, HELD));
+    340|       expect(got).toMatchObject({ status: 404, body: '{"code":"NOT_FOU…
+       |                   ^
+    341|       expect(got.headers["cache-control"]).toBe("private, no-store");
+    342|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

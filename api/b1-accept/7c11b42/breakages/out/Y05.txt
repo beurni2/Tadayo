@@ -1,0 +1,107 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 24 failed) 2869ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120) 68ms
+   ❯ a later addition: every member approves, the candidate accepts, in either order (FQ65) (4)
+     × joins the candidate on their acceptance once every member has approved, and not before 80ms
+     × keeps a candidate who accepted first waiting, with no progress shown, until the last member approves 50ms
+     × joins everyone who accepted together, and carries the one who hadn't 47ms
+     × dates the membership from the sample taken after the lock, not the receipt's (T1) 28ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 54ms
+     × starts the club on the acceptance when the creator approved the new revision first 34ms
+   ❯ who may approve or decline (T9, T14, FQ119) (5)
+     × gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing 38ms
+     × answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19) 33ms
+   ❯ what a token names, and to whom (T7, T14, FQ59, FQ71) (7)
+     × gives nothing of a suspended club, and nothing to an account that left after joining with the link 30ms
+   ❯ accepting the exact roster the caller saw (T7, T19, T52) (4)
+     × keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict 23ms
+     × accepts once: again under a new key it answers where the invitation stands and changes nothing 37ms
+   ❯ the roster applied (T7, A01, T27, FQ120) (4)
+     × doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends 35ms
+     × ends the candidates who hadn't accepted when the revision's proposer is no longer a member 40ms
+     × gives each member the club's open revision with the roster, as that member reads it 29ms
+   ❯ the club's row (T1, T7) (4)
+     × joins the candidate once when the last approval and the acceptance arrive at once, in either order 163ms
+   ❯ found in review: an acceptance stands for the name the members read (FQ66, FQ84) (5)
+     × joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name 126ms
+     × joins the others and carries the renamed account as someone who hasn't accepted 84ms
+     × shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing 31ms
+     × ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now 109ms
+     × stands again when the name is changed back before the last approval 55ms
+   ❯ found in review: rules no test held (5)
+     × dates a club's start, its members and its first days by one sample (T1) 32ms
+   ❯ found in review: the clock is read after the club's row is held (T1) (3)
+     × dates a membership by the clock as it reads once the row is the acceptance's 56ms
+     × dates a membership by the clock as it reads once the row is the last approval's 62ms
+
+ Test Files  1 failed (1)
+      Tests  24 failed | 31 passed (55)
+   Start at  01:12:57
+   Duration  3.50s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 24 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > joins the person who accepts, starts the club, opens its first days and carries the other candidate into a new revision (FQ54, FQ120)
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins the candidate on their acceptance once every member has approved, and not before
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > keeps a candidate who accepted first waiting, with no progress shown, until the last member approves
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > joins everyone who accepted together, and carries the one who hadn't
+ FAIL  src/db/accept-roster.test.ts > a later addition: every member approves, the candidate accepts, in either order (FQ65) > dates the membership from the sample taken after the lock, not the receipt's (T1)
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > starts the club on the acceptance when the creator approved the new revision first
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > gives the neutral not-found to everyone the revision doesn't ask, and leaves nothing
+ FAIL  src/db/accept-roster.test.ts > who may approve or decline (T9, T14, FQ119) > answers a retry with the first answer, though the roster has moved on, and another request under the key with a conflict (T19)
+ FAIL  src/db/accept-roster.test.ts > what a token names, and to whom (T7, T14, FQ59, FQ71) > gives nothing of a suspended club, and nothing to an account that left after joining with the link
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > keeps the token out of every row, answers a retry with the first answer though the token is used, and another request under the key with a conflict
+ FAIL  src/db/accept-roster.test.ts > accepting the exact roster the caller saw (T7, T19, T52) > accepts once: again under a new key it answers where the invitation stands and changes nothing
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > doesn't join an accepted account whose deletion has begun: alone it applies nothing, and with others its candidate ends
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > ends the candidates who hadn't accepted when the revision's proposer is no longer a member
+ FAIL  src/db/accept-roster.test.ts > the roster applied (T7, A01, T27, FQ120) > gives each member the club's open revision with the roster, as that member reads it
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > joins the others and carries the renamed account as someone who hasn't accepted
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now
+ FAIL  src/db/accept-roster.test.ts > found in review: an acceptance stands for the name the members read (FQ66, FQ84) > stands again when the name is changed back before the last approval
+ FAIL  src/db/accept-roster.test.ts > found in review: rules no test held > dates a club's start, its members and its first days by one sample (T1)
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a membership by the clock as it reads once the row is the acceptance's
+ FAIL  src/db/accept-roster.test.ts > found in review: the clock is read after the club's row is held (T1) > dates a membership by the clock as it reads once the row is the last approval's
+PostgresError: app.roster_revisions: a revision's version moves by one with its state, and only then (T33)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:206:18
+    204|
+    205|   // 2. The revision is applied.
+    206|   await bound(tx)`
+       |                  ^
+    207|     UPDATE app.roster_revisions
+    208|        SET state = 'applied', ended_at = ${at}::pg_catalog.timestamptz
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/24]⎯
+
+ FAIL  src/db/accept-roster.test.ts > the club's row (T1, T7) > joins the candidate once when the last approval and the acceptance arrive at once, in either order
+AssertionError: expected undefined to be 'applied' // Object.is equality
+
+- Expected:
+"applied"
+
++ Received:
+undefined
+
+ ❯ src/db/accept-roster.test.ts:1233:32
+    1231|         // Whichever comes second applies the roster.
+    1232|         expect(accepted.state).toBe(acceptFirst ? "waiting" : "joined"…
+    1233|         expect(approved.state).toBe(acceptFirst ? "applied" : "open");
+       |                                ^
+    1234|         const members = await membersOf(db as unknown as WorldTx, s.w.…
+    1235|         expect(members.map((one) => one.user_id)).toEqual([...s.w.user…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/24]⎯
+

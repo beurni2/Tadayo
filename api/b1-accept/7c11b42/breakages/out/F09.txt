@@ -1,0 +1,105 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+ ❯ src/db/accept-roster.test.ts (55 tests | 2 failed) 3361ms
+   ❯ a first roster: the club starts as soon as one person accepts (FQ54) (2)
+     × shows the signed-out page the inviter's name, and the person signed in the exact roster, names only (T7, FQ47) 124ms
+   ❯ another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) (4)
+     × makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it 38ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 53 passed (55)
+   Start at  01:08:40
+   Duration  4.03s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/accept-roster.test.ts > a first roster: the club starts as soon as one person accepts (FQ54) > shows the signed-out page the inviter's name, and the person signed in the exact roster, names only (T7, FQ47)
+AssertionError: expected { state: 'open', …(7) } to deeply equal { state: 'open', …(7) }
+
+- Expected
++ Received
+
+@@ -10,17 +10,17 @@
+        "is_you": false,
+        "kind": "member",
+        "name": "Ben",
+      },
+      {
+-       "is_you": true,
++       "is_you": false,
+        "kind": "candidate",
+-       "name": "Maya",
++       "name": "Alex",
+      },
+      {
+-       "is_you": false,
++       "is_you": true,
+        "kind": "candidate",
+-       "name": "Alex",
++       "name": "Maya",
+      },
+    ],
+    "state": "open",
+  }
+
+ ❯ src/db/accept-roster.test.ts:174:58
+    172|       const maya = await newUser(plain(tx), "Maya");
+    173|       expect(await webPreview(tx, s.maya.token, NOW)).toEqual({ invite…
+    174|       expect(await preview(tx, maya, s.maya.token, NOW)).toEqual({
+       |                                                          ^
+    175|         state: "open",
+    176|         invitation_id: s.maya.link,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:170:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/accept-roster.test.ts > another name: a revision the server makes, which everyone accepts and approves again (FQ66, FQ84) > makes a revision under the account's own name, binds the link, and starts a first roster only once its creator has approved it and a candidate has accepted it
+AssertionError: expected { state: 'changed', …(7) } to deeply equal { state: 'changed', …(7) }
+
+- Expected
++ Received
+
+@@ -10,17 +10,17 @@
+        "is_you": false,
+        "kind": "member",
+        "name": "Ben",
+      },
+      {
+-       "is_you": true,
++       "is_you": false,
+        "kind": "candidate",
+-       "name": "Debby",
++       "name": "Alex",
+      },
+      {
+-       "is_you": false,
++       "is_you": true,
+        "kind": "candidate",
+-       "name": "Alex",
++       "name": "Debby",
+      },
+    ],
+    "state": "changed",
+  }
+
+ ❯ src/db/accept-roster.test.ts:482:59
+    480|       expect(forBen?.candidates[0]).toMatchObject({ name: "Debby", inv…
+    481|       // Debby reviews the new roster, under Debby's own name.
+    482|       expect(await preview(tx, debby, s.maya.token, NOW)).toEqual({
+       |                                                           ^
+    483|         state: "changed",
+    484|         invitation_id: s.maya.link,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/accept-roster.test.ts:441:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

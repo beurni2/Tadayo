@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/decide-roster.ts b/packages/domain/src/clubs/decide-roster.ts
+index aef48b47..2a66782c 100644
+--- a/packages/domain/src/clubs/decide-roster.ts
++++ b/packages/domain/src/clubs/decide-roster.ts
+@@ -126,7 +126,6 @@ async function decideRoster(
+       INSERT INTO app.roster_approvals (revision_id, interval_id, decision, implicit, decided_at)
+       VALUES (${revisionId}, ${asking}, ${decision}, false, ${at}::pg_catalog.timestamptz)`;
+     if (operation === "approveRoster") {
+-      await applyIfReady(tx, at, clubId, revisionId);
+     } else {
+       await bound(tx)`
+         UPDATE app.candidates k SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz

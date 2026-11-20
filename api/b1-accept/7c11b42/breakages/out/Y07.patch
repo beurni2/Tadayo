@@ -1,0 +1,14 @@
+diff --git a/packages/domain/src/clubs/apply-roster.ts b/packages/domain/src/clubs/apply-roster.ts
+index ff6eee0f..d4ac9b73 100644
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -236,8 +236,7 @@ export async function applyIfReady(
+   const started = !flag(row["activated"]);
+   await bound(tx)`
+     UPDATE app.clubs
+-       SET roster_version = roster_version + 1,
+-           activated_at = coalesce(activated_at, ${at}::pg_catalog.timestamptz)
++       SET activated_at = coalesce(activated_at, ${at}::pg_catalog.timestamptz)
+      WHERE id = ${clubId}`;
+   // The first days are dated by the command's own sample, the one `activated_at` and `joined_at` hold.
+   if (started) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);

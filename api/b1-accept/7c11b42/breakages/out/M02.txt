@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36825 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (16 tests | 1 failed | 13 skipped) 69063ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 43765ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed | 13 skipped (16)
+   Start at  01:15:22
+   Duration  69.99s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 48, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 48,
++   "first": [
++     "active, collecting: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "active, collecting, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "active, open: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "active, open, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "active, past: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "active, past, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "active, past, a year on: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "active, past, a year on, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "withdrawn, collecting: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "withdrawn, collecting, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "withdrawn, open: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "withdrawn, open, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "withdrawn, past: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "withdrawn, past, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "withdrawn, past, a year on: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "withdrawn, past, a year on, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "removed by moderation, collecting: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "removed by moderation, collecting, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "removed by moderation, open: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "removed by moderation, open, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "removed by moderation, past: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "removed by moderation, past, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "removed by moderation, past, a year on: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "removed by moderation, past, a year on, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "held (T29), collecting: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "held (T29), collecting, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "held (T29), open: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "held (T29), open, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "held (T29), past: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "held (T29), past, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "held (T29), past, a year on: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "held (T29), past, a year on, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "its day suspended, collecting: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "its day suspended, collecting, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "its day suspended, open: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "its day suspended, open, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "its day suspended, past: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "its day suspended, past, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++     "its day suspended, past, a year on: approveRoster: status 500, not 200 with the revision after the decision (approving twice)",
++     "its day suspended, past, a year on, approveRoster: shape at status: 500 isn't an answer approveRoster declares",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1467:66
+    1465|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1466|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1467|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1468|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1469|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1a-mut/services/api
+
+ ❯ src/clubs/invitation.test.ts (25 tests | 1 failed) 316ms
+   ❯ what the five routes refuse before any transaction (4)
+     × names a bad token, never its value, on the page's route, the app's and on accepting, and reads no database for it 16ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 46 passed (47)
+   Start at  01:13:34
+   Duration  765ms (tests 48%, import 38%, transform 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/invitation.test.ts > what the five routes refuse before any transaction > names a bad token, never its value, on the page's route, the app's and on accepting, and reads no database for it
+AssertionError: /v1/invitations/web-preview undefined: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"token\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\"}",
+    "status": 400,
+  }
+
+ ❯ src/clubs/invitation.test.ts:229:56
+    227|         const sent = url === ACCEPT ? payload : token === undefined ? …
+    228|         const got = await answer(post(url, JSON.stringify(sent)));
+    229|         expect(got, `${url} ${JSON.stringify(token)}`).toMatchObject(i…
+       |                                                        ^
+    230|         expect(got.body).not.toMatch(/AAA/);
+    231|       }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
