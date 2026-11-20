@@ -9,8 +9,9 @@ import TadayoCore
 #endif
 
 /// The Tadayo API, as the app calls it. The generated `Client` stays internal and this is all the
-/// app sees: what B0 calls, in `TadayoCore`'s types, with every failure as an `APIFailure`, which
-/// carries nothing of the answer (T52). It grows with each slice.
+/// app sees: the account here, the clubs in `TadayoAPIClient+Clubs.swift`, in `TadayoCore`'s
+/// types, with every failure as an `APIFailure`, which carries nothing of the answer (T52). It
+/// grows with each slice.
 public struct TadayoAPIClient: AccountService {
     let client: Client
     let now: @Sendable () -> ContinuousClock.Instant
@@ -79,11 +80,7 @@ public struct TadayoAPIClient: AccountService {
     public func clubs() async throws(APIFailure) -> ClubList {
         try await call { client in
             switch try await client.listClubs() {
-            case .ok(let answer):
-                let list = try answer.body.json
-                return ClubList(
-                    serverClock: ServerClock(serverNow: list.serverNow, receivedAt: now()),
-                    isEmpty: list.clubs.isEmpty && list.invitations.isEmpty)
+            case .ok(let answer): return try ClubList(answer.body.json, receivedAt: now())
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
                 let code = try answer.body.json.code
@@ -95,7 +92,7 @@ public struct TadayoAPIClient: AccountService {
         }
     }
 
-    private func call<T>(_ body: (Client) async throws -> T) async throws(APIFailure) -> T {
+    func call<T>(_ body: (Client) async throws -> T) async throws(APIFailure) -> T {
         do {
             return try await body(client)
         } catch let failure as APIFailure {

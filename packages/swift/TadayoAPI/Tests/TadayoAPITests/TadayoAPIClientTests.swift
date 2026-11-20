@@ -102,11 +102,7 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
         _ transport: CannedTransport, auth: RefreshingAuth = RefreshingAuth(),
         stored: AuthSession? = nil
     ) -> TadayoAPIClient {
-        let store = InMemorySessionStore(stored ?? session(1))
-        return TadayoAPIClient(
-            serverURL: URL(string: "https://api-dev.tadayo.app")!,
-            session: SessionManager(auth: auth, store: store, now: { [start] in start }),
-            transport: transport)
+        .testing(transport, auth: auth, stored: stored ?? session(1), at: start)
     }
 
     // The contract's examples (packages/contracts/openapi.yaml).
@@ -333,8 +329,8 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
     @Test func aFailureSaysNothingOfTheAnswer() {
         // T52: nothing a failure prints can carry an address, a name or a token.
         for failure in [
-            APIFailure.network, .signedOut, .profileIncomplete, .versionConflict, .unavailable,
-            .refused,
+            APIFailure.network, .signedOut, .profileIncomplete, .versionConflict, .notFound,
+            .notAllowed, .rosterChanged, .clubFull, .invitationExpired, .unavailable, .refused,
         ] {
             #expect(String(describing: failure).allSatisfy { $0.isLetter })
         }

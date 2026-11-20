@@ -44,8 +44,12 @@ import Testing
     let named = account(name: "Ben", age: true, version: 3)
 
     func clubs(empty: Bool) -> ClubList {
-        ClubList(
-            serverClock: ServerClock(serverNow: start, receivedAt: .now), isEmpty: empty)
+        let waiting = MyInvitation(
+            invitationID: "inv_kt_leila", clubName: "Kitchen table", inviterName: "Ben",
+            state: .waiting)
+        return ClubList(
+            serverClock: ServerClock(serverNow: start, receivedAt: .now), clubs: [],
+            invitations: empty ? [] : [waiting])
     }
 
     func root(
