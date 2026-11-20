@@ -40,9 +40,9 @@ All on `dev` since the api lane's B1 PRs. Each is called through `TadayoAPIClien
 | `GET /v1/clubs/{club_id}` | `getClub` (`ClubDetail`: `roster_version`, `can_propose`, `open_revision_id`) | G05-club-details |
 | `GET /v1/clubs/{club_id}/members` | `listMembers` (`Member`, in the server's `position`) | G05-members |
 | `GET /v1/rosters/{revision_id}` | `getRosterRevision` (the exact roster: members and `Candidate`s, each candidate's `invitation` (`CandidateInvitation`, `CandidateLinkState`) for its proposer only; `my_decision`; never who decided) | G01-invite-people, G03-approve, G05-members-proposed |
-| `POST /v1/rosters/{revision_id}/approvals`, `/declines` | `approveRoster` (VERSION_CONFLICT, ROSTER_CHANGED, CLUB_FULL besides the usual), `declineRoster` (ROSTER_CHANGED) | G03-approve |
+| `POST /v1/rosters/{revision_id}/approvals`, `/declines` | `approveRoster` (VERSION_CONFLICT, ROSTER_CHANGED, CLUB_FULL besides the usual), `declineRoster` (VERSION_CONFLICT, ROSTER_CHANGED) | G03-approve |
 | `POST /v1/invitations/preview` | `previewInvitation`, the token in the body: `open`, `changed`, `waiting`, `expired`, `full`, `did_not_go_ahead` or `joined`; NOT_FOUND for an unknown, revoked, replaced or used link (T14) | G02, G03-waiting, G03-declined |
-| `POST /v1/invitations/accept` | `acceptInvitation`: `joined`, `waiting`, or `changed` when the account's name differs (FQ66) | G02, G03-waiting, G02-changed |
+| `POST /v1/invitations/accept` | `acceptInvitation`: `joined`, `waiting`, or `changed` when the account's name differs (FQ66); VERSION_CONFLICT, ROSTER_CHANGED, CLUB_FULL and INVITATION_EXPIRED (410) besides the usual | G02, G03-waiting, G02-changed |
 | `POST /v1/clubs/{club_id}/leave` | `leaveClub` | Not in B1: `G05-leave` is B6's (T26) |
 
 Members' photographs (`getMemberAvatar`, from `Person.avatar_version`) come with B3, when profile photos upload; until then no account has one and every row shows the avatar's initial (handoff 1's fallback).

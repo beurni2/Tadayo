@@ -95,7 +95,8 @@
 
             func clubs() async throws(APIFailure) -> ClubList {
                 ClubList(
-                    serverClock: ServerClock(serverNow: Date(), receivedAt: .now), isEmpty: true)
+                    serverClock: ServerClock(serverNow: Date(), receivedAt: .now), clubs: [],
+                    invitations: [])
             }
         }
     }
