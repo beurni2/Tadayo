@@ -3,8 +3,10 @@ import OpenAPIRuntime
 import TadayoCore
 
 /// Stage B1's club calls (docs/plans/ios-b1-clubs.md section 3). Each answer the contract
-/// documents becomes `TadayoCore`'s type or an `APIFailure`; an answer it doesn't, or one whose
-/// content breaks it (a date that isn't one, a link that isn't an invitation link), is refused.
+/// documents becomes `TadayoCore`'s type or an `APIFailure`. An answer it doesn't is refused:
+/// an undocumented status, an error code the operation doesn't document for that status (as
+/// `clubs()` and `update()` refuse one), or content that breaks it (a date that isn't one, a link
+/// that isn't exactly an invitation link).
 extension TadayoAPIClient: ClubService {
     public func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
         async throws(APIFailure) -> ClubDetail
@@ -16,8 +18,10 @@ extension TadayoAPIClient: ClubService {
             {
             case .created(let answer): return try ClubDetail(answer.body.json, receivedAt: now())
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
-            case .conflict(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
+            case .conflict(let answer):
+                throw Self.failure(try answer.body.json.code, among: [])
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
             case .undocumented(let status, _): throw Self.failure(status: status)
@@ -30,7 +34,8 @@ extension TadayoAPIClient: ClubService {
             switch try await client.getClub(path: .init(clubId: clubID)) {
             case .ok(let answer): return try ClubDetail(answer.body.json, receivedAt: now())
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
@@ -44,7 +49,8 @@ extension TadayoAPIClient: ClubService {
             switch try await client.listMembers(path: .init(clubId: clubID)) {
             case .ok(let answer): return try MemberList(answer.body.json, receivedAt: now())
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
@@ -66,9 +72,11 @@ extension TadayoAPIClient: ClubService {
             {
             case .created(let answer): return try RosterRevision(answer.body.json)
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
-            case .conflict(let answer): throw Self.failure(try answer.body.json.code)
+            case .conflict(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.versionConflict, .clubFull])
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
             case .undocumented(let status, _): throw Self.failure(status: status)
@@ -84,11 +92,17 @@ extension TadayoAPIClient: ClubService {
                 path: .init(clubId: clubID), headers: .init(idempotencyKey: key.description),
                 body: .json(.init(candidateId: candidateID)))
             {
-            case .created(let answer): return try InvitationLink(answer.body.json)
+            case .created(let answer):
+                let link = try InvitationLink(answer.body.json)
+                guard link.candidateID == candidateID else { throw APIFailure.refused }
+                return link
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(
+                    try answer.body.json.code, among: [.profileIncomplete, .notAllowed])
             case .notFound: throw APIFailure.notFound
-            case .conflict(let answer): throw Self.failure(try answer.body.json.code)
+            case .conflict(let answer):
+                throw Self.failure(try answer.body.json.code, among: [])
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
             case .undocumented(let status, _): throw Self.failure(status: status)
@@ -104,7 +118,9 @@ extension TadayoAPIClient: ClubService {
                     throw APIFailure.refused
                 }
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(
+                    try answer.body.json.code, among: [.profileIncomplete, .notAllowed])
             case .notFound: throw APIFailure.notFound
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
@@ -118,7 +134,8 @@ extension TadayoAPIClient: ClubService {
             switch try await client.getRosterRevision(path: .init(revisionId: revisionID)) {
             case .ok(let answer): return try RosterRevision(answer.body.json)
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
@@ -138,9 +155,12 @@ extension TadayoAPIClient: ClubService {
             {
             case .ok(let answer): return try RosterRevision(answer.body.json)
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
-            case .conflict(let answer): throw Self.failure(try answer.body.json.code)
+            case .conflict(let answer):
+                throw Self.failure(
+                    try answer.body.json.code, among: [.versionConflict, .rosterChanged, .clubFull])
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
             case .undocumented(let status, _): throw Self.failure(status: status)
@@ -159,9 +179,12 @@ extension TadayoAPIClient: ClubService {
             {
             case .ok(let answer): return try RosterRevision(answer.body.json)
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
-            case .conflict(let answer): throw Self.failure(try answer.body.json.code)
+            case .conflict(let answer):
+                throw Self.failure(
+                    try answer.body.json.code, among: [.versionConflict, .rosterChanged])
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
             case .undocumented(let status, _): throw Self.failure(status: status)
@@ -174,7 +197,8 @@ extension TadayoAPIClient: ClubService {
             switch try await client.previewInvitation(body: .json(.init(token: token.secret))) {
             case .ok(let answer): return InvitationPreview(try answer.body.json)
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
@@ -196,9 +220,12 @@ extension TadayoAPIClient: ClubService {
             {
             case .ok(let answer): return InvitationAcceptance(try answer.body.json)
             case .unauthorized: throw APIFailure.signedOut
-            case .forbidden(let answer): throw Self.failure(try answer.body.json.code)
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
             case .notFound: throw APIFailure.notFound
-            case .conflict(let answer): throw Self.failure(try answer.body.json.code)
+            case .conflict(let answer):
+                throw Self.failure(
+                    try answer.body.json.code, among: [.versionConflict, .rosterChanged, .clubFull])
             case .gone: throw APIFailure.invitationExpired
             case .tooManyRequests: throw APIFailure.unavailable
             case .badRequest: throw APIFailure.refused
@@ -207,20 +234,21 @@ extension TadayoAPIClient: ClubService {
         }
     }
 
-    /// The failure an error body's code names. A code the screens have no words of their own for
-    /// (`IDEMPOTENCY_CONFLICT` among them, which means this key went with another body) is
-    /// refused.
-    static func failure(_ code: Components.Schemas.ErrorCode) -> APIFailure {
-        switch code {
-        case .unauthenticated: .signedOut
+    /// The failure an error body's code names, when the operation documents that code for the
+    /// answer's status (`packages/contracts/src/operations-clubs.ts`, and `standardErrors` in
+    /// `operation.ts`); any other code is refused. `IDEMPOTENCY_CONFLICT`, which every command
+    /// documents for a 409 and which means this key went with another body, is never in `codes`,
+    /// so it is refused too.
+    static func failure(
+        _ code: Components.Schemas.ErrorCode, among codes: Set<Components.Schemas.ErrorCode>
+    ) -> APIFailure {
+        guard codes.contains(code) else { return .refused }
+        return switch code {
         case .profileIncomplete: .profileIncomplete
         case .notAllowed: .notAllowed
-        case .notFound: .notFound
         case .versionConflict: .versionConflict
         case .rosterChanged: .rosterChanged
         case .clubFull: .clubFull
-        case .invitationExpired: .invitationExpired
-        case .rateLimited: .unavailable
         default: .refused
         }
     }
@@ -239,8 +267,7 @@ extension Person {
 extension Occurrence {
     /// Refused when `local_date` isn't a date: the app never guesses a day (T41).
     init(_ day: Components.Schemas.Occurrence) throws(APIFailure) {
-        guard let date = LocalDate(iso: day.localDate),
-            let phase = OccurrencePhase(rawValue: day.phase.rawValue)
+        guard let date = LocalDate(iso: day.localDate), let phase = OccurrencePhase(day.phase)
         else { throw .refused }
         self.init(
             id: day.id, clubID: day.clubId, star: Person(day.star), localDate: date,
@@ -258,7 +285,7 @@ extension ClubRef {
 
 extension ClubSummary {
     init(_ club: Components.Schemas.ClubSummary) throws(APIFailure) {
-        guard let state = ClubState(rawValue: club.state.rawValue) else { throw .refused }
+        guard let state = ClubState(club.state) else { throw .refused }
         self.init(
             ref: ClubRef(
                 id: club.id, name: club.name, timezone: club.timezone,
@@ -271,9 +298,7 @@ extension ClubSummary {
 
 extension MyInvitation {
     init(_ invitation: Components.Schemas.MyInvitation) throws(APIFailure) {
-        guard let state = MyInvitationState(rawValue: invitation.state.rawValue) else {
-            throw .refused
-        }
+        guard let state = MyInvitationState(invitation.state) else { throw .refused }
         self.init(
             invitationID: invitation.invitationId, clubName: invitation.clubName,
             inviterName: invitation.inviterName, state: state)
@@ -330,16 +355,14 @@ extension MemberList {
 
 extension RosterRevision {
     init(_ revision: Components.Schemas.RosterRevision) throws(APIFailure) {
-        guard let state = RosterRevisionState(rawValue: revision.state.rawValue),
-            let decision = RosterDecision(rawValue: revision.myDecision.rawValue)
+        guard let state = RosterRevisionState(revision.state),
+            let decision = RosterDecision(revision.myDecision)
         else { throw .refused }
         var candidates: [Candidate] = []
         for candidate in revision.candidates {
             var invitation: CandidateInvitation?
             if let link = candidate.invitation {
-                guard let linkState = CandidateLinkState(rawValue: link.state.rawValue) else {
-                    throw .refused
-                }
+                guard let linkState = CandidateLinkState(link.state) else { throw .refused }
                 invitation = CandidateInvitation(
                     id: link.id, state: linkState, expiresAt: link.expiresAt)
             }
@@ -358,14 +381,16 @@ extension RosterRevision {
 }
 
 extension InvitationLink {
-    /// Refused when the URL isn't exactly an invitation link with a token: the app never shares
-    /// anything else.
+    /// Refused when the URL isn't exactly an invitation link with a token, character for
+    /// character as the contract's pattern has it (`^https://tadayo\.app/i#[A-Za-z0-9_-]{43,128}$`):
+    /// the app never stores or shares anything else, not even the leniencies `InvitationToken`
+    /// allows a pasted link.
     init(_ link: Components.Schemas.InvitationLink) throws(APIFailure) {
         var url: URL?
         if let text = link.url {
-            guard InvitationToken(link: text) != nil, let parsed = URL(string: text) else {
-                throw .refused
-            }
+            guard let token = InvitationToken(link: text),
+                text == "https://tadayo.app/i#\(token.secret)", let parsed = URL(string: text)
+            else { throw .refused }
             url = parsed
         }
         self.init(
@@ -376,9 +401,12 @@ extension InvitationLink {
 
 extension InvitationRosterEntry {
     init(_ entry: Components.Schemas.InvitationRosterEntry) {
-        self.init(
-            name: entry.name, kind: entry.kind == .member ? .member : .candidate,
-            isYou: entry.isYou)
+        let kind: InvitationRosterEntry.Kind =
+            switch entry.kind {
+            case .member: .member
+            case .candidate: .candidate
+            }
+        self.init(name: entry.name, kind: kind, isYou: entry.isYou)
     }
 }
 
@@ -424,4 +452,37 @@ extension InvitationAcceptance {
         case .changed: self = .changed
         }
     }
+}
+
+// MARK: The contract's enumerations, by their values
+
+// Each maps a generated value to `TadayoCore`'s by its raw value, nil for one `TadayoCore` doesn't
+// know yet (the lanes' agreement: the app learns a value before the server sends it).
+// `ClubCallsTests.everyValueTheContractNamesHasItsOwnCase` maps every case of each, so a contract
+// that adds a value fails the Swift tests until `TadayoCore` learns it.
+
+extension ClubState {
+    init?(_ state: Components.Schemas.ClubState) { self.init(rawValue: state.rawValue) }
+}
+
+extension OccurrencePhase {
+    init?(_ phase: Components.Schemas.OccurrencePhase) { self.init(rawValue: phase.rawValue) }
+}
+
+extension MyInvitationState {
+    init?(_ state: Components.Schemas.MyInvitationState) { self.init(rawValue: state.rawValue) }
+}
+
+extension RosterRevisionState {
+    init?(_ state: Components.Schemas.RosterRevisionState) {
+        self.init(rawValue: state.rawValue)
+    }
+}
+
+extension RosterDecision {
+    init?(_ decision: Components.Schemas.RosterDecision) { self.init(rawValue: decision.rawValue) }
+}
+
+extension CandidateLinkState {
+    init?(_ state: Components.Schemas.CandidateLinkState) { self.init(rawValue: state.rawValue) }
 }

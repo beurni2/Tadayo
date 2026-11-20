@@ -22,6 +22,7 @@ import Testing
 
     @Test func theHostAndSchemeAreReadInAnyCase() {
         #expect(InvitationToken(link: "HTTPS://Tadayo.App/i#\(token)")?.secret == token)
+        #expect(InvitationToken(link: "https://TADAYO.APP/i#\(token)")?.secret == token)
     }
 
     @Test func anythingElseIsNoInvitation() {
@@ -31,6 +32,11 @@ import Testing
             "https://tadayo.app.example.com/i#\(token)",
             "https://example.com/i#\(token)",
             "https://tadayo.app:443/i#\(token)",
+            "https://tadayo.app:/i#\(token)",
+            "https://tadayo%2Eapp/i#\(token)",
+            "https://tadayo.app%2Fi#\(token)",
+            "https://tadayo.app/i##\(token)",
+            "https://tadayo.app/%69#\(token)",
             "https://someone@tadayo.app/i#\(token)",
             "https://tadayo.app/I#\(token)",
             "https://tadayo.app/i/#\(token)",

@@ -342,18 +342,22 @@ public struct InvitationToken: Sendable, Hashable, CustomStringConvertible,
         self.secret = secret
     }
 
-    /// The token of an invitation link, `https://tadayo.app/i#<token>` and nothing else: no
-    /// other host, port, user, path or query, and the token only in the fragment. Spaces and line
-    /// breaks around a pasted link are ignored.
+    /// The token of an invitation link, `https://tadayo.app/i#<token>` and nothing else, read as
+    /// characters, not through a URL parser: no other host or spelling of it (no escape, no port,
+    /// not even an empty one, no user), no other path or query, and the token alone after `#`.
+    /// Two leniencies, both for a link a person pastes or a system hands over: the spaces and line
+    /// breaks around it are ignored, and the scheme and host may be in any case, as URLs allow
+    /// (`HTTPS://Tadayo.App`); the path `/i` and the token are exact.
     public init?(link: String) {
-        let text = link.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let parts = URLComponents(string: text), parts.scheme?.lowercased() == "https",
-            parts.host?.lowercased() == "tadayo.app", parts.port == nil, parts.user == nil,
-            parts.password == nil, parts.percentEncodedPath == "/i",
-            parts.percentEncodedQuery == nil,
-            let fragment = parts.percentEncodedFragment
+        let text = Array(link.trimmingCharacters(in: .whitespacesAndNewlines).utf8)
+        let origin = Array("https://tadayo.app".utf8)
+        let path = Array("/i#".utf8)
+        guard text.count > origin.count + path.count,
+            text[..<origin.count].map(Self.lowercased) == origin,
+            Array(text[origin.count..<(origin.count + path.count)]) == path
         else { return nil }
-        self.init(secret: fragment)
+        // A byte that isn't UTF-8 decodes to U+FFFD, which `init(secret:)` refuses.
+        self.init(secret: String(decoding: text[(origin.count + path.count)...], as: UTF8.self))
     }
 
     /// The token of a link the system opened (a universal link) or a person pasted.
@@ -364,6 +368,10 @@ public struct InvitationToken: Sendable, Hashable, CustomStringConvertible,
     public var description: String { "InvitationToken" }
     public var debugDescription: String { "InvitationToken" }
     public var customMirror: Mirror { Mirror(self, children: [:]) }
+
+    private static func lowercased(_ byte: UInt8) -> UInt8 {
+        (UInt8(ascii: "A")...UInt8(ascii: "Z")).contains(byte) ? byte + 32 : byte
+    }
 
     private static let base64URL: Set<UInt8> = Set(
         Array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_".utf8))

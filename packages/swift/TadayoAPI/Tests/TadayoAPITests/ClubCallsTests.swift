@@ -168,6 +168,65 @@ import Testing
         #expect(revision.candidates.map(\.name) == ["Leila"])
     }
 
+    @Test func theMembersAreInPositionOrderWhateverOrderTheyCameIn() async throws {
+        var answer = try #require(
+            try JSONSerialization.jsonObject(
+                with: Data(ContractExample.json("listMembers.sunday_people").utf8))
+                as? [String: Any])
+        let members = try #require(answer["members"] as? [Any])
+        answer["members"] = Array(members.reversed())
+        let body = try JSONSerialization.data(withJSONObject: answer)
+        let list = try await api(
+            CannedTransport([.json(200, String(decoding: body, as: UTF8.self))])
+        ).members(of: "club_sunday_people")
+        #expect(
+            list.members.map(\.person.displayName) == [
+                "Ben", "Maya", "Alex", "Sam", "Debby", "Nina",
+            ])
+    }
+
+    @Test func aListWithNoClubIsEmpty() async throws {
+        let list = try await api(CannedTransport([example("listClubs.no_club")])).clubs()
+        #expect(list.isEmpty)
+        #expect(list.clubs.isEmpty)
+        #expect(list.invitations.isEmpty)
+    }
+
+    @Test func anActiveClubCarriesTheDayOpenNowAndTheNext() async throws {
+        let detail = try await api(CannedTransport([example("getClub.sunday_people")]))
+            .club("club_sunday_people")
+        #expect(detail.club.state == .active)
+        #expect(detail.club.memberCount == 6)
+        #expect(detail.club.openDay?.star.displayName == "Debby")
+        #expect(detail.club.openDay?.phase == .open)
+        #expect(detail.club.openDay?.localDate == LocalDate(year: 2026, month: 11, day: 6))
+        #expect(detail.club.nextDay?.star.displayName == "Nina")
+        #expect(detail.openRevisionID == nil)
+    }
+
+    @Test func everyValueTheContractNamesHasItsOwnCase() {
+        // A value the contract adds before `TadayoCore` knows it fails here, not as a refused
+        // answer on a phone (the lanes' agreement: the app learns a value first).
+        for state in Components.Schemas.ClubState.allCases {
+            #expect(ClubState(state) != nil, "\(state)")
+        }
+        for phase in Components.Schemas.OccurrencePhase.allCases {
+            #expect(OccurrencePhase(phase) != nil, "\(phase)")
+        }
+        for state in Components.Schemas.MyInvitationState.allCases {
+            #expect(MyInvitationState(state) != nil, "\(state)")
+        }
+        for state in Components.Schemas.RosterRevisionState.allCases {
+            #expect(RosterRevisionState(state) != nil, "\(state)")
+        }
+        for decision in Components.Schemas.RosterDecision.allCases {
+            #expect(RosterDecision(decision) != nil, "\(decision)")
+        }
+        for state in Components.Schemas.CandidateLinkState.allCases {
+            #expect(CandidateLinkState(state) != nil, "\(state)")
+        }
+    }
+
     // MARK: Proposing people and their links
 
     @Test func proposingSendsTheLabelsAndTheRosterVersionItRead() async throws {
@@ -225,17 +284,38 @@ import Testing
         #expect(link.invitationID == "inv_kt_leila")
     }
 
-    @Test func aLinkThatIsNotAnInvitationLinkIsRefused() async {
+    func linkAnswer(url: String, candidate: String = "cnd_kt_leila") -> CannedTransport.Answer {
+        let body: [String: String] = [
+            "invitation_id": "inv_kt_leila", "candidate_id": candidate, "url": url,
+            "expires_at": "2026-11-13T14:41:00Z",
+        ]
+        let data = try! JSONSerialization.data(withJSONObject: body)
+        return .json(201, String(decoding: data, as: UTF8.self))
+    }
+
+    @Test func aLinkThatIsNotExactlyAnInvitationLinkIsRefused() async {
+        // The server's link is held to the contract's pattern character for character: none of
+        // the leniencies a pasted link gets (spaces around it, the host's case), so the app never
+        // stores or shares a link another phone would read differently.
         for url in [
             "https://example.com/i#\(token)", "https://tadayo.app/i?t=\(token)",
             "http://tadayo.app/i#\(token)", "https://tadayo.app/i#short",
+            "https://tadayo.app/i#\(token)\n", " https://tadayo.app/i#\(token)",
+            "HTTPS://TADAYO.APP/i#\(token)", "https://tadayo%2Eapp/i#\(token)",
+            "https://tadayo.app:/i#\(token)",
         ] {
-            let body =
-                #"{"invitation_id":"inv_kt_leila","candidate_id":"cnd_kt_leila","url":"\#(url)","expires_at":"2026-11-13T14:41:00Z"}"#
             await #expect(throws: APIFailure.refused, "\(url)") {
-                try await api(CannedTransport([.json(201, body)])).createInvitation(
+                try await api(CannedTransport([linkAnswer(url: url)])).createInvitation(
                     for: "cnd_kt_leila", in: "club_kitchen_table", key: .make(at: start))
             }
+        }
+    }
+
+    @Test func aLinkForAnotherCandidateIsRefused() async {
+        let answer = linkAnswer(url: "https://tadayo.app/i#\(token)", candidate: "cnd_kt_sam")
+        await #expect(throws: APIFailure.refused) {
+            try await api(CannedTransport([answer])).createInvitation(
+                for: "cnd_kt_leila", in: "club_kitchen_table", key: .make(at: start))
         }
     }
 
@@ -276,6 +356,16 @@ import Testing
         ).rosterRevision("rev_kt_debby")
         #expect(revision.candidates.map(\.name) == ["Debby"])
         #expect(revision.proposedBy == ben)
+        #expect(revision.myDecision == .pending)
+    }
+
+    @Test func aMemberSeesARevisionForAnotherNameWithoutItsLink() async throws {
+        let revision = try await api(CannedTransport([example("getRosterRevision.another_name")]))
+            .rosterRevision("rev_kt_debby")
+        #expect(revision.club.myMembershipID == "mem_kt_maya")
+        #expect(revision.candidates.map(\.name) == ["Debby"])
+        #expect(revision.candidates.first?.proposedBy == ben)
+        #expect(revision.candidates.first?.invitation == nil)
         #expect(revision.myDecision == .pending)
     }
 
@@ -465,6 +555,19 @@ import Testing
                 .versionConflict
             ),
             (.accept, error("IDEMPOTENCY_CONFLICT"), .refused),
+            (.revokeInvitation, .json(403, #"{"code":"PROFILE_INCOMPLETE"}"#), .profileIncomplete),
+            (.rosterRevision, .json(403, #"{"code":"PROFILE_INCOMPLETE"}"#), .profileIncomplete),
+            // A code the operation doesn't document for that status is refused, whatever it
+            // names, as `clubs()` refuses one (`TadayoAPIClientTests`).
+            (.club, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
+            (.members, .json(403, #"{"code":"UNAUTHENTICATED"}"#), .refused),
+            (.accept, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
+            (.createClub, error("VERSION_CONFLICT"), .refused),
+            (.createInvitation, error("CLUB_FULL"), .refused),
+            (.propose, error("ROSTER_CHANGED"), .refused),
+            (.decline, error("CLUB_FULL"), .refused),
+            (.approve, error("UNAUTHENTICATED"), .refused),
+            (.approve, error("NOT_FOUND"), .refused),
         ]
         for (operation, answer, failure) in cases {
             await #expect(throws: failure, "\(operation) \(answer)") {
@@ -503,14 +606,27 @@ import Testing
                         expiresAt: start.addingTimeInterval(7200)))
             ])
             let transport = CannedTransport([unauthenticated, example(operation.example)])
-            try await operation.call(on: api(transport, auth: auth), self)
-            let key = HTTPField.Name("Idempotency-Key")!
+            // A key the action made a minute before the call, so no key the call could make
+            // for itself matches it.
+            let key = IdempotencyKey.make(at: start.addingTimeInterval(-60))
+            try await operation.call(on: api(transport, auth: auth), self, key: key)
+            let header = HTTPField.Name("Idempotency-Key")!
             #expect(transport.sent.count == 2, "\(operation)")
             #expect(transport.sent.map(\.bearer) == ["Bearer access-1", "Bearer access-2"])
             #expect(
-                transport.sent.first?.request.headerFields[key]
-                    == transport.sent.last?.request.headerFields[key], "\(operation)")
+                transport.sent.map { $0.request.headerFields[header] }
+                    == [key.description, key.description], "\(operation)")
             #expect(transport.sent.first?.body == transport.sent.last?.body, "\(operation)")
+        }
+    }
+
+    @Test func aReadCarriesNoKey() async throws {
+        for operation in ClubOperation.allCases where !operation.isCommand {
+            let transport = CannedTransport([example(operation.example)])
+            try await operation.call(on: api(transport), self)
+            #expect(
+                transport.sent.first?.request.headerFields[HTTPField.Name("Idempotency-Key")!]
+                    == nil, "\(operation)")
         }
     }
 
@@ -549,8 +665,10 @@ import Testing
         /// Every one but creating a club, whose answers the contract lists without a 404.
         var documents404: Bool { self != .createClub }
 
-        func call(on api: TadayoAPIClient, _ test: ClubCallsTests) async throws {
-            let key = IdempotencyKey.make(at: test.start)
+        func call(on api: TadayoAPIClient, _ test: ClubCallsTests, key: IdempotencyKey? = nil)
+            async throws
+        {
+            let key = key ?? IdempotencyKey.make(at: test.start)
             switch self {
             case .createClub:
                 _ = try await api.createClub(
