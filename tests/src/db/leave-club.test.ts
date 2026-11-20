@@ -389,16 +389,15 @@ describe("the receipt of a leave (T19)", () => {
     });
   });
 
-  it("refuses another choice under the key of a leave, and keeps the first", async () => {
+  it("gives the neutral not-found to another choice under the key of a leave, and keeps the first", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 3);
       const key = randomUUID();
-      await leaving(tx, user(w, 1), w.club, "keep", key);
-      expect(await refusal(leaving(tx, user(w, 1), w.club, "withdraw", key))).toEqual({
-        code: "IDEMPOTENCY_CONFLICT",
-        facts: {},
-      });
+      const first = await leaving(tx, user(w, 1), w.club, "keep", key);
+      // Not a conflict: to someone who isn't a member, a used key says no more than a new one (T14).
+      expect(await refusal(leaving(tx, user(w, 1), w.club, "withdraw", key))).toEqual(NONE);
       expect((await membership(tx, member(w, 1)))?.contributions).toBe("keep");
+      expect(await leaving(tx, user(w, 1), w.club, "keep", key)).toEqual(first);
     });
   });
 
@@ -430,7 +429,11 @@ describe("the receipt of a leave (T19)", () => {
       expect(await refusal(leaving(tx, user(w, 1), w.club, "withdraw", key))).toEqual(NONE);
       expect(await membership(tx, again?.interval_id ?? "")).toMatchObject({ state: "active" });
       // A new key leaves the new interval, and the first interval's row is as it ended.
-      await leaving(tx, user(w, 1), w.club, "withdraw");
+      const second = randomUUID();
+      const left = await leaving(tx, user(w, 1), w.club, "withdraw", second);
+      // The first leave's key stays unanswered now that both intervals have ended; the second's is answered.
+      expect(await refusal(leaving(tx, user(w, 1), w.club, "keep", key))).toEqual(NONE);
+      expect(await leaving(tx, user(w, 1), w.club, "withdraw", second)).toEqual(left);
       expect(await membership(tx, again?.interval_id ?? "")).toMatchObject({
         state: "left",
         contributions: "withdraw",
@@ -629,6 +632,26 @@ describe("found in the review of PR #78", () => {
     });
   });
 
+  it("carries a name's revision as that when the leave is committed, with the checks kept for the commit", async () => {
+    const s = await alone(async (tx) => {
+      const w = await clubOf(tx, 3);
+      const first = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+      const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(first, 0));
+      const samuel = await newUser(plain(tx), "Samuel");
+      await acceptWith(tx, clock, samuel, made.token, first.id, 1);
+      return { w, first };
+    });
+    await leavingAlone(user(s.w, 2), s.w.club);
+    const tx = db as unknown as WorldTx;
+    const next = await openOf(tx, s.w.club);
+    expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+    expect(next).toMatchObject({
+      members: [member(s.w, 0), member(s.w, 1)],
+      candidates: [{ id: candidate(s.first, 0), label: "Samuel", accepted: false }],
+      approvals: [],
+    });
+  });
+
   it("tells someone who joined by a link and left nothing through that link, and keeps no receipt (T14)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 3);
@@ -669,6 +692,40 @@ describe("found in the review of PR #78", () => {
     });
   });
 
+  it("reads a used key alike for a club nobody has, a club left and a suspended one the account is in (T14)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const other = await clubOf(tx, 2);
+      const [second] = await joinByRoster(
+        plain(tx),
+        other.club,
+        { user: user(other, 0), interval: member(other, 0) },
+        [{ user: user(w, 1), label: "Maya" }],
+        new Date("2026-11-10T00:00:00Z"),
+      );
+      const gone = await clubOf(tx, 2);
+      const key = randomUUID();
+      // Maya leaves one club under the key, and then a second one under another.
+      await leaving(tx, user(w, 1), w.club, "keep", key);
+      await joinByRoster(
+        plain(tx),
+        gone.club,
+        { user: user(gone, 0), interval: member(gone, 0) },
+        [{ user: user(w, 1), label: "Maya" }],
+        new Date("2026-11-10T00:00:00Z"),
+      );
+      await leaving(tx, user(w, 1), gone.club);
+      await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id = ${other.club}`;
+      for (const club of [other.club, gone.club, "club_nobody_has"]) {
+        for (const choice of ["keep", "withdraw"] as const) {
+          expect(await refusal(leaving(tx, user(w, 1), club, choice, key))).toEqual(NONE);
+        }
+      }
+      expect(await membership(tx, second ?? "")).toMatchObject({ state: "active", left_at: null });
+      expect(await receiptsOf(tx, user(w, 1))).toHaveLength(2);
+    });
+  });
+
   it("keeps the club in the receipt: the key of a leave leaves no other club", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 3);
@@ -694,8 +751,8 @@ describe("found in the review of PR #78", () => {
   it("ends a proposal with nothing left to carry, though its proposer stays", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 3);
-      // Ben proposes Sam; Maya proposes nobody new beside Sam, so the open revision is Maya's and holds
-      // only Ben's candidate.
+      // Ben proposes Sam; Maya proposes Nina beside Sam, and Nina then ends (by rows: no command ends a
+      // candidate and leaves its revision open), so the open revision is Maya's and holds only Ben's Sam.
       const first = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
       const open = await propose(tx, clock, user(w, 1), w.club, ["Nina"]);
       await plain(tx)`

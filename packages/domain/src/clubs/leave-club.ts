@@ -8,8 +8,9 @@
 //    isn't suspended (FQ122).
 // 2. The receipt (T19). For a member, the rule every club command has (`reserveAsMember`, FQ112). For
 //    anyone else, the receipt of this same request is answered as it was stored: a retry of a leave that
-//    went through, whose first answer is still the caller's; not to an account that holds a later interval
-//    in the club, suspended since (FQ112). With no such receipt, NOT_FOUND, and nothing
+//    went through, whose first answer is still the caller's; not once the account has begun another
+//    interval in the club, whether that one is active, ended or in a club suspended since (FQ112). With no
+//    such receipt, and for a key the account used for another request, NOT_FOUND, and nothing
 //    is kept: a stranger, a former member with a new key, an account being deleted, a suspended club and
 //    an id nobody has all read alike (T14).
 // 3. The club's row, `FOR UPDATE`. Then who is asking, again: the same interval, or NOT_FOUND.
@@ -109,17 +110,27 @@ export async function leaveClub(
   // 1. Who is asking. 2. The receipt.
   const asking = await activeMember(tx, userId, clubId);
   if (asking === null) {
-    // An interval the account still holds there (the club is suspended) can't have left: a key that an
-    // earlier interval left with names nothing to it, the same body or another, as it names nothing while
-    // the club isn't suspended (FQ112, FQ122).
-    const [held] = await bound(tx)`
-      SELECT 1 AS found FROM app.memberships m
-       WHERE m.club_id = ${clubId} AND m.user_id = ${userId} AND m.state = 'active'`;
-    if (held !== undefined) throw new Refused("NOT_FOUND");
-    const stored = await reserveReceipt(tx, receipt, await clock.sample(tx));
-    if (stored !== null) return stored.replay;
-    // The reservation goes with the refusal.
-    throw new Refused("NOT_FOUND");
+    // Only the retry of this very leave is answered, and only while the account has begun no interval in
+    // the club since. Everything else is NOT_FOUND, a key used for another request included: to someone
+    // who isn't a member, a club reads the same whether it is suspended, left or was never there (T14).
+    let stored: { readonly replay: Json } | null;
+    try {
+      stored = await reserveReceipt(tx, receipt, await clock.sample(tx));
+    } catch (error) {
+      if (error instanceof Refused && error.code === "IDEMPOTENCY_CONFLICT") throw new Refused("NOT_FOUND");
+      throw error;
+    }
+    // With no receipt, the reservation goes with the refusal.
+    if (stored === null) throw new Refused("NOT_FOUND");
+    const [since] = await bound(tx)`
+      SELECT 1 AS found
+        FROM app.idempotency_receipts r
+        JOIN app.memberships m ON m.user_id = r.actor_user_id AND m.club_id = ${clubId}
+       WHERE r.actor_user_id = ${userId} AND r.operation = 'leaveClub'
+         AND r.idempotency_key = ${input.key}::pg_catalog.uuid AND m.joined_at >= r.created_at
+       LIMIT 1`;
+    if (since !== undefined) throw new Refused("NOT_FOUND");
+    return stored.replay;
   }
   const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
   if (first !== null) return first.replay;
