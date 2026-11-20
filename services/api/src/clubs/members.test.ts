@@ -11,6 +11,7 @@ import { successExamples } from "../../../../packages/contracts/src/fixtures/exa
 import type { ChosenDay, MemberRow, Roster } from "@tadayo/domain";
 import { describe, expect, it } from "vitest";
 import { membersBody } from "./members.ts";
+import { revisionSight } from "./revision-example.ts";
 
 type Body = Record<string, unknown>;
 
@@ -55,17 +56,15 @@ function roster(value: Body): Roster {
         nextUp: member["next_up"] as boolean,
       };
     }),
+    openRevision: value["open_revision"] === undefined ? null : revisionSight(value["open_revision"] as Body),
   };
 }
 
-/** The example without what this slice doesn't send yet: each member's `cover` (FQ41) and `open_revision` (B1). */
+/** The example without what isn't sent yet: each member's `cover` (FQ41). */
 function sentNow(value: Body): Body {
   const without = (body: Body, field: string): Body =>
     Object.fromEntries(Object.entries(body).filter(([key]) => key !== field));
-  return {
-    ...without(value, "open_revision"),
-    members: (value["members"] as Body[]).map((member) => without(member, "cover")),
-  };
+  return { ...value, members: (value["members"] as Body[]).map((member) => without(member, "cover")) };
 }
 
 describe("the roster's serializer against the contract's examples (T55)", () => {
@@ -76,11 +75,17 @@ describe("the roster's serializer against the contract's examples (T55)", () => 
     expect(examples.map(([name]) => name)).toEqual(expect.arrayContaining(["sunday_people", "first_days"]));
   });
 
-  it.each(examples)("makes %s field for field, but for the cover and the open revision", (_name, example) => {
+  it.each(examples)("makes %s field for field, but for the cover", (_name, example) => {
     const value = example.value as Body;
     const made = membersBody(Temporal.Instant.from(value["server_now"] as string), roster(value));
     expect(made).toEqual(sentNow(value));
     expect(Members.safeParse(made).success).toBe(true);
+  });
+
+  it("sends the club's open revision where the contract's example has one, and only there", () => {
+    const withOne = examples.filter(([, example]) => (example.value as Body)["open_revision"] !== undefined);
+    expect(withOne.length).toBeGreaterThan(0);
+    expect(withOne.length).toBeLessThan(examples.length);
   });
 
   it("sends the server's instant in whole seconds, rounded down", () => {
@@ -101,6 +106,7 @@ describe("the roster's serializer against the contract's examples (T55)", () => 
           nextUp: false,
         },
       ],
+      openRevision: null,
     }) as Body & { members: Body[] };
     expect(Object.keys(made).sort()).toEqual(["club", "members", "server_now"]);
     expect(made.members).toEqual([

@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
 // The roster's rows of the privacy matrix (B1's second slice: `proposeRoster`, `getRosterRevision`,
-// `createInvitation` and `revokeInvitation`; the contract's `RosterRevision`, `InvitationLink` and
+// `createInvitation` and `revokeInvitation`; B1's third: `approveRoster` and `declineRoster`; the contract's `RosterRevision`, `InvitationLink` and
 // `RevokedInvitation`; spec 04, 32; T7, T9, T14, T15, T19, T33, T55; handoff 1, handoff 4; FQ60, FQ71, FQ75,
 // FQ77, FQ80, FQ119): what each role must get, judged from the world's rows apart from the statements the
 // routes run.
@@ -20,6 +20,10 @@
 //   club's, then six people to the club's members and open candidates (A01, T6).
 // - Who makes or revokes a link: the member who proposed its candidate, and nobody else, whatever the
 //   link's state (T14): a link an account accepted with can't be revoked or replaced (handoff 4).
+// - Who approves or declines: whoever reads the revision, by the same rule, and nobody else. A newer
+//   revision is ROSTER_CHANGED with the newest one's id, another version VERSION_CONFLICT with the
+//   revision's; then a member's own decision is taken once, on an open revision, and any other request is
+//   answered with the revision as it stands (`decisionOutcome`).
 //
 // The leak scanner reads the same answers for ids, names and tokens the viewer may not see; it can't judge
 // a state, a decision or whose link an answer shows, so these rows do.
@@ -38,6 +42,8 @@ export const ROSTER_JUDGED: ReadonlySet<string> = new Set([
   "getRosterRevision",
   "createInvitation",
   "revokeInvitation",
+  "approveRoster",
+  "declineRoster",
 ]);
 
 /** A club holds at most six people, its candidates still open counted (A01, T6). */
@@ -70,8 +76,19 @@ export interface LinkRows {
   revoked: boolean;
   replaced: boolean;
   bound: boolean;
+  /** The account that accepted with it, or null. */
+  boundTo: string | null;
+  /** That account's profile name now, or null. */
+  boundName: string | null;
   /** The SHA-256 of its token, in hex. */
   hash: string;
+}
+
+export interface CandidateRows {
+  club: string;
+  state: string;
+  /** The interval that proposed the candidate. */
+  proposer: string;
 }
 
 /** The roster's rows of some clubs, as the judges read them. */
@@ -79,6 +96,8 @@ export interface RosterWorld {
   revisions: Map<string, RevisionRows>;
   /** Every link, by id. */
   links: Map<string, LinkRows>;
+  /** Every candidate, by id. */
+  candidates: Map<string, CandidateRows>;
 }
 
 /** Reads the roster's rows of `clubs` on `db`, a connection of the test's own. */
@@ -121,14 +140,21 @@ export async function rosterWorldOf(db: WorldTx, clubs: readonly string[]): Prom
       revoked: boolean;
       replaced: boolean;
       bound: boolean;
+      bound_to: string | null;
+      bound_name: string | null;
       hash: string;
     }[]
   >`
     SELECT i.id, i.candidate_id AS candidate, k.club_id AS club, k.proposed_by_interval_id AS proposer, i.expires_at,
            i.revoked_at IS NOT NULL AS revoked, i.replaced_by_id IS NOT NULL AS replaced,
-           i.bound_user_id IS NOT NULL AS bound, pg_catalog.encode(i.token_sha256, 'hex') AS hash
+           i.bound_user_id IS NOT NULL AS bound, i.bound_user_id AS bound_to,
+           (SELECT u.display_name FROM app.users u WHERE u.id = i.bound_user_id) AS bound_name,
+           pg_catalog.encode(i.token_sha256, 'hex') AS hash
       FROM app.invitations i JOIN app.candidates k ON k.id = i.candidate_id
      WHERE k.club_id IN ${db(clubs)}`;
+  const openRows = await db<{ id: string; club: string; state: string; proposer: string }[]>`
+    SELECT id, club_id AS club, state, proposed_by_interval_id AS proposer
+      FROM app.candidates WHERE club_id IN ${db(clubs)}`;
   return {
     revisions: new Map(
       revisionRows.map((row) => [
@@ -167,10 +193,13 @@ export async function rosterWorldOf(db: WorldTx, clubs: readonly string[]): Prom
           revoked: row.revoked,
           replaced: row.replaced,
           bound: row.bound,
+          boundTo: row.bound_to,
+          boundName: row.bound_name,
           hash: row.hash,
         },
       ]),
     ),
+    candidates: new Map(openRows.map((row) => [row.id, { club: row.club, state: row.state, proposer: row.proposer }])),
   };
 }
 
@@ -314,6 +343,53 @@ const FULL = pinned(409, "Conflict", '{"code":"CLUB_FULL"}');
 const NOT_ALLOWED = pinned(403, "Forbidden", '{"code":"NOT_ALLOWED"}');
 const versionConflict = (current: number) =>
   pinned(409, "Conflict", `{"code":"VERSION_CONFLICT","current_version":${String(current)}}`);
+
+const rosterChanged = (current: string) =>
+  pinned(409, "Conflict", `{"code":"ROSTER_CHANGED","current_id":"${current}"}`);
+
+/** The newest revision of the chain that replaced `id`: the one nothing has superseded. */
+export function newestOf(roster: RosterWorld, id: string): string {
+  let current = id;
+  for (let hops = 0; hops < roster.revisions.size; hops += 1) {
+    const next = roster.revisions.get(current)?.supersededBy ?? null;
+    if (next === null) break;
+    current = next;
+  }
+  return current;
+}
+
+/**
+ * What an approval or a decline of the revision `id` at `expected` must get from the rows before it: a
+ * pinned refusal; "decides", when the caller's own decision is still to make on an open revision; or
+ * "stands", a 200 that changes nothing (the revision has ended, or the caller has decided: the contract
+ * gives these commands no refusal for it). Whoever can't read the revision gets the neutral not-found
+ * before anything else (FQ119, T14).
+ */
+export function decisionOutcome(
+  world: ScheduleWorld,
+  roster: RosterWorld,
+  id: string,
+  account: string | null,
+  now: Temporal.Instant,
+  expected: number,
+): Answer | "decides" | "stands" {
+  const revision = roster.revisions.get(id);
+  if (revision === undefined || revisionFor(world, roster, id, account, now) === undefined) return NEUTRAL;
+  if (revision.state === "superseded") return rosterChanged(newestOf(roster, id));
+  if (revision.version !== expected) return versionConflict(revision.version);
+  const viewer = viewerIn(world, revision.club, account);
+  return revision.state === "open" && viewer !== undefined && !revision.decisions.has(viewer) ? "decides" : "stands";
+}
+
+/** A generic approval's or decline's answer in a cell, at a version no revision is at: it never decides. */
+export function genericDecisionExpected(seen: () => RosterSeen, id: string): Expected {
+  return (answer) => {
+    const { schedule, roster, now, account } = seen();
+    const outcome = decisionOutcome(schedule, roster, id, account, now, NO_SUCH_VERSION);
+    if (typeof outcome === "string") return ["the judge's own generic decision would be taken"];
+    return pinnedProblems(answer, outcome);
+  };
+}
 
 /** A version no club of the matrix reaches: what the generic request names, so it changes nothing. */
 export const NO_SUCH_VERSION = 1_000_000;
@@ -506,4 +582,10 @@ export function proposeCases(version: number, label: string): ProposeCase[] {
   ];
 }
 
-export { CONFLICT as IDEMPOTENCY_CONFLICT, invalid as invalidRequest };
+export {
+  CONFLICT as IDEMPOTENCY_CONFLICT,
+  FULL as CLUB_FULL,
+  invalid as invalidRequest,
+  rosterChanged,
+  versionConflict,
+};

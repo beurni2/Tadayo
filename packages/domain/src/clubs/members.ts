@@ -17,8 +17,11 @@
 //   at most one member, and none when the club has no next day.
 // - `position`: the roster's stable order (../schedule/order.ts; FQ98, FQ114), from 1.
 //
-// `cover` (FQ41) is not here: no membership stores a colour yet (B4). Nor is the open roster revision,
-// which B1's roster commands make.
+// - `openRevision`: the club's open roster revision, as the caller reads it (./roster-revision.ts
+//   `readableRevisions`, FQ119), or null when there is none or it isn't the caller's to read. It is in the
+//   same statement, so the roster and the revision are one snapshot.
+//
+// `cover` (FQ41) is not here: no membership stores a colour yet (B4).
 
 import { chosenDay, daysByClub, nextDaysByStar, type ChosenDay } from "../authorization/days.ts";
 import { activeMemberships } from "../authorization/member.ts";
@@ -28,6 +31,7 @@ import { WEEKDAYS, type Weekday } from "../schedule/propose.ts";
 import { person, personOf, type SchedulePerson } from "../schedule/week.ts";
 import { clubTimeZone } from "../time/civil.ts";
 import type { ServerNow } from "../time/clock.ts";
+import { readableRevisions, sightOf, type RevisionSight } from "./roster-revision.ts";
 
 export interface MemberRow {
   readonly person: SchedulePerson;
@@ -47,6 +51,8 @@ export interface Roster {
   };
   /** In roster order. */
   readonly members: readonly MemberRow[];
+  /** The club's open roster revision as the caller reads it, or null. */
+  readonly openRevision: RevisionSight | null;
 }
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | R)[]) => R;
@@ -119,6 +125,8 @@ export async function listMembers(
                 ON nd.club_id = s.club_id AND nd.star_interval_id = s.interval_id
              WHERE s.club_id = c.id AND s.state = 'active') AS members,
            h.next_day AS club_next,
+           (SELECT pg_catalog.to_jsonb(v) FROM (${readableRevisions(sql, userId, now)}) v
+             WHERE v.club_id = c.id AND v.state = 'open') AS open_revision,
            EXISTS (SELECT FROM app.schedule_proposals p
                     WHERE p.club_id = c.id AND p.reason = 'activation' AND p.state = 'open') AS first_days_open,
            (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
@@ -167,6 +175,8 @@ export async function listMembers(
     inForce: inForce === undefined ? null : inForce.days,
   });
   const byId = new Map(shown.map((member) => [member.id, member]));
+  const open = row["open_revision"];
+  const openRevision = open === null || open === undefined ? null : sightOf(record(open));
   return {
     club: { id, name: text(row["name"]), timezone, membershipId: text(row["membership_id"]) },
     members: order.map((memberId, index) => {
@@ -179,5 +189,6 @@ export async function listMembers(
         nextUp: clubNext !== null && clubNext.star.membershipId === memberId,
       };
     }),
+    openRevision,
   };
 }

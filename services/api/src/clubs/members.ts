@@ -6,14 +6,16 @@
 // clock's sample first, and serializes what comes back by an explicit field list (T55).
 //
 // Anyone with nothing of the club gets the neutral not-found, the same answer as an id nobody has (T14).
-// `cover` (FQ41) and `open_revision` (B1's roster revision), both optional in the contract, aren't sent
-// yet: nothing stores the first, and no command makes the second.
+// `open_revision` is the club's open roster revision as the caller reads it (FQ119), when there is one,
+// read in the roster's own statement. `cover` (FQ41), optional in the contract, isn't sent yet: nothing
+// stores it.
 
 import { contractInstant, listMembers, type Json, type Roster } from "@tadayo/domain";
 import { ok, problem } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 import { occurrenceBody } from "./list.ts";
+import { rosterRevisionBody } from "./roster.ts";
 
 /** The contract's `Members`: `now` is the clock's sample, whole seconds, rounded down. */
 export function membersBody(now: Temporal.Instant, roster: Roster): Json {
@@ -35,6 +37,7 @@ export function membersBody(now: Temporal.Instant, roster: Roster): Json {
       ...(member.nextDay === null ? {} : { next_day: occurrenceBody(member.nextDay) }),
       next_up: member.nextUp,
     })),
+    ...(roster.openRevision === null ? {} : { open_revision: rosterRevisionBody(roster.openRevision) }),
   };
 }
 

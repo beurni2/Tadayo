@@ -1023,10 +1023,28 @@ class Steps:
             bundles = sorted(n for n in os.listdir(export) if n.endswith(".exportedBundle"))
             self.write_log("simulators.txt", "exported: " + (", ".join(bundles) or "nothing"))
             if len(bundles) == 1:
-                code = self.shell.run(["xcodebuild", "-importPlatform",
-                                       os.path.join(export, bundles[0])], env=env,
+                bundle = os.path.join(export, bundles[0])
+                code = self.shell.run(["xcodebuild", "-importPlatform", bundle], env=env,
                                       log=self.log("simulators.txt"))
                 self.write_log("simulators.txt", f"(exit {code})")
+                if self.imported(version) is False:
+                    # The runner image of 2026-11-19 (xcode-27-arm64 20261119.0378, macOS 27.2)
+                    # refuses the import to the runner's own user: "Requires elevated
+                    # privileges: Copying a directory source requires sudo" (exit 70), where the
+                    # image before it took it. So an import that left no image is run again
+                    # as root, once for each download variant tried, which the runner's user
+                    # may do without a password (`-n` fails rather than ask). sudo drops the
+                    # environment, so the pinned Xcode is named on its line; `-H` gives root
+                    # its own home, so nothing root makes lands in the runner user's Library,
+                    # where a later step couldn't write over it. simctl's list still decides
+                    # whether it worked (`docs/LIMITATIONS.md`, 2026-11-19).
+                    print(f"ios: simulator: the import left no imported image of iOS {version}; "
+                          "importing again with sudo")
+                    code = self.shell.run(
+                        ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={env['DEVELOPER_DIR']}",
+                         "xcodebuild", "-importPlatform", bundle], env=env,
+                        log=self.log("simulators.txt"))
+                    self.write_log("simulators.txt", f"(exit {code})")
             images = self.drop_asset_copies(version)
             if images is None:
                 return None
@@ -1062,6 +1080,24 @@ class Steps:
                                            log=self.log("simulators.txt"))
                     self.write_log("simulators.txt", f"(exit {cache})")
                     if cache != 0:
+                        # On the runner image of 2026-11-19, where the import ran as root, the
+                        # update exited 25 ("Child process exited with an error") and the pass
+                        # on iOS 26.5 that followed ran slower and failed two keyboard tests
+                        # that pass with the cache (`docs/LIMITATIONS.md`, 2026-11-19). Run
+                        # once more as root, in the import's form, it answered "dyld shared
+                        # cache is usable" and both tests passed. The two files of the
+                        # builder's output that simctl names weren't there when looked for
+                        # (`ios` run 44655516106), so why the runner's user can't build it
+                        # isn't known. Any failed update is run again this way, whatever the
+                        # image. Still not fatal: the tests say whether it mattered.
+                        print(f"ios: simulator: updating iOS {version}'s shared cache exited "
+                              f"{cache}; updating it again with sudo")
+                        cache = self.shell.run(
+                            ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={env['DEVELOPER_DIR']}",
+                             "xcrun", "simctl", "runtime", "dyld_shared_cache", "update",
+                             identifier], env=env, log=self.log("simulators.txt"))
+                        self.write_log("simulators.txt", f"(exit {cache})")
+                    if cache != 0:
                         print(f"ios: simulator: updating iOS {version}'s shared cache exited "
                               f"{cache}, so its first boot builds it (logs/simulators.txt)")
                 return runtime
@@ -1082,6 +1118,15 @@ class Steps:
             return None
         return [i for i in images.values()
                 if isinstance(i, dict) and i.get("platformIdentifier") == SIMULATOR_PLATFORM]
+
+    def imported(self, version):
+        """Whether simctl lists an imported image of iOS `version` that is Ready; None when its
+        list can't be read, which drop_asset_copies then says."""
+        images = self.runtime_images()
+        if images is None:
+            return None
+        return any(imported_image(i, "Ready") and same_version(i.get("version"), version)
+                   for i in images)
 
     def drop_asset_copies(self, version):
         """Deletes the MobileAsset copies of iOS `version` once an imported image of it is Ready,

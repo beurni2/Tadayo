@@ -66,9 +66,13 @@ import {
   type Spec,
   type Step,
 } from "./harness.ts";
+import { INVITATION_JUDGED, acceptOutcome, freshToken, previewExpected, webPreviewExpected } from "./invitation.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
 import {
   IDEMPOTENCY_CONFLICT,
+  NO_SUCH_VERSION,
+  decisionOutcome,
+  genericDecisionExpected,
   genericProposal,
   genericProposalExpected,
   linkOutcome,
@@ -129,14 +133,53 @@ const REQUESTS_PER_WORLD = 72;
 /** What the roster's table did for each role (the role's test fills it; the last test reads it). */
 const ROSTER_TABLES = new Map<
   string,
-  { memberPhases: number; revisions: number; links: number; otherAnswers: number }
+  { memberPhases: number; revisions: number; links: number; otherAnswers: number; invitations: number }
 >();
+/**
+ * The answers the invitation's table gives someone other than the cell's viewer, for each revision: the
+ * signed-out page twice, the link's holder ten times, another member three times.
+ */
+const INVITATION_OTHER_ANSWERS = 15;
 
 /** A world's own suffix, so its names are no other world's. */
 const suffix = () => ` ${randomBytes(6).toString("hex")}`;
 
-/** Another club's objects, with an avatar of one of its people that is ready, and one of them's sign-in subject. */
-type Elsewhere = Targets & { avatar: string; subject: string };
+/**
+ * Another club's objects, with an avatar of one of its people that is ready, and that person's sign-in
+ * subject, account and profile name: the person who holds the links the invitation's table makes.
+ */
+type Elsewhere = Targets & { avatar: string; subject: string; account: string; name: string };
+
+/** The token a request presented in its body, when it did (the scanner's `presented`). */
+function presentedBy(spec: Spec): string | undefined {
+  if (spec.body === undefined) return undefined;
+  try {
+    const body: unknown = JSON.parse(spec.body);
+    const token = typeof body === "object" && body !== null ? (body as Record<string, unknown>)["token"] : undefined;
+    return typeof token === "string" ? token : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The body each generic request of the roster's and the invitation's commands carries, past the body's
+ * check and changing nothing: a version no revision is at, and a token nobody made.
+ */
+function genericBodyFor(spec: Spec, revision: string, token: string): Spec {
+  const id = spec.operation.id;
+  const body =
+    id === "approveRoster" || id === "declineRoster"
+      ? { expected_version: NO_SUCH_VERSION }
+      : id === "acceptInvitation"
+        ? { token, revision_id: revision, expected_version: NO_SUCH_VERSION }
+        : id === "previewInvitation" || id === "previewInvitationWeb"
+          ? { token }
+          : undefined;
+  return body === undefined
+    ? spec
+    : { ...spec, headers: { ...spec.headers, "content-type": "application/json" }, body: JSON.stringify(body) };
+}
 
 const db = worldSql();
 let api: ApiSql;
@@ -194,8 +237,10 @@ beforeAll(async () => {
     const drop = await twoContributors(tx, w);
     const proposal = await addFirstDays(tx, w);
     const avatar = await newAvatar(plain(tx), w.ben.user, "ready");
-    const [subject] = await tx<{ auth_subject: string }[]>`SELECT auth_subject FROM app.users WHERE id = ${w.ben.user}`;
-    if (subject === undefined) throw new Error("the other club's author has no sign-in subject");
+    const [subject] = await tx<{ auth_subject: string | null; display_name: string | null }[]>`
+      SELECT auth_subject, display_name FROM app.users WHERE id = ${w.ben.user}`;
+    if (subject === undefined || subject.auth_subject === null || subject.display_name === null)
+      throw new Error("the other club's author has no sign-in subject or no name");
     return {
       club: w.club,
       drop,
@@ -206,6 +251,8 @@ beforeAll(async () => {
       ...(await rosterTargets(tx, w)),
       avatar: avatar.id,
       subject: subject.auth_subject,
+      account: w.ben.user,
+      name: subject.display_name,
     };
   });
 });
@@ -340,11 +387,26 @@ async function factsOf(
       candidate: string;
       proposed_by: string;
       token_sha256: string;
+      dead: boolean;
+      expires_at: Temporal.Instant;
+      roster: string[] | null;
     }[]
   >`
     SELECT i.id, i.bound_user_id AS bound, c.club_id AS club, c.state = 'joined' AS joined, k.name AS club_name,
            c.id AS candidate, c.proposed_by_interval_id AS proposed_by, pg_catalog.encode(i.token_sha256, 'hex') AS token_sha256,
-           CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS inviter
+           CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS inviter,
+           i.revoked_at IS NOT NULL OR i.replaced_by_id IS NOT NULL AS dead, i.expires_at,
+           -- What the club's open revision shows the candidate, while still open on it: its members' names
+           -- and its candidates' labels.
+           (SELECT array(SELECT su.display_name FROM app.roster_revision_members rm
+                           JOIN app.memberships s ON s.interval_id = rm.interval_id
+                           JOIN app.users su ON su.id = s.user_id
+                          WHERE rm.revision_id = r.id AND s.state = 'active' AND su.display_name IS NOT NULL)
+                   || array(SELECT x.label FROM app.roster_revision_candidates x WHERE x.revision_id = r.id)
+              FROM app.roster_revisions r
+              JOIN app.roster_revision_candidates rc ON rc.revision_id = r.id AND rc.candidate_id = c.id
+             WHERE r.club_id = c.club_id AND r.state = 'open' AND r.roster_sealed_at IS NOT NULL
+               AND c.state = 'open') AS roster
       FROM app.invitations i
       JOIN app.candidates c ON c.id = i.candidate_id
       JOIN app.clubs k ON k.id = c.club_id
@@ -462,6 +524,9 @@ async function factsOf(
             candidate: row.candidate,
             proposedBy: row.proposed_by,
             tokenSha256: row.token_sha256,
+            dead: row.dead,
+            expiresAt: row.expires_at,
+            roster: row.roster,
           },
         ]),
       ),
@@ -495,7 +560,9 @@ function scanner(
         world: known.world,
         now,
       };
-      for (const finding of scan(answer, context)) {
+      const presented = presentedBy(spec);
+      const asked = presented === undefined ? context : { ...context, presented };
+      for (const finding of scan(answer, asked)) {
         wrong.push(`${where}, ${spec.operation.id}: ${finding.check} at ${finding.at}: ${finding.what}`);
       }
     }
@@ -525,7 +592,15 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // the club answers and the states that had one, the proposals the judge said must make a revision,
       // the revisions and links made, and the answers given to another member. A table that was skipped
       // whole would balance every other count, so these are asserted below.
-      const roster = { proposals: 0, memberPhases: 0, due: 0, revisions: 0, links: 0, otherAnswers: 0 };
+      const roster = {
+        proposals: 0,
+        memberPhases: 0,
+        due: 0,
+        revisions: 0,
+        links: 0,
+        otherAnswers: 0,
+        invitations: 0,
+      };
       const memberStates = new Set<string>();
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
@@ -606,6 +681,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         const startVersion = schedule.proposals.get(cell.targets.proposal)?.version ?? -1;
         // A schedule command's generic request carries a body the contract accepts and every rule refuses
         // (schedule.ts's genericBody), so the guessed and malformed ids beside it are judged past the body's check.
+        const genericToken = freshToken();
         const specs = operations
           .flatMap((operation) => specsFor(operation, cell.targets, authorization))
           .map((spec): Spec =>
@@ -629,7 +705,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                       headers: { ...spec.headers, "content-type": "application/json" },
                       body: JSON.stringify({ candidate_id: freshId() }),
                     }
-                  : spec,
+                  : genericBodyFor(spec, cell.targets.revision, genericToken),
           );
         for (const [index, phase] of phases.entries()) {
           const now = PHASES[phase];
@@ -641,6 +717,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const membersSeen = (): MembersSeen => ({
             ...scheduleSeen(),
             nextOf: (star) => daysOf(facts.world, cell.w.club, now, star).next,
+            openRevision: (club) => {
+              const open = clubRows.get(club)?.openRevision ?? null;
+              return open === null ? undefined : revisionFor(schedule, rosterWorld, open, cell.viewer, now);
+            },
           });
           const clubSeen = (): ClubSeen => ({
             ...scheduleSeen(),
@@ -660,22 +740,26 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                     ? genericProposalExpected(rosterSeen, cell.w.club)
                     : gate === undefined && id === "createInvitation"
                       ? NEUTRAL
-                      : gate === undefined && id === "listMembers"
-                        ? membersExpected(membersSeen, cell.w.club)
-                        : gate === undefined && id === "getClub"
-                          ? clubExpected(clubSeen, cell.w.club)
-                          : gate === undefined && id === "createClub"
-                            ? CREATE_CLUB_NO_BODY
-                            : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                              ? cellExpected(session, spec.operation, seen)
-                              : id === "getSchedule"
-                                ? weekExpected(scheduleSeen, cell.w.club)
-                                : commandExpected(
-                                    scheduleSeen,
-                                    id as ScheduleCommand,
-                                    cell.targets.proposal,
-                                    startVersion,
-                                  );
+                      : gate === undefined && (id === "approveRoster" || id === "declineRoster")
+                        ? genericDecisionExpected(rosterSeen, cell.targets.revision)
+                        : gate === undefined && INVITATION_JUDGED.has(id)
+                          ? NEUTRAL
+                          : gate === undefined && id === "listMembers"
+                            ? membersExpected(membersSeen, cell.w.club)
+                            : gate === undefined && id === "getClub"
+                              ? clubExpected(clubSeen, cell.w.club)
+                              : gate === undefined && id === "createClub"
+                                ? CREATE_CLUB_NO_BODY
+                                : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                  ? cellExpected(session, spec.operation, seen)
+                                  : id === "getSchedule"
+                                    ? weekExpected(scheduleSeen, cell.w.club)
+                                    : commandExpected(
+                                        scheduleSeen,
+                                        id as ScheduleCommand,
+                                        cell.targets.proposal,
+                                        startVersion,
+                                      );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -827,9 +911,11 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             if (found === undefined) throw new Error(`the contract has no ${id}`);
             return found;
           };
-          const sendAs = async (spec: Spec, as?: string, key?: string | null): Promise<Answer> => {
+          // `as` is the caller's own Authorization; null sends none, as a signed-out page does.
+          const sendAs = async (spec: Spec, as?: string | null, key?: string | null): Promise<Answer> => {
             const request = render(spec);
-            if (as !== undefined) request.headers["authorization"] = as;
+            if (as === null) delete request.headers["authorization"];
+            else if (as !== undefined) request.headers["authorization"] = as;
             if (key === null) delete request.headers["idempotency-key"];
             else if (key !== undefined) request.headers["idempotency-key"] = key;
             counted.expectedBodies += 1;
@@ -838,14 +924,14 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             counted.bodies += 1;
             return answer;
           };
-          // `as` is the account an answer was given to when it isn't the cell's viewer: the answer is scanned
-          // with that account's own facts, read from the world as it is now.
+          // `as` is the account an answer was given to when it isn't the cell's viewer, null for a caller
+          // with no session: the answer is scanned with that caller's own facts, read from the world as it is now.
           const judged = async (
             spec: Spec,
             answer: Answer,
             expected: Expected | string[],
             note: string,
-            as?: string,
+            as?: string | null,
           ) => {
             const problems = Array.isArray(expected)
               ? expected
@@ -1033,6 +1119,260 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             const club = byId("getClub");
             counted.expectedAnswers += 1;
             record(await cellStep(app, club, clubExpected(clubSeen, cell.w.club)));
+
+            // The invitation's table (invitation.ts): a new link for the candidate, held by someone of another
+            // club, who previews it, accepts under another name (a new revision, FQ66), accepts that one and
+            // waits; the members read, approve and decline; and the holder is told it didn't go ahead. Each
+            // answer is judged from the rows before its request, and each step the table means to take is
+            // held to the outcome it names, so a judge that agreed with a refusal would fail here. Another
+            // member declines at the end, so no roster is applied in a cell: the club's members stay who
+            // the cell's other rows expect (the roster applied is on Postgres, tests/src/db/accept-roster.test.ts,
+            // and through the app in this file's last test).
+            const reload = async () => {
+              facts = await load();
+              clubRows = await loadClubRows();
+              rosterWorld = await loadRoster();
+            };
+            const where = `${state.name}, ${phase}, the invitation's table`;
+            const meant = (step: string, got: unknown, want: unknown) => {
+              if (got !== want) wrong.push(`${where}: ${step} was judged ${String(got)}, not ${String(want)}`);
+            };
+            const stateOf = (answer: Answer): unknown => {
+              try {
+                return (JSON.parse(answer.body) as Record<string, unknown>)["state"];
+              } catch {
+                return undefined;
+              }
+            };
+            const relinked = await sendAs(link, undefined, randomUUID());
+            rosterWorld = await loadRoster();
+            const second = madeLink(relinked, rosterWorld, candidate, now);
+            facts = await load();
+            await judged(link, relinked, second.problems, "a new link after the revoke");
+            const token = second.token;
+            const linkId = second.id;
+            if (token === undefined || linkId === undefined || other === undefined) {
+              wrong.push(`${where}: no second link, or no other member, to run it with`);
+            } else {
+              secrets.push(token);
+              roster.invitations += 1;
+              facts = await load();
+              const linkSeen = () => ({ schedule, roster: rosterWorld, now });
+              const web = json(byId("previewInvitationWeb"), { token });
+              const preview = json(byId("previewInvitation"), { token });
+              const holder = elsewhere.account;
+              const previewAs = async (who: "viewer" | "holder" | "other", want: string, note: string) => {
+                const as = who === "viewer" ? undefined : who === "holder" ? outsider : other.authorization;
+                const account = who === "viewer" ? cell.viewer : who === "holder" ? holder : other.account;
+                const answer = await sendAs(preview, as);
+                meant(note, stateOf(answer), want);
+                await judged(
+                  preview,
+                  answer,
+                  previewExpected(linkSeen, token, account),
+                  note,
+                  who === "viewer" ? undefined : account,
+                );
+              };
+              const acceptAs = async (
+                who: "viewer" | "holder",
+                rev: string,
+                version: number,
+                want: string,
+                note: string,
+                key: string = randomUUID(),
+              ): Promise<{ sent: Spec; answer: Answer }> => {
+                const account = who === "holder" ? holder : cell.viewer;
+                const name = who === "holder" ? elsewhere.name : (profile.name ?? "");
+                const sent = json(byId("acceptInvitation"), { token, revision_id: rev, expected_version: version });
+                const outcome = acceptOutcome(schedule, rosterWorld, token, account, name, rev, version, now);
+                const answer = await sendAs(sent, who === "holder" ? outsider : undefined, key);
+                let expected: Expected | string[];
+                if (typeof outcome !== "string") {
+                  expected = outcome;
+                  meant(note, (JSON.parse(outcome.body) as { code: string }).code, want);
+                } else {
+                  meant(note, outcome, want);
+                  await reload();
+                  expected =
+                    outcome === "changed" || outcome === "waiting"
+                      ? sameAnswer("the acceptance", 200, { invitation_id: linkId, state: outcome })(answer)
+                      : ["the judge says this acceptance joins, and the table applies no roster"];
+                }
+                await judged(sent, answer, expected, note, who === "holder" ? holder : undefined);
+                return { sent, answer };
+              };
+              // A retry under its key is the first answer, byte for byte, whatever the rows say now (T19).
+              const retried = async (first: { sent: Spec; answer: Answer }, key: string, note: string, as?: string) => {
+                const answer = await sendAs(first.sent, as === undefined ? undefined : as, key);
+                await judged(
+                  first.sent,
+                  answer,
+                  said(answer) === said(first.answer)
+                    ? []
+                    : ["a retry under its key got another answer than the first (T19)"],
+                  note,
+                  as === outsider ? holder : as === undefined ? undefined : other.account,
+                );
+              };
+              const decideAs = async (
+                command: "approveRoster" | "declineRoster",
+                who: "viewer" | "other",
+                rev: string,
+                version: number,
+                want: string,
+                note: string,
+                key: string = randomUUID(),
+              ): Promise<{ sent: Spec; answer: Answer }> => {
+                const account = who === "viewer" ? cell.viewer : other.account;
+                const sent = json({ ...byId(command), path: { revision_id: rev } }, { expected_version: version });
+                const outcome = decisionOutcome(schedule, rosterWorld, rev, account, now, version);
+                const before = rosterWorld.revisions.get(rev);
+                const versionBefore = clubRows.get(cell.w.club)?.rosterVersion ?? -1;
+                const answer = await sendAs(sent, who === "viewer" ? undefined : other.authorization, key);
+                let expected: Expected | string[];
+                if (typeof outcome !== "string") {
+                  expected = outcome;
+                  meant(note, (JSON.parse(outcome.body) as { code: string }).code, want);
+                } else {
+                  meant(note, outcome, want);
+                  await reload();
+                  const read = revisionFor(schedule, rosterWorld, rev, account, now);
+                  const after = rosterWorld.revisions.get(rev);
+                  const interval = viewerIn(schedule, cell.w.club, account) ?? "";
+                  const problems =
+                    read === undefined
+                      ? ["whoever decided can't read the revision"]
+                      : sameAnswer("the revision after the decision", 200, read)(answer);
+                  const moved = (clubRows.get(cell.w.club)?.rosterVersion ?? -1) - versionBefore;
+                  if (before === undefined || after === undefined) problems.push("the revision's rows are gone");
+                  else if (outcome === "stands") {
+                    if (after.state !== before.state || after.version !== before.version || moved !== 0)
+                      problems.push("a decision that changes nothing changed the revision or the club");
+                    if (after.decisions.size !== before.decisions.size)
+                      problems.push("a decision that changes nothing wrote a decision");
+                  } else if (command === "approveRoster") {
+                    if (after.decisions.get(interval) !== "approved") problems.push("an approval wrote no approval");
+                    if (after.decisions.size !== before.decisions.size + 1)
+                      problems.push("an approval wrote another decision than its member's");
+                    if (after.state !== "open" || after.version !== before.version || moved !== 0)
+                      problems.push("an approval others still owe ended the revision or moved a version");
+                  } else {
+                    if (after.decisions.get(interval) !== "declined") problems.push("a decline wrote no decision");
+                    if (after.state !== "did_not_go_ahead" || after.version !== before.version + 1)
+                      problems.push("a decline didn't end the revision at its next version");
+                    if (moved !== 1) problems.push("a decline didn't move the club's roster version by one");
+                    if (after.candidates.some((one) => rosterWorld.candidates.get(one.id)?.state !== "ended"))
+                      problems.push("a decline left one of the revision's candidates open");
+                    if ((clubRows.get(cell.w.club)?.openRevision ?? null) !== null)
+                      problems.push("a decline left the club an open revision");
+                  }
+                  expected = problems;
+                }
+                await judged(sent, answer, expected, note, who === "viewer" ? undefined : account);
+                return { sent, answer };
+              };
+              const readAs = async (who: "viewer" | "other", rev: string, note: string) => {
+                const spec: Spec = { ...byId("getRosterRevision"), path: { revision_id: rev } };
+                const account = who === "viewer" ? cell.viewer : other.account;
+                await judged(
+                  spec,
+                  await sendAs(spec, who === "viewer" ? undefined : other.authorization),
+                  revisionExpected(rosterSeen, rev, account),
+                  note,
+                  who === "viewer" ? undefined : account,
+                );
+              };
+              const versionOf = (rev: string) => rosterWorld.revisions.get(rev)?.version ?? -1;
+
+              // The link, live: the signed-out page reads the inviter's name; its holder the exact roster; a
+              // member of the club is told they are one, and can't accept with it.
+              const live = await sendAs(web, null);
+              if (live.status !== 200) wrong.push(`${where}: a live link's page got ${String(live.status)}`);
+              await judged(web, live, webPreviewExpected(linkSeen, token), "a live link, signed out", null);
+              await previewAs("holder", "open", "a live link previewed by its holder");
+              await previewAs("viewer", "joined", "a live link previewed by its proposer");
+              await previewAs("other", "joined", "a live link previewed by another member");
+              await acceptAs("viewer", made, versionOf(made), "NOT_FOUND", "a member accepting with a link");
+              await acceptAs("holder", made, versionOf(made) + 1, "VERSION_CONFLICT", "accepting at a stale version");
+
+              // Accepted under another name: a new revision under the holder's own name, which nobody has
+              // approved or accepted (FQ66, FQ84); the retry is the first answer (T19).
+              const acceptKey = randomUUID();
+              const renamed = await acceptAs("holder", made, versionOf(made), "changed", "accepting", acceptKey);
+              const next = clubRows.get(cell.w.club)?.openRevision ?? "";
+              const nextRows = rosterWorld.revisions.get(next);
+              if (rosterWorld.revisions.get(made)?.supersededBy !== next || next === made)
+                wrong.push(`${where}: the revision accepted under another name isn't superseded by the open one`);
+              if (nextRows?.candidates.find((one) => one.id === candidate)?.label !== elsewhere.name)
+                wrong.push(`${where}: the new revision doesn't show the holder under their own name (FQ66)`);
+              if (nextRows?.decisions.size !== 0 || nextRows.candidates.some((one) => one.acceptedWith !== null))
+                wrong.push(`${where}: the new revision carries an approval or an acceptance (FQ84)`);
+              if (rosterWorld.links.get(linkId)?.boundTo !== holder)
+                wrong.push(`${where}: accepting didn't bind the link to its holder`);
+              const rowsBefore = rosterWorld.revisions.size;
+              await retried(renamed, acceptKey, "the same acceptance again under its key", outsider);
+              if ((await loadRoster()).revisions.size !== rowsBefore) wrong.push(`${where}: a retry made a revision`);
+              await previewAs("holder", "changed", "the changed roster previewed by its holder");
+              // The members: the old revision names the new one, and takes no decision; the new one is read
+              // by those it lists.
+              await readAs("viewer", made, "the superseded revision, by its proposer");
+              await decideAs(
+                "approveRoster",
+                "viewer",
+                made,
+                versionOf(made),
+                "ROSTER_CHANGED",
+                "approving a superseded revision",
+              );
+              await readAs("other", next, "the revision under the holder's name, by another member");
+
+              // The holder accepts the roster under their own name, and waits: nothing says who has approved.
+              await acceptAs("holder", next, versionOf(next), "waiting", "accepting the changed roster");
+              if (
+                rosterWorld.revisions.get(next)?.candidates.find((one) => one.id === candidate)?.acceptedWith !== linkId
+              )
+                wrong.push(`${where}: accepting left the candidate's row on the revision as it was`);
+              await previewAs("holder", "waiting", "the accepted roster previewed by its holder");
+              const used = await sendAs(web, null);
+              await judged(web, used, NEUTRAL, "a used link, signed out", null);
+              // The club's roster carries the open revision, as its member reads it.
+              const members = byId("listMembers");
+              counted.expectedAnswers += 1;
+              record(await cellStep(app, members, membersExpected(membersSeen, cell.w.club)));
+              if (membersSeen().openRevision(cell.w.club) === undefined)
+                wrong.push(`${where}: the judge gives the proposer no open revision in the club's roster`);
+
+              // The proposer approves, once: the retry is the first answer, and a second approval changes nothing.
+              const approveKey = randomUUID();
+              const approved = await decideAs(
+                "approveRoster",
+                "viewer",
+                next,
+                versionOf(next),
+                "decides",
+                "approving",
+                approveKey,
+              );
+              await retried(approved, approveKey, "the same approval again under its key");
+              await decideAs("approveRoster", "viewer", next, versionOf(next), "stands", "approving twice");
+              // Another member declines: the revision ends for everyone, and nothing says who declined (T33).
+              await decideAs("declineRoster", "other", next, versionOf(next), "decides", "declining");
+              await previewAs("holder", "did_not_go_ahead", "the declined roster previewed by its holder");
+              await acceptAs(
+                "holder",
+                next,
+                versionOf(next) - 1,
+                "VERSION_CONFLICT",
+                "accepting a declined roster as it was",
+              );
+              await acceptAs("holder", next, versionOf(next), "NOT_FOUND", "accepting a declined roster");
+              await decideAs("declineRoster", "viewer", next, versionOf(next), "stands", "declining a declined roster");
+              await readAs("viewer", next, "the declined revision, by its proposer");
+              counted.expectedAnswers += 2;
+              record(await cellStep(app, club, clubExpected(clubSeen, cell.w.club)));
+              record(await cellStep(app, members, membersExpected(membersSeen, cell.w.club)));
+            }
           }
           const last = index === phases.length - 1;
           const scheduleGroups = new Map<string, string>();
@@ -1150,7 +1490,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       expect(roster.revisions).toBeGreaterThanOrEqual(memberStates.size);
       if (roster.memberPhases === 0) expect(roster.revisions).toBe(0);
       expect(roster.links).toBe(roster.revisions);
-      expect(roster.otherAnswers).toBe(roster.revisions * 5);
+      expect(roster.invitations).toBe(roster.revisions);
+      expect(roster.otherAnswers).toBe(roster.revisions * (5 + INVITATION_OTHER_ANSWERS));
       expect(counted.answers).toBe(counted.expectedAnswers);
       expect(malformed.size).toBeGreaterThan(0);
     });
@@ -1172,6 +1513,242 @@ describe("the roster's table ran (tests/src/privacy/roster.ts)", () => {
       "rejoined member, a new interval (T8)",
       "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
     ]);
+  });
+});
+
+describe("a roster applied through the app (spec 04; T7, T8, T33; FQ65)", () => {
+  it("joins the person who accepted once the last member approves, and answers each caller as the rows say", async () => {
+    const wrong: string[] = [];
+    const counted = { answers: 0 };
+    const w = await db.begin(async (tx) => {
+      const made = await newWorld(plain(tx), suffix());
+      await twoContributors(tx, made);
+      await checkAsAtCommit(plain(tx));
+      return made;
+    });
+    const now = PHASES.collecting;
+    clock.set(now);
+    const sessionsOf = await db<{ account: string; subject: string; name: string | null; interval: string | null }[]>`
+      SELECT u.id AS account, u.auth_subject AS subject, u.display_name AS name,
+             (SELECT m.interval_id FROM app.memberships m
+               WHERE m.user_id = u.id AND m.club_id = ${w.club} AND m.state = 'active') AS interval
+        FROM app.users u
+       WHERE u.id = ${w.dan.user}
+          OR u.id IN (SELECT user_id FROM app.memberships WHERE club_id = ${w.club} AND state = 'active')`;
+    const callers = new Map<string, { authorization: string; name: string; interval: string | null }>();
+    const secrets: string[] = [];
+    for (const row of sessionsOf) {
+      const authorization = bearer(await keys.signer.token(row.subject));
+      secrets.push(authorization.slice("Bearer ".length));
+      callers.set(row.account, { authorization, name: row.name ?? "", interval: row.interval });
+    }
+    const joiner = w.dan.user;
+    const proposer = w.ana.user;
+    const others = [...callers].filter(([account, one]) => one.interval !== null && account !== proposer);
+    expect(callers.get(joiner)?.interval).toBeNull();
+    expect(callers.get(joiner)?.name).not.toBe("");
+    expect(others.length).toBeGreaterThanOrEqual(2);
+    const clubs = [w.club, elsewhere.club];
+    const world = db as unknown as WorldTx;
+    let schedule = await scheduleWorldOf(world, clubs);
+    let rosterWorld = await rosterWorldOf(world, clubs);
+    let clubRows = await clubRowsOf(world, clubs);
+    const reload = async () => {
+      schedule = await scheduleWorldOf(world, clubs);
+      rosterWorld = await rosterWorldOf(world, clubs);
+      clubRows = await clubRowsOf(world, clubs);
+    };
+    const spec = (id: string, path: Record<string, string>, body?: unknown): Spec => {
+      const operation = operations.find((one) => one.id === id);
+      if (operation === undefined) throw new Error(`the contract has no ${id}`);
+      return {
+        operation,
+        path,
+        query: {},
+        headers: {
+          "idempotency-key": randomUUID(),
+          ...(body === undefined ? {} : { "content-type": "application/json" }),
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      };
+    };
+    // Each answer, sent as `account` (null: signed out), judged, and scanned with that caller's own facts
+    // read from the world after it.
+    const ask = async (
+      account: string | null,
+      sent: Spec,
+      expected: (answer: Answer) => Expected | string[],
+      note: string,
+      key?: string,
+    ): Promise<Answer> => {
+      const request = render(sent);
+      const caller = account === null ? undefined : callers.get(account);
+      if (caller !== undefined) request.headers["authorization"] = caller.authorization;
+      if (key !== undefined) request.headers["idempotency-key"] = key;
+      const answer = await answerOf(app, request);
+      await reload();
+      const want = expected(answer);
+      const problems = Array.isArray(want)
+        ? want
+        : typeof want === "function"
+          ? want(answer)
+          : pinnedProblems(answer, want);
+      const facts = await factsOf(clubs, account, { secrets: [...secrets] });
+      scanner(
+        wrong,
+        note,
+        () => facts,
+        now,
+        counted,
+      )({
+        problems: problems.map((problem) => `${sent.operation.id}: ${problem}`),
+        answers: [{ spec: sent, answer }],
+      });
+      return answer;
+    };
+    const seen = () => ({ schedule, roster: rosterWorld, now });
+    const rosterSeen = (account: string) => (): RosterSeen => ({
+      schedule,
+      account,
+      now,
+      roster: rosterWorld,
+      rows: clubRows,
+    });
+
+    // Ana proposes the joiner under the joiner's own profile name, and makes the link.
+    const label = callers.get(joiner)?.name ?? "";
+    const version = clubRows.get(w.club)?.rosterVersion ?? -1;
+    await ask(
+      proposer,
+      spec("proposeRoster", { club_id: w.club }, { expected_roster_version: version, add: [{ label }] }),
+      (answer) => (answer.status === 201 ? [] : [`status ${String(answer.status)}, not 201`]),
+      "the proposal",
+    );
+    const revision = clubRows.get(w.club)?.openRevision ?? "";
+    const candidate = rosterWorld.revisions.get(revision)?.candidates.at(-1)?.id ?? "";
+    const linked = await ask(
+      proposer,
+      spec("createInvitation", { club_id: w.club }, { candidate_id: candidate }),
+      (answer) => madeLink(answer, rosterWorld, candidate, now).problems,
+      "the link",
+    );
+    const token = madeLink(linked, rosterWorld, candidate, now).token ?? "";
+    expect(token).not.toBe("");
+    secrets.push(token);
+    const preview = () => spec("previewInvitation", {}, { token });
+    const accept = (at: number) => spec("acceptInvitation", {}, { token, revision_id: revision, expected_version: at });
+    const stateOf = (answer: Answer) => (JSON.parse(answer.body) as Record<string, unknown>)["state"];
+
+    // The joiner previews the exact roster and accepts it: waiting, while the members haven't all approved.
+    const opened = await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner's preview");
+    expect(stateOf(opened)).toBe("open");
+    const acceptKey = randomUUID();
+    const before = acceptOutcome(schedule, rosterWorld, token, joiner, label, revision, 1, now);
+    expect(before).toBe("waiting");
+    const waited = await ask(
+      joiner,
+      accept(1),
+      () =>
+        sameAnswer("the acceptance", 200, {
+          invitation_id: linked.body === "" ? "" : (JSON.parse(linked.body) as { invitation_id: string }).invitation_id,
+          state: "waiting",
+        }),
+      "the joiner's acceptance",
+      acceptKey,
+    );
+    expect(stateOf(await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner waits"))).toBe(
+      "waiting",
+    );
+
+    // Each other member approves: the revision stays open until the last, whose approval applies it.
+    for (const [index, [account]] of others.entries()) {
+      const last = index === others.length - 1;
+      expect(decisionOutcome(schedule, rosterWorld, revision, account, now, 1)).toBe("decides");
+      const answer = await ask(
+        account,
+        spec("approveRoster", { revision_id: revision }, { expected_version: 1 }),
+        () => {
+          const want = revisionFor(schedule, rosterWorld, revision, account, now);
+          return want === undefined
+            ? ["the member can't read the revision they approved"]
+            : sameAnswer("the revision", 200, want);
+        },
+        `approval ${String(index + 1)}`,
+      );
+      expect(stateOf(answer)).toBe(last ? "applied" : "open");
+    }
+
+    // Applied: the joiner is a member, with a new interval that joined by this revision (T8); the club's
+    // roster version moved once; the revision is at its next version; nothing is left open.
+    const [joined] = await db<{ interval: string; via: string | null; origin: string }[]>`
+      SELECT interval_id AS interval, joined_via_revision_id AS via, origin FROM app.memberships
+       WHERE club_id = ${w.club} AND user_id = ${joiner} AND state = 'active'`;
+    expect(joined).toMatchObject({ via: revision, origin: "roster" });
+    expect(rosterWorld.revisions.get(revision)).toMatchObject({ state: "applied", version: 2 });
+    expect(clubRows.get(w.club)).toMatchObject({ rosterVersion: version + 2, openRevision: null });
+    expect(rosterWorld.candidates.get(candidate)?.state).toBe("joined");
+
+    // The joiner now: the link says joined, with the club; the retry is still the first answer (T19); the
+    // revision named as it ended says joined; the club's roster lists them; the signed-out page says nothing.
+    const club = { id: w.club, name: schedule.clubs.get(w.club)?.name, timezone: schedule.clubs.get(w.club)?.timezone };
+    expect(
+      stateOf(await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner, joined")),
+    ).toBe("joined");
+    const retry = await ask(
+      joiner,
+      accept(1),
+      (answer) => (said(answer) === said(waited) ? [] : ["a retry got another answer (T19)"]),
+      "the acceptance again",
+      acceptKey,
+    );
+    expect(stateOf(retry)).toBe("waiting");
+    expect(acceptOutcome(schedule, rosterWorld, token, joiner, label, revision, 2, now)).toBe("joined again");
+    await ask(
+      joiner,
+      accept(2),
+      () =>
+        sameAnswer("the acceptance", 200, {
+          invitation_id: (JSON.parse(waited.body) as { invitation_id: string }).invitation_id,
+          state: "joined",
+          club: { ...club, my_membership_id: joined?.interval },
+        }),
+      "accepting the applied roster again",
+    );
+    const facts = await factsOf(clubs, joiner, { secrets: [...secrets] });
+    await ask(
+      joiner,
+      spec("listMembers", { club_id: w.club }),
+      () =>
+        membersExpected(
+          () => ({
+            schedule,
+            account: joiner,
+            now,
+            nextOf: (star) => daysOf(facts.world, w.club, now, star).next,
+            openRevision: () => undefined,
+          }),
+          w.club,
+        ),
+      "the club's roster, by its new member",
+    );
+    // FQ119: the applied revision lists the members who approved it, not the person it brought in.
+    await ask(
+      joiner,
+      spec("getRosterRevision", { revision_id: revision }),
+      () => NEUTRAL,
+      "the revision, by its new member",
+    );
+    await ask(
+      proposer,
+      spec("getRosterRevision", { revision_id: revision }),
+      () => revisionExpected(rosterSeen(proposer), revision, proposer),
+      "the applied revision, by its proposer",
+    );
+    await ask(null, spec("previewInvitationWeb", {}, { token }), () => NEUTRAL, "the used link, signed out");
+    await ask(proposer, preview(), () => previewExpected(seen, token, proposer), "the used link, by its proposer");
+
+    expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
+    expect(counted.answers).toBe(13 + others.length);
   });
 });
 
@@ -1207,7 +1784,11 @@ describe("callers without a session, in each state of the drop and phase of the 
         };
       });
       const facts = await factsOf([cell.w.club, elsewhere.club], null, { accounts: [cell.w.dan.user], secrets });
-      const specs = operations.flatMap((operation) => specsFor(operation, cell.targets, "Bearer unused"));
+      // The signed-out page's route reads a body: a token nobody made, so it names nothing (T14).
+      const noToken = freshToken();
+      const specs = operations
+        .flatMap((operation) => specsFor(operation, cell.targets, "Bearer unused"))
+        .map((spec) => genericBodyFor(spec, cell.targets.revision, noToken));
       for (const phase of Object.keys(PHASES) as Phase[]) {
         const now = PHASES[phase];
         clock.set(now);

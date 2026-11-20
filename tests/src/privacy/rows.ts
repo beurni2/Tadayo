@@ -42,9 +42,6 @@
 //   at 32, longer values more often (about once in 310 million at 48 bytes, and once in 26 million at
 //   the contract's longest, 384), and handles of 12 about once in 100,000, which the matrix's runs
 //   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS, ownTextKey);
-// - for the invitation's routes (B1), a person who holds a link and hasn't accepted it: the matrix's
-//   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
-//   nobody has accepted ties no account to the club;
 // - for createUpload, the replays of its intent (TECH-DESIGN section 8), before it grants anything:
 //   spike S1's server part needs them before Gate A;
 // - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
@@ -102,12 +99,35 @@
 //   row's hash is of (scanner.ts). A later phase of a cell may find the club full of the candidates
 //   carried, and then its proposal is CLUB_FULL and the rest of its table isn't run: each role's test
 //   counts the revisions, links and other member's answers its table made and asserts them, and one test
-//   names the six roles that made any (matrix.test.ts, "the roster's table ran"). Accepting, approving and
-//   declining are B1's next slice: Ana reads `accepted` on the world's own revision, but these pass
-//   through no cell here: the states used and expired (a link is revoked before its week is out), a
-//   decision other than the proposer's own, a declined revision, and the read of a superseded revision
-//   (only the newest is read). The read's rule for them is tested on rows built by hand
-//   (tests/src/db/invitation.test.ts, propose-roster.test.ts) and the judge's on roster.test.ts;
+//   names the six roles that made any (matrix.test.ts, "the roster's table ran"). Since the invitation's
+//   table (below) ends each phase's revision by a decline, its candidates end with it, so a later phase no
+//   longer finds the club full of them; the judge still says CLUB_FULL should the rows ever hold six;
+// - for the invitation's three routes and the roster's two decisions (B1's third slice, done): in every
+//   cell, each with a body the contract accepts that changes nothing (a token nobody made, a version no
+//   revision is at), judged by invitation.ts and roster.ts's `decisionOutcome`: the neutral not-found, or
+//   VERSION_CONFLICT to the one member who reads the world's own revision. Then, in every phase, for the
+//   revision the roster's table made: a second link for its candidate, held by someone of another club.
+//   The signed-out page reads the inviter's name, and nothing once the link is used; the holder previews
+//   the exact roster (`open`), is refused a stale version, accepts under their own name (`changed`: a new
+//   revision under that name with no approval and no acceptance, FQ66, FQ84; its retry the same bytes),
+//   previews it (`changed`), accepts it (`waiting`) and previews again (`waiting`); a member of the club
+//   previewing the link is told `joined`, and can't accept with it; the proposer reads the superseded
+//   revision, is refused a decision of it (ROSTER_CHANGED), reads the open revision in listMembers'
+//   `open_revision`, approves (its retry the same bytes; a second approval changes nothing); another
+//   member declines; the holder then previews `did_not_go_ahead` and is refused acceptance. Each step is
+//   held to the outcome the table names, so a judge that agreed with a refusal would fail, and each answer
+//   is scanned with its own caller's facts and the token its request presented. Another member declines
+//   in every phase, so no cell applies a roster: the club's members stay who the cell's other rows expect.
+//   A roster applied to a club that has started, and a joiner's own answers, go through the app in
+//   matrix.test.ts's "a roster applied through the app"; a club's start with its first days goes through
+//   the commands on Postgres only (tests/src/db/accept-roster.test.ts). What passes through no cell, and
+//   is held by the database tests and invitation.test.ts's judge tests: `expired`, `full`,
+//   INVITATION_EXPIRED and CLUB_FULL of an acceptance (a link is made and used within its phase; six
+//   members are built only by hand); a revoked or a replaced link's token on the three routes (the
+//   table's first link is revoked and never presented); a suspended club's link; a second place in the
+//   same club; a link whose candidate joined and then left; ROSTER_CHANGED of an acceptance; an inviter
+//   with no name; an ended proposal's link nobody used; and an account that changed its name after
+//   accepting;
 // - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
 //   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
 //   shows), each as a check a row can run:
@@ -130,14 +150,15 @@
 
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";
+import { INVITATION_JUDGED } from "./invitation.ts";
 import { MEMBERS_JUDGED } from "./members.ts";
 import { ROSTER_JUDGED } from "./roster.ts";
 import { SCHEDULE_JUDGED } from "./schedule.ts";
 
 /**
  * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice),
- * the roster (B2's generation slice), the club's two routes (B1's first slice) and the roster's four (B1's
- * second slice).
+ * the roster (B2's generation slice), the club's two routes (B1's first slice), the roster's four (B1's
+ * second slice) and its two decisions and the invitation's three (B1's third slice).
  */
 export const JUDGED: ReadonlySet<string> = new Set([
   ...ACCOUNT_JUDGED,
@@ -145,6 +166,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...MEMBERS_JUDGED,
   ...CLUB_JUDGED,
   ...ROSTER_JUDGED,
+  ...INVITATION_JUDGED,
 ]);
 
 const GATE =
@@ -238,6 +260,44 @@ export const REVOKE_INVITATION = Object.freeze({
     `member once an account accepted with the link; the neutral NOT_FOUND to everyone else (${GATE})`,
 });
 
+/** approveRoster and declineRoster (B1's third slice): roster.ts's decisionOutcome. */
+export const ROSTER_DECISION = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; the neutral NOT_FOUND to anyone who can't read the revision " +
+    "(FQ119); ROSTER_CHANGED with the newest revision's id once a newer one replaced it; VERSION_CONFLICT with the " +
+    "revision's version; then 200 with the RosterRevision as the caller reads it after their own decision, taken " +
+    `once on an open revision, or as it stands when there is nothing to decide; the same bytes to a retry (${GATE})`,
+});
+
+/** previewInvitationWeb (B1's third slice): the inviter's name for a live link, to anyone, signed in or not. */
+export const INVITATION_WEB = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; 200 with the inviter's name, and nothing else, for the token of " +
+    "a link nobody has used, not revoked, replaced or expired, whose candidate is still open in a club that isn't " +
+    "suspended; the neutral NOT_FOUND for every other token, to every caller: the route is public, so the gate " +
+    "reads no session for it",
+});
+
+/** previewInvitation (B1's third slice): invitation.ts's previewFor. */
+export const INVITATION_PREVIEW = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; 200 with the InvitationPreview as invitation.ts's previewFor " +
+    "makes it from the world's rows for the token's link and the caller: joined to a member of its club, " +
+    "did_not_go_ahead to the account that accepted with it, expired, full, or the open revision's exact roster by " +
+    "names as open, changed or waiting; the neutral NOT_FOUND for a token that names nothing to the caller: no " +
+    `link, one revoked, replaced or used by another account, or a suspended club's (${GATE})`,
+});
+
+/** acceptInvitation (B1's third slice): invitation.ts's acceptOutcome. */
+export const INVITATION_ACCEPT = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; then as invitation.ts's acceptOutcome says from the world's " +
+    "rows: the neutral NOT_FOUND for a token that names nothing to the caller, to a member holding a link they " +
+    "didn't join with and for a revision that doesn't list the link's candidate, INVITATION_EXPIRED, ROSTER_CHANGED " +
+    "with the newest revision's id, VERSION_CONFLICT with the revision's version, CLUB_FULL, or 200 with the " +
+    `InvitationAcceptance, changed, waiting or joined; the same bytes to a retry under its key (${GATE})`,
+});
+
 /** chooseScheduleDays and confirmScheduleDays (B2's schedule slice): schedule.ts's table of bodies. */
 export const SCHEDULE_COMMAND = Object.freeze({
   answer:
@@ -247,8 +307,8 @@ export const SCHEDULE_COMMAND = Object.freeze({
 });
 
 export const ROWS: Readonly<Record<string, unknown>> = {
-  acceptInvitation: NONE,
-  approveRoster: NONE,
+  acceptInvitation: INVITATION_ACCEPT,
+  approveRoster: ROSTER_DECISION,
   blockMember: NONE,
   chooseScheduleDays: SCHEDULE_COMMAND,
   clearReaction: NONE,
@@ -261,7 +321,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   createReport: NONE,
   createReservation: NONE,
   createUpload: NONE,
-  declineRoster: NONE,
+  declineRoster: ROSTER_DECISION,
   deleteAccount: NONE,
   deleteComment: NONE,
   deleteMyAvatar: NONE,
@@ -293,8 +353,8 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   listMemories: NONE,
   listMyDrops: NONE,
   previewBlock: NONE,
-  previewInvitation: NONE,
-  previewInvitationWeb: NONE,
+  previewInvitation: INVITATION_PREVIEW,
+  previewInvitationWeb: INVITATION_WEB,
   proposeRoster: PROPOSE_ROSTER,
   registerDevice: NONE,
   releaseReservation: NONE,
