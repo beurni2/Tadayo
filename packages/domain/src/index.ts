@@ -28,6 +28,7 @@ export {
 export { acceptInvitation, type Acceptance, type AcceptInvitationInput } from "./clubs/accept-invitation.ts";
 export { applyIfReady, type AppliedRoster } from "./clubs/apply-roster.ts";
 export { approveRoster, declineRoster, type RosterDecisionInput } from "./clubs/decide-roster.ts";
+export { leaveClub, type Contributions, type LeaveClubInput, type LeftClub } from "./clubs/leave-club.ts";
 export { tokenHash } from "./clubs/invitation-facts.ts";
 export {
   invitationStanding,

@@ -151,6 +151,7 @@
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";
 import { INVITATION_JUDGED } from "./invitation.ts";
+import { LEAVE_JUDGED } from "./leave.ts";
 import { MEMBERS_JUDGED } from "./members.ts";
 import { ROSTER_JUDGED } from "./roster.ts";
 import { SCHEDULE_JUDGED } from "./schedule.ts";
@@ -167,6 +168,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...CLUB_JUDGED,
   ...ROSTER_JUDGED,
   ...INVITATION_JUDGED,
+  ...LEAVE_JUDGED,
 ]);
 
 const GATE =
@@ -298,6 +300,16 @@ export const INVITATION_ACCEPT = Object.freeze({
     `InvitationAcceptance, changed, waiting or joined; the same bytes to a retry under its key (${GATE})`,
 });
 
+/** leaveClub (B1's fourth slice): leave.ts's leaveOutcome, leftExpected and leaveProblems. */
+export const LEAVE_CLUB = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; 200 with the LeftClub, the club's id, the server's instant in " +
+    "whole seconds and the caller's own choice and no other field, to an account with an active interval in a club " +
+    "that isn't suspended, whose interval ends at that instant with the rows leave.ts's leaveProblems asks for; the " +
+    "same bytes to its retry under the same key, though the caller is no longer a member; the neutral NOT_FOUND to " +
+    `every other role the gate lets through, and to the person who left under any other key (${GATE})`,
+});
+
 /** chooseScheduleDays and confirmScheduleDays (B2's schedule slice): schedule.ts's table of bodies. */
 export const SCHEDULE_COMMAND = Object.freeze({
   answer:
@@ -344,7 +356,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getSchedule: SCHEDULE,
   getUpload: NONE,
   hideDrop: NONE,
-  leaveClub: NONE,
+  leaveClub: LEAVE_CLUB,
   listBlocks: NONE,
   listClubs: CLUBS,
   listComments: NONE,

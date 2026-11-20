@@ -74,6 +74,7 @@ const BUILT = new Set([
   "acceptInvitation",
   "approveRoster",
   "declineRoster",
+  "leaveClub",
   "getSchedule",
   "chooseScheduleDays",
   "confirmScheduleDays",
@@ -107,7 +108,7 @@ describe("the skeleton's routes (T14)", () => {
 
   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
     const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
-    expect(unbuilt).toHaveLength(49);
+    expect(unbuilt).toHaveLength(48);
     for (const operation of unbuilt) {
       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
       expect(await answer({ method: operation.method.toUpperCase(), url }), operation.id).toEqual(NEUTRAL);

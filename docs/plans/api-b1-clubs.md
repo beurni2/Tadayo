@@ -256,3 +256,63 @@ Then the command:
 - **B6:** deleting an account must end its bound open candidates; until then such a candidate ends when its roster is applied, and holds a place meanwhile. The deletion must take the club's row of each such candidate after the account's row, in `acceptInvitation`'s order, and read the account's memberships again under it: `applyIfReady` reads a joiner's account state under the club's row without locking the account (the club's row then the account's would be the reverse of `acceptInvitation`'s order, a deadlock), so a deletion that didn't wait for the club's row could miss a membership made beside it (review round 1, R2-2).
 - **The web page's PR:** `apps/web`'s invitation page and the CORS rule for `previewInvitationWeb`.
 - **Not reachable through a cell of the matrix,** and held by the database tests and the judges' tests: `expired`, `full`, INVITATION_EXPIRED and CLUB_FULL of an acceptance; a revoked or a replaced link's token on the three routes; a suspended club's link; a second place in the same club; a link whose candidate joined and then left; ROSTER_CHANGED of an acceptance; an inviter with no name; an ended proposal's link nobody used; an account that changed its name after accepting. A club's start with its first days goes through the commands on Postgres, not through the app: the applied-roster test of the matrix uses a club that has started.
+
+## 5. The fourth PR: `api/b1-leave`
+
+`leaveClub`: a member ends their own membership of a club, choosing explicitly what happens to their drops. No migration (the columns are `db/migrations/0003_people_and_clubs.sql`), no contract change, no workflow file. Made from `main` at `319a2f1`.
+
+### 5.1 Sources
+
+- **The contract:** `packages/contracts/src/operations-clubs.ts` (`leaveClub`, `POST /v1/clubs/{club_id}/leave`, idempotent), `schemas/clubs.ts` (`LeaveClubRequest` with `contributions`, `LeftClub` with `club_id`, `left_at`, `contributions`).
+- **The spec:** 04 (membership by exact roster), 18 (favourites go with the club), 22 ("Leaving asks Keep my contributions in the club or Withdraw my contributions ... loses club and favourites access either way"), 32.
+- **The invariants:** T1 (the server's clock), T7 (the exact roster), T8 (a rejoin is a new interval that inherits nothing), T9 and T14 (the authorization module; the neutral not-found), T19 (one commit per idempotency key), T26 (leaving is explicit), T36 (no push to anyone), T55.
+- **The questions:** FQ16 (a club under two members is paused), FQ63 (the leaver's days that haven't opened are held), FQ75 (the name a former member is shown by), FQ80 (nothing of a suspended club), FQ112 (a used key and a later interval), FQ120 (the carry), and FQ121 and FQ122, new here.
+- **The stage:** `docs/MILESTONES.md` B1: "leaving, with the end of the membership interval. The withdraw-on-leave cascade comes in B6."
+- **The book:** G05-leave (book p30).
+
+### 5.2 The rules
+
+**`leaveClub`** (`packages/domain/src/clubs/leave-club.ts`), in one READ COMMITTED transaction the caller opens. A refusal throws `Refused`, which rolls it back, its receipt included. In order:
+
+1. Who is asking (`activeMember`, the authorization module): an active account with an active interval in a club that isn't suspended.
+2. The receipt (T19).
+    - For a member: `reserveAsMember`, the rule every club command has. A key whose receipt an earlier interval made names nothing (FQ112).
+    - For anyone else: the receipt of this same request, if the account has one, is answered as it was stored. That is a retry of a leave that went through: the person is no longer a member, and the first answer is still theirs (T19). With no such receipt the answer is NOT_FOUND and nothing is kept: a stranger, a former member with a new key, an account being deleted, a suspended club and an id nobody has all read alike (T14).
+3. The club's row, `FOR UPDATE`, as every roster command takes it and as the schedule's plan asks of a leave (`docs/plans/api-b2-schedule.md`, "Added by the review of PR #68"). Then who is asking, again: the same interval, or NOT_FOUND.
+4. The clock, after the lock (T1). `left_at` is that sample, and so is every `ended_at` below.
+5. The membership ends: `state` left, `left_at`, `contributions` as the request chose, and `ended_display_name`, the account's profile name now (FQ75). From this statement on the authorization module gives the account nothing of the club: its routes, its days, and later its drops and favourites (T9, spec 18, 22).
+6. The club's proposals (FQ121):
+    - every open candidate the leaver proposed ends: only a candidate's proposer makes its link, so nobody could invite them (section 3.2);
+    - the club's open revision, if there is one, ends, its `version` up by one: it lists the leaver as a member, so it is no longer the exact roster (T7), and could never apply;
+    - its other candidates still open go on in a revision the server makes, as FQ120's carry does: the club's members now, the same proposer, whose approval stands by proposing (FQ60), the candidates at their labels and in their order, with no acceptance, so each accepts again and every other member approves again. The ended revision is superseded by it, so a request naming it is told the new one (ROSTER_CHANGED);
+    - when nothing can be carried (no other open candidate, the revision's proposer is the leaver, or nobody is left), the revision ends as did-not-go-ahead and its open candidates end with it, so none holds a place on no revision.
+7. The club's `roster_version` moves by one.
+8. The answer, `LeftClub`: the club's id, `left_at` in whole seconds as stored, the choice. Stored in the receipt and answered as the receipt keeps it.
+
+**What isn't written.** A club under two members is paused by its members' count, which isn't stored (`club-state.ts`, FQ16). The leaver's days that haven't opened are held by `left_at` being before their reveal (FQ63; `db/migrations/0005_schedules_and_days.sql`), so leaving writes no day. No push, no event and no row says who left to anyone but the roster itself (T36).
+
+**The route** (`services/api/src/clubs/leave.ts`): the key, then the body by the contract's schema (`contributions` named when it is missing or wrong, never a value), then the command in a transaction; 200 with the explicit field list (T55); a replay with the same bytes.
+
+### 5.3 Decisions
+
+- **Both choices are taken, and the choice is recorded; withdrawing the drops is B6's** (`docs/MILESTONES.md`, B1 and B6). No drop exists before B3 builds them, so until then the two choices differ only in the row. B6's cascade must withdraw for every ended interval whose `contributions` is `withdraw`, those that ended before it shipped included, and B3 must not show a drop of such an interval: section 5.5 says so.
+- **FQ121, new: what a leave does to the club's open proposal.** No source says. The default is rule 6: the leaver's own candidates end, and the others are carried into a new proposal the remaining members approve again and the invited people accept again, as FQ120 carries. The other readings: end the whole proposal (people already invited would have to be proposed again, and their links die), or keep it and let it apply without the leaver (members approved a roster that named someone no longer there, against T7's exact roster).
+- **FQ122, new: leaving a suspended club.** FQ80's default gives nothing of a suspended club, and the authorization module answers its member as it answers a stranger. So a leave of a suspended club is NOT_FOUND until moderation lifts the suspension. The other reading, letting a member leave a suspended club, would make this the one route that tells a suspended club from a missing one. It is reversible either way: nothing is stored.
+- **The last member may leave.** A club with nobody is paused if it had started, and stays proposed if it hadn't; nothing is deleted (a club is never deleted). Nobody can read it or restart it.
+- **A retry after leaving is answered** by the stored answer, though the caller is no longer a member (rule 2). The other reading (NOT_FOUND to everyone who isn't a member) would tell a person whose first answer was lost that the club never existed, and the app couldn't tell a leave that went through from one that didn't.
+- **An account being deleted doesn't leave through this route** (NOT_FOUND, as the module gives it nothing). Its memberships end with the deletion, in B6.
+
+### 5.4 Tests
+
+- **Rules, on Postgres** (`tests/src/db/leave-club.test.ts`, helpers in `roster-world.ts`): the row a leave writes, for each choice; what the leaver can read afterwards (the club, its members, a revision that lists them: nothing); the club paused under two; the last member; the leaver's candidates ended and the others carried, with the approvals and acceptances the new revision starts with; a proposal the leaver made; a proposal with only the leaver's candidates; ROSTER_CHANGED for the ended revision; `roster_version`; the retry after leaving, with the same bytes; another body under the same key; a new key after leaving; a key of an earlier interval after joining again; a stranger, a suspended club, an account being deleted; the clock sampled after the lock, and a leave racing an approval, an acceptance and another leave behind the club's row.
+- **The route** (`services/api/src/clubs/leave.test.ts`): the key, the body's check, the field list, the mapping of each refusal, the replay.
+- **The privacy matrix** (`tests/src/privacy/rows.ts`): `leaveClub` leaves `NONE`. Each role's answer judged from the world's rows: a member's 200 and what it changes, the neutral not-found for everyone else. The former member's rows now come from a leave, on a revision that lists the interval that left (section 3.2's note for this PR).
+- **The leak scanner:** `LeftClub` holds the caller's own club id, an instant and their own choice; the scanner passes it only to the account that left.
+- **How the tests are written:** from this section, but after the command, not before it: the command was written first, so no test here was seen red against a missing command. What shows that each test can fail is the deliberate breakages, run at the PR's last head. The matrix's leave happens in a club with no open proposal; FQ121's carry is held by the database tests and by the judge's own tests (`tests/src/privacy/leave.test.ts`).
+
+### 5.5 What this PR leaves
+
+- **`api/b2-first-days-roster`:** what a leave does to the schedule. Until it merges, a leave while a club's first days are open leaves the first-days proposal naming someone who left: nothing revises it, and the last confirmation doesn't apply it. No app calls `leaveClub` yet and `dev` holds no club that depends on it. That PR takes the club's row, as this command already does, and judges the first days under it (FQ102).
+- **B3:** a drop of an interval that ended with `withdraw` is never shown.
+- **B6:** the withdrawal's cascade, for every interval that ended with `withdraw`, whenever it ended; leaving by a block; the memberships of a deleted account; the account's route to withdraw later (spec 22).
+- **B4 and later:** favourites, which go with the club for the leaver either way (spec 18).
