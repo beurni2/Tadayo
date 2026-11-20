@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index 5b7de9a4..96350a51 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -140,7 +140,6 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+   if (facts.membershipId !== null && !(mine && facts.candidateState === "joined")) return { kind: "nothing" };
+   if (facts.candidateState === "ended" && !mine) return { kind: "nothing" };
+   // Someone who joined and has left is a former member, told nothing of the club (T14).
+-  if (facts.candidateState === "joined" && facts.membershipId === null) return { kind: "nothing" };
+   const [named] = await bound(tx)`
+     SELECT r.state, r.version, rc.label
+       FROM app.roster_revisions r

@@ -1,0 +1,179 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 8 failed) 1530ms
+   ❯ leaving a club (leaveClub) (5)
+     × ends the member's interval at the clock's sample, with the choice keep and the name the person has now 77ms
+     × ends the member's interval at the clock's sample, with the choice withdraw and the name the person has now 26ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the leaver's own candidates and carries the others into a revision of the members who stay 64ms
+     × ends the whole proposal when its proposer is the one leaving 22ms
+     × writes no revision when the club has no open proposal 11ms
+   ❯ a leave behind the club's row (T1) (4)
+     × ends one interval once when eight sends of one leave arrive at once 34ms
+   ❯ found in the review of PR #78 (11)
+     × gives the neutral not-found to a second leave behind the first, and keeps no receipt of it 74ms
+     × lets two members leave one after the other behind the row, each ending the proposal as it stands 83ms
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 24 passed (32)
+   Start at  03:56:37
+   Duration  2.16s (tests 83%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > leaving a club (leaveClub) > ends the member's interval at the clock's sample, with the choice keep and the name the person has now
+ FAIL  src/db/leave-club.test.ts > leaving a club (leaveClub) > ends the member's interval at the clock's sample, with the choice withdraw and the name the person has now
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/db/leave-club.test.ts:164:49
+    162|         expect(row).toMatchObject({ state: "left", contributions: choi…
+    163|         expect(String(row?.left_at)).toBe("2026-11-11T07:00:00.123456Z…
+    164|         expect(await rosterVersion(tx, w.club)).toBe(before + 1);
+       |                                                 ^
+    165|         // Nobody else's row moved.
+    166|         expect(await membership(tx, member(w, 0))).toMatchObject({ sta…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:152:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the leaver's own candidates and carries the others into a revision of the members who stay
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ src/db/leave-club.test.ts:279:49
+    277|       expect(ended).toMatchObject({ state: "superseded", version: 2, s…
+    278|       expect(String(ended?.ended_at)).toBe("2026-11-11T05:30:00.123456…
+    279|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 1);
+       |                                                 ^
+    280|       // A request that names the ended revision is told the new one.
+    281|       expect(await refusal(approve(tx, clock, user(s.w, 2), s.open.id,…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the whole proposal when its proposer is the one leaving
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ src/db/leave-club.test.ts:342:49
+    340|       expect(String((await revisionRow(tx, s.open.id))?.ended_at)).toB…
+    341|       expect(await openOf(tx, s.w.club)).toBeNull();
+    342|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 1);
+       |                                                 ^
+    343|       // Nobody holds a place on no revision: Ben can propose five peo…
+    344|       const again = await propose(tx, clock, user(s.w, 0), s.w.club, […
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:324:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > writes no revision when the club has no open proposal
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/db/leave-club.test.ts:372:47
+    370|       await leaving(tx, user(w, 2), w.club);
+    371|       expect(await revisionsOf(tx, w.club)).toEqual(revisions);
+    372|       expect(await rosterVersion(tx, w.club)).toBe(before + 1);
+       |                                               ^
+    373|     });
+    374|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:366:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/db/leave-club.test.ts > a leave behind the club's row (T1) > ends one interval once when eight sends of one leave arrive at once
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/db/leave-club.test.ts:518:67
+    516|     const eight = await Promise.all(Array.from({ length: 8 }, () => le…
+    517|     expect(new Set(eight.map((answer) => JSON.stringify(answer))).size…
+    518|     expect(await rosterVersion(db as unknown as WorldTx, w.club)).toBe…
+       |                                                                   ^
+    519|     expect(await receiptsOf(db as unknown as WorldTx, user(w, 2))).toH…
+    520|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > gives the neutral not-found to a second leave behind the first, and keeps no receipt of it
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/db/leave-club.test.ts:786:69
+    784|       expect(await first).toMatchObject({ club_id: w.club });
+    785|       expect(await second).toBe("NOT_FOUND");
+    786|       expect(await rosterVersion(db as unknown as WorldTx, w.club)).to…
+       |                                                                     ^
+    787|       expect(await receiptsOf(db as unknown as WorldTx, user(w, 1))).t…
+    788|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > lets two members leave one after the other behind the row, each ending the proposal as it stands
+AssertionError: expected 1 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 1
+
+ ❯ src/db/leave-club.test.ts:815:49
+    813|       expect(await two).toMatchObject({ club_id: s.w.club });
+    814|       const tx = db as unknown as WorldTx;
+    815|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 2);
+       |                                                 ^
+    816|       const next = await openOf(tx, s.w.club);
+    817|       expect(next?.members).toEqual([member(s.w, 0), member(s.w, 1)]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+

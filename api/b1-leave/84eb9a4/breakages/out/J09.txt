@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/leave.test.ts (15 tests | 1 failed) 19ms
+   ❯ what a leave changes (leaveProblems) (12)
+     × catches each way the ended revision and the new one can be wrong 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:12
+   Duration  803ms (import 77%, tests 11%, transform 10%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave changes (leaveProblems) > catches each way the ended revision and the new one can be wrong
+AssertionError: the new revision's approvals aren't its proposer's alone (FQ60): expected [] to include 'the new revision\'s approvals aren\'t…'
+ ❯ src/privacy/leave.test.ts:303:36
+    301|       const rows = carried();
+    302|       change(rows);
+    303|       expect(judge(rows), problem).toContain(problem);
+       |                                    ^
+    304|     }
+    305|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

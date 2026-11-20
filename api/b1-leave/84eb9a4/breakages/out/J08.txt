@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/leave.test.ts (15 tests | 1 failed) 18ms
+   ❯ what a leave changes (leaveProblems) (12)
+     × catches each way the ended revision and the new one can be wrong 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:10
+   Duration  812ms (import 76%, transform 11%, tests 10%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave changes (leaveProblems) > catches each way the ended revision and the new one can be wrong
+AssertionError: the new revision carries an acceptance of another roster (T7): expected [] to include 'the new revision carries an acceptanc…'
+ ❯ src/privacy/leave.test.ts:303:36
+    301|       const rows = carried();
+    302|       change(rows);
+    303|       expect(judge(rows), problem).toContain(problem);
+       |                                    ^
+    304|     }
+    305|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..1fece3b9 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -127,7 +127,7 @@ export async function leaveClub(
+         FROM app.idempotency_receipts r
+         JOIN app.memberships m ON m.user_id = r.actor_user_id AND m.club_id = ${clubId}
+        WHERE r.actor_user_id = ${userId} AND r.operation = 'leaveClub'
+-         AND r.idempotency_key = ${input.key}::pg_catalog.uuid AND m.joined_at >= r.created_at
++         AND r.idempotency_key = ${input.key}::pg_catalog.uuid AND m.joined_at >= r.created_at AND m.state = 'active'
+        LIMIT 1`;
+     if (since !== undefined) throw new Refused("NOT_FOUND");
+     return stored.replay;

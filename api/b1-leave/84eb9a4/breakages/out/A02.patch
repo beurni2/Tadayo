@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/accept-invitation.ts b/packages/domain/src/clubs/accept-invitation.ts
+index 5b7de9a4..c2652daa 100644
+--- a/packages/domain/src/clubs/accept-invitation.ts
++++ b/packages/domain/src/clubs/accept-invitation.ts
+@@ -166,7 +166,6 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
+     const [listed] = await bound(tx)`
+       SELECT 1 AS found FROM app.roster_revision_candidates rc
+        WHERE rc.revision_id = ${newest} AND rc.candidate_id = ${facts.candidateId}`;
+-    if (listed === undefined) return { kind: "nothing" };
+     return { kind: "refused", facts, refusal: new Refused("ROSTER_CHANGED", { current_id: newest }) };
+   }
+   if (version !== input.expectedVersion) {

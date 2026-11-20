@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/leave.ts b/services/api/src/clubs/leave.ts
+index 2f1c729c..68fb917f 100644
+--- a/services/api/src/clubs/leave.ts
++++ b/services/api/src/clubs/leave.ts
+@@ -17,7 +17,7 @@ import { signedIn } from "../deps.ts";
+ export function leftClubBody(left: LeftClub): { readonly [key: string]: Json } {
+   return {
+     club_id: left.clubId,
+-    left_at: contractInstant(left.leftAt),
++    left_at: left.leftAt.toString(),
+     contributions: left.contributions,
+   };
+ }

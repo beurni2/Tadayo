@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/leave.test.ts (15 tests | 1 failed) 21ms
+   ❯ what a leave changes (leaveProblems) (12)
+     × catches another member's interval ended, the leaver's own left active, and a version that didn't move by one 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:02
+   Duration  831ms (import 78%, tests 10%, transform 9%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave changes (leaveProblems) > catches another member's interval ended, the leaver's own left active, and a version that didn't move by one
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the club's roster version didn't move by one",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:165:28
+    163|       const stuck = plain();
+    164|       stuck.after.clubs = clubRows(version, null);
+    165|       expect(judge(stuck)).toEqual(["the club's roster version didn't …
+       |                            ^
+    166|     }
+    167|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

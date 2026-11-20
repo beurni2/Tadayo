@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index d73d8220..a9246f8e 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -139,7 +139,7 @@ export function leaveProblems(
+     carried.map((one) => `${one.id} ${one.label}`).join("\n")
+   )
+     problems.push("the new revision's candidates aren't the ones carried, at their labels and in their order");
+-  if (next.candidates.some((one) => one.acceptedWith !== null))
++  if (next.candidates.some((one) => one.acceptedWith === undefined))
+     problems.push("the new revision carries an acceptance of another roster (T7)");
+   if (next.origin !== was.origin) problems.push(`the new revision is a ${next.origin}, not a ${was.origin}`);
+   if (was.origin === "proposal") {

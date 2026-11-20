@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/leave.test.ts (15 tests | 1 failed) 20ms
+   ❯ what a leave changes (leaveProblems) (12)
+     × carries nothing for a proposer who was no member before the leave, and none of the candidates ended before it 5ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:07
+   Duration  803ms (import 76%, transform 13%, tests 9%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave changes (leaveProblems) > carries nothing for a proposer who was no member before the leave, and none of the candidates ended before it
+AssertionError: expected [ Array(1) ] to include 'the revision is superseded, not did_n…'
+ ❯ src/privacy/leave.test.ts:393:25
+    391|     gone.before.schedule = schedule(["itv_ana"]);
+    392|     gone.after.schedule = schedule(["itv_ana", "itv_ben"]);
+    393|     expect(judge(gone)).toContain("the revision is superseded, not did…
+       |                         ^
+    394|     // Sam had ended before the leave: the new revision must not list …
+    395|     const before = carried();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

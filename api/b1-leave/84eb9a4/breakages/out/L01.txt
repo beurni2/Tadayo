@@ -1,0 +1,112 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 5 failed) 1851ms
+   ❯ the receipt of a leave (T19) (4)
+     × answers a retry after leaving with the first answer, byte for byte, and changes nothing 18ms
+     × gives the neutral not-found to another choice under the key of a leave, and keeps the first 15ms
+     × gives a member who joined again the neutral not-found for the key they left with (FQ112) 34ms
+   ❯ who may leave (T9, T14) (3)
+     × still answers the retry of a leave once the club is suspended 11ms
+   ❯ a leave behind the club's row (T1) (4)
+     × ends one interval once when eight sends of one leave arrive at once 33ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 27 passed (32)
+   Start at  03:55:35
+   Duration  2.52s (tests 84%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > the receipt of a leave (T19) > answers a retry after leaving with the first answer, byte for byte, and changes nothing
+Refused: refused: NOT_FOUND
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:133:11
+    131|        LIMIT 1`;
+    132|     if (since !== undefined) throw new Refused("NOT_FOUND");
+    133|     throw new Refused("NOT_FOUND");
+       |           ^
+    134|   }
+    135|   const first = await reserveAsMember(tx, receipt, await clock.sample(…
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/leave-club.test.ts:385:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:379:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > the receipt of a leave (T19) > gives the neutral not-found to another choice under the key of a leave, and keeps the first
+Refused: refused: NOT_FOUND
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:133:11
+    131|        LIMIT 1`;
+    132|     if (since !== undefined) throw new Refused("NOT_FOUND");
+    133|     throw new Refused("NOT_FOUND");
+       |           ^
+    134|   }
+    135|   const first = await reserveAsMember(tx, receipt, await clock.sample(…
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/leave-club.test.ts:400:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:393:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > the receipt of a leave (T19) > gives a member who joined again the neutral not-found for the key they left with (FQ112)
+Refused: refused: NOT_FOUND
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:133:11
+    131|        LIMIT 1`;
+    132|     if (since !== undefined) throw new Refused("NOT_FOUND");
+    133|     throw new Refused("NOT_FOUND");
+       |           ^
+    134|   }
+    135|   const first = await reserveAsMember(tx, receipt, await clock.sample(…
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/leave-club.test.ts:436:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:414:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > who may leave (T9, T14) > still answers the retry of a leave once the club is suspended
+Refused: refused: NOT_FOUND
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:133:11
+    131|        LIMIT 1`;
+    132|     if (since !== undefined) throw new Refused("NOT_FOUND");
+    133|     throw new Refused("NOT_FOUND");
+       |           ^
+    134|   }
+    135|   const first = await reserveAsMember(tx, receipt, await clock.sample(…
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/leave-club.test.ts:478:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:473:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > a leave behind the club's row (T1) > ends one interval once when eight sends of one leave arrive at once
+Refused: refused: NOT_FOUND
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:133:11
+    131|        LIMIT 1`;
+    132|     if (since !== undefined) throw new Refused("NOT_FOUND");
+    133|     throw new Refused("NOT_FOUND");
+       |           ^
+    134|   }
+    135|   const first = await reserveAsMember(tx, receipt, await clock.sample(…
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/leave-club.test.ts:516:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/leave.test.ts (15 tests | 1 failed) 21ms
+   ❯ what a leave changes (leaveProblems) (12)
+     × catches the leaver's candidate left open 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:03
+   Duration  854ms (import 78%, transform 11%, tests 10%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave changes (leaveProblems) > catches the leaver's candidate left open
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the leaver's candidate cnd_debby is still open (FQ121)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:239:25
+    237|     const rows = carried();
+    238|     rows.after.roster.candidates.set("cnd_debby", { club: CLUB, propos…
+    239|     expect(judge(rows)).toEqual(["the leaver's candidate cnd_debby is …
+       |                         ^
+    240|   });
+    241|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

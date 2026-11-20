@@ -1,0 +1,12 @@
+diff --git a/services/api/src/clubs/leave.ts b/services/api/src/clubs/leave.ts
+index 2f1c729c..bfc50d7f 100644
+--- a/services/api/src/clubs/leave.ts
++++ b/services/api/src/clubs/leave.ts
+@@ -46,7 +46,6 @@ export function leaveClubHandler(deps: Deps): Handler {
+     try {
+       response = await deps.sql.begin((tx) => leaveClub(tx, deps.clock, input, leftClubBody));
+     } catch (error) {
+-      if (error instanceof Refused) return refusal(reply, error);
+       throw error;
+     }
+     return ok(reply, response);

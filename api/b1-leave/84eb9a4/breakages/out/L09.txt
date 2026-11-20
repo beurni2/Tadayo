@@ -1,0 +1,67 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 2 failed) 1622ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the leaver's own candidates and carries the others into a revision of the members who stay 80ms
+   ❯ found in the review of PR #78 (11)
+     × ends a proposal with nothing left to carry, though its proposer stays 24ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  03:56:07
+   Duration  2.24s (tests 84%, import 11%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the leaver's own candidates and carries the others into a revision of the members who stay
+AssertionError: expected 'open' to be 'ended' // Object.is equality
+
+Expected: "ended"
+Received: "open"
+
+ ❯ src/db/leave-club.test.ts:262:30
+    260|       for (const one of [s.sam, s.debby]) {
+    261|         const ended = await candidateState(tx, one);
+    262|         expect(ended?.state).toBe("ended");
+       |                              ^
+    263|         expect(String(ended?.ended_at)).toBe("2026-11-11T05:30:00.1234…
+    264|       }
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > ends a proposal with nothing left to carry, though its proposer stays
+AssertionError: expected { …(6) } to match object { state: 'did_not_go_ahead', …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "did_not_go_ahead",
+-   "superseded_by_id": null,
++   "state": "superseded",
++   "superseded_by_id": "rev_4U35Di9FZLGWiSMKUd_VXg",
+  }
+
+ ❯ src/db/leave-club.test.ts:761:46
+    759|         UPDATE app.candidates SET state = 'ended', ended_at = ${LATER}…
+    760|       await leaving(tx, user(w, 0), w.club);
+    761|       expect(await revisionRow(tx, open.id)).toMatchObject({ state: "d…
+       |                                              ^
+    762|       expect((await candidateState(tx, candidate(first, 0)))?.state).t…
+    763|       expect(await openOf(tx, w.club)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:752:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..35d4e089 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -146,7 +146,7 @@ export async function leaveClub(
+   const [ended] = await bound(tx)`
+     UPDATE app.memberships m
+        SET state = 'left', left_at = ${at}::pg_catalog.timestamptz, contributions = ${contributions},
+-           ended_display_name = u.display_name
++           ended_display_name = 'x' || u.display_name
+       FROM app.users u
+      WHERE m.interval_id = ${asking} AND m.state = 'active' AND u.id = m.user_id
+     RETURNING m.interval_id`;

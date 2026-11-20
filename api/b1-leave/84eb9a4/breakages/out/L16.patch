@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..a472602f 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -176,7 +176,7 @@ export async function leaveClub(
+       const next = newId("rev");
+       await bound(tx)`
+         UPDATE app.roster_revisions
+-           SET state = 'superseded', version = version + 1, superseded_by_id = ${next},
++           SET state = 'did_not_go_ahead', version = version + 1,
+                ended_at = ${at}::pg_catalog.timestamptz
+          WHERE id = ${revisionId}`;
+       await writeRevision(tx, {

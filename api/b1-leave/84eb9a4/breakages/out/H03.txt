@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/services/api
+
+ ❯ src/clubs/leave.test.ts (10 tests | 1 failed) 156ms
+   ❯ what leaveClub refuses before any transaction (3)
+     × names the choice when it is missing or isn't keep or withdraw, never a value, and reads no database for it 16ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  03:56:57
+   Duration  598ms (import 49%, tests 33%, transform 18%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/leave.test.ts > what leaveClub refuses before any transaction > names the choice when it is missing or isn't keep or withdraw, never a value, and reads no database for it
+AssertionError: {}: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"contributions\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\"}",
+    "status": 400,
+  }
+
+ ❯ src/clubs/leave.test.ts:138:44
+    136|     for (const [payload, field] of cases) {
+    137|       const got = await answer(post(JSON.stringify(payload)));
+    138|       expect(got, JSON.stringify(payload)).toMatchObject(invalid(field…
+       |                                            ^
+    139|       expect(got.body).not.toMatch(/remove|Keep|moving|text/);
+    140|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

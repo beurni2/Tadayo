@@ -1,0 +1,18 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..dcdec757 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -183,11 +183,11 @@ export async function leaveClub(
+         id: next,
+         clubId,
+         // What the ended revision was: a name nobody has approved yet stays one (FQ84).
+-        origin,
++        origin: "proposal",
+         proposer: text(open["proposed_by_interval_id"]),
+         at,
+         candidates: carried.map((row) => ({ candidateId: text(row["candidate_id"]), label: text(row["label"]) })),
+-        implicit: origin === "proposal",
++        implicit: true,
+       });
+     } else {
+       await bound(tx)`

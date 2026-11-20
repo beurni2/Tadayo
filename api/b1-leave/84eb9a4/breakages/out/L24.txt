@@ -1,0 +1,99 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 3 failed) 1807ms
+   ❯ the receipt of a leave (T19) (4)
+     × gives the neutral not-found to another choice under the key of a leave, and keeps the first 24ms
+   ❯ found in the review of PR #78 (11)
+     × doesn't answer the key of an earlier leave to someone who joined again, once the club is suspended (FQ112) 71ms
+     × reads a used key alike for a club nobody has, a club left and a suspended one the account is in (T14) 73ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 29 passed (32)
+   Start at  03:55:44
+   Duration  2.43s (tests 84%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > the receipt of a leave (T19) > gives the neutral not-found to another choice under the key of a leave, and keeps the first
+AssertionError: expected { code: 'IDEMPOTENCY_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
++   "code": "IDEMPOTENCY_CONFLICT",
+    "facts": {},
+  }
+
+ ❯ src/db/leave-club.test.ts:398:79
+    396|       const first = await leaving(tx, user(w, 1), w.club, "keep", key);
+    397|       // Not a conflict: to someone who isn't a member, a used key say…
+    398|       expect(await refusal(leaving(tx, user(w, 1), w.club, "withdraw",…
+       |                                                                               ^
+    399|       expect((await membership(tx, member(w, 1)))?.contributions).toBe…
+    400|       expect(await leaving(tx, user(w, 1), w.club, "keep", key)).toEqu…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:393:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > doesn't answer the key of an earlier leave to someone who joined again, once the club is suspended (FQ112)
+AssertionError: expected { code: 'IDEMPOTENCY_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
++   "code": "IDEMPOTENCY_CONFLICT",
+    "facts": {},
+  }
+
+ ❯ src/db/leave-club.test.ts:691:79
+    689|       await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id =…
+    690|       expect(await refusal(leaving(tx, user(w, 1), w.club, "keep", key…
+    691|       expect(await refusal(leaving(tx, user(w, 1), w.club, "withdraw",…
+       |                                                                               ^
+    692|     });
+    693|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:679:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > reads a used key alike for a club nobody has, a club left and a suspended one the account is in (T14)
+AssertionError: expected { code: 'IDEMPOTENCY_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
++   "code": "IDEMPOTENCY_CONFLICT",
+    "facts": {},
+  }
+
+ ❯ src/db/leave-club.test.ts:721:77
+    719|       for (const club of [other.club, gone.club, "club_nobody_has"]) {
+    720|         for (const choice of ["keep", "withdraw"] as const) {
+    721|           expect(await refusal(leaving(tx, user(w, 1), club, choice, k…
+       |                                                                             ^
+    722|         }
+    723|       }
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:696:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

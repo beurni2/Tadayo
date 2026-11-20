@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/services/api
+
+ ❯ src/clubs/leave.test.ts (10 tests | 1 failed) 159ms
+   ❯ what leaveClub refuses before any transaction (3)
+     × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 94ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  03:56:56
+   Duration  598ms (import 47%, tests 33%, transform 19%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/leave.test.ts > what leaveClub refuses before any transaction > names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong
+AssertionError: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"Idempotency-Key\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"contributions\"}",
+    "status": 400,
+  }
+
+ ❯ src/clubs/leave.test.ts:113:32
+    111|     for (const key of [null, "", "abc", `${KEY}0`, `${KEY}, ${KEY}`]) {
+    112|       const got = await answer(post('{"contributions":7}', key));
+    113|       expect(got, String(key)).toMatchObject(invalid("Idempotency-Key"…
+       |                                ^
+    114|       expect(got.headers["cache-control"]).toBe("private, no-store");
+    115|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

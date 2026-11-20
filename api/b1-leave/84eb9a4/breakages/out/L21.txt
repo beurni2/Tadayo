@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1753ms
+   ❯ the receipt of a leave (T19) (4)
+     × gives the neutral not-found to another choice under the key of a leave, and keeps the first 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:56:43
+   Duration  2.34s (tests 85%, import 11%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > the receipt of a leave (T19) > gives the neutral not-found to another choice under the key of a leave, and keeps the first
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/leave-club.test.ts:398:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:393:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

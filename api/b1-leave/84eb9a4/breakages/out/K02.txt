@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (30 tests | 1 failed) 33ms
+   ❯ what accepting must get (acceptInvitation) (8)
+     × tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all 11ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:15
+   Duration  763ms (import 76%, tests 13%, transform 10%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > what accepting must get (acceptInvitation) > tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all
+AssertionError: expected { status: 409, …(3) } to be { status: 404, …(3) } // Object.is equality
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
++   "body": "{\"code\":\"ROSTER_CHANGED\",\"current_id\":\"rev_2\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+      "connection": "keep-alive",
+-     "content-length": "20",
++     "content-length": "46",
+      "content-type": "application/json; charset=utf-8",
+    },
+-   "reason": "Not Found",
+-   "status": 404,
++   "reason": "Conflict",
++   "status": 409,
+  }
+
+ ❯ src/privacy/invitation.test.ts:419:45
+    417|       [["cand_mo", { state: "ended" }]],
+    418|     );
+    419|     expect(accept("usr_mo", "Mo", carried)).toBe(NEUTRAL);
+       |                                             ^
+    420|     expect(accept("usr_mo", "Mo", carried, { expected: 9 })).toBe(NEUT…
+    421|     // Mo joined by the link and has left since: no interval of Mo's i…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

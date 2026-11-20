@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index d73d8220..8161c556 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -143,7 +143,7 @@ export function leaveProblems(
+     problems.push("the new revision carries an acceptance of another roster (T7)");
+   if (next.origin !== was.origin) problems.push(`the new revision is a ${next.origin}, not a ${was.origin}`);
+   if (was.origin === "proposal") {
+-    if (next.decisions.size !== 1 || next.decisions.get(was.proposer) !== "approved")
++    if (next.decisions.get(was.proposer) !== "approved")
+       problems.push("the new revision's approvals aren't its proposer's alone (FQ60)");
+   } else if (next.decisions.size !== 0) {
+     problems.push("the new revision of a name nobody approved starts with an approval (FQ84)");

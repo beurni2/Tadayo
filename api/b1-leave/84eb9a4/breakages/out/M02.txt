@@ -1,0 +1,49 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36873 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (17 tests | 1 failed | 16 skipped) 42619ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 42437ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 skipped (17)
+   Start at  03:57:59
+   Duration  43.62s (tests 98%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 6, first: [ …(6) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 6,
++   "first": [
++     "active, past, a year on: leaveClub: the club's roster version didn't move by one (the viewer's own leave)",
++     "withdrawn, past, a year on: leaveClub: the club's roster version didn't move by one (the viewer's own leave)",
++     "removed by moderation, past, a year on: leaveClub: the club's roster version didn't move by one (the viewer's own leave)",
++     "held (T29), past, a year on: leaveClub: the club's roster version didn't move by one (the viewer's own leave)",
++     "its day suspended, past, a year on: leaveClub: the club's roster version didn't move by one (the viewer's own leave)",
++     "its day cancelled, past, a year on: leaveClub: the club's roster version didn't move by one (the viewer's own leave)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1593:66
+    1591|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1592|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1593|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1594|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1595|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

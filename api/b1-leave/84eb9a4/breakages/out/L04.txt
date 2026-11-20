@@ -1,0 +1,115 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 5 failed) 3822ms
+   ❯ a leave behind the club's row (T1) (4)
+     × dates the leave by the clock as it reads once the row is the leave's 63ms
+     × leaves a club that the last approval has just grown, when the approval came first 1158ms
+   ❯ found in the review of PR #78 (11)
+     × gives the neutral not-found to a second leave behind the first, and keeps no receipt of it 73ms
+     × lets two members leave one after the other behind the row, each ending the proposal as it stands 90ms
+     × carries no acceptance that came just before the leave 1077ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 27 passed (32)
+   Start at  03:55:50
+   Duration  4.47s (tests 92%, import 6%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > a leave behind the club's row (T1) > dates the leave by the clock as it reads once the row is the leave's
+AssertionError: expected '2026-11-11T05:00:00Z' to be '2026-11-11T08:00:00Z' // Object.is equality
+
+Expected: "2026-11-11T08:00:00Z"
+Received: "2026-11-11T05:00:00Z"
+
+ ❯ src/db/leave-club.test.ts:507:28
+    505|     }
+    506|     const answer = (await waiting) as { left_at: string };
+    507|     expect(answer.left_at).toBe("2026-11-11T08:00:00Z");
+       |                            ^
+    508|     const row = await membership(db as unknown as WorldTx, member(w, 1…
+    509|     expect(String(row?.left_at)).toBe("2026-11-11T08:00:00.123456Z");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > a leave behind the club's row (T1) > leaves a club that the last approval has just grown, when the approval came first
+AssertionError: expected '40P01' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_BfDSuHyZkahjt1ntIGUL-A",
+}
+
++ Received:
+"40P01"
+
+ ❯ src/db/leave-club.test.ts:585:26
+    583|       }
+    584|       expect(await approved).toMatchObject({ state: "applied" });
+    585|       expect(await left).toMatchObject({ club_id: s.w.club });
+       |                          ^
+    586|       const tx = db as unknown as WorldTx;
+    587|       const active = await plain(tx)<{ user_id: string }[]>`
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > gives the neutral not-found to a second leave behind the first, and keeps no receipt of it
+AssertionError: expected 'Error: clubs: the membership its memb…' to be 'NOT_FOUND' // Object.is equality
+
+Expected: "NOT_FOUND"
+Received: "Error: clubs: the membership its member is leaving can't be ended"
+
+ ❯ src/db/leave-club.test.ts:785:28
+    783|       }
+    784|       expect(await first).toMatchObject({ club_id: w.club });
+    785|       expect(await second).toBe("NOT_FOUND");
+       |                            ^
+    786|       expect(await rosterVersion(db as unknown as WorldTx, w.club)).to…
+    787|       expect(await receiptsOf(db as unknown as WorldTx, user(w, 1))).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > lets two members leave one after the other behind the row, each ending the proposal as it stands
+AssertionError: expected '23000' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_Ga5N55-h7qxrmAFSq9KJIA",
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/leave-club.test.ts:813:25
+    811|       }
+    812|       expect(await one).toMatchObject({ club_id: s.w.club });
+    813|       expect(await two).toMatchObject({ club_id: s.w.club });
+       |                         ^
+    814|       const tx = db as unknown as WorldTx;
+    815|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries no acceptance that came just before the leave
+AssertionError: expected '40P01' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_tDbx7ulJE6I8cTdQQprB9A",
+}
+
++ Received:
+"40P01"
+
+ ❯ src/db/leave-club.test.ts:889:24
+    887|     }
+    888|     expect(await accepted).toMatchObject({ state: "waiting" });
+    889|     expect(await left).toMatchObject({ club_id: s.w.club });
+       |                        ^
+    890|     const tx = db as unknown as WorldTx;
+    891|     const next = await openOf(tx, s.w.club);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

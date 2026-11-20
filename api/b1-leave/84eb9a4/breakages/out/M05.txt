@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36873 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (17 tests | 1 failed | 16 skipped) 44181ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 43984ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 skipped (17)
+   Start at  04:00:12
+   Duration  45.08s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 312, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 312,
++   "first": [
++     "active, collecting: leaveClub, club_id guessed: status 200",
++     "active, collecting: leaveClub, club_id guessed: reason \"OK\"",
++     "active, collecting: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"guess_97DZRCBy-k6Vy0NggTz_qA\\\",\\\"left_at\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, collecting: leaveClub, club_id guessed: content-length: 98",
++     "active, collecting: leaveClub, club_id guessed: status 200",
++     "active, collecting: leaveClub, club_id guessed: reason \"OK\"",
++     "active, collecting: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"club_3sp9LXxysPAB8UixKDt1mQ\\\",\\\"left_at\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, collecting: leaveClub, club_id guessed: content-length: 97",
++     "active, collecting, leaveClub: world at $.club_id: a club this world doesn't have",
++     "active, collecting, leaveClub: world at $.club_id: a club of a club the viewer has no interval in (T14)",
++     "active, open: leaveClub, club_id guessed: status 200",
++     "active, open: leaveClub, club_id guessed: reason \"OK\"",
++     "active, open: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"guess_ABGRkDqbemhO58fEJymkAA\\\",\\\"left_at\\\":\\\"2026-11-07T07:00:00Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, open: leaveClub, club_id guessed: content-length: 98",
++     "active, open: leaveClub, club_id guessed: status 200",
++     "active, open: leaveClub, club_id guessed: reason \"OK\"",
++     "active, open: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"club_3sp9LXxysPAB8UixKDt1mQ\\\",\\\"left_at\\\":\\\"2026-11-07T07:00:00Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, open: leaveClub, club_id guessed: content-length: 97",
++     "active, open, leaveClub: world at $.club_id: a club this world doesn't have",
++     "active, open, leaveClub: world at $.club_id: a club of a club the viewer has no interval in (T14)",
++     "active, past: leaveClub, club_id guessed: status 200",
++     "active, past: leaveClub, club_id guessed: reason \"OK\"",
++     "active, past: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"guess_52I3scBgQj4wh1-iy8rfwA\\\",\\\"left_at\\\":\\\"2026-11-08T01:00:00Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, past: leaveClub, club_id guessed: content-length: 98",
++     "active, past: leaveClub, club_id guessed: status 200",
++     "active, past: leaveClub, club_id guessed: reason \"OK\"",
++     "active, past: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"club_3sp9LXxysPAB8UixKDt1mQ\\\",\\\"left_at\\\":\\\"2026-11-08T01:00:00Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, past: leaveClub, club_id guessed: content-length: 97",
++     "active, past, leaveClub: world at $.club_id: a club this world doesn't have",
++     "active, past, leaveClub: world at $.club_id: a club of a club the viewer has no interval in (T14)",
++     "active, past, a year on: leaveClub, club_id guessed: status 200",
++     "active, past, a year on: leaveClub, club_id guessed: reason \"OK\"",
++     "active, past, a year on: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"guess_gdqZnBhjUFE8jStH8Seh3w\\\",\\\"left_at\\\":\\\"2027-11-08T01:00:00Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, past, a year on: leaveClub, club_id guessed: content-length: 98",
++     "active, past, a year on: leaveClub, club_id guessed: status 200",
++     "active, past, a year on: leaveClub, club_id guessed: reason \"OK\"",
++     "active, past, a year on: leaveClub, club_id guessed: body \"{\\\"club_id\\\":\\\"club_3sp9LXxysPAB8UixKDt1mQ\\\",\\\"left_at\\\":\\\"2027-11-08T01:00:00Z\\\",\\\"contributions\\\":\\\"keep\\\"}\"",
++     "active, past, a year on: leaveClub, club_id guessed: content-length: 97",
++     "active, past, a year on, leaveClub: world at $.club_id: a club this world doesn't have",
++     "active, past, a year on, leaveClub: world at $.club_id: a club of a club the viewer has no interval in (T14)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1593:66
+    1591|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1592|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1593|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1594|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1595|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

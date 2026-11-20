@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1813ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the whole proposal when its proposer is the one leaving 48ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:56:13
+   Duration  2.42s (tests 85%, import 10%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the whole proposal when its proposer is the one leaving
+PostgresError: app.roster_approvals: mem_YAZAaYjMFlYYlrkSRwhgDA is no longer a member, so doesn't decide (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeRevision ../packages/domain/src/clubs/apply-roster.ts:108:20
+    106|     UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catal…
+    107|   if (revision.implicit) {
+    108|     await bound(tx)`
+       |                    ^
+    109|       INSERT INTO app.roster_approvals (revision_id, interval_id, deci…
+    110|       VALUES (${id}, ${revision.proposer}, 'approved', true, ${at}::pg…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

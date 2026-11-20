@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1762ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × keeps a carried candidate's link good, to accept the new roster with 50ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:56:31
+   Duration  2.46s (tests 81%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > keeps a carried candidate's link good, to accept the new roster with
+AssertionError: expected [ { …(3) }, { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "accepted": false,
+-     "id": "cand_v1iNgbLoh75C69sLffC06g",
+-     "label": "Sam",
++     "id": "cand_uI6bq9epAZQGsqvtGrIEPA",
++     "label": "Nina",
+    },
+    {
+      "accepted": false,
+      "id": "cand_gCa2I4mElWNdbmA169K5iw",
+      "label": "Debby",
+    },
+    {
+      "accepted": false,
+-     "id": "cand_uI6bq9epAZQGsqvtGrIEPA",
+-     "label": "Nina",
++     "id": "cand_v1iNgbLoh75C69sLffC06g",
++     "label": "Sam",
+    },
+  ]
+
+ ❯ src/db/leave-club.test.ts:302:32
+    300|       await leaving(tx, user(s.w, 2), s.w.club);
+    301|       const next = await openOf(tx, s.w.club);
+    302|       expect(next?.candidates).toEqual([
+       |                                ^
+    303|         { id: s.sam, label: "Sam", accepted: false },
+    304|         { id: s.debby, label: "Debby", accepted: false },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:295:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

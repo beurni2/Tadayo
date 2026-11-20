@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index d73d8220..32ddd5df 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -112,7 +112,7 @@ export function leaveProblems(
+   const ended = after.roster.revisions.get(openBefore);
+   if (was === undefined || ended === undefined) return [...problems, "the open revision's rows are gone"];
+   const carried = was.candidates.filter(
+-    (one) => one.proposer !== interval && before.roster.candidates.get(one.id)?.state === "open",
++    (one) => one.proposer !== interval,
+   );
+   if (ended.version !== was.version + 1) problems.push("the ended revision's version didn't move by one");
+   // Carried only by a proposer who stays: one who isn't a member any more stands behind nothing.

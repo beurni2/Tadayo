@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index bfcbbbd7..88812639 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -214,7 +214,6 @@ export function acceptOutcome(
+   if (viewer !== undefined && !(mine && state === "joined")) return NEUTRAL;
+   if (state === "ended" && !mine) return NEUTRAL;
+   // Someone who joined by the link and has left is a former member (T14).
+-  if (state === "joined" && viewer === undefined) return NEUTRAL;
+   const rows = roster.revisions.get(revision);
+   const listed = rows?.candidates.find((candidate) => candidate.id === link.candidate);
+   if (rows === undefined || rows.club !== link.club || !rows.sealed || listed === undefined) return NEUTRAL;

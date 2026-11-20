@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36873 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (17 tests | 1 failed | 16 skipped) 46639ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 46434ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 skipped (17)
+   Start at  04:00:58
+   Duration  47.70s (tests 98%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 168, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 168,
++   "first": [
++     "active, past, a year on: leaveClub: status 500 (a leave under a new key afterwards)",
++     "active, past, a year on: leaveClub: reason \"Internal Server Error\" (a leave under a new key afterwards)",
++     "active, past, a year on: leaveClub: body \"\" (a leave under a new key afterwards)",
++     "active, past, a year on: leaveClub: content-type: undefined (a leave under a new key afterwards)",
++     "active, past, a year on: leaveClub: content-length: 0 (a leave under a new key afterwards)",
++     "active, past, a year on, leaveClub: shape at status: 500 isn't an answer leaveClub declares",
++     "active, past, a year on: getClub: status 200",
++     "active, past, a year on: getClub: reason \"OK\"",
++     "active, past, a year on: getClub: body \"{\\\"server_now\\\":\\\"2027-11-08T01:00:00Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_0KXjnW9a1dnxQS_StWQtgw\\\",\\\"name\\\":\\\"Saturday people 1523a584299f\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_KtrpmKMgYHxT9FqZm0W4qA\\\",\\\"state\\\"\"",
++     "active, past, a year on: getClub: content-length: 267",
++     "active, past, a year on, getClub: world at $.club: a club the viewer is no longer an active member of, as one of their clubs (ClubSummary)",
++     "active, past, a year on, getClub: world at $.club.my_membership_id: not the viewer's active interval in this club",
++     "active, past, a year on: listMembers: status 200",
++     "active, past, a year on: listMembers: reason \"OK\"",
++     "active, past, a year on: listMembers: body \"{\\\"server_now\\\":\\\"2027-11-08T01:00:00Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_0KXjnW9a1dnxQS_StWQtgw\\\",\\\"name\\\":\\\"Saturday people 1523a584299f\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_KtrpmKMgYHxT9FqZm0W4qA\\\"},\\\"membe\"",
++     "active, past, a year on: listMembers: content-length: 449",
++     "active, past, a year on: getSchedule: status 500",
++     "active, past, a year on: getSchedule: reason \"Internal Server Error\"",
++     "active, past, a year on: getSchedule: body \"\"",
++     "active, past, a year on: getSchedule: content-type: undefined",
++     "active, past, a year on: getSchedule: content-length: 0",
++     "active, past, a year on, getSchedule: shape at status: 500 isn't an answer getSchedule declares",
++     "active, past, a year on: getRosterRevision: status 200",
++     "active, past, a year on: getRosterRevision: reason \"OK\"",
++     "active, past, a year on: getRosterRevision: body \"{\\\"id\\\":\\\"rev_MftgRUghlOnqKsVgpJWV_Q\\\",\\\"version\\\":2,\\\"club\\\":{\\\"id\\\":\\\"club_0KXjnW9a1dnxQS_StWQtgw\\\",\\\"name\\\":\\\"Saturday people 1523a584299f\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_KtrpmKMgYHxT9FqZm0W4q\"",
++     "active, past, a year on: getRosterRevision: content-length: 999",
++     "active, past, a year on, getRosterRevision: world at $.candidates[0].invitation.id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++     "active, past, a year on, getRosterRevision: world at $.candidates[1].invitation.id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++     "withdrawn, past, a year on: leaveClub: status 500 (a leave under a new key afterwards)",
++     "withdrawn, past, a year on: leaveClub: reason \"Internal Server Error\" (a leave under a new key afterwards)",
++     "withdrawn, past, a year on: leaveClub: body \"\" (a leave under a new key afterwards)",
++     "withdrawn, past, a year on: leaveClub: content-type: undefined (a leave under a new key afterwards)",
++     "withdrawn, past, a year on: leaveClub: content-length: 0 (a leave under a new key afterwards)",
++     "withdrawn, past, a year on, leaveClub: shape at status: 500 isn't an answer leaveClub declares",
++     "withdrawn, past, a year on: getClub: status 200",
++     "withdrawn, past, a year on: getClub: reason \"OK\"",
++     "withdrawn, past, a year on: getClub: body \"{\\\"server_now\\\":\\\"2027-11-08T01:00:00Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_u2T3sfF5OXAQnYTWj2SCUg\\\",\\\"name\\\":\\\"Saturday people 30f791b54031\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zqOiVRVAA8u4EzNhGRCTIg\\\",\\\"state\\\"\"",
++     "withdrawn, past, a year on: getClub: content-length: 267",
++     "withdrawn, past, a year on, getClub: world at $.club: a club the viewer is no longer an active member of, as one of their clubs (ClubSummary)",
++     "withdrawn, past, a year on, getClub: world at $.club.my_membership_id: not the viewer's active interval in this club",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1593:66
+    1591|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1592|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1593|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1594|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1595|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

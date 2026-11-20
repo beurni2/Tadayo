@@ -1,0 +1,74 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 2 failed) 1711ms
+   ❯ leaving a club (leaveClub) (5)
+     × ends the member's interval at the clock's sample, with the choice keep and the name the person has now 85ms
+     × ends the member's interval at the clock's sample, with the choice withdraw and the name the person has now 34ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  03:56:04
+   Duration  2.40s (tests 83%, import 11%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > leaving a club (leaveClub) > ends the member's interval at the clock's sample, with the choice keep and the name the person has now
+AssertionError: expected { …(5) } to match object { state: 'left', …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "contributions": "keep",
+-   "ended_display_name": "Maya R",
++   "ended_display_name": "xMaya R",
+    "state": "left",
+  }
+
+ ❯ src/db/leave-club.test.ts:162:21
+    160|         expect(answer).toEqual({ club_id: w.club, left_at: "2026-11-11…
+    161|         const row = await membership(tx, member(w, 1));
+    162|         expect(row).toMatchObject({ state: "left", contributions: choi…
+       |                     ^
+    163|         expect(String(row?.left_at)).toBe("2026-11-11T07:00:00.123456Z…
+    164|         expect(await rosterVersion(tx, w.club)).toBe(before + 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:152:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-club.test.ts > leaving a club (leaveClub) > ends the member's interval at the clock's sample, with the choice withdraw and the name the person has now
+AssertionError: expected { …(5) } to match object { state: 'left', …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "contributions": "withdraw",
+-   "ended_display_name": "Maya R",
++   "ended_display_name": "xMaya R",
+    "state": "left",
+  }
+
+ ❯ src/db/leave-club.test.ts:162:21
+    160|         expect(answer).toEqual({ club_id: w.club, left_at: "2026-11-11…
+    161|         const row = await membership(tx, member(w, 1));
+    162|         expect(row).toMatchObject({ state: "left", contributions: choi…
+       |                     ^
+    163|         expect(String(row?.left_at)).toBe("2026-11-11T07:00:00.123456Z…
+    164|         expect(await rosterVersion(tx, w.club)).toBe(before + 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:152:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

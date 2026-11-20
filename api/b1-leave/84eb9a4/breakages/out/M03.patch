@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..b527fc47 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -130,7 +130,7 @@ export async function leaveClub(
+          AND r.idempotency_key = ${input.key}::pg_catalog.uuid AND m.joined_at >= r.created_at
+        LIMIT 1`;
+     if (since !== undefined) throw new Refused("NOT_FOUND");
+-    return stored.replay;
++    throw new Refused("NOT_FOUND");
+   }
+   const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
+   if (first !== null) return first.replay;

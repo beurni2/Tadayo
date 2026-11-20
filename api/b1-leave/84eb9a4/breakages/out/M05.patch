@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..5ff8881b 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -121,7 +121,7 @@ export async function leaveClub(
+       throw error;
+     }
+     // With no receipt, the reservation goes with the refusal.
+-    if (stored === null) throw new Refused("NOT_FOUND");
++    if (stored === null) return completeReceipt(tx, receipt, render({ clubId, leftAt: await clock.sample(tx), contributions }));
+     const [since] = await bound(tx)`
+       SELECT 1 AS found
+         FROM app.idempotency_receipts r

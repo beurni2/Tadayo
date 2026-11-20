@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..f5c55337 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -137,7 +137,6 @@ export async function leaveClub(
+ 
+   // 3. The club's row, and who is asking, again.
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+-  if ((await activeMember(tx, userId, clubId)) !== asking) throw new Refused("NOT_FOUND");
+ 
+   // 4. The clock, after the lock.
+   const at = await clock.sample(tx);

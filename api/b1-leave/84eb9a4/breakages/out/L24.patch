@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..9aae93cc 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -117,7 +117,6 @@ export async function leaveClub(
+     try {
+       stored = await reserveReceipt(tx, receipt, await clock.sample(tx));
+     } catch (error) {
+-      if (error instanceof Refused && error.code === "IDEMPOTENCY_CONFLICT") throw new Refused("NOT_FOUND");
+       throw error;
+     }
+     // With no receipt, the reservation goes with the refusal.

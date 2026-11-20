@@ -1,0 +1,52 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 2 failed) 1675ms
+   ❯ found in the review of PR #78 (11)
+     × reads a used key alike for a club nobody has, a club left and a suspended one the account is in (T14) 56ms
+     × keeps the club in the receipt: the key of a leave leaves no other club 29ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  03:56:40
+   Duration  2.34s (tests 82%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > reads a used key alike for a club nobody has, a club left and a suspended one the account is in (T14)
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/leave-club.test.ts:721:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:696:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > keeps the club in the receipt: the key of a leave leaves no other club
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/leave-club.test.ts:743:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:730:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

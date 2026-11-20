@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index d73d8220..17b7d39c 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -116,7 +116,7 @@ export function leaveProblems(
+   );
+   if (ended.version !== was.version + 1) problems.push("the ended revision's version didn't move by one");
+   // Carried only by a proposer who stays: one who isn't a member any more stands behind nothing.
+-  if (carried.length === 0 || !stayed.includes(was.proposer)) {
++  if (carried.length === 0 || was.proposer === interval) {
+     if (ended.state !== "did_not_go_ahead") problems.push(`the revision is ${ended.state}, not did_not_go_ahead`);
+     if (openAfter !== null) problems.push("a revision is open though nothing could be carried (FQ121)");
+     for (const one of was.candidates) {

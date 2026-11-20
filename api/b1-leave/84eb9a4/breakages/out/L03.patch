@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..885df18e 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -132,7 +132,7 @@ export async function leaveClub(
+     if (since !== undefined) throw new Refused("NOT_FOUND");
+     return stored.replay;
+   }
+-  const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
++  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
+   if (first !== null) return first.replay;
+ 
+   // 3. The club's row, and who is asking, again.

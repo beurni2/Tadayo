@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/invitation.ts b/tests/src/privacy/invitation.ts
+index bfcbbbd7..570ea5e5 100644
+--- a/tests/src/privacy/invitation.ts
++++ b/tests/src/privacy/invitation.ts
+@@ -225,7 +225,7 @@ export function acceptOutcome(
+     // carried the others on.
+     const newest = newestOf(roster, revision);
+     const still = roster.revisions.get(newest)?.candidates.some((candidate) => candidate.id === link.candidate);
+-    return still === true ? rosterChanged(newest) : NEUTRAL;
++    return rosterChanged(newest);
+   }
+   if (rows.version !== expected) return versionConflict(rows.version);
+   if (rows.state !== "open") return rows.state === "applied" && viewer !== undefined ? "joined again" : NEUTRAL;

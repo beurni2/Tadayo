@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/leave.test.ts (15 tests | 1 failed) 20ms
+   ❯ what a leave changes (leaveProblems) (12)
+     × asks a name's revision to stay one, with no approval, and a proposal to keep its proposer's alone (FQ84) 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:05
+   Duration  784ms (import 76%, transform 11%, tests 10%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave changes (leaveProblems) > asks a name's revision to stay one, with no approval, and a proposal to keep its proposer's alone (FQ84)
+AssertionError: expected [ Array(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "the new revision is a proposal, not a rename",
+    "the new revision of a name nobody approved starts with an approval (FQ84)",
+  ]
+
+ ❯ src/privacy/leave.test.ts:379:31
+    377|     next(relabelled).decisions = new Map([["itv_ana", "approved"]]);
+    378|     // What the first build did: the name's revision relabelled as its…
+    379|     expect(judge(relabelled)).toEqual([
+       |                               ^
+    380|       "the new revision is a proposal, not a rename",
+    381|       "the new revision of a name nobody approved starts with an appro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/services/api
+
+ ❯ src/clubs/leave.test.ts (10 tests | 1 failed) 177ms
+   ❯ the leave's serializer against the contract's example (T55) (3)
+     × sends the instant in whole seconds, rounded down, and the choice as it was made 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  03:56:54
+   Duration  638ms (import 44%, tests 34%, transform 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/leave.test.ts > the leave's serializer against the contract's example (T55) > sends the instant in whole seconds, rounded down, and the choice as it was made
+AssertionError: expected { club_id: 'club_1', …(2) } to deeply equal { club_id: 'club_1', …(2) }
+
+- Expected
++ Received
+
+  {
+    "club_id": "club_1",
+    "contributions": "withdraw",
+-   "left_at": "2026-11-13T14:41:00Z",
++   "left_at": "2026-11-13T14:41:00.999999Z",
+  }
+
+ ❯ src/clubs/leave.test.ts:46:7
+     44|         contributions: "withdraw",
+     45|       }),
+     46|     ).toEqual({ club_id: "club_1", left_at: "2026-11-13T14:41:00Z", co…
+       |       ^
+     47|   });
+     48| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

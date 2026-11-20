@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1832ms
+   ❯ a leave behind the club's row (T1) (4)
+     × dates the leave by the clock as it reads once the row is the leave's 72ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:55:58
+   Duration  2.49s (tests 85%, import 10%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > a leave behind the club's row (T1) > dates the leave by the clock as it reads once the row is the leave's
+AssertionError: expected '2026-11-11T05:00:00Z' to be '2026-11-11T08:00:00Z' // Object.is equality
+
+Expected: "2026-11-11T08:00:00Z"
+Received: "2026-11-11T05:00:00Z"
+
+ ❯ src/db/leave-club.test.ts:507:28
+    505|     }
+    506|     const answer = (await waiting) as { left_at: string };
+    507|     expect(answer.left_at).toBe("2026-11-11T08:00:00Z");
+       |                            ^
+    508|     const row = await membership(db as unknown as WorldTx, member(w, 1…
+    509|     expect(String(row?.left_at)).toBe("2026-11-11T08:00:00.123456Z");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1621ms
+   ❯ found in the review of PR #78 (11)
+     × tells someone who joined by a link and left nothing through that link, and keeps no receipt (T14) 75ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:56:49
+   Duration  2.25s (tests 84%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > tells someone who joined by a link and left nothing through that link, and keeps no receipt (T14)
+AssertionError: expected { code: 'VERSION_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "VERSION_CONFLICT",
++   "facts": {
++     "current_version": 2,
++   },
+  }
+
+ ❯ src/db/leave-club.test.ts:669:89
+    667|         SELECT version FROM app.roster_revisions WHERE id = ${open.id}…
+    668|       for (const version of [0, applied?.version ?? -1, 9]) {
+    669|         expect(await refusal(acceptWith(tx, clock, sam, made.token, op…
+       |                                                                                         ^
+    670|       }
+    671|       expect(await preview(tx, sam, made.token, NOW)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:656:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

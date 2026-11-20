@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1812ms
+   ❯ found in the review of PR #78 (11)
+     × ends a proposal with nothing left to carry, though its proposer stays 53ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:56:16
+   Duration  2.41s (tests 86%, import 10%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > ends a proposal with nothing left to carry, though its proposer stays
+AssertionError: expected { …(6) } to match object { state: 'did_not_go_ahead', …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "did_not_go_ahead",
+-   "superseded_by_id": null,
++   "state": "superseded",
++   "superseded_by_id": "rev_n9LZDRe20cNnrpFwKaEbzw",
+  }
+
+ ❯ src/db/leave-club.test.ts:761:46
+    759|         UPDATE app.candidates SET state = 'ended', ended_at = ${LATER}…
+    760|       await leaving(tx, user(w, 0), w.club);
+    761|       expect(await revisionRow(tx, open.id)).toMatchObject({ state: "d…
+       |                                              ^
+    762|       expect((await candidateState(tx, candidate(first, 0)))?.state).t…
+    763|       expect(await openOf(tx, w.club)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:752:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

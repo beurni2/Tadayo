@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..6399d94f 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -193,7 +193,7 @@ export async function leaveClub(
+       await bound(tx)`
+         UPDATE app.candidates k SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz
+           FROM app.roster_revision_candidates rc
+-         WHERE rc.revision_id = ${revisionId} AND rc.candidate_id = k.id AND k.state = 'open'`;
++         WHERE rc.revision_id = ${revisionId} AND rc.candidate_id = k.id AND k.state = 'open' AND false`;
+       await bound(tx)`
+         UPDATE app.roster_revisions
+            SET state = 'did_not_go_ahead', version = version + 1, ended_at = ${at}::pg_catalog.timestamptz

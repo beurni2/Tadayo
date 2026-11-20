@@ -1,0 +1,114 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 4 failed) 1751ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the leaver's own candidates and carries the others into a revision of the members who stay 69ms
+     × keeps a carried candidate's link good, to accept the new roster with 59ms
+   ❯ found in the review of PR #78 (11)
+     × carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84) 88ms
+     × carries a name's revision as that when the leave is committed, with the checks kept for the commit 40ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 28 passed (32)
+   Start at  03:56:19
+   Duration  2.39s (tests 84%, import 11%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the leaver's own candidates and carries the others into a revision of the members who stay
+AssertionError: expected { …(6) } to deeply equal { id: Any<String>, …(5) }
+
+- Expected
++ Received
+
+@@ -1,13 +1,7 @@
+  {
+-   "approvals": [
+-     {
+-       "decision": "approved",
+-       "implicit": true,
+-       "interval": "mem_z1lAdsKkZureOEyvWidegA",
+-     },
+-   ],
++   "approvals": [],
+    "candidates": [
+      {
+        "accepted": false,
+        "id": "cand_sNtAlSAvHoi2yc9sKv5gvA",
+        "label": "Nina",
+
+ ❯ src/db/leave-club.test.ts:267:20
+    265|       expect(await candidateState(tx, s.nina)).toMatchObject({ state: …
+    266|       const next = await openOf(tx, s.w.club);
+    267|       expect(next).toEqual({
+       |                    ^
+    268|         id: expect.any(String) as string,
+    269|         proposer: member(s.w, 1),
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > keeps a carried candidate's link good, to accept the new roster with
+AssertionError: expected 'open' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "open"
+
+ ❯ src/db/leave-club.test.ts:318:29
+    316|       // Ben approves, and Nina joins: Maya's approval stands by propo…
+    317|       const applied = await approve(tx, clock, user(s.w, 0), next?.id …
+    318|       expect(applied.state).toBe("applied");
+       |                             ^
+    319|       expect((await candidateState(tx, s.nina))?.state).toBe("joined");
+    320|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:295:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84)
+AssertionError: expected 'proposal' to be 'rename' // Object.is equality
+
+Expected: "rename"
+Received: "proposal"
+
+ ❯ src/db/leave-club.test.ts:619:50
+    617|       const next = await openOf(tx, w.club);
+    618|       expect(next?.id).not.toBe(named?.id);
+    619|       expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+       |                                                  ^
+    620|       expect(next).toMatchObject({
+    621|         proposer: member(w, 0),
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:604:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries a name's revision as that when the leave is committed, with the checks kept for the commit
+AssertionError: expected 'proposal' to be 'rename' // Object.is equality
+
+Expected: "rename"
+Received: "proposal"
+
+ ❯ src/db/leave-club.test.ts:647:48
+    645|     const tx = db as unknown as WorldTx;
+    646|     const next = await openOf(tx, s.w.club);
+    647|     expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+       |                                                ^
+    648|     expect(next).toMatchObject({
+    649|       members: [member(s.w, 0), member(s.w, 1)],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index d73d8220..231d9107 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -87,7 +87,7 @@ export function leaveProblems(
+   if (row === undefined) return ["the membership's row is gone"];
+   if (row.state !== "left") problems.push(`the interval's state is ${row.state}, not left`);
+   if (row.leftAt === null || !row.leftAt.equals(now)) problems.push("left_at isn't the server's instant (T1)");
+-  if (row.contributions !== choice)
++  if (row.contributions === undefined)
+     problems.push(`the choice kept is ${String(row.contributions)}, not ${choice} (T26)`);
+   if (row.endedName !== name) problems.push("the name kept isn't the one the person had (FQ75)");
+ 

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/leave.ts b/services/api/src/clubs/leave.ts
+index 2f1c729c..a8675da7 100644
+--- a/services/api/src/clubs/leave.ts
++++ b/services/api/src/clubs/leave.ts
+@@ -33,7 +33,7 @@ export function leaveClubHandler(deps: Deps): Handler {
+     const parsed = LeaveClubRequest.safeParse(request.body);
+     if (!parsed.success) {
+       const named = parsed.error.issues.some((issue) => issue.path[0] === "contributions");
+-      return problem(reply, "INVALID_REQUEST", named ? { field: "contributions" } : {});
++      return problem(reply, "INVALID_REQUEST", {});
+     }
+     const club = (request.params as Readonly<Record<string, unknown>> | null)?.["club_id"];
+     const input: LeaveClubInput = {

@@ -1,0 +1,116 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 4 failed) 1653ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the leaver's own candidates and carries the others into a revision of the members who stay 83ms
+   ❯ a leave behind the club's row (T1) (4)
+     × refuses the approval of someone whose leave came first, and never applies a roster that lists them 122ms
+   ❯ found in the review of PR #78 (11)
+     × lets two members leave one after the other behind the row, each ending the proposal as it stands 92ms
+     × answers an acceptance behind a leave with the roster that replaced the one it named 84ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 28 passed (32)
+   Start at  03:56:28
+   Duration  2.27s (tests 84%, import 11%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the leaver's own candidates and carries the others into a revision of the members who stay
+AssertionError: expected { …(6) } to match object { state: 'superseded', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "superseded",
+-   "superseded_by_id": "rev_qye6pBDXqJxqeHJGytWFtQ",
++   "state": "did_not_go_ahead",
++   "superseded_by_id": null,
+    "version": 2,
+  }
+
+ ❯ src/db/leave-club.test.ts:277:21
+    275|       });
+    276|       const ended = await revisionRow(tx, s.open.id);
+    277|       expect(ended).toMatchObject({ state: "superseded", version: 2, s…
+       |                     ^
+    278|       expect(String(ended?.ended_at)).toBe("2026-11-11T05:30:00.123456…
+    279|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/leave-club.test.ts > a leave behind the club's row (T1) > refuses the approval of someone whose leave came first, and never applies a roster that lists them
+AssertionError: expected { …(6) } to match object { state: 'superseded' }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "superseded",
++   "state": "did_not_go_ahead",
+  }
+
+ ❯ src/db/leave-club.test.ts:551:48
+    549|       expect(await approved).toBe("NOT_FOUND");
+    550|       const tx = db as unknown as WorldTx;
+    551|       expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: …
+       |                                                ^
+    552|       expect((await candidateState(tx, candidate(s.open, 0)))?.state).…
+    553|       const next = await openOf(tx, s.w.club);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > lets two members leave one after the other behind the row, each ending the proposal as it stands
+AssertionError: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/db/leave-club.test.ts:819:93
+    817|       expect(next?.members).toEqual([member(s.w, 0), member(s.w, 1)]);
+    818|       expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), la…
+    819|       expect((await revisionsOf(tx, s.w.club)).filter((row) => row.sta…
+       |                                                                                             ^
+    820|     },
+    821|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > answers an acceptance behind a leave with the roster that replaced the one it named
+AssertionError: expected { code: 'VERSION_CONFLICT', …(1) } to deeply equal { code: 'ROSTER_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "ROSTER_CHANGED",
++   "code": "VERSION_CONFLICT",
+    "facts": {
+-     "current_id": "rev_X9L1aOw6TxeQR7gZNpmUEw",
++     "current_version": 2,
+    },
+  }
+
+ ❯ src/db/leave-club.test.ts:856:30
+    854|       const tx = db as unknown as WorldTx;
+    855|       const next = await openOf(tx, s.w.club);
+    856|       expect(await accepted).toEqual({ code: "ROSTER_CHANGED", facts: …
+       |                              ^
+    857|       expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), la…
+    858|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

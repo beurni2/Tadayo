@@ -1,0 +1,16 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..c96983bc 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -148,9 +148,9 @@ export async function leaveClub(
+        SET state = 'left', left_at = ${at}::pg_catalog.timestamptz, contributions = ${contributions},
+            ended_display_name = u.display_name
+       FROM app.users u
+-     WHERE m.interval_id = ${asking} AND m.state = 'active' AND u.id = m.user_id
++     WHERE m.interval_id = ${asking} AND m.state = 'active' AND u.id = m.user_id AND false
+     RETURNING m.interval_id`;
+-  if (ended === undefined) throw new Error("clubs: the membership its member is leaving can't be ended");
++  if (ended !== undefined) throw new Error("clubs: the membership its member is leaving can't be ended");
+ 
+   // 6. The club's proposals.
+   await bound(tx)`

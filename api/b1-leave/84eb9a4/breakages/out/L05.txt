@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1860ms
+   ❯ found in the review of PR #78 (11)
+     × gives the neutral not-found to a second leave behind the first, and keeps no receipt of it 81ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:55:55
+   Duration  2.53s (tests 85%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > gives the neutral not-found to a second leave behind the first, and keeps no receipt of it
+AssertionError: expected 'Error: clubs: the membership its memb…' to be 'NOT_FOUND' // Object.is equality
+
+Expected: "NOT_FOUND"
+Received: "Error: clubs: the membership its member is leaving can't be ended"
+
+ ❯ src/db/leave-club.test.ts:785:28
+    783|       }
+    784|       expect(await first).toMatchObject({ club_id: w.club });
+    785|       expect(await second).toBe("NOT_FOUND");
+       |                            ^
+    786|       expect(await rosterVersion(db as unknown as WorldTx, w.club)).to…
+    787|       expect(await receiptsOf(db as unknown as WorldTx, user(w, 1))).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

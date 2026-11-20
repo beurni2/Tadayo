@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/leave.test.ts (15 tests | 1 failed) 20ms
+   ❯ what a leave changes (leaveProblems) (12)
+     × catches each part of the membership's row that is wrong 8ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:00
+   Duration  849ms (import 79%, transform 10%, tests 9%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave changes (leaveProblems) > catches each part of the membership's row that is wrong
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privacy/leave.test.ts:149:65
+    147|     // The instant itself, not its whole second.
+    148|     expect(judge(plain(), left({ leftAt: Temporal.Instant.from("2026-1…
+    149|     expect(judge(plain(), left({ contributions: "withdraw" }))).toHave…
+       |                                                                 ^
+    150|     expect(judge(plain(), left({ contributions: null }))).toHaveLength…
+    151|     expect(judge(plain(), left({ endedName: "Someone else" }))).toHave…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

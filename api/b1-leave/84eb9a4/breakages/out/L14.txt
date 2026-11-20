@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 2 failed) 1651ms
+   ❯ found in the review of PR #78 (11)
+     × carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84) 78ms
+     × carries a name's revision as that when the leave is committed, with the checks kept for the commit 53ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  03:56:22
+   Duration  2.33s (tests 82%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84)
+AssertionError: expected 'proposal' to be 'rename' // Object.is equality
+
+Expected: "rename"
+Received: "proposal"
+
+ ❯ src/db/leave-club.test.ts:619:50
+    617|       const next = await openOf(tx, w.club);
+    618|       expect(next?.id).not.toBe(named?.id);
+    619|       expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+       |                                                  ^
+    620|       expect(next).toMatchObject({
+    621|         proposer: member(w, 0),
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:604:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries a name's revision as that when the leave is committed, with the checks kept for the commit
+AssertionError: expected 'proposal' to be 'rename' // Object.is equality
+
+Expected: "rename"
+Received: "proposal"
+
+ ❯ src/db/leave-club.test.ts:647:48
+    645|     const tx = db as unknown as WorldTx;
+    646|     const next = await openOf(tx, s.w.club);
+    647|     expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+       |                                                ^
+    648|     expect(next).toMatchObject({
+    649|       members: [member(s.w, 0), member(s.w, 1)],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

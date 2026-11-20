@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..577a3598 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -155,7 +155,7 @@ export async function leaveClub(
+   // 6. The club's proposals.
+   await bound(tx)`
+     UPDATE app.candidates SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz
+-     WHERE club_id = ${clubId} AND proposed_by_interval_id = ${asking} AND state = 'open'`;
++     WHERE club_id = ${clubId} AND proposed_by_interval_id = ${asking} AND state = 'open' AND false`;
+   const [open] = await bound(tx)`
+     SELECT r.id, r.origin, r.proposed_by_interval_id,
+            (SELECT pm.state = 'active' FROM app.memberships pm

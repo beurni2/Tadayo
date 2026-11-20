@@ -1,0 +1,124 @@
+== L01 a retry after leaving finds nothing [db]: CAUGHT; exit 1 ['Tests  3 failed | 27 passed (30)']
+    × answers a retry after leaving with the first answer, byte for byte, and changes nothing 20ms
+    × ends one interval once when eight sends of one leave arrive at once 41ms
+    × still answers the retry of a leave once the club is suspended 15ms
+== L02 an earlier leave's key answers a member of a suspended club [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × doesn't answer the key of an earlier leave to someone who joined again, once the club is suspended (FQ112) 76ms
+== L03 an earlier interval's key is answered to a member who joined again [db]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × doesn't answer the key of an earlier leave to someone who joined again, once the club is suspended (FQ112) 56ms
+    × gives a member who joined again the neutral not-found for the key they left with (FQ112) 36ms
+== L04 the club's row isn't locked [db]: CAUGHT; exit 1 ['Tests  5 failed | 25 passed (30)']
+    × carries no acceptance that came just before the leave 1084ms
+    × dates the leave by the clock as it reads once the row is the leave's 59ms
+    × gives the neutral not-found to a second leave behind the first, and keeps no receipt of it 77ms
+    × leaves a club that the last approval has just grown, when the approval came first 1162ms
+    × lets two members leave one after the other behind the row, each ending the proposal as it stands 88ms
+== L05 who is asking isn't read again under the row [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × gives the neutral not-found to a second leave behind the first, and keeps no receipt of it 55ms
+== L06 the clock is read before the row is held [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × dates the leave by the clock as it reads once the row is the leave's 65ms
+== L07 the choice kept is always keep [db]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × ends the member's interval at the clock's sample, with the choice withdraw and the name the person has now 37ms
+    × gives a member who joined again the neutral not-found for the key they left with (FQ112) 35ms
+== L08 the name kept isn't the person's [db]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × ends the member's interval at the clock's sample, with the choice keep and the name the person has now 83ms
+    × ends the member's interval at the clock's sample, with the choice withdraw and the name the person has now 28ms
+== L09 the leaver's candidates stay open [db]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × ends a proposal with nothing left to carry, though its proposer stays 50ms
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 80ms
+== L10 every open candidate of the club ends [db]: CAUGHT; exit 1 ['Tests  8 failed | 22 passed (30)']
+    × answers an acceptance behind a leave with the roster that replaced the one it named 89ms
+    × carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84) 63ms
+    × carries no acceptance that came just before the leave 96ms
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 68ms
+    × gives the person who left nothing of the club, and the others a club without them 74ms
+    × keeps a carried candidate's link good, to accept the new roster with 51ms
+== L11 a proposal is carried though its proposer left [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × ends the whole proposal when its proposer is the one leaving 38ms
+== L12 a proposal with nothing to carry is carried [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × ends a proposal with nothing left to carry, though its proposer stays 59ms
+== L13 a name's revision is carried as a proposal [db]: CAUGHT; exit 1 ['Tests  3 failed | 27 passed (30)']
+    × carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84) 62ms
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 84ms
+    × keeps a carried candidate's link good, to accept the new roster with 69ms
+== L14 a carried revision always has its proposer's approval [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84) 73ms
+== L15 a carried proposal has no approval [db]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 77ms
+    × keeps a carried candidate's link good, to accept the new roster with 67ms
+== L16 the ended revision doesn't name the new one [db]: CAUGHT; exit 1 ['Tests  4 failed | 26 passed (30)']
+    × answers an acceptance behind a leave with the roster that replaced the one it named 71ms
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 68ms
+    × lets two members leave one after the other behind the row, each ending the proposal as it stands 119ms
+    × refuses the approval of someone whose leave came first, and never applies a roster that lists them 148ms
+== L17 the candidates are carried in the other order [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × keeps a carried candidate's link good, to accept the new roster with 45ms
+== L18 an ended proposal's candidates stay open [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × ends the whole proposal when its proposer is the one leaving 32ms
+== L19 the roster's version doesn't move [db]: CAUGHT; exit 1 ['Tests  8 failed | 22 passed (30)']
+    × ends one interval once when eight sends of one leave arrive at once 35ms
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 71ms
+    × ends the member's interval at the clock's sample, with the choice keep and the name the person has now 81ms
+    × ends the member's interval at the clock's sample, with the choice withdraw and the name the person has now 29ms
+    × ends the whole proposal when its proposer is the one leaving 23ms
+    × gives the neutral not-found to a second leave behind the first, and keeps no receipt of it 75ms
+== L20 the receipt doesn't hold the club [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × keeps the club in the receipt: the key of a leave leaves no other club 33ms
+== L21 the receipt doesn't hold the choice [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × refuses another choice under the key of a leave, and keeps the first 19ms
+== L22 the leave ends nobody's interval but answers [db]: CAUGHT; exit 1 ['Tests  21 failed | 9 passed (30)']
+    × carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84) 48ms
+    × carries no acceptance that came just before the leave 89ms
+    × dates the leave by the clock as it reads once the row is the leave's 56ms
+    × doesn't answer the key of an earlier leave to someone who joined again, once the club is suspended (FQ112) 57ms
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 73ms
+    × ends the member's interval at the clock's sample, with the choice keep and the name the person has now 87ms
+== A01 someone who joined by a link and left is told the revision's version [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × tells someone who joined by a link and left nothing through that link, and keeps no receipt (T14) 71ms
+== A02 a candidate a leave ended is told the roster that went on without them [db]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × ends the leaver's own candidates and carries the others into a revision of the members who stay 97ms
+== H01 the answer's instant keeps its fraction [api]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × sends the instant in whole seconds, rounded down, and the choice as it was made 8ms
+== H02 a key that isn't a UUID reaches the command [api]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 105ms
+== H03 a wrong choice isn't named [api]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × names the choice when it is missing or isn't keep or withdraw, never a value, and reads no database for it 15ms
+== H04 a refusal isn't mapped [api]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × maps each refusal: the neutral not-found, and a key used for another request 13ms
+== H05 the answer says keep whatever was chosen [api]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × sends the instant in whole seconds, rounded down, and the choice as it was made 7ms
+== J01 the judge passes any choice kept [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × catches each part of the membership's row that is wrong 8ms
+== J02 the judge passes a roster version that didn't move [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × catches another member's interval ended, the leaver's own left active, and a version that didn't move by one 8ms
+== J03 the judge passes the leaver's candidate left open [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × catches the leaver's candidate left open 7ms
+== J04 the judge passes a name's revision relabelled [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × asks a name's revision to stay one, with no approval, and a proposal to keep its proposer's alone (FQ84) 7ms
+== J05 the judge passes an approval on a name's new revision [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × asks a name's revision to stay one, with no approval, and a proposal to keep its proposer's alone (FQ84) 8ms
+== J06 the judge carries for a proposer who was no member [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × carries nothing for a proposer who was no member before the leave, and none of the candidates ended before it 8ms
+== J07 the judge carries a candidate ended before the leave [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × carries nothing for a proposer who was no member before the leave, and none of the candidates ended before it 6ms
+== J08 the judge passes an acceptance carried [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × catches each way the ended revision and the new one can be wrong 11ms
+== J09 the judge passes other approvals on the new revision [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × catches each way the ended revision and the new one can be wrong 7ms
+== K01 the acceptance's judge tells a person who left the version [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all 9ms
+== K02 the acceptance's judge tells an ended candidate the newest roster [judge]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)']
+    × tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all 11ms
+== M01 the matrix: the choice kept is always keep [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 16 skipped (17)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 44690ms
+== M02 the matrix: the roster's version doesn't move [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 16 skipped (17)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 44582ms
+== M03 the matrix: a retry after leaving finds nothing [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 16 skipped (17)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 45324ms
+== M04 the matrix: the answer says keep whatever was chosen [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 16 skipped (17)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 44905ms
+== M05 the matrix: a new key after leaving is answered like the first [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 16 skipped (17)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 43033ms
+== M06 the matrix: the leaver still reads the club [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 16 skipped (17)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 46634ms
+restored: ''

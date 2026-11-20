@@ -1,0 +1,245 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 9 failed) 1803ms
+   ❯ leaving a club (leaveClub) (5)
+     × gives the person who left nothing of the club, and the others a club without them 73ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the leaver's own candidates and carries the others into a revision of the members who stay 86ms
+     × keeps a carried candidate's link good, to accept the new roster with 57ms
+   ❯ a leave behind the club's row (T1) (4)
+     × refuses the approval of someone whose leave came first, and never applies a roster that lists them 134ms
+   ❯ found in the review of PR #78 (11)
+     × carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84) 74ms
+     × carries a name's revision as that when the leave is committed, with the checks kept for the commit 60ms
+     × lets two members leave one after the other behind the row, each ending the proposal as it stands 101ms
+     × answers an acceptance behind a leave with the roster that replaced the one it named 105ms
+     × carries no acceptance that came just before the leave 95ms
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 23 passed (32)
+   Start at  03:56:10
+   Duration  2.43s (tests 84%, import 11%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > leaving a club (leaveClub) > gives the person who left nothing of the club, and the others a club without them
+AssertionError: expected null not to be null
+ ❯ src/db/leave-club.test.ts:184:24
+    182|       expect(await read(tx, user(w, 1), open.id, NOW)).toBeNull();
+    183|       const next = await openOf(tx, w.club);
+    184|       expect(next).not.toBeNull();
+       |                        ^
+    185|       expect(await read(tx, user(w, 1), next?.id ?? "", NOW)).toBeNull…
+    186|       const [club] = (await listClubs(tx, user(w, 0), NOW)).clubs;
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:174:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the leaver's own candidates and carries the others into a revision of the members who stay
+AssertionError: expected { state: 'ended', …(1) } to match object { state: 'open', ended_at: null }
+
+- Expected
++ Received
+
+  {
+-   "ended_at": null,
+-   "state": "open",
++   "ended_at": "2026-11-11T05:30:00.123456Z",
++   "state": "ended",
+  }
+
+ ❯ src/db/leave-club.test.ts:265:48
+    263|         expect(String(ended?.ended_at)).toBe("2026-11-11T05:30:00.1234…
+    264|       }
+    265|       expect(await candidateState(tx, s.nina)).toMatchObject({ state: …
+       |                                                ^
+    266|       const next = await openOf(tx, s.w.club);
+    267|       expect(next).toEqual({
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > keeps a carried candidate's link good, to accept the new roster with
+AssertionError: expected undefined to deeply equal [ { …(3) }, { …(3) }, { …(3) } ]
+
+- Expected:
+[
+  {
+    "accepted": false,
+    "id": "cand_o074qc84itsAp2JmRAhy9Q",
+    "label": "Sam",
+  },
+  {
+    "accepted": false,
+    "id": "cand_dx1xOmy-Kh3vKQK2EHfQBg",
+    "label": "Debby",
+  },
+  {
+    "accepted": false,
+    "id": "cand_IDN0_lfAjXDqdkSN8NLhnQ",
+    "label": "Nina",
+  },
+]
+
++ Received:
+undefined
+
+ ❯ src/db/leave-club.test.ts:302:32
+    300|       await leaving(tx, user(s.w, 2), s.w.club);
+    301|       const next = await openOf(tx, s.w.club);
+    302|       expect(next?.candidates).toEqual([
+       |                                ^
+    303|         { id: s.sam, label: "Sam", accepted: false },
+    304|         { id: s.debby, label: "Debby", accepted: false },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:295:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > a leave behind the club's row (T1) > refuses the approval of someone whose leave came first, and never applies a roster that lists them
+AssertionError: expected { …(6) } to match object { state: 'superseded' }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "superseded",
++   "state": "did_not_go_ahead",
+  }
+
+ ❯ src/db/leave-club.test.ts:551:48
+    549|       expect(await approved).toBe("NOT_FOUND");
+    550|       const tx = db as unknown as WorldTx;
+    551|       expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: …
+       |                                                ^
+    552|       expect((await candidateState(tx, candidate(s.open, 0)))?.state).…
+    553|       const next = await openOf(tx, s.w.club);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84)
+AssertionError: expected undefined to be 'rename' // Object.is equality
+
+- Expected:
+"rename"
+
++ Received:
+undefined
+
+ ❯ src/db/leave-club.test.ts:619:50
+    617|       const next = await openOf(tx, w.club);
+    618|       expect(next?.id).not.toBe(named?.id);
+    619|       expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+       |                                                  ^
+    620|       expect(next).toMatchObject({
+    621|         proposer: member(w, 0),
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:604:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries a name's revision as that when the leave is committed, with the checks kept for the commit
+AssertionError: expected undefined to be 'rename' // Object.is equality
+
+- Expected:
+"rename"
+
++ Received:
+undefined
+
+ ❯ src/db/leave-club.test.ts:647:48
+    645|     const tx = db as unknown as WorldTx;
+    646|     const next = await openOf(tx, s.w.club);
+    647|     expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+       |                                                ^
+    648|     expect(next).toMatchObject({
+    649|       members: [member(s.w, 0), member(s.w, 1)],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > lets two members leave one after the other behind the row, each ending the proposal as it stands
+AssertionError: expected undefined to deeply equal [ 'mem_6bZdMVJx7W9hFecj1DlKbA', …(1) ]
+
+- Expected:
+[
+  "mem_6bZdMVJx7W9hFecj1DlKbA",
+  "mem_99re6byykpWqMEuVtnzIYQ",
+]
+
++ Received:
+undefined
+
+ ❯ src/db/leave-club.test.ts:817:29
+    815|       expect(await rosterVersion(tx, s.w.club)).toBe(before + 2);
+    816|       const next = await openOf(tx, s.w.club);
+    817|       expect(next?.members).toEqual([member(s.w, 0), member(s.w, 1)]);
+       |                             ^
+    818|       expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), la…
+    819|       expect((await revisionsOf(tx, s.w.club)).filter((row) => row.sta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > answers an acceptance behind a leave with the roster that replaced the one it named
+AssertionError: expected { code: 'NOT_FOUND', facts: {} } to deeply equal { code: 'ROSTER_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "ROSTER_CHANGED",
+-   "facts": {
+-     "current_id": undefined,
+-   },
++   "code": "NOT_FOUND",
++   "facts": {},
+  }
+
+ ❯ src/db/leave-club.test.ts:856:30
+    854|       const tx = db as unknown as WorldTx;
+    855|       const next = await openOf(tx, s.w.club);
+    856|       expect(await accepted).toEqual({ code: "ROSTER_CHANGED", facts: …
+       |                              ^
+    857|       expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), la…
+    858|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/db/leave-club.test.ts > found in the review of PR #78 > carries no acceptance that came just before the leave
+AssertionError: expected undefined to deeply equal [ 'mem_j0WmtuSrd4qUVYteuluZZw', …(1) ]
+
+- Expected:
+[
+  "mem_j0WmtuSrd4qUVYteuluZZw",
+  "mem_La9pNNkRU2V4Wd-od6UiRQ",
+]
+
++ Received:
+undefined
+
+ ❯ src/db/leave-club.test.ts:892:27
+    890|     const tx = db as unknown as WorldTx;
+    891|     const next = await openOf(tx, s.w.club);
+    892|     expect(next?.members).toEqual([member(s.w, 0), member(s.w, 1)]);
+       |                           ^
+    893|     expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), labe…
+    894|     expect((await candidateState(tx, candidate(s.open, 0)))?.state).to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+

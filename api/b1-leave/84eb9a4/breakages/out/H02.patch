@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/leave.ts b/services/api/src/clubs/leave.ts
+index 2f1c729c..4a15cadf 100644
+--- a/services/api/src/clubs/leave.ts
++++ b/services/api/src/clubs/leave.ts
+@@ -27,7 +27,7 @@ export function leaveClubHandler(deps: Deps): Handler {
+     const account = signedIn(request);
+     // The key is judged before the body's fields, the contract's order; nothing here echoes a value.
+     const key = request.headers["idempotency-key"];
+-    if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
++    if (typeof key !== "string") {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+     const parsed = LeaveClubRequest.safeParse(request.body);

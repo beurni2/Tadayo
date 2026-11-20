@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1660ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the leaver's own candidates and carries the others into a revision of the members who stay 94ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:56:52
+   Duration  2.29s (tests 83%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the leaver's own candidates and carries the others into a revision of the members who stay
+AssertionError: expected { code: 'ROSTER_CHANGED', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "ROSTER_CHANGED",
++   "facts": {
++     "current_id": "rev_XvqXfEUiO82zn8TaKCqtnw",
++   },
+  }
+
+ ❯ src/db/leave-club.test.ts:288:86
+    286|       // that went on without Sam: not its id, not a version.
+    287|       expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ sta…
+    288|       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s…
+       |                                                                                      ^
+    289|       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s…
+    290|       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, n…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

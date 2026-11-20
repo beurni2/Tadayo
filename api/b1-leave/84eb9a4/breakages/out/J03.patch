@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index d73d8220..ce7de033 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -98,7 +98,7 @@ export function leaveProblems(
+     problems.push("the club's roster version didn't move by one");
+ 
+   for (const [id, candidate] of after.roster.candidates) {
+-    if (candidate.club === club && candidate.proposer === interval && candidate.state === "open")
++    if (candidate.club === club && candidate.proposer === interval && candidate.state === "none")
+       problems.push(`the leaver's candidate ${id} is still open (FQ121)`);
+   }
+ 

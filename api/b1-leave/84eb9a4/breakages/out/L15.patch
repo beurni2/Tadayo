@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..b1521eab 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -187,7 +187,7 @@ export async function leaveClub(
+         proposer: text(open["proposed_by_interval_id"]),
+         at,
+         candidates: carried.map((row) => ({ candidateId: text(row["candidate_id"]), label: text(row["label"]) })),
+-        implicit: origin === "proposal",
++        implicit: false,
+       });
+     } else {
+       await bound(tx)`

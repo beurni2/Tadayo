@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/privacy/invitation.test.ts (30 tests | 1 failed) 28ms
+   ❯ what accepting must get (acceptInvitation) (8)
+     × tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all 9ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 44 passed (45)
+   Start at  03:57:13
+   Duration  864ms (import 75%, transform 12%, tests 10%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/invitation.test.ts > what accepting must get (acceptInvitation) > tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all
+AssertionError: expected { status: 409, …(3) } to be { status: 404, …(3) } // Object.is equality
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
++   "body": "{\"code\":\"VERSION_CONFLICT\",\"current_version\":2}",
+    "headers": {
+      "cache-control": "private, no-store",
+      "connection": "keep-alive",
+-     "content-length": "20",
++     "content-length": "47",
+      "content-type": "application/json; charset=utf-8",
+    },
+-   "reason": "Not Found",
+-   "status": 404,
++   "reason": "Conflict",
++   "status": 409,
+  }
+
+ ❯ src/privacy/invitation.test.ts:428:61
+    426|     );
+    427|     expect(accept("usr_mo", "Mo", joined, { expected: 2 })).toBe(NEUTR…
+    428|     expect(accept("usr_mo", "Mo", joined, { expected: 9 })).toBe(NEUTR…
+       |                                                             ^
+    429|   });
+    430|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

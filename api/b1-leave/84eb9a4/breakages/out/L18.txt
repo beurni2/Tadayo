@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1l-mut/tests
+
+ ❯ src/db/leave-club.test.ts (32 tests | 1 failed) 1700ms
+   ❯ what a leave does to the club's open proposal (FQ121) (5)
+     × ends the whole proposal when its proposer is the one leaving 31ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:56:34
+   Duration  2.37s (tests 83%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-club.test.ts > what a leave does to the club's open proposal (FQ121) > ends the whole proposal when its proposer is the one leaving
+AssertionError: expected 'open' to be 'ended' // Object.is equality
+
+Expected: "ended"
+Received: "open"
+
+ ❯ src/db/leave-club.test.ts:337:30
+    335|       for (const one of [s.sam, s.debby, s.nina]) {
+    336|         const ended = await candidateState(tx, one);
+    337|         expect(ended?.state).toBe("ended");
+       |                              ^
+    338|         expect(String(ended?.ended_at)).toBe(AT_FIRST);
+    339|       }
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-club.test.ts:324:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

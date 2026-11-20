@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 10fb8a7b..bd8b4492 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -172,7 +172,7 @@ export async function leaveClub(
+        ORDER BY rc.position`;
+     const origin: unknown = open["origin"];
+     if (origin !== "proposal" && origin !== "rename") throw new Error("clubs: a leave read a row it can't use");
+-    if (carried.length > 0 && open["proposer_active"] === true) {
++    if (carried.length > 0) {
+       const next = newId("rev");
+       await bound(tx)`
+         UPDATE app.roster_revisions

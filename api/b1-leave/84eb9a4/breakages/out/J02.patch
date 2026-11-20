@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index d73d8220..2cb36ace 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -94,7 +94,7 @@ export function leaveProblems(
+   const stayed = activeOf(before.schedule, club).filter((one) => one !== interval);
+   if (activeOf(after.schedule, club).join() !== stayed.join()) problems.push("another member's interval changed");
+   const versions = [before.clubs.get(club)?.rosterVersion, after.clubs.get(club)?.rosterVersion];
+-  if (versions[0] === undefined || versions[1] !== versions[0] + 1)
++  if (versions[0] === undefined || versions[1] === undefined)
+     problems.push("the club's roster version didn't move by one");
+ 
+   for (const [id, candidate] of after.roster.candidates) {
