@@ -5,6 +5,7 @@ export { clubDetailBody, withServerNow } from "./clubs/club.ts";
 export { membersBody } from "./clubs/members.ts";
 export { invitationAcceptanceBody, invitationPreviewBody } from "./clubs/invitation.ts";
 export { invitationLinkBody, invitationUrl, rosterRevisionBody } from "./clubs/roster.ts";
+export { leftClubBody } from "./clubs/leave.ts";
 export { connect, type ApiSql } from "./connection.ts";
 export {
   KeysUnavailable,
