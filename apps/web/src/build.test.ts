@@ -297,13 +297,31 @@ describe("the site in public/", () => {
     });
   });
 
-  it("claims the path of the invitation link the contract gives, with the token in its fragment, never in its path", () => {
-    // The contract's example of createInvitation's link (InvitationLink.url), as the server makes it.
+  it("claims the path of the invitation link the contract gives, for any fragment and query, with the token in its fragment", () => {
+    const association = JSON.parse(readFileSync(join(SOURCE, ASSOCIATION), "utf8")) as {
+      applinks: { details: { components: Record<string, unknown>[] }[] };
+    };
+    // A component claims a path for every link when it narrows neither the fragment nor the query, and excludes nothing.
+    const claimed = (path: string) =>
+      association.applinks.details
+        .flatMap((detail) => detail.components)
+        .filter(
+          (component) => component["/"] === path && !("#" in component || "?" in component || "exclude" in component),
+        );
     const contract = readFileSync(join(SOURCE, "..", "..", "..", "packages", "contracts", "openapi.yaml"), "utf8");
-    const links = [...contract.matchAll(/url: (https:\/\/tadayo\.app\/\S*)/g)].map((match) => new URL(match[1] ?? ""));
-    expect(links.length).toBeGreaterThan(0);
-    for (const link of links) {
-      expect(link.pathname).toBe("/i");
+    // The rule (InvitationLink.url's pattern, as the server makes the link): a path on tadayo.app, then the token after #.
+    const rules = [...contract.matchAll(/pattern: \^https:\\\/\\\/tadayo\\\.app(\\\/[^#\s]*)#/g)].map((match) =>
+      (match[1] ?? "").replaceAll("\\/", "/"),
+    );
+    // And every example of such a link: the path, no query, and a fragment.
+    const examples = [...contract.matchAll(/url: (https:\/\/tadayo\.app\/\S*)/g)].map(
+      (match) => new URL(match[1] ?? ""),
+    );
+    expect(rules.length).toBeGreaterThan(0);
+    expect(examples.length).toBeGreaterThan(0);
+    for (const path of rules) expect(claimed(path), path).toHaveLength(1);
+    for (const link of examples) {
+      expect(claimed(link.pathname), link.href).toHaveLength(1);
       expect(link.search).toBe("");
       expect(link.hash.length).toBeGreaterThan(1);
     }

@@ -8,7 +8,7 @@
         "components": [
           {
             "/": "/i",
-            "comment": "An invitation link, https://tadayo.app/i#<token>: the token is in the fragment, which nothing sends to a server, and the app sends it only in a request body (T7)."
+            "comment": "An invitation link, https://tadayo.app/i#<token>: a browser never puts the fragment in a request, and the token travels only in a request body (T7, T52)."
           }
         ]
       }
