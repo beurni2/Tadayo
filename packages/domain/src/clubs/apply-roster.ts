@@ -19,9 +19,11 @@
 //    accepted with an account that is no longer active (a deletion has begun, T27) doesn't join: that
 //    candidate ends.
 // 4. The club's `roster_version` moves by one, once for the whole command. A club that hadn't started
-//    starts now (FQ54, FQ84), and its first days open in this transaction (../schedule/open.ts). A club
-//    that had started gains its members with no day yet: the schedule's own change follows (FQ100; B2's
-//    next PRs).
+//    starts now (FQ54, FQ84), and its first days open in this transaction (../schedule/open.ts). In a
+//    club that had started, ../schedule/settle.ts says what the people who joined do to its first days:
+//    they are included while no day is confirmed (FQ55, FQ102); once one is, they join with no day, and
+//    the schedule's own change follows (FQ100; `api/b2-membership-change`); and a club whose first days
+//    ended with nobody to confirm them opens new ones.
 // 5. The candidates who hadn't accepted, or whose acceptance no longer stands, are carried into a new revision the server makes (FQ120's
 //    default): the same proposer, whose approval of them stands as it did when they proposed (FQ60), the
 //    club's members now, the people who just joined included, and the carried candidates at their own
@@ -35,6 +37,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
 import { openFirstDays } from "../schedule/open.ts";
+import { settleFirstDays } from "../schedule/settle.ts";
 import type { ClockSql, ServerNow } from "../time/clock.ts";
 import { CLUB_SIZE } from "./club.ts";
 
@@ -241,6 +244,8 @@ export async function applyIfReady(
      WHERE id = ${clubId}`;
   // The first days are dated by the command's own sample, the one `activated_at` and `joined_at` hold.
   if (started) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
+  // A club that had started: what the people who joined do to its first days (FQ55, FQ100, FQ102).
+  else await settleFirstDays(tx, at, clubId);
 
   // 5. The candidates who hadn't accepted go on, in a new revision (FQ120).
   const left = candidates.filter((candidate) => candidate.open && !standing(candidate) && !gone(candidate));

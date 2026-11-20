@@ -67,7 +67,16 @@ import {
   type Step,
 } from "./harness.ts";
 import { INVITATION_JUDGED, acceptOutcome, freshToken, previewExpected, webPreviewExpected } from "./invitation.ts";
-import { LEAVE_NO_BODY, leaveOutcome, leaveProblems, leftExpected, type Choice, type MembershipRow } from "./leave.ts";
+import {
+  firstDaysJoinProblems,
+  firstDaysProblems,
+  LEAVE_NO_BODY,
+  leaveOutcome,
+  leaveProblems,
+  leftExpected,
+  type Choice,
+  type MembershipRow,
+} from "./leave.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
 import {
   IDEMPOTENCY_CONFLICT,
@@ -1547,6 +1556,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 [
                   ...leftExpected(cell.w.club, now, choice)(first),
                   ...leaveProblems(before, after, cell.w.club, outcome, membership, now, choice),
+                  ...firstDaysProblems(before.schedule, after.schedule, cell.w.club, outcome),
                 ],
                 "the viewer's own leave",
               );
@@ -1665,239 +1675,298 @@ describe("the leave ran (tests/src/privacy/leave.ts)", () => {
 });
 
 describe("a roster applied through the app (spec 04; T7, T8, T33; FQ65)", () => {
-  it("joins the person who accepted once the last member approves, and answers each caller as the rows say", async () => {
-    const wrong: string[] = [];
-    const counted = { answers: 0 };
-    const w = await db.begin(async (tx) => {
-      const made = await newWorld(plain(tx), suffix());
-      await twoContributors(tx, made);
-      await checkAsAtCommit(plain(tx));
-      return made;
-    });
-    const now = PHASES.collecting;
-    clock.set(now);
-    const sessionsOf = await db<{ account: string; subject: string; name: string | null; interval: string | null }[]>`
+  // The second time the club's first days are open with nobody confirmed, so the join revises them, and so
+  // does a leave after it (FQ55, FQ102): the one place the routes and the scanner meet a revision's rows.
+  it.each([
+    { firstDays: false, title: "" },
+    { firstDays: true, title: ", and revises the open first days for the join and for a leave after it" },
+  ])(
+    "joins the person who accepted once the last member approves, and answers each caller as the rows say$title",
+    async ({ firstDays }) => {
+      const wrong: string[] = [];
+      const counted = { answers: 0 };
+      const w = await db.begin(async (tx) => {
+        const made = await newWorld(plain(tx), suffix());
+        await twoContributors(tx, made);
+        if (firstDays) await addFirstDays(tx, made, false);
+        await checkAsAtCommit(plain(tx));
+        return made;
+      });
+      const now = PHASES.collecting;
+      clock.set(now);
+      const sessionsOf = await db<{ account: string; subject: string; name: string | null; interval: string | null }[]>`
       SELECT u.id AS account, u.auth_subject AS subject, u.display_name AS name,
              (SELECT m.interval_id FROM app.memberships m
                WHERE m.user_id = u.id AND m.club_id = ${w.club} AND m.state = 'active') AS interval
         FROM app.users u
        WHERE u.id = ${w.dan.user}
           OR u.id IN (SELECT user_id FROM app.memberships WHERE club_id = ${w.club} AND state = 'active')`;
-    const callers = new Map<string, { authorization: string; name: string; interval: string | null }>();
-    const secrets: string[] = [];
-    for (const row of sessionsOf) {
-      const authorization = bearer(await keys.signer.token(row.subject));
-      secrets.push(authorization.slice("Bearer ".length));
-      callers.set(row.account, { authorization, name: row.name ?? "", interval: row.interval });
-    }
-    const joiner = w.dan.user;
-    const proposer = w.ana.user;
-    const others = [...callers].filter(([account, one]) => one.interval !== null && account !== proposer);
-    expect(callers.get(joiner)?.interval).toBeNull();
-    expect(callers.get(joiner)?.name).not.toBe("");
-    expect(others.length).toBeGreaterThanOrEqual(2);
-    const clubs = [w.club, elsewhere.club];
-    const world = db as unknown as WorldTx;
-    let schedule = await scheduleWorldOf(world, clubs);
-    let rosterWorld = await rosterWorldOf(world, clubs);
-    let clubRows = await clubRowsOf(world, clubs);
-    const reload = async () => {
-      schedule = await scheduleWorldOf(world, clubs);
-      rosterWorld = await rosterWorldOf(world, clubs);
-      clubRows = await clubRowsOf(world, clubs);
-    };
-    const spec = (id: string, path: Record<string, string>, body?: unknown): Spec => {
-      const operation = operations.find((one) => one.id === id);
-      if (operation === undefined) throw new Error(`the contract has no ${id}`);
-      return {
-        operation,
-        path,
-        query: {},
-        headers: {
-          "idempotency-key": randomUUID(),
-          ...(body === undefined ? {} : { "content-type": "application/json" }),
-        },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      const callers = new Map<string, { authorization: string; name: string; interval: string | null }>();
+      const secrets: string[] = [];
+      for (const row of sessionsOf) {
+        const authorization = bearer(await keys.signer.token(row.subject));
+        secrets.push(authorization.slice("Bearer ".length));
+        callers.set(row.account, { authorization, name: row.name ?? "", interval: row.interval });
+      }
+      const joiner = w.dan.user;
+      const proposer = w.ana.user;
+      const others = [...callers].filter(([account, one]) => one.interval !== null && account !== proposer);
+      expect(callers.get(joiner)?.interval).toBeNull();
+      expect(callers.get(joiner)?.name).not.toBe("");
+      expect(others.length).toBeGreaterThanOrEqual(2);
+      const clubs = [w.club, elsewhere.club];
+      const world = db as unknown as WorldTx;
+      let schedule = await scheduleWorldOf(world, clubs);
+      let rosterWorld = await rosterWorldOf(world, clubs);
+      let clubRows = await clubRowsOf(world, clubs);
+      const reload = async () => {
+        schedule = await scheduleWorldOf(world, clubs);
+        rosterWorld = await rosterWorldOf(world, clubs);
+        clubRows = await clubRowsOf(world, clubs);
       };
-    };
-    // Each answer, sent as `account` (null: signed out), judged, and scanned with that caller's own facts
-    // read from the world after it.
-    const ask = async (
-      account: string | null,
-      sent: Spec,
-      expected: (answer: Answer) => Expected | string[],
-      note: string,
-      key?: string,
-    ): Promise<Answer> => {
-      const request = render(sent);
-      const caller = account === null ? undefined : callers.get(account);
-      if (caller !== undefined) request.headers["authorization"] = caller.authorization;
-      if (key !== undefined) request.headers["idempotency-key"] = key;
-      const answer = await answerOf(app, request);
-      await reload();
-      const want = expected(answer);
-      const problems = Array.isArray(want)
-        ? want
-        : typeof want === "function"
-          ? want(answer)
-          : pinnedProblems(answer, want);
-      const facts = await factsOf(clubs, account, { secrets: [...secrets] });
-      scanner(
-        wrong,
-        note,
-        () => facts,
-        now,
-        counted,
-      )({
-        problems: problems.map((problem) => `${sent.operation.id}: ${problem}`),
-        answers: [{ spec: sent, answer }],
-      });
-      return answer;
-    };
-    const seen = () => ({ schedule, roster: rosterWorld, now });
-    const rosterSeen = (account: string) => (): RosterSeen => ({
-      schedule,
-      account,
-      now,
-      roster: rosterWorld,
-      rows: clubRows,
-    });
-
-    // Ana proposes the joiner under the joiner's own profile name, and makes the link.
-    const label = callers.get(joiner)?.name ?? "";
-    const version = clubRows.get(w.club)?.rosterVersion ?? -1;
-    await ask(
-      proposer,
-      spec("proposeRoster", { club_id: w.club }, { expected_roster_version: version, add: [{ label }] }),
-      (answer) => (answer.status === 201 ? [] : [`status ${String(answer.status)}, not 201`]),
-      "the proposal",
-    );
-    const revision = clubRows.get(w.club)?.openRevision ?? "";
-    const candidate = rosterWorld.revisions.get(revision)?.candidates.at(-1)?.id ?? "";
-    const linked = await ask(
-      proposer,
-      spec("createInvitation", { club_id: w.club }, { candidate_id: candidate }),
-      (answer) => madeLink(answer, rosterWorld, candidate, now).problems,
-      "the link",
-    );
-    const token = madeLink(linked, rosterWorld, candidate, now).token ?? "";
-    expect(token).not.toBe("");
-    secrets.push(token);
-    const preview = () => spec("previewInvitation", {}, { token });
-    const accept = (at: number) => spec("acceptInvitation", {}, { token, revision_id: revision, expected_version: at });
-    const stateOf = (answer: Answer) => (JSON.parse(answer.body) as Record<string, unknown>)["state"];
-
-    // The joiner previews the exact roster and accepts it: waiting, while the members haven't all approved.
-    const opened = await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner's preview");
-    expect(stateOf(opened)).toBe("open");
-    const acceptKey = randomUUID();
-    const before = acceptOutcome(schedule, rosterWorld, token, joiner, label, revision, 1, now);
-    expect(before).toBe("waiting");
-    const waited = await ask(
-      joiner,
-      accept(1),
-      () =>
-        sameAnswer("the acceptance", 200, {
-          invitation_id: linked.body === "" ? "" : (JSON.parse(linked.body) as { invitation_id: string }).invitation_id,
-          state: "waiting",
-        }),
-      "the joiner's acceptance",
-      acceptKey,
-    );
-    expect(stateOf(await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner waits"))).toBe(
-      "waiting",
-    );
-
-    // Each other member approves: the revision stays open until the last, whose approval applies it.
-    for (const [index, [account]] of others.entries()) {
-      const last = index === others.length - 1;
-      expect(decisionOutcome(schedule, rosterWorld, revision, account, now, 1)).toBe("decides");
-      const answer = await ask(
+      const spec = (id: string, path: Record<string, string>, body?: unknown): Spec => {
+        const operation = operations.find((one) => one.id === id);
+        if (operation === undefined) throw new Error(`the contract has no ${id}`);
+        return {
+          operation,
+          path,
+          query: {},
+          headers: {
+            "idempotency-key": randomUUID(),
+            ...(body === undefined ? {} : { "content-type": "application/json" }),
+          },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        };
+      };
+      // Each answer, sent as `account` (null: signed out), judged, and scanned with that caller's own facts
+      // read from the world after it.
+      const ask = async (
+        account: string | null,
+        sent: Spec,
+        expected: (answer: Answer) => Expected | string[],
+        note: string,
+        key?: string,
+      ): Promise<Answer> => {
+        const request = render(sent);
+        const caller = account === null ? undefined : callers.get(account);
+        if (caller !== undefined) request.headers["authorization"] = caller.authorization;
+        if (key !== undefined) request.headers["idempotency-key"] = key;
+        const answer = await answerOf(app, request);
+        await reload();
+        const want = expected(answer);
+        const problems = Array.isArray(want)
+          ? want
+          : typeof want === "function"
+            ? want(answer)
+            : pinnedProblems(answer, want);
+        const facts = await factsOf(clubs, account, { secrets: [...secrets] });
+        scanner(
+          wrong,
+          note,
+          () => facts,
+          now,
+          counted,
+        )({
+          problems: problems.map((problem) => `${sent.operation.id}: ${problem}`),
+          answers: [{ spec: sent, answer }],
+        });
+        return answer;
+      };
+      const seen = () => ({ schedule, roster: rosterWorld, now });
+      const rosterSeen = (account: string) => (): RosterSeen => ({
+        schedule,
         account,
-        spec("approveRoster", { revision_id: revision }, { expected_version: 1 }),
-        () => {
-          const want = revisionFor(schedule, rosterWorld, revision, account, now);
-          return want === undefined
-            ? ["the member can't read the revision they approved"]
-            : sameAnswer("the revision", 200, want);
-        },
-        `approval ${String(index + 1)}`,
-      );
-      expect(stateOf(answer)).toBe(last ? "applied" : "open");
-    }
+        now,
+        roster: rosterWorld,
+        rows: clubRows,
+      });
 
-    // Applied: the joiner is a member, with a new interval that joined by this revision (T8); the club's
-    // roster version moved once; the revision is at its next version; nothing is left open.
-    const [joined] = await db<{ interval: string; via: string | null; origin: string }[]>`
+      // Ana proposes the joiner under the joiner's own profile name, and makes the link.
+      const label = callers.get(joiner)?.name ?? "";
+      const version = clubRows.get(w.club)?.rosterVersion ?? -1;
+      await ask(
+        proposer,
+        spec("proposeRoster", { club_id: w.club }, { expected_roster_version: version, add: [{ label }] }),
+        (answer) => (answer.status === 201 ? [] : [`status ${String(answer.status)}, not 201`]),
+        "the proposal",
+      );
+      const revision = clubRows.get(w.club)?.openRevision ?? "";
+      const candidate = rosterWorld.revisions.get(revision)?.candidates.at(-1)?.id ?? "";
+      const linked = await ask(
+        proposer,
+        spec("createInvitation", { club_id: w.club }, { candidate_id: candidate }),
+        (answer) => madeLink(answer, rosterWorld, candidate, now).problems,
+        "the link",
+      );
+      const token = madeLink(linked, rosterWorld, candidate, now).token ?? "";
+      expect(token).not.toBe("");
+      secrets.push(token);
+      const preview = () => spec("previewInvitation", {}, { token });
+      const accept = (at: number) =>
+        spec("acceptInvitation", {}, { token, revision_id: revision, expected_version: at });
+      const stateOf = (answer: Answer) => (JSON.parse(answer.body) as Record<string, unknown>)["state"];
+
+      // The joiner previews the exact roster and accepts it: waiting, while the members haven't all approved.
+      const opened = await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner's preview");
+      expect(stateOf(opened)).toBe("open");
+      const acceptKey = randomUUID();
+      const before = acceptOutcome(schedule, rosterWorld, token, joiner, label, revision, 1, now);
+      expect(before).toBe("waiting");
+      const waited = await ask(
+        joiner,
+        accept(1),
+        () =>
+          sameAnswer("the acceptance", 200, {
+            invitation_id:
+              linked.body === "" ? "" : (JSON.parse(linked.body) as { invitation_id: string }).invitation_id,
+            state: "waiting",
+          }),
+        "the joiner's acceptance",
+        acceptKey,
+      );
+      expect(
+        stateOf(await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner waits")),
+      ).toBe("waiting");
+
+      // Each other member approves: the revision stays open until the last, whose approval applies it.
+      const unjoined = schedule;
+      for (const [index, [account]] of others.entries()) {
+        const last = index === others.length - 1;
+        expect(decisionOutcome(schedule, rosterWorld, revision, account, now, 1)).toBe("decides");
+        const answer = await ask(
+          account,
+          spec("approveRoster", { revision_id: revision }, { expected_version: 1 }),
+          () => {
+            const want = revisionFor(schedule, rosterWorld, revision, account, now);
+            return want === undefined
+              ? ["the member can't read the revision they approved"]
+              : sameAnswer("the revision", 200, want);
+          },
+          `approval ${String(index + 1)}`,
+        );
+        expect(stateOf(answer)).toBe(last ? "applied" : "open");
+      }
+
+      // Applied: the joiner is a member, with a new interval that joined by this revision (T8); the club's
+      // roster version moved once; the revision is at its next version; nothing is left open.
+      const [joined] = await db<{ interval: string; via: string | null; origin: string }[]>`
       SELECT interval_id AS interval, joined_via_revision_id AS via, origin FROM app.memberships
        WHERE club_id = ${w.club} AND user_id = ${joiner} AND state = 'active'`;
-    expect(joined).toMatchObject({ via: revision, origin: "roster" });
-    expect(rosterWorld.revisions.get(revision)).toMatchObject({ state: "applied", version: 2 });
-    expect(clubRows.get(w.club)).toMatchObject({ rosterVersion: version + 2, openRevision: null });
-    expect(rosterWorld.candidates.get(candidate)?.state).toBe("joined");
-
-    // The joiner now: the link says joined, with the club; the retry is still the first answer (T19); the
-    // revision named as it ended says joined; the club's roster lists them; the signed-out page says nothing.
-    const club = { id: w.club, name: schedule.clubs.get(w.club)?.name, timezone: schedule.clubs.get(w.club)?.timezone };
-    expect(
-      stateOf(await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner, joined")),
-    ).toBe("joined");
-    const retry = await ask(
-      joiner,
-      accept(1),
-      (answer) => (said(answer) === said(waited) ? [] : ["a retry got another answer (T19)"]),
-      "the acceptance again",
-      acceptKey,
-    );
-    expect(stateOf(retry)).toBe("waiting");
-    expect(acceptOutcome(schedule, rosterWorld, token, joiner, label, revision, 2, now)).toBe("joined again");
-    await ask(
-      joiner,
-      accept(2),
-      () =>
-        sameAnswer("the acceptance", 200, {
-          invitation_id: (JSON.parse(waited.body) as { invitation_id: string }).invitation_id,
-          state: "joined",
-          club: { ...club, my_membership_id: joined?.interval },
-        }),
-      "accepting the applied roster again",
-    );
-    const facts = await factsOf(clubs, joiner, { secrets: [...secrets] });
-    await ask(
-      joiner,
-      spec("listMembers", { club_id: w.club }),
-      () =>
-        membersExpected(
-          () => ({
-            schedule,
-            account: joiner,
-            now,
-            nextOf: (star) => daysOf(facts.world, w.club, now, star).next,
-            openRevision: () => undefined,
-          }),
-          w.club,
+      expect(joined).toMatchObject({ via: revision, origin: "roster" });
+      // The club's first days after the join, row by row: revised to include the new member when nobody had
+      // confirmed, and no proposal made or changed when none were open.
+      wrong.push(
+        ...firstDaysJoinProblems(unjoined, schedule, w.club, [joined?.interval ?? ""]).map(
+          (problem) => `the join: ${problem}`,
         ),
-      "the club's roster, by its new member",
-    );
-    // FQ119: the applied revision lists the members who approved it, not the person it brought in.
-    await ask(
-      joiner,
-      spec("getRosterRevision", { revision_id: revision }),
-      () => NEUTRAL,
-      "the revision, by its new member",
-    );
-    await ask(
-      proposer,
-      spec("getRosterRevision", { revision_id: revision }),
-      () => revisionExpected(rosterSeen(proposer), revision, proposer),
-      "the applied revision, by its proposer",
-    );
-    await ask(null, spec("previewInvitationWeb", {}, { token }), () => NEUTRAL, "the used link, signed out");
-    await ask(proposer, preview(), () => previewExpected(seen, token, proposer), "the used link, by its proposer");
+      );
+      expect(rosterWorld.revisions.get(revision)).toMatchObject({ state: "applied", version: 2 });
+      expect(clubRows.get(w.club)).toMatchObject({ rosterVersion: version + 2, openRevision: null });
+      expect(rosterWorld.candidates.get(candidate)?.state).toBe("joined");
 
-    expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-    expect(counted.answers).toBe(13 + others.length);
-  });
+      // The joiner now: the link says joined, with the club; the retry is still the first answer (T19); the
+      // revision named as it ended says joined; the club's roster lists them; the signed-out page says nothing.
+      const club = {
+        id: w.club,
+        name: schedule.clubs.get(w.club)?.name,
+        timezone: schedule.clubs.get(w.club)?.timezone,
+      };
+      expect(
+        stateOf(await ask(joiner, preview(), () => previewExpected(seen, token, joiner), "the joiner, joined")),
+      ).toBe("joined");
+      const retry = await ask(
+        joiner,
+        accept(1),
+        (answer) => (said(answer) === said(waited) ? [] : ["a retry got another answer (T19)"]),
+        "the acceptance again",
+        acceptKey,
+      );
+      expect(stateOf(retry)).toBe("waiting");
+      expect(acceptOutcome(schedule, rosterWorld, token, joiner, label, revision, 2, now)).toBe("joined again");
+      await ask(
+        joiner,
+        accept(2),
+        () =>
+          sameAnswer("the acceptance", 200, {
+            invitation_id: (JSON.parse(waited.body) as { invitation_id: string }).invitation_id,
+            state: "joined",
+            club: { ...club, my_membership_id: joined?.interval },
+          }),
+        "accepting the applied roster again",
+      );
+      const facts = await factsOf(clubs, joiner, { secrets: [...secrets] });
+      await ask(
+        joiner,
+        spec("listMembers", { club_id: w.club }),
+        () =>
+          membersExpected(
+            () => ({
+              schedule,
+              account: joiner,
+              now,
+              nextOf: (star) => daysOf(facts.world, w.club, now, star).next,
+              openRevision: () => undefined,
+            }),
+            w.club,
+          ),
+        "the club's roster, by its new member",
+      );
+      // FQ119: the applied revision lists the members who approved it, not the person it brought in.
+      await ask(
+        joiner,
+        spec("getRosterRevision", { revision_id: revision }),
+        () => NEUTRAL,
+        "the revision, by its new member",
+      );
+      await ask(
+        proposer,
+        spec("getRosterRevision", { revision_id: revision }),
+        () => revisionExpected(rosterSeen(proposer), revision, proposer),
+        "the applied revision, by its proposer",
+      );
+      await ask(null, spec("previewInvitationWeb", {}, { token }), () => NEUTRAL, "the used link, signed out");
+      await ask(proposer, preview(), () => previewExpected(seen, token, proposer), "the used link, by its proposer");
+
+      if (firstDays) {
+        // The revised week, as the new member and as a member who was there read it: each from the rows.
+        const weekOf = (account: string) => () => weekExpected(() => ({ schedule, account, now }), w.club);
+        const mine = (answer: Answer) =>
+          (JSON.parse(answer.body) as { proposal?: { version?: unknown; my_days?: unknown } }).proposal;
+        const revised = await ask(joiner, spec("getSchedule", { club_id: w.club }), weekOf(joiner), "the week, joined");
+        expect(mine(revised)).toMatchObject({ version: 2 });
+        expect((mine(revised)?.my_days as unknown[]).length).toBe(1);
+        await ask(proposer, spec("getSchedule", { club_id: w.club }), weekOf(proposer), "the week, by its proposer");
+        // A member who was there leaves: a revision again, without them, judged row by row; the club then
+        // answers the leaver nothing, and those who stay their week with nobody who left in it.
+        const [leaver, gone] = others[0] ?? ["", { interval: null }];
+        const stayed = schedule;
+        await ask(
+          leaver,
+          spec("leaveClub", { club_id: w.club }, { contributions: "keep" }),
+          () => leftExpected(w.club, now, "keep"),
+          "a member's leave",
+        );
+        wrong.push(
+          ...firstDaysProblems(stayed, schedule, w.club, gone.interval ?? "").map((problem) => `the leave: ${problem}`),
+        );
+        await ask(leaver, spec("getSchedule", { club_id: w.club }), () => NEUTRAL, "the week, by the member who left");
+        const again = await ask(joiner, spec("getSchedule", { club_id: w.club }), weekOf(joiner), "the week, after it");
+        expect(mine(again)).toMatchObject({ version: 3 });
+        expect((mine(again)?.my_days as unknown[]).length).toBe(2);
+        // The world's week in force keeps the leaver's day, named (FQ102); the first days name them nowhere.
+        expect(JSON.stringify(mine(again))).not.toContain(gone.interval ?? "none");
+        await ask(
+          proposer,
+          spec("getSchedule", { club_id: w.club }),
+          weekOf(proposer),
+          "the proposer's week, after it",
+        );
+      }
+
+      expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
+      expect(counted.answers).toBe(13 + others.length + (firstDays ? 6 : 0));
+    },
+  );
 });
 
 describe("callers without a session, in each state of the drop and phase of the day (T14, T27, T53)", () => {

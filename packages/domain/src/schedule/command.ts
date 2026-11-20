@@ -19,7 +19,7 @@
 // 6. The clock, sampled after the lock (T1; T3's order). The receipt's own `created_at` is an earlier
 //    sample, which decides nothing.
 // 7. The rule, which the command passes in: NOT_ALLOWED, or the change. A proposal that has ended with no
-//    successor (applied, or superseded with the club paused) takes no change: NOT_ALLOWED.
+//    successor (applied, or superseded: the club paused, or nobody it includes still a member, FQ123) takes no change: NOT_ALLOWED.
 // 8. The answer: the proposal as the caller now sees it, read again after the change and made by the same
 //    `answerOf` the read uses, stored in the receipt and answered as the receipt keeps it.
 

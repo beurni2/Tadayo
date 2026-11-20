@@ -24,6 +24,9 @@ import type { ProposalAnswer } from "./week.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | boolean)[]) => R;
 
+// Every row is of the proposal's current week (db/migrations/0013_first_days_revision.sql): the week the
+// caller's holds were read from, under the club's row.
+
 function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly never[]) => R): Bound<R> {
   return sql as Bound<R>;
 }
@@ -40,6 +43,7 @@ export function chooseScheduleDays(
     const judged = judgeChoice(callerId, proposal.facts, input.weekdays);
     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
     const caller = proposal.facts.members.find((member) => member.id === callerId);
+    const week = String(proposal.weekRevision);
     if (caller === undefined) throw new Error("schedule: the caller left the proposal under its club's lock");
     for (const weekday of WEEKDAYS) {
       const holds = caller.held.includes(weekday);
@@ -48,15 +52,17 @@ export function chooseScheduleDays(
       if (caller.suggested.includes(weekday)) {
         await bound(tx)`
           UPDATE app.schedule_proposal_days SET held = ${wanted}::pg_catalog.bool
-           WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId} AND weekday = ${weekday}::app.weekday`;
+           WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId} AND weekday = ${weekday}::app.weekday
+             AND week_revision = ${week}::pg_catalog.int2`;
       } else if (wanted) {
         await bound(tx)`
-          INSERT INTO app.schedule_proposal_days (proposal_id, interval_id, weekday, suggested, held)
-          VALUES (${proposal.id}, ${callerId}, ${weekday}::app.weekday, false, true)`;
+          INSERT INTO app.schedule_proposal_days (proposal_id, interval_id, weekday, suggested, held, week_revision)
+          VALUES (${proposal.id}, ${callerId}, ${weekday}::app.weekday, false, true, ${week}::pg_catalog.int2)`;
       } else {
         await bound(tx)`
           DELETE FROM app.schedule_proposal_days
-           WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId} AND weekday = ${weekday}::app.weekday`;
+           WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId} AND weekday = ${weekday}::app.weekday
+             AND week_revision = ${week}::pg_catalog.int2`;
       }
     }
   });

@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
-// Leave a club (the contract's `leaveClub`; spec 04, 18, 22, 32; G05-leave, book p30; T1, T7, T8, T9, T14,
-// T19, T26, T36; FQ16, FQ60, FQ63, FQ75, FQ80, FQ112, FQ120, FQ121, FQ122; docs/plans/api-b1-clubs.md,
+// Leave a club (the contract's `leaveClub`; spec 04, 05, 18, 22, 32; G05-leave, book p30; T1, T7, T8, T9, T14,
+// T19, T26, T33, T36; FQ16, FQ60, FQ63, FQ75, FQ80, FQ102, FQ112, FQ120, FQ121, FQ122, FQ123; docs/plans/api-b1-clubs.md,
 // section 5), in one READ COMMITTED transaction the caller opens. A refusal throws `Refused`, which rolls
 // it back, so a refused request leaves nothing, its receipt included.
 //
@@ -24,7 +24,12 @@
 //    one was: a member's proposal keeps its proposer's approval by proposing (FQ60), and the revision of
 //    a name nobody has approved (`rename`, FQ84) starts with no approval at all.
 // 7. The club's `roster_version`, up by one.
-// 8. The answer, stored in the receipt and answered as the receipt keeps it.
+// 8. The club's first days (../schedule/settle.ts, FQ102, FQ123), asked on every leave; with none
+//    open a leave changes nothing, since the club it leaves has no first days to restart. While they are open: with no day
+//    confirmed, a revision of the proposed week without the leaver, or their end with one member left;
+//    with one confirmed, they apply when only confirmed members stay among those they include, and end
+//    when the one member left hasn't confirmed or nobody they include is left.
+// 9. The answer, stored in the receipt and answered as the receipt keeps it.
 //
 // Nothing else is written. A club under two members is paused by its members' count (./club-state.ts,
 // FQ16); the leaver's days that haven't opened are held by `left_at` (FQ63); no push goes to anyone (T36).
@@ -37,6 +42,7 @@ import { completeReceipt, reserveAsMember, reserveReceipt, type ReceiptKey } fro
 import type { Json } from "../idempotency/request.ts";
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
+import { settleFirstDays } from "../schedule/settle.ts";
 import { writeRevision } from "./apply-roster.ts";
 
 export type Contributions = "keep" | "withdraw";
@@ -204,6 +210,9 @@ export async function leaveClub(
   // 7. The club's roster version.
   await bound(tx)`UPDATE app.clubs SET roster_version = roster_version + 1 WHERE id = ${clubId}`;
 
-  // 8. The answer.
+  // 8. The club's first days.
+  await settleFirstDays(tx, at, clubId);
+
+  // 9. The answer.
   return completeReceipt(tx, receipt, render({ clubId, leftAt: at, contributions }));
 }

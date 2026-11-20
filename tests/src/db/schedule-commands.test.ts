@@ -783,7 +783,10 @@ describe("the refusals, in the contract's order", () => {
     return w;
   }
 
-  /** Replaces the world's proposal with a newer one, as PR 3's revision will: rows this test writes. */
+  /**
+   * Replaces the world's proposal with a newer one, as a membership change will (`api/b2-membership-change`):
+   * rows this test writes. A revision of the first days keeps its proposal (./first-days-roster.test.ts).
+   */
   async function replaced(tx: WorldTx, w: FirstDays): Promise<string> {
     const successor = newId("spr");
     await tx`
@@ -901,7 +904,7 @@ describe("the refusals, in the contract's order", () => {
       await rolledBack(db, async (tx) => {
         const clock = fakeClock(OPENED);
         const w = await firstDays(tx, clock, 4);
-        // As a leave that pauses the club will end them (PR 3): rows this test writes.
+        // As a leave that pauses the club ends them (packages/domain/src/schedule/settle.ts): rows this test writes.
         await tx`
           UPDATE app.schedule_proposals SET state = 'superseded', version = version + 1, closed_at = ${AT.added}
            WHERE id = ${w.proposal}`;
@@ -981,7 +984,7 @@ describe("one commit per key (T19)", () => {
       // The key is per operation: the same key confirms, as its own request.
       await choose(tx, clock, w, 0, ["monday"]);
       expect((await confirm(tx, clock, w, 0, ["monday"], { key })).myState).toBe("confirmed");
-      // Another proposal of the same club, as PR 3's revision will make: the same body under the key, at its path.
+      // Another proposal of the same club, as a membership change will make: the same body under the key, at its path.
       const successor = newId("spr");
       await tx`
         UPDATE app.schedule_proposals

@@ -44,6 +44,8 @@ function world(): ScheduleWorld {
     reason: "activation",
     effectiveFrom: "2026-11-08",
     daysPerMember: 2,
+    weekRevision: 1,
+    earlier: [],
     scheduleVersion: "sched_first",
     replacedBy: null,
     members: [

@@ -66,8 +66,12 @@ const ANA_DAYS = [
   ["thursday", "2026-11-12"],
 ] as const;
 
-/** Adds the matrix's first days to `w` (this file's header), before any role changes the club. Returns the proposal. */
-export async function addFirstDays(tx: WorldTx, w: World): Promise<string> {
+/**
+ * Adds the matrix's first days to `w` (this file's header), before any role changes the club. Returns the
+ * proposal. With `confirmed` false, Ana hasn't confirmed, so nobody has: the first days a join or a leave
+ * revises (FQ55, FQ102).
+ */
+export async function addFirstDays(tx: WorldTx, w: World, confirmed = true): Promise<string> {
   const version = newId("sched");
   const proposal = newId("spr");
   await tx`
@@ -95,10 +99,12 @@ export async function addFirstDays(tx: WorldTx, w: World): Promise<string> {
       INSERT INTO app.schedule_proposal_days (proposal_id, interval_id, weekday, suggested, held)
       VALUES (${proposal}, ${interval}, ${weekday}, ${suggested}, ${held})`;
   }
-  await tx`
-    UPDATE app.schedule_proposal_members SET confirmed_at = ${AT.generated}
-     WHERE proposal_id = ${proposal} AND interval_id = ${w.ana.interval}`;
-  for (const [weekday, firstDate] of ANA_DAYS) {
+  if (confirmed) {
+    await tx`
+      UPDATE app.schedule_proposal_members SET confirmed_at = ${AT.generated}
+       WHERE proposal_id = ${proposal} AND interval_id = ${w.ana.interval}`;
+  }
+  for (const [weekday, firstDate] of confirmed ? ANA_DAYS : []) {
     await tx`
       INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
       VALUES (${version}, ${w.club}, ${weekday}, ${w.ana.interval}, ${firstDate}, ${AT.generated})`;
@@ -128,8 +134,13 @@ export interface ScheduleProposalRows {
   daysPerMember: number;
   scheduleVersion: string | null;
   replacedBy: string | null;
+  /** Which proposed week the proposal is on (db/migrations/0013_first_days_revision.sql). */
+  weekRevision: number;
   members: { interval: string; confirmed: boolean }[];
+  /** The rows of its current week, which are all a route answers from. */
   days: { interval: string; weekday: Weekday; suggested: boolean; held: boolean }[];
+  /** The rows of its earlier weeks, which nothing answers from and nothing changes. */
+  earlier: { interval: string; weekday: Weekday; suggested: boolean; held: boolean; weekRevision: number }[];
 }
 
 /** The schedule's rows of some clubs, as the judges read them. */
@@ -187,20 +198,29 @@ export async function scheduleWorldOf(db: WorldTx, clubs: readonly string[]): Pr
       reason: string;
       effective_from: string;
       days_per_member: number;
+      week_revision: number;
       schedule_version: string | null;
       replaced_by: string | null;
     }[]
   >`
     SELECT id, club_id AS club, state, version, reason, effective_from::text AS effective_from, days_per_member,
-           schedule_version_id AS schedule_version, replaced_by
+           week_revision, schedule_version_id AS schedule_version, replaced_by
       FROM app.schedule_proposals WHERE club_id IN ${db(clubs)}`;
   const proposalMembers = await db<{ proposal: string; interval: string; confirmed: boolean }[]>`
     SELECT proposal_id AS proposal, interval_id AS interval, confirmed_at IS NOT NULL AS confirmed
       FROM app.schedule_proposal_members WHERE club_id IN ${db(clubs)}`;
   const proposalDays = await db<
-    { proposal: string; interval: string; weekday: Weekday; suggested: boolean; held: boolean }[]
+    {
+      proposal: string;
+      interval: string;
+      weekday: Weekday;
+      suggested: boolean;
+      held: boolean;
+      week_revision: number;
+    }[]
   >`
-    SELECT d.proposal_id AS proposal, d.interval_id AS interval, d.weekday::text AS weekday, d.suggested, d.held
+    SELECT d.proposal_id AS proposal, d.interval_id AS interval, d.weekday::text AS weekday, d.suggested, d.held,
+           d.week_revision
       FROM app.schedule_proposal_days d JOIN app.schedule_proposals p ON p.id = d.proposal_id
      WHERE p.club_id IN ${db(clubs)}`;
   return {
@@ -239,18 +259,28 @@ export async function scheduleWorldOf(db: WorldTx, clubs: readonly string[]): Pr
           reason: row.reason,
           effectiveFrom: row.effective_from,
           daysPerMember: row.days_per_member,
+          weekRevision: row.week_revision,
           scheduleVersion: row.schedule_version,
           replacedBy: row.replaced_by,
           members: proposalMembers
             .filter((each) => each.proposal === row.id)
             .map((each) => ({ interval: each.interval, confirmed: each.confirmed })),
           days: proposalDays
-            .filter((each) => each.proposal === row.id)
+            .filter((each) => each.proposal === row.id && each.week_revision === row.week_revision)
             .map((each) => ({
               interval: each.interval,
               weekday: each.weekday,
               suggested: each.suggested,
               held: each.held,
+            })),
+          earlier: proposalDays
+            .filter((each) => each.proposal === row.id && each.week_revision !== row.week_revision)
+            .map((each) => ({
+              interval: each.interval,
+              weekday: each.weekday,
+              suggested: each.suggested,
+              held: each.held,
+              weekRevision: each.week_revision,
             })),
         },
       ]),

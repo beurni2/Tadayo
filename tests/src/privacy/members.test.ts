@@ -54,6 +54,8 @@ function world(over: { firstDays?: "open" | "applied" | "none"; effectiveFrom?: 
                 reason: "activation",
                 effectiveFrom: "2026-11-02",
                 daysPerMember: 2,
+                weekRevision: 1,
+                earlier: [],
                 scheduleVersion: "sched_first",
                 replacedBy: null,
                 members: [],

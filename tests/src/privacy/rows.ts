@@ -142,11 +142,12 @@
 //     and a confirmation that leaves the first days open changes only the confirmer's `next_day` (once
 //     their day is dated, FQ79) and `next_up`, which marks whoever's next day opens first; `position`
 //     moves only when the first days apply, on their last confirmation or on a leave that leaves only
-//     confirmed members, to the schedule's order (FQ98, FQ102);
+//     confirmed members, to the schedule's order (FQ98, FQ102), and for a restarted club on the day its
+//     new week starts (FQ124);
 //   - after a leave, the leaver in no `held_by` or `holders`, and still the `owner` of a day they
-//     confirmed, with no `first_date` (FQ63, FQ102), once a leave frees a leaver's holds (the first days'
-//     roster PR); a revision of the first days moving the `version` (FQ102); and a former member listed in
-//     a replaced proposal getting the neutral not-found.
+//     confirmed, with no `first_date` (FQ63, FQ102), now that a leave frees a leaver's holds; a revision
+//     of the first days moving the `version` (FQ102), both in tests/src/db/first-days-roster.test.ts; and
+//     a former member listed in a replaced proposal getting the neutral not-found.
 
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";

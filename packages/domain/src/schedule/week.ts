@@ -1,7 +1,9 @@
 /// <reference lib="esnext.temporal" />
 // A club's week as the database holds it, for one caller (spec 05; T9, T14, T55; FQ75): the club, the
 // caller's own membership, every schedule version with its confirmed days, and one proposal with its
-// members, what each holds and who has confirmed. It is ONE statement, so one snapshot: a confirmation that
+// members, what each holds in its current week (`week_revision`: a revision that proposes other days
+// writes its week beside the earlier one, which nothing reads; db/migrations/0013_first_days_revision.sql)
+// and who has confirmed. It is ONE statement, so one snapshot: a confirmation that
 // commits while it runs is in the proposal and in the version, or in neither. The caller is checked in
 // the same statement, through the authorization module (`activeMemberships`): anyone the rule gives
 // nothing of the club gets no row, and the answer is null.
@@ -48,6 +50,8 @@ export interface LoadedVersion {
 export interface LoadedProposal {
   readonly id: string;
   readonly version: number;
+  /** The proposed week its rows are read from and written to. */
+  readonly weekRevision: number;
   readonly reason: "activation" | "membership_change";
   readonly state: "open" | "applied" | "superseded";
   readonly effectiveFrom: string;
@@ -173,10 +177,12 @@ function proposalOf(value: unknown, versions: readonly LoadedVersion[]): LoadedP
   const state = row["state"];
   const version = row["version"];
   const perMember = row["days_per_member"];
+  const weekRevision = row["week_revision"];
   if (reason !== "activation" && reason !== "membership_change") throw shape();
   if (state !== "open" && state !== "applied" && state !== "superseded") throw shape();
   if (typeof version !== "number" || !Number.isSafeInteger(version) || version < 1) throw shape();
   if (perMember !== 1 && perMember !== 2) throw shape();
+  if (typeof weekRevision !== "number" || !Number.isSafeInteger(weekRevision) || weekRevision < 1) throw shape();
   const people = new Map<string, SchedulePerson>();
   const members = list(row["members"]).map((item): ProposalMember => {
     const member = record(item);
@@ -203,6 +209,7 @@ function proposalOf(value: unknown, versions: readonly LoadedVersion[]): LoadedP
   return {
     id: text(row["id"]),
     version,
+    weekRevision,
     reason,
     state,
     effectiveFrom: date(row["effective_from"]),
@@ -246,6 +253,7 @@ export async function loadWeek(
            (SELECT pg_catalog.jsonb_build_object(
                      'id', p.id, 'version', p.version, 'reason', p.reason, 'state', p.state,
                      'effective_from', p.effective_from, 'days_per_member', p.days_per_member,
+                     'week_revision', p.week_revision,
                      'schedule_version_id', p.schedule_version_id, 'replaced_by', p.replaced_by,
                      'members',
                      (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
@@ -257,7 +265,8 @@ export async function loadWeek(
                                          'weekday', d.weekday, 'suggested', d.suggested, 'held', d.held)),
                                        '[]'::pg_catalog.jsonb)
                                   FROM app.schedule_proposal_days d
-                                 WHERE d.proposal_id = pm.proposal_id AND d.interval_id = pm.interval_id))
+                                 WHERE d.proposal_id = pm.proposal_id AND d.interval_id = pm.interval_id
+                                   AND d.week_revision = p.week_revision))
                                ORDER BY s.joined_at, s.interval_id COLLATE "C"),
                              '[]'::pg_catalog.jsonb)
                         FROM app.schedule_proposal_members pm
