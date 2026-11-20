@@ -32,7 +32,7 @@ import {
 } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { rolledBack, worldSql, type WorldTx } from "./harness.ts";
+import { expectRefused, REFUSED, rolledBack, worldSql, type WorldTx } from "./harness.ts";
 import { foundedBy, joinAs, leaveAs, type MadeClub } from "./club-world.ts";
 import { plain, refusal } from "./roster-world.ts";
 import { holding, waitingOn } from "./week-world.ts";
@@ -432,6 +432,19 @@ describe("when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131)", () => {
         expect(await reads(name, now()), name).toEqual([]);
         expect(await reads(name, opened), name).toEqual([]);
       }
+      // A cancelled day takes nothing new: Alex's link for it is refused (T9).
+      const alex = { user: c.user["Alex"] ?? "", interval: c.member["Alex"] ?? "" };
+      await expectRefused(
+        plain(tx),
+        REFUSED.integrity,
+        (sp) =>
+          commitDrop(sp, where, alex, {
+            media: "external_video",
+            caption: "Too",
+            at: new Date(current.epochMilliseconds),
+          }),
+        /is a cancelled day, and takes nothing new \(T9\)/,
+      );
       // Sam takes Thursday: Sam's own day on the 19th is another day, which holds nothing of Maya's.
       await confirmOwn(tx, c, "Sam");
       await make(tx, c);
@@ -444,6 +457,32 @@ describe("when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131)", () => {
       const [kept] = await tx<{ state: string; author: string }[]>`
         SELECT state, author_interval_id AS author FROM app.drops WHERE id = ${drop}`;
       expect(kept).toEqual({ state: "active", author: c.member["Maya"] });
+    });
+  });
+
+  it("frees days the same way when the first days apply with a late joiner and no day free (FQ100, FQ131)", async () => {
+    await rolledBack(db, async (tx) => {
+      // Ben, Maya and Alex's first days, two days each: Ben and Maya confirm, then Sam joins with no day (FQ100).
+      const c = await foundedBy(tx, clock, "Ben");
+      await join(tx, c, "Maya", "Ben");
+      await join(tx, c, "Alex", "Ben");
+      await confirmOwn(tx, c, "Ben");
+      await confirmOwn(tx, c, "Maya");
+      await join(tx, c, "Sam", "Ben");
+      expect(await picks(tx, c)).toEqual([]);
+      // Alex's confirmation applies the first days. All six days are held and Sam has none, so each of the three
+      // keeps their first day, Alex's just-confirmed Saturday among the days freed, and Sam picks.
+      expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "applied" });
+      const all = await weeks(tx, c);
+      expect(all).toHaveLength(2);
+      expect(all.at(-1)?.days.map((day) => [day[0], day[1]])).toEqual([
+        ["monday", "Ben"],
+        ["tuesday", "Maya"],
+        ["wednesday", "Alex"],
+      ]);
+      const [pick] = await picks(tx, c);
+      expect(pick).toMatchObject({ state: "open", version: 1, days_per_member: 1 });
+      expect(await heldAtFirst(tx, c, pick?.id ?? "")).toEqual({ Sam: ["thursday"] });
     });
   });
 
@@ -504,11 +543,18 @@ describe("a pick added to, replaced, dropped, and a club paused (FQ16, FQ131)", 
       const [first, second] = await picks(tx, c);
       expect(first).toMatchObject({ id: pick.id, state: "superseded", version: 2, replaced_by: second?.id });
       expect(String(first?.closed_at)).toBe(current.toString());
-      // Four members take one day each: Ben and Maya keep Monday and Tuesday, Thursday and Friday are freed,
-      // and Alex and Sam pick one day each from what is free.
+      // Four members take one day each, and Wednesday and Saturday are free for Alex and Sam: Ben and Maya
+      // keep both their days, nothing is cancelled, and no week is written (FQ125).
       expect(second).toMatchObject({ state: "open", version: 1, days_per_member: 1, effective_from: TODAY });
-      expect(await heldAtFirst(tx, c, second?.id ?? "")).toEqual({ Alex: ["wednesday"], Sam: ["thursday"] });
-      expect((await weeks(tx, c)).at(-1)?.days.map((day) => day[0])).toEqual(["monday", "tuesday"]);
+      expect(await heldAtFirst(tx, c, second?.id ?? "")).toEqual({ Alex: ["wednesday"], Sam: ["saturday"] });
+      expect(await weeks(tx, c)).toHaveLength(1);
+      expect((await weeks(tx, c)).at(-1)?.days.map((day) => day[0])).toEqual([
+        "monday",
+        "tuesday",
+        "thursday",
+        "friday",
+      ]);
+      expect(await tx`SELECT id FROM app.occurrences WHERE club_id = ${c.club} AND status = 'cancelled'`).toEqual([]);
       expect(await proposalOf(tx, c, "Alex")).toMatchObject({ id: second?.id, myState: "choosing" });
       for (const command of [confirm, choose]) {
         expect(await refusal(command(tx, c, "Alex", pick.id, 1, ["wednesday", "saturday"]))).toEqual({
@@ -526,7 +572,7 @@ describe("a pick added to, replaced, dropped, and a club paused (FQ16, FQ131)", 
     await rolledBack(db, async (tx) => {
       const { c, pick } = await withAlex(tx);
       await join(tx, c, "Sam", "Ben");
-      // Sam leaves: three again, two days each. Ben and Maya keep the one day each left them; Alex picks two.
+      // Sam leaves: three again, two days each, and Alex picks two, Wednesday and Saturday, the two free.
       await leaving(tx, c, "Sam");
       const [first, second, third] = await picks(tx, c);
       expect(first).toMatchObject({ id: pick.id, state: "superseded", replaced_by: second?.id });

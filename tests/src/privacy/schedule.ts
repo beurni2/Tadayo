@@ -18,8 +18,8 @@
 // - getSchedule: the neutral not-found unless the viewer's account has an active interval in a club that
 //   isn't suspended (the gate has already answered an account being deleted and an unfinished profile).
 //   Otherwise the whole `Schedule`, byte for value: the server's instant, the club with the viewer's own
-//   interval, `current` (the latest version in force on the club's local date, when it has a day whose star
-//   has a name to show) and `proposal` (the club's open one, only when it includes the viewer's interval:
+//   interval, `current` (the latest version in force on the club's local date, with the days of its stars
+//   still in the club and with a name to show, when it has one) and `proposal` (the club's open one, only when it includes the viewer's interval:
 //   a member who joined after it, or left and rejoined, gets `current` alone, FQ100).
 // - A proposal as one viewer sees it (`proposalFor`): `owner` and `first_date` on a day someone confirmed
 //   (`first_date` only while its owner is still a member); `holders` only to a holder of a contested day,
@@ -473,7 +473,9 @@ export function weekFor(
     .at(-1);
   const assignments = WEEK.flatMap((weekday) => {
     const found = inForce?.assignments.find((each) => each.weekday === weekday);
-    const person = found === undefined ? undefined : personOf(world, found.star);
+    // Only a member still in the club: a leaver's day won't open, and is free for a new member's pick.
+    const person =
+      found === undefined || world.members.get(found.star)?.active !== true ? undefined : personOf(world, found.star);
     return person === undefined ? [] : [{ weekday, person }];
   });
   const open = [...world.proposals].find(
@@ -610,6 +612,7 @@ export function changeProblems(
   account: string | null,
   weekdays: readonly Weekday[],
   today?: string,
+  at?: Temporal.Instant,
 ): string[] {
   const was = before.proposals.get(proposalId);
   const now = after.proposals.get(proposalId);
@@ -688,6 +691,24 @@ export function changeProblems(
         problems.push(
           `${each.weekday} first opens on ${each.firstDate}, before the week after the confirmation (FQ130)`,
         );
+    }
+    // FQ130 exactly, given the confirmation's instant: the first such weekday on or after both, whose 7 AM
+    // in the club's zone is at least 24 elapsed hours after it (FQ79). The world here has no days, so a
+    // first date pushed past a member's last announced day on that weekday is the database tests'
+    // (tests/src/db/membership-change.test.ts).
+    const zone = after.clubs.get(now.club)?.timezone;
+    if (at !== undefined && zone !== undefined) {
+      for (const each of mine) {
+        let date = Temporal.PlainDate.from(nextMonday > start ? nextMonday : start);
+        const early = (day: Temporal.PlainDate) =>
+          Temporal.Instant.compare(
+            day.toZonedDateTime({ timeZone: zone, plainTime: "07:00" }).toInstant(),
+            at.add({ hours: 24 }),
+          ) < 0;
+        while (WEEK[date.dayOfWeek - 1] !== each.weekday || early(date)) date = date.add({ days: 1 });
+        if (each.firstDate !== date.toString())
+          problems.push(`${each.weekday} first opens on ${each.firstDate}, not ${date.toString()} (FQ130)`);
+      }
     }
   } else {
     const dated = after.versions.find((version) => version.id === now.scheduleVersion)?.assignments ?? [];
@@ -927,10 +948,12 @@ export function commandExpected(
  * packages/domain/src/schedule/change.ts:
  * - while the first days are open, or in a club where none ever applied, no pick and no week is made or
  *   moved;
- * - each active member keeps their days of the club's latest week, from Monday, up to spec 05's number for
- *   the club's size; any beyond it are freed (a fourth member joining three): then a new week holds exactly
- *   the days kept, as they were, from `today` or the day after the latest week's start when that is today
- *   or later; otherwise no week is made;
+ * - each active member keeps their days of the club's latest week. Only where the weekdays nobody active
+ *   has there are fewer than spec 05's number for the club's size times the active members with no day
+ *   there (three who hold all six, and a fourth) are days freed: each keeps their days from Monday up to
+ *   that number, and any beyond it are freed. Then a new week holds exactly the days kept, as they were,
+ *   from `today` or the day after the latest week's start when that is today or later; otherwise no week
+ *   is made;
  * - the members with no day kept pick: with fewer than two active members no pick is open, and one that was
  *   ends superseded at its next version with no successor. An open pick with spec 05's number of days each
  *   gains a row for each of them it doesn't list, unconfirmed, nothing else of it moving (T33); else, with
@@ -1003,14 +1026,21 @@ export function weekChangeProblems(
     .sort((a, b) => Temporal.Instant.compare(joined(a), joined(b)) || byBytes(a, b));
   const per = active.length <= 3 ? 2 : 1;
   const latest = latestWeek(before, club);
+  const theirs = (interval: string) =>
+    WEEK.flatMap((weekday) =>
+      (latest?.assignments ?? []).filter((each) => each.star === interval && each.weekday === weekday),
+    );
+  const unplaced = active.filter((interval) => theirs(interval).length === 0).length;
+  const nobodys = WEEK.filter((weekday) =>
+    active.every((interval) => !theirs(interval).some((each) => each.weekday === weekday)),
+  ).length;
+  const short = nobodys < per * unplaced;
   const kept: { weekday: Weekday; star: string; firstDate: string }[] = [];
   let freed = false;
   for (const interval of active) {
-    const days = WEEK.flatMap((weekday) =>
-      (latest?.assignments ?? []).filter((each) => each.star === interval && each.weekday === weekday),
-    );
-    kept.push(...days.slice(0, per));
-    if (days.length > per) freed = true;
+    const days = theirs(interval);
+    kept.push(...(short ? days.slice(0, per) : days));
+    if (short && days.length > per) freed = true;
   }
   // The week.
   const added = after.versions.filter(

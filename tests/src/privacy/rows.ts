@@ -317,8 +317,9 @@ export const SCHEDULE_COMMAND = Object.freeze({
   answer:
     "each body of schedule.ts's table answered as its outcomeOf says from the world's rows: INVALID_REQUEST to " +
     "what the contract refuses, then the neutral NOT_FOUND to anyone the proposal doesn't include, MEMBERSHIP_CHANGED, " +
-    "VERSION_CONFLICT, NOT_ALLOWED, or 200 with the proposal as the viewer sees it after the change; a membership " +
-    `change takes only its confirmation, of exactly the days it proposes for the caller, and moves no version (FQ81) (${GATE})`,
+    "VERSION_CONFLICT, NOT_ALLOWED, or 200 with the proposal as the viewer sees it after the change; a new " +
+    "member's pick takes choices and confirmations of free days, and moves its version only with its state: its " +
+    `last confirmation applies it at the next version (T33) (${GATE})`,
 });
 
 export const ROWS: Readonly<Record<string, unknown>> = {

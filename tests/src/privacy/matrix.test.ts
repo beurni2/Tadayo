@@ -2009,10 +2009,14 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
   // The one place the routes and the scanner meet a pick. The club is made by the commands themselves
   // (../db/club-world.ts): Ben and Maya confirmed their first days, the days were made, and Alex joined, so a
   // pick is open for Alex alone. Each answer is judged from the rows (schedule.ts) and scanned with its
-  // caller's own facts, at two instants: before any day has opened, and during Maya's open Friday, when Sam
-  // joins (freeing Ben's and Maya's second days and replacing the pick) and Maya leaves (replacing it again).
-  // What each join and leave did to the week and the pick is judged row by row. Then the two new members
-  // confirm, a member's account is being deleted, and the club is suspended.
+  // caller's own facts, at three instants: before any day has opened; during Maya's open Friday, when Sam
+  // joins (four take one day each, and the two free days are enough for Alex and Sam, so nobody's day is
+  // freed and the pick is replaced) and Maya leaves (replacing it again), and the two new members confirm,
+  // which leaves all six days held; and when Omar joins as a fourth, which frees the others' second days from
+  // next week, their days then cancelled, and Thursday 19 November, a freed day's date, in the morning. What
+  // each join and leave did to the week and the pick is judged row by row, and the freed days' statuses and
+  // the club's next day by their literal dates. Then a member's account is being deleted, and the club is
+  // suspended.
   it("answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes", async () => {
     const wrong: string[] = [];
     const counted = { answers: 0 };
@@ -2020,7 +2024,7 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     // Wednesday 11 November 2026, midnight in New York, the club's zone.
     const start = Temporal.Instant.from("2026-11-11T05:00:00Z");
     const tag = suffix();
-    const [ben, maya, alex, sam] = [`Ben${tag}`, `Maya${tag}`, `Alex${tag}`, `Sam${tag}`];
+    const [ben, maya, alex, sam, omar] = [`Ben${tag}`, `Maya${tag}`, `Alex${tag}`, `Sam${tag}`, `Omar${tag}`];
     const built = await db.begin(async (tx) => {
       clock.set(start);
       const c = await foundedBy(tx, clock, ben);
@@ -2053,9 +2057,18 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     clock.set(now);
     const today = async () => (await changeDatesAt(db, club, now)).today;
     const account = (name: string) => c.user[name] ?? "";
-    // Sam joins later: an account made now, so the callers can be signed in from the start.
+    // Sam and Omar join later: accounts made now, so the callers can be signed in from the start.
     const samsAccount = await newUser(plain(world), sam);
-    const accounts = [account(ben), account(maya), account(alex), samsAccount, stranger, elsewhere.account];
+    const omarsAccount = await newUser(plain(world), omar);
+    const accounts = [
+      account(ben),
+      account(maya),
+      account(alex),
+      samsAccount,
+      omarsAccount,
+      stranger,
+      elsewhere.account,
+    ];
     const subjects = await db<{ account: string; subject: string }[]>`
       SELECT id AS account, auth_subject AS subject FROM app.users WHERE id IN ${db(accounts)}`;
     const callers = new Map<string, string>();
@@ -2065,7 +2078,7 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
       secrets.push(authorization.slice("Bearer ".length));
       callers.set(row.account, authorization);
     }
-    expect(callers.size).toBe(6);
+    expect(callers.size).toBe(7);
     const clubs = [club, elsewhere.club];
     let schedule = await scheduleWorldOf(world, clubs);
     const spec = (id: string, path: Record<string, string>, body?: unknown): Spec => {
@@ -2097,7 +2110,10 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
       if (key !== undefined) request.headers["idempotency-key"] = key;
       const answer = await answerOf(app, request);
       schedule = await scheduleWorldOf(world, clubs);
-      const facts = await factsOf(clubs, as, { accounts: [stranger, samsAccount], secrets: [...secrets] });
+      const facts = await factsOf(clubs, as, {
+        accounts: [stranger, samsAccount, omarsAccount],
+        secrets: [...secrets],
+      });
       const want = expected(answer, facts);
       const problems = Array.isArray(want)
         ? want
@@ -2159,7 +2175,7 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
           const viewer = viewerIn(schedule, club, as) ?? "";
           return [
             ...sameBody("the proposal", proposalFor(schedule, proposal, viewer))(answer),
-            ...changeProblems(before, schedule, id, proposal, as, body.weekdays, date),
+            ...changeProblems(before, schedule, id, proposal, as, body.weekdays, date, now),
           ];
         },
         note,
@@ -2249,7 +2265,8 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     expect(said(await week(account(maya), "the week, after the new member chose, again"))).toBe(said(mayas));
 
     // Friday 13 November, noon in New York: Maya's Friday is open. Sam joins: four members take one day each,
-    // so Ben's Thursday and Maya's Friday leave the week from next week, and Alex and Sam pick one day each.
+    // and Wednesday and Saturday, the two days nobody has, are enough for Alex and Sam, so Ben and Maya keep
+    // both their days (FQ125, FQ131), no week is written, and the pick is replaced for one day each.
     now = Temporal.Instant.from("2026-11-13T17:00:00Z");
     clock.set(now);
     const unjoined = schedule;
@@ -2267,12 +2284,11 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     expect(second).not.toBe(first);
     expect(schedule.proposals.get(first)).toMatchObject({ state: "superseded", replacedBy: second });
     expect(schedule.proposals.get(second)).toMatchObject({ daysPerMember: 1, version: 1 });
-    // Ben's clubs, during the open day: the freed Thursdays from next week are cancelled, never next (T9).
-    await clubsOf(account(ben), "the clubs, by a member whose second day was freed");
+    await clubsOf(account(ben), "the clubs, by a member already in the week, during the open day");
     await week(account(ben), "the week, after the fourth member joined");
     expect(proposalIn(await week(account(sam), "the week, by the fourth member"))).toMatchObject({
       id: second,
-      my_days: ["thursday"],
+      my_days: ["saturday"],
     });
     const replaced = await command(account(alex), "confirmScheduleDays", first, alexsDays, "the replaced pick");
     expect(JSON.parse(replaced.body)).toEqual({ code: "MEMBERSHIP_CHANGED", current_id: second });
@@ -2337,6 +2353,47 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     await week(account(ben), "the week, once the pick applied");
     await clubsOf(account(alex), "the clubs, by a new member");
 
+    // Ben, Alex and Sam hold all six days. Omar joins: no day is free for a fourth, so each keeps their first
+    // day from Monday, and the others leave the week from next week, their days then cancelled (the founder's
+    // answer on three to four members, FQ131). Ben's Thursdays were made at the start, four weeks ahead.
+    const beforeOmar = schedule;
+    await db.begin(async (tx) => {
+      await joinAs(tx, clock, c, omar, ben, omarsAccount);
+      await checkAsAtCommit(plain(tx));
+    });
+    schedule = await scheduleWorldOf(world, clubs);
+    wrong.push(
+      ...weekChangeProblems(beforeOmar, schedule, club, await changeDatesAt(db, club, now)).map(
+        (problem) => `Omar's join: ${problem}`,
+      ),
+    );
+    const bensThursdays = await db<{ local_date: string; status: string }[]>`
+      SELECT local_date::text AS local_date, status FROM app.occurrences
+       WHERE club_id = ${club} AND star_interval_id = ${c.member[ben] ?? ""} AND EXTRACT(isodow FROM local_date) = 4
+       ORDER BY local_date`;
+    expect(bensThursdays).toEqual([
+      { local_date: "2026-11-12", status: "scheduled" },
+      { local_date: "2026-11-19", status: "cancelled" },
+      { local_date: "2026-11-26", status: "cancelled" },
+      { local_date: "2026-12-03", status: "cancelled" },
+      { local_date: "2026-12-10", status: "cancelled" },
+    ]);
+    const fourth = openPick()?.[0] ?? "";
+    expect(schedule.proposals.get(fourth)).toMatchObject({ daysPerMember: 1, version: 1 });
+    expect(proposalIn(await week(omarsAccount, "the week, by a fourth member with no day free"))).toMatchObject({
+      id: fourth,
+      my_days: ["thursday"],
+    });
+    await week(account(ben), "the week, by a member whose second day was freed");
+    // Thursday 19 November, 6 AM in New York: Ben's Thursday was freed, so the club's next day is Ben's
+    // Monday 23 November, never the 19th (T9).
+    now = Temporal.Instant.from("2026-11-19T11:00:00Z");
+    clock.set(now);
+    const onTheFreedDate = await clubsOf(account(ben), "the clubs, on a freed day's date");
+    const listed = (JSON.parse(onTheFreedDate.body) as { clubs: { id: string; next_day?: { local_date: string } }[] })
+      .clubs;
+    expect(listed.find((each) => each.id === club)?.next_day?.local_date).toBe("2026-11-23");
+
     // A member whose account is being deleted: the gate's 401 before anything of the club (T27).
     await db`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${now}
               WHERE id = ${account(alex)}`;
@@ -2370,7 +2427,7 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     ).toBe(404);
 
     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-    expect(counted.answers).toBe(40);
+    expect(counted.answers).toBe(43);
   });
 });
 

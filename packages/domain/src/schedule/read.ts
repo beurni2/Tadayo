@@ -5,7 +5,9 @@
 // taken first.
 //
 // - `current` is the latest version in force on the club's local date at `now`, with the days confirmed
-//   in it, from Monday. A version with no day yet, as the first days' is before anyone confirms, gives no
+//   in it of members still in the club, from Monday. A member who left is in it no more: their days won't
+//   open (FQ63), they are free for a new member's pick, and a member who joined since never shared the
+//   club with them. A version with no such day, as the first days' is before anyone confirms, gives no
 //   `current`. A day whose star has no name to show is left out, never sent nameless (FQ75, as Home's
 //   days are: ../authorization/days.ts).
 // - `proposal` is the club's open one as the caller sees it (`answerOf`), only when it includes the
@@ -54,7 +56,9 @@ export async function readSchedule(
   const today = now.toZonedDateTimeISO(clubTimeZone(week.club.timezone)).toPlainDate().toString();
   const inForce = week.versions.filter((version) => version.effectiveFrom <= today).at(-1);
   const assignments = (inForce?.assignments ?? []).flatMap((assignment) =>
-    assignment.person === null ? [] : [{ weekday: assignment.weekday, person: assignment.person }],
+    assignment.person === null || !assignment.starActive
+      ? []
+      : [{ weekday: assignment.weekday, person: assignment.person }],
   );
   const included = week.proposal !== null && includedMember(week.proposal.facts, week.membershipId) !== undefined;
   return {

@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
 // A club made the way the product makes one, for the tests that need a week the commands wrote
-// (tests/src/db/membership-change.test.ts, and the privacy matrix's membership change): `createClub`,
+// (tests/src/db/membership-change.test.ts, and the privacy matrix's new member's pick through the app): `createClub`,
 // `proposeRoster`, `approveRoster`, `createInvitation`, `acceptInvitation`, `leaveClub` and
 // `confirmScheduleDays`, each as its route runs it (./roster-world.ts), at the instant the caller's clock
 // says. Members are in the order they joined (FQ98), so a caller moves its clock between two joins.

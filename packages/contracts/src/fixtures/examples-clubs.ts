@@ -104,7 +104,7 @@ const WEEK: readonly WeekdayKey[] = ["monday", "tuesday", "wednesday", "thursday
 
 // Kitchen table's new member's days once Leila has joined, seen on Friday 6 November (FQ125 to FQ131):
 // the five members keep their days, each taken by its member, and Leila picks the one free day, Friday,
-// which the proposal gives her first (spec 05: one day each for six members). Confirmed at once, it is
+// which the proposal gives Leila first (spec 05: one day each for six members). Confirmed at once, it is
 // Leila's from Friday 13 November, Friday of the week after, at least 24 hours away (FQ130), and the
 // proposal applies, since Leila is everyone it includes.
 const ktNewMember = (myState: "choosing" | "confirmed") => ({

@@ -598,7 +598,8 @@ describe("choosing days (FQ46, FQ48, FQ55; T33)", () => {
         owner: sam,
         suggested: false,
       });
-      expect(ben?.current?.assignments).toEqual([{ weekday: "thursday", person: sam }]);
+      // The club's week lists only members still in the club, so Sam's Thursday isn't in it (Schedule.current).
+      expect(ben?.current).toBeNull();
       // And Ben confirms Monday: nobody who is still a member holds it too.
       const answer = await confirm(tx, clock, w, 0, ["monday"]);
       expect(answer).toMatchObject({ myState: "confirmed", state: "open", version: 1 });
@@ -997,7 +998,7 @@ describe("one commit per key (T19)", () => {
       // The key is per operation: the same key confirms, as its own request.
       await choose(tx, clock, w, 0, ["monday"]);
       expect((await confirm(tx, clock, w, 0, ["monday"], { key })).myState).toBe("confirmed");
-      // Another proposal of the same club, as a membership change will make: the same body under the key, at its path.
+      // Another proposal of the same club, as a new member's pick makes: the same body under the key, at its path.
       const successor = newId("spr");
       await tx`
         UPDATE app.schedule_proposals

@@ -434,7 +434,7 @@ describe("a leave once a day is confirmed (FQ102)", () => {
       await confirmOwn(tx, c, "Ben");
       await leaving(tx, c, "Maya");
       expect(await proposals(tx, c)).toMatchObject([{ state: "applied", version: 2 }]);
-      // The join that follows opens no first days: the week for the two is a membership change.
+      // The join that follows opens no first days: Sam gets a pick of the free days (FQ127).
       await join(tx, c, "Sam", "Ben");
       expect((await proposals(tx, c)).map((each) => [each.reason, each.state])).toEqual([
         ["activation", "applied"],
@@ -522,15 +522,12 @@ describe("a leave once a day is confirmed (FQ102)", () => {
       expect(slot(answer, "monday")).toMatchObject({ state: "yours", firstDate: "2026-12-14" });
       expect(slot(answer, "thursday")).toMatchObject({ state: "yours", firstDate: "2026-12-17" });
       expect(await confirmOwn(tx, c, "Sam")).toMatchObject({ state: "applied" });
-      // FQ124's cost, as it is: until the new week starts, the week in force is the earlier one, which
-      // holds Ben's two days alone, named, and none of Maya's or Sam's, to Sam who never met Ben too.
+      // Until the new week starts, the week in force is the earlier one, which holds Ben's two days alone
+      // and none of Maya's or Sam's. Ben has left, so the club's week shows none of them: it lists only
+      // members still in the club, and Sam never met Ben (FQ124; Schedule.current).
       const waiting = await sight(tx, c, "Sam");
       expect(waiting?.proposal).toBeNull();
-      expect(waiting?.current?.effectiveFrom).toBe("2026-11-11");
-      expect(waiting?.current?.assignments.map((each) => [each.weekday, each.person.membershipId])).toEqual([
-        ["monday", c.member["Ben"]],
-        ["thursday", c.member["Ben"]],
-      ]);
+      expect(waiting?.current).toBeNull();
       // The days made afterwards follow the ones already made, and none is Ben's.
       tick(7 * 24);
       await tx.savepoint((sp) => makeDays(sp, clock, c.club));

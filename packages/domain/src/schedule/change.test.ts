@@ -158,14 +158,30 @@ describe("pickAfter: a fourth member frees a day now (FQ131, the founder's answe
     );
   });
 
-  it("frees nothing of a member who left, whose days are free already, and nothing in a club of three or fewer", () => {
-    // Two of a club of three joined by two at once: four members, Ben and Debby keep their first days.
-    expect(pickAfter(facts({ active: ["ben", "debby", "alex", "sam"], week: TWO })).freed).toEqual(
-      week(["thursday", "ben"], ["friday", "debby"]),
-    );
+  it("frees nothing where the free days are enough for the new members, and nothing in a club of three or fewer", () => {
+    // Two joined by two at once: four members, and Wednesday and Saturday are free for the two of them,
+    // so Ben and Debby keep both their days (FQ125).
+    expect(pickAfter(facts({ active: ["ben", "debby", "alex", "sam"], week: TWO }))).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: false,
+        daysPerMember: 1,
+        proposed: [
+          { id: "alex", days: ["wednesday"] },
+          { id: "sam", days: ["saturday"] },
+        ],
+      },
+    });
     expect(pickAfter(facts({ active: ["ben", "debby", "maya"], week: TWO })).freed).toEqual([]);
-    expect(pickAfter(facts({ active: ["ben", "alex", "sam", "nina"], week: THREE })).freed).toEqual(
-      week(["thursday", "ben"]),
+    // Debby and Maya left: their four days are free for three new members, and Ben keeps both days.
+    expect(pickAfter(facts({ active: ["ben", "alex", "sam", "nina"], week: THREE })).freed).toEqual([]);
+  });
+
+  it("frees the days beyond each member's first wherever the free days are too few, as two joined by three", () => {
+    // Two free days for three new members: Ben and Debby keep their first days, Thursday and Friday are freed.
+    expect(pickAfter(facts({ active: ["ben", "debby", "alex", "sam", "nina"], week: TWO })).freed).toEqual(
+      week(["thursday", "ben"], ["friday", "debby"]),
     );
   });
 
@@ -228,7 +244,8 @@ describe("pickAfter: an open pick through joins and leaves", () => {
   });
 
   it("opens a new pick in its place when the club's size changes the days each takes (FQ131)", () => {
-    // Maya picks two days in a club of three, and Alex joins: one day each now, for both of them.
+    // Maya picks two days in a club of three, and Alex joins before Maya confirms: one day each now, for
+    // both of them, from the two free days, so nobody's day is freed (FQ125).
     expect(
       pickAfter(
         facts({
@@ -238,14 +255,14 @@ describe("pickAfter: an open pick through joins and leaves", () => {
         }),
       ),
     ).toEqual({
-      freed: week(["thursday", "ben"], ["friday", "debby"]),
+      freed: [],
       proposal: {
         kind: "open",
         replaces: true,
         daysPerMember: 1,
         proposed: [
           { id: "maya", days: ["wednesday"] },
-          { id: "alex", days: ["thursday"] },
+          { id: "alex", days: ["saturday"] },
         ],
       },
     });

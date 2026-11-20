@@ -753,8 +753,10 @@ describe("what a pick's confirmation must leave in the rows (FQ125, FQ126, FQ130
       ...more,
     ]);
   };
-  const judge = (after: ScheduleWorld, before = pickWorld()) =>
-    changeProblems(before, after, "confirmScheduleDays", PICK, "usr_cleo", ["wednesday", "saturday"], TODAY);
+  /** Wednesday 11 November, 10 AM in New York. */
+  const AT_CONFIRMED = Temporal.Instant.from("2026-11-11T15:00:00Z");
+  const judge = (after: ScheduleWorld, before = pickWorld(), at = AT_CONFIRMED) =>
+    changeProblems(before, after, "confirmScheduleDays", PICK, "usr_cleo", ["wednesday", "saturday"], TODAY, at);
 
   it("accepts the new member's days in the club's next week, everyone else's as they were, and the pick applied", () => {
     expect(judge(confirmed())).toEqual([]);
@@ -779,6 +781,14 @@ describe("what a pick's confirmation must leave in the rows (FQ125, FQ126, FQ130
         each.weekday === "wednesday" ? { ...each, firstDate: TODAY } : each,
       );
     expect(judge(soon).join(" ")).toMatch(/wednesday first opens on 2026-11-11/);
+    // A week late is no closer to FQ130 than a week early.
+    const late = confirmed();
+    const latest = late.versions.at(-1);
+    if (latest !== undefined)
+      latest.assignments = latest.assignments.map((each) =>
+        each.weekday === "wednesday" ? { ...each, firstDate: "2026-11-25" } : each,
+      );
+    expect(judge(late).join(" ")).toMatch(/wednesday first opens on 2026-11-25, not 2026-11-18 \(FQ130\)/);
     const stuck = confirmed();
     Object.assign(pickOf(stuck), { state: "open", version: 1 });
     expect(judge(stuck).join(" ")).toMatch(/not applied at 2 \(T33\)/);
@@ -931,17 +941,14 @@ describe("what a join or a leave must leave of the club's week and pick, row by 
   });
 
   it("wants an open pick replaced when the club's size changes the days each, naming its successor", () => {
-    // Cleo picks two days; Dee joins: four take one day each.
-    const replaced = (named: string | null) => {
+    // Cleo picks two days; Dee joins before Cleo confirms: four take one day each, from Wednesday and
+    // Saturday, the two nobody has, so Ana and Ben keep both their days and no week is made (FQ125).
+    const replaced = (named: string | null, dees: Weekday = "saturday") => {
       const w = setActive(
         pickWorld([[PICK, pickRows({ state: "superseded", version: 2, replacedBy: named })]]),
         "itv_dee",
         true,
       );
-      withWeek(w, "sched_four", TODAY, [
-        assignment("monday", "itv_ana", "2026-11-02"),
-        assignment("tuesday", "itv_ben", "2026-11-03"),
-      ]);
       w.proposals.set(
         "spr_next",
         pickRows({
@@ -950,13 +957,22 @@ describe("what a join or a leave must leave of the club's week and pick, row by 
             { interval: "itv_cleo", confirmed: false },
             { interval: "itv_dee", confirmed: false },
           ],
-          days: [day("itv_cleo", "wednesday", true, true), day("itv_dee", "thursday", true, true)],
+          days: [day("itv_cleo", "wednesday", true, true), day("itv_dee", dees, true, true)],
         }),
       );
       return w;
     };
     expect(judge(pickWorld(), replaced("spr_next"))).toEqual([]);
     expect(judge(pickWorld(), replaced(null)).join(" ")).toMatch(/the pick that was open is/);
+    expect(judge(pickWorld(), replaced("spr_next", "thursday")).join(" ")).toMatch(
+      /itv_dee holds thursday at first, not saturday/,
+    );
+    const freedAnyway = replaced("spr_next");
+    withWeek(freedAnyway, "sched_four", TODAY, [
+      assignment("monday", "itv_ana", "2026-11-02"),
+      assignment("tuesday", "itv_ben", "2026-11-03"),
+    ]);
+    expect(judge(pickWorld(), freedAnyway).join(" ")).toMatch(/no day was freed/);
   });
 
   it("wants an open pick ended with no successor when nobody it includes is left, or the club is paused", () => {

@@ -9,10 +9,12 @@
 // - Nobody already in the week is asked anything, and nobody moves (FQ125, FQ126): a member who stays
 //   keeps exactly their days through any join or leave, even where spec 05's table would give a smaller
 //   club two days each (FQ131).
-// - One exception, the founder's answer on three to four members: a join that lowers spec 05's number of
-//   days each (from two to one, as a fourth member joins) frees a day now (`freed`): each member already in
-//   the week keeps their first day from Monday, and their other days leave the week, their days announced
-//   from the next week on cancelled. The new member picks from them and starts next week.
+// - One exception, the founder's answer on three to four members: when the free days can't give each new
+//   member spec 05's number (three who hold all six days, and a fourth joins), a day is freed now
+//   (`freed`): each member already in the week keeps their first day from Monday, and their other days
+//   leave the week, their days announced from the next week on cancelled. The new member picks from them
+//   and starts next week. Where enough days are free (two members and a third who hasn't confirmed, and a
+//   fourth; two who join at once), nobody's day is freed: the new members pick from the free ones.
 // - A free day is one no active member has in the club's latest week: one nobody had, a member's who left,
 //   or one just freed.
 // - The members with no day in the latest week (someone who joined since, or a late joiner of the first
@@ -121,16 +123,23 @@ export function pickAfter(facts: PickFacts): PickChange {
   if (active.length < 2) return open === null ? NOTHING : { freed: [], proposal: { kind: "drop" } };
   const per = daysPerMember(active.length);
 
-  // Each active member's days in the week, from Monday: the first `per` stay, the rest are freed.
+  // Each active member's days in the week, from Monday. The members with none are new: each needs `per`
+  // free days. Only when the free days can't give them that (three who hold all six days, and a fourth)
+  // does the founder's answer free a day now: each member keeps their first `per` days, and the rest are
+  // freed. Otherwise everyone keeps exactly their days, and nothing is cancelled (FQ125, FQ131).
+  const daysOf = new Map(
+    active.map((id) => [id, fromMonday(week.filter((day) => day.star === id).map((day) => day.weekday))] as const),
+  );
+  const fresh = active.filter((id) => daysOf.get(id)?.length === 0);
+  const held = active.reduce((count, id) => count + (daysOf.get(id)?.length ?? 0), 0);
+  const freeing = WEEKDAYS.length - held < per * fresh.length;
   const freed: WeekDay[] = [];
   const kept: WeekDay[] = [];
   for (const id of active) {
-    fromMonday(week.filter((day) => day.star === id).map((day) => day.weekday)).forEach((weekday, nth) =>
-      (nth < per ? kept : freed).push({ weekday, star: id }),
+    (daysOf.get(id) ?? []).forEach((weekday, nth) =>
+      (freeing && nth >= per ? freed : kept).push({ weekday, star: id }),
     );
   }
-  const withDays = new Set(kept.map((day) => day.star));
-  const fresh = active.filter((id) => !withDays.has(id));
   const inWeek = new Set(kept.map((day) => day.weekday));
 
   if (open === null) {

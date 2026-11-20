@@ -6,8 +6,8 @@
 //
 // - The window is the club's own today at `now` through the Sunday that ends the fourth week after
 //   today's (WEEKS_AHEAD; weeks run Monday to Sunday), both dates in the club's zone. Seen from Friday
-//   6 November 2026 that is every day to Saturday 5 December, where the contract's own example ends
-//   The window's end moves once a week, at the club's Monday midnight.
+//   6 November 2026 that is every day to Saturday 5 December. The window's end moves once a week, at the
+//   club's Monday midnight.
 // - A date in it is owed when it isn't a Sunday (T6), the version in force on it (the latest that started
 //   on or before it: FQ61) gives its weekday to a star, the date is on or after that day's first date
 //   (FQ79), and the star is still a member (FQ63).

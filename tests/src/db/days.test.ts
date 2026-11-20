@@ -139,6 +139,24 @@ describe("T6 and FQ61: a day for the right star, from the week in force", () => 
     });
   });
 
+  it("refuses a new week that starts on or before an earlier week of its club (0015)", async () => {
+    // "The week before" and the week in force on a date are what the weeks' starts say, so they come in order.
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      for (const starts of ["2026-11-02", "2026-10-26"]) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => sp`
+            INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
+            VALUES (${newId("sched")}, ${w.club}, ${starts}, ${AT.added})
+          `,
+          new RegExp(`a week starts after every earlier week of its club, after 2026-11-02, not on ${starts}`),
+        );
+      }
+    });
+  });
+
   it("refuses a Sunday, and an assignment whose first date isn't its weekday", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
