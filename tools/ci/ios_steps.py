@@ -41,7 +41,10 @@ The steps:
                each runtime it reuses or creates that device, and checks that simctl lists it on
                that runtime. It boots only the first runtime's device, and writes each runtime's
                identifier, build, device and UDID to run.json and logs/simulators.txt, with the
-               snapshot runtime (and, in simulators.txt, where it comes from).
+               snapshot runtime (and, in simulators.txt, where it comes from). After a failed
+               update of a downloaded runtime's shared cache, it copies what the builder left,
+               and the system log's lines about it, into simulators.txt before anything runs
+               again (Steps.cache_builder_output).
   build        `xcodebuild build-for-testing` of SCHEME, or `xcodebuild build` while the
                scheme has no test target (xcodebuild refuses build-for-testing then), with
                `-skipPackagePluginValidation` (ADR-028). It fails when the build log shows a
@@ -63,6 +66,11 @@ The steps:
                under apps/ios sets a record mode of its own, which would override `never`
                (RECORDING); after the passes, if the run wrote a reference under a __Snapshots__
                folder all the same (a mode set some other way); and when any pass failed.
+  The simulator step (after its check of the snapshot runtime), the build and each test pass
+  sample the runner as they start, every SAMPLE_EVERY seconds, and as they end, in
+  logs/runner.txt, the simulator step with the runner's hardware first, and say how long each
+  took and the load averages then (Steps.sampling); each boot's log says how long it took. None
+  of it decides a step.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
                itself included. The new ones come from the snapshot runtime's result bundle:
@@ -127,7 +135,8 @@ job uploads as the artifact `ios-results` and the evidence job downloads to the 
                   pinned runtime <v>, the runtime simctl gave, its build, the device, its UDID and
                   the pass's result; the snapshot runtime; the tests' overall result
   logs/           toolchain.txt, xcodegen.txt, simulators.txt, build.log, attachments-manifest.json,
-                  and test-<v>.log and test-summary-<v>.json for each pinned runtime (LOG_NAMES)
+                  runner.txt (the runner's samples), and test-<v>.log and test-summary-<v>.json
+                  for each pinned runtime (LOG_NAMES)
   Tests-<v>.xcresult  each pass's result bundle; collect reads the snapshot runtime's
   artifacts/      swift-snapshot-testing's SNAPSHOT_ARTIFACTS on the snapshot runtime's pass: the
                   images that differ from their committed reference
@@ -157,6 +166,7 @@ CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
 import base64
+import contextlib
 import hashlib
 import json
 import os
@@ -165,6 +175,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import threading
 import time
 import urllib.parse
 import xml.etree.ElementTree as ElementTree
@@ -239,10 +250,32 @@ ODD_DRAWS_SHOWN = 100
 ASSET_IMAGES = "/System/Library/AssetsV2/"
 SIMULATOR_PLATFORM = "com.apple.platform.iphonesimulator"
 RUNNER_IMAGES_ISSUE = "actions/runner-images#14946"
+# The runner's samples (Steps.sampling), in logs/runner.txt: at the start and the end of the
+# simulator step, the build and each test pass, after each boot, and every SAMPLE_EVERY seconds
+# between. Each is the second of two `top` samples a second apart, since the first has no CPU
+# use to show: the load averages, CPU and memory use, the disks' reads and writes so far, and
+# the eight busiest processes. The simulator step's first sample also has the runner's hardware
+# (RUNNER_HOST). Only logged, never what decides a step: since about 13:25 UTC on 2026-11-20
+# every step has run slower on both runner images, the build 2 to 4 times and iOS 26.5's pass
+# more (docs/LIMITATIONS.md, 2026-11-20), and the logs didn't say what the runner was doing.
+SAMPLE_EVERY = 60
+RUNNER_SAMPLE = ["top", "-l", "2", "-s", "1", "-n", "8", "-o", "cpu", "-stats",
+                 "pid,command,cpu,mem"]
+RUNNER_HOST = ["sysctl", "hw.model", "machdep.cpu.brand_string", "hw.ncpu", "hw.memsize"]
+LOAD_AVERAGES = re.compile(r"^Load Avg: ([0-9.]+), ([0-9.]+), ([0-9.]+)", re.M)
+# A failed shared cache update names its builder's two output files in simctl's error
+# (`stderrPath=...`, `stdoutPath=...`). Steps.cache_builder_output copies the end of each one
+# under CACHE_FOLDER, and the system log's lines from simdiskimaged and the builder
+# (CACHE_LOG), into logs/simulators.txt, CACHE_LINES lines of each at most.
+CACHE_FOLDER = "/Library/Developer/CoreSimulator/Caches/dyld/"
+CACHE_FILE = re.compile(r"\b(?:stderrPath|stdoutPath)=(/[^,}\s]+)")
+CACHE_LINES = 200
+CACHE_LOG = ["log", "show", "--last", "3m", "--style", "compact", "--predicate",
+             'process == "simdiskimaged" OR process BEGINSWITH "update_dyld"']
 # The files the steps write in OUT's logs/: the only ones the evidence job copies or links. All
 # top-level files: a folder in logs/ is a stray.
 LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log",
-             "attachments-manifest.json") + tuple(
+             "attachments-manifest.json", "runner.txt") + tuple(
     name for version in toolchain.IOS_RUNTIMES
     for name in (f"test-{version}.log", f"test-summary-{version}.json"))
 # Xcode adds "_<n>_<UUID>" to an attachment's suggested name when it exports it: at the end of a
@@ -643,6 +676,21 @@ def evidence_path(branch, sha, full=False):
     return f"{branch}/{sha[:7]}/" + ("ios-full" if full else "ios")
 
 
+def last_lines(lines, what):
+    """`what`'s header, saying how many lines it has, and its last CACHE_LINES lines."""
+    kept = lines[-CACHE_LINES:]
+    said = f"{len(lines)} line" + ("" if len(lines) == 1 else "s")
+    if len(kept) < len(lines):
+        said += f", the last {len(kept)} here"
+    return f"--- {what}: {said}" + (":\n" + "\n".join(kept) if kept else "")
+
+
+def duration(seconds):
+    """`seconds` as the logs say a time taken: "41 s", "14 min 3 s"."""
+    minutes, seconds = divmod(max(0, int(round(seconds))), 60)
+    return f"{minutes} min {seconds} s" if minutes else f"{seconds} s"
+
+
 def magick_text(text):
     """Text safe for montage's -title and -label: % and a backslash start escapes, and a
     leading @ reads a file, so none of them may reach it as written."""
@@ -680,12 +728,16 @@ def sheet_name(entry, taken):
 
 class Steps:
     def __init__(self, root, shell, environ=None, out=None, require_app=REQUIRE_APP,
-                 sleep=time.sleep):
+                 sleep=time.sleep, sample_every=SAMPLE_EVERY, clock=time.monotonic):
         self.root = root
         self.shell = shell
         self.environ = os.environ if environ is None else environ
         self.require_app = require_app
         self.sleep = sleep
+        # None turns the runner's samples off (sampling); the clock times boots and steps.
+        self.sample_every = sample_every
+        self.clock = clock
+        self._runner_log = threading.Lock()
         if out:
             self.out = out
         elif self.environ.get("IOS_OUT"):
@@ -717,6 +769,128 @@ class Steps:
         os.makedirs(self.out_path("logs"), exist_ok=True)
         with open(self.log(name), "a", encoding="utf-8") as f:
             f.write(text if text.endswith("\n") else text + "\n")
+
+    def log_size(self, name):
+        try:
+            return os.path.getsize(self.log(name))
+        except OSError:
+            return 0
+
+    def runner_sample(self, label, host=False):
+        """Appends one sample of the runner (RUNNER_SAMPLE) to logs/runner.txt, headed by the time
+        and `label`, and with the runner's hardware (RUNNER_HOST) first when `host`. Returns its
+        load averages, as text, or None when the sample doesn't show them."""
+        lines = []
+        if host:
+            code, out, err = self.shell.capture(RUNNER_HOST, env=self.xcode_env())
+            lines.append((out + err).strip() or f"({RUNNER_HOST[0]} exited {code})")
+        code, out, err = self.shell.capture(RUNNER_SAMPLE, env=self.xcode_env())
+        parts = out.split("Processes:")
+        sample = "Processes:" + parts[-1] if code == 0 and len(parts) > 2 else out + err
+        lines.append(sample.strip() or f"({RUNNER_SAMPLE[0]} exited {code})")
+        stamp = time.strftime("%H:%M:%S", time.gmtime())
+        with self._runner_log:
+            self.write_log("runner.txt", f"--- {stamp} UTC, {label}\n" + "\n".join(lines))
+        found = LOAD_AVERAGES.search(sample)
+        return " ".join(found.groups()) if found else None
+
+    @contextlib.contextmanager
+    def sampling(self, step, label, host=False):
+        """Samples the runner (runner_sample) as `label`'s work starts, every self.sample_every
+        seconds while it runs, and as it ends, which the step's output says, with how long the
+        work took and the load averages then. A step stopped by its timeout keeps the samples
+        taken. Off when self.sample_every is None, as in the tests that check a step's commands."""
+        if self.sample_every is None:
+            yield
+            return
+        started = self.clock()
+        self.runner_sample(f"{label}: start", host=host)
+        stop = threading.Event()
+
+        def every():
+            while not stop.wait(self.sample_every):
+                self.runner_sample(label)
+        thread = threading.Thread(target=every, daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join(30)
+            took = duration(self.clock() - started)
+            load = self.runner_sample(f"{label}: end, after {took}")
+            print(f"ios: {step}: {label} took {took}; the runner's load averages then: "
+                  f"{load or 'unread'} (logs/runner.txt)", flush=True)
+
+    def boot(self, udid, version, log_name, step):
+        """`simctl bootstatus -b`, which boots the device and waits until it has finished
+        booting; its log says how long that took, and so does the step's output. Returns its exit
+        code."""
+        started = self.clock()
+        code = self.shell.run(["xcrun", "simctl", "bootstatus", udid, "-b"],
+                              env=self.xcode_env(), log=self.log(log_name))
+        took = duration(self.clock() - started)
+        said = f"iOS {version}'s simulator {udid} " + (
+            f"booted in {took}" if code == 0 else f"didn't boot, after {took} (exit {code})")
+        self.write_log(log_name, said)
+        if code == 0:
+            print(f"ios: {step}: {said} (logs/{log_name})", flush=True)
+            if self.sample_every is not None:
+                self.runner_sample(f"iOS {version} booted, after {took}")
+        return code
+
+    def cache_builder_output(self, since):
+        """After a failed shared cache update, whose output simulators.txt holds from byte
+        `since`: the end of each of the builder's output files that simctl's error names
+        (CACHE_FILE), when it's under CACHE_FOLDER, read as root when the runner's user can't;
+        what that folder holds; and the system log's lines from simdiskimaged and the builder
+        (CACHE_LOG). Each at most CACHE_LINES lines, appended to simulators.txt. Only logged: why
+        the update fails for the runner's user, and now and then as root too, isn't known
+        (docs/LIMITATIONS.md, 2026-11-19 and 2026-11-20)."""
+        try:
+            with open(self.log("simulators.txt"), "rb") as f:
+                f.seek(since)
+                said = f.read().decode("utf-8", "replace")
+        except OSError:
+            said = ""
+        paths = list(dict.fromkeys(CACHE_FILE.findall(said)))
+        readable = [p for p in paths if os.path.normpath(p) == p and p.startswith(CACHE_FOLDER)]
+        for path in paths:
+            if path not in readable or os.path.islink(path):
+                self.write_log("simulators.txt", f"--- {path}: " + (
+                    "a link, so not read" if path in readable else
+                    f"not under {CACHE_FOLDER}, so not read"))
+                continue
+            try:
+                with open(path, "rb") as f:
+                    text = f.read().decode("utf-8", "replace")
+            except FileNotFoundError:
+                self.write_log("simulators.txt", f"--- {path}: not there")
+                continue
+            except OSError as error:
+                # Read as root, as the update with sudo runs, when the runner's user can't.
+                tail = ["sudo", "-n", "tail", "-n", str(CACHE_LINES), path]
+                code, out, err = self.shell.capture(tail, env=self.xcode_env())
+                if code != 0:
+                    self.write_log("simulators.txt",
+                                   f"--- {path}: {error.strerror or error}, and as root: "
+                                   f"{(out + err).strip()[:200]} (exit {code})")
+                    continue
+                path, text = f"{path}, read as root (`{' '.join(tail[2:5])}`)", out
+            self.write_log("simulators.txt", last_lines(text.splitlines(), path))
+        for folder in sorted({os.path.dirname(p) for p in readable}):
+            try:
+                found = sorted((e.name, e.stat(follow_symlinks=False).st_size)
+                               for e in os.scandir(folder))
+                listing = "\n".join(f"{name} ({size} bytes)" for name, size in found) or "empty"
+            except OSError as error:
+                listing = error.strerror or str(error)
+            self.write_log("simulators.txt", f"--- {folder}:\n{listing}")
+        code, out, err = self.shell.capture(CACHE_LOG, env=self.xcode_env())
+        self.write_log("simulators.txt", last_lines((out + err).splitlines(),
+                                                    f"{' '.join(CACHE_LOG)} (exit {code})"))
+        print("ios: simulator: the shared cache builder's output and the system log's lines "
+              "about it are in logs/simulators.txt", flush=True)
 
     def run_record(self):
         try:
@@ -890,6 +1064,10 @@ class Steps:
         except ValueError as error:
             print(f"ios: simulator: {error}")
             return 1
+        with self.sampling("simulator", "the simulator step", host=True):
+            return self.simulators(snapshots)
+
+    def simulators(self, snapshots):
         env = self.xcode_env()
         for cmd in (["xcrun", "simctl", "list", "runtimes"],
                     ["xcrun", "simctl", "list", "devices", "available"]):
@@ -971,8 +1149,7 @@ class Steps:
         # Only the first runtime's device is booted: the build's destination and the first pass.
         # The test step boots each other one just before its pass.
         first = values[f"udid-{pinned[0]}"]
-        if self.shell.run(["xcrun", "simctl", "bootstatus", first, "-b"], env=env,
-                          log=self.log("simulators.txt")) != 0:
+        if self.boot(first, pinned[0], "simulators.txt", "simulator") != 0:
             print(f"ios: simulator: {first} didn't boot (logs/simulators.txt)")
             return 1
         self.update_run_record(**values)
@@ -1075,11 +1252,13 @@ class Steps:
                     # runtime`: `dyld_shared_cache update (<runtime> || --all)`). A failure here
                     # is logged and said, not fatal: the first boot then builds the cache, in the
                     # test step's time.
+                    since = self.log_size("simulators.txt")
                     cache = self.shell.run(["xcrun", "simctl", "runtime", "dyld_shared_cache",
                                             "update", identifier], env=env,
                                            log=self.log("simulators.txt"))
                     self.write_log("simulators.txt", f"(exit {cache})")
                     if cache != 0:
+                        self.cache_builder_output(since)
                         # On the runner image of 2026-11-19, where the import ran as root, the
                         # update exited 25 ("Child process exited with an error") and the pass
                         # on iOS 26.5 that followed ran slower and failed two keyboard tests
@@ -1089,14 +1268,19 @@ class Steps:
                         # builder's output that simctl names weren't there when looked for
                         # (`ios` run 44655516106), so why the runner's user can't build it
                         # isn't known. Any failed update is run again this way, whatever the
-                        # image. Still not fatal: the tests say whether it mattered.
+                        # image. Still not fatal: the tests say whether it mattered. Since
+                        # 2026-11-20 the builder's own output is copied into the log after each
+                        # failed update (cache_builder_output), before anything runs again.
                         print(f"ios: simulator: updating iOS {version}'s shared cache exited "
                               f"{cache}; updating it again with sudo")
+                        since = self.log_size("simulators.txt")
                         cache = self.shell.run(
                             ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={env['DEVELOPER_DIR']}",
                              "xcrun", "simctl", "runtime", "dyld_shared_cache", "update",
                              identifier], env=env, log=self.log("simulators.txt"))
                         self.write_log("simulators.txt", f"(exit {cache})")
+                        if cache != 0:
+                            self.cache_builder_output(since)
                     if cache != 0:
                         print(f"ios: simulator: updating iOS {version}'s shared cache exited "
                               f"{cache}, so its first boot builds it (logs/simulators.txt)")
@@ -1247,11 +1431,12 @@ class Steps:
         # -skipPackagePluginValidation lets Xcode run the package build plugins in the graph
         # without asking a person to trust each one first, which CI can't do: TadayoAPI's client
         # is generated by the Swift OpenAPI Generator's plugin on every build (ADR-028).
-        code = self.shell.run(["xcodebuild", action, "-project", project,
-                               "-scheme", SCHEME, "-destination", destination,
-                               "-derivedDataPath", self.derived_data(),
-                               "-skipPackagePluginValidation"],
-                              env=self.xcode_env(), log=self.log("build.log"))
+        with self.sampling("build", "the build"):
+            code = self.shell.run(["xcodebuild", action, "-project", project,
+                                   "-scheme", SCHEME, "-destination", destination,
+                                   "-derivedDataPath", self.derived_data(),
+                                   "-skipPackagePluginValidation"],
+                                  env=self.xcode_env(), log=self.log("build.log"))
         # The flag trusts every plugin in the graph, so the log is checked for the plugins Xcode
         # ran: only toolchain.PACKAGE_PLUGINS', from their package, on their targets.
         plugins = self.plugin_problems()
@@ -1327,7 +1512,7 @@ class Steps:
             results[version] = result
             self.update_run_record(**{f"tests-{version}": result})
         for version in pinned:
-            udid, log = udids[version], self.log(f"test-{version}.log")
+            udid = udids[version]
             snapshot_pass = version == snapshots
             skipped = [] if snapshot_pass else \
                 [t for t in targets if t.endswith(SNAPSHOT_TARGET_SUFFIX)]
@@ -1338,53 +1523,16 @@ class Steps:
                 print(f"ios: test: no test target is left to run on iOS {version}")
                 record(version, "none")
                 continue
-            if udid != booted:
-                # One simulator at a time on the runner. A failed shutdown is logged, not fatal;
-                # a device that doesn't boot fails its pass.
-                self.shell.run(["xcrun", "simctl", "shutdown", booted], env=self.xcode_env(),
-                               log=log)
-                booted = udid
-                if self.shell.run(["xcrun", "simctl", "bootstatus", udid, "-b"],
-                                  env=self.xcode_env(), log=log) != 0:
-                    print(f"ios: test: the iOS {version} simulator {udid} didn't boot "
-                          f"(logs/test-{version}.log)")
-                    record(version, "failed")
-                    failure = failure or 1
-                    continue
-            bundle = self.out_path(f"Tests-{version}.xcresult")
-            shutil.rmtree(bundle, ignore_errors=True)
-            cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
-                   "-destination", self.destination(version),
-                   "-derivedDataPath", self.derived_data(), "-resultBundlePath", bundle,
-                   "-skipPackagePluginValidation"]
-            for target in skipped:
-                cmd += ["-skip-testing", target]
-            env = {"TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never"}
-            if snapshot_pass:
-                env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"] = artifacts
-            # The image moved a downloaded runtime mid-run before the import
-            # (RUNNER_IMAGES_ISSUE): its pass's log says where it is, before and after, and the
-            # step says so when that changed. Never what decides the pass.
-            place = None
-            if version in toolchain.IOS_DOWNLOADS:
-                facts = self.run_record()
-                where = (facts.get(f"runtime-{version}"), facts.get(f"runtime-build-{version}"))
-                place = self.runtime_place(*where)
-                self.write_log(f"test-{version}.log", f"iOS {version} before the pass: "
-                                                      f"{place or 'unreadable'}")
-            code = self.shell.run(cmd, env=self.xcode_env(env), log=log)
-            if version in toolchain.IOS_DOWNLOADS:
-                after = self.runtime_place(*where)
-                self.write_log(f"test-{version}.log", f"iOS {version} after the pass: "
-                                                      f"{after or 'unreadable'}")
-                if place is not None and after is not None and after != place:
-                    print(f"ios: test: iOS {version}'s runtime moved during its pass "
-                          f"({RUNNER_IMAGES_ISSUE}): {place} became {after} "
-                          f"(logs/test-{version}.log)")
-            _, summary, err = self.shell.capture(
-                ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
-                 "--compact"], env=self.xcode_env())
-            self.write_log(f"test-summary-{version}.json", summary or err)
+            with self.sampling("test", f"the pass on iOS {version}"):
+                code = self.test_pass(version, udid, booted, skipped, snapshot_pass, project,
+                                      artifacts)
+            booted = udid
+            if code is None:
+                print(f"ios: test: the iOS {version} simulator {udid} didn't boot "
+                      f"(logs/test-{version}.log)")
+                record(version, "failed")
+                failure = failure or 1
+                continue
             record(version, "passed" if code == 0 else "failed")
             if code != 0:
                 failure = failure or code
@@ -1408,6 +1556,53 @@ class Steps:
             print("ios: test: " + ", ".join(f"iOS {v} {r}" for v, r in results.items()) + "; the "
                   "evidence job still publishes what they drew")
         return failure
+
+    def test_pass(self, version, udid, booted, skipped, snapshot_pass, project, artifacts):
+        """One pass of the tests on iOS `version`: boots its device first when it isn't the one
+        booted, shutting that one down (one simulator at a time on the runner; a failed shutdown
+        is logged, not fatal). Returns xcodebuild's exit code, or None when the device didn't
+        boot."""
+        log = self.log(f"test-{version}.log")
+        if udid != booted:
+            self.shell.run(["xcrun", "simctl", "shutdown", booted], env=self.xcode_env(),
+                           log=log)
+            if self.boot(udid, version, f"test-{version}.log", "test") != 0:
+                return None
+        bundle = self.out_path(f"Tests-{version}.xcresult")
+        shutil.rmtree(bundle, ignore_errors=True)
+        cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
+               "-destination", self.destination(version),
+               "-derivedDataPath", self.derived_data(), "-resultBundlePath", bundle,
+               "-skipPackagePluginValidation"]
+        for target in skipped:
+            cmd += ["-skip-testing", target]
+        env = {"TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never"}
+        if snapshot_pass:
+            env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"] = artifacts
+        # The image moved a downloaded runtime mid-run before the import
+        # (RUNNER_IMAGES_ISSUE): its pass's log says where it is, before and after, and the
+        # step says so when that changed. Never what decides the pass.
+        place = None
+        if version in toolchain.IOS_DOWNLOADS:
+            facts = self.run_record()
+            where = (facts.get(f"runtime-{version}"), facts.get(f"runtime-build-{version}"))
+            place = self.runtime_place(*where)
+            self.write_log(f"test-{version}.log", f"iOS {version} before the pass: "
+                                                  f"{place or 'unreadable'}")
+        code = self.shell.run(cmd, env=self.xcode_env(env), log=log)
+        if version in toolchain.IOS_DOWNLOADS:
+            after = self.runtime_place(*where)
+            self.write_log(f"test-{version}.log", f"iOS {version} after the pass: "
+                                                  f"{after or 'unreadable'}")
+            if place is not None and after is not None and after != place:
+                print(f"ios: test: iOS {version}'s runtime moved during its pass "
+                      f"({RUNNER_IMAGES_ISSUE}): {place} became {after} "
+                      f"(logs/test-{version}.log)")
+        _, summary, err = self.shell.capture(
+            ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
+             "--compact"], env=self.xcode_env())
+        self.write_log(f"test-summary-{version}.json", summary or err)
+        return code
 
     def recorded_snapshots(self):
         """{path: "new" or "changed"} for each PNG under a __Snapshots__ folder in apps/ios that

@@ -22,6 +22,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from unittest import mock
 
@@ -107,6 +109,53 @@ MOUNTS = "\n".join([
     f"/dev/disk31s1 on {CRYPTEX}iOS_23F770 (apfs, sealed, local, read-only, journaled, nobrowse)"]) + "\n"
 RUNTIME_BUNDLE = CRYPTEX + "iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime"
 DEVELOPER_DIR = f"/Applications/Xcode_{toolchain.XCODE_VERSION}.app/Contents/Developer"
+# `top -l 2 -s 1`'s two samples, as macOS prints them, shortened: the first has no CPU use to
+# show, so only the second is kept.
+TOP = """Processes: 512 total, 3 running, 509 sleeping, 2210 threads
+2026/11/20 18:30:01
+Load Avg: 9.99, 9.99, 9.99
+CPU usage: 0.0% user, 0.0% sys, 100.0% idle
+PhysMem: 6900M used (1200M wired, 900M compressor), 120M unused.
+Disks: 900000/20G read, 400000/9G written.
+
+PID   COMMAND          %CPU MEM
+1     launchd          0.0  20M
+Processes: 512 total, 4 running, 508 sleeping, 2214 threads
+2026/11/20 18:30:02
+Load Avg: 4.10, 3.20, 2.50
+CPU usage: 61.2% user, 30.1% sys, 8.7% idle
+PhysMem: 6950M used (1210M wired, 950M compressor), 80M unused.
+Disks: 900100/20G read, 400050/9G written.
+
+PID   COMMAND          %CPU MEM
+4242  swift-frontend   98.0 900M
+"""
+HOST = ("hw.model: VirtualMac2,1\nmachdep.cpu.brand_string: Apple M1 (Virtual)\nhw.ncpu: 3\n"
+        "hw.memsize: 7516192768\n")
+SAMPLE_LABEL = re.compile(r"^--- [0-9]{2}:[0-9]{2}:[0-9]{2} UTC, (.*)$", re.M)
+
+
+class Clock:
+    """A monotonic clock that answers `times` in order, then the last one for ever."""
+
+    def __init__(self, *times):
+        self.times, self.lock = list(times), threading.Lock()
+
+    def __call__(self):
+        with self.lock:
+            return self.times.pop(0) if len(self.times) > 1 else self.times[0]
+
+
+def cache_error(folder):
+    """What simctl says of a failed shared cache update, naming its builder's two files in
+    `folder` (`ios` run 44759022421's logs/simulators.txt, with this folder)."""
+    return ("Failed to build dyld shared cache for runtime: iOS 26.5 (26.5 - 23F77) - "
+            "com.apple.CoreSimulator.SimRuntime.iOS-26-5.\n"
+            "error: Error Domain=com.apple.CoreSimulator.simdiskimaged.SimDiskImageError Code=25 "
+            '"Child process exited with an error" UserInfo={stderrPath='
+            f"{folder}/update_dyld_sim_shared_cache-stderr.txt, NSLocalizedDescription=Child "
+            f"process exited with an error, stdoutPath={folder}/update_dyld_sim_shared_cache-"
+            "stdout.txt}\n")
 # What ios-version may hold besides exactly 27.2 and one optional line break: each must fail.
 BAD_IOS_VERSIONS = [b"26.5", b"26.5\n", b"27.2\n\n", b"27.2 \n", b" 27.2\n", b"27.2\t", b"27.2\r\n",
                     b"27.2\r", b"27.2\nx", b"27.2\n27.2\n", b"", b"\n", b"27.20\n", b"27\n", b"27.2.0\n",
@@ -227,15 +276,19 @@ class StepsTest(unittest.TestCase):
             finally:
                 self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, b"27.2\n")
 
-    def steps(self, shell=None, environ=None, require_app=False):
+    def steps(self, shell=None, environ=None, require_app=False, sample_every=None, clock=None):
+        # The runner's samples are off unless a test asks for them, so each test's commands are
+        # its step's own.
         env = dict(self.environ)
         env.update(environ or {})
         steps = ios_steps.Steps(self.repo.root, shell or FakeShell(), environ=env,
-                                require_app=require_app, sleep=lambda s: None)
+                                require_app=require_app, sleep=lambda s: None,
+                                sample_every=sample_every, clock=clock or time.monotonic)
         return steps
 
-    def step(self, name, shell=None, environ=None, require_app=False):
-        steps = self.steps(shell, environ, require_app)
+    def step(self, name, shell=None, environ=None, require_app=False, sample_every=None,
+             clock=None):
+        steps = self.steps(shell, environ, require_app, sample_every, clock)
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             code = getattr(steps, name)()
@@ -1027,10 +1080,12 @@ class SimulatorTest(StepsTest):
         self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [update, again])
         self.assertIn("updating iOS 26.5's shared cache exited 25; updating it again with sudo", out)
         self.assertNotIn("so its first boot builds it", out)
-        # Both updates' exit codes are logged, the plain one's first, the one with sudo's last.
+        # Both updates' exit codes are logged, the plain one's first, the one with sudo's last,
+        # and between them what the failed one's builder left (cache_builder_output).
         text = self.simulators_log()
-        self.assertEqual(text.count("(exit 25)"), 1)
-        self.assertIn("(exit 25)\n(exit 0)\n", text)
+        self.assertEqual((text.count("(exit 25)"), text.count("\n(exit 0)\niOS 26.5: runtime")), (1, 1))
+        self.assertLess(text.index("(exit 25)"), text.index("--- log show"))
+        self.assertLess(text.index("--- log show"), text.index("\n(exit 0)\niOS 26.5: runtime"))
         self.assert_pinned(shell)
         # Nothing else in the step runs as root.
         self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [again])
@@ -1039,6 +1094,141 @@ class SimulatorTest(StepsTest):
         shell = self.shell(after_download=WITH_26_5)
         self.assertEqual(self.step("simulator", shell)[0], 0)
         self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [])
+
+    def runner_log(self):
+        with open(os.path.join(self.repo.out, "logs", "runner.txt")) as f:
+            return f.read()
+
+    def append_simulators_log(self, text):
+        with open(os.path.join(self.repo.out, "logs", "simulators.txt"), "a") as f:
+            f.write(text)
+
+    def cache_folder(self):
+        """A folder that stands for ios_steps.CACHE_FOLDER, and in it the folder simctl names
+        for iOS 26.5's builder, made."""
+        cache = tempfile.mkdtemp(prefix="dyld-") + "/"
+        self.addCleanup(shutil.rmtree, cache)
+        folder = os.path.join(cache, "26B123", "inc", "com.apple.CoreSimulator.SimRuntime.iOS-26-5.23F77")
+        os.makedirs(folder)
+        return cache, folder
+
+    def test_the_step_is_sampled_with_the_runner_s_hardware_first_and_its_boot_timed(self):
+        shell = self.shell(after_download=WITH_26_5)
+        shell.answers[:0] = [(starts("top"), (0, TOP, "")), (starts("sysctl"), (0, HOST, ""))]
+        code, out = self.step("simulator", shell, sample_every=3600, clock=Clock(0, 100, 141, 200))
+        self.assertEqual(code, 0, out)
+        # The hardware once, first, then a sample; every command with the pinned Xcode.
+        self.assertEqual(shell.commands[:2], [ios_steps.RUNNER_HOST, ios_steps.RUNNER_SAMPLE])
+        self.assertEqual(shell.commands.count(ios_steps.RUNNER_HOST), 1)
+        self.assert_pinned(shell)
+        text = self.runner_log()
+        self.assertEqual(SAMPLE_LABEL.findall(text), [
+            "the simulator step: start", "iOS 27.2 booted, after 41 s",
+            "the simulator step: end, after 3 min 20 s"])
+        self.assertIn(", the simulator step: start\n" + HOST + "Processes: 512 total, 4 running", text)
+        self.assertIn(f"iOS 27.2's simulator {UDID} booted in 41 s\n", self.simulators_log())
+        self.assertIn(f"ios: simulator: iOS 27.2's simulator {UDID} booted in 41 s (logs/simulators.txt)", out)
+        self.assertIn("ios: simulator: the simulator step took 3 min 20 s; the runner's load averages "
+                      "then: 4.10 3.20 2.50 (logs/runner.txt)", out)
+        # A bad ios-version still fails before any command.
+        self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, BAD_IOS_VERSIONS[0])
+        shell = self.shell(after_download=WITH_26_5)
+        code, out = self.step("simulator", shell, sample_every=3600)
+        self.assertEqual((code, shell.commands), (1, []))
+
+    def test_a_failed_update_s_builder_output_is_logged_before_the_update_with_sudo(self):
+        cache, folder = self.cache_folder()
+        stderr = os.path.join(folder, "update_dyld_sim_shared_cache-stderr.txt")
+        stdout = os.path.join(folder, "update_dyld_sim_shared_cache-stdout.txt")
+        with open(stderr, "w") as f:
+            f.write("".join(f"stderr line {n}\n" for n in range(1, 301)))
+        with open(stdout, "w") as f:
+            f.write("stdout line 1\n")
+        system_log = "simdiskimaged: line a\nupdate_dyld_sim_shared_cache: line b\n"
+        shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 0 if cmd[0] == "sudo" else 25)
+        shell.effects.append((lambda cmd: "dyld_shared_cache" in cmd and cmd[0] != "sudo",
+                              lambda cmd: self.append_simulators_log(cache_error(folder))))
+        shell.answers.insert(0, (starts("log", "show"), (0, system_log, "")))
+        with mock.patch.object(ios_steps, "CACHE_FOLDER", cache):
+            code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        text = self.simulators_log()
+        self.assertIn(f"--- {stderr}: 300 lines, the last 200 here:\nstderr line 101\n", text)
+        self.assertIn("stderr line 300\n", text)
+        self.assertNotIn("stderr line 100\n", text)
+        self.assertIn(f"--- {stdout}: 1 line:\nstdout line 1\n", text)
+        self.assertIn(f"--- {folder}:\nupdate_dyld_sim_shared_cache-stderr.txt ({os.path.getsize(stderr)} bytes)\n"
+                      "update_dyld_sim_shared_cache-stdout.txt (14 bytes)\n", text)
+        self.assertIn(f"--- {' '.join(ios_steps.CACHE_LOG)} (exit 0): 2 lines:\n{system_log}", text)
+        self.assertIn("ios: simulator: the shared cache builder's output and the system log's lines "
+                      "about it are in logs/simulators.txt", out)
+        # Once, after the failed update and before the one with sudo, which worked; the files
+        # read as the runner's user, so nothing more as root.
+        update = ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]
+        again = ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}"] + update
+        self.assertEqual(shell.commands.count(ios_steps.CACHE_LOG), 1)
+        self.assertLess(shell.commands.index(update), shell.commands.index(ios_steps.CACHE_LOG))
+        self.assertLess(shell.commands.index(ios_steps.CACHE_LOG), shell.commands.index(again))
+        self.assertLess(text.index("stderr line 300"), text.index("\n(exit 0)\niOS 26.5: runtime"))
+        self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [again])
+        self.assert_pinned(shell)
+
+    def test_a_named_file_not_there_or_outside_the_cache_folder_is_said_and_never_read(self):
+        cache, folder = self.cache_folder()
+        shutil.rmtree(folder)
+        outside = self.repo.write("elsewhere.txt", "never copied\n")
+        climbing = f"{cache}26B123/../../{os.path.basename(outside)}"
+        linked = os.path.join(cache, "linked.txt")
+        os.symlink(outside, linked)
+        named = cache_error(folder) + f"stderrPath={outside}, stdoutPath={climbing}, stderrPath={linked}}}\n"
+        shell = self.shell(after_download=WITH_26_5, cache_code=25)
+        shell.effects.append((has("dyld_shared_cache"), lambda cmd: self.append_simulators_log(named)))
+        with mock.patch.object(ios_steps, "CACHE_FOLDER", cache):
+            code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertIn("so its first boot builds it", out)
+        text = self.simulators_log()
+        self.assertNotIn("never copied", text)
+        for said in [f"--- {folder}/update_dyld_sim_shared_cache-stderr.txt: not there\n",
+                     f"--- {outside}: not under {cache}, so not read\n",
+                     f"--- {climbing}: not under {cache}, so not read\n",
+                     f"--- {linked}: a link, so not read\n",
+                     f"--- {folder}:\nNo such file or directory\n",
+                     f"--- {' '.join(ios_steps.CACHE_LOG)} (exit 0): 0 lines\n"]:
+            # After each of the two failed updates.
+            self.assertEqual(text.count(said), 2, said)
+        self.assertEqual(shell.commands.count(ios_steps.CACHE_LOG), 2)
+
+    def test_a_named_file_the_runner_s_user_can_t_read_is_read_as_root(self):
+        cache, folder = self.cache_folder()
+        stderr = os.path.join(folder, "update_dyld_sim_shared_cache-stderr.txt")
+        with open(stderr, "w") as f:
+            f.write("builder said no\n")
+        tail = ["sudo", "-n", "tail", "-n", "200", stderr]
+        real_open = open
+
+        def guarded(path, *args, **kwargs):
+            if path == stderr:
+                raise PermissionError(13, "Permission denied", path)
+            return real_open(path, *args, **kwargs)
+        for answer, said in [((0, "builder said no\n", ""),
+                              f"--- {stderr}, read as root (`tail -n 200`): 1 line:\nbuilder said no\n"),
+                             ((1, "", "sudo: a password is required\n"),
+                              f"--- {stderr}: Permission denied, and as root: sudo: a password is "
+                              "required (exit 1)\n")]:
+            with self.subTest(answer=answer):
+                logs = os.path.join(self.repo.out, "logs")
+                shutil.rmtree(logs, ignore_errors=True)
+                shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 0 if cmd[0] == "sudo" else 25)
+                shell.effects.append((lambda cmd: "dyld_shared_cache" in cmd and cmd[0] != "sudo",
+                                      lambda cmd: self.append_simulators_log(cache_error(folder))))
+                shell.answers.insert(0, (starts("sudo", "-n", "tail"), answer))
+                with mock.patch.object(ios_steps, "CACHE_FOLDER", cache), mock.patch("builtins.open", guarded):
+                    code, out = self.step("simulator", shell)
+                self.assertEqual(code, 0, out)
+                self.assertIn(said, self.simulators_log())
+                self.assertEqual(shell.commands.count(tail), 1)
+                self.assert_pinned(shell)
 
     def test_the_download_s_exit_code_doesn_t_decide(self):
         # Xcode can fall back to another runtime and exit 0, or fail a proxy and say "not
@@ -1477,6 +1667,107 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn("iOS 26.5 before the pass: unreadable\n", text)
         self.assertIn("iOS 26.5 after the pass: unreadable\n", text)
         self.assertNotIn("moved during its pass", out)
+
+    def sample_shell(self, top=(0, TOP, ""), **kwargs):
+        return FakeShell(answers=[(starts("top"), top), (starts("sysctl"), (0, HOST, ""))], **kwargs)
+
+    def runner_log(self):
+        try:
+            with open(self.log("runner.txt")) as f:
+                return f.read()
+        except FileNotFoundError:
+            return ""
+
+    def test_the_runner_is_sampled_unless_the_tests_turn_it_off(self):
+        # main makes its Steps with the defaults: a sample every minute.
+        self.assertEqual(ios_steps.SAMPLE_EVERY, 60)
+        self.assertEqual(ios_steps.Steps(self.repo.root, FakeShell()).sample_every, 60)
+        self.assertIn("runner.txt", ios_steps.LOG_NAMES)
+
+    def test_the_build_is_sampled_as_it_starts_and_ends_and_says_how_long_it_took(self):
+        shell = self.sample_shell(effects=[(has("build-for-testing"), lambda cmd: self.products())])
+        code, out = self.step("build", shell, sample_every=3600, clock=Clock(0, 843))
+        self.assertEqual(code, 0, out)
+        # top before and after the build, with the pinned Xcode like every command; the
+        # hardware is the simulator step's.
+        self.assertEqual([c[0] for c in shell.commands], ["top", "xcodebuild", "top"])
+        self.assertEqual(shell.commands[0], ios_steps.RUNNER_SAMPLE)
+        self.assertEqual(shell.envs[0], {"DEVELOPER_DIR": DEVELOPER_DIR})
+        text = self.runner_log()
+        self.assertEqual(SAMPLE_LABEL.findall(text), ["the build: start", "the build: end, after 14 min 3 s"])
+        self.assertRegex(text, r"^--- [0-9:]{8} UTC, the build: start\nProcesses: 512 total, 4 running")
+        # Only the second of top's two samples, the one with CPU use.
+        self.assertEqual((text.count("Load Avg: 4.10, 3.20, 2.50"), text.count("9.99")), (2, 0))
+        self.assertIn("4242  swift-frontend   98.0 900M\n", text)
+        self.assertIn("ios: build: the build took 14 min 3 s; the runner's load averages then: "
+                      "4.10 3.20 2.50 (logs/runner.txt)", out)
+
+    def test_samples_are_taken_while_the_work_runs_and_kept_when_the_step_is_stopped(self):
+        seen = {}
+
+        def build(cmd):
+            # A build that lasts until two samples have been taken while it ran.
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline and self.runner_log().count(", the build\n") < 2:
+                time.sleep(0.01)
+            seen["during"] = self.runner_log()
+            self.products()
+        shell = self.sample_shell(effects=[(has("build-for-testing"), build)])
+        code, out = self.step("build", shell, sample_every=0.01)
+        self.assertEqual(code, 0, out)
+        # While the build ran, the log already held its first sample and two more: a step its
+        # timeout stops keeps them.
+        self.assertIn(", the build: start\n", seen["during"])
+        self.assertGreaterEqual(seen["during"].count(", the build\n"), 2)
+        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[-1][:22], "the build: end, after ")
+
+    def test_each_pass_is_sampled_and_its_device_s_boot_timed(self):
+        shell = self.sample_shell()
+        code, out = self.step("test", shell, sample_every=3600, clock=Clock(0, 600, 600, 600, 641, 1500))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log()), [
+            "the pass on iOS 27.2: start", "the pass on iOS 27.2: end, after 10 min 0 s",
+            "the pass on iOS 26.5: start", "iOS 26.5 booted, after 41 s",
+            "the pass on iOS 26.5: end, after 15 min 0 s"])
+        self.assertIn(f"ios: test: iOS 26.5's simulator {UDID_26} booted in 41 s (logs/test-26.5.log)", out)
+        self.assertIn("ios: test: the pass on iOS 27.2 took 10 min 0 s; the runner's load averages "
+                      "then: 4.10 3.20 2.50 (logs/runner.txt)", out)
+        self.assertIn("ios: test: the pass on iOS 26.5 took 15 min 0 s; ", out)
+        with open(self.log("test-26.5.log")) as f:
+            self.assertIn(f"iOS 26.5's simulator {UDID_26} booted in 41 s\n", f.read())
+        # Each pass's tests run between its samples, and its device boots after the first.
+        tops = [i for i, c in enumerate(shell.commands) if c[0] == "top"]
+        runs = [i for i, c in enumerate(shell.commands) if c[:2] == ["xcodebuild", "test-without-building"]]
+        boot = shell.commands.index(["xcrun", "simctl", "bootstatus", UDID_26, "-b"])
+        self.assertEqual(len(tops), 5)
+        self.assertTrue(tops[0] < runs[0] < tops[1] < tops[2] < boot < tops[3] < runs[1] < tops[4], shell.commands)
+        self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "passed"})
+
+    def test_a_device_that_doesn_t_boot_says_how_long_it_was_given(self):
+        shell = self.sample_shell(codes=[(starts("xcrun", "simctl", "bootstatus"), 1)])
+        code, out = self.step("test", shell, sample_every=3600, clock=Clock(0, 600, 600, 600, 900, 900))
+        self.assertEqual(code, 1)
+        self.assertIn(f"the iOS 26.5 simulator {UDID_26} didn't boot", out)
+        with open(self.log("test-26.5.log")) as f:
+            self.assertIn(f"iOS 26.5's simulator {UDID_26} didn't boot, after 5 min 0 s (exit 1)\n", f.read())
+        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[2:], [
+            "the pass on iOS 26.5: start", "the pass on iOS 26.5: end, after 5 min 0 s"])
+        self.assertEqual(self.results(), {"tests": "failed", "tests-27.2": "passed", "tests-26.5": "failed"})
+
+    def test_a_sample_top_couldn_t_take_says_so_and_decides_nothing(self):
+        for top, said in [((1, "", "top: can't sample\n"), "top: can't sample\n"),
+                          ((1, "", ""), "(top exited 1)\n"),
+                          ((0, "Processes: 1 total\n", ""), "Processes: 1 total\n")]:
+            with self.subTest(top=top):
+                if os.path.exists(self.log("runner.txt")):
+                    os.remove(self.log("runner.txt"))
+                shell = self.sample_shell(top=top, effects=[(has("build-for-testing"), lambda cmd: self.products())])
+                code, out = self.step("build", shell, sample_every=3600, clock=Clock(0, 5))
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self.runner_log().count(said), 2)
+                self.assertIn("ios: build: the build took 5 s; the runner's load averages then: unread "
+                              "(logs/runner.txt)", out)
+                shutil.rmtree(os.path.join(self.repo.root, "_runner_temp", "DerivedData"))
 
     def test_a_failed_shutdown_is_logged_and_a_failed_boot_fails_its_pass(self):
         shell = FakeShell(codes=[(starts("xcrun", "simctl", "shutdown"), 1)])
