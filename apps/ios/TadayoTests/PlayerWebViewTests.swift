@@ -35,19 +35,36 @@ final class PlayerWebViewTests: XCTestCase {
             ProxyConfiguration(httpCONNECTProxy: .hostPort(host: "127.0.0.1", port: 9))
         ]
         PlayerWebView.load(webView, base: base)
-        try await wait("the shell makes its frame") { model.log.contains("shell: frame made") }
+        // The process's first load waits up to 60 seconds for the frame; every later load keeps
+        // 10. In `ios` run 44715668431, attempt 1 (iOS 26.5), the runner stalled during the first
+        // load: WebKit's first line came 6.7 seconds after the suite began, the web process was
+        // reported unresponsive for 7.4 seconds, and the frame wasn't made within the wait. The
+        // log has no line for the frame itself; the test ended 21.4 seconds after it began. The
+        // later loads of that run, whose processes launched as slowly, made their frames in time,
+        // and the same first load took 1.0 second in the re-run. What is checked once the frame
+        // is made is unchanged.
+        let cold = !Self.loadedBefore
+        Self.loadedBefore = true
+        try await wait("the shell makes its frame", seconds: cold ? 60 : 10) {
+            model.log.contains("shell: frame made")
+        }
         return (webView, coordinator)
     }
 
+    /// Whether `loaded` has run before in this test process.
+    private static var loadedBefore = false
+
+    /// Polls `met` every 50 milliseconds, `seconds` × 20 times. A stalled runner makes the wait
+    /// longer on the clock than `seconds`, never shorter.
     private func wait(
-        _ what: String, file: StaticString = #filePath, line: UInt = #line,
+        _ what: String, seconds: Int = 10, file: StaticString = #filePath, line: UInt = #line,
         until met: () -> Bool
     ) async throws {
-        for _ in 0..<200 {
+        for _ in 0..<(seconds * 20) {
             if met() { return }
             try await Task.sleep(for: .milliseconds(50))
         }
-        XCTFail("waited 10 seconds for: \(what)", file: file, line: line)
+        XCTFail("waited at least \(seconds) seconds for: \(what)", file: file, line: line)
     }
 
     private func post(_ body: String, to webView: WKWebView) async throws {
