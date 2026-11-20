@@ -114,14 +114,22 @@ export function changeAfter(facts: ChangeFacts): WeekChange {
 /**
  * The local date a change proposed on `today` starts: the first Monday after the days' window seen from
  * `today` and after `lastMade`, the last local date a day was made for (FQ61, FQ115). `replacedStart` is
- * the start of the open change it replaces, kept while it is still ahead (FQ126, FQ127).
+ * the start of the open change it replaces, kept while it is still ahead of `today` and of every day made
+ * (FQ126, FQ127).
  */
 export function changeStart(
   today: Temporal.PlainDate,
   lastMade: Temporal.PlainDate | null,
   replacedStart: Temporal.PlainDate | null,
 ): Temporal.PlainDate {
-  if (replacedStart !== null && Temporal.PlainDate.compare(replacedStart, today) > 0) return replacedStart;
+  // Still ahead, and still after every day made: generation makes none from an open change's start (FQ127).
+  if (
+    replacedStart !== null &&
+    Temporal.PlainDate.compare(replacedStart, today) > 0 &&
+    (lastMade === null || Temporal.PlainDate.compare(lastMade, replacedStart) < 0)
+  ) {
+    return replacedStart;
+  }
   let start = windowEnd(today).add({ days: 1 });
   if (lastMade !== null && Temporal.PlainDate.compare(lastMade, start) >= 0) {
     start = lastMade.add({ days: 8 - lastMade.dayOfWeek });

@@ -1097,7 +1097,7 @@ describe("a proposal's week, proposed again (0013; FQ102)", () => {
   });
 });
 
-describe("a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ126)", () => {
+describe("a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ101, FQ126)", () => {
   /** A club of two whose first days applied: each member confirmed the two days proposed for them. */
   async function applied(tx: Tx): Promise<FirstDays> {
     const w = await firstDays(tx, 2);
@@ -1109,7 +1109,11 @@ describe("a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ126)", () => {
   }
 
   /** The change's own row, as the command writes it, with what `over` changes. */
-  function proposeChange(tx: Tx, club: string, over: Record<string, string | number | null> = {}): Promise<string> {
+  function proposeChange(
+    tx: Tx,
+    club: string,
+    over: Record<string, string | number | Date | null> = {},
+  ): Promise<string> {
     const row = {
       id: newId("spr"),
       club_id: club,
@@ -1143,9 +1147,12 @@ describe("a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ126)", () => {
   it("is proposed open, at version 1, in its one week, with no week of its own, from a Monday", async () => {
     await rolledBack(app, async (tx) => {
       const w = await applied(tx);
-      const refused = (over: Record<string, string | number | null>, message: RegExp) =>
+      const refused = (over: Record<string, string | number | Date | null>, message: RegExp) =>
         expectRefused(tx, REFUSED.integrity, (sp) => proposeChange(sp, w.club, over), message);
       await refused({ version: 2 }, /open, at version 1, in its one week/);
+      await refused({ state: "superseded", closed_at: AT.edited }, /open, at version 1, in its one week/);
+      await refused({ state: "applied", closed_at: AT.edited }, /open, at version 1, in its one week/);
+      await refused({ replaced_by: w.proposal }, /open, at version 1, in its one week/);
       await refused({ week_revision: 2 }, /open, at version 1, in its one week/);
       await refused({ schedule_version_id: w.version }, /no week of its own/);
       // Tuesday 8 December, and Sunday 6 December.

@@ -203,7 +203,7 @@ export const SCHEDULE = Object.freeze({
     "active interval in a club that isn't suspended: `current`, and the open proposal only when it includes that " +
     "interval (FQ100), each slot naming only whom the contract gives that viewer, and for a membership change the " +
     "member each day is proposed for whoever has confirmed (FQ81), with `announced`, the club's days not yet " +
-    `closed, only for a caller with a day in the week in force; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+    `closed, only for a caller with a day in the club's latest week; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
 /** listMembers (B2's generation slice): the club's roster for one of its members, whole, from the world's rows. */

@@ -603,6 +603,23 @@ function scanner(
  */
 const malformed = new Map<string, { answer: string; role: string }>();
 
+/**
+ * What `weekChangeProblems` needs of the dates when a membership started or ended in `club` at `instant`:
+ * the club's local date then, and the last local date a day was made for (FQ61, FQ115).
+ */
+async function changeDatesAt(
+  sql: WorldTx | typeof db,
+  club: string,
+  instant: Temporal.Instant,
+): Promise<{ today: string; lastMade: string | null }> {
+  const [row] = await sql<{ zone: string; last: string | null }[]>`
+    SELECT c.timezone AS zone,
+           (SELECT max(o.local_date)::text FROM app.occurrences o WHERE o.club_id = c.id) AS last
+      FROM app.clubs c WHERE c.id = ${club}`;
+  if (row === undefined) throw new Error("the matrix asked the dates of a club that doesn't exist");
+  return { today: instant.toZonedDateTimeISO(row.zone).toPlainDate().toString(), lastMade: row.last };
+}
+
 describe("a route with no row fails, and no route is outside the contract (TECH-DESIGN section 8)", () => {
   it("gives every operation of the contract a row, and the app a route for each and no other", () => {
     expect(rowProblems(operations, ROWS)).toEqual([]);
@@ -1570,6 +1587,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                   ...leftExpected(cell.w.club, now, choice)(first),
                   ...leaveProblems(before, after, cell.w.club, outcome, membership, now, choice),
                   ...firstDaysProblems(before.schedule, after.schedule, cell.w.club, outcome),
+                  ...weekChangeProblems(
+                    before.schedule,
+                    after.schedule,
+                    cell.w.club,
+                    await changeDatesAt(db, cell.w.club, now),
+                  ),
                 ],
                 "the viewer's own leave",
               );
@@ -1872,6 +1895,9 @@ describe("a roster applied through the app (spec 04; T7, T8, T33; FQ65)", () => 
         ...firstDaysJoinProblems(unjoined, schedule, w.club, [joined?.interval ?? ""]).map(
           (problem) => `the join: ${problem}`,
         ),
+        ...weekChangeProblems(unjoined, schedule, w.club, await changeDatesAt(db, w.club, now)).map(
+          (problem) => `the join: ${problem}`,
+        ),
       );
       expect(rosterWorld.revisions.get(revision)).toMatchObject({ state: "applied", version: 2 });
       expect(clubRows.get(w.club)).toMatchObject({ rosterVersion: version + 2, openRevision: null });
@@ -1961,6 +1987,9 @@ describe("a roster applied through the app (spec 04; T7, T8, T33; FQ65)", () => 
         );
         wrong.push(
           ...firstDaysProblems(stayed, schedule, w.club, gone.interval ?? "").map((problem) => `the leave: ${problem}`),
+          ...weekChangeProblems(stayed, schedule, w.club, await changeDatesAt(db, w.club, now)).map(
+            (problem) => `the leave: ${problem}`,
+          ),
         );
         await ask(leaver, spec("getSchedule", { club_id: w.club }), () => NEUTRAL, "the week, by the member who left");
         const again = await ask(joiner, spec("getSchedule", { club_id: w.club }), weekOf(joiner), "the week, after it");
@@ -1986,7 +2015,9 @@ describe("a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ6
   // The one place the routes and the scanner meet a membership change. The club is made by the commands
   // themselves (../db/club-world.ts): Ben and Maya confirmed their first days, the days were made, and Alex
   // joined, so a change is open for the three. Each answer is judged from the rows (schedule.ts) and scanned
-  // with its caller's own facts; what the join and a leave did to the change is judged row by row.
+  // with its caller's own facts, at two instants: before any day has opened, and during an open day, which
+  // a member leaves in. What the join and the leave did to the change is judged row by row. Then a member
+  // whose account is being deleted, and the club suspended.
   it("answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave", async () => {
     const wrong: string[] = [];
     const counted = { answers: 0 };
@@ -1995,12 +2026,7 @@ describe("a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ6
     const start = Temporal.Instant.from("2026-11-11T05:00:00Z");
     const tag = suffix();
     const [ben, maya, alex] = [`Ben${tag}`, `Maya${tag}`, `Alex${tag}`];
-    const ZONE = "America/New_York";
-    const datesAt = async (club: string, instant: Temporal.Instant, sql: WorldTx) => {
-      const [made] = await sql<{ last: string | null }[]>`
-        SELECT max(local_date)::text AS last FROM app.occurrences WHERE club_id = ${club}`;
-      return { today: instant.toZonedDateTimeISO(ZONE).toPlainDate().toString(), lastMade: made?.last ?? null };
-    };
+    const datesAt = (club: string, instant: Temporal.Instant, sql: WorldTx) => changeDatesAt(sql, club, instant);
     const built = await db.begin(async (tx) => {
       clock.set(start);
       const c = await foundedBy(tx, clock, ben);
@@ -2028,7 +2054,8 @@ describe("a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ6
     });
     const { c, stranger } = built;
     const club = c.club;
-    const now = start.add({ hours: 2 });
+    // Two hours in, before any day of the club has opened; later, the Friday of that week, during a day.
+    let now = start.add({ hours: 2 });
     clock.set(now);
     const account = (name: string) => c.user[name] ?? "";
     const accounts = [account(ben), account(maya), account(alex), stranger, elsewhere.account];
@@ -2197,7 +2224,43 @@ describe("a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ6
     );
     expect((await command(account(ben), "confirmScheduleDays", first, days, "a second confirmation")).status).toBe(403);
 
-    // Maya leaves: Ben and Alex aren't the week's members, so a new change replaces the open one.
+    // Friday 13 November, noon in New York: Ben's Thursday has closed and Maya's Friday is open. The
+    // announced days are those not yet closed, the open one first, for the members with a day in the week;
+    // the new member still gets none.
+    now = Temporal.Instant.from("2026-11-13T17:00:00Z");
+    clock.set(now);
+    const announcedIn = (answer: Answer) =>
+      (proposalOf(answer)["announced"] ?? []) as { local_date: string; phase: string }[];
+    const friday = await week(account(ben), "the week, during an open day");
+    expect(announcedIn(friday)[0]).toMatchObject({ local_date: "2026-11-13", phase: "open" });
+    expect(announcedIn(friday).map((day) => day.local_date)).not.toContain("2026-11-12");
+    expect(
+      announcedIn(friday)
+        .slice(1)
+        .every((day) => day.phase === "collecting"),
+    ).toBe(true);
+    await week(account(maya), "the star's week, during the open day");
+    expect(proposalOf(await week(account(alex), "the new member's week, during an open day"))).not.toHaveProperty(
+      "announced",
+    );
+    // Ben's key, two days on: still the first answer, with the days as they were announced then (T19).
+    await ask(
+      account(ben),
+      spec("confirmScheduleDays", { proposal_id: first }, days),
+      (answer) => (said(answer) === said(confirmed) ? [] : ["a retry two days on got another answer (T19)"]),
+      "the confirmation again, two days on",
+      key,
+    );
+    // Maya confirms during the open day, under a key used again once Maya has left.
+    const mayasKey = randomUUID();
+    const mayasDays = { expected_version: 1, weekdays: ["tuesday", "friday"] } as const;
+    expect(
+      (await command(account(maya), "confirmScheduleDays", first, mayasDays, "the star's confirmation", mayasKey))
+        .status,
+    ).toBe(200);
+
+    // Maya leaves during the open day: Ben and Alex aren't the week's members, so a new change replaces the
+    // open one.
     const stayed = schedule;
     await ask(
       account(maya),
@@ -2226,12 +2289,27 @@ describe("a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ6
       );
       expect(gone.status).toBe(404);
     }
+    // The key of the confirmation Maya made as a member: nothing, not the stored answer (T14 before T19).
+    const stale = await command(
+      account(maya),
+      "confirmScheduleDays",
+      first,
+      mayasDays,
+      "the leaver's own confirmation again, under its key",
+      mayasKey,
+    );
+    expect(stale.status).toBe(404);
     const replaced = await command(account(ben), "confirmScheduleDays", first, days, "the replaced change");
     expect(JSON.parse(replaced.body)).toEqual({ code: "MEMBERSHIP_CHANGED", current_id: second });
     // The new change: Ben confirms again, and its announced days hold none of the member who left.
     const again = await week(account(ben), "the week, after the leave");
     expect(proposalOf(again)).toMatchObject({ id: second, my_state: "choosing", version: 1 });
-    expect(JSON.stringify(proposalOf(again))).not.toContain(c.member[maya] ?? "none");
+    // The day that was open when Maya left stays to its close, under the name Maya left with; Maya's later
+    // days are held, so none of them is announced, and no day of the new week names Maya.
+    expect(announcedIn(again).filter((day) => JSON.stringify(day).includes(c.member[maya] ?? "none"))).toMatchObject([
+      { local_date: "2026-11-13", phase: "open" },
+    ]);
+    expect(JSON.stringify(proposalOf(again)["slots"])).not.toContain(c.member[maya] ?? "none");
     const taken = await command(
       account(alex),
       "confirmScheduleDays",
@@ -2241,8 +2319,42 @@ describe("a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ6
     );
     expect(taken.status).toBe(200);
 
+    // A member whose account is being deleted: the gate's 401 before anything of the club, with the change
+    // open (T27). The membership is still active, so Ben's week still proposes Alex's days by name (B6 ends it).
+    await db`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${now}
+              WHERE id = ${account(alex)}`;
+    // Judged as the gate's answer (./account.ts `gateOf`), which comes before the rows of any club.
+    const gone = await ask(
+      account(alex),
+      spec("getSchedule", { club_id: club }),
+      () => UNAUTHENTICATED,
+      "the week, by a member whose account is being deleted",
+    );
+    expect(gone.status).toBe(401);
+    const deleting = await ask(
+      account(alex),
+      spec("confirmScheduleDays", { proposal_id: second }, { expected_version: 1, weekdays: ["tuesday", "friday"] }),
+      () => UNAUTHENTICATED,
+      "a confirmation by a member whose account is being deleted",
+    );
+    expect(deleting.status).toBe(401);
+    expect(proposalOf(await week(account(ben), "the week, beside an account being deleted"))).toMatchObject({
+      id: second,
+    });
+    // The club suspended: nothing for its own members either.
+    await db`UPDATE app.clubs SET suspended_at = ${now} WHERE id = ${club}`;
+    expect((await week(account(ben), "the week, in a suspended club")).status).toBe(404);
+    const suspended = await command(
+      account(ben),
+      "confirmScheduleDays",
+      second,
+      days,
+      "a confirmation in a suspended club",
+    );
+    expect(suspended.status).toBe(404);
+
     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-    expect(counted.answers).toBe(25);
+    expect(counted.answers).toBe(36);
   });
 });
 

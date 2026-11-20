@@ -4,10 +4,8 @@
 // packages/domain/src/schedule/settle-change.ts, change.ts, confirm-days.ts, week.ts). Every club here is
 // made the way the product makes one, as tests/src/db/first-days-roster.test.ts makes its own: `createClub`,
 // `proposeRoster`, `createInvitation`, `acceptInvitation`, `approveRoster`, `leaveClub`, and the schedule's
-// `confirmScheduleDays`, each as its route runs it, with the checks Postgres keeps for the commit run after
-// each (./club-world.ts).
-//
-// Written before `settleChange` existed and before the commands called it, from the plan's sections 2 to 5.
+// `confirmScheduleDays`, each as its route runs it (./club-world.ts), and the checks Postgres keeps for the
+// commit run after each step here (`committed`, ./world.ts).
 
 import { randomUUID } from "node:crypto";
 import { leftClubBody } from "@tadayo/api";
@@ -37,8 +35,9 @@ afterAll(async () => {
   await db.end();
 });
 
-// Wednesday 11 November 2026, midnight in New York. Seen from that week, the days are made to Sunday
-// 13 December, and a change starts on Monday 14 December (FQ61, FQ115).
+// Wednesday 11 November 2026, midnight in New York. Seen from that week, the days' window runs to Sunday
+// 13 December (the last day made is Saturday 12 December), and a change starts on Monday 14 December
+// (FQ61, FQ115).
 const AT_FIRST = "2026-11-11T05:00:00.123456Z";
 const FIRST = Temporal.Instant.from(AT_FIRST);
 const START = "2026-12-14";
@@ -331,13 +330,81 @@ describe("a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127)", (
     });
   });
 
+  it("names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126)", async () => {
+    await rolledBack(db, async (tx) => {
+      const { c, change } = await withAlex(tx);
+      await join(tx, c, "Sam", "Ben");
+      // Sam leaves: Ben, Maya and Alex again, who still aren't the week's two, so a third change.
+      await leaving(tx, c, "Sam");
+      const [first, second, third] = await changes(tx, c);
+      expect(first).toMatchObject({ id: change.id, state: "superseded", replaced_by: second?.id });
+      expect(second).toMatchObject({ state: "superseded", version: 2, replaced_by: third?.id });
+      expect(third).toMatchObject({ state: "open", version: 1, effective_from: START });
+      // The id two replacements back answers with the open change, never the one between, which has ended.
+      for (const command of [confirm, choose]) {
+        expect(await refusal(command(tx, c, "Ben", change.id, 1, ["monday", "thursday"]))).toEqual({
+          code: "MEMBERSHIP_CHANGED",
+          facts: { current_id: third?.id },
+        });
+      }
+      expect(await refusal(confirm(tx, c, "Ben", second?.id ?? "", 1, ["monday"]))).toEqual({
+        code: "MEMBERSHIP_CHANGED",
+        facts: { current_id: third?.id },
+      });
+      // Alex leaves: the club is back at its week, the third change ends, and none is open. Every id of the
+      // chain is then an ended proposal: the version it ended at, then NOT_ALLOWED.
+      await leaving(tx, c, "Alex");
+      expect((await changes(tx, c)).map((each) => each.state)).toEqual(["superseded", "superseded", "superseded"]);
+      expect(await refusal(confirm(tx, c, "Ben", change.id, 1, ["monday", "thursday"]))).toEqual({
+        code: "VERSION_CONFLICT",
+        facts: { current_version: 2 },
+      });
+      expect(await refusal(confirm(tx, c, "Ben", change.id, 2, ["monday", "thursday"]))).toMatchObject({
+        code: "NOT_ALLOWED",
+      });
+      expect(await refusal(confirm(tx, c, "Ben", third?.id ?? "", 2, ["monday", "thursday"]))).toMatchObject({
+        code: "NOT_ALLOWED",
+      });
+    });
+  });
+
+  it("works a change out from a restarted club's own week, not the week before it, and gives its members the announced days (FQ124)", async () => {
+    await rolledBack(db, async (tx) => {
+      // Ben confirms and leaves; Maya, alone and unconfirmed, sees the first days end (FQ102). Sam joins:
+      // new first days with a week of their own, since Ben's confirmed days are in the first (FQ124).
+      const c = await foundedBy(tx, clock, "Ben");
+      await join(tx, c, "Maya", "Ben");
+      await confirmOwn(tx, c, "Ben");
+      await leaving(tx, c, "Ben");
+      await join(tx, c, "Sam", "Maya");
+      const mayas = (await confirmOwn(tx, c, "Maya")).myDays;
+      const applied = await confirmOwn(tx, c, "Sam");
+      expect(applied).toMatchObject({ state: "applied" });
+      const sams = applied.myDays;
+      const weeks = await tx<{ id: string }[]>`
+        SELECT id FROM app.schedule_versions WHERE club_id = ${c.club} ORDER BY effective_from`;
+      expect(weeks).toHaveLength(2);
+      expect(await changes(tx, c)).toEqual([]);
+      // Debby joins: the change keeps Maya's and Sam's days of the second week and gives Debby the two free.
+      await join(tx, c, "Debby", "Maya");
+      const [change] = await changes(tx, c);
+      expect(change).toMatchObject({ state: "open", days_per_member: 2 });
+      const free = WEEK.filter((weekday) => ![...mayas, ...sams].includes(weekday as Weekday));
+      expect(await proposedIn(tx, c, change?.id ?? "")).toEqual({ Maya: mayas, Sam: sams, Debby: free });
+      // Maya and Sam have a day in the club's latest week, started or not; Debby has none.
+      expect((await proposalOf(tx, c, "Maya")).announced).toEqual([]);
+      expect((await proposalOf(tx, c, "Sam")).announced).toEqual([]);
+      expect("announced" in (await proposalOf(tx, c, "Debby"))).toBe(false);
+    });
+  });
+
   it("takes a new start for a replacement once the replaced change's start is today", async () => {
     await rolledBack(db, async (tx) => {
       const { c } = await withAlex(tx);
       // Monday 14 December, 00:00 in New York: the start. (`api/b2-change-start` will have ended the change.)
       tick(33 * 24);
       await join(tx, c, "Sam", "Ben");
-      // Seen from that Monday the days run to Sunday 17 January 2027.
+      // Seen from that Monday the days' window runs to Sunday 17 January 2027.
       expect((await changes(tx, c)).at(-1)).toMatchObject({ state: "open", effective_from: "2027-01-18" });
     });
   });
@@ -397,7 +464,7 @@ describe("a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127)", (
     });
   });
 
-  it("proposes nothing when the one member of a paused club with no open change leaves or is joined by the week's own", async () => {
+  it("proposes nothing when the one member of a paused club with no open change leaves too", async () => {
     await rolledBack(db, async (tx) => {
       const c = await pair(tx);
       await leaving(tx, c, "Maya");
@@ -437,8 +504,8 @@ describe("the days made while a change is open (FQ61, FQ127)", () => {
   it("starts a change after a day already made beyond the window", async () => {
     await rolledBack(db, async (tx) => {
       const c = await pair(tx);
-      // The days are made a week later, to Sunday 20 December; a change proposed in the clock's own week
-      // would start on 14 December, among them.
+      // The days are made a week later, through Saturday 19 December (the window ends on Sunday the 20th); a
+      // change proposed in the clock's own week would start on 14 December, among them.
       tick(7 * 24);
       await tx.savepoint((sp) => makeDays(sp, clock, c.club));
       tick(-7 * 24);
@@ -662,9 +729,26 @@ describe("confirming a change (FQ56, FQ81; T1, T19, T33)", () => {
       });
     });
   });
+
+  it("answers a retry with the first answer after the change was replaced, and nothing once the caller has left (T19, T14)", async () => {
+    await rolledBack(db, async (tx) => {
+      const { c, change } = await withAlex(tx);
+      const key = randomUUID();
+      const first = await confirm(tx, c, "Ben", change.id, 1, ["monday", "thursday"], key);
+      await join(tx, c, "Sam", "Ben");
+      expect((await changes(tx, c))[0]).toMatchObject({ id: change.id, state: "superseded" });
+      // The same request under the same key: the stored answer, as it was, though the change has ended.
+      expect(await confirm(tx, c, "Ben", change.id, 1, ["monday", "thursday"], key)).toEqual(first);
+      // Once Ben has left, the key gives nothing: the neutral answer comes before the receipt (T14).
+      await leaving(tx, c, "Ben");
+      expect(await refusal(confirm(tx, c, "Ben", change.id, 1, ["monday", "thursday"], key))).toMatchObject({
+        code: "NOT_FOUND",
+      });
+    });
+  });
 });
 
-describe("confirmations and a leave at once, on connections of their own (T1)", () => {
+describe("confirmations and a leave at once, on connections of their own", () => {
   const outcome = (done: Promise<unknown>): Promise<unknown> =>
     done.then(
       (answer) => answer,
@@ -752,4 +836,37 @@ describe("confirmations and a leave at once, on connections of their own (T1)", 
     expect(await left).toMatchObject({ club_id: s.c.club });
     expect(await rowOf(s.change.id)).toEqual({ state: "superseded", version: 2, confirmed: 1 });
   });
+
+  it(
+    "answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change",
+    { timeout: 30_000 },
+    async () => {
+      // Ben, Maya, Alex and Sam, with a change open for the four. Sam's leave replaces it with one for three.
+      const s = await db.begin(async (raw) => {
+        const tx = raw as unknown as WorldTx;
+        const made = await withAlex(tx);
+        await join(tx, made.c, "Sam", "Ben");
+        const open = (await changes(tx, made.c)).at(-1);
+        if (open === undefined) throw new Error("no change for the four");
+        return { c: made.c, change: open };
+      });
+      const hold = await holding(db, s.c.club);
+      let left: Promise<unknown>;
+      let ben: Promise<unknown>;
+      try {
+        left = outcome(leavingAlone(s.c, "Sam"));
+        await waitingOn(db, hold.pid, 1);
+        ben = outcome(confirmingAlone(s.c, "Ben", s.change.id, ["monday"]));
+        await waitingOn(db, hold.pid, 2);
+      } finally {
+        await hold.release();
+      }
+      expect(await left).toMatchObject({ club_id: s.c.club });
+      expect(await ben).toBe("MEMBERSHIP_CHANGED");
+      expect(await rowOf(s.change.id)).toEqual({ state: "superseded", version: 2, confirmed: 0 });
+      const [next] = await db<{ id: string; state: string }[]>`
+      SELECT id, state FROM app.schedule_proposals WHERE replaced_by IS NULL AND state = 'open' AND club_id = ${s.c.club}`;
+      expect(next?.id).not.toBe(s.change.id);
+    },
+  );
 });

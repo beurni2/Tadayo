@@ -784,7 +784,7 @@ describe("the refusals, in the contract's order", () => {
   }
 
   /**
-   * Replaces the world's proposal with a newer one, as a membership change will (`api/b2-membership-change`):
+   * Replaces the world's proposal with a newer one, as a membership change does (settle-change.ts `settleChange`):
    * rows this test writes. A revision of the first days keeps its proposal (./first-days-roster.test.ts).
    */
   async function replaced(tx: WorldTx, w: FirstDays): Promise<string> {

@@ -317,6 +317,8 @@ describe("what a command must get, in the contract's order", () => {
     const replaced = world();
     rows(replaced).replacedBy = "spr_next";
     rows(replaced).state = "superseded";
+    // The proposal that replaced it, open: the id the refusal names.
+    replaced.proposals.set("spr_next", { ...rows(world()), version: 1 });
     expect(code(choose(replaced, "usr_ben", ["monday"], 9))).toBe(
       '{"code":"MEMBERSHIP_CHANGED","current_id":"spr_next"}',
     );
@@ -551,8 +553,8 @@ function changeWorld(proposals: [string, ScheduleProposalRows][] = [[CHANGE, cha
 }
 
 const ANNOUNCED = [{ id: "occ_one" }, { id: "occ_two" }];
-const change = (w: ScheduleWorld): ScheduleProposalRows => {
-  const found = w.proposals.get(CHANGE);
+const change = (w: ScheduleWorld, id = CHANGE): ScheduleProposalRows => {
+  const found = w.proposals.get(id);
   if (found === undefined) throw new Error("the world lost its change");
   return found;
 };
@@ -665,10 +667,30 @@ describe("what a command must get for a membership change (FQ56)", () => {
   });
 
   it("keeps the contract's order: not found, MEMBERSHIP_CHANGED, the version, NOT_ALLOWED", () => {
-    const replaced = changeWorld([[CHANGE, changeRows({ state: "superseded", version: 2, replacedBy: "spr_next" })]]);
+    const ended = changeRows({ state: "superseded", version: 2, replacedBy: "spr_next" });
+    const replaced = changeWorld([
+      [CHANGE, ended],
+      ["spr_next", changeRows()],
+    ]);
     expect(code(ask(replaced, "confirmScheduleDays", ["monday"], 1))).toBe(
       '{"code":"MEMBERSHIP_CHANGED","current_id":"spr_next"}',
     );
+    // Replaced twice: the id named is the club's open change, never the ended one between (FQ126).
+    const twice = changeWorld([
+      [CHANGE, ended],
+      ["spr_next", changeRows({ state: "superseded", version: 2, replacedBy: "spr_last" })],
+      ["spr_last", changeRows()],
+    ]);
+    expect(code(ask(twice, "confirmScheduleDays", ["monday"], 1))).toBe(
+      '{"code":"MEMBERSHIP_CHANGED","current_id":"spr_last"}',
+    );
+    // Replaced by a change that ended with no successor: an ended proposal, the version and then NOT_ALLOWED.
+    const deadEnd = changeWorld([
+      [CHANGE, ended],
+      ["spr_next", changeRows({ state: "superseded", version: 2 })],
+    ]);
+    expect(code(ask(deadEnd, "confirmScheduleDays", ["monday", "thursday"], 1))).toMatch(/VERSION_CONFLICT.*2/);
+    expect(code(ask(deadEnd, "confirmScheduleDays", ["monday", "thursday"], 2))).toMatch(/NOT_ALLOWED/);
     const dropped = changeWorld([[CHANGE, changeRows({ state: "superseded", version: 2 })]]);
     expect(code(ask(dropped, "confirmScheduleDays", ["monday", "thursday"], 1))).toMatch(/VERSION_CONFLICT.*2/);
     expect(code(ask(dropped, "confirmScheduleDays", ["monday", "thursday"], 2))).toMatch(/NOT_ALLOWED/);
@@ -800,6 +822,19 @@ describe("what a join or a leave must leave of the club's change, row by row (we
     );
     // Once the replaced change's start is today, a new start.
     expect(judge(changeWorld(), four("2027-01-18"), { today: "2026-12-14", lastMade: "2026-12-11" })).toEqual([]);
+    // Between three and four members the week is spec 05's, in the order they joined: no other one day each.
+    const swapped = four("2026-12-14");
+    change(swapped, "spr_four").days = [
+      day("itv_ana", "monday", true, true),
+      day("itv_ben", "tuesday", true, true),
+      day("itv_cleo", "thursday", true, true),
+      day("itv_dee", "wednesday", true, true),
+    ];
+    expect(judge(changeWorld(), swapped, twoWeeksOn).join(" ")).toMatch(
+      /itv_cleo is proposed thursday, not wednesday \(FQ125\)/,
+    );
+    // A day made on or after the replaced change's start: a new start, after it.
+    expect(judge(changeWorld(), four("2026-12-28"), { today: "2026-11-25", lastMade: "2026-12-15" })).toEqual([]);
     // The replaced change must be superseded naming the new one.
     const unnamed = four("2026-12-14");
     change(unnamed).replacedBy = null;

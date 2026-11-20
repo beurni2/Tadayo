@@ -29,7 +29,7 @@ import { activeMemberships } from "../authorization/member.ts";
 import type { FragmentSql, QuerySql } from "../authorization/read-sql.ts";
 import type { ServerNow } from "../time/clock.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
-import { changeViewFor, viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./view.ts";
+import { changeViewFor, seesAnnounced, viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./view.ts";
 
 /** The contract's Person. */
 export interface SchedulePerson {
@@ -237,7 +237,10 @@ function proposalOf(
     people,
     announced:
       reason === "membership_change" &&
-      versions.at(-1)?.assignments.some((assignment) => assignment.starInterval === callerId) === true
+      seesAnnounced(
+        callerId,
+        (versions.at(-1)?.assignments ?? []).map((assignment) => assignment.starInterval),
+      )
         ? daysAhead
         : null,
   };

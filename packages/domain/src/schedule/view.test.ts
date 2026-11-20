@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
-import { changeViewFor, viewFor, type ProposalMember, type SlotView, type WeekFacts } from "./view.ts";
+import { changeViewFor, seesAnnounced, viewFor, type ProposalMember, type SlotView, type WeekFacts } from "./view.ts";
 
 // Sunday people, in the order they joined, each with the weekday the first days proposed for them
 // (the contract's fixture, packages/contracts/src/fixtures/world.ts; F01-friends-first-days).
@@ -423,5 +423,19 @@ describe("a membership change's view (FQ56, FQ81; the contract's `change` scene)
   it("refuses a viewer the change doesn't include, or who has left (T14)", () => {
     expect(() => changeViewFor("debby", change())).toThrow();
     expect(() => changeViewFor("ben", change([], ["ben"]))).toThrow();
+  });
+});
+
+describe("who gets a membership change's announced days (the contract's `announced`; FQ100)", () => {
+  it("gives them to a member with a day in the club's latest week, however many days", () => {
+    expect(seesAnnounced("ben", ["ben", "maya", "ben", "maya"])).toBe(true);
+    expect(seesAnnounced("maya", ["ben", "maya"])).toBe(true);
+  });
+
+  it("gives none to a member with no day in it: a new member, each of several, a late joiner", () => {
+    expect(seesAnnounced("alex", ["ben", "maya", "ben", "maya"])).toBe(false);
+    expect(seesAnnounced("sam", ["ben", "maya"])).toBe(false);
+    // A club whose latest week has no day at all.
+    expect(seesAnnounced("ben", [])).toBe(false);
   });
 });

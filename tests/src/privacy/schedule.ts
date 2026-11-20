@@ -533,7 +533,11 @@ export function outcomeOf(
   const me = proposal.members.find((member) => member.interval === viewer);
   if (viewer === undefined || me === undefined) return NEUTRAL;
   if (proposal.replacedBy !== null) {
-    return pinned(409, "Conflict", `{"code":"MEMBERSHIP_CHANGED","current_id":"${proposal.replacedBy}"}`);
+    // The club's open proposal, however many replacements on (FQ126); with none open, an ended proposal.
+    const current = [...world.proposals].find(([, each]) => each.club === proposal.club && each.state === "open");
+    if (current !== undefined) {
+      return pinned(409, "Conflict", `{"code":"MEMBERSHIP_CHANGED","current_id":"${current[0]}"}`);
+    }
   }
   if (proposal.version !== body.expected_version) {
     return pinned(409, "Conflict", `{"code":"VERSION_CONFLICT","current_version":${String(proposal.version)}}`);
@@ -878,7 +882,10 @@ const plusDays = (date: string, days: number) => Temporal.PlainDate.from(date).a
  *   version with no successor;
  * - otherwise one is open for exactly the active members. One already open for them is untouched. A new one
  *   is at version 1 with no week of its own; every member has spec 05's number of days, each proposed and
- *   held, no weekday twice, and a member who has that number in the latest week keeps exactly them; it
+ *   held, no weekday twice, a member who has that number in the latest week keeps exactly them, and every
+ *   member's days are the ones FQ125's rule gives (the table's whole week between three and four members;
+ *   otherwise, for a member who lacks days, the table's days for their place when free, else the first
+ *   free from Monday); it
  *   starts on the first Monday after the fourth week past `today`'s and after `lastMade`, or on the start
  *   of the open change it replaces while that is still ahead; and the change it replaces is superseded at
  *   its next version, naming it.
@@ -985,13 +992,55 @@ export function weekChangeProblems(
     if (kept.length === per && canonical(kept) !== canonical(proposed))
       problems.push(`${interval} has ${kept.join(", ")} and is proposed ${proposed.join(", ")}: moved (FQ125)`);
   }
+  // Which days, whole (FQ125). Spec 05's table gives the member in place n (from 0, in join order) the nth
+  // weekday, and with two days each the one three days on. Where the most days any active member has in
+  // the latest week is neither none nor the table's number, the change proposes the table. Otherwise each
+  // member keeps their days, and one who lacks days takes, in join order, the table's days for their place
+  // that nobody keeps or has taken, then the first such days from Monday.
+  const table = (place: number) => (per === 2 ? [WEEK[place], WEEK[place + 3]] : [WEEK[place]]);
+  const most = Math.max(0, ...active.map((interval) => inWeek(interval).length));
+  const due = new Map<string, Weekday[]>();
+  if (most !== 0 && most !== per) {
+    for (const [place, interval] of active.entries()) {
+      due.set(
+        interval,
+        table(place).filter((weekday) => weekday !== undefined),
+      );
+    }
+  } else {
+    const gone = new Set<Weekday>(active.flatMap(inWeek));
+    for (const [place, interval] of active.entries()) {
+      const mine = inWeek(interval);
+      for (const weekday of [...table(place), ...WEEK]) {
+        if (mine.length === per) break;
+        if (weekday === undefined || gone.has(weekday)) continue;
+        gone.add(weekday);
+        mine.push(weekday);
+      }
+      due.set(interval, mine);
+    }
+  }
+  for (const interval of active) {
+    const want = WEEK.filter((weekday) => due.get(interval)?.includes(weekday) === true);
+    const proposed = WEEK.filter((weekday) =>
+      rows.days.some((day) => day.interval === interval && day.weekday === weekday),
+    );
+    if (canonical(want) !== canonical(proposed))
+      problems.push(`${interval} is proposed ${proposed.join(", ")}, not ${want.join(", ")} (FQ125)`);
+  }
   // The start: the first Monday after four whole weeks past today's (FQ115) and after every day made (FQ61).
   const today = Temporal.PlainDate.from(at.today);
   let start = plusDays(at.today, 36 - today.dayOfWeek);
   if (at.lastMade !== null && at.lastMade >= start) {
     start = plusDays(at.lastMade, 8 - Temporal.PlainDate.from(at.lastMade).dayOfWeek);
   }
-  if (was !== undefined && was[1].effectiveFrom > at.today) start = was[1].effectiveFrom;
+  // A replacement keeps the replaced change's start while it is ahead of today and of every day made.
+  if (
+    was !== undefined &&
+    was[1].effectiveFrom > at.today &&
+    (at.lastMade === null || at.lastMade < was[1].effectiveFrom)
+  )
+    start = was[1].effectiveFrom;
   if (rows.effectiveFrom !== start) problems.push(`the change starts on ${rows.effectiveFrom}, not ${start}`);
   return problems;
 }

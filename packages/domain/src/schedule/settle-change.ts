@@ -4,7 +4,8 @@
 // section 3). Called in the caller's transaction, holding the club's row, with the caller's own sample of
 // the clock taken after that lock (T1), after `settleFirstDays` (./settle.ts), by every command that
 // starts or ends a membership of a club that has started (../clubs/apply-roster.ts, ../clubs/leave-club.ts),
-// and by the confirmation that applies the first days (./confirm-days.ts).
+// and by the confirmation that applies the first days (./confirm-days.ts). B6's account deletion ends a
+// membership too, and must call this as a leave does.
 //
 // Under the club's row nothing of its schedule changes meanwhile (./command.ts). So the facts are read
 // once, the rule says what follows (./change.ts `changeAfter`), and this writes it:

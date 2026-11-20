@@ -36,7 +36,8 @@ Asked after every membership that starts or ends in a club that has started, and
 | No week was ever confirmed (every proposal ended with no successor) | Nothing here: new first days (FQ102, FQ123) |
 | Fewer than two active members | An open change ends with no successor; nothing is proposed (FQ16: the club is paused) |
 | The active members are exactly the stars of the week in force, each with the table's number of days | An open change ends with no successor (the roster is back where the week is); nothing is proposed |
-| Otherwise | A change is proposed for the active members. An open change is replaced by it (`replaced_by`; its id then answers `MEMBERSHIP_CHANGED` with `current_id`) |
+| An open change already includes exactly the active members | Nothing: the open change stands, with its confirmations |
+| Otherwise | A change is proposed for the active members. An open change is replaced by it (`replaced_by`; its id then answers `MEMBERSHIP_CHANGED` with `current_id`, the club's open change, however many replacements on; once none is open it answers as any ended proposal does) |
 
 A change that is replaced or ended loses its confirmations: the new one is confirmed by everyone again (FQ126, new).
 
@@ -56,11 +57,11 @@ One week, no choosing, no contest (FQ56; G04-change). The other reading for the 
 
 The first Monday after every day already made for the club, and after today: the Monday after the generation window's end seen from the club's local date at the proposal (`windowEnd(today) + 1`), or the Monday after the last day made, whichever is later. Seen from Friday 6 November 2026 that is Monday 7 December, the fixture's `changeFrom`.
 
-A change that replaces an open one keeps the open one's start while that is still ahead: no day was made from it on (2.5), so it is still the first free week. Its week is worked out again from the week in force, not from the change it replaces, so a new member's proposed day can differ between the two.
+A change that replaces an open one keeps the open one's start while that is still ahead and no day was made on or after it: no day is made from it on while a change is open (2.5), so it is still the first free week. Otherwise it takes a new start by the rule above. Its week is worked out again from the week in force, not from the change it replaces, so a new member's proposed day can differ between the two.
 
 ### 2.4 Reading and confirming
 
-- **`getSchedule`** (`week.ts` `answerOf`, `view.ts`): for a member the change includes, `proposal` is the change: `slots` are the member's own days (`yours`, `suggested`) and every other day `available`, with `held_by` naming the member the change proposes it for, for every caller, whoever has confirmed (FQ81); `my_days`; `my_state`; `announced`, the club's days not yet closed in date order, unless the caller has no day in the week in force (the new member; G04-change). `current` is the week in force as before. The change includes every active member, so nobody gets "current alone" from it.
+- **`getSchedule`** (`week.ts` `answerOf`, `view.ts`): for a member the change includes, `proposal` is the change: `slots` are the member's own days (`yours`, `suggested`) and every other day `available`, with `held_by` naming the member the change proposes it for, for every caller, whoever has confirmed (FQ81); `my_days`; `my_state`; `announced`, the club's days not yet closed in date order, unless the caller has no day in the club's latest week (the new member; G04-change). `current` is the week in force as before. The change includes every active member, so nobody gets "current alone" from it.
 - **`confirmScheduleDays`** (`confirm-days.ts`): the body's weekdays must be the days the change proposes for the caller (`NOT_ALLOWED` otherwise, as the request says). It writes the member's `confirmed_at` from the clock's sample taken under the club's row (T1) and nothing else: `state` and `version` stay, so the answer to every member is the same whoever has confirmed (FQ81, T33). A second confirmation is `NOT_ALLOWED` (as in the first days). Idempotent by its key (T19), through `scheduleCommand`.
 - Refusals in the contract's order: `NOT_FOUND` (not a member, or not included), `MEMBERSHIP_CHANGED` (replaced; `current_id`), `VERSION_CONFLICT`, `NOT_ALLOWED`.
 
@@ -79,10 +80,10 @@ In the caller's transaction, under the club's row, with the caller's clock sampl
 
 ## 4. The migration, `0014_membership_change.sql`
 
-Guards only, replacing functions of 0012 and 0013 with the same rules plus a change's own:
+Guards only, replacing two functions of 0013 with the same rules plus a change's own:
 
-- `app.schedule_proposal_days_guard` (replaced): a change's days are written once, with the proposal, each proposed and held for one member; no member's choice changes them (a change has no choosing).
-- `app.schedule_proposals_guard` (replaced): a change never ends `applied` until PR B, which replaces this guard with the start's rule; it can only end `superseded`, and its week is never proposed again.
+- `app.schedule_proposal_days_guard` (replaced): a change's days are inserted only, never changed or deleted, each proposed and held for one member; no member's choice changes them (a change has no choosing). That they are written with the proposal, one weekday for one member, holds under the club's row, which every writer takes (section 3), not by the guard alone.
+- `app.schedule_proposals_guard` (replaced): a change never ends `applied` until PR B, which replaces this guard with the start's rule and must remake `schedule_proposals_keep` with it; it can only end `superseded`, and its week is never proposed again.
 - `app.schedule_change_start_guard` (new, before insert): a change starts open at version 1 with no week of its own, from a Monday, and only in a club whose first days have applied.
 - A club has at most one open proposal (already so: `schedule_proposals_one_open`). A confirmation's own rules (an active member, `days_per_member` days held alone) are 0012's and apply to a change unchanged.
 
@@ -95,7 +96,7 @@ Each replaced rule keeps its tests from 0012 and 0013, which still pass.
 - **`generate.test.ts`**: no day from an open change's start; the days before it as before.
 - **`tests/src/db/membership-change.test.ts`** (through the commands as the routes run them): the first days apply with a late joiner and a change is proposed in the same transaction; a join and a leave in a club with a week in force; a join then a leave back to the week (dropped); a join while a change is open (replaced, `MEMBERSHIP_CHANGED` for the old id); the club paused; the read for a member who stays, for the new member, before and after a confirmation by another member (identical answers, FQ81); the confirmation's refusals in order; a retry of a confirmation (T19); two confirmations at once on two connections.
 - **`schedule-proposals.test.ts`**: migration 0014's guards, each failing first.
-- **The privacy matrix** (`tests/src/privacy/`): the world gets a club with an open change; `getSchedule` and `confirmScheduleDays` are judged for each role (a member who stays, the new member, a former member, a member of another club, a stranger), and a judge of the change's rows runs after every join and leave, as `firstDaysProblems` does.
+- **The privacy matrix** (`tests/src/privacy/`): the world gets a club with an open change; `getSchedule` and `confirmScheduleDays` are judged for each role (a member who stays, the new member, a former member, a member of another club, a stranger), and a judge of the change's rows (`weekChangeProblems`: the whole proposed week by 2.2's rule restated, the start by 2.3's) runs after every join and leave, as `firstDaysProblems` does.
 
 ## 6. Verify, review, records
 
@@ -107,6 +108,6 @@ Each replaced rule keeps its tests from 0012 and 0013, which still pass.
 ## 7. Risks and open points
 
 - **FQ125, FQ126, FQ127 are product rules the sources leave open.** Each is built at the default above, which changes nothing stored before a change applies, and is raised with the PR.
-- **A late joiner waits about five weeks for a day** (FQ61's default with four weeks made ahead): the change starts after every day already made. This is FQ61's stated reading, not new, and is said again with the PR.
+- **A late joiner waits four to five weeks for a day** (FQ61's default with four weeks made ahead): the change starts after every day already made. This is FQ61's stated reading, not new, and is said again with the PR.
 - **Between PR A and PR B a change can't apply.** Nobody can meet it on `dev` (no club made through the app; the worker there is stopped).
 - **A club at the edge of the table.** A seventh member can't join (A01), so `changeWeek` never sees more than six.

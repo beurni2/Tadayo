@@ -43,18 +43,19 @@ describe("changeWeek: which week a change proposes (FQ125)", () => {
   });
 
   it("gives a new member the first free day from Monday when the day of their place is kept by someone", () => {
-    // Five members whose days aren't the table's: the sixth member's place is Saturday, which Sam keeps.
+    // Five members whose days aren't the table's: the sixth member's place is Saturday, which Sam keeps,
+    // and Monday is Ben's, so the first free day is Tuesday.
     const five = week(
-      ["tuesday", "ben"],
+      ["monday", "ben"],
       ["wednesday", "debby"],
       ["thursday", "maya"],
       ["friday", "alex"],
       ["saturday", "sam"],
     );
     const change = changeWeek(["ben", "debby", "maya", "alex", "sam", "nina"], five);
-    expect(change.proposed.at(-1)).toEqual({ id: "nina", days: ["monday"] });
+    expect(change.proposed.at(-1)).toEqual({ id: "nina", days: ["tuesday"] });
     expect(change.proposed.slice(0, 5).map((member) => member.days)).toEqual([
-      ["tuesday"],
+      ["monday"],
       ["wednesday"],
       ["thursday"],
       ["friday"],
@@ -119,6 +120,12 @@ describe("changeWeek: which week a change proposes (FQ125)", () => {
     expect(change.proposed.slice(4)).toEqual([
       { id: "sam", days: ["friday"] },
       { id: "nina", days: ["saturday"] },
+    ]);
+    // Neither place is free (Friday and Saturday are kept): the first free day each, never the same one.
+    const four = week(["tuesday", "ben"], ["wednesday", "debby"], ["friday", "maya"], ["saturday", "alex"]);
+    expect(changeWeek(["ben", "debby", "maya", "alex", "sam", "nina"], four).proposed.slice(4)).toEqual([
+      { id: "sam", days: ["monday"] },
+      { id: "nina", days: ["thursday"] },
     ]);
   });
 
@@ -245,10 +252,29 @@ describe("changeStart: the first week after every day already made (FQ61, FQ115)
     expect(changeStart(D("2026-12-09"), D("2026-12-05"), D("2026-12-07")).toString()).toBe("2027-01-11");
   });
 
-  it("is always a Monday", () => {
+  it("takes a new start when a day was made on or after the replaced change's start", () => {
+    // Generation makes no such day while the change is open (FQ127); the rule holds without it.
+    expect(changeStart(D("2026-11-20"), D("2026-12-07"), D("2026-12-07")).toString()).toBe("2026-12-21");
+    expect(changeStart(D("2026-11-20"), D("2026-12-09"), D("2026-12-07")).toString()).toBe("2026-12-21");
+  });
+
+  it("is always a Monday after today and after the last day made, whichever branch decides", () => {
+    let beyond = 0;
     for (let offset = 0; offset < 40; offset += 1) {
       const today = D("2026-10-25").add({ days: offset });
-      expect(changeStart(today, today.add({ days: offset % 9 }), null).dayOfWeek).toBe(1);
+      // Days made from none to well past the window, so both branches decide in turn.
+      for (const ahead of [null, 0, 9, 28, 29, 34, 35, 36, 41, 60]) {
+        const lastMade = ahead === null ? null : today.add({ days: ahead });
+        const start = changeStart(today, lastMade, null);
+        expect(start.dayOfWeek).toBe(1);
+        expect(Temporal.PlainDate.compare(start, today)).toBeGreaterThan(0);
+        if (lastMade !== null) {
+          expect(Temporal.PlainDate.compare(start, lastMade)).toBeGreaterThan(0);
+          expect(start.since(lastMade).days <= 7 || start.equals(changeStart(today, null, null))).toBe(true);
+          if (!start.equals(changeStart(today, null, null))) beyond += 1;
+        }
+      }
     }
+    expect(beyond).toBeGreaterThan(40);
   });
 });

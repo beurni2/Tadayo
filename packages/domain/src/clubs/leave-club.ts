@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
 // Leave a club (the contract's `leaveClub`; spec 04, 05, 18, 22, 32; G05-leave, book p30; T1, T7, T8, T9, T14,
-// T19, T26, T33, T36; FQ16, FQ60, FQ63, FQ75, FQ80, FQ102, FQ112, FQ120, FQ121, FQ122, FQ123; docs/plans/api-b1-clubs.md,
+// T19, T26, T33, T36; FQ16, FQ60, FQ63, FQ75, FQ80, FQ102, FQ112, FQ120 to FQ123, FQ125, FQ126; docs/plans/api-b1-clubs.md,
 // section 5), in one READ COMMITTED transaction the caller opens. A refusal throws `Refused`, which rolls
 // it back, so a refused request leaves nothing, its receipt included.
 //
@@ -24,11 +24,14 @@
 //    one was: a member's proposal keeps its proposer's approval by proposing (FQ60), and the revision of
 //    a name nobody has approved (`rename`, FQ84) starts with no approval at all.
 // 7. The club's `roster_version`, up by one.
-// 8. The club's first days (../schedule/settle.ts, FQ102, FQ123), asked on every leave; with none
-//    open a leave changes nothing, since the club it leaves has no first days to restart. While they are open: with no day
-//    confirmed, a revision of the proposed week without the leaver, or their end with one member left;
-//    with one confirmed, they apply when only confirmed members stay among those they include, and end
-//    when the one member left hasn't confirmed or nobody they include is left.
+// 8. The club's week, asked on every leave. First its first days (../schedule/settle.ts, FQ102, FQ123);
+//    with none open that changes nothing, since the club has no first days to restart. While they are
+//    open: with no day confirmed, a revision of the proposed week without the leaver, or their end with
+//    one member left; with one confirmed, they apply when only confirmed members stay among those they
+//    include, and end when the one member left hasn't confirmed or nobody they include is left. Then the
+//    membership change (../schedule/settle-change.ts; FQ16, FQ125, FQ126): in a club whose first days
+//    have applied, a week without the leaver's days is proposed to the members who stay, replacing an
+//    open change; an open change ends when the members are back to the week's own, or under two.
 // 9. The answer, stored in the receipt and answered as the receipt keeps it.
 //
 // Nothing else is written. A club under two members is paused by its members' count (./club-state.ts,

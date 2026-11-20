@@ -1,4 +1,4 @@
--- 0014: the membership change (spec 05; T6, T33; FQ39, FQ56, FQ61, FQ81, FQ125 to FQ127). 0012 named
+-- 0014: the membership change (spec 05; T6, T33; FQ39, FQ56, FQ61, FQ81, FQ101, FQ125 to FQ127). 0012 named
 -- the kind and left its rules to the PR that builds it: this one.
 --
 -- A membership change is one proposed week every active member confirms as a whole, with no
@@ -7,10 +7,18 @@
 -- are the last guards behind them:
 --   - a change is proposed open, at version 1, in week 1, with no week of its own, from a Monday,
 --     and only in a club whose first days have applied;
---   - its days are written once, with it, each proposed and held, a weekday for one member; no
---     choice changes them, and its week is never proposed again: a join or a leave replaces it;
+--   - its days are inserted only, never changed or deleted, each proposed and held, a weekday for
+--     one member; no choice changes them, and its week is never proposed again: a join or a leave
+--     replaces it;
 --   - it never ends `applied` here. It applies at its start, which `api/b2-change-start` builds,
---     replacing this one rule with the start's own.
+--     replacing this one rule with the start's own. To give an applied change its week, that PR
+--     also makes 0012's `schedule_proposals_keep` again, which keeps `schedule_version_id` as
+--     inserted.
+-- What these guards leave to the command's lock on the club's row (settle-change.ts writes a
+-- change's row, members and days in one transaction under it): that the days are written with
+-- the proposal and not later, and that two transactions at once never give one weekday to two
+-- members. The days' guard reads the proposal FOR SHARE, as 0012's does, so it orders nothing
+-- between two inserts for different members; no command makes two.
 -- A confirmation of it is already kept by 0012 and 0013: an active member, once, who holds the
 -- proposal's number of days alone.
 --
@@ -35,7 +43,7 @@ BEGIN
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   IF NEW.state = 'applied' AND NEW.reason = 'membership_change' THEN
-    RAISE EXCEPTION 'app.schedule_proposals: the membership change % applies only at its start (FQ81)', NEW.id
+    RAISE EXCEPTION 'app.schedule_proposals: the membership change % applies only at its start (FQ101)', NEW.id
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   IF NEW.state = 'applied' AND OLD.state = 'open' AND NEW.reason = 'activation' AND (
@@ -88,7 +96,7 @@ BEGIN
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   IF NEW.schedule_version_id IS NOT NULL THEN
-    RAISE EXCEPTION 'app.schedule_proposals: a membership change has no week of its own until it applies (FQ81)'
+    RAISE EXCEPTION 'app.schedule_proposals: a membership change has no week of its own until it applies (FQ101)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   IF pg_catalog.date_part('isodow', NEW.effective_from) <> 1 THEN

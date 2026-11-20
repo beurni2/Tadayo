@@ -141,3 +141,13 @@ export function changeViewFor(viewerId: string, facts: WeekFacts): ProposalView 
     myState: viewer.confirmed ? "confirmed" : "choosing",
   };
 }
+
+/**
+ * Whether a membership change comes with its `announced` days for `viewerId`: only for a member with a day
+ * in the club's latest week, whose stars are `latestWeekStars` (the contract's `ScheduleProposal.announced`;
+ * G04-change). Someone the change gives a first day to has no announced day to keep: the new member, several
+ * of them, or a member who joined once a day was confirmed (FQ100).
+ */
+export function seesAnnounced(viewerId: string, latestWeekStars: readonly string[]): boolean {
+  return latestWeekStars.includes(viewerId);
+}
