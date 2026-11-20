@@ -1,12 +1,23 @@
 /// <reference lib="esnext.temporal" />
-// The membership change's rules (spec 05; FQ16, FQ56, FQ61, FQ100, FQ102, FQ115, FQ125 to FQ127;
-// docs/plans/api-b2-membership-change.md, section 2).
+// A new member's days once a club's first days have applied (spec 05; FQ16, FQ79, FQ100, FQ125 to FQ127,
+// FQ129 to FQ131; docs/plans/api-b2-new-member-day.md, sections 1 and 4).
 
 import { describe, expect, it } from "vitest";
-import { changeAfter, changeStart, changeWeek, type ChangeFacts, type WeekDay } from "./change.ts";
+import {
+  newMemberFirstDate,
+  nextMonday,
+  nextWeekStart,
+  pickAfter,
+  type PickFacts,
+  type PickMember,
+  type WeekDay,
+} from "./change.ts";
 import type { Weekday } from "./propose.ts";
 
 const D = (date: string): Temporal.PlainDate => Temporal.PlainDate.from(date);
+const NEW_YORK = "America/New_York";
+/** An instant from the club's own wall time in New York. */
+const at = (wall: string): Temporal.Instant => Temporal.PlainDateTime.from(wall).toZonedDateTime(NEW_YORK).toInstant();
 
 function week(...days: readonly (readonly [Weekday, string])[]): WeekDay[] {
   return days.map(([weekday, star]) => ({ weekday, star }));
@@ -23,28 +34,62 @@ const THREE = week(
 );
 /** One day each for four. */
 const FOUR = week(["monday", "ben"], ["tuesday", "debby"], ["wednesday", "maya"], ["thursday", "alex"]);
+/** Two days each for two. */
+const TWO = week(["monday", "ben"], ["tuesday", "debby"], ["thursday", "ben"], ["friday", "debby"]);
 
-function facts(over: Partial<ChangeFacts>): ChangeFacts {
+function facts(over: Partial<PickFacts>): PickFacts {
   return { active: ["ben", "debby", "maya", "alex"], firstDaysOpen: false, week: FOUR, open: null, ...over };
 }
 
-describe("changeWeek: which week a change proposes (FQ125)", () => {
-  it("keeps every member's day and gives a fifth member the table's day for their place, which is free", () => {
-    expect(changeWeek(["ben", "debby", "maya", "alex", "sam"], FOUR)).toEqual({
-      daysPerMember: 1,
-      proposed: [
-        { id: "ben", days: ["monday"] },
-        { id: "debby", days: ["tuesday"] },
-        { id: "maya", days: ["wednesday"] },
-        { id: "alex", days: ["thursday"] },
-        { id: "sam", days: ["friday"] },
-      ],
+const member = (id: string, held: readonly Weekday[], confirmed = false): PickMember => ({ id, held, confirmed });
+
+describe("pickAfter: who is asked, and nothing else (FQ125, FQ126)", () => {
+  it("asks nothing while the first days are open or never applied: their own rule decides (FQ102)", () => {
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam"], firstDaysOpen: true }))).toEqual({
+      freed: [],
+      proposal: { kind: "nothing" },
+    });
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam"], week: null }))).toEqual({
+      freed: [],
+      proposal: { kind: "nothing" },
     });
   });
 
-  it("gives a new member the first free day from Monday when the day of their place is kept by someone", () => {
-    // Five members whose days aren't the table's: the sixth member's place is Saturday, which Sam keeps,
-    // and Monday is Ben's, so the first free day is Tuesday.
+  it("asks nothing when every active member has a day in the week, after a leave too (FQ125, FQ131)", () => {
+    expect(pickAfter(facts({}))).toEqual({ freed: [], proposal: { kind: "nothing" } });
+    // Alex left: Thursday is free, and the three who stay keep one day each, though spec 05 gives three two.
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya"] }))).toEqual({
+      freed: [],
+      proposal: { kind: "nothing" },
+    });
+    // Debby left a club of three: Ben and Maya keep their two days each, and Debby's are free.
+    expect(pickAfter(facts({ active: ["ben", "maya"], week: THREE }))).toEqual({
+      freed: [],
+      proposal: { kind: "nothing" },
+    });
+  });
+
+  it("opens a pick for a new member alone, with spec 05's number of free days for the club's size (FQ127, FQ131)", () => {
+    // A fifth member: one day, the table's day for their place (Friday), which is free.
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam"] }))).toEqual({
+      freed: [],
+      proposal: { kind: "open", replaces: false, daysPerMember: 1, proposed: [{ id: "sam", days: ["friday"] }] },
+    });
+    // A third member of a club of two: two days, the two the others don't have.
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya"], week: TWO }))).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: false,
+        daysPerMember: 2,
+        proposed: [{ id: "maya", days: ["wednesday", "saturday"] }],
+      },
+    });
+  });
+
+  it("gives a new member the first free days from Monday when the table's day for their place is someone's", () => {
+    // Five members whose days aren't the table's: the sixth's place is Saturday, which Sam has, and Monday
+    // is Ben's, so the first free day is Tuesday.
     const five = week(
       ["monday", "ben"],
       ["wednesday", "debby"],
@@ -52,229 +97,248 @@ describe("changeWeek: which week a change proposes (FQ125)", () => {
       ["friday", "alex"],
       ["saturday", "sam"],
     );
-    const change = changeWeek(["ben", "debby", "maya", "alex", "sam", "nina"], five);
-    expect(change.proposed.at(-1)).toEqual({ id: "nina", days: ["tuesday"] });
-    expect(change.proposed.slice(0, 5).map((member) => member.days)).toEqual([
-      ["monday"],
-      ["wednesday"],
-      ["thursday"],
-      ["friday"],
-      ["saturday"],
-    ]);
-  });
-
-  it("frees the days of a member who left and moves nobody, where the table keeps the days each", () => {
-    // Five to four: one day each before and after.
-    const five = [...FOUR, { weekday: "friday" as const, star: "sam" }];
-    expect(changeWeek(["ben", "debby", "alex", "sam"], five).proposed).toEqual([
-      { id: "ben", days: ["monday"] },
-      { id: "debby", days: ["tuesday"] },
-      { id: "alex", days: ["thursday"] },
-      { id: "sam", days: ["friday"] },
-    ]);
-    // Three to two: two days each before and after.
-    expect(changeWeek(["ben", "maya"], THREE)).toEqual({
-      daysPerMember: 2,
-      proposed: [
-        { id: "ben", days: ["monday", "thursday"] },
-        { id: "maya", days: ["wednesday", "saturday"] },
-      ],
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam", "nina"], week: five }))).toEqual({
+      freed: [],
+      proposal: { kind: "open", replaces: false, daysPerMember: 1, proposed: [{ id: "nina", days: ["tuesday"] }] },
     });
   });
 
-  it("proposes the table's whole week when a fourth member joins three: one day each (spec 05)", () => {
-    expect(changeWeek(["ben", "debby", "maya", "alex"], THREE)).toEqual({
-      daysPerMember: 1,
-      proposed: [
-        { id: "ben", days: ["monday"] },
-        { id: "debby", days: ["tuesday"] },
-        { id: "maya", days: ["wednesday"] },
-        { id: "alex", days: ["thursday"] },
-      ],
+  it("gives two who join at once different free days, in the order they joined", () => {
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam", "nina"] }))).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: false,
+        daysPerMember: 1,
+        proposed: [
+          { id: "sam", days: ["friday"] },
+          { id: "nina", days: ["saturday"] },
+        ],
+      },
     });
   });
 
-  it("proposes the table's whole week when four become three: two days each (spec 05)", () => {
-    expect(changeWeek(["ben", "maya", "alex"], FOUR)).toEqual({
-      daysPerMember: 2,
-      proposed: [
-        { id: "ben", days: ["monday", "thursday"] },
-        { id: "maya", days: ["tuesday", "friday"] },
-        { id: "alex", days: ["wednesday", "saturday"] },
-      ],
+  it("includes a member of the first days' late joiners with no day, and a leaver's day is free (FQ100, FQ102)", () => {
+    // Maya confirmed Wednesday in the first days and left; Alex joined after the first confirmation.
+    const withLeaver = week(["monday", "ben"], ["tuesday", "debby"], ["wednesday", "maya"]);
+    expect(pickAfter(facts({ active: ["ben", "debby", "alex", "sam"], week: withLeaver }))).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: false,
+        daysPerMember: 1,
+        proposed: [
+          { id: "alex", days: ["wednesday"] },
+          { id: "sam", days: ["thursday"] },
+        ],
+      },
     });
-  });
-
-  it("gives a member with no day in the week the days they lack, as it does a new member (FQ100)", () => {
-    // The first days applied for Ben and Debby, two days each; Maya joined after the first confirmation.
-    const two = week(["monday", "ben"], ["tuesday", "debby"], ["thursday", "ben"], ["friday", "debby"]);
-    expect(changeWeek(["ben", "debby", "maya"], two).proposed).toEqual([
-      { id: "ben", days: ["monday", "thursday"] },
-      { id: "debby", days: ["tuesday", "friday"] },
-      { id: "maya", days: ["wednesday", "saturday"] },
-    ]);
-  });
-
-  it("gives two who join at once different days, in the order they joined", () => {
-    const change = changeWeek(["ben", "debby", "maya", "alex", "sam", "nina"], FOUR);
-    expect(change.proposed.slice(4)).toEqual([
-      { id: "sam", days: ["friday"] },
-      { id: "nina", days: ["saturday"] },
-    ]);
-    // Neither place is free (Friday and Saturday are kept): the first free day each, never the same one.
-    const four = week(["tuesday", "ben"], ["wednesday", "debby"], ["friday", "maya"], ["saturday", "alex"]);
-    expect(changeWeek(["ben", "debby", "maya", "alex", "sam", "nina"], four).proposed.slice(4)).toEqual([
-      { id: "sam", days: ["monday"] },
-      { id: "nina", days: ["thursday"] },
-    ]);
-  });
-
-  it("gives the table's days to members none of whom has a day in the week", () => {
-    // Everyone who confirmed has left; the two who remain joined later.
-    expect(changeWeek(["sam", "nina"], FOUR).proposed).toEqual([
-      { id: "sam", days: ["monday", "thursday"] },
-      { id: "nina", days: ["tuesday", "friday"] },
-    ]);
-  });
-
-  it("proposes a day once and every member the table's number, for every size and every member who leaves", () => {
-    for (let size = 3; size <= 6; size += 1) {
-      const names = ["a", "b", "c", "d", "e", "f"].slice(0, size);
-      const before = changeWeek(names, []).proposed.flatMap((member) =>
-        member.days.map((weekday) => ({ weekday, star: member.id })),
-      );
-      for (const leaver of names) {
-        const stay = names.filter((name) => name !== leaver);
-        const change = changeWeek(stay, before);
-        const days = change.proposed.flatMap((member) => member.days);
-        expect(new Set(days).size).toBe(days.length);
-        expect(change.proposed.map((member) => member.id)).toEqual(stay);
-        for (const member of change.proposed) expect(member.days).toHaveLength(change.daysPerMember);
-      }
-    }
-  });
-
-  it("refuses a roster outside two to six (A01)", () => {
-    expect(() => changeWeek(["ben"], FOUR)).toThrow(RangeError);
-    expect(() => changeWeek(["a", "b", "c", "d", "e", "f", "g"], FOUR)).toThrow(RangeError);
   });
 });
 
-describe("changeAfter: when a change is proposed, replaced or dropped", () => {
-  it("leaves the first days to their own rule while they are open", () => {
-    expect(changeAfter(facts({ firstDaysOpen: true, active: ["ben", "debby"] }))).toEqual({ kind: "nothing" });
-  });
-
-  it("proposes nothing for a club that never had a confirmed week", () => {
-    expect(changeAfter(facts({ week: null, active: ["ben", "debby"] }))).toEqual({ kind: "nothing" });
-  });
-
-  it("proposes nothing when the active members are the week's stars, each with the table's days", () => {
-    expect(changeAfter(facts({}))).toEqual({ kind: "nothing" });
-    expect(changeAfter(facts({ active: ["ben", "debby", "maya"], week: THREE }))).toEqual({ kind: "nothing" });
-  });
-
-  it("proposes a change for a join, a leave, and a leaver's day still in the week", () => {
-    const joined = changeAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam"] }));
-    expect(joined).toMatchObject({ kind: "propose", replaces: false, daysPerMember: 1 });
-    // Five to four, one day each: nobody's day moves, and the change still takes the leaver's day out.
-    const five = [...FOUR, { weekday: "friday" as const, star: "sam" }];
-    const left = changeAfter(facts({ week: five }));
-    expect(left).toMatchObject({ kind: "propose", replaces: false });
-    if (left.kind !== "propose") throw new Error("unreachable");
-    expect(left.proposed.flatMap((member) => member.days)).toEqual(["monday", "tuesday", "wednesday", "thursday"]);
-  });
-
-  it("proposes a change when a member has fewer days than the table's, though the stars are the members", () => {
-    // Three members hold one day each, as the first days of four left them (FQ100, FQ102).
-    const one = week(["monday", "ben"], ["tuesday", "debby"], ["wednesday", "maya"]);
-    expect(changeAfter(facts({ active: ["ben", "debby", "maya"], week: one }))).toMatchObject({
-      kind: "propose",
-      daysPerMember: 2,
+describe("pickAfter: a fourth member frees a day now (FQ131, the founder's answer)", () => {
+  it("keeps each member's first day from Monday and frees the others, for a fourth member to pick from", () => {
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex"], week: THREE }))).toEqual({
+      freed: week(["thursday", "ben"], ["friday", "debby"], ["saturday", "maya"]),
+      proposal: { kind: "open", replaces: false, daysPerMember: 1, proposed: [{ id: "alex", days: ["thursday"] }] },
     });
   });
 
-  it("replaces an open change when the members it includes are no longer the club's (FQ126)", () => {
-    const open = { members: ["ben", "debby", "maya", "alex", "sam"] };
-    const again = changeAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam", "nina"], open }));
-    expect(again).toMatchObject({ kind: "propose", replaces: true });
+  it("frees by the days each has, not the table's: the earlier day from Monday stays", () => {
+    const chosen = week(
+      ["tuesday", "ben"],
+      ["saturday", "ben"],
+      ["monday", "debby"],
+      ["wednesday", "debby"],
+      ["thursday", "maya"],
+      ["friday", "maya"],
+    );
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex"], week: chosen })).freed).toEqual(
+      week(["saturday", "ben"], ["wednesday", "debby"], ["friday", "maya"]),
+    );
   });
 
-  it("changes nothing when the open change already includes exactly the club's members", () => {
-    const open = { members: ["sam", "ben", "debby", "maya", "alex"] };
-    expect(changeAfter(facts({ active: ["ben", "debby", "maya", "alex", "sam"], open }))).toEqual({
-      kind: "nothing",
-    });
+  it("frees nothing of a member who left, whose days are free already, and nothing in a club of three or fewer", () => {
+    // Two of a club of three joined by two at once: four members, Ben and Debby keep their first days.
+    expect(pickAfter(facts({ active: ["ben", "debby", "alex", "sam"], week: TWO })).freed).toEqual(
+      week(["thursday", "ben"], ["friday", "debby"]),
+    );
+    expect(pickAfter(facts({ active: ["ben", "debby", "maya"], week: TWO })).freed).toEqual([]);
+    expect(pickAfter(facts({ active: ["ben", "alex", "sam", "nina"], week: THREE })).freed).toEqual(
+      week(["thursday", "ben"]),
+    );
   });
 
-  it("drops an open change when the club is back at the week's own members", () => {
-    const open = { members: ["ben", "debby", "maya", "alex", "sam"] };
-    expect(changeAfter(facts({ open }))).toEqual({ kind: "drop" });
-  });
-
-  it("drops an open change, and proposes none, with fewer than two members (FQ16)", () => {
-    expect(changeAfter(facts({ active: ["ben"], open: { members: ["ben", "debby"] } }))).toEqual({ kind: "drop" });
-    expect(changeAfter(facts({ active: ["ben"] }))).toEqual({ kind: "nothing" });
-    expect(changeAfter(facts({ active: [] }))).toEqual({ kind: "nothing" });
-  });
-
-  it("refuses a member listed twice, and more than six (A01)", () => {
-    expect(() => changeAfter(facts({ active: ["ben", "ben"] }))).toThrow();
-    expect(() => changeAfter(facts({ active: ["a", "b", "c", "d", "e", "f", "g"] }))).toThrow(RangeError);
+  it("frees nothing in a paused club, which asks nobody anything (FQ16)", () => {
+    expect(pickAfter(facts({ active: ["ben"], week: THREE }))).toEqual({ freed: [], proposal: { kind: "nothing" } });
   });
 });
 
-describe("changeStart: the first week after every day already made (FQ61, FQ115)", () => {
-  it("is Monday 7 December 2026 seen from Friday 6 November, the contract's own example", () => {
-    expect(changeStart(D("2026-11-06"), D("2026-12-05"), null).toString()).toBe("2026-12-07");
-    expect(changeStart(D("2026-11-06"), null, null).toString()).toBe("2026-12-07");
+describe("pickAfter: an open pick through joins and leaves", () => {
+  const open = (members: readonly PickMember[], daysPerMember: 1 | 2 = 1) => ({ daysPerMember, members });
+
+  it("adds a member who joins while it is open, with free days nobody it includes holds", () => {
+    const five = ["ben", "debby", "maya", "alex", "sam"];
+    // Sam holds Friday; Nina's place is Saturday, free and unheld.
+    expect(pickAfter(facts({ active: [...five, "nina"], open: open([member("sam", ["friday"])]) }))).toEqual({
+      freed: [],
+      proposal: { kind: "add", members: [{ id: "nina", days: ["saturday"] }] },
+    });
+    // Sam chose Saturday: Nina gets the first free day nobody holds, Friday.
+    expect(pickAfter(facts({ active: [...five, "nina"], open: open([member("sam", ["saturday"])]) }))).toEqual({
+      freed: [],
+      proposal: { kind: "add", members: [{ id: "nina", days: ["friday"] }] },
+    });
   });
 
-  it("is the same Monday from every day of a week, and a week later from the next Monday", () => {
-    for (const day of ["2026-11-02", "2026-11-04", "2026-11-07", "2026-11-08"]) {
-      expect(changeStart(D(day), null, null).toString()).toBe("2026-12-07");
-    }
-    expect(changeStart(D("2026-11-09"), null, null).toString()).toBe("2026-12-14");
+  it("changes nothing while those it includes are still choosing, and no version moves (T33)", () => {
+    const five = ["ben", "debby", "maya", "alex", "sam"];
+    expect(pickAfter(facts({ active: five, open: open([member("sam", ["friday"])]) }))).toEqual({
+      freed: [],
+      proposal: { kind: "nothing" },
+    });
+    // A member already in the week leaves: their day is free in the pick, and nothing is written.
+    expect(
+      pickAfter(facts({ active: ["ben", "debby", "alex", "sam"], open: open([member("sam", ["friday"])]) })),
+    ).toEqual({ freed: [], proposal: { kind: "nothing" } });
   });
 
-  it("is the Monday after the last day made when a day was made beyond the window", () => {
-    expect(changeStart(D("2026-11-06"), D("2026-12-09"), null).toString()).toBe("2026-12-14");
-    // A day made on a Saturday: the Monday two days on.
-    expect(changeStart(D("2026-11-06"), D("2026-12-12"), null).toString()).toBe("2026-12-14");
+  it("applies when everyone it includes who is still a member has confirmed, as on a leave", () => {
+    // Sam confirmed Friday, so Friday is Sam's in the week; Nina left without confirming.
+    const sams = [...FOUR, { weekday: "friday" as const, star: "sam" }];
+    expect(
+      pickAfter(
+        facts({
+          active: ["ben", "debby", "maya", "alex", "sam"],
+          week: sams,
+          open: open([member("sam", ["friday"], true), member("nina", ["saturday"])]),
+        }),
+      ),
+    ).toEqual({ freed: [], proposal: { kind: "apply" } });
   });
 
-  it("keeps the start of the change it replaces while that start is still ahead (FQ126, FQ127)", () => {
-    expect(changeStart(D("2026-11-20"), D("2026-12-05"), D("2026-12-07")).toString()).toBe("2026-12-07");
+  it("ends with no successor when nobody it includes is still a member, or the club is paused (FQ16)", () => {
+    expect(
+      pickAfter(facts({ active: ["ben", "debby", "maya", "alex"], open: open([member("sam", ["friday"])]) })),
+    ).toEqual({ freed: [], proposal: { kind: "drop" } });
+    expect(pickAfter(facts({ active: ["ben"], open: open([member("sam", ["friday"])]) }))).toEqual({
+      freed: [],
+      proposal: { kind: "drop" },
+    });
   });
 
-  it("takes a new start when the replaced change's start is today or has passed", () => {
-    expect(changeStart(D("2026-12-07"), D("2026-12-05"), D("2026-12-07")).toString()).toBe("2027-01-11");
-    expect(changeStart(D("2026-12-09"), D("2026-12-05"), D("2026-12-07")).toString()).toBe("2027-01-11");
+  it("opens a new pick in its place when the club's size changes the days each takes (FQ131)", () => {
+    // Maya picks two days in a club of three, and Alex joins: one day each now, for both of them.
+    expect(
+      pickAfter(
+        facts({
+          active: ["ben", "debby", "maya", "alex"],
+          week: TWO,
+          open: open([member("maya", ["wednesday", "saturday"])], 2),
+        }),
+      ),
+    ).toEqual({
+      freed: week(["thursday", "ben"], ["friday", "debby"]),
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: 1,
+        proposed: [
+          { id: "maya", days: ["wednesday"] },
+          { id: "alex", days: ["thursday"] },
+        ],
+      },
+    });
+    // Alex picks one day in a club of four, where Ben and Debby kept one day each, and Maya leaves: two
+    // days each for three, so two for Alex, and Ben and Debby keep theirs (FQ125).
+    const kept = week(["monday", "ben"], ["tuesday", "debby"]);
+    expect(
+      pickAfter(facts({ active: ["ben", "debby", "alex"], week: kept, open: open([member("alex", ["wednesday"])]) })),
+    ).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: 2,
+        proposed: [{ id: "alex", days: ["wednesday", "saturday"] }],
+      },
+    });
   });
 
-  it("takes a new start when a day was made on or after the replaced change's start", () => {
-    // Generation makes no such day while the change is open (FQ127); the rule holds without it.
-    expect(changeStart(D("2026-11-20"), D("2026-12-07"), D("2026-12-07")).toString()).toBe("2026-12-21");
-    expect(changeStart(D("2026-11-20"), D("2026-12-09"), D("2026-12-07")).toString()).toBe("2026-12-21");
+  it("applies in place of a new pick when those it includes have all confirmed and the size changes", () => {
+    const sams = [...FOUR, { weekday: "friday" as const, star: "sam" }];
+    // Sam confirmed Friday, Nina hadn't and left, and Maya and Alex left too: three members, two days each
+    // by the table, but each keeps the one they have (FQ131), and nobody has none.
+    expect(
+      pickAfter(
+        facts({
+          active: ["ben", "debby", "sam"],
+          week: sams,
+          open: open([member("sam", ["friday"], true), member("nina", ["saturday"])]),
+        }),
+      ),
+    ).toEqual({ freed: [], proposal: { kind: "apply" } });
   });
 
-  it("is always a Monday after today and after the last day made, whichever branch decides", () => {
-    let beyond = 0;
-    for (let offset = 0; offset < 40; offset += 1) {
-      const today = D("2026-10-25").add({ days: offset });
-      // Days made from none to well past the window, so both branches decide in turn.
-      for (const ahead of [null, 0, 9, 28, 29, 34, 35, 36, 41, 60]) {
-        const lastMade = ahead === null ? null : today.add({ days: ahead });
-        const start = changeStart(today, lastMade, null);
-        expect(start.dayOfWeek).toBe(1);
-        expect(Temporal.PlainDate.compare(start, today)).toBeGreaterThan(0);
-        if (lastMade !== null) {
-          expect(Temporal.PlainDate.compare(start, lastMade)).toBeGreaterThan(0);
-          expect(start.since(lastMade).days <= 7 || start.equals(changeStart(today, null, null))).toBe(true);
-          if (!start.equals(changeStart(today, null, null))) beyond += 1;
-        }
-      }
-    }
-    expect(beyond).toBeGreaterThan(40);
+  it("throws for a club of more than six, or a member listed twice", () => {
+    expect(() => pickAfter(facts({ active: ["a", "b", "c", "d", "e", "f", "g"] }))).toThrow(RangeError);
+    expect(() => pickAfter(facts({ active: ["ben", "ben"] }))).toThrow();
+  });
+});
+
+describe("nextMonday and nextWeekStart", () => {
+  it("gives the Monday after the date's week, weeks running Monday to Sunday", () => {
+    expect(nextMonday(D("2026-11-06")).toString()).toBe("2026-11-09"); // Friday
+    expect(nextMonday(D("2026-11-09")).toString()).toBe("2026-11-16"); // Monday
+    expect(nextMonday(D("2026-11-08")).toString()).toBe("2026-11-09"); // Sunday
+  });
+
+  it("starts a new week today, or the day after the latest week's start when that is today or later", () => {
+    expect(nextWeekStart(D("2026-11-06"), D("2026-11-02")).toString()).toBe("2026-11-06");
+    expect(nextWeekStart(D("2026-11-06"), null).toString()).toBe("2026-11-06");
+    expect(nextWeekStart(D("2026-11-06"), D("2026-11-06")).toString()).toBe("2026-11-07");
+    expect(nextWeekStart(D("2026-11-06"), D("2026-12-07")).toString()).toBe("2026-12-08");
+  });
+});
+
+describe("newMemberFirstDate: the picked day in the week after (FQ130)", () => {
+  it("is that weekday in the week after the confirmation, never this week", () => {
+    const friday = at("2026-11-06T10:00");
+    expect(newMemberFirstDate("friday", friday, NEW_YORK, D("2026-11-06"), null).toString()).toBe("2026-11-13");
+    expect(newMemberFirstDate("monday", friday, NEW_YORK, D("2026-11-06"), null).toString()).toBe("2026-11-09");
+    // Tomorrow is a Saturday this week: the new member's first Saturday is the next one.
+    expect(newMemberFirstDate("saturday", friday, NEW_YORK, D("2026-11-06"), null).toString()).toBe("2026-11-14");
+  });
+
+  it("waits a week where the week after's date is less than 24 hours on (FQ79)", () => {
+    // Sunday afternoon: Monday's 7 AM is 16 hours on, so the first Monday is eight days later; Tuesday isn't.
+    const sunday = at("2026-11-08T15:00");
+    expect(newMemberFirstDate("monday", sunday, NEW_YORK, D("2026-11-08"), null).toString()).toBe("2026-11-16");
+    expect(newMemberFirstDate("tuesday", sunday, NEW_YORK, D("2026-11-08"), null).toString()).toBe("2026-11-10");
+    // Exactly 24 hours qualifies; a second less waits a week.
+    expect(newMemberFirstDate("monday", at("2026-11-08T07:00"), NEW_YORK, D("2026-11-08"), null).toString()).toBe(
+      "2026-11-09",
+    );
+    expect(newMemberFirstDate("monday", at("2026-11-08T07:00:01"), NEW_YORK, D("2026-11-08"), null).toString()).toBe(
+      "2026-11-16",
+    );
+  });
+
+  it("comes after the last day of that weekday announced for a member still in the club", () => {
+    // Ben's Thursdays were made to 3 December before a fourth member freed them: the new member follows.
+    const tuesday = at("2026-11-10T09:00");
+    expect(newMemberFirstDate("thursday", tuesday, NEW_YORK, D("2026-11-10"), D("2026-12-03")).toString()).toBe(
+      "2026-12-10",
+    );
+    // A day announced only this week leaves next week free.
+    expect(newMemberFirstDate("thursday", tuesday, NEW_YORK, D("2026-11-10"), D("2026-11-12")).toString()).toBe(
+      "2026-11-19",
+    );
+  });
+
+  it("is on or after the start of the week it joins", () => {
+    // The club's latest week starts on 7 December (first days opened again, FQ124): the day joins it.
+    const friday = at("2026-11-06T10:00");
+    expect(newMemberFirstDate("friday", friday, NEW_YORK, D("2026-12-08"), null).toString()).toBe("2026-12-11");
   });
 });

@@ -1,7 +1,7 @@
 // The club examples: Sunday people (six members) and Kitchen table (five, with Leila proposed by Ben,
 // book p30). Each is a scene of its own (book p12).
 import type { Examples } from "./examples.ts";
-import { at, changeFrom, club, clubs, day, member, people, rosters, type Who } from "./world.ts";
+import { at, club, clubs, day, member, people, rosters, type Who } from "./world.ts";
 
 const sp = clubs.sundayPeople;
 const kt = clubs.kitchenTable;
@@ -102,45 +102,36 @@ const invitationRoster = (state: "open" | "changed" | "waiting") => ({
 type WeekdayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
 const WEEK: readonly WeekdayKey[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
-// Kitchen table's membership change after Leila joins, from Monday 7 December, the first week after the
-// days already announced (FQ61), built on G04-change's rules: one week every member confirms as a whole,
-// with no choosing, each day naming the member it's proposed for, whoever has confirmed (FQ81). G04-change
-// itself draws a pair change from 16 November (world.ts). `announced` is every Kitchen table day from
-// Saturday 7 November to Saturday 5 December, the days kept as they were.
-const ktChange: Record<WeekdayKey, Who> = {
-  monday: "ben",
-  tuesday: "alex",
-  wednesday: "sam",
-  thursday: "nina",
-  friday: "leila",
-  saturday: "maya",
-};
-const ktAnnounced = Array.from({ length: 29 }, (_, index) =>
-  new Date(Date.parse("2026-11-07T12:00:00Z") + index * 86_400_000).toISOString().slice(0, 10),
-).flatMap((date) => {
-  const weekday = WEEK[new Date(`${date}T12:00:00Z`).getUTCDay() - 1];
-  const holder = rosters.kitchenTable.find(([, day]) => day === weekday);
-  return holder ? [day("kitchenTable", holder[0], date, "collecting")] : [];
-});
-const ktChangeProposal = (myState: "choosing" | "confirmed") => ({
+// Kitchen table's new member's days once Leila has joined, seen on Friday 6 November (FQ125 to FQ131):
+// the five members keep their days, each taken by its member, and Leila picks the one free day, Friday,
+// which the proposal gives her first (spec 05: one day each for six members). Confirmed at once, it is
+// Leila's from Friday 13 November, Friday of the week after, at least 24 hours away (FQ130), and the
+// proposal applies, since Leila is everyone it includes.
+const ktNewMember = (myState: "choosing" | "confirmed") => ({
   id: "spr_kt_2",
-  version: 1,
+  version: myState === "choosing" ? 1 : 2,
   reason: "membership_change",
-  effective_from: changeFrom,
+  effective_from: "2026-11-06",
   days_per_member: 1,
-  slots: WEEK.map((weekday) =>
-    ktChange[weekday] === "ben"
-      ? { weekday, state: "yours", suggested: true }
-      : { weekday, state: "available", held_by: member("kitchenTable", ktChange[weekday]), suggested: false },
-  ),
-  my_days: ["monday"],
+  slots: WEEK.map((weekday) => {
+    const holder = rosters.kitchenTable.find(([, day]) => day === weekday);
+    if (holder !== undefined) {
+      return { weekday, state: "taken", owner: member("kitchenTable", holder[0]), suggested: false };
+    }
+    return {
+      weekday,
+      state: "yours",
+      ...(myState === "confirmed" ? { first_date: "2026-11-13" } : {}),
+      suggested: true,
+    };
+  }),
+  my_days: ["friday"],
   my_state: myState,
-  state: "open",
-  announced: ktAnnounced,
+  state: myState === "choosing" ? "open" : "applied",
 });
-const ktSchedule = (proposal: Record<string, unknown>) => ({
+const ktSchedule = (proposal: Record<string, unknown>, viewer: Who = "ben") => ({
   server_now: at.friday6Morning,
-  club: kt,
+  club: viewer === "ben" ? kt : club("kitchenTable", viewer),
   current: {
     effective_from: "2026-10-05",
     assignments: rosters.kitchenTable.map(([who, weekday]) => ({ weekday, person: member("kitchenTable", who) })),
@@ -502,15 +493,10 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
           current: { effective_from: "2026-10-05", assignments: spSchedule },
         },
       },
-      change: {
+      new_member: {
         summary:
-          "Kitchen table's membership change after Leila joins, from Monday 7 December: one week everyone confirms, each day naming the member it's proposed for, with the days announced until then kept (G04-change's rules, FQ61)",
-        value: ktSchedule(ktChangeProposal("choosing")),
-      },
-      change_confirmed: {
-        summary:
-          "The same change once Ben has confirmed it: the same week and version, and nothing about anyone else's confirmation before it starts (FQ81)",
-        value: ktSchedule(ktChangeProposal("confirmed")),
+          "Leila, Kitchen table's new member, picks a day: the five others keep theirs, each taken by its member, and Friday, the one free day, is proposed for Leila (FQ125, FQ127, FQ131)",
+        value: ktSchedule(ktNewMember("choosing"), "leila"),
       },
       conflict_three: {
         summary:
@@ -613,8 +599,9 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
     },
     confirmScheduleDays: {
       confirmed: {
-        summary: "Ben confirms Kitchen table's change: the same week and version as before (FQ81)",
-        value: ktChangeProposal("confirmed"),
+        summary:
+          "Leila confirms Friday: it is Leila's from Friday 13 November, Friday of the week after, at least 24 hours away, and the proposal applies, one version on (FQ130)",
+        value: ktNewMember("confirmed"),
       },
       first_day_confirmed: {
         summary:

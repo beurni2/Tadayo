@@ -478,44 +478,42 @@ describe("the judges' own helpers", () => {
   });
 });
 
-// A membership change, on a world written out by hand: Ana, Ben and Cleo have the club's week, two days
-// each... of which Cleo's are free here: the week is Ana's Monday and Thursday and Ben's Tuesday and Friday,
-// and Cleo joined after it. The change proposes Cleo Wednesday and Saturday.
-const CHANGE = "spr_change";
+// A new member's pick, on a world written out by hand: Ana and Ben have the club's week, two days each
+// (Ana's Monday and Thursday, Ben's Tuesday and Friday), and Cleo joined after it. The pick includes Cleo
+// alone, holding Wednesday and Saturday, spec 05's days for the third of three.
+const PICK = "spr_pick";
+const TODAY = "2026-11-11";
 
-function changeRows(more: Partial<ScheduleProposalRows> = {}): ScheduleProposalRows {
+function pickRows(more: Partial<ScheduleProposalRows> = {}): ScheduleProposalRows {
   return {
     club: CLUB,
     state: "open",
     version: 1,
     reason: "membership_change",
-    effectiveFrom: "2026-12-14",
+    effectiveFrom: TODAY,
     daysPerMember: 2,
     weekRevision: 1,
     earlier: [],
     scheduleVersion: null,
     replacedBy: null,
-    members: [
-      { interval: "itv_ana", confirmed: false },
-      { interval: "itv_ben", confirmed: false },
-      { interval: "itv_cleo", confirmed: false },
-    ],
-    days: [
-      day("itv_ana", "monday", true, true),
-      day("itv_ana", "thursday", true, true),
-      day("itv_ben", "tuesday", true, true),
-      day("itv_ben", "friday", true, true),
-      day("itv_cleo", "wednesday", true, true),
-      day("itv_cleo", "saturday", true, true),
-    ],
+    members: [{ interval: "itv_cleo", confirmed: false }],
+    days: [day("itv_cleo", "wednesday", true, true), day("itv_cleo", "saturday", true, true)],
     ...more,
   };
 }
 
-/** The club with its applied first days, the week of Ana and Ben, and `proposals` beside them. */
-function changeWorld(proposals: [string, ScheduleProposalRows][] = [[CHANGE, changeRows()]]): ScheduleWorld {
+const assignment = (weekday: Weekday, star: string, firstDate: string) => ({ weekday, star, firstDate });
+const ANA_BEN = [
+  assignment("monday", "itv_ana", "2026-11-02"),
+  assignment("tuesday", "itv_ben", "2026-11-03"),
+  assignment("thursday", "itv_ana", "2026-11-05"),
+  assignment("friday", "itv_ben", "2026-11-06"),
+];
+
+/** The club with its applied first days, the week of Ana and Ben, Cleo, Dee, Eve and Fay, and `proposals`. */
+function pickWorld(proposals: [string, ScheduleProposalRows][] = [[PICK, pickRows()]]): ScheduleWorld {
   const first: ScheduleProposalRows = {
-    ...changeRows(),
+    ...pickRows(),
     reason: "activation",
     state: "applied",
     version: 2,
@@ -525,7 +523,7 @@ function changeWorld(proposals: [string, ScheduleProposalRows][] = [[CHANGE, cha
       { interval: "itv_ana", confirmed: true },
       { interval: "itv_ben", confirmed: true },
     ],
-    days: changeRows().days.filter((each) => each.interval !== "itv_cleo"),
+    days: ANA_BEN.map((each) => day(each.star, each.weekday, true, true)),
   };
   return {
     clubs: new Map([[CLUB, { name: "The Saturdays", timezone: "America/New_York", suspended: false }]]),
@@ -533,336 +531,455 @@ function changeWorld(proposals: [string, ScheduleProposalRows][] = [[CHANGE, cha
       ["itv_ana", member("usr_ana", "2026-10-01T00:00:00Z", "Ana", { avatar: "v1" })],
       ["itv_ben", member("usr_ben", "2026-10-02T00:00:00Z", "Ben")],
       ["itv_cleo", member("usr_cleo", "2026-11-09T00:00:00Z", "Cleo")],
+      ["itv_dee", member("usr_dee", "2026-11-10T00:00:00Z", "Dee", { active: false })],
+      ["itv_eve", member("usr_eve", "2026-11-10T01:00:00Z", "Eve", { active: false })],
+      ["itv_fay", member("usr_fay", "2026-11-10T02:00:00Z", "Fay", { active: false })],
     ]),
-    activeAccounts: new Set(["usr_ana", "usr_ben", "usr_cleo"]),
-    versions: [
-      {
-        id: "sched_week",
-        club: CLUB,
-        effectiveFrom: "2026-11-02",
-        assignments: [
-          { weekday: "monday", star: "itv_ana", firstDate: "2026-11-02" },
-          { weekday: "thursday", star: "itv_ana", firstDate: "2026-11-05" },
-          { weekday: "tuesday", star: "itv_ben", firstDate: "2026-11-03" },
-          { weekday: "friday", star: "itv_ben", firstDate: "2026-11-06" },
-        ],
-      },
-    ],
+    activeAccounts: new Set(["usr_ana", "usr_ben", "usr_cleo", "usr_dee", "usr_eve", "usr_fay"]),
+    versions: [{ id: "sched_week", club: CLUB, effectiveFrom: "2026-11-02", assignments: [...ANA_BEN] }],
     proposals: new Map([["spr_first", first], ...proposals]),
   };
 }
 
-const ANNOUNCED = [{ id: "occ_one" }, { id: "occ_two" }];
-const change = (w: ScheduleWorld, id = CHANGE): ScheduleProposalRows => {
+const pickOf = (w: ScheduleWorld, id = PICK): ScheduleProposalRows => {
   const found = w.proposals.get(id);
-  if (found === undefined) throw new Error("the world lost its change");
+  if (found === undefined) throw new Error("the world lost its pick");
   return found;
 };
+const setActive = (w: ScheduleWorld, interval: string, active: boolean): ScheduleWorld => {
+  const found = w.members.get(interval);
+  if (found !== undefined) found.active = active;
+  return w;
+};
+/** `w` with a later week from `effectiveFrom` holding `assignments`. */
+const withWeek = (
+  w: ScheduleWorld,
+  id: string,
+  effectiveFrom: string,
+  assignments: ReturnType<typeof assignment>[],
+) => {
+  w.versions.push({ id, club: CLUB, effectiveFrom, assignments });
+  return w;
+};
+const pickSlots = (w: ScheduleWorld, viewer: string, id = PICK) => proposalFor(w, id, viewer)["slots"] as Slot[];
+const DEE = { membership_id: "itv_dee", display_name: "Dee" };
 
-describe("a membership change as one member sees it (FQ56, FQ61, FQ81)", () => {
-  it("gives a member with a day in the week their days, every other day with whom it is proposed for, and the announced days", () => {
-    expect(proposalFor(changeWorld(), CHANGE, "itv_ana", ANNOUNCED)).toEqual({
-      id: CHANGE,
+describe("a new member's pick as one member sees it (FQ125, FQ127, FQ130)", () => {
+  it("gives the new member each day of the week in force as its member's, with no first date, and the free days", () => {
+    expect(proposalFor(pickWorld(), PICK, "itv_cleo")).toEqual({
+      id: PICK,
       version: 1,
       reason: "membership_change",
-      effective_from: "2026-12-14",
+      effective_from: TODAY,
       days_per_member: 2,
       slots: [
-        { weekday: "monday", state: "yours", suggested: true },
-        { weekday: "tuesday", state: "available", held_by: BEN, suggested: false },
-        { weekday: "wednesday", state: "available", held_by: CLEO, suggested: false },
-        { weekday: "thursday", state: "yours", suggested: true },
-        { weekday: "friday", state: "available", held_by: BEN, suggested: false },
-        { weekday: "saturday", state: "available", held_by: CLEO, suggested: false },
+        { weekday: "monday", state: "taken", owner: ANA, suggested: false },
+        { weekday: "tuesday", state: "taken", owner: BEN, suggested: false },
+        { weekday: "wednesday", state: "yours", suggested: true },
+        { weekday: "thursday", state: "taken", owner: ANA, suggested: false },
+        { weekday: "friday", state: "taken", owner: BEN, suggested: false },
+        { weekday: "saturday", state: "yours", suggested: true },
       ],
-      my_days: ["monday", "thursday"],
+      my_days: ["wednesday", "saturday"],
       my_state: "choosing",
       state: "open",
-      announced: ANNOUNCED,
     });
-    expect(() => proposalFor(changeWorld(), CHANGE, "itv_ana")).toThrow(/announced/);
+    // Ana is in the week, not in the pick.
+    expect(() => proposalFor(pickWorld(), PICK, "itv_ana")).toThrow(/doesn't include/);
   });
 
-  it("gives the new member the same week and no announced days, whatever the judge was handed", () => {
-    const seen = proposalFor(changeWorld(), CHANGE, "itv_cleo", ANNOUNCED);
-    expect(seen).not.toHaveProperty("announced");
-    expect(seen["my_days"]).toEqual(["wednesday", "saturday"]);
-    expect((seen["slots"] as Slot[])[0]).toEqual({
-      weekday: "monday",
-      state: "available",
-      held_by: ANA,
-      suggested: false,
-    });
-    expect(proposalFor(changeWorld(), CHANGE, "itv_cleo")).toEqual(seen);
-  });
-
-  it("shows nobody's confirmation but the viewer's own, and no name for a day proposed for nobody or for someone who left", () => {
-    const w = changeWorld();
-    change(w).members = [
-      { interval: "itv_ana", confirmed: true },
-      { interval: "itv_ben", confirmed: true },
-      { interval: "itv_cleo", confirmed: false },
+  it("frees a leaver's days, and shows a choice, a contest and a confirmed new member as the first days do", () => {
+    const gone = setActive(pickWorld(), "itv_ben", false);
+    // Cleo has taken Ben's Tuesday in place of the proposed Wednesday, which stays marked as proposed.
+    pickOf(gone).days = [
+      day("itv_cleo", "tuesday", false, true),
+      day("itv_cleo", "wednesday", true, false),
+      day("itv_cleo", "saturday", true, true),
     ];
-    const cleo = proposalFor(w, CHANGE, "itv_cleo");
-    expect(cleo).toEqual(proposalFor(changeWorld(), CHANGE, "itv_cleo"));
-    expect(proposalFor(w, CHANGE, "itv_ana", ANNOUNCED)["my_state"]).toBe("confirmed");
-    const gone = changeWorld();
-    const ben = gone.members.get("itv_ben");
-    if (ben !== undefined) ben.active = false;
-    const slots = proposalFor(gone, CHANGE, "itv_cleo")["slots"] as Slot[];
-    expect(slots[1]).toEqual({ weekday: "tuesday", state: "available", suggested: false });
-    const free = changeWorld([
-      [CHANGE, changeRows({ days: changeRows().days.filter((each) => each.interval !== "itv_ben") })],
+    expect(pickSlots(gone, "itv_cleo").slice(1, 3)).toEqual([
+      { weekday: "tuesday", state: "yours", suggested: false },
+      { weekday: "wednesday", state: "available", suggested: true },
     ]);
-    expect((proposalFor(free, CHANGE, "itv_cleo")["slots"] as Slot[])[4]).toEqual({
-      weekday: "friday",
+    expect(pickSlots(gone, "itv_cleo")[4]).toEqual({ weekday: "friday", state: "available", suggested: false });
+    // Dee joined too, and holds Wednesday and Friday's... Wednesday: a contest for both, a name for one.
+    const two = setActive(pickWorld(), "itv_dee", true);
+    pickOf(two).members.push({ interval: "itv_dee", confirmed: false });
+    pickOf(two).days.push(day("itv_dee", "wednesday", false, true));
+    expect(pickSlots(two, "itv_cleo")[2]).toEqual({
+      weekday: "wednesday",
+      state: "clash",
+      holders: [CLEO, DEE],
+      suggested: true,
+    });
+    expect(pickSlots(two, "itv_dee")[5]).toEqual({
+      weekday: "saturday",
       state: "available",
+      held_by: CLEO,
+      suggested: false,
+    });
+    // Cleo confirms, in a new week: Cleo's own days show their first dates, and to Dee they are taken, undated.
+    pickOf(two).days = [
+      day("itv_cleo", "wednesday", true, true),
+      day("itv_cleo", "saturday", true, true),
+      day("itv_dee", "friday", false, true),
+    ];
+    pickOf(two).members[0] = { interval: "itv_cleo", confirmed: true };
+    withWeek(two, "sched_cleo", TODAY, [
+      ...ANA_BEN,
+      assignment("wednesday", "itv_cleo", "2026-11-18"),
+      assignment("saturday", "itv_cleo", "2026-11-21"),
+    ]);
+    const cleo = proposalFor(two, PICK, "itv_cleo");
+    expect(cleo["my_state"]).toBe("confirmed");
+    expect((cleo["slots"] as Slot[]).map((each) => [each["state"], each["first_date"]])).toEqual([
+      ["taken", undefined],
+      ["taken", undefined],
+      ["yours", "2026-11-18"],
+      ["taken", undefined],
+      ["taken", undefined],
+      ["yours", "2026-11-21"],
+    ]);
+    expect(pickSlots(two, "itv_dee")[2]).toEqual({
+      weekday: "wednesday",
+      state: "taken",
+      owner: CLEO,
       suggested: false,
     });
   });
 
-  it("is in the club's Schedule for every member it includes, with the announced days the cell handed over", () => {
-    const want = weekFor(changeWorld(), CLUB, "usr_ana", NOW, ANNOUNCED);
-    expect((want?.["proposal"] as Record<string, unknown>)["announced"]).toEqual(ANNOUNCED);
-    const judge = judging(
-      weekExpected(() => ({ schedule: changeWorld(), account: "usr_ana", now: NOW, announced: ANNOUNCED }), CLUB),
-    );
-    expect(judge(ok(want))).toEqual([]);
-    const without = { ...want, proposal: { ...(want?.["proposal"] as object), announced: [] } };
-    expect(judge(ok(without)).join(" ")).toMatch(/proposal/);
-    const cleo = weekFor(changeWorld(), CLUB, "usr_cleo", NOW, ANNOUNCED);
-    const leaked = { ...cleo, proposal: { ...(cleo?.["proposal"] as object), announced: ANNOUNCED } };
-    const cleoJudge = judging(
-      weekExpected(() => ({ schedule: changeWorld(), account: "usr_cleo", now: NOW, announced: ANNOUNCED }), CLUB),
-    );
-    expect(cleoJudge(ok(cleo))).toEqual([]);
-    expect(cleoJudge(ok(leaked)).join(" ")).toMatch(/proposal/);
+  it("is in the club's Schedule of the members it includes alone (FQ126)", () => {
+    expect(weekFor(pickWorld(), CLUB, "usr_ana", NOW)).not.toHaveProperty("proposal");
+    const cleo = weekFor(pickWorld(), CLUB, "usr_cleo", NOW);
+    expect(cleo?.["proposal"]).toEqual(proposalFor(pickWorld(), PICK, "itv_cleo"));
+    const anaJudge = judging(weekExpected(() => ({ schedule: pickWorld(), account: "usr_ana", now: NOW }), CLUB));
+    const ana = weekFor(pickWorld(), CLUB, "usr_ana", NOW);
+    expect(anaJudge(ok(ana))).toEqual([]);
+    expect(anaJudge(ok({ ...ana, proposal: cleo?.["proposal"] })).join(" ")).toMatch(/proposal/);
   });
 });
 
-describe("what a command must get for a membership change (FQ56)", () => {
+describe("what a command must get in a pick (FQ55, FQ99, FQ125, FQ127, FQ131)", () => {
   const ask = (
     w: ScheduleWorld,
     command: "chooseScheduleDays" | "confirmScheduleDays",
     weekdays: Weekday[],
     version = 1,
-  ) => outcomeOf(w, command, CHANGE, "usr_ana", { expected_version: version, weekdays });
+    account = "usr_cleo",
+    id = PICK,
+  ) => outcomeOf(w, command, id, account, { expected_version: version, weekdays });
   const code = (answer: Answer | "ok") => (answer === "ok" ? "ok" : answer.body);
 
-  it("refuses every choice, and confirms exactly the days it proposes for the viewer", () => {
-    expect(code(ask(changeWorld(), "chooseScheduleDays", ["monday", "thursday"]))).toMatch(/NOT_ALLOWED/);
-    expect(code(ask(changeWorld(), "chooseScheduleDays", []))).toMatch(/NOT_ALLOWED/);
-    expect(ask(changeWorld(), "confirmScheduleDays", ["thursday", "monday"])).toBe("ok");
-    for (const days of [["monday"], ["tuesday", "friday"], ["monday", "friday"], ["wednesday"]] as Weekday[][]) {
-      expect(code(ask(changeWorld(), "confirmScheduleDays", days)), days.join()).toMatch(/NOT_ALLOWED/);
+  it("takes a choice of free days, never a day of the week in force or more than days_per_member", () => {
+    for (const days of [["saturday"], [], ["wednesday", "saturday"]] as Weekday[][]) {
+      expect(ask(pickWorld(), "chooseScheduleDays", days), days.join()).toBe("ok");
     }
+    for (const days of [["monday"], ["tuesday", "wednesday"], ["wednesday", "saturday", "friday"]] as Weekday[][]) {
+      expect(code(ask(pickWorld(), "chooseScheduleDays", days)), days.join()).toMatch(/NOT_ALLOWED/);
+    }
+    // Ben left: Tuesday and Friday are free.
+    expect(ask(setActive(pickWorld(), "itv_ben", false), "chooseScheduleDays", ["tuesday", "friday"])).toBe("ok");
   });
 
-  it("lets a member confirm a day another member has confirmed nothing about, and refuses a second confirmation", () => {
-    const w = changeWorld();
-    change(w).members[1] = { interval: "itv_ben", confirmed: true };
-    expect(ask(w, "confirmScheduleDays", ["monday", "thursday"])).toBe("ok");
-    change(w).members[0] = { interval: "itv_ana", confirmed: true };
-    expect(code(ask(w, "confirmScheduleDays", ["monday", "thursday"]))).toMatch(/NOT_ALLOWED/);
+  it("confirms exactly the days held, none contested, once", () => {
+    expect(ask(pickWorld(), "confirmScheduleDays", ["saturday", "wednesday"])).toBe("ok");
+    for (const days of [["wednesday"], ["monday", "thursday"], ["wednesday", "friday"]] as Weekday[][]) {
+      expect(code(ask(pickWorld(), "confirmScheduleDays", days)), days.join()).toMatch(/NOT_ALLOWED/);
+    }
+    const two = setActive(pickWorld(), "itv_dee", true);
+    pickOf(two).members.push({ interval: "itv_dee", confirmed: false });
+    pickOf(two).days.push(day("itv_dee", "wednesday", false, true));
+    expect(code(ask(two, "confirmScheduleDays", ["wednesday", "saturday"]))).toMatch(/NOT_ALLOWED/);
+    // Dee leaves, holding nothing.
+    expect(ask(setActive(two, "itv_dee", false), "confirmScheduleDays", ["wednesday", "saturday"])).toBe("ok");
+    const once = pickWorld();
+    pickOf(once).members[0] = { interval: "itv_cleo", confirmed: true };
+    expect(code(ask(once, "confirmScheduleDays", ["wednesday", "saturday"]))).toMatch(/NOT_ALLOWED/);
   });
 
-  it("keeps the contract's order: not found, MEMBERSHIP_CHANGED, the version, NOT_ALLOWED", () => {
-    const ended = changeRows({ state: "superseded", version: 2, replacedBy: "spr_next" });
-    const replaced = changeWorld([
-      [CHANGE, ended],
-      ["spr_next", changeRows()],
-    ]);
-    expect(code(ask(replaced, "confirmScheduleDays", ["monday"], 1))).toBe(
+  it("keeps the contract's order: not found, MEMBERSHIP_CHANGED to whom the open pick includes, the version, NOT_ALLOWED", () => {
+    expect(ask(pickWorld(), "confirmScheduleDays", ["monday", "thursday"], 1, "usr_ana")).toBe(NEUTRAL);
+    const ended = pickRows({ state: "superseded", version: 2, replacedBy: "spr_next" });
+    const withDee = (rows: ScheduleProposalRows) => ({
+      ...rows,
+      members: [...rows.members, { interval: "itv_dee", confirmed: false }],
+    });
+    const replaced = setActive(
+      pickWorld([
+        [PICK, ended],
+        ["spr_next", withDee(pickRows({ daysPerMember: 1 }))],
+      ]),
+      "itv_dee",
+      true,
+    );
+    expect(code(ask(replaced, "confirmScheduleDays", ["wednesday", "saturday"]))).toBe(
       '{"code":"MEMBERSHIP_CHANGED","current_id":"spr_next"}',
     );
-    // Replaced twice: the id named is the club's open change, never the ended one between (FQ126).
-    const twice = changeWorld([
-      [CHANGE, ended],
-      ["spr_next", changeRows({ state: "superseded", version: 2, replacedBy: "spr_last" })],
-      ["spr_last", changeRows()],
+    // Replaced twice: the open pick, never the ended one between.
+    const twice = pickWorld([
+      [PICK, ended],
+      ["spr_next", pickRows({ state: "superseded", version: 2, replacedBy: "spr_last" })],
+      ["spr_last", pickRows()],
     ]);
-    expect(code(ask(twice, "confirmScheduleDays", ["monday"], 1))).toBe(
+    expect(code(ask(twice, "confirmScheduleDays", ["wednesday"]))).toBe(
       '{"code":"MEMBERSHIP_CHANGED","current_id":"spr_last"}',
     );
-    // Replaced by a change that ended with no successor: an ended proposal, the version and then NOT_ALLOWED.
-    const deadEnd = changeWorld([
-      [CHANGE, ended],
-      ["spr_next", changeRows({ state: "superseded", version: 2 })],
-    ]);
-    expect(code(ask(deadEnd, "confirmScheduleDays", ["monday", "thursday"], 1))).toMatch(/VERSION_CONFLICT.*2/);
-    expect(code(ask(deadEnd, "confirmScheduleDays", ["monday", "thursday"], 2))).toMatch(/NOT_ALLOWED/);
-    const dropped = changeWorld([[CHANGE, changeRows({ state: "superseded", version: 2 })]]);
-    expect(code(ask(dropped, "confirmScheduleDays", ["monday", "thursday"], 1))).toMatch(/VERSION_CONFLICT.*2/);
-    expect(code(ask(dropped, "confirmScheduleDays", ["monday", "thursday"], 2))).toMatch(/NOT_ALLOWED/);
-    expect(
-      outcomeOf(replaced, "confirmScheduleDays", CHANGE, "usr_stranger", { expected_version: 1, weekdays: ["monday"] }),
-    ).toBe(NEUTRAL);
+    // An open pick that doesn't include the caller: the replaced one is an ended proposal to them.
+    const notMine = setActive(
+      pickWorld([
+        [PICK, ended],
+        ["spr_next", pickRows({ members: [{ interval: "itv_dee", confirmed: false }], days: [] })],
+      ]),
+      "itv_dee",
+      true,
+    );
+    expect(code(ask(notMine, "confirmScheduleDays", ["wednesday", "saturday"], 1))).toMatch(/VERSION_CONFLICT.*2/);
+    expect(code(ask(notMine, "confirmScheduleDays", ["wednesday", "saturday"], 2))).toMatch(/NOT_ALLOWED/);
+    // Ended with no successor.
+    const dropped = pickWorld([[PICK, pickRows({ state: "superseded", version: 2 })]]);
+    expect(code(ask(dropped, "confirmScheduleDays", ["wednesday", "saturday"], 1))).toMatch(/VERSION_CONFLICT.*2/);
+    expect(code(ask(dropped, "confirmScheduleDays", ["wednesday", "saturday"], 2))).toMatch(/NOT_ALLOWED/);
   });
 });
 
-describe("what a change's confirmation must leave in the rows (FQ81, T33)", () => {
-  const confirmed = () => {
-    const after = changeWorld();
-    change(after).members[0] = { interval: "itv_ana", confirmed: true };
-    return after;
+describe("what a pick's confirmation must leave in the rows (FQ125, FQ126, FQ130; T33)", () => {
+  /** Cleo's confirmation: a week from today, Ana's and Ben's days as they were, Cleo's from next week. */
+  const confirmed = (more: ReturnType<typeof assignment>[] = []) => {
+    const after = pickWorld([[PICK, pickRows({ state: "applied", version: 2 })]]);
+    pickOf(after).members[0] = { interval: "itv_cleo", confirmed: true };
+    return withWeek(after, "sched_cleo", TODAY, [
+      ...ANA_BEN,
+      assignment("wednesday", "itv_cleo", "2026-11-18"),
+      assignment("saturday", "itv_cleo", "2026-11-21"),
+      ...more,
+    ]);
   };
-  const judge = (after: ScheduleWorld) =>
-    changeProblems(changeWorld(), after, "confirmScheduleDays", CHANGE, "usr_ana", ["monday", "thursday"]);
+  const judge = (after: ScheduleWorld, before = pickWorld()) =>
+    changeProblems(before, after, "confirmScheduleDays", PICK, "usr_cleo", ["wednesday", "saturday"], TODAY);
 
-  it("accepts the viewer's confirmation alone", () => {
+  it("accepts the new member's days in the club's next week, everyone else's as they were, and the pick applied", () => {
     expect(judge(confirmed())).toEqual([]);
   });
 
-  it("refuses a moved version or state, another member's confirmation, a day written into a week, and no confirmation", () => {
-    expect(judge(changeWorld()).join(" ")).toMatch(/isn't confirmed/);
+  it("refuses no new week, another start, a day moved or dropped, a day dated this week, and no version", () => {
+    const none = confirmed();
+    none.versions.pop();
+    expect(judge(none).join(" ")).toMatch(/didn't write the club's next week/);
+    const later = confirmed();
+    const last = later.versions.at(-1);
+    if (last !== undefined) last.effectiveFrom = "2026-11-12";
+    expect(judge(later).join(" ")).toMatch(/starts on 2026-11-12, not 2026-11-11/);
     const moved = confirmed();
-    change(moved).version = 2;
-    expect(judge(moved).join(" ")).toMatch(/version 2/);
-    const others = confirmed();
-    change(others).members[1] = { interval: "itv_ben", confirmed: true };
-    expect(judge(others).join(" ")).toMatch(/another member's confirmation/);
-    const written = confirmed();
-    written.versions[0]?.assignments.push({ weekday: "wednesday", star: "itv_cleo", firstDate: "2026-12-16" });
-    expect(judge(written).join(" ")).toMatch(/wrote a day into a week/);
-    const days = confirmed();
-    change(days).days = change(days).days.filter((each) => each.interval !== "itv_cleo");
-    expect(judge(days).join(" ")).toMatch(/another member's days/);
+    const week = moved.versions.at(-1);
+    if (week !== undefined) week.assignments = week.assignments.filter((each) => each.weekday !== "friday");
+    expect(judge(moved).join(" ")).toMatch(/as they were/);
+    const soon = confirmed();
+    const dated = soon.versions.at(-1);
+    if (dated !== undefined)
+      dated.assignments = dated.assignments.map((each) =>
+        each.weekday === "wednesday" ? { ...each, firstDate: TODAY } : each,
+      );
+    expect(judge(soon).join(" ")).toMatch(/wednesday first opens on 2026-11-11/);
+    const stuck = confirmed();
+    Object.assign(pickOf(stuck), { state: "open", version: 1 });
+    expect(judge(stuck).join(" ")).toMatch(/not applied at 2 \(T33\)/);
+    // Ben left before: Ben's days stay out of the new week.
+    expect(judge(setActive(confirmed(), "itv_ben", false), setActive(pickWorld(), "itv_ben", false)).join(" ")).toMatch(
+      /as they were/,
+    );
+  });
+
+  it("takes the day after the latest week's start, when that is today or later", () => {
+    const before = withWeek(pickWorld(), "sched_today", TODAY, [...ANA_BEN]);
+    const after = withWeek(
+      withWeek(pickWorld([[PICK, pickRows({ state: "applied", version: 2 })]]), "sched_today", TODAY, [...ANA_BEN]),
+      "sched_cleo",
+      "2026-11-12",
+      [...ANA_BEN, assignment("wednesday", "itv_cleo", "2026-11-18"), assignment("saturday", "itv_cleo", "2026-11-21")],
+    );
+    pickOf(after).members[0] = { interval: "itv_cleo", confirmed: true };
+    expect(judge(after, before)).toEqual([]);
   });
 });
 
-describe("what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127)", () => {
-  // Wednesday 11 November 2026: four whole weeks past its week end on Sunday 13 December.
-  const AT_DAY: { today: string; lastMade: string | null } = { today: "2026-11-11", lastMade: "2026-12-11" };
-  const none = () => changeWorld([]);
+describe("what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131)", () => {
+  const AT_DAY = { today: TODAY };
   const judge = (before: ScheduleWorld, after: ScheduleWorld, at = AT_DAY) =>
     weekChangeProblems(before, after, CLUB, at);
-  const withCleoGone = (w: ScheduleWorld) => {
-    const cleo = w.members.get("itv_cleo");
-    if (cleo !== undefined) cleo.active = false;
+  /** Ana, Ben and Cleo in the week, two days each, and Dee's join to come. */
+  const THREE = [
+    ...ANA_BEN,
+    assignment("wednesday", "itv_cleo", "2026-11-04"),
+    assignment("saturday", "itv_cleo", "2026-11-07"),
+  ];
+  const three = () => withWeek(pickWorld([]), "sched_three", "2026-11-05", [...THREE]);
+  /** Dee's join to `three`: Ana, Ben and Cleo keep their first day in a new week; Dee picks Thursday. */
+  const fourth = (
+    start = TODAY,
+    kept = THREE.filter((each) => ["monday", "tuesday", "wednesday"].includes(each.weekday)),
+    today = TODAY,
+  ) => {
+    const w = setActive(withWeek(three(), "sched_four", start, kept), "itv_dee", true);
+    w.proposals.set(
+      "spr_dee",
+      pickRows({
+        effectiveFrom: today,
+        daysPerMember: 1,
+        members: [{ interval: "itv_dee", confirmed: false }],
+        days: [day("itv_dee", "thursday", true, true)],
+      }),
+    );
     return w;
   };
 
-  it("accepts a new change for the active members, and each start the dates give", () => {
-    expect(judge(withCleoGone(none()), changeWorld())).toEqual([]);
-    // A day made beyond the window: the Monday after it.
-    const later = changeWorld([[CHANGE, changeRows({ effectiveFrom: "2026-12-21" })]]);
-    expect(judge(withCleoGone(none()), later, { today: "2026-11-11", lastMade: "2026-12-18" })).toEqual([]);
-    expect(judge(withCleoGone(none()), later).join(" ")).toMatch(/starts on 2026-12-21, not 2026-12-14/);
-    // No day made at all.
-    expect(judge(withCleoGone(none()), changeWorld(), { today: "2026-11-09", lastMade: null })).toEqual([]);
-    expect(judge(withCleoGone(none()), changeWorld(), { today: "2026-11-16", lastMade: null }).join(" ")).toMatch(
-      /not 2026-12-21/,
+  it("wants a pick for a member who joins with no day, holding spec 05's days for their place when free", () => {
+    const before = setActive(pickWorld([]), "itv_cleo", false);
+    expect(judge(before, pickWorld())).toEqual([]);
+    expect(judge(before, pickWorld([])).join(" ")).toMatch(/no pick is open though a member has no day/);
+    const anaToo = pickWorld([
+      [PICK, pickRows({ members: [...pickRows().members, { interval: "itv_ana", confirmed: false }] })],
+    ]);
+    expect(judge(before, anaToo).join(" ")).toMatch(/not the members with no day/);
+    const monday = pickWorld([
+      [PICK, pickRows({ days: [day("itv_cleo", "monday", true, true), day("itv_cleo", "saturday", true, true)] })],
+    ]);
+    expect(judge(before, monday).join(" ")).toMatch(/holds monday, saturday at first, not wednesday, saturday/);
+    expect(judge(before, pickWorld([[PICK, pickRows({ daysPerMember: 1 })]])).join(" ")).toMatch(
+      /gives 1 days each, not 2/,
+    );
+    expect(judge(before, pickWorld([[PICK, pickRows({ version: 2 })]])).join(" ")).toMatch(/isn't at version 1/);
+    expect(judge(before, pickWorld([[PICK, pickRows({ effectiveFrom: "2026-11-16" })]])).join(" ")).toMatch(
+      /is from 2026-11-16, not 2026-11-11/,
+    );
+    const confirmedAtFirst = pickWorld();
+    pickOf(confirmedAtFirst).members[0] = { interval: "itv_cleo", confirmed: true };
+    expect(judge(before, confirmedAtFirst).join(" ")).toMatch(/starts with a confirmation/);
+    expect(judge(before, withWeek(pickWorld(), "sched_x", TODAY, [...ANA_BEN])).join(" ")).toMatch(/no day was freed/);
+  });
+
+  it("wants a fourth member's join to free the others' second days in a new week, and a pick for the fourth", () => {
+    expect(judge(setActive(three(), "itv_dee", false), fourth())).toEqual([]);
+    const none = fourth();
+    none.versions.pop();
+    expect(judge(three(), none).join(" ")).toMatch(/freed with no new week/);
+    expect(judge(three(), fourth(TODAY, [...THREE])).join(" ")).toMatch(/isn't the days each member keeps/);
+    expect(judge(three(), fourth("2026-11-12")).join(" ")).toMatch(/starts on 2026-11-12, not 2026-11-11/);
+    const friday = fourth();
+    pickOf(friday, "spr_dee").days = [day("itv_dee", "friday", true, true)];
+    expect(judge(three(), friday).join(" ")).toMatch(/holds friday at first, not thursday/);
+    // The latest week starts today: the new one the day after.
+    const onTheWeeksStart = { today: "2026-11-05" };
+    expect(judge(three(), fourth("2026-11-06", undefined, "2026-11-05"), onTheWeeksStart)).toEqual([]);
+    expect(judge(three(), fourth("2026-11-05", undefined, "2026-11-05"), onTheWeeksStart).join(" ")).toMatch(
+      /starts on 2026-11-05, not 2026-11-06/,
     );
   });
 
-  it("refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each", () => {
-    expect(judge(withCleoGone(none()), none()).join(" ")).toMatch(/no change is open/);
-    const without = changeWorld([[CHANGE, changeRows({ members: changeRows().members.slice(0, 2) })]]);
-    expect(judge(withCleoGone(none()), without).join(" ")).toMatch(/not the club's active members/);
-    const swap = (from: Weekday, to: Weekday, more: Partial<ReturnType<typeof day>> = {}) =>
-      changeWorld([
-        [
-          CHANGE,
-          changeRows({
-            days: changeRows().days.map((each) => (each.weekday === from ? { ...each, weekday: to, ...more } : each)),
-          }),
-        ],
+  it("asks nobody anything when a member leaves, or joins with everyone keeping their days", () => {
+    const left = setActive(three(), "itv_cleo", false);
+    expect(judge(three(), left)).toEqual([]);
+    const opened = setActive(withWeek(pickWorld(), "sched_three", "2026-11-05", [...THREE]), "itv_cleo", false);
+    expect(judge(three(), opened).join(" ")).toMatch(/a pick is open though every member has a day/);
+  });
+
+  it("wants a member who joins an open pick added to it, holding a day nobody it includes holds, and nothing else moved (T33)", () => {
+    // Ana, Ben, Cleo and Dee have a day each; Eve picks Friday; Fay joins.
+    const four = () => {
+      const w = setActive(setActive(pickWorld([]), "itv_dee", true), "itv_eve", true);
+      withWeek(w, "sched_four", "2026-11-05", [
+        assignment("monday", "itv_ana", "2026-11-09"),
+        assignment("tuesday", "itv_ben", "2026-11-10"),
+        assignment("wednesday", "itv_cleo", "2026-11-11"),
+        assignment("thursday", "itv_dee", "2026-11-12"),
       ]);
-    expect(judge(withCleoGone(none()), swap("monday", "wednesday")).join(" ")).toMatch(/moved \(FQ125\)/);
-    expect(judge(withCleoGone(none()), swap("monday", "wednesday")).join(" ")).toMatch(/one weekday for two members/);
-    expect(judge(withCleoGone(none()), swap("saturday", "saturday", { held: false })).join(" ")).toMatch(
-      /proposed and held/,
-    );
-    const one = changeWorld([[CHANGE, changeRows({ daysPerMember: 1 })]]);
-    expect(judge(withCleoGone(none()), one).join(" ")).toMatch(/gives 1 days each, not 2/);
-    const second = changeWorld([[CHANGE, changeRows({ version: 2 })]]);
-    expect(judge(withCleoGone(none()), second).join(" ")).toMatch(/isn't at version 1/);
-    const startsConfirmed = changeWorld();
-    change(startsConfirmed).members[0] = { interval: "itv_ana", confirmed: true };
-    expect(judge(withCleoGone(none()), startsConfirmed).join(" ")).toMatch(/starts with a confirmation/);
-  });
-
-  it("wants an open change dropped, with no successor, when a leave brings the club back to its week", () => {
-    const dropped = withCleoGone(changeWorld([[CHANGE, changeRows({ state: "superseded", version: 2 })]]));
-    expect(judge(changeWorld(), dropped)).toEqual([]);
-    expect(judge(changeWorld(), withCleoGone(changeWorld())).join(" ")).toMatch(/a change is open in a club/);
-    const named = withCleoGone(
-      changeWorld([[CHANGE, changeRows({ state: "superseded", version: 2, replacedBy: "spr_x" })]]),
-    );
-    expect(judge(changeWorld(), named).join(" ")).toMatch(/the change that was open is/);
-  });
-
-  it("wants an open change for other members replaced by a new one that names it and keeps its start while that is ahead", () => {
-    // Dee joins: four members, one day each, spec 05's whole week.
-    const four = (start: string): ScheduleWorld => {
-      const w = changeWorld([
-        [CHANGE, changeRows({ state: "superseded", version: 2, replacedBy: "spr_four" })],
-        [
-          "spr_four",
-          changeRows({
-            daysPerMember: 1,
-            effectiveFrom: start,
-            members: [...changeRows().members, { interval: "itv_dee", confirmed: false }],
-            days: [
-              day("itv_ana", "monday", true, true),
-              day("itv_ben", "tuesday", true, true),
-              day("itv_cleo", "wednesday", true, true),
-              day("itv_dee", "thursday", true, true),
-            ],
-          }),
-        ],
-      ]);
-      w.members.set("itv_dee", member("usr_dee", "2026-11-20T00:00:00Z", "Dee"));
+      w.proposals.set(
+        PICK,
+        pickRows({
+          daysPerMember: 1,
+          members: [{ interval: "itv_eve", confirmed: false }],
+          days: [day("itv_eve", "friday", true, true)],
+        }),
+      );
       return w;
     };
-    const twoWeeksOn = { today: "2026-11-25", lastMade: "2026-12-11" };
-    expect(judge(changeWorld(), four("2026-12-14"), twoWeeksOn)).toEqual([]);
-    expect(judge(changeWorld(), four("2026-12-28"), twoWeeksOn).join(" ")).toMatch(
-      /starts on 2026-12-28, not 2026-12-14/,
+    const joined = (fays: Weekday, more: Partial<ScheduleProposalRows> = {}) => {
+      const w = setActive(four(), "itv_fay", true);
+      const rows = pickOf(w);
+      Object.assign(rows, {
+        members: [...rows.members, { interval: "itv_fay", confirmed: false }],
+        days: [...rows.days, day("itv_fay", fays, true, true)],
+        ...more,
+      });
+      return w;
+    };
+    expect(judge(four(), joined("saturday"))).toEqual([]);
+    expect(judge(four(), joined("friday")).join(" ")).toMatch(/the open pick is/);
+    expect(judge(four(), joined("saturday", { version: 2 })).join(" ")).toMatch(/the open pick is/);
+    // Fay leaves again: Eve still picks. Eve confirmed and Fay leaves: it applies.
+    expect(judge(joined("saturday"), setActive(joined("saturday"), "itv_fay", false))).toEqual([]);
+    const eveConfirmed = () => {
+      const w = joined("saturday");
+      pickOf(w).members[0] = { interval: "itv_eve", confirmed: true };
+      w.versions.at(-1)?.assignments.push(assignment("friday", "itv_eve", "2026-11-20"));
+      return w;
+    };
+    const applied = setActive(eveConfirmed(), "itv_fay", false);
+    Object.assign(pickOf(applied), { state: "applied", version: 2 });
+    expect(judge(eveConfirmed(), applied)).toEqual([]);
+    expect(judge(eveConfirmed(), setActive(eveConfirmed(), "itv_fay", false)).join(" ")).toMatch(
+      /the one that was has ended|the pick that was open is/,
     );
-    // Once the replaced change's start is today, a new start.
-    expect(judge(changeWorld(), four("2027-01-18"), { today: "2026-12-14", lastMade: "2026-12-11" })).toEqual([]);
-    // Between three and four members the week is spec 05's, in the order they joined: no other one day each.
-    const swapped = four("2026-12-14");
-    change(swapped, "spr_four").days = [
-      day("itv_ana", "monday", true, true),
-      day("itv_ben", "tuesday", true, true),
-      day("itv_cleo", "thursday", true, true),
-      day("itv_dee", "wednesday", true, true),
-    ];
-    expect(judge(changeWorld(), swapped, twoWeeksOn).join(" ")).toMatch(
-      /itv_cleo is proposed thursday, not wednesday \(FQ125\)/,
-    );
-    // A day made on or after the replaced change's start: a new start, after it.
-    expect(judge(changeWorld(), four("2026-12-28"), { today: "2026-11-25", lastMade: "2026-12-15" })).toEqual([]);
-    // The replaced change must be superseded naming the new one.
-    const unnamed = four("2026-12-14");
-    change(unnamed).replacedBy = null;
-    expect(judge(changeWorld(), unnamed, twoWeeksOn).join(" ")).toMatch(/the change that was open is/);
   });
 
-  it("wants nothing made or moved while the first days are open, where none ever applied, and for the same members", () => {
+  it("wants an open pick replaced when the club's size changes the days each, naming its successor", () => {
+    // Cleo picks two days; Dee joins: four take one day each.
+    const replaced = (named: string | null) => {
+      const w = setActive(
+        pickWorld([[PICK, pickRows({ state: "superseded", version: 2, replacedBy: named })]]),
+        "itv_dee",
+        true,
+      );
+      withWeek(w, "sched_four", TODAY, [
+        assignment("monday", "itv_ana", "2026-11-02"),
+        assignment("tuesday", "itv_ben", "2026-11-03"),
+      ]);
+      w.proposals.set(
+        "spr_next",
+        pickRows({
+          daysPerMember: 1,
+          members: [
+            { interval: "itv_cleo", confirmed: false },
+            { interval: "itv_dee", confirmed: false },
+          ],
+          days: [day("itv_cleo", "wednesday", true, true), day("itv_dee", "thursday", true, true)],
+        }),
+      );
+      return w;
+    };
+    expect(judge(pickWorld(), replaced("spr_next"))).toEqual([]);
+    expect(judge(pickWorld(), replaced(null)).join(" ")).toMatch(/the pick that was open is/);
+  });
+
+  it("wants an open pick ended with no successor when nobody it includes is left, or the club is paused", () => {
+    const dropped = setActive(pickWorld([[PICK, pickRows({ state: "superseded", version: 2 })]]), "itv_cleo", false);
+    expect(judge(pickWorld(), dropped)).toEqual([]);
+    expect(judge(pickWorld(), setActive(pickWorld(), "itv_cleo", false)).join(" ")).toMatch(/has ended/);
+    const paused = setActive(pickWorld([[PICK, pickRows({ state: "superseded", version: 2 })]]), "itv_ana", false);
+    setActive(paused, "itv_ben", false);
+    expect(judge(pickWorld(), paused)).toEqual([]);
+    expect(judge(pickWorld(), setActive(setActive(pickWorld(), "itv_ana", false), "itv_ben", false)).join(" ")).toMatch(
+      /open in a paused club/,
+    );
+  });
+
+  it("wants nothing made or moved while the first days are open, or where none ever applied", () => {
     const open = (w: ScheduleWorld) => {
       const first = w.proposals.get("spr_first");
       if (first !== undefined) Object.assign(first, { state: "open", version: 1 });
       return w;
     };
-    expect(judge(open(withCleoGone(none())), open(none()))).toEqual([]);
-    expect(judge(open(withCleoGone(none())), open(changeWorld())).join(" ")).toMatch(/where none is due/);
-    // A change already open for exactly the active members stays as it is.
-    expect(judge(changeWorld(), changeWorld())).toEqual([]);
-    const again = changeWorld([
-      [CHANGE, changeRows({ state: "superseded", version: 2, replacedBy: "spr_again" })],
-      ["spr_again", changeRows()],
-    ]);
-    expect(judge(changeWorld(), again).join(" ")).toMatch(/same members was replaced or moved/);
-    // A paused club: nothing open.
-    const alone = (w: ScheduleWorld) => {
-      const ben = w.members.get("itv_ben");
-      if (ben !== undefined) ben.active = false;
-      return withCleoGone(w);
-    };
-    expect(judge(none(), alone(none()))).toEqual([]);
-    expect(judge(none(), alone(changeWorld())).join(" ")).toMatch(/a change is open in a club/);
+    const before = setActive(open(pickWorld([])), "itv_cleo", false);
+    expect(judge(before, open(pickWorld([])))).toEqual([]);
+    expect(judge(before, open(pickWorld())).join(" ")).toMatch(/where none is due/);
+    expect(judge(before, withWeek(open(pickWorld([])), "sched_x", TODAY, [])).join(" ")).toMatch(/where none is due/);
   });
 });

@@ -218,14 +218,16 @@ export const CLUB_OPERATIONS: Operation[] = [
     path: "/v1/schedule-proposals/{proposal_id}/choice",
     summary: "Choose the caller's days",
     description:
-      "In the club's first days only, before the caller confirms (FQ57): a contested day may be kept, and a " +
+      "In the club's first days and in a membership change, a new member's days, before the caller " +
+      "confirms (FQ57): a contested day may be kept, and a " +
       "contest is shown, never swapped (spec 05, T6, FQ55). Refused, in this order: NOT_FOUND to a caller " +
       "without an active membership in the proposal's club (T9, T14; spec 07), and to an active member whose " +
       "current membership the proposal doesn't include, one who left and rejoined among them (FQ100); " +
       "MEMBERSHIP_CHANGED when a newer proposal replaced it (`current_id`); VERSION_CONFLICT when its week " +
       "changed or it ended (`current_version`); NOT_ALLOWED once it has ended with no successor (applied, or " +
-      "superseded: `ScheduleProposal`), after the caller confirmed, in a membership change, for more " +
-      "than `days_per_member` days, or for a day another member has confirmed meanwhile, whose owner the app " +
+      "superseded: `ScheduleProposal`), after the caller confirmed, for more than `days_per_member` days, " +
+      "for a day of the week in force in a membership change, or for a day another member has confirmed " +
+      "meanwhile, whose owner the app " +
       "reads from the schedule (FQ78). The answer is the proposal as the caller now sees it, with the same " +
       "`version` (T33).",
     idempotent: true,
@@ -241,16 +243,17 @@ export const CLUB_OPERATIONS: Operation[] = [
     description:
       "In the club's first days, each confirmed day goes ahead from its first date (FQ79), while a contested " +
       "day has no reveal until all but one of its holders have chosen another (FQ55). In a membership change, " +
-      "the confirmation is of the whole proposed week, which stays open, with the same answer to each member " +
-      "whoever has confirmed, until its start, and applies at that boundary once every active member has " +
-      "confirmed, the current days continuing until then (spec 05, FQ56, FQ81). Refused, in this order: " +
+      "a new member's days, each confirmed day is the caller's from its first date, that weekday in the week " +
+      "after the confirmation at least 24 hours after it, in a new week that starts then; the days of " +
+      "everyone already in the week stay as they are, and a day of a member who left on that weekday from " +
+      "then on is cancelled (FQ125, FQ129, FQ130). Refused, in this order: " +
       "NOT_FOUND to a caller without an active membership in the proposal's club (T9, T14; spec 07), and to " +
       "an active member whose current membership the proposal doesn't include, one who left and rejoined " +
-      "among them (FQ100); MEMBERSHIP_CHANGED when a newer proposal replaced it (`current_id`), as when a " +
-      "change's start passed before everyone confirmed (FQ49); VERSION_CONFLICT when its week changed " +
+      "among them (FQ100); MEMBERSHIP_CHANGED when a newer proposal replaced it (`current_id`); " +
+      "VERSION_CONFLICT when its week changed " +
       "or it ended (`current_version`); NOT_ALLOWED once it has ended with no successor, and as the request says. The answer is the proposal as the caller now " +
-      "sees it, with the same `version`, except after the first days' last confirmation, which applies " +
-      "them and answers `applied` with the next `version` (T33).",
+      "sees it, with the same `version`, except after the last confirmation, which applies it and answers " +
+      "`applied` with the next `version` (T33).",
     idempotent: true,
     body: ScheduleConfirmRequest,
     ok: { status: 200, json: ScheduleProposal },

@@ -9,9 +9,9 @@
 //   `current`. A day whose star has no name to show is left out, never sent nameless (FQ75, as Home's
 //   days are: ../authorization/days.ts).
 // - `proposal` is the club's open one as the caller sees it (`answerOf`), only when it includes the
-//   caller's own membership: a member who joined after it gets `current` alone (FQ100).
-//   A membership change includes every active member, and comes with the club's days not yet closed at
-//   `now` (`announced`, FQ61) for a caller with a day in the club's week (./week.ts).
+//   caller's own membership: a member who joined after the first days' first confirmation gets `current`
+//   alone (FQ100), and so does every member with a day in the week while new members pick theirs in a
+//   membership change, since nobody else is asked anything (FQ126).
 //
 // Anyone the authorization module gives nothing of the club gets null, the neutral not-found (T14).
 
@@ -19,6 +19,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import { clubTimeZone } from "../time/civil.ts";
 import type { ServerNow } from "../time/clock.ts";
 import type { Weekday } from "./propose.ts";
+import { includedMember } from "./view.ts";
 import { answerOf, loadWeek, type ProposalAnswer, type SchedulePerson } from "./week.ts";
 
 export interface CurrentWeek {
@@ -47,7 +48,7 @@ export async function readSchedule(
   clubId: string,
   now: ServerNow,
 ): Promise<ScheduleSight | null> {
-  const week = await loadWeek(tx, userId, clubId, "open", now);
+  const week = await loadWeek(tx, userId, clubId, "open");
   if (week === null) return null;
   // Dates in ISO form compare as text.
   const today = now.toZonedDateTimeISO(clubTimeZone(week.club.timezone)).toPlainDate().toString();
@@ -55,7 +56,7 @@ export async function readSchedule(
   const assignments = (inForce?.assignments ?? []).flatMap((assignment) =>
     assignment.person === null ? [] : [{ weekday: assignment.weekday, person: assignment.person }],
   );
-  const included = week.proposal?.facts.members.some((member) => member.id === week.membershipId) === true;
+  const included = week.proposal !== null && includedMember(week.proposal.facts, week.membershipId) !== undefined;
   return {
     club: { ...week.club, membershipId: week.membershipId },
     current:

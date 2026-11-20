@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
-import { changeViewFor, seesAnnounced, viewFor, type ProposalMember, type SlotView, type WeekFacts } from "./view.ts";
+import {
+  pickViewFor,
+  pickWeekFacts,
+  viewFor,
+  type LatestDay,
+  type ProposalMember,
+  type SlotView,
+  type WeekFacts,
+} from "./view.ts";
 
 // Sunday people, in the order they joined, each with the weekday the first days proposed for them
 // (the contract's fixture, packages/contracts/src/fixtures/world.ts; F01-friends-first-days).
@@ -345,97 +353,154 @@ describe("what no view of the first days ever carries (T55, T33; FQ46, FQ48)", (
   });
 });
 
-describe("a membership change's view (FQ56, FQ81; the contract's `change` scene)", () => {
-  // Kitchen table's change after Leila joins: one day each, proposed and held, as settle-change.ts writes it.
-  const KITCHEN: readonly (readonly [string, Weekday])[] = [
-    ["ben", "monday"],
-    ["alex", "tuesday"],
-    ["sam", "wednesday"],
-    ["nina", "thursday"],
-    ["leila", "friday"],
-    ["maya", "saturday"],
+describe("a membership change's view: a new member's pick (FQ125 to FQ127, FQ130; the contract's `new_member` scene)", () => {
+  // Kitchen table's week after Leila joins: five members with a day each, Friday free (world.ts, kitchenTable).
+  const LATEST: readonly LatestDay[] = [
+    { weekday: "monday", star: "ben", starActive: true, firstDate: "2026-09-07" },
+    { weekday: "tuesday", star: "alex", starActive: true, firstDate: "2026-09-08" },
+    { weekday: "wednesday", star: "sam", starActive: true, firstDate: "2026-09-09" },
+    { weekday: "thursday", star: "nina", starActive: true, firstDate: "2026-09-10" },
+    { weekday: "saturday", star: "maya", starActive: true, firstDate: "2026-09-12" },
   ];
-  const change = (confirmed: readonly string[] = [], left: readonly string[] = []): WeekFacts => ({
-    daysPerMember: 1,
-    members: KITCHEN.map(([id, day]) => ({
-      id,
-      active: !left.includes(id),
-      confirmed: confirmed.includes(id),
-      suggested: [day],
-      held: [day],
-    })),
-    firstDates: {},
+  const leila = (over: Partial<ProposalMember> = {}): ProposalMember => ({
+    id: "leila",
+    active: true,
+    confirmed: false,
+    suggested: ["friday"],
+    held: ["friday"],
+    ...over,
   });
 
-  it("gives the viewer their own day, and names for every other day the member it is proposed for", () => {
-    expect(changeViewFor("ben", change())).toEqual({
+  it("makes every day of the week in force its member's, and leaves the free day to those the pick includes", () => {
+    const facts = pickWeekFacts(1, [leila()], LATEST);
+    expect(facts.members.map((member) => [member.id, member.confirmed, member.held])).toEqual([
+      ["leila", false, ["friday"]],
+      ["ben", true, ["monday"]],
+      ["alex", true, ["tuesday"]],
+      ["sam", true, ["wednesday"]],
+      ["nina", true, ["thursday"]],
+      ["maya", true, ["saturday"]],
+    ]);
+    expect(pickViewFor("leila", facts)).toEqual({
       slots: [
-        { weekday: "monday", state: "yours", suggested: true },
-        { weekday: "tuesday", state: "available", heldBy: "alex", suggested: false },
-        { weekday: "wednesday", state: "available", heldBy: "sam", suggested: false },
-        { weekday: "thursday", state: "available", heldBy: "nina", suggested: false },
-        { weekday: "friday", state: "available", heldBy: "leila", suggested: false },
-        { weekday: "saturday", state: "available", heldBy: "maya", suggested: false },
+        { weekday: "monday", state: "taken", owner: "ben", suggested: false },
+        { weekday: "tuesday", state: "taken", owner: "alex", suggested: false },
+        { weekday: "wednesday", state: "taken", owner: "sam", suggested: false },
+        { weekday: "thursday", state: "taken", owner: "nina", suggested: false },
+        { weekday: "friday", state: "yours", suggested: true },
+        { weekday: "saturday", state: "taken", owner: "maya", suggested: false },
       ],
-      myDays: ["monday"],
+      myDays: ["friday"],
       myState: "choosing",
     });
   });
 
-  it("is the same for a viewer whoever else has confirmed, and changes only `myState` at their own (FQ81)", () => {
-    for (const [viewer] of KITCHEN) {
-      const before = changeViewFor(viewer, change());
-      const others = KITCHEN.map(([id]) => id).filter((id) => id !== viewer);
-      expect(changeViewFor(viewer, change(others))).toEqual(before);
-      expect(changeViewFor(viewer, change([viewer]))).toEqual({ ...before, myState: "confirmed" });
-    }
+  it("dates only the viewer's own confirmed day, from the latest week (FQ130)", () => {
+    const confirmed = [
+      ...LATEST,
+      { weekday: "friday" as const, star: "leila", starActive: true, firstDate: "2026-11-13" },
+    ];
+    const facts = pickWeekFacts(1, [leila({ confirmed: true })], confirmed);
+    const view = pickViewFor("leila", facts);
+    expect(view.myState).toBe("confirmed");
+    expect(view.slots.find((slot) => slot.weekday === "friday")).toEqual({
+      weekday: "friday",
+      state: "yours",
+      firstDate: "2026-11-13",
+      suggested: true,
+    });
+    expect(view.slots.filter((slot) => slot.firstDate !== undefined)).toHaveLength(1);
   });
 
-  it("gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date", () => {
-    for (const [viewer] of KITCHEN) {
-      for (const slot of changeViewFor(viewer, change(["ben", "maya"])).slots) {
-        expect(["yours", "available"]).toContain(slot.state);
-        expect(Object.keys(slot).sort()).toEqual(
-          slot.state === "yours" ? ["state", "suggested", "weekday"] : ["heldBy", "state", "suggested", "weekday"],
-        );
-        expect(slot.heldBy).not.toBe(viewer);
-      }
-    }
-  });
-
-  it("leaves a free day with no name, in a week of fewer than six days", () => {
-    const pair: WeekFacts = {
-      daysPerMember: 2,
-      members: [
-        { id: "ben", active: true, confirmed: false, suggested: ["monday", "thursday"], held: ["monday", "thursday"] },
-        { id: "debby", active: true, confirmed: false, suggested: ["tuesday", "friday"], held: ["tuesday", "friday"] },
-      ],
-      firstDates: {},
+  it("shows two new members' holds as the first days do: held_by while choosing, a contest by name (FQ46, FQ48)", () => {
+    const pair = [
+      { weekday: "monday" as const, star: "ben", starActive: true, firstDate: "2026-09-07" },
+      { weekday: "tuesday" as const, star: "debby", starActive: true, firstDate: "2026-09-08" },
+      { weekday: "wednesday" as const, star: "maya", starActive: true, firstDate: "2026-09-09" },
+    ];
+    const sam: ProposalMember = {
+      id: "sam",
+      active: true,
+      confirmed: false,
+      suggested: ["thursday"],
+      held: ["thursday"],
     };
-    const view = changeViewFor("debby", pair);
-    expect(view.myDays).toEqual(["tuesday", "friday"]);
-    expect(view.slots.filter((slot) => slot.state === "available" && slot.heldBy === undefined)).toEqual([
-      { weekday: "wednesday", state: "available", suggested: false },
-      { weekday: "saturday", state: "available", suggested: false },
-    ]);
+    const nina: ProposalMember = {
+      id: "nina",
+      active: true,
+      confirmed: false,
+      suggested: ["friday"],
+      held: ["friday"],
+    };
+    const apart = pickWeekFacts(1, [sam, nina], pair);
+    expect(pickViewFor("sam", apart).slots.find((slot) => slot.weekday === "friday")).toEqual({
+      weekday: "friday",
+      state: "available",
+      heldBy: "nina",
+      suggested: false,
+    });
+    const together = pickWeekFacts(1, [sam, { ...nina, held: ["thursday"] }], pair);
+    expect(pickViewFor("sam", together).slots.find((slot) => slot.weekday === "thursday")).toEqual({
+      weekday: "thursday",
+      state: "clash",
+      holders: ["sam", "nina"],
+      suggested: true,
+    });
+    // Once Nina confirms Thursday, it is in the week: taken by Nina, undated, for Sam.
+    const ninas = [...pair, { weekday: "thursday" as const, star: "nina", starActive: true, firstDate: "2026-11-19" }];
+    const taken = pickWeekFacts(
+      1,
+      [
+        { ...sam, held: ["friday"] },
+        { ...nina, held: ["thursday"], confirmed: true },
+      ],
+      ninas,
+    );
+    expect(pickViewFor("sam", taken).slots.find((slot) => slot.weekday === "thursday")).toEqual({
+      weekday: "thursday",
+      state: "taken",
+      owner: "nina",
+      suggested: true,
+    });
   });
 
-  it("refuses a viewer the change doesn't include, or who has left (T14)", () => {
-    expect(() => changeViewFor("debby", change())).toThrow();
-    expect(() => changeViewFor("ben", change([], ["ben"]))).toThrow();
+  it("frees the days of a member who left, of the week or of the pick (FQ125, FQ129)", () => {
+    const withLeaver = LATEST.map((day) => (day.star === "maya" ? { ...day, starActive: false } : day));
+    const sam: ProposalMember = {
+      id: "sam",
+      active: false,
+      confirmed: true,
+      suggested: ["thursday"],
+      held: ["thursday"],
+    };
+    const facts = pickWeekFacts(
+      1,
+      [leila(), sam],
+      [
+        ...withLeaver.filter((day) => day.star !== "nina"),
+        { weekday: "thursday", star: "sam", starActive: false, firstDate: "2026-11-19" },
+      ],
+    );
+    const view = pickViewFor("leila", facts);
+    expect(view.slots.find((slot) => slot.weekday === "saturday")).toEqual({
+      weekday: "saturday",
+      state: "available",
+      suggested: false,
+    });
+    expect(view.slots.find((slot) => slot.weekday === "thursday")).toEqual({
+      weekday: "thursday",
+      state: "available",
+      suggested: false,
+    });
+    expect(facts.firstDates).toEqual({
+      monday: "2026-09-07",
+      tuesday: "2026-09-08",
+      wednesday: "2026-09-09",
+    });
   });
-});
 
-describe("who gets a membership change's announced days (the contract's `announced`; FQ100)", () => {
-  it("gives them to a member with a day in the club's latest week, however many days", () => {
-    expect(seesAnnounced("ben", ["ben", "maya", "ben", "maya"])).toBe(true);
-    expect(seesAnnounced("maya", ["ben", "maya"])).toBe(true);
-  });
-
-  it("gives none to a member with no day in it: a new member, each of several, a late joiner", () => {
-    expect(seesAnnounced("alex", ["ben", "maya", "ben", "maya"])).toBe(false);
-    expect(seesAnnounced("sam", ["ben", "maya"])).toBe(false);
-    // A club whose latest week has no day at all.
-    expect(seesAnnounced("ben", [])).toBe(false);
+  it("refuses a viewer the pick doesn't include: a member already in the week, or one who left (T14)", () => {
+    expect(() => pickViewFor("ben", pickWeekFacts(1, [leila()], LATEST))).toThrow();
+    expect(() => pickViewFor("leila", pickWeekFacts(1, [leila({ active: false })], LATEST))).toThrow();
   });
 });

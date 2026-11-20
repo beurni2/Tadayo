@@ -26,13 +26,14 @@ export async function foundedBy(tx: WorldTx, clock: FakeClock, name: string): Pr
   return { club: made.club, user: { [name]: made.user }, member: { [name]: made.interval } };
 }
 
-/** `proposer` proposes `name`, every other member approves, and a new account of that name accepts. */
+/** `proposer` proposes `name`, every other member approves, and `account` (else a new account of that name) accepts. */
 export async function joinAs(
   tx: WorldTx,
   clock: FakeClock,
   c: MadeClub,
   name: string,
   proposer: string,
+  account?: string,
 ): Promise<void> {
   const by = c.user[proposer] ?? "";
   const open = await propose(tx, clock, by, c.club, [name]);
@@ -43,10 +44,10 @@ export async function joinAs(
     if (other !== by) await approve(tx, clock, other, open.id, open.version);
   }
   const made = await linkFor(tx, clock, by, c.club, candidate);
-  const account = await newUser(plain(tx), name);
-  const answer = await acceptWith(tx, clock, account, made.token, open.id, open.version);
+  const accepting = account ?? (await newUser(plain(tx), name));
+  const answer = await acceptWith(tx, clock, accepting, made.token, open.id, open.version);
   if (answer.state !== "joined" || answer.club === undefined) throw new Error(`joinAs: ${name} is ${answer.state}`);
-  c.user[name] = account;
+  c.user[name] = accepting;
   c.member[name] = answer.club.my_membership_id;
 }
 

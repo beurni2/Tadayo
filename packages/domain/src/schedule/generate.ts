@@ -1,15 +1,13 @@
 /// <reference lib="esnext.temporal" />
 // The days a club is owed (spec 05: "Generate upcoming occurrences several weeks ahead"; spec 06; T2,
-// T6; FQ16, FQ61, FQ63, FQ79, FQ115). A pure rule: it reads no clock and no database. The command that
+// T6; FQ16, FQ61, FQ63, FQ79, FQ115, FQ129, FQ130). A pure rule: it reads no clock and no database. The command that
 // makes the days (./make-days.ts) gives it the club's facts and the clock's sample, and the database's
 // own guard judges every row again (db/migrations/0005_schedules_and_days.sql, occurrences_insert_guard).
 //
 // - The window is the club's own today at `now` through the Sunday that ends the fourth week after
 //   today's (WEEKS_AHEAD; weeks run Monday to Sunday), both dates in the club's zone. Seen from Friday
 //   6 November 2026 that is every day to Saturday 5 December, where the contract's own example ends
-//   (packages/contracts/src/fixtures/examples-clubs.ts, `ktAnnounced`). The window's end moves once a
-//   week, at the club's Monday midnight, so the first Monday no day is made for yet, the earliest a
-//   changed week can start (FQ61), is the same all week.
+//   The window's end moves once a week, at the club's Monday midnight.
 // - A date in it is owed when it isn't a Sunday (T6), the version in force on it (the latest that started
 //   on or before it: FQ61) gives its weekday to a star, the date is on or after that day's first date
 //   (FQ79), and the star is still a member (FQ63).
@@ -21,19 +19,15 @@
 //   suspended, leaves a day to be made on its own morning, with whatever time is left (FQ116).
 // - A club that hasn't started, is suspended (spec 22) or has fewer than two members (FQ16) is owed
 //   nothing. The days it already has stay as they are: this rule only ever adds.
-// - A date that already has a day is not owed again, whoever's day it is.
-// - While a membership change is open, no date on or after its start is owed (FQ127): the change starts
-//   from the first week after every day made (FQ61), and stays that week only if no day is made in it.
-//   The days before the start are made as ever, so the days announced are those before it.
+// - A date that already has a day is not owed again, whoever's day it is, unless that day was cancelled:
+//   then it is owed to the star the version in force now gives it, but never again to the star whose day
+//   was cancelled. A new member's first date may be a date whose day was a member's who left, cancelled
+//   when the new member confirmed (FQ129, FQ130): the new member's day is made there.
 
 import { clubTimeZone, dayInstants } from "../time/civil.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 
-/**
- * How far ahead days are made: through the end of this many whole weeks after the club's current week
- * (FQ115), the number the contract's fixtures took (packages/contracts/src/fixtures/world.ts,
- * `changeFrom`).
- */
+/** How far ahead days are made: through the end of this many whole weeks after the club's current week (FQ115). */
 export const WEEKS_AHEAD = 4;
 
 /** The last local date of the window seen from `today`: the Sunday ending the WEEKS_AHEAD-th week after today's. */
@@ -67,10 +61,10 @@ export interface GenerationFacts {
   readonly activeMembers: number;
   /** Every version of the club's week, in any order. */
   readonly versions: readonly WeekVersion[];
-  /** The local dates that already have a day. */
+  /** The local dates that already have a day not cancelled. */
   readonly made: ReadonlySet<string>;
-  /** The local date an open membership change starts on, or null with none open (FQ127). */
-  readonly changeFrom: string | null;
+  /** For each local date with a cancelled day, the stars whose day there was cancelled (FQ129). */
+  readonly cancelled: ReadonlyMap<string, readonly string[]>;
 }
 
 export interface OwedDay {
@@ -86,9 +80,10 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
   const zone = clubTimeZone(facts.zone);
   // A fact that is missing makes no day: `!(n >= 2)` is true of a number that isn't one.
   if (!facts.activated || facts.suspended || !(facts.activeMembers >= 2)) return [];
-  // A change waiting to start: only `null` says there is none.
-  const changeFrom = facts.changeFrom;
-  if (changeFrom !== null && typeof changeFrom !== "string") return [];
+  // A fact that is missing makes no day.
+  if (!(facts.cancelled instanceof Map)) return [];
+  // The check above leaves `Map<any, any>`; the stars are the type's.
+  const cancelled = facts.cancelled as ReadonlyMap<string, readonly string[]>;
   // ISO dates compare as text.
   const versions = [...facts.versions].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1));
   const today = now.toZonedDateTimeISO(zone).toPlainDate();
@@ -98,12 +93,12 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
     const weekday = WEEKDAYS[date.dayOfWeek - 1];
     if (weekday === undefined) continue; // Sunday (T6).
     const localDate = date.toString();
-    if (changeFrom !== null && !(localDate < changeFrom)) break;
     if (facts.made.has(localDate)) continue;
     const inForce = versions.filter((version) => version.effectiveFrom <= localDate).at(-1);
     const day = inForce?.assignments.find((assignment) => assignment.weekday === weekday);
     if (inForce === undefined || day === undefined) continue;
     if (!day.starActive || !(day.firstDate <= localDate)) continue;
+    if (cancelled.get(localDate)?.includes(day.starInterval) === true) continue;
     const { revealAt, closeAt } = dayInstants(date, zone);
     if (!(Temporal.Instant.compare(revealAt, now) > 0)) continue;
     owed.push({ localDate, versionId: inForce.id, starInterval: day.starInterval, revealAt, closeAt });
