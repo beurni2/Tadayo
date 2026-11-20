@@ -399,9 +399,9 @@ final class SignInUITests: XCTestCase {
     /// the frame stayed at 399 to 482 for the whole 2 seconds, and `ios` run 44411795444 read
     /// once at each of its six settles. So a frame still under the button after 2 seconds is
     /// stuck, not late. What stuck it was the app's scroll, made inside the update that pinned
-    /// Verify code: a probe found the tree stale in 22 of 177 launches on iOS 26.5, from the
+    /// Verify code: a probe found the tree stale in 25 of 205 launches on iOS 26.5, from the
     /// first read, until a drag of the column; `CodeScreen` now makes that scroll again a turn
-    /// of the run loop later, which left none of 28 stale there and none of 14 on iOS 27.2
+    /// of the run loop later, which left none of 109 stale there and none of 59 on iOS 27.2
     /// (`docs/plans/ios-b0-pin-scroll-turn.md`). This check is unchanged and is what holds
     /// the tree to the screen. A field still under the button after 2 seconds fails the
     /// test, as it
