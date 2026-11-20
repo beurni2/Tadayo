@@ -39,7 +39,8 @@ The steps:
                assumed from an exit code, and only an imported image simctl says is Ready counts.
                Any other missing runtime fails the step, naming it. There is no other device: on
                each runtime it reuses or creates that device, and checks that simctl lists it on
-               that runtime. It boots only the first runtime's device, and writes each runtime's
+               that runtime. It boots no device, so none runs beside the build (the test step
+               boots each just before its pass), and writes each runtime's
                identifier, build, device and UDID to run.json and logs/simulators.txt, with the
                snapshot runtime (and, in simulators.txt, where it comes from). After a failed
                update of a downloaded runtime's shared cache, it copies what the builder left,
@@ -54,8 +55,8 @@ The steps:
   test         `xcodebuild test-without-building` of the scheme's tests, when it has any, once
                on each of toolchain.IOS_RUNTIMES in order: each pass with its own destination,
                result bundle (Tests-<v>.xcresult) and logs, and every pass run even when one
-               before it failed. Before each pass after the first, it shuts the device booted
-               last down and boots that pass's; the pass on a runtime toolchain.IOS_DOWNLOADS
+               before it failed. Before each pass it boots that pass's device, shutting the one
+               booted last down first; the pass on a runtime toolchain.IOS_DOWNLOADS
                lists writes where that runtime is (its bundle and its build's volumes) before
                and after it to its log, and says so if that changed. Every pass has
                swift-snapshot-testing's record mode `never` (a snapshot with no committed
@@ -251,10 +252,10 @@ ASSET_IMAGES = "/System/Library/AssetsV2/"
 SIMULATOR_PLATFORM = "com.apple.platform.iphonesimulator"
 RUNNER_IMAGES_ISSUE = "actions/runner-images#14946"
 # The runner's samples (Steps.sampling), in logs/runner.txt: at the start and the end of the
-# simulator step, the build and each test pass, after each boot, and every SAMPLE_EVERY seconds
-# between. Each is the second of two `top` samples a second apart, since the first has no CPU
-# use to show: the load averages, CPU and memory use, the disks' reads and writes so far, and
-# the eight busiest processes. The simulator step's first sample also has the runner's hardware
+# simulator step, the build and each test pass, after each pass's boot, and every SAMPLE_EVERY
+# seconds between. Each is the second of two `top` samples a second apart, since the first has
+# no CPU use to show: the load averages, CPU and memory use, the disks' reads and writes so far,
+# and the eight busiest processes. The simulator step's first sample also has the runner's hardware
 # (RUNNER_HOST). Only logged, never what decides a step: since about 13:25 UTC on 2026-11-20
 # every step has run slower on both runner images, the build 2 to 4 times and iOS 26.5's pass
 # more (docs/LIMITATIONS.md, 2026-11-20), and the logs didn't say what the runner was doing.
@@ -1146,12 +1147,12 @@ class Steps:
                            f"runtime-{version}": identifier,
                            f"runtime-build-{version}": build or None,
                            f"device-{version}": device_type["name"], f"udid-{version}": udid})
-        # Only the first runtime's device is booted: the build's destination and the first pass.
-        # The test step boots each other one just before its pass.
-        first = values[f"udid-{pinned[0]}"]
-        if self.boot(first, pinned[0], "simulators.txt", "simulator") != 0:
-            print(f"ios: simulator: {first} didn't boot (logs/simulators.txt)")
-            return 1
+        # No device is booted here: the test step boots each pass's just before the pass, so no
+        # simulator runs beside the build. In `ios` run 44794160395 the booted iOS 27.2
+        # simulator's own services (two diagnosticd, apsd, BackgroundShortcutRunner, widgets)
+        # were among the busiest processes all through a 20-minute build, on a runner whose
+        # three CPUs were never idle (docs/LIMITATIONS.md, 2026-11-20). xcodebuild builds for a
+        # device that is shut down.
         self.update_run_record(**values)
         self.write_log("simulators.txt", f"The snapshot tests run on iOS {snapshots} "
                                          f"({SNAPSHOT_SOURCE}).")
@@ -1503,8 +1504,8 @@ class Steps:
         print(f"ios: test: the snapshot tests run on iOS {snapshots} ({SNAPSHOT_SOURCE})")
         artifacts = self.out_path("artifacts")
         os.makedirs(artifacts, exist_ok=True)
-        # The simulator step booted the first runtime's device; each later pass boots its own.
-        results, failure, booted = {}, 0, udids[pinned[0]]
+        # Each pass boots its own device: the simulator step boots none.
+        results, failure, booted = {}, 0, None
 
         def record(version, result):
             # Each pass is recorded as it ends, so a step stopped by its timeout during a later
@@ -1559,13 +1560,14 @@ class Steps:
 
     def test_pass(self, version, udid, booted, skipped, snapshot_pass, project, artifacts):
         """One pass of the tests on iOS `version`: boots its device first when it isn't the one
-        booted, shutting that one down (one simulator at a time on the runner; a failed shutdown
-        is logged, not fatal). Returns xcodebuild's exit code, or None when the device didn't
-        boot."""
+        booted, shutting that one down when there is one (one simulator at a time on the runner;
+        a failed shutdown is logged, not fatal). Returns xcodebuild's exit code, or None when the
+        device didn't boot."""
         log = self.log(f"test-{version}.log")
         if udid != booted:
-            self.shell.run(["xcrun", "simctl", "shutdown", booted], env=self.xcode_env(),
-                           log=log)
+            if booted is not None:
+                self.shell.run(["xcrun", "simctl", "shutdown", booted], env=self.xcode_env(),
+                               log=log)
             if self.boot(udid, version, f"test-{version}.log", "test") != 0:
                 return None
         bundle = self.out_path(f"Tests-{version}.xcresult")

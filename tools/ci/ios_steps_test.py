@@ -904,20 +904,18 @@ class SimulatorTest(StepsTest):
         self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [])
         self.assertEqual(self.read_record()["runtime-26.5"], IOS_26_5["identifier"])
 
-    def test_boots_only_the_first_runtime_s_device(self):
-        shell = self.shell(after_download=WITH_26_5)
-        self.assertEqual(self.step("simulator", shell)[0], 0)
-        boots = [c for c in shell.commands if "bootstatus" in c or c[:3] == ["xcrun", "simctl", "boot"]]
-        self.assertEqual(boots, [["xcrun", "simctl", "bootstatus", UDID, "-b"]])
-        # After both devices are made.
-        last_create = max(i for i, c in enumerate(shell.commands) if c[:3] == ["xcrun", "simctl", "create"])
-        self.assertGreater(shell.commands.index(boots[0]), last_create)
-
-    def test_a_device_that_doesn_t_boot_fails(self):
-        code, out = self.step("simulator", self.shell(after_download=WITH_26_5, boot_code=1))
-        self.assertEqual(code, 1)
-        self.assertIn(f"{UDID} didn't boot", out)
-        self.assertFalse(os.path.isfile(os.path.join(self.repo.out, "run.json")))
+    def test_boots_no_device_so_none_runs_beside_the_build(self):
+        # Since 2026-11-20 the test step boots each pass's device (ios run 44794160395: the booted
+        # iOS 27.2 simulator's services were among the busiest processes of the build). A device
+        # that wouldn't boot fails its pass there (BuildAndTestSteps).
+        for boot_code in (0, 1):
+            with self.subTest(boot_code=boot_code):
+                shell = self.shell(after_download=WITH_26_5, boot_code=boot_code)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 0, out)
+                self.assertEqual([c for c in shell.commands if "bootstatus" in c or c[:3] == ["xcrun", "simctl", "boot"]], [])
+                self.assertNotIn("boot", out)
+                self.assertEqual(self.read_record()["udid-27.2"], UDID)
 
     def test_takes_the_27_2_runtime_that_supports_the_iphone_17(self):
         # The twin is listed first and has the later build; it holds iPhone Duo alone.
@@ -1112,10 +1110,10 @@ class SimulatorTest(StepsTest):
         os.makedirs(folder)
         return cache, folder
 
-    def test_the_step_is_sampled_with_the_runner_s_hardware_first_and_its_boot_timed(self):
+    def test_the_step_is_sampled_with_the_runner_s_hardware_first(self):
         shell = self.shell(after_download=WITH_26_5)
         shell.answers[:0] = [(starts("top"), (0, TOP, "")), (starts("sysctl"), (0, HOST, ""))]
-        code, out = self.step("simulator", shell, sample_every=3600, clock=Clock(0, 100, 141, 200))
+        code, out = self.step("simulator", shell, sample_every=3600, clock=Clock(0, 200))
         self.assertEqual(code, 0, out)
         # The hardware once, first, then a sample; every command with the pinned Xcode.
         self.assertEqual(shell.commands[:2], [ios_steps.RUNNER_HOST, ios_steps.RUNNER_SAMPLE])
@@ -1123,11 +1121,8 @@ class SimulatorTest(StepsTest):
         self.assert_pinned(shell)
         text = self.runner_log()
         self.assertEqual(SAMPLE_LABEL.findall(text), [
-            "the simulator step: start", "iOS 27.2 booted, after 41 s",
-            "the simulator step: end, after 3 min 20 s"])
+            "the simulator step: start", "the simulator step: end, after 3 min 20 s"])
         self.assertIn(", the simulator step: start\n" + HOST + "Processes: 512 total, 4 running", text)
-        self.assertIn(f"iOS 27.2's simulator {UDID} booted in 41 s\n", self.simulators_log())
-        self.assertIn(f"ios: simulator: iOS 27.2's simulator {UDID} booted in 41 s (logs/simulators.txt)", out)
         self.assertIn("ios: simulator: the simulator step took 3 min 20 s; the runner's load averages "
                       "then: 4.10 3.20 2.50 (logs/runner.txt)", out)
         # A bad ios-version still fails before any command.
@@ -1603,7 +1598,7 @@ class BuildAndTestSteps(StepsTest):
             self.step("test", FakeShell(codes=[(on(UDID_26), stop)]))
         self.assertEqual(self.results(), {"tests-27.2": "none"})
 
-    def test_between_passes_the_device_is_shut_down_and_the_next_booted(self):
+    def test_each_pass_boots_its_device_and_shuts_the_last_one_down_first(self):
         shell = FakeShell()
         self.assertEqual(self.step("test", shell)[0], 0)
         seen = [(c[:2] if c[0] == "xcodebuild" else c, log) for c, log in zip(shell.commands, shell.logs, strict=True)
@@ -1613,6 +1608,7 @@ class BuildAndTestSteps(StepsTest):
         # image's own, doesn't.
         images = (["xcrun", "simctl", "list", "runtimes", "--json"], None)
         self.assertEqual(seen, [
+            (["xcrun", "simctl", "bootstatus", UDID, "-b"], self.log("test-27.2.log")),
             (["xcodebuild", "test-without-building"], self.log("test-27.2.log")),
             (["xcrun", "simctl", "shutdown", UDID], self.log("test-26.5.log")),
             (["xcrun", "simctl", "bootstatus", UDID_26, "-b"], self.log("test-26.5.log")),
@@ -1658,7 +1654,9 @@ class BuildAndTestSteps(StepsTest):
                 if after is not None:
                     self.assertIn(f": {before} became {after} (logs/test-26.5.log)", out)
                 # iOS 27.2, the image's own, has no such lines.
-                self.assertFalse(os.path.isfile(self.log("test-27.2.log")))
+                with open(self.log("test-27.2.log")) as f:
+                    self.assertNotIn("the pass:", f.read())
+                os.remove(self.log("test-27.2.log"))
         # Unreadable both times: said in the log, nothing else.
         code, out = self.step("test", FakeShell())
         self.assertEqual(code, 0, out)
@@ -1723,34 +1721,38 @@ class BuildAndTestSteps(StepsTest):
 
     def test_each_pass_is_sampled_and_its_device_s_boot_timed(self):
         shell = self.sample_shell()
-        code, out = self.step("test", shell, sample_every=3600, clock=Clock(0, 600, 600, 600, 641, 1500))
+        code, out = self.step("test", shell, sample_every=3600, clock=Clock(0, 0, 106, 600, 600, 600, 641, 1500))
         self.assertEqual(code, 0, out)
         self.assertEqual(SAMPLE_LABEL.findall(self.runner_log()), [
-            "the pass on iOS 27.2: start", "the pass on iOS 27.2: end, after 10 min 0 s",
+            "the pass on iOS 27.2: start", "iOS 27.2 booted, after 1 min 46 s",
+            "the pass on iOS 27.2: end, after 10 min 0 s",
             "the pass on iOS 26.5: start", "iOS 26.5 booted, after 41 s",
             "the pass on iOS 26.5: end, after 15 min 0 s"])
+        self.assertIn(f"ios: test: iOS 27.2's simulator {UDID} booted in 1 min 46 s (logs/test-27.2.log)", out)
         self.assertIn(f"ios: test: iOS 26.5's simulator {UDID_26} booted in 41 s (logs/test-26.5.log)", out)
         self.assertIn("ios: test: the pass on iOS 27.2 took 10 min 0 s; the runner's load averages "
                       "then: 4.10 3.20 2.50 (logs/runner.txt)", out)
         self.assertIn("ios: test: the pass on iOS 26.5 took 15 min 0 s; ", out)
         with open(self.log("test-26.5.log")) as f:
             self.assertIn(f"iOS 26.5's simulator {UDID_26} booted in 41 s\n", f.read())
-        # Each pass's tests run between its samples, and its device boots after the first.
+        # Each pass's device boots after its first sample, and its tests run between the sample
+        # after the boot and its last.
         tops = [i for i, c in enumerate(shell.commands) if c[0] == "top"]
         runs = [i for i, c in enumerate(shell.commands) if c[:2] == ["xcodebuild", "test-without-building"]]
-        boot = shell.commands.index(["xcrun", "simctl", "bootstatus", UDID_26, "-b"])
-        self.assertEqual(len(tops), 5)
-        self.assertTrue(tops[0] < runs[0] < tops[1] < tops[2] < boot < tops[3] < runs[1] < tops[4], shell.commands)
+        boots = [shell.commands.index(["xcrun", "simctl", "bootstatus", u, "-b"]) for u in (UDID, UDID_26)]
+        self.assertEqual(len(tops), 6)
+        self.assertTrue(tops[0] < boots[0] < tops[1] < runs[0] < tops[2] < tops[3] < boots[1] < tops[4] < runs[1] < tops[5],
+                        shell.commands)
         self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "passed"})
 
     def test_a_device_that_doesn_t_boot_says_how_long_it_was_given(self):
-        shell = self.sample_shell(codes=[(starts("xcrun", "simctl", "bootstatus"), 1)])
-        code, out = self.step("test", shell, sample_every=3600, clock=Clock(0, 600, 600, 600, 900, 900))
+        shell = self.sample_shell(codes=[(lambda cmd: cmd[:3] == ["xcrun", "simctl", "bootstatus"] and cmd[3] == UDID_26, 1)])
+        code, out = self.step("test", shell, sample_every=3600, clock=Clock(0, 0, 30, 600, 600, 600, 900, 900))
         self.assertEqual(code, 1)
         self.assertIn(f"the iOS 26.5 simulator {UDID_26} didn't boot", out)
         with open(self.log("test-26.5.log")) as f:
             self.assertIn(f"iOS 26.5's simulator {UDID_26} didn't boot, after 5 min 0 s (exit 1)\n", f.read())
-        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[2:], [
+        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[3:], [
             "the pass on iOS 26.5: start", "the pass on iOS 26.5: end, after 5 min 0 s"])
         self.assertEqual(self.results(), {"tests": "failed", "tests-27.2": "passed", "tests-26.5": "failed"})
 
@@ -1773,12 +1775,22 @@ class BuildAndTestSteps(StepsTest):
         shell = FakeShell(codes=[(starts("xcrun", "simctl", "shutdown"), 1)])
         self.assertEqual(self.step("test", shell)[0], 0)
         self.assertEqual(len(self.passes(shell)), 2)
-        shell = FakeShell(codes=[(starts("xcrun", "simctl", "bootstatus"), 1)])
+        # A device that doesn't boot fails its pass, the first one's too, and the next pass
+        # still shuts it down and boots its own.
+        shell = FakeShell(codes=[(lambda cmd: cmd[:3] == ["xcrun", "simctl", "bootstatus"] and cmd[3] == UDID_26, 1)])
         code, out = self.step("test", shell)
         self.assertEqual(code, 1)
         self.assertIn(f"the iOS 26.5 simulator {UDID_26} didn't boot", out)
         self.assertEqual(len(self.passes(shell)), 1)
         self.assertEqual(self.results(), {"tests": "failed", "tests-27.2": "passed", "tests-26.5": "failed"})
+        shell = FakeShell(codes=[(starts("xcrun", "simctl", "bootstatus"), 1)])
+        code, out = self.step("test", shell)
+        self.assertEqual(code, 1)
+        self.assertIn(f"the iOS 27.2 simulator {UDID} didn't boot", out)
+        self.assertIn(f"the iOS 26.5 simulator {UDID_26} didn't boot", out)
+        self.assertEqual(len(self.passes(shell)), 0)
+        self.assertIn(["xcrun", "simctl", "shutdown", UDID], shell.commands)
+        self.assertEqual(self.results(), {"tests": "failed", "tests-27.2": "failed", "tests-26.5": "failed"})
 
     def test_a_pass_with_no_target_left_is_none_and_boots_nothing(self):
         # A scheme of snapshot tests alone: the other runtime's pass has nothing to run. Were
@@ -1789,13 +1801,15 @@ class BuildAndTestSteps(StepsTest):
             self.assertEqual(self.step("test", shell)[0], 0)
         self.assertEqual([c[c.index("-destination") + 1] for c, _, _ in self.passes(shell)],
                          [f"platform=iOS Simulator,id={UDID_26}"])
-        # 27.2's device, booted by the simulator step, is shut down for 26.5's.
-        self.assertIn(["xcrun", "simctl", "shutdown", UDID], shell.commands)
+        # 27.2's device is never booted, so only 26.5's boots, with nothing to shut down.
+        self.assertEqual([c for c in shell.commands if c[:2] == ["xcrun", "simctl"] and "list" not in c],
+                         [["xcrun", "simctl", "bootstatus", UDID_26, "-b"]])
         self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "none", "tests-26.5": "passed"})
         shell = FakeShell()
         self.assertEqual(self.step("test", shell)[0], 0)
         self.assertEqual(len(self.passes(shell)), 1)
-        self.assertFalse([c for c in shell.commands if c[:2] == ["xcrun", "simctl"]])
+        self.assertEqual([c for c in shell.commands if c[:2] == ["xcrun", "simctl"]],
+                         [["xcrun", "simctl", "bootstatus", UDID, "-b"]])
         self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "none"})
 
     def test_a_stale_bundle_is_removed_before_its_pass(self):
