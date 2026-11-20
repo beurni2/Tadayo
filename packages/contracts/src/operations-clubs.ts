@@ -223,7 +223,8 @@ export const CLUB_OPERATIONS: Operation[] = [
       "without an active membership in the proposal's club (T9, T14; spec 07), and to an active member whose " +
       "current membership the proposal doesn't include, one who left and rejoined among them (FQ100); " +
       "MEMBERSHIP_CHANGED when a newer proposal replaced it (`current_id`); VERSION_CONFLICT when its week " +
-      "changed (`current_version`); NOT_ALLOWED after the caller confirmed, in a membership change, for more " +
+      "changed or it ended (`current_version`); NOT_ALLOWED once it has ended with no successor (applied, or " +
+      "superseded: `ScheduleProposal`), after the caller confirmed, in a membership change, for more " +
       "than `days_per_member` days, or for a day another member has confirmed meanwhile, whose owner the app " +
       "reads from the schedule (FQ78). The answer is the proposal as the caller now sees it, with the same " +
       "`version` (T33).",
@@ -247,7 +248,7 @@ export const CLUB_OPERATIONS: Operation[] = [
       "an active member whose current membership the proposal doesn't include, one who left and rejoined " +
       "among them (FQ100); MEMBERSHIP_CHANGED when a newer proposal replaced it (`current_id`), as when a " +
       "change's start passed before everyone confirmed (FQ49); VERSION_CONFLICT when its week changed " +
-      "(`current_version`); NOT_ALLOWED as the request says. The answer is the proposal as the caller now " +
+      "or it ended (`current_version`); NOT_ALLOWED once it has ended with no successor, and as the request says. The answer is the proposal as the caller now " +
       "sees it, with the same `version`, except after the first days' last confirmation, which applies " +
       "them and answers `applied` with the next `version` (T33).",
     idempotent: true,
