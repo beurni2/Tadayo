@@ -1,0 +1,42 @@
+Design handoff 8: stage B1, clubs and invitations
+
+Sources: the linked Tadayo repository: docs/tadayo-design-book-2.1.md, docs/tadayo-build-spec-v3.md, docs/tadayo-new-direction-addendum-r1.md (the founder's new direction, revision 1), and design/reference/, with the 2.1 renders, handoffs 1 to 7 in design/reference/claude-design/, the named frames in design/reference/screens/, and the brand in design/reference/brand/ (brand-tokens.md, brand-components.png, the wordmark and the icon; its README.md says which revision and which handoff each comes from). design/reference/INVENTORY.md lists every state, and its "Known differences" section, item "The new direction, revision 1", says what this brief redraws. If the repository isn't linked: the attached Tadayo_UI_UX_Design_Book.pdf (design revision 2.1), Tadayo_v3_Build_and_Design.pdf, the new direction addendum (PDF), brand-tokens.md, brand-components.png, and the exports of handoffs 1 to 7. Use the brand's tokens, cover colours and components as they are (revision 1.1, with handoff 7's component sheet); if you have Tadayo's design system, it holds the same brand.
+
+What to design: one frame per state, 393×852 points, each titled with the state's exact name, in the order listed below (if an export loses the titles, the order identifies the frames).
+
+A. The new direction's redraws (addendum 1 and 3; FQ106)
+
+1. A01-welcome: Welcome, signed out, before A02-email. Spec 04 and book p9 (2.1 state 01, A01-welcome.png). The headline "A day, made by your people." and its explanation give way to the brand line, exactly "Your day. Your story. A thought from your friends.", and an explanation of taking turns sharing your life, with optional additions from friends (addendum 1 and 3). Keep the one labelled Example (spec 04: "clearly labelled Example and excluded from the club"), its two stages (caption now, photo on the day) and the two routes, Create a club and I have an invite. The example's photograph stays the book's chair as a stand-in: the founder supplies the real one before the trial (FQ23).
+2. A01-welcome-dark
+3. A01-welcome-xl: at the largest accessibility text size.
+4. G02-web: the signed-out invitation page on tadayo.app (handoff 1's G02-web: "Ben invited you to a club on Tadayo", Get Tadayo). Add the brand line to its introduction (FQ106's default). It still shows the inviter's name and nothing else: no club name, roster, photographs or dates (T7).
+5. G02-web-dark
+6. G02-web-xl: at 200% text zoom, as handoff 2's G02-web-xl.
+
+B. Moments B1's screens have no words or frame for
+
+7. G01-create-failed: Ben named the club "Sunday people" and tapped Create; the club wasn't made. The name stays typed. Words for no connection and for a refusal (handoff 7's pattern: "Couldn’t … Check your connection and try again." and "Couldn’t … Try again."). Screen G01 (spec 04), 2.1 state 47 (G01-create.png).
+8. G02-checking: Ben opened an invitation link from Messages, signed in; the app is asking the server about it. Nothing of the club or its people shows yet (handoff 4: "We’ll check the link before showing the club or its people."). Screen G02.
+9. G02-invitation-failed: Ben tapped Accept this roster on Debby's invitation to Sunday people and the request failed with no connection. The roster stays; nothing has changed. Words for no connection and for a refusal. Screen G02, 2.1 state 02 (G02-invitation.png).
+10. G03-approve-failed: Maya tapped Approve Leila (Kitchen table) and it failed. Words for Approve and for Decline failing, each for no connection and for a refusal; both actions stay. Never name who declined (book p30). Screen G03, handoff 4's G03-approve.
+11. G05-club-details-failed: Ben opened Club details for Sunday people and it couldn't load. Give the loading words too ("Loading …"), in the form of handoff 7's tab loading and failure (noClubTabStates), with Retry. Screen G05, 2.1 state 20 (G05-club-details.png).
+
+C. Four points kept for this stage's brief (handoff 7's brief, section 4)
+
+12. G01-invite-people-accept-again: Ben's invitation list for Sunday people, where Sam accepted an earlier version of the roster and must accept this one (a link state the API calls "used"). Sam's row: its status words, and whether Share again or Create new link is offered. Handoff 4's G01-invite-people-revoked is the closest frame.
+13. G01-pending-approve: the first roster's waiting screen when Ben, the creator, must approve a roster revision the server made because the person who accepted is named differently from the name Ben typed (FQ84). Handoff 4's G01-pending says "The club starts when another person accepts the same roster.", which isn't true here: show that Ben's own approval is needed, and the way to it (Review members).
+14. G05-members-invite: where Ben shares and manages a later addition's link once Sunday people has started (FQ51's default reaches the invitation list only during setup, and a paused club's Club details offers "Invite someone", handoff 6's G05-club-details-paused). Draw Club details' members with Invite someone for an active club, or say where it belongs.
+15. G02-changed-name: G02-changed when what changed is the viewer's own name: Ben accepted under the name "Benjamin", so the server made a new roster with "Benjamin · You". Handoff 2's G02-changed says "The people in Sunday people have changed.", which reads as if someone else changed.
+
+Content: the book's fixture clubs. Sunday people: Ben (Monday, the viewer unless stated), Maya, Alex, Sam, Debby (Friday), Nina. Kitchen table: five members, Leila proposed. Dates as the book uses them (Friday 6 and 13 November 2026). Nothing invented.
+
+Rules that apply: book p9 (Welcome and invitation, Recovery), p30 (member approval), p32 (the switcher), p34 (components), p35 (tokens), p41 (routes and labels); spec 03, 04 and 07; the addendum's sections 1 and 3. Names, not inferred pronouns. Exact dates. Native iOS controls. The type is the iOS system font at the book's sizes; in the frames, Arimo stands in for it, included in the export.
+
+Questions I need answered in the design:
+- Welcome's example: does it stay a friend's drop (Maya's card for Debby's Friday beside the chair photograph), or show the star's own drop now that the star's sharing is central (addendum 1)? Its label must not say "her day" (FQ20): name the person.
+- Where the brand line sits on Welcome and on G02-web, and its type role. Nowhere else in the app's chrome (FQ106).
+- Whether the in-app G02-invitation's explanation changes with the new direction. If it does, add a frame titled G02-invitation after frame 15; if not, say so.
+- The words for each failure in frames 7, 9, 10 and 11, and what VoiceOver reads for each.
+- What a person sees for an invitation they already accepted from another device (the API answers "joined"): the club, or a line first.
+
+Dark and large-text frames: only where listed above, titled <state>-dark and <state>-xl.
