@@ -102,6 +102,7 @@ const BUILT = new Set([
   "acceptInvitation",
   "approveRoster",
   "declineRoster",
+  "leaveClub",
   "getSchedule",
   "chooseScheduleDays",
   "confirmScheduleDays",

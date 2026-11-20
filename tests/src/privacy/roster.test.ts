@@ -92,6 +92,7 @@ function revision(more: Partial<RevisionRows> = {}): RevisionRows {
     club: CLUB,
     state: "open",
     version: 1,
+    origin: "proposal",
     proposer: "itv_ben",
     sealed: true,
     supersededBy: null,
