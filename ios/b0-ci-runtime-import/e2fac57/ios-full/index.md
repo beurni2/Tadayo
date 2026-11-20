@@ -4,11 +4,16 @@ The `ios` workflow's evidence for `e2fac57139f1e5267ed47f03af14a8c3b6892968` (ht
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
 - iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
-- iOS `26.5` on `iPhone 17`: tests `failed`, without the snapshot tests
+- iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `failed`
-- Odd draws: none in `logs/test-27.2.log`
+- Tests: `passed`
+- Odd draws: 2 in `logs/test-27.2.log`, below
 - Carries every snapshot (a run by hand, for a gate); 0 snapshot(s) not carried
+
+Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
+
+- `warning: ScreenSnapshot A02-code-resend: settled after 3 draws, SHA-256 17b55557 da69c00b da69c00b; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot H01-error-no-club: settled after 3 draws, SHA-256 37012c2b 07906202 07906202; against the last draw, draw 1: 9038 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
 |---|---|---|---|---|---|
