@@ -219,7 +219,18 @@ struct CodeScreen: View {
                 // Frame 19 is scrolled so, the field under the navigation bar and the error
                 // continuing behind the button.
                 .onChange(of: pinsVerify) { _, pinned in
-                    if pinned { scroll.scrollTo(Self.field, anchor: .top) }
+                    if pinned {
+                        scroll.scrollTo(Self.field, anchor: .top)
+                        #if DEBUG
+                            // Probe only (`ios/b0-pin-tree-probe`, never to merge).
+                            if ProcessInfo.processInfo.arguments.contains("-TadayoPinProbeFix") {
+                                DispatchQueue.main.async {
+                                    UIAccessibility.post(
+                                        notification: .layoutChanged, argument: nil)
+                                }
+                            }
+                        #endif
+                    }
                 }
                 // Each time the keyboard comes up or goes, the held foot starts from the region
                 // as it is.
