@@ -71,7 +71,7 @@ The steps:
   sample the runner as they start, every SAMPLE_EVERY seconds, and as they end, in
   logs/runner.txt, the simulator step with the runner's hardware first, and say how long each
   took and the load averages then (Steps.sampling); each boot's log says how long it took. None
-  of it decides a step.
+  of it decides a step: each diagnostic command is stopped after DIAG_TIMEOUT seconds.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
                itself included. The new ones come from the snapshot runtime's result bundle:
@@ -252,14 +252,18 @@ ASSET_IMAGES = "/System/Library/AssetsV2/"
 SIMULATOR_PLATFORM = "com.apple.platform.iphonesimulator"
 RUNNER_IMAGES_ISSUE = "actions/runner-images#14946"
 # The runner's samples (Steps.sampling), in logs/runner.txt: at the start and the end of the
-# simulator step, the build and each test pass, after each pass's boot, and every SAMPLE_EVERY
-# seconds between. Each is the second of two `top` samples a second apart, since the first has
-# no CPU use to show: the load averages, CPU and memory use, the disks' reads and writes so far,
+# simulator step, the build and each test pass, and every SAMPLE_EVERY seconds between. Each is
+# the second of two `top` samples a second apart, since the first has no CPU use to show: the
+# load averages, CPU and memory use, the disks' reads and writes since the runner's VM booted,
 # and the eight busiest processes. The simulator step's first sample also has the runner's hardware
 # (RUNNER_HOST). Only logged, never what decides a step: since about 13:25 UTC on 2026-11-20
 # every step has run slower on both runner images, the build 2 to 4 times and iOS 26.5's pass
 # more (docs/LIMITATIONS.md, 2026-11-20), and the logs didn't say what the runner was doing.
+# Every diagnostic command is given DIAG_TIMEOUT seconds and is then stopped, so a slow or hung
+# `top` costs a step at most that much at its start and its end: in a saturated runner one took
+# up to about 70 seconds (`ios` 44794160395).
 SAMPLE_EVERY = 60
+DIAG_TIMEOUT = 20
 RUNNER_SAMPLE = ["top", "-l", "2", "-s", "1", "-n", "8", "-o", "cpu", "-stats",
                  "pid,command,cpu,mem"]
 RUNNER_HOST = ["sysctl", "hw.model", "machdep.cpu.brand_string", "hw.ncpu", "hw.memsize"]
@@ -267,12 +271,19 @@ LOAD_AVERAGES = re.compile(r"^Load Avg: ([0-9.]+), ([0-9.]+), ([0-9.]+)", re.M)
 # A failed shared cache update names its builder's two output files in simctl's error
 # (`stderrPath=...`, `stdoutPath=...`). Steps.cache_builder_output copies the end of each one
 # under CACHE_FOLDER, and the system log's lines from simdiskimaged and the builder
-# (CACHE_LOG), into logs/simulators.txt, CACHE_LINES lines of each at most.
+# (cache_log), into logs/simulators.txt, CACHE_LINES lines of each at most. The system log is
+# read from a minute before the update started, and given CACHE_LOG_TIMEOUT seconds.
 CACHE_FOLDER = "/Library/Developer/CoreSimulator/Caches/dyld/"
 CACHE_FILE = re.compile(r"\b(?:stderrPath|stdoutPath)=(/[^,}\s]+)")
 CACHE_LINES = 200
-CACHE_LOG = ["log", "show", "--last", "3m", "--style", "compact", "--predicate",
-             'process == "simdiskimaged" OR process BEGINSWITH "update_dyld"']
+CACHE_LOG_TIMEOUT = 60
+
+
+def cache_log(minutes):
+    """`log show` of the last `minutes` minutes' lines from simdiskimaged and the builder."""
+    return ["log", "show", "--last", f"{minutes}m", "--style", "compact", "--predicate",
+            'process == "simdiskimaged" OR process BEGINSWITH "update_dyld"']
+
 # The files the steps write in OUT's logs/: the only ones the evidence job copies or links. All
 # top-level files: a folder in logs/ is a stray.
 LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log",
@@ -403,12 +414,17 @@ class Shell:
             print(f"ios: {cmd[0]} isn't installed", flush=True)
             return 127
 
-    def capture(self, cmd, env=None, cwd=None):
+    def capture(self, cmd, env=None, cwd=None, timeout=None):
+        """Runs cmd and answers its exit code, output and errors. With a timeout, a command
+        still running then is stopped and answers 124, as `timeout(1)` does."""
         try:
             result = subprocess.run(cmd, cwd=cwd or self.root, env=self._env(env),
-                                    capture_output=True, text=True, errors="replace")
+                                    capture_output=True, text=True, errors="replace",
+                                    timeout=timeout)
         except FileNotFoundError:
             return 127, "", f"{cmd[0]} isn't installed"
+        except subprocess.TimeoutExpired:
+            return 124, "", f"{cmd[0]} didn't finish in {timeout} s, so it was stopped"
         return result.returncode, result.stdout, result.stderr
 
     @staticmethod
@@ -783,9 +799,11 @@ class Steps:
         load averages, as text, or None when the sample doesn't show them."""
         lines = []
         if host:
-            code, out, err = self.shell.capture(RUNNER_HOST, env=self.xcode_env())
+            code, out, err = self.shell.capture(RUNNER_HOST, env=self.xcode_env(),
+                                                timeout=DIAG_TIMEOUT)
             lines.append((out + err).strip() or f"({RUNNER_HOST[0]} exited {code})")
-        code, out, err = self.shell.capture(RUNNER_SAMPLE, env=self.xcode_env())
+        code, out, err = self.shell.capture(RUNNER_SAMPLE, env=self.xcode_env(),
+                                            timeout=DIAG_TIMEOUT)
         parts = out.split("Processes:")
         sample = "Processes:" + parts[-1] if code == 0 and len(parts) > 2 else out + err
         lines.append(sample.strip() or f"({RUNNER_SAMPLE[0]} exited {code})")
@@ -799,8 +817,11 @@ class Steps:
     def sampling(self, step, label, host=False):
         """Samples the runner (runner_sample) as `label`'s work starts, every self.sample_every
         seconds while it runs, and as it ends, which the step's output says, with how long the
-        work took and the load averages then. A step stopped by its timeout keeps the samples
-        taken. Off when self.sample_every is None, as in the tests that check a step's commands."""
+        work took and the load averages then. Each sample is written as it's taken, so a step
+        stopped by its timeout keeps those taken. The samples in between are taken beside the
+        work; the first and the last cost it each at most DIAG_TIMEOUT, and waiting for a sample
+        in progress at the end the same. Off when self.sample_every is None, as in the tests that
+        check a step's commands."""
         if self.sample_every is None:
             yield
             return
@@ -817,7 +838,7 @@ class Steps:
             yield
         finally:
             stop.set()
-            thread.join(30)
+            thread.join(DIAG_TIMEOUT + 5)  # a sample in progress ends within DIAG_TIMEOUT
             took = duration(self.clock() - started)
             load = self.runner_sample(f"{label}: end, after {took}")
             print(f"ios: {step}: {label} took {took}; the runner's load averages then: "
@@ -826,7 +847,7 @@ class Steps:
     def boot(self, udid, version, log_name, step):
         """`simctl bootstatus -b`, which boots the device and waits until it has finished
         booting; its log says how long that took, and so does the step's output. Returns its exit
-        code."""
+        code. No sample here: the pass's own samples (sampling) show the runner after the boot."""
         started = self.clock()
         code = self.shell.run(["xcrun", "simctl", "bootstatus", udid, "-b"],
                               env=self.xcode_env(), log=self.log(log_name))
@@ -836,16 +857,16 @@ class Steps:
         self.write_log(log_name, said)
         if code == 0:
             print(f"ios: {step}: {said} (logs/{log_name})", flush=True)
-            if self.sample_every is not None:
-                self.runner_sample(f"iOS {version} booted, after {took}")
         return code
 
-    def cache_builder_output(self, since):
-        """After a failed shared cache update, whose output simulators.txt holds from byte
-        `since`: the end of each of the builder's output files that simctl's error names
-        (CACHE_FILE), when it's under CACHE_FOLDER, read as root when the runner's user can't;
-        what that folder holds; and the system log's lines from simdiskimaged and the builder
-        (CACHE_LOG). Each at most CACHE_LINES lines, appended to simulators.txt. Only logged: why
+    def cache_builder_output(self, since, started):
+        """After a failed shared cache update, which started at self.clock() `started` and
+        whose output simulators.txt holds from byte `since`: the end of each of the builder's
+        output files that simctl's error names (CACHE_FILE), when it's under CACHE_FOLDER and
+        neither it nor any folder above it is a link, read as root when the runner's user can't
+        (where root resolves the path first); what that folder holds; and the system log's lines
+        from simdiskimaged and the builder since a minute before the update started
+        (cache_log). Each at most CACHE_LINES lines, appended to simulators.txt. Only logged: why
         the update fails for the runner's user, and now and then as root too, isn't known
         (docs/LIMITATIONS.md, 2026-11-19 and 2026-11-20)."""
         try:
@@ -857,9 +878,11 @@ class Steps:
         paths = list(dict.fromkeys(CACHE_FILE.findall(said)))
         readable = [p for p in paths if os.path.normpath(p) == p and p.startswith(CACHE_FOLDER)]
         for path in paths:
-            if path not in readable or os.path.islink(path):
+            # realpath resolves a link at every level the runner's user can reach; a folder it
+            # can't search is resolved by root below, before root reads anything.
+            if path not in readable or os.path.realpath(path) != path:
                 self.write_log("simulators.txt", f"--- {path}: " + (
-                    "a link, so not read" if path in readable else
+                    "a link or under one, so not read" if path in readable else
                     f"not under {CACHE_FOLDER}, so not read"))
                 continue
             try:
@@ -869,15 +892,31 @@ class Steps:
                 self.write_log("simulators.txt", f"--- {path}: not there")
                 continue
             except OSError as error:
-                # Read as root, as the update with sudo runs, when the runner's user can't.
+                # Read as root, as the update with sudo runs, when the runner's user can't, and
+                # only when root resolves the path to itself, so no link is followed as root.
+                said = f"--- {path}: {error.strerror or error}, and as root: "
+                resolve = ["sudo", "-n", "realpath", path]
+                code, out, err = self.shell.capture(resolve, env=self.xcode_env(),
+                                                    timeout=DIAG_TIMEOUT)
+                if code != 0 or out.strip() != path:
+                    self.write_log("simulators.txt", said + (
+                        f"{(out + err).strip()[:200]} (exit {code})" if code != 0 else
+                        "a link or under one, so not read"))
+                    continue
                 tail = ["sudo", "-n", "tail", "-n", str(CACHE_LINES), path]
-                code, out, err = self.shell.capture(tail, env=self.xcode_env())
+                code, out, err = self.shell.capture(tail, env=self.xcode_env(),
+                                                    timeout=DIAG_TIMEOUT)
                 if code != 0:
                     self.write_log("simulators.txt",
-                                   f"--- {path}: {error.strerror or error}, and as root: "
-                                   f"{(out + err).strip()[:200]} (exit {code})")
+                                   said + f"{(out + err).strip()[:200]} (exit {code})")
                     continue
-                path, text = f"{path}, read as root (`{' '.join(tail[2:5])}`)", out
+                # tail answers the last lines only, so the file's own length isn't known.
+                kept = out.splitlines()
+                self.write_log("simulators.txt",
+                               f"--- {path}, read as root (`{' '.join(tail[2:5])}`): its last "
+                               f"{len(kept)} line" + ("" if len(kept) == 1 else "s")
+                               + (":\n" + "\n".join(kept) if kept else ""))
+                continue
             self.write_log("simulators.txt", last_lines(text.splitlines(), path))
         for folder in sorted({os.path.dirname(p) for p in readable}):
             try:
@@ -887,9 +926,10 @@ class Steps:
             except OSError as error:
                 listing = error.strerror or str(error)
             self.write_log("simulators.txt", f"--- {folder}:\n{listing}")
-        code, out, err = self.shell.capture(CACHE_LOG, env=self.xcode_env())
+        log = cache_log(int((self.clock() - started) // 60) + 2)
+        code, out, err = self.shell.capture(log, env=self.xcode_env(), timeout=CACHE_LOG_TIMEOUT)
         self.write_log("simulators.txt", last_lines((out + err).splitlines(),
-                                                    f"{' '.join(CACHE_LOG)} (exit {code})"))
+                                                    f"{' '.join(log)} (exit {code})"))
         print("ios: simulator: the shared cache builder's output and the system log's lines "
               "about it are in logs/simulators.txt", flush=True)
 
@@ -1149,10 +1189,10 @@ class Steps:
                            f"device-{version}": device_type["name"], f"udid-{version}": udid})
         # No device is booted here: the test step boots each pass's just before the pass, so no
         # simulator runs beside the build. In `ios` run 44794160395 the booted iOS 27.2
-        # simulator's own services (two diagnosticd, apsd, BackgroundShortcutRunner, widgets)
+        # simulator's own services (its diagnosticd, apsd, BackgroundShortcutRunner, widgets)
         # were among the busiest processes all through a 20-minute build, on a runner whose
-        # three CPUs were never idle (docs/LIMITATIONS.md, 2026-11-20). xcodebuild builds for a
-        # device that is shut down.
+        # three CPUs showed no idle time in any sample of it (docs/LIMITATIONS.md, 2026-11-20).
+        # xcodebuild builds for a device that is shut down.
         self.update_run_record(**values)
         self.write_log("simulators.txt", f"The snapshot tests run on iOS {snapshots} "
                                          f"({SNAPSHOT_SOURCE}).")
@@ -1253,13 +1293,13 @@ class Steps:
                     # runtime`: `dyld_shared_cache update (<runtime> || --all)`). A failure here
                     # is logged and said, not fatal: the first boot then builds the cache, in the
                     # test step's time.
-                    since = self.log_size("simulators.txt")
+                    since, started = self.log_size("simulators.txt"), self.clock()
                     cache = self.shell.run(["xcrun", "simctl", "runtime", "dyld_shared_cache",
                                             "update", identifier], env=env,
                                            log=self.log("simulators.txt"))
                     self.write_log("simulators.txt", f"(exit {cache})")
                     if cache != 0:
-                        self.cache_builder_output(since)
+                        self.cache_builder_output(since, started)
                         # On the runner image of 2026-11-19, where the import ran as root, the
                         # update exited 25 ("Child process exited with an error") and the pass
                         # on iOS 26.5 that followed ran slower and failed two keyboard tests
@@ -1274,14 +1314,14 @@ class Steps:
                         # failed update (cache_builder_output), before anything runs again.
                         print(f"ios: simulator: updating iOS {version}'s shared cache exited "
                               f"{cache}; updating it again with sudo")
-                        since = self.log_size("simulators.txt")
+                        since, started = self.log_size("simulators.txt"), self.clock()
                         cache = self.shell.run(
                             ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={env['DEVELOPER_DIR']}",
                              "xcrun", "simctl", "runtime", "dyld_shared_cache", "update",
                              identifier], env=env, log=self.log("simulators.txt"))
                         self.write_log("simulators.txt", f"(exit {cache})")
                         if cache != 0:
-                            self.cache_builder_output(since)
+                            self.cache_builder_output(since, started)
                     if cache != 0:
                         print(f"ios: simulator: updating iOS {version}'s shared cache exited "
                               f"{cache}, so its first boot builds it (logs/simulators.txt)")

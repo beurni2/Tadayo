@@ -192,6 +192,7 @@ class FakeShell:
 
     def __init__(self, answers=None, codes=None, effects=None):
         self.commands, self.envs, self.logs = [], [], []
+        self.timeouts = {}  # each captured command's timeout, by the command
         self.answers = answers or []
         self.codes = codes or []
         self.effects = effects or []
@@ -208,10 +209,11 @@ class FakeShell:
                 return code(cmd) if callable(code) else code
         return 0
 
-    def capture(self, cmd, env=None, cwd=None):
+    def capture(self, cmd, env=None, cwd=None, timeout=None):
         self.commands.append(cmd)
         self.envs.append(env)
         self.logs.append(None)
+        self.timeouts[tuple(cmd)] = timeout
         for matches, result in self.answers:
             if matches(cmd):
                 return result(cmd) if callable(result) else result
@@ -1104,7 +1106,7 @@ class SimulatorTest(StepsTest):
     def cache_folder(self):
         """A folder that stands for ios_steps.CACHE_FOLDER, and in it the folder simctl names
         for iOS 26.5's builder, made."""
-        cache = tempfile.mkdtemp(prefix="dyld-") + "/"
+        cache = os.path.realpath(tempfile.mkdtemp(prefix="dyld-")) + "/"
         self.addCleanup(shutil.rmtree, cache)
         folder = os.path.join(cache, "26B123", "inc", "com.apple.CoreSimulator.SimRuntime.iOS-26-5.23F77")
         os.makedirs(folder)
@@ -1154,19 +1156,47 @@ class SimulatorTest(StepsTest):
         self.assertIn(f"--- {stdout}: 1 line:\nstdout line 1\n", text)
         self.assertIn(f"--- {folder}:\nupdate_dyld_sim_shared_cache-stderr.txt ({os.path.getsize(stderr)} bytes)\n"
                       "update_dyld_sim_shared_cache-stdout.txt (14 bytes)\n", text)
-        self.assertIn(f"--- {' '.join(ios_steps.CACHE_LOG)} (exit 0): 2 lines:\n{system_log}", text)
+        log = ios_steps.cache_log(2)  # from a minute before the update started, which was just now
+        self.assertIn(f"--- {' '.join(log)} (exit 0): 2 lines:\n{system_log}", text)
         self.assertIn("ios: simulator: the shared cache builder's output and the system log's lines "
                       "about it are in logs/simulators.txt", out)
         # Once, after the failed update and before the one with sudo, which worked; the files
         # read as the runner's user, so nothing more as root.
         update = ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]
         again = ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}"] + update
-        self.assertEqual(shell.commands.count(ios_steps.CACHE_LOG), 1)
-        self.assertLess(shell.commands.index(update), shell.commands.index(ios_steps.CACHE_LOG))
-        self.assertLess(shell.commands.index(ios_steps.CACHE_LOG), shell.commands.index(again))
+        self.assertEqual(shell.commands.count(log), 1)
+        self.assertLess(shell.commands.index(update), shell.commands.index(log))
+        self.assertLess(shell.commands.index(log), shell.commands.index(again))
+        self.assertEqual(shell.timeouts[tuple(log)], ios_steps.CACHE_LOG_TIMEOUT)
         self.assertLess(text.index("stderr line 300"), text.index("\n(exit 0)\niOS 26.5: runtime"))
         self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [again])
         self.assert_pinned(shell)
+        # An update that ran 3 min 20 s: its log is read from a minute before it started.
+        shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 0 if cmd[0] == "sudo" else 25)
+        shell.effects.append((lambda cmd: "dyld_shared_cache" in cmd and cmd[0] != "sudo",
+                              lambda cmd: self.append_simulators_log(cache_error(folder))))
+        with mock.patch.object(ios_steps, "CACHE_FOLDER", cache):
+            code, out = self.step("simulator", shell, clock=Clock(0, 200))
+        self.assertEqual(code, 0, out)
+        self.assertIn(ios_steps.cache_log(5), shell.commands)
+
+    def test_each_failed_update_reads_only_the_files_its_own_error_names(self):
+        cache, folder = self.cache_folder()
+        first, second = (os.path.join(folder, name) for name in ("first-stderr.txt", "second-stderr.txt"))
+        for path, said in ((first, "the first update's builder\n"), (second, "the sudo update's builder\n")):
+            with open(path, "w") as f:
+                f.write(said)
+        shell = self.shell(after_download=WITH_26_5, cache_code=25)
+        shell.effects.append((has("dyld_shared_cache"), lambda cmd: self.append_simulators_log(
+            f"An error was encountered. {{stderrPath={second if cmd[0] == 'sudo' else first}}}\n")))
+        with mock.patch.object(ios_steps, "CACHE_FOLDER", cache):
+            code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        text = self.simulators_log()
+        # The output after the update with sudo starts after the first one's, so the first file
+        # isn't read again.
+        self.assertEqual((text.count(f"--- {first}: 1 line:"), text.count(f"--- {second}: 1 line:")), (1, 1))
+        self.assertLess(text.index(f"--- {first}: "), text.index(f"--- {second}: "))
 
     def test_a_named_file_not_there_or_outside_the_cache_folder_is_said_and_never_read(self):
         cache, folder = self.cache_folder()
@@ -1175,7 +1205,11 @@ class SimulatorTest(StepsTest):
         climbing = f"{cache}26B123/../../{os.path.basename(outside)}"
         linked = os.path.join(cache, "linked.txt")
         os.symlink(outside, linked)
-        named = cache_error(folder) + f"stderrPath={outside}, stdoutPath={climbing}, stderrPath={linked}}}\n"
+        # A link to a folder above the file, which the file's own name doesn't show.
+        os.symlink(os.path.dirname(outside), os.path.join(cache, "linked"))
+        under = os.path.join(cache, "linked", os.path.basename(outside))
+        named = (cache_error(folder) + f"stderrPath={outside}, stdoutPath={climbing}, stderrPath={linked}, "
+                 f"stdoutPath={under}}}\n")
         shell = self.shell(after_download=WITH_26_5, cache_code=25)
         shell.effects.append((has("dyld_shared_cache"), lambda cmd: self.append_simulators_log(named)))
         with mock.patch.object(ios_steps, "CACHE_FOLDER", cache):
@@ -1187,12 +1221,13 @@ class SimulatorTest(StepsTest):
         for said in [f"--- {folder}/update_dyld_sim_shared_cache-stderr.txt: not there\n",
                      f"--- {outside}: not under {cache}, so not read\n",
                      f"--- {climbing}: not under {cache}, so not read\n",
-                     f"--- {linked}: a link, so not read\n",
+                     f"--- {linked}: a link or under one, so not read\n",
+                     f"--- {under}: a link or under one, so not read\n",
                      f"--- {folder}:\nNo such file or directory\n",
-                     f"--- {' '.join(ios_steps.CACHE_LOG)} (exit 0): 0 lines\n"]:
+                     f"--- {' '.join(ios_steps.cache_log(2))} (exit 0): 0 lines\n"]:
             # After each of the two failed updates.
             self.assertEqual(text.count(said), 2, said)
-        self.assertEqual(shell.commands.count(ios_steps.CACHE_LOG), 2)
+        self.assertEqual(shell.commands.count(ios_steps.cache_log(2)), 2)
 
     def test_a_named_file_the_runner_s_user_can_t_read_is_read_as_root(self):
         cache, folder = self.cache_folder()
@@ -1200,29 +1235,41 @@ class SimulatorTest(StepsTest):
         with open(stderr, "w") as f:
             f.write("builder said no\n")
         tail = ["sudo", "-n", "tail", "-n", "200", stderr]
+        resolve = ["sudo", "-n", "realpath", stderr]
         real_open = open
 
         def guarded(path, *args, **kwargs):
             if path == stderr:
                 raise PermissionError(13, "Permission denied", path)
             return real_open(path, *args, **kwargs)
-        for answer, said in [((0, "builder said no\n", ""),
-                              f"--- {stderr}, read as root (`tail -n 200`): 1 line:\nbuilder said no\n"),
-                             ((1, "", "sudo: a password is required\n"),
-                              f"--- {stderr}: Permission denied, and as root: sudo: a password is "
-                              "required (exit 1)\n")]:
-            with self.subTest(answer=answer):
+        real = (0, stderr + "\n", "")
+        refused = (1, "", "sudo: a password is required\n")
+        cases = [
+            (real, (0, "builder said no\n", ""), 1,
+             f"--- {stderr}, read as root (`tail -n 200`): its last 1 line:\nbuilder said no\n"),
+            (real, refused, 1, f"--- {stderr}: Permission denied, and as root: sudo: a password is required (exit 1)\n"),
+            # Root never reads through a link, wherever it is in the path.
+            ((0, "/private/elsewhere/stderr.txt\n", ""), (0, "never read\n", ""), 0,
+             f"--- {stderr}: Permission denied, and as root: a link or under one, so not read\n"),
+            (refused, (0, "never read\n", ""), 0,
+             f"--- {stderr}: Permission denied, and as root: sudo: a password is required (exit 1)\n")]
+        for resolved, answer, tails, said in cases:
+            with self.subTest(resolved=resolved, answer=answer):
                 logs = os.path.join(self.repo.out, "logs")
                 shutil.rmtree(logs, ignore_errors=True)
                 shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 0 if cmd[0] == "sudo" else 25)
                 shell.effects.append((lambda cmd: "dyld_shared_cache" in cmd and cmd[0] != "sudo",
                                       lambda cmd: self.append_simulators_log(cache_error(folder))))
-                shell.answers.insert(0, (starts("sudo", "-n", "tail"), answer))
+                shell.answers[:0] = [(starts("sudo", "-n", "tail"), answer), (starts("sudo", "-n", "realpath"), resolved)]
                 with mock.patch.object(ios_steps, "CACHE_FOLDER", cache), mock.patch("builtins.open", guarded):
                     code, out = self.step("simulator", shell)
                 self.assertEqual(code, 0, out)
                 self.assertIn(said, self.simulators_log())
-                self.assertEqual(shell.commands.count(tail), 1)
+                self.assertNotIn("never read", self.simulators_log())
+                self.assertEqual((shell.commands.count(resolve), shell.commands.count(tail)), (1, tails))
+                self.assertLess(shell.commands.index(resolve), len(shell.commands) if not tails else shell.commands.index(tail))
+                for cmd in [resolve, tail][:1 + tails]:
+                    self.assertEqual(shell.timeouts[tuple(cmd)], ios_steps.DIAG_TIMEOUT)
                 self.assert_pinned(shell)
 
     def test_the_download_s_exit_code_doesn_t_decide(self):
@@ -1691,6 +1738,8 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual([c[0] for c in shell.commands], ["top", "xcodebuild", "top"])
         self.assertEqual(shell.commands[0], ios_steps.RUNNER_SAMPLE)
         self.assertEqual(shell.envs[0], {"DEVELOPER_DIR": DEVELOPER_DIR})
+        # Each sample is stopped after DIAG_TIMEOUT, so a hung top costs the step that at most.
+        self.assertEqual(shell.timeouts[tuple(ios_steps.RUNNER_SAMPLE)], ios_steps.DIAG_TIMEOUT)
         text = self.runner_log()
         self.assertEqual(SAMPLE_LABEL.findall(text), ["the build: start", "the build: end, after 14 min 3 s"])
         self.assertRegex(text, r"^--- [0-9:]{8} UTC, the build: start\nProcesses: 512 total, 4 running")
@@ -1700,7 +1749,7 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn("ios: build: the build took 14 min 3 s; the runner's load averages then: "
                       "4.10 3.20 2.50 (logs/runner.txt)", out)
 
-    def test_samples_are_taken_while_the_work_runs_and_kept_when_the_step_is_stopped(self):
+    def test_samples_are_taken_while_the_work_runs_and_written_as_they_are_taken(self):
         seen = {}
 
         def build(cmd):
@@ -1711,9 +1760,12 @@ class BuildAndTestSteps(StepsTest):
             seen["during"] = self.runner_log()
             self.products()
         shell = self.sample_shell(effects=[(has("build-for-testing"), build)])
+        started = time.monotonic()
         code, out = self.step("build", shell, sample_every=0.01)
         self.assertEqual(code, 0, out)
-        # While the build ran, the log already held its first sample and two more: a step its
+        # The sampler stops when the work ends, rather than being waited for.
+        self.assertLess(time.monotonic() - started, 10 + ios_steps.DIAG_TIMEOUT / 2)
+        # While the build ran, the log already held its first sample and two more, so a step its
         # timeout stops keeps them.
         self.assertIn(", the build: start\n", seen["during"])
         self.assertGreaterEqual(seen["during"].count(", the build\n"), 2)
@@ -1723,11 +1775,11 @@ class BuildAndTestSteps(StepsTest):
         shell = self.sample_shell()
         code, out = self.step("test", shell, sample_every=3600, clock=Clock(0, 0, 106, 600, 600, 600, 641, 1500))
         self.assertEqual(code, 0, out)
+        # No sample of its own after a boot, which would hold up the pass's tests: the pass's
+        # samples show the runner then.
         self.assertEqual(SAMPLE_LABEL.findall(self.runner_log()), [
-            "the pass on iOS 27.2: start", "iOS 27.2 booted, after 1 min 46 s",
-            "the pass on iOS 27.2: end, after 10 min 0 s",
-            "the pass on iOS 26.5: start", "iOS 26.5 booted, after 41 s",
-            "the pass on iOS 26.5: end, after 15 min 0 s"])
+            "the pass on iOS 27.2: start", "the pass on iOS 27.2: end, after 10 min 0 s",
+            "the pass on iOS 26.5: start", "the pass on iOS 26.5: end, after 15 min 0 s"])
         self.assertIn(f"ios: test: iOS 27.2's simulator {UDID} booted in 1 min 46 s (logs/test-27.2.log)", out)
         self.assertIn(f"ios: test: iOS 26.5's simulator {UDID_26} booted in 41 s (logs/test-26.5.log)", out)
         self.assertIn("ios: test: the pass on iOS 27.2 took 10 min 0 s; the runner's load averages "
@@ -1735,14 +1787,13 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn("ios: test: the pass on iOS 26.5 took 15 min 0 s; ", out)
         with open(self.log("test-26.5.log")) as f:
             self.assertIn(f"iOS 26.5's simulator {UDID_26} booted in 41 s\n", f.read())
-        # Each pass's device boots after its first sample, and its tests run between the sample
-        # after the boot and its last.
+        # Each pass's device boots after its first sample, and its tests run between the boot and
+        # its last sample.
         tops = [i for i, c in enumerate(shell.commands) if c[0] == "top"]
         runs = [i for i, c in enumerate(shell.commands) if c[:2] == ["xcodebuild", "test-without-building"]]
         boots = [shell.commands.index(["xcrun", "simctl", "bootstatus", u, "-b"]) for u in (UDID, UDID_26)]
-        self.assertEqual(len(tops), 6)
-        self.assertTrue(tops[0] < boots[0] < tops[1] < runs[0] < tops[2] < tops[3] < boots[1] < tops[4] < runs[1] < tops[5],
-                        shell.commands)
+        self.assertEqual(len(tops), 4)
+        self.assertTrue(tops[0] < boots[0] < runs[0] < tops[1] < tops[2] < boots[1] < runs[1] < tops[3], shell.commands)
         self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "passed"})
 
     def test_a_device_that_doesn_t_boot_says_how_long_it_was_given(self):
@@ -1752,12 +1803,23 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn(f"the iOS 26.5 simulator {UDID_26} didn't boot", out)
         with open(self.log("test-26.5.log")) as f:
             self.assertIn(f"iOS 26.5's simulator {UDID_26} didn't boot, after 5 min 0 s (exit 1)\n", f.read())
-        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[3:], [
+        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[2:], [
             "the pass on iOS 26.5: start", "the pass on iOS 26.5: end, after 5 min 0 s"])
         self.assertEqual(self.results(), {"tests": "failed", "tests-27.2": "passed", "tests-26.5": "failed"})
 
+    def test_a_command_given_a_timeout_is_stopped_then(self):
+        started = time.monotonic()
+        code, out, err = ios_steps.Shell(self.repo.root).capture(
+            [sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.5)
+        self.assertLess(time.monotonic() - started, 10)
+        self.assertEqual((code, out), (124, ""))
+        self.assertIn("didn't finish in 0.5 s, so it was stopped", err)
+        self.assertEqual(ios_steps.Shell(self.repo.root).capture([sys.executable, "-c", "print('ok')"], timeout=30),
+                         (0, "ok\n", ""))
+
     def test_a_sample_top_couldn_t_take_says_so_and_decides_nothing(self):
         for top, said in [((1, "", "top: can't sample\n"), "top: can't sample\n"),
+                          ((124, "", "top didn't finish in 20 s, so it was stopped"), "top didn't finish in 20 s, so it was stopped\n"),
                           ((1, "", ""), "(top exited 1)\n"),
                           ((0, "Processes: 1 total\n", ""), "Processes: 1 total\n")]:
             with self.subTest(top=top):
