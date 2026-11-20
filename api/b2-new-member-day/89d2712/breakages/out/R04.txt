@@ -1,0 +1,129 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 3 failed) 38ms
+   ❯ pickAfter: a fourth member frees a day now (FQ131, the founder's answer) (5)
+     × keeps each member's first day from Monday and frees the others, for a fourth member to pick from 17ms
+     × frees by the days each has, not the table's: the earlier day from Monday stays 1ms
+     × frees the days beyond each member's first wherever the free days are too few, as two joined by three 3ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  3 failed | 149 passed (152)
+   Start at  16:13:30
+   Duration  1.74s (tests 87%, import 10%, worker 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: a fourth member frees a day now (FQ131, the founder's answer) > keeps each member's first day from Monday and frees the others, for a fourth member to pick from
+AssertionError: expected { freed: [ { …(2) }, …(2) ], …(1) } to deeply equal { freed: [ { …(2) }, …(2) ], …(1) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,27 @@
+  {
+    "freed": [
+      {
+        "star": "ben",
+-       "weekday": "thursday",
++       "weekday": "monday",
+      },
+      {
+        "star": "debby",
+-       "weekday": "friday",
++       "weekday": "tuesday",
+      },
+      {
+        "star": "maya",
+-       "weekday": "saturday",
++       "weekday": "wednesday",
+      },
+    ],
+    "proposal": {
+      "daysPerMember": 1,
+      "kind": "open",
+      "proposed": [
+        {
+          "days": [
+-           "thursday",
++           "monday",
+          ],
+          "id": "alex",
+        },
+      ],
+      "replaces": false,
+
+ ❯ src/schedule/change.test.ts:141:89
+    139| describe("pickAfter: a fourth member frees a day now (FQ131, the found…
+    140|   it("keeps each member's first day from Monday and frees the others, …
+    141|     expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex"],…
+       |                                                                                         ^
+    142|       freed: week(["thursday", "ben"], ["friday", "debby"], ["saturday…
+    143|       proposal: { kind: "open", replaces: false, daysPerMember: 1, pro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: a fourth member frees a day now (FQ131, the founder's answer) > frees by the days each has, not the table's: the earlier day from Monday stays
+AssertionError: expected [ { weekday: 'tuesday', …(1) }, …(2) ] to deeply equal [ { weekday: 'saturday', …(1) }, …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "star": "ben",
+-     "weekday": "saturday",
++     "weekday": "tuesday",
+    },
+    {
+      "star": "debby",
+-     "weekday": "wednesday",
++     "weekday": "monday",
+    },
+    {
+      "star": "maya",
+-     "weekday": "friday",
++     "weekday": "thursday",
+    },
+  ]
+
+ ❯ src/schedule/change.test.ts:156:96
+    154|       ["friday", "maya"],
+    155|     );
+    156|     expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex"],…
+       |                                                                                                ^
+    157|       week(["saturday", "ben"], ["wednesday", "debby"], ["friday", "ma…
+    158|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: a fourth member frees a day now (FQ131, the founder's answer) > frees the days beyond each member's first wherever the free days are too few, as two joined by three
+AssertionError: expected [ …(2) ] to deeply equal [ { weekday: 'thursday', …(1) }, …(1) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "star": "ben",
+-     "weekday": "thursday",
++     "weekday": "monday",
+    },
+    {
+      "star": "debby",
+-     "weekday": "friday",
++     "weekday": "tuesday",
+    },
+  ]
+
+ ❯ src/schedule/change.test.ts:183:100
+    181|   it("frees the days beyond each member's first wherever the free days…
+    182|     // Two free days for three new members: Ben and Debby keep their f…
+    183|     expect(pickAfter(facts({ active: ["ben", "debby", "alex", "sam", "…
+       |                                                                                                    ^
+    184|       week(["thursday", "ben"], ["friday", "debby"]),
+    185|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

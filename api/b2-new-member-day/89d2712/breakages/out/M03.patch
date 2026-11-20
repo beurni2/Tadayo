@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..675af971 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -101,7 +101,7 @@ BEGIN
+                       WHERE v.club_id = NEW.club_id AND v.effective_from > starts AND v.effective_from <= o.local_date)
+    ORDER BY o.local_date
+    LIMIT 1;
+-  IF FOUND THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_assignments: % from % would give %, a day already announced, to someone else (FQ61, T6)',
+       NEW.weekday, GREATEST(starts, NEW.first_date), announced
+       USING ERRCODE = 'integrity_constraint_violation';

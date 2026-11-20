@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..180bfeee 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -136,7 +136,6 @@ BEGIN
+    WHERE club_id = NEW.club_id AND effective_from < starts
+    ORDER BY effective_from DESC LIMIT 1;
+   IF EXISTS (SELECT FROM app.schedule_assignments a
+-               JOIN app.memberships ms ON ms.interval_id = a.star_interval_id AND ms.state = 'active'
+               WHERE a.schedule_version_id = before AND a.weekday = NEW.weekday
+                 AND a.star_interval_id = NEW.star_interval_id AND a.first_date = NEW.first_date
+                 AND a.confirmed_at = NEW.confirmed_at)

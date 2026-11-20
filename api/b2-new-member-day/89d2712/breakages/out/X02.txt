@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (19 tests | 1 failed | 18 skipped) 1451ms
+   ❯ a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125 to FQ127, FQ129 to FQ131) (1)
+     × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 1208ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  16:16:45
+   Duration  2.77s (tests 62%, import 30%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125 to FQ127, FQ129 to FQ131) > answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes
+AssertionError: expected [ …(5) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+@@ -3,20 +3,20 @@
+      "local_date": "2026-11-12",
+      "status": "scheduled",
+    },
+    {
+      "local_date": "2026-11-19",
+-     "status": "cancelled",
++     "status": "scheduled",
+    },
+    {
+      "local_date": "2026-11-26",
+-     "status": "cancelled",
++     "status": "scheduled",
+    },
+    {
+      "local_date": "2026-12-03",
+-     "status": "cancelled",
++     "status": "scheduled",
+    },
+    {
+      "local_date": "2026-12-10",
+-     "status": "cancelled",
++     "status": "scheduled",
+    },
+  ]
+
+ ❯ src/privacy/matrix.test.ts:2384:27
+    2382|        WHERE club_id = ${club} AND star_interval_id = ${c.member[ben] …
+    2383|        ORDER BY local_date`;
+    2384|     expect(bensThursdays).toEqual([
+       |                           ^
+    2385|       { local_date: "2026-11-12", status: "scheduled" },
+    2386|       { local_date: "2026-11-19", status: "cancelled" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index 50f57f6c..13d7acbc 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -1079,7 +1079,7 @@ export function weekChangeProblems(
+       ids.map((interval) => {
+         const mine = WEEK.filter(
+           (weekday) => (earlier.get(interval) ?? []).includes(weekday) && !gone.has(weekday),
+-        ).slice(0, per);
++        ).slice(0, 0);
+         for (const weekday of mine) gone.add(weekday);
+         return [interval, mine];
+       }),

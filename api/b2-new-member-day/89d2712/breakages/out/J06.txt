@@ -1,0 +1,59 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (39 tests | 2 failed) 66ms
+   ❯ what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131) (7)
+     × wants a member who joins an open pick added to it, holding a day nobody it includes holds, and nothing else moved (T33) 14ms
+     × wants an open pick replaced when the club's size changes the days each, naming its successor 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 37 passed (39)
+   Start at  16:23:24
+   Duration  731ms (import 63%, tests 20%, transform 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131) > wants a member who joins an open pick added to it, holding a day nobody it includes holds, and nothing else moved (T33)
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the open pick is {\"club\":\"clb_here\",\"days\":[\"itv_eve friday true false\",\"itv_eve saturday false true\",\"itv_fay friday true true\"],\"daysPerMember\":1,\"earlier\":[],\"effectiveFrom\":\"2026-11-11\",\"members\":[\"itv_eve false\",\"itv_fay false\"],\"reason\":\"membership_change\",\"replacedBy\":null,\"scheduleVersion\":null,\"state\":\"open\",\"version\":1,\"weekRevision\":1}, not {\"club\":\"clb_here\",\"days\":[\"itv_eve friday true false\",\"itv_eve saturday false true\"],\"daysPerMember\":1,\"earlier\":[],\"effectiveFrom\":\"2026-11-11\",\"members\":[\"itv_eve false\",\"itv_fay false\"],\"reason\":\"membership_change\",\"replacedBy\":null,\"scheduleVersion\":null,\"state\":\"open\",\"version\":1,\"weekRevision\":1} (T33)",
++ ]
+
+ ❯ src/privacy/schedule.test.ts:969:51
+    967|       return w;
+    968|     };
+    969|     expect(judge(aside(), asideJoined("friday"))).toEqual([]);
+       |                                                   ^
+    970|     expect(judge(aside(), asideJoined("saturday")).join(" ")).toMatch(…
+    971|     expect(judge(four(), joined("saturday", { version: 2 })).join(" ")…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131) > wants an open pick replaced when the club's size changes the days each, naming its successor
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "itv_cleo holds saturday at first, not wednesday (FQ48, FQ127)",
++   "itv_dee holds wednesday at first, not saturday (FQ48, FQ127)",
++ ]
+
+ ❯ src/privacy/schedule.test.ts:1037:60
+    1035|       return w;
+    1036|     };
+    1037|     expect(judge(choosing, kept("saturday", "wednesday"))).toEqual([]);
+       |                                                            ^
+    1038|     expect(judge(choosing, kept("wednesday", "saturday")).join(" ")).t…
+    1039|       /itv_cleo holds wednesday at first, not saturday/,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

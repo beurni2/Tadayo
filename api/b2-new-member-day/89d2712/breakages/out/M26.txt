@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 2 failed) 25843ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 10637ms
+     × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 10604ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 31 passed (33)
+   Start at  16:22:40
+   Duration  26.90s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > refuses a reservation that waits on a cancellation in progress, once it commits (T9)
+Error: waitingOn: nothing came to wait for the club's row
+ ❯ waitingOn src/db/week-world.ts:177:9
+    175|     await new Promise((resolve) => setTimeout(resolve, 25));
+    176|   }
+    177|   throw new Error("waitingOn: nothing came to wait for the club's row"…
+       |         ^
+    178| }
+    179|
+ ❯ src/db/membership-change.test.ts:1240:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63)
+Error: waitingOn: nothing came to wait for the club's row
+ ❯ waitingOn src/db/week-world.ts:177:9
+    175|     await new Promise((resolve) => setTimeout(resolve, 25));
+    176|   }
+    177|   throw new Error("waitingOn: nothing came to wait for the club's row"…
+       |         ^
+    178| }
+    179|
+ ❯ src/db/membership-change.test.ts:1258:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

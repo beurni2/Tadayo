@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (26 tests | 1 failed) 58ms
+   ❯ a date whose day was cancelled (FQ129, FQ130) (3)
+     × never owes a cancelled date again to the star whose day was cancelled 22ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:14:50
+   Duration  2.19s (tests 90%, import 8%, worker 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > a date whose day was cancelled (FQ129, FQ130) > never owes a cancelled date again to the star whose day was cancelled
+AssertionError: expected [ '2026-11-13', '2026-11-20', …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "2026-11-13",
++   "2026-11-20",
++   "2026-11-27",
++   "2026-12-04",
++ ]
+
+ ❯ src/schedule/generate.test.ts:429:51
+    427|   it("never owes a cancelled date again to the star whose day was canc…
+    428|     // The same week as before, no new member: Debby's cancelled Frida…
+    429|     expect(dates(club({ made, cancelled }), NOW)).toEqual([]);
+       |                                                   ^
+    430|     // A date cancelled for one star and given to another, cancelled a…
+    431|     const twice = new Map(debbys.map((date) => [date, ["debby", "leila…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 2 failed) 48ms
+   ❯ pickAfter: a fourth member frees a day now (FQ131, the founder's answer) (5)
+     × frees nothing in a paused club, which asks nobody anything (FQ16) 15ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × ends with no successor when nobody it includes is still a member, or the club is paused (FQ16) 1ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  2 failed | 150 passed (152)
+   Start at  16:13:44
+   Duration  2.11s (tests 91%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: a fourth member frees a day now (FQ131, the founder's answer) > frees nothing in a paused club, which asks nobody anything (FQ16)
+RangeError: schedule: a week is proposed for two to six members, not 1 (A01)
+ ❯ checkCount src/schedule/propose.ts:14:11
+     12| function checkCount(memberCount: number): void {
+     13|   if (!Number.isInteger(memberCount) || memberCount < 2 || memberCount…
+     14|     throw new RangeError(`schedule: a week is proposed for two to six …
+       |           ^
+     15|   }
+     16| }
+ ❯ daysPerMember src/schedule/propose.ts:20:3
+ ❯ pickAfter src/schedule/change.ts:137:15
+ ❯ src/schedule/change.test.ts:189:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > ends with no successor when nobody it includes is still a member, or the club is paused (FQ16)
+RangeError: schedule: a week is proposed for two to six members, not 1 (A01)
+ ❯ checkCount src/schedule/propose.ts:14:11
+     12| function checkCount(memberCount: number): void {
+     13|   if (!Number.isInteger(memberCount) || memberCount < 2 || memberCount…
+     14|     throw new RangeError(`schedule: a week is proposed for two to six …
+       |           ^
+     15|   }
+     16| }
+ ❯ daysPerMember src/schedule/propose.ts:20:3
+ ❯ pickAfter src/schedule/change.ts:137:15
+ ❯ src/schedule/change.test.ts:240:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

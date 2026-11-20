@@ -1,0 +1,196 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 5 failed) 4941ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 153ms
+   ❯ a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) (3)
+     × writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody 99ms
+     × makes the week's days while a pick is open, as before, and the new member's only once confirmed 108ms
+     × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 118ms
+   ❯ reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) (3)
+     × gives the new member each day of the week in force as its member's, with no first date, and the free days to choose 68ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 28 passed (33)
+   Start at  16:14:14
+   Duration  6.12s (tests 91%, import 6%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+AssertionError: expected [ Array(15) ] to deeply equal [ Array(14) ]
+
+- Expected
++ Received
+
+@@ -8,10 +8,15 @@
+      "2026-11-13",
+      "Maya",
+      "scheduled",
+    ],
+    [
++     "2026-11-14",
++     "Alex",
++     "scheduled",
++   ],
++   [
+      "2026-11-19",
+      "Ben",
+      "cancelled",
+    ],
+    [
+
+ ❯ src/db/membership-change.test.ts:366:71
+    364|       ]);
+    365|       // This week's days stay as announced; from Monday 16 November t…
+    366|       expect(await daysOn(tx, c, ["thursday", "friday", "saturday"])).…
+       |                                                                       ^
+    367|         ["2026-11-12", "Ben", "scheduled"],
+    368|         ["2026-11-13", "Maya", "scheduled"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:351:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody
+AssertionError: expected [ { …(2) }, { …(2) } ] to deeply equal [ { …(2) }, { …(2) } ]
+
+- Expected
++ Received
+
+@@ -52,11 +52,11 @@
+          "2026-11-13",
+        ],
+        [
+          "saturday",
+          "Alex",
+-         "2026-11-21",
++         "2026-11-14",
+        ],
+      ],
+      "effective_from": "2026-11-12",
+    },
+  ]
+
+ ❯ src/db/membership-change.test.ts:737:34
+    735|       // A new week from Thursday 12 November, the day after the first…
+    736|       // they were, and Alex's from Wednesday 18 and Saturday 21 Novem…
+    737|       expect(await weeks(tx, c)).toEqual([
+       |                                  ^
+    738|         {
+    739|           effective_from: TODAY,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:728:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > makes the week's days while a pick is open, as before, and the new member's only once confirmed
+AssertionError: expected [ '2026-11-28', '2026-12-02', …(7) ] to deeply equal [ '2026-12-02', '2026-12-05', …(6) ]
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  [
++   "2026-11-28",
+    "2026-12-02",
+    "2026-12-05",
+    "2026-12-09",
+    "2026-12-12",
+    "2026-12-16",
+
+ ❯ src/db/membership-change.test.ts:801:85
+    799|       expect((await weeks(tx, c)).at(-1)).toMatchObject({ effective_fr…
+    800|       await make(tx, c);
+    801|       expect((await daysOn(tx, c, ["wednesday", "saturday"])).map((day…
+       |                                                                                     ^
+    802|         ...["2026-12-02", "2026-12-05", "2026-12-09", "2026-12-12"],
+    803|         ...["2026-12-16", "2026-12-19", "2026-12-23", "2026-12-26"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:780:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129)
+AssertionError: expected { effective_from: '2026-11-13', …(1) } to deeply equal { effective_from: '2026-11-13', …(1) }
+
+- Expected
++ Received
+
+@@ -21,15 +21,15 @@
+        "2026-11-12",
+      ],
+      [
+        "friday",
+        "Sam",
+-       "2026-11-20",
++       "2026-11-13",
+      ],
+      [
+        "saturday",
+        "Alex",
+-       "2026-11-21",
++       "2026-11-14",
+      ],
+    ],
+    "effective_from": "2026-11-13",
+  }
+
+ ❯ src/db/membership-change.test.ts:819:43
+    817|       expect(await heldAtFirst(tx, c, pick?.id ?? "")).toEqual({ Sam: …
+    818|       await confirmOwn(tx, c, "Sam");
+    819|       expect((await weeks(tx, c)).at(-1)).toEqual({
+       |                                           ^
+    820|         effective_from: "2026-11-13",
+    821|         days: [
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:809:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) > gives the new member each day of the week in force as its member's, with no first date, and the free days to choose
+AssertionError: expected [ …(6) ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+@@ -25,8 +25,8 @@
+      undefined,
+    ],
+    [
+      "saturday",
+      "yours",
+-     "2026-11-21",
++     "2026-11-14",
+    ],
+  ]
+
+ ❯ src/db/membership-change.test.ts:876:86
+    874|       const answer = await confirmOwn(tx, c, "Alex");
+    875|       expect(answer).toMatchObject({ state: "applied", version: 2, myS…
+    876|       expect(answer.slots.map((each) => [each.weekday, each.state, eac…
+       |                                                                                      ^
+    877|         ["monday", "taken", undefined],
+    878|         ["tuesday", "taken", undefined],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:853:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

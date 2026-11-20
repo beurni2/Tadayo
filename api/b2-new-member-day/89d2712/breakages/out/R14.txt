@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 33ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × ends with no successor when nobody it includes is still a member, or the club is paused (FQ16) 13ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:13:57
+   Duration  2.07s (tests 89%, import 8%, worker 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > ends with no successor when nobody it includes is still a member, or the club is paused (FQ16)
+AssertionError: expected { freed: [], …(1) } to deeply equal { freed: [], …(1) }
+
+- Expected
++ Received
+
+  {
+    "freed": [],
+    "proposal": {
+-     "kind": "drop",
++     "kind": "nothing",
+    },
+  }
+
+ ❯ src/schedule/change.test.ts:239:7
+    237|     expect(
+    238|       pickAfter(facts({ active: ["ben", "debby", "maya", "alex"], open…
+    239|     ).toEqual({ freed: [], proposal: { kind: "drop" } });
+       |       ^
+    240|     expect(pickAfter(facts({ active: ["ben"], open: open([member("sam"…
+    241|       freed: [],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

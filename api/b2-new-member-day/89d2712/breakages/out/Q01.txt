@@ -1,0 +1,51 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (54 tests | 1 failed) 3204ms
+   ❯ choosing days (FQ46, FQ48, FQ55; T33) (6)
+     × frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102) 61ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 53 passed (54)
+   Start at  16:16:34
+   Duration  3.68s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102)
+AssertionError: expected { effectiveFrom: '2026-11-02', …(1) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "assignments": [
+    {
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Sam who left",
+        "membershipId": "mem_NIJ8tQrDuQzCFe8C5tDcwg",
+      },
+      "weekday": "thursday",
+    },
+  ],
+  "effectiveFrom": "2026-11-02",
+}
+
+ ❯ src/db/schedule-commands.test.ts:602:28
+    600|       });
+    601|       // The club's week lists only members still in the club, so Sam'…
+    602|       expect(ben?.current).toBeNull();
+       |                            ^
+    603|       // And Ben confirms Monday: nobody who is still a member holds i…
+    604|       const answer = await confirm(tx, clock, w, 0, ["monday"]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:575:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

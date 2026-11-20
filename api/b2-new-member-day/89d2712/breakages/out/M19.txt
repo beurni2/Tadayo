@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 2 failed) 4624ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 221ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 175ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 31 passed (33)
+   Start at  16:20:26
+   Duration  5.81s (tests 92%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/membership-change.test.ts:477:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > refuses a reservation that waits on a cancellation in progress, once it commits (T9)
+AssertionError: expected undefined to be '23000' // Object.is equality
+
+- Expected:
+"23000"
+
++ Received:
+undefined
+
+ ❯ src/db/membership-change.test.ts:1244:30
+    1242|         await cancel.release();
+    1243|       }
+    1244|       expect(await reserved).toBe("23000");
+       |                              ^
+    1245|       expect(await reservationsOf(day)).toBe(0);
+    1246|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

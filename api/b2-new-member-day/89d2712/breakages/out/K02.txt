@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 2 failed) 5047ms
+   ❯ a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) (3)
+     × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 136ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × takes a confirmation that comes before the leave, which then finds the pick applied 231ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 31 passed (33)
+   Start at  16:16:02
+   Duration  5.85s (tests 92%, import 5%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129)
+PostgresError: duplicate key value violates unique constraint "schedule_assignments_pkey"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ confirmNewMemberDays ../packages/domain/src/schedule/confirm-days.ts:156:20
+    154|       typeof lastAnnounced === "string" ? Temporal.PlainDate.from(last…
+    155|     ).toString();
+    156|     await bound(tx)`
+       |                    ^
+    157|         INSERT INTO app.schedule_assignments
+    158|           (schedule_version_id, club_id, weekday, star_interval_id, fi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes a confirmation that comes before the leave, which then finds the pick applied
+AssertionError: expected '23000' to match object { state: 'applied', version: 2, …(1) }
+
+- Expected:
+{
+  "myState": "confirmed",
+  "state": "applied",
+  "version": 2,
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/membership-change.test.ts:1135:26
+    1133|         await hold.release();
+    1134|       }
+    1135|       expect(await alex).toMatchObject({ state: "applied", version: 2,…
+       |                          ^
+    1136|       expect(await left).toMatchObject({ club_id: s.c.club });
+    1137|       expect(await rowOf(s.pick.id)).toEqual({ state: "applied", versi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

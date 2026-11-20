@@ -1,0 +1,294 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 14 failed) 4747ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two) 102ms
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 93ms
+     × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 96ms
+     × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 94ms
+   ❯ a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) (3)
+     × writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody 105ms
+     × makes the week's days while a pick is open, as before, and the new member's only once confirmed 114ms
+     × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 83ms
+   ❯ reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) (3)
+     × gives the new member each day of the week in force as its member's, with no first date, and the free days to choose 73ms
+   ❯ choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) (4)
+     × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation 241ms
+     × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 80ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own 312ms
+     × takes a confirmation that comes before the leave, which then finds the pick applied 229ms
+     × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 143ms
+     × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 89ms
+
+ Test Files  1 failed (1)
+      Tests  14 failed | 19 passed (33)
+   Start at  16:16:09
+   Duration  5.43s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two)
+PostgresError: app.schedule_versions: the week sched_fh3o4D1n2SChwIsz7YDVng leaves out mem_fz9g82mcXyXOIapBvBpaoA's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+PostgresError: app.schedule_versions: the week sched_0hfBRfulV-Q_MqbGm_FbDw leaves out mem_mAAeZRaWESHy9HSqkFah_A's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1)
+PostgresError: app.schedule_versions: the week sched_OVk0yksKuAQef4ZCxGycQg leaves out mem_WoXpn_di3rUjkWfae7HAfw's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)
+PostgresError: app.schedule_versions: the week sched_ogw1j-Vj4MJpCZCOVmaF6Q leaves out mem_e3gnGQ3O-5CdeUKgmP_BCw's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody
+PostgresError: app.schedule_versions: the week sched_KFzxkFNDr4UGRD-pL0dguA leaves out mem_8dsoS7dWjbAEWNxriUOcSA's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > makes the week's days while a pick is open, as before, and the new member's only once confirmed
+PostgresError: app.schedule_versions: the week sched_BcXItuSmPPt4-2jaFMPpZg leaves out mem_DBWHs1QGEholj9QEPdWf2w's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129)
+PostgresError: app.schedule_versions: the week sched_QSNGMnSSCEQzkTkpaLaZ_g leaves out mem_ROxQ1-l2mLPJQrZ97rSLaw's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) > gives the new member each day of the week in force as its member's, with no first date, and the free days to choose
+PostgresError: app.schedule_versions: the week sched_sBoQzt_vLVDw-Yz0Mq5zEw leaves out mem_frMZJuyhWMkISkJREZE6pg's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation
+PostgresError: app.schedule_versions: the week sched_zU9K47uhPfxZ8Ret_0VDtg leaves out mem_k78XdjbkTYho2SgSTX96pQ's monday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19)
+PostgresError: app.schedule_versions: the week sched_Lc91oXib1IMMwNl3_r4TuA leaves out mem_u79FWPP5AyQyVPxFHbuO1g's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own
+AssertionError: expected '23000' to match object { state: 'open', version: 1, …(1) }
+
+- Expected:
+{
+  "myState": "confirmed",
+  "state": "open",
+  "version": 1,
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/membership-change.test.ts:1079:27
+    1077|         await hold.release();
+    1078|       }
+    1079|       expect(await debby).toMatchObject({ state: "open", version: 1, m…
+       |                           ^
+    1080|       expect(await nina).toMatchObject({ state: "applied", version: 2,…
+    1081|       expect(await rowOf(s.pick.id)).toEqual({ state: "applied", versi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes a confirmation that comes before the leave, which then finds the pick applied
+AssertionError: expected '23000' to match object { state: 'applied', version: 2, …(1) }
+
+- Expected:
+{
+  "myState": "confirmed",
+  "state": "applied",
+  "version": 2,
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/membership-change.test.ts:1135:26
+    1133|         await hold.release();
+    1134|       }
+    1135|       expect(await alex).toMatchObject({ state: "applied", version: 2,…
+       |                          ^
+    1136|       expect(await left).toMatchObject({ club_id: s.c.club });
+    1137|       expect(await rowOf(s.pick.id)).toEqual({ state: "applied", versi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > refuses a reservation that waits on a cancellation in progress, once it commits (T9)
+PostgresError: app.schedule_versions: the week sched_xpweLCFvKAlZUqu30CB9GA leaves out mem_kUj7gNmBPTP0_OlOEo0cbQ's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63)
+PostgresError: app.schedule_versions: the week sched_TMBHU_SCtTDFDR5x8RZFXQ leaves out mem_k9FM5FP047jUi1Q6yGjovA's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+

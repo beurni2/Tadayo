@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index 9b862a38..af96b890 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -160,7 +160,7 @@ async function confirmNewMemberDays(
+                 ${at}::pg_catalog.timestamptz)`;
+     // A day of a member who has left, on this weekday from the new member's first date on (FQ129).
+     await bound(tx)`
+-        UPDATE app.occurrences o SET status = 'cancelled'
++        UPDATE app.occurrences o SET status = o.status
+          WHERE o.club_id = ${clubId} AND o.status <> 'cancelled' AND o.local_date >= ${opens}::pg_catalog.date
+            AND EXTRACT(isodow FROM o.local_date) = ${isoDay}::pg_catalog.int4
+            AND NOT EXISTS (SELECT FROM app.memberships s

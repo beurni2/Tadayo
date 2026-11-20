@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 37ms
+   ❯ newMemberFirstDate: the picked day in the week after (FQ130) (5)
+     × is on or after the start of the week it joins 11ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:14:21
+   Duration  2.34s (tests 91%, import 6%, worker 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > newMemberFirstDate: the picked day in the week after (FQ130) > is on or after the start of the week it joins
+AssertionError: expected '2026-11-13' to be '2026-12-11' // Object.is equality
+
+Expected: "2026-12-11"
+Received: "2026-11-13"
+
+ ❯ src/schedule/change.test.ts:458:94
+    456|     // The club's latest week starts on 7 December (first days opened …
+    457|     const friday = at("2026-11-06T10:00");
+    458|     expect(newMemberFirstDate("friday", friday, NEW_YORK, D("2026-12-0…
+       |                                                                                              ^
+    459|   });
+    460| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

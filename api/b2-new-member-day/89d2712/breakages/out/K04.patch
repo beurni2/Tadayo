@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index 9b862a38..3e7e87ef 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -151,7 +151,7 @@ async function confirmNewMemberDays(
+       at,
+       zone,
+       start,
+-      typeof lastAnnounced === "string" ? Temporal.PlainDate.from(lastAnnounced) : null,
++      null,
+     ).toString();
+     await bound(tx)`
+         INSERT INTO app.schedule_assignments

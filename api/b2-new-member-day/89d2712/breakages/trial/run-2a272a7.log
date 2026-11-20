@@ -1,0 +1,247 @@
+head: 2a272a7a4c5a7f75638c0603dfdf55f965620cf9
+pgci 0
+db-bootstrap 0
+baseline unit:       Tests  152 passed (152)
+baseline membership-change:       Tests  33 passed (33)
+baseline schedule-proposals:       Tests  49 passed (49)
+baseline days:       Tests  15 passed (15)
+baseline uniqueness:       Tests  7 passed (7)
+baseline schedule-commands:       Tests  54 passed (54)
+baseline judge:       Tests  39 passed (39)
+baseline matrix:       Tests  1 passed | 18 skipped (19)
+database made again before the breakages: 0
+== R01 days are freed at every join that brings four or more [unit]: CAUGHT; exit 1 ['Tests  3 failed | 149 passed (152)']
+    × frees nothing where the free days are enough for the new members, and nothing in a club of three or fewer 16ms
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 3ms
+    × opens a new pick in its place when the club's size changes the days each takes (FQ131) 2ms
+== R02 days are never freed [unit]: CAUGHT; exit 1 ['Tests  3 failed | 149 passed (152)']
+    × frees by the days each has, not the table's: the earlier day from Monday stays 1ms
+    × frees the days beyond each member's first wherever the free days are too few, as two joined by three 1ms
+    × keeps each member's first day from Monday and frees the others, for a fourth member to pick from 9ms
+== R03 days are freed when the free days are exactly enough [unit]: CAUGHT; exit 1 ['Tests  3 failed | 149 passed (152)']
+    × frees nothing where the free days are enough for the new members, and nothing in a club of three or fewer 26ms
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 1ms
+    × opens a new pick in its place when the club's size changes the days each takes (FQ131) 2ms
+== R04 a member keeps their later days and loses their first [unit]: CAUGHT; exit 1 ['Tests  3 failed | 149 passed (152)']
+    × frees by the days each has, not the table's: the earlier day from Monday stays 2ms
+    × frees the days beyond each member's first wherever the free days are too few, as two joined by three 1ms
+    × keeps each member's first day from Monday and frees the others, for a fourth member to pick from 16ms
+== R05 freeing counts the table's days, not each member's [unit]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  152 passed (152)']
+== R06 a new member may take a day someone keeps [unit]: CAUGHT; exit 1 ['Tests  5 failed | 147 passed (152)']
+    × adds a member who joins while it is open, with free days nobody it includes holds 2ms
+    × frees nothing where the free days are enough for the new members, and nothing in a club of three or fewer 2ms
+    × gives a new member the first free days from Monday when the table's day for their place is someone's 18ms
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 1ms
+    × opens a new pick in its place when the club's size changes the days each takes (FQ131) 2ms
+== R07 two who join take the same day [unit]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × frees nothing where the free days are enough for the new members, and nothing in a club of three or fewer 28ms
+== R08 a pick opens while the first days are open [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × asks nothing while the first days are open or never applied: their own rule decides (FQ102) 18ms
+== R09 a paused club is asked something [unit]: CAUGHT; exit 1 ['Tests  2 failed | 150 passed (152)']
+    × ends with no successor when nobody it includes is still a member, or the club is paused (FQ16) 1ms
+    × frees nothing in a paused club, which asks nobody anything (FQ16) 10ms
+== R10 a member with fewer days than the table's is asked again [unit]: CAUGHT; exit 1 ['Tests  4 failed | 148 passed (152)']
+    × applies in place of a new pick when those it includes have all confirmed and the size changes 0ms
+    × asks nothing when every active member has a day in the week, after a leave too (FQ125, FQ131) 6ms
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 1ms
+    × opens a new pick in its place when the club's size changes the days each takes (FQ131) 1ms
+== R11 an open pick of another size is kept [unit]: CAUGHT; exit 1 ['Tests  2 failed | 150 passed (152)']
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 8ms
+    × opens a new pick in its place when the club's size changes the days each takes (FQ131) 8ms
+== R12 a member who joins an open pick isn't added [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × adds a member who joins while it is open, with free days nobody it includes holds 20ms
+== R13 a member who joins an open pick may take a day held in it [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × adds a member who joins while it is open, with free days nobody it includes holds 15ms
+== R14 a pick nobody is left in stays open [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × ends with no successor when nobody it includes is still a member, or the club is paused (FQ16) 12ms
+== R15 a pick never applies [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × applies when everyone it includes who is still a member has confirmed, as on a leave 20ms
+== R16 a new week starts today even when the latest starts later [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × starts a new week today, or the day after the latest week's start when that is today or later 10ms
+== R17 a new week starts on the latest week's start when that is today [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × starts a new week today, or the day after the latest week's start when that is today or later 12ms
+== R18 next Monday is a day early [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × gives the Monday after the date's week, weeks running Monday to Sunday 7ms
+== R19 a new member's day first opens this week [unit]: CAUGHT; exit 1 ['Tests  2 failed | 150 passed (152)']
+    × is that weekday in the week after the confirmation, never this week 15ms
+    × takes this week and next from the club's own date, not UTC's (T1) 1ms
+== R23 on Postgres: a new member's day first opens this week [mc]: CAUGHT; exit 1 ['Tests  5 failed | 28 passed (33)']
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 187ms
+    × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 156ms
+    × gives the new member each day of the week in force as its member's, with no first date, and the free days to choose 73ms
+    × makes the week's days while a pick is open, as before, and the new member's only once confirmed 143ms
+    × writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody 90ms
+== R20 a new member's day ignores the start of the week it joins [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × is on or after the start of the week it joins 14ms
+== R21 a new member's day ignores the last day announced on its weekday [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × comes after the last day of that weekday announced for a member still in the club 13ms
+== R22 a new member's day ignores FQ79's 24 hours [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × waits a week where the week after's date is less than 24 hours on (FQ79) 9ms
+== R24 a new pick gives each member the table's days again, not what they held [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 18ms
+== R25 on Postgres: a new pick gives each member the table's days again [mc]: CAUGHT; exit 1 ['Tests  1 failed | 32 passed (33)']
+    × keeps what a member held when a new pick takes the place of theirs: Alex's chosen Saturday stays Alex's (FQ125, FQ126) 112ms
+== R26 on a clash the later joiner keeps the day [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 15ms
+== R27 a member keeps more than the new number of the days they held [unit]: CAUGHT; exit 1 ['Tests  2 failed | 150 passed (152)']
+    × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 1ms
+    × opens a new pick in its place when the club's size changes the days each takes (FQ131) 9ms
+== R28 a new member's day takes today from UTC [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × takes this week and next from the club's own date, not UTC's (T1) 16ms
+== V01 a leaver's day of the week is taken in a pick [unit]: CAUGHT; exit 1 ['Tests  2 failed | 150 passed (152)']
+    × frees the days of a member who left, of the week or of the pick (FQ125, FQ129) 12ms
+    × never takes a day of the week in force, and takes a free one, a leaver's too 8ms
+== N01 a cancelled date is owed again to its star [unit]: CAUGHT; exit 1 ['Tests  1 failed | 151 passed (152)']
+    × never owes a cancelled date again to the star whose day was cancelled 21ms
+== S01 a freed week keeps the freed days [mc]: CAUGHT; exit 1 ['Tests  4 failed | 29 passed (33)']
+    × frees days the same way when the first days apply with a late joiner and no day free (FQ100, FQ131) 125ms
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 212ms
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 234ms
+    × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 185ms
+== S02 the freed days are not cancelled [mc]: CAUGHT; exit 1 ['Tests  3 failed | 30 passed (33)']
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 197ms
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 206ms
+    × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 159ms
+== S03 the freed days are cancelled from this week [mc]: CAUGHT; exit 1 ['Tests  1 failed | 32 passed (33)']
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 149ms
+== S04 a freed week starts next Monday [mc]: CAUGHT; exit 1 ['Tests  2 failed | 31 passed (33)']
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 189ms
+    × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 141ms
+== S05 a pick is from next Monday [mc]: CAUGHT; exit 1 ['Tests  30 failed | 3 passed (33)']
+    × adds a member who joins while it is open, holding a free day nobody it includes holds, and moves nothing else (T33) 140ms
+    × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the pick 61ms
+    × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 64ms
+    × answers a retry with the first answer after the pick was replaced, and nothing once the caller has left (T19, T14) 72ms
+    × asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two) 81ms
+    × ends an open pick when the club is paused, and opens one when it has two members again (FQ16, FQ116) 74ms
+== S06 a replaced pick names no successor [mc]: CAUGHT; exit 1 ['Tests  3 failed | 30 passed (33)']
+    × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the pick 210ms
+    × names the club's open pick to an id replaced more than once, and treats it as ended once none is open 137ms
+    × replaces an open pick when the club's size changes the days each, and the old id answers MEMBERSHIP_CHANGED to whom the new one includes 129ms
+== S07 an ended pick keeps its version [mc]: CAUGHT; exit 1 ['Tests  5 failed | 28 passed (33)']
+    × ends an open pick when the club is paused, and opens one when it has two members again (FQ16, FQ116) 71ms
+    × ends an open pick with no successor when nobody it includes is still a member 82ms
+    × gives members already in the week, someone who left, a stranger and a member of another club nothing of it (T14) 114ms
+    × names the club's open pick to an id replaced more than once, and treats it as ended once none is open 178ms
+    × refuses a confirmation that comes after the leave that ended the pick 261ms
+== S08 the late joiner's apply frees nothing [mc]: CAUGHT; exit 1 ['Tests  4 failed | 29 passed (33)']
+    × frees days the same way when the first days apply with a late joiner and no day free (FQ100, FQ131) 111ms
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 152ms
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 187ms
+    × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 160ms
+== S09 a join takes today and next week from UTC [mc]: CAUGHT; exit 1 ['Tests  1 failed | 32 passed (33)']
+    × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 187ms
+== K01 a confirmation's week starts next Monday [mc]: CAUGHT; exit 1 ['Tests  8 failed | 25 passed (33)']
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 167ms
+    × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 175ms
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 298ms
+    × makes the week's days while a pick is open, as before, and the new member's only once confirmed 134ms
+    × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation 278ms
+    × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 185ms
+== K02 a confirmation's week copies a leaver's days [mc]: CAUGHT; exit 1 ['Tests  2 failed | 31 passed (33)']
+    × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 138ms
+    × takes a confirmation that comes before the leave, which then finds the pick applied 244ms
+== K03 a confirmation's week leaves everyone else out [mc]: CAUGHT; exit 1 ['Tests  14 failed | 19 passed (33)']
+    × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 85ms
+    × asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two) 103ms
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 79ms
+    × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 88ms
+    × gives the new member each day of the week in force as its member's, with no first date, and the free days to choose 80ms
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 72ms
+== K04 a confirmation ignores the last day announced on its weekday [mc]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  33 passed (33)']
+== K05 a leaver's days on a picked weekday are not cancelled [mc]: CAUGHT; exit 1 ['Tests  1 failed | 32 passed (33)']
+    × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 235ms
+== K06 a pick never applies on its last confirmation [mc]: CAUGHT; exit 1 ['Tests  12 failed | 21 passed (33)']
+    × asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two) 109ms
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 88ms
+    × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 79ms
+    × gives the new member each day of the week in force as its member's, with no first date, and the free days to choose 80ms
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 114ms
+    × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 84ms
+== Q01 the club's week lists a member who left [sc]: CAUGHT; exit 1 ['Tests  1 failed | 53 passed (54)']
+    × frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102) 75ms
+== Q02 through the app: the club's week lists a member who left [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 1137ms
+== X01 through the app: days are freed at every join that brings four or more [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 875ms
+== X02 through the app: the freed days are not cancelled [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 1068ms
+== X03 through the app: a new member's day first opens this week [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 1197ms
+== M01 a cancelled day keeps its date from any other day [uniq]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)'] (database made again: 0 0)
+    × leaves a cancelled day's date to one other day, and keeps the cancelled one (FQ129) 19ms
+== M02 a date may have two live days [uniq]: CAUGHT; exit 1 ['Tests  2 failed | 5 passed (7)'] (database made again: 0 0)
+    × keeps one day per club and date (T6) 24ms
+    × leaves a cancelled day's date to one other day, and keeps the cancelled one (FQ129) 20ms
+== M03 a new week may give an announced day to someone else [days]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)'] (database made again: 0 0)
+    × refuses a new week that would give a day already announced to someone else (FQ61, 0015) 27ms
+== M04 a cancelled day keeps its date from a new week [days]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)'] (database made again: 0 0)
+    × takes a new week whose day is a date with a cancelled day, which then takes the new star's (FQ129) 26ms
+== M05 a day made under a later week counts against an earlier one [days]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 14 passed (15)'] (database made again: 0 0)
+    × takes a new week whose day is a date with a cancelled day, which then takes the new star's (FQ129) 13ms
+== M06 a week after the first days may hold anything [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × holds in a week after the first days only what its members had in the week before, as it was, and confirmations (FQ126) 25ms
+== M07 a confirmation's day may be in a week it didn't write [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × holds in a week after the first days only what its members had in the week before, as it was, and confirmations (FQ126) 57ms
+== M08 a day of the week before may move its first date [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × holds in a week after the first days only what its members had in the week before, as it was, and confirmations (FQ126) 33ms
+== M09 a week after the first days may leave out a member's day [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × keeps in a week after the first days every day of the week before whose member is still in the club (FQ125, FQ126, FQ131) 32ms
+== M10 the database frees days at every four or more [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × keeps in a week after the first days every day of the week before whose member is still in the club (FQ125, FQ126, FQ131) 46ms
+== M11 the database never frees days [mc]: CAUGHT; exit 1 ['Tests  4 failed | 29 passed (33)'] (database made again: 0 0)
+    × frees days the same way when the first days apply with a late joiner and no day free (FQ100, FQ131) 82ms
+    × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 153ms
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 212ms
+    × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 128ms
+== M12 the database keeps a leaver's days in every week [mc]: CAUGHT; exit 1 ['Tests  2 failed | 31 passed (33)'] (database made again: 0 0)
+    × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 142ms
+    × takes a confirmation that comes before the leave, which then finds the pick applied 210ms
+== M13 a pick may list a member who left [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × lists only members still in the club with no day in its latest week (FQ125, FQ127) 46ms
+== M14 a pick may list a member with a day in the week [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × lists only members still in the club with no day in its latest week (FQ125, FQ127) 50ms
+== M15 a week may start before an earlier week [days]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)'] (database made again: 0 0)
+    × refuses a new week that starts on or before an earlier week of its club (0015) 17ms
+== M16 a week may start on an earlier week's start [days]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)'] (database made again: 0 0)
+    × refuses a new week that starts on or before an earlier week of its club (0015) 23ms
+== M17 in a pick a member who confirmed and left still contests their day [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × lets a member confirm a day of one who confirmed it and left since: a member who left contests nothing (FQ127) 72ms
+== M18 a member who left contests nothing in the first days either [sp]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  49 passed (49)'] (database made again: 0 0)
+== M19 a cancelled day takes a new drop [mc]: CAUGHT; exit 1 ['Tests  2 failed | 31 passed (33)'] (database made again: 0 0)
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 284ms
+    × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 166ms
+== M20 a pick may hold a day of the week in force [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × lets its members hold any free day, and never a day of the week in force whose member is still in the club (FQ125, FQ127) 23ms
+== M21 a pick may be from any date [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × is proposed open, at version 1, in its one week, with no week of its own, from the club's local date 32ms
+== M22 a pick may apply with nobody left in it [sp]: CAUGHT; exit 1 ['Tests  2 failed | 47 passed (49)'] (database made again: 0 0)
+    × applies once every member it includes who is still in the club has confirmed, and never with nobody left 51ms
+    × applies the first days only once every member still in the club has confirmed, and at least one has (FQ102) 45ms
+== M23 a week may copy the day of a member who left, as it was [sp]: CAUGHT; exit 1 ['Tests  1 failed | 48 passed (49)'] (database made again: 0 0)
+    × holds in a week after the first days only what its members had in the week before, as it was, and confirmations (FQ126) 51ms
+== M24 a cancelled day takes a new reservation [mc]: CAUGHT; exit 1 ['Tests  3 failed | 30 passed (33)'] (database made again: 0 0)
+    × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 204ms
+    × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 10579ms
+    × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 10574ms
+== M25 a reservation reads a day's status without waiting for a cancellation [mc]: CAUGHT; exit 1 ['Tests  2 failed | 31 passed (33)'] (database made again: 0 0)
+    × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 10547ms
+    × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 10642ms
+== M26 a cancellation never waits for a reservation in progress [mc]: CAUGHT; exit 1 ['Tests  2 failed | 31 passed (33)'] (database made again: 0 0)
+    × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 10539ms
+    × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 10607ms
+== J01 the judge frees days at every join that brings four or more [judge]: CAUGHT; exit 1 ['Tests  1 failed | 38 passed (39)'] (database made again from the true migration: 0 0)
+    × wants an open pick replaced when the club's size changes the days each, naming its successor 14ms
+== J02 the judge never frees days [judge]: CAUGHT; exit 1 ['Tests  1 failed | 38 passed (39)']
+    × wants a fourth member's join to free the others' second days in a new week, and a pick for the fourth 10ms
+== J03 the judge takes a new member's first date anywhere in the right week [judge]: CAUGHT; exit 1 ['Tests  1 failed | 38 passed (39)']
+    × refuses no new week, another start, a day moved or dropped, a day dated this week, and no version 10ms
+== J04 through the app: the judge lists a member who left in the club's week [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 880ms
+== J05 the judge gives each member of a new pick the table's days again [judge]: CAUGHT; exit 1 ['Tests  1 failed | 38 passed (39)']
+    × wants an open pick replaced when the club's size changes the days each, naming its successor 11ms
+== J06 the judge counts a day set aside as held [judge]: CAUGHT; exit 1 ['Tests  2 failed | 37 passed (39)']
+    × wants a member who joins an open pick added to it, holding a day nobody it includes holds, and nothing else moved (T33) 11ms
+    × wants an open pick replaced when the club's size changes the days each, naming its successor 3ms
+restored: ''
+exit 0

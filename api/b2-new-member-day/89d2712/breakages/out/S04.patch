@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index 2d4f4652..c1cac220 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -186,7 +186,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+ 
+   if (change.freed.length > 0) {
+     if (latest === null) throw new Error("schedule: the rule freed days of a week the club doesn't have");
+-    const start = nextWeekStart(today, date(latest["effective_from"])).toString();
++    const start = nextMonday(today).toString();
+     const versionId = newId("sched");
+     await bound(tx)`
+       INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)

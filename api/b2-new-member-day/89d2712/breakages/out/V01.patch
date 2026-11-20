@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index f33eec63..fdb16485 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -159,7 +159,6 @@ export function pickWeekFacts(
+   const stars = new Map<string, Weekday[]>();
+   const firstDates: Partial<Record<Weekday, string>> = {};
+   for (const day of latest) {
+-    if (!day.starActive) continue;
+     firstDates[day.weekday] = day.firstDate;
+     if (listed.has(day.star)) continue;
+     stars.set(day.star, [...(stars.get(day.star) ?? []), day.weekday]);

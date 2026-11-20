@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/days.test.ts (15 tests | 1 failed) 461ms
+   ❯ T6 and FQ61: a day for the right star, from the week in force (11)
+     × refuses a new week that starts on or before an earlier week of its club (0015) 27ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  16:19:42
+   Duration  1.46s (tests 75%, import 13%, transform 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/days.test.ts > T6 and FQ61: a day for the right star, from the week in force > refuses a new week that starts on or before an earlier week of its club (0015)
+AssertionError: duplicate key value violates unique constraint "schedule_versions_club_id_effective_from_key": expected '23505' to be '23000' // Object.is equality
+
+Expected: "23000"
+Received: "23505"
+
+ ❯ expectRefused src/db/harness.ts:112:37
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+       |                                     ^
+    113|   if (message) expect(error.message).toMatch(message);
+    114| }
+ ❯ src/db/days.test.ts:147:9
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/days.test.ts:144:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

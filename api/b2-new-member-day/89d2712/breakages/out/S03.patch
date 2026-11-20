@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index 2d4f4652..f247f4c9 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -201,7 +201,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+                 ${day.confirmedAt}::pg_catalog.timestamptz)`;
+     }
+     // From the next week on: the freed days' announced days open for nobody (T9), and are kept.
+-    const from = nextMonday(today).toString();
++    const from = today.toString();
+     for (const day of change.freed) {
+       await bound(tx)`
+         UPDATE app.occurrences SET status = 'cancelled'

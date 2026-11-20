@@ -1,0 +1,14 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..25510b34 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -108,8 +108,7 @@ function firstHolds(
+   const kept = new Map(
+     ids.map((id) => {
+       const days = fromMonday(earlier.get(id) ?? [])
+-        .filter((weekday) => !taken.has(weekday))
+-        .slice(0, per);
++        .filter((weekday) => !taken.has(weekday));
+       for (const weekday of days) taken.add(weekday);
+       return [id, days] as const;
+     }),

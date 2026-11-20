@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 1 failed) 5491ms
+   ❯ a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) (7)
+     × keeps what a member held when a new pick takes the place of theirs: Alex's chosen Saturday stays Alex's (FQ125, FQ126) 156ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 32 passed (33)
+   Start at  16:14:32
+   Duration  6.33s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > keeps what a member held when a new pick takes the place of theirs: Alex's chosen Saturday stays Alex's (FQ125, FQ126)
+AssertionError: expected { Alex: [ 'wednesday' ], …(1) } to deeply equal { Alex: [ 'saturday' ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "Alex": [
+-     "saturday",
++     "wednesday",
+    ],
+    "Sam": [
+-     "wednesday",
++     "saturday",
+    ],
+  }
+
+ ❯ src/db/membership-change.test.ts:627:58
+    625|       const [, second] = await picks(tx, c);
+    626|       expect(second).toMatchObject({ state: "open", days_per_member: 1…
+    627|       expect(await heldAtFirst(tx, c, second?.id ?? "")).toEqual({ Ale…
+       |                                                          ^
+    628|       expect(await proposalOf(tx, c, "Alex")).toMatchObject({ id: seco…
+    629|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:619:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

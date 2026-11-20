@@ -1,0 +1,55 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 1 failed) 5170ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 182ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 32 passed (33)
+   Start at  16:15:11
+   Duration  5.94s (tests 92%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+AssertionError: expected [ Array(14) ] to deeply equal [ Array(14) ]
+
+- Expected
++ Received
+
+@@ -1,15 +1,15 @@
+  [
+    [
+      "2026-11-12",
+      "Ben",
+-     "scheduled",
++     "cancelled",
+    ],
+    [
+      "2026-11-13",
+      "Maya",
+-     "scheduled",
++     "cancelled",
+    ],
+    [
+      "2026-11-19",
+      "Ben",
+      "cancelled",
+
+ ❯ src/db/membership-change.test.ts:366:71
+    364|       ]);
+    365|       // This week's days stay as announced; from Monday 16 November t…
+    366|       expect(await daysOn(tx, c, ["thursday", "friday", "saturday"])).…
+       |                                                                       ^
+    367|         ["2026-11-12", "Ben", "scheduled"],
+    368|         ["2026-11-13", "Maya", "scheduled"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:351:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

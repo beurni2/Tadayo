@@ -1,0 +1,194 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 8 failed) 5224ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 202ms
+     × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 184ms
+     × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 272ms
+   ❯ a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) (3)
+     × writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody 100ms
+     × makes the week's days while a pick is open, as before, and the new member's only once confirmed 93ms
+     × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 133ms
+   ❯ choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) (4)
+     × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation 221ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own 306ms
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 25 passed (33)
+   Start at  16:15:55
+   Duration  5.93s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+AssertionError: expected [ '2026-11-11', '2026-11-16', …(1) ] to deeply equal [ '2026-11-11', '2026-11-12', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "2026-11-11",
+-   "2026-11-12",
+-   "2026-11-13",
++   "2026-11-16",
++   "2026-11-17",
+  ]
+
+ ❯ src/db/membership-change.test.ts:359:54
+    357|       // new one from Friday 13 November, the day after the latest wee…
+    358|       const all = await weeks(tx, c);
+    359|       expect(all.map((each) => each.effective_from)).toEqual([TODAY, "…
+       |                                                      ^
+    360|       expect(all.at(-1)?.days).toEqual([
+    361|         ["monday", "Ben", "2026-11-16"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:351:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1)
+AssertionError: expected '2026-11-17' to be '2026-11-15' // Object.is equality
+
+Expected: "2026-11-15"
+Received: "2026-11-17"
+
+ ❯ src/db/membership-change.test.ts:427:59
+    425|       // day: Thursday 19 November is next week's, so it is cancelled …
+    426|       // this week's, kept, and the 26th the first cancelled).
+    427|       expect((await weeks(tx, c)).at(-1)?.effective_from).toBe("2026-1…
+       |                                                           ^
+    428|       const thursdays = await daysOn(tx, c, ["thursday"]);
+    429|       expect(thursdays[0]).toEqual(["2026-11-19", "Ben", "cancelled"]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:417:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)
+PostgresError: app.schedule_versions: a week starts after every earlier week of its club, after 2026-11-17, not on 2026-11-16
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ confirmNewMemberDays ../packages/domain/src/schedule/confirm-days.ts:128:18
+    126|        WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId…
+    127|   const versionId = newId("sched");
+    128|   await bound(tx)`
+       |                  ^
+    129|       INSERT INTO app.schedule_versions (id, club_id, effective_from, …
+    130|       VALUES (${versionId}, ${clubId}, ${start.toString()}::pg_catalog…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody
+AssertionError: expected [ { …(2) }, { …(2) } ] to deeply equal [ { …(2) }, { …(2) } ]
+
+- Expected
++ Received
+
+@@ -55,8 +55,8 @@
+          "saturday",
+          "Alex",
+          "2026-11-21",
+        ],
+      ],
+-     "effective_from": "2026-11-12",
++     "effective_from": "2026-11-16",
+    },
+  ]
+
+ ❯ src/db/membership-change.test.ts:737:34
+    735|       // A new week from Thursday 12 November, the day after the first…
+    736|       // they were, and Alex's from Wednesday 18 and Saturday 21 Novem…
+    737|       expect(await weeks(tx, c)).toEqual([
+       |                                  ^
+    738|         {
+    739|           effective_from: TODAY,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:728:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > makes the week's days while a pick is open, as before, and the new member's only once confirmed
+AssertionError: expected { effective_from: '2026-11-30', …(1) } to match object { effective_from: '2026-11-25' }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "effective_from": "2026-11-25",
++   "effective_from": "2026-11-30",
+  }
+
+ ❯ src/db/membership-change.test.ts:799:43
+    797|       // Alex confirms on Wednesday 25 November: a week from that day,…
+    798|       await confirmOwn(tx, c, "Alex");
+    799|       expect((await weeks(tx, c)).at(-1)).toMatchObject({ effective_fr…
+       |                                           ^
+    800|       await make(tx, c);
+    801|       expect((await daysOn(tx, c, ["wednesday", "saturday"])).map((day…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:780:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129)
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation
+PostgresError: app.schedule_versions: a week starts after every earlier week of its club, after 2026-11-16, not on 2026-11-16
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ confirmNewMemberDays ../packages/domain/src/schedule/confirm-days.ts:128:18
+    126|        WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId…
+    127|   const versionId = newId("sched");
+    128|   await bound(tx)`
+       |                  ^
+    129|       INSERT INTO app.schedule_versions (id, club_id, effective_from, …
+    130|       VALUES (${versionId}, ${clubId}, ${start.toString()}::pg_catalog…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own
+AssertionError: expected '23000' to match object { state: 'applied', version: 2, …(1) }
+
+- Expected:
+{
+  "myState": "confirmed",
+  "state": "applied",
+  "version": 2,
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/membership-change.test.ts:1080:26
+    1078|       }
+    1079|       expect(await debby).toMatchObject({ state: "open", version: 1, m…
+    1080|       expect(await nina).toMatchObject({ state: "applied", version: 2,…
+       |                          ^
+    1081|       expect(await rowOf(s.pick.id)).toEqual({ state: "applied", versi…
+    1082|       expect(await weeksOf(s.c.club)).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+

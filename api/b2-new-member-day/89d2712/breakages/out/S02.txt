@@ -1,0 +1,164 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 3 failed) 6193ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 179ms
+     × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 181ms
+     × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 220ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 30 passed (33)
+   Start at  16:15:03
+   Duration  7.25s (tests 91%, import 6%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+AssertionError: expected [ Array(14) ] to deeply equal [ Array(14) ]
+
+- Expected
++ Received
+
+@@ -10,63 +10,63 @@
+      "scheduled",
+    ],
+    [
+      "2026-11-19",
+      "Ben",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-11-20",
+      "Maya",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-11-21",
+      "Alex",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-11-26",
+      "Ben",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-11-27",
+      "Maya",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-11-28",
+      "Alex",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-12-03",
+      "Ben",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-12-04",
+      "Maya",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-12-05",
+      "Alex",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-12-10",
+      "Ben",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-12-11",
+      "Maya",
+-     "cancelled",
++     "scheduled",
+    ],
+    [
+      "2026-12-12",
+      "Alex",
+-     "cancelled",
++     "scheduled",
+    ],
+  ]
+
+ ❯ src/db/membership-change.test.ts:366:71
+    364|       ]);
+    365|       // This week's days stay as announced; from Monday 16 November t…
+    366|       expect(await daysOn(tx, c, ["thursday", "friday", "saturday"])).…
+       |                                                                       ^
+    367|         ["2026-11-12", "Ben", "scheduled"],
+    368|         ["2026-11-13", "Maya", "scheduled"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:351:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1)
+AssertionError: expected [ '2026-11-19', 'Ben', 'scheduled' ] to deeply equal [ '2026-11-19', 'Ben', 'cancelled' ]
+
+- Expected
++ Received
+
+  [
+    "2026-11-19",
+    "Ben",
+-   "cancelled",
++   "scheduled",
+  ]
+
+ ❯ src/db/membership-change.test.ts:429:28
+    427|       expect((await weeks(tx, c)).at(-1)?.effective_from).toBe("2026-1…
+    428|       const thursdays = await daysOn(tx, c, ["thursday"]);
+    429|       expect(thursdays[0]).toEqual(["2026-11-19", "Ben", "cancelled"]);
+       |                            ^
+    430|       expect(thursdays.filter((day) => day[2] === "scheduled")).toEqua…
+    431|       // Sam confirms Thursday at once: the 19th, in the week after th…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:417:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)
+AssertionError: expected 'scheduled' to be 'cancelled' // Object.is equality
+
+Expected: "cancelled"
+Received: "scheduled"
+
+ ❯ src/db/membership-change.test.ts:470:33
+    468|       await join(tx, c, "Sam", "Ben");
+    469|       const [cancelled] = await tx<{ status: string }[]>`SELECT status…
+    470|       expect(cancelled?.status).toBe("cancelled");
+       |                                 ^
+    471|       for (const name of ["Ben", "Maya", "Alex", "Sam"]) {
+    472|         expect(await reads(name, now()), name).toEqual([]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:440:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

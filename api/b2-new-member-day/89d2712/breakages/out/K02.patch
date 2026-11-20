@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index 9b862a38..e4d37ae3 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -135,7 +135,7 @@ async function confirmNewMemberDays(
+       SELECT ${versionId}, a.club_id, a.weekday, a.star_interval_id, a.first_date, a.confirmed_at
+         FROM app.schedule_assignments a
+         JOIN app.memberships s ON s.interval_id = a.star_interval_id
+-       WHERE a.schedule_version_id = ${latest.id} AND s.state = 'active'`;
++       WHERE a.schedule_version_id = ${latest.id}`;
+   for (const weekday of days) {
+     const isoDay = String(WEEKDAYS.indexOf(weekday) + 1);
+     // The last day of this weekday announced for a member still in the club (a day a fourth member freed).

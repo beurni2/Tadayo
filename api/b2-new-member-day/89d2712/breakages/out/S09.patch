@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index 2d4f4652..27947a51 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -182,7 +182,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+             }),
+           },
+   });
+-  const today = at.toZonedDateTimeISO(clubTimeZone(text(row["timezone"]))).toPlainDate();
++  const today = at.toZonedDateTimeISO("UTC").toPlainDate();
+ 
+   if (change.freed.length > 0) {
+     if (latest === null) throw new Error("schedule: the rule freed days of a week the club doesn't have");

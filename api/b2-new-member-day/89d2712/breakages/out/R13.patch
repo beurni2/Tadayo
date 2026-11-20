@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..58f89db6 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -185,7 +185,6 @@ export function pickAfter(facts: PickFacts): PickChange {
+   const joining = fresh.filter((id) => !listed.has(id));
+   if (joining.length > 0) {
+     const taken = new Set(inWeek);
+-    for (const member of included) if (!member.confirmed) for (const weekday of member.held) taken.add(weekday);
+     return { freed, proposal: { kind: "add", members: firstHolds(joining, active, per, taken) } };
+   }
+   if (included.length === 0) return { freed, proposal: { kind: "drop" } };

@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 30ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 12ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:14:39
+   Duration  1.89s (tests 90%, import 8%, worker 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126)
+AssertionError: expected { freed: [], proposal: { …(4) } } to deeply equal { freed: [], proposal: { …(4) } }
+
+- Expected
++ Received
+
+@@ -4,19 +4,19 @@
+      "daysPerMember": 2,
+      "kind": "open",
+      "proposed": [
+        {
+          "days": [
++           "monday",
+            "friday",
+-           "saturday",
+          ],
+          "id": "alex",
+        },
+        {
+          "days": [
+-           "monday",
+            "wednesday",
++           "saturday",
+          ],
+          "id": "sam",
+        },
+      ],
+      "replaces": true,
+
+ ❯ src/schedule/change.test.ts:329:7
+    327|         facts({ active: three, week: debbys, open: open([member("alex"…
+    328|       ),
+    329|     ).toEqual({
+       |       ^
+    330|       freed: [],
+    331|       proposal: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

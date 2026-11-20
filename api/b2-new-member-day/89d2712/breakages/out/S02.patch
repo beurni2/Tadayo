@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index 2d4f4652..76635118 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -204,7 +204,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+     const from = nextMonday(today).toString();
+     for (const day of change.freed) {
+       await bound(tx)`
+-        UPDATE app.occurrences SET status = 'cancelled'
++        UPDATE app.occurrences SET status = status
+          WHERE club_id = ${clubId} AND star_interval_id = ${day.star} AND status <> 'cancelled'
+            AND local_date >= ${from}::pg_catalog.date
+            AND EXTRACT(isodow FROM local_date) = ${String(WEEKDAYS.indexOf(day.weekday) + 1)}::pg_catalog.int4`;

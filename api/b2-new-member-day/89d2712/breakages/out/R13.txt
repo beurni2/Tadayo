@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 43ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × adds a member who joins while it is open, with free days nobody it includes holds 20ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:13:55
+   Duration  1.81s (tests 89%, import 8%, worker 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > adds a member who joins while it is open, with free days nobody it includes holds
+AssertionError: expected { freed: [], proposal: { …(2) } } to deeply equal { freed: [], proposal: { …(2) } }
+
+- Expected
++ Received
+
+@@ -3,11 +3,11 @@
+    "proposal": {
+      "kind": "add",
+      "members": [
+        {
+          "days": [
+-           "friday",
++           "saturday",
+          ],
+          "id": "nina",
+        },
+      ],
+    },
+
+ ❯ src/schedule/change.test.ts:204:104
+    202|     });
+    203|     // Sam chose Saturday: Nina gets the first free day nobody holds, …
+    204|     expect(pickAfter(facts({ active: [...five, "nina"], open: open([me…
+       |                                                                                                        ^
+    205|       freed: [],
+    206|       proposal: { kind: "add", members: [{ id: "nina", days: ["friday"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

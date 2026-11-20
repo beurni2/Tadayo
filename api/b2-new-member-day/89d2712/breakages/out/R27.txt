@@ -1,0 +1,46 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 2 failed) 32ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × opens a new pick in its place when the club's size changes the days each takes (FQ131) 11ms
+     × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 1ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  2 failed | 150 passed (152)
+   Start at  16:14:42
+   Duration  1.99s (tests 87%, import 10%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > opens a new pick in its place when the club's size changes the days each takes (FQ131)
+Error: schedule: the week has no free day left for a new member
+ ❯ src/schedule/change.ts:126:36
+    124|     }
+    125|     // Spec 05's numbers leave enough free days: two each for up to th…
+    126|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    127|     return { id, days: fromMonday(days) };
+    128|   });
+ ❯ firstHolds src/schedule/change.ts:116:14
+ ❯ pickAfter src/schedule/change.ts:179:19
+ ❯ src/schedule/change.test.ts:250:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126)
+Error: schedule: the week has no free day left for a new member
+ ❯ src/schedule/change.ts:126:36
+    124|     }
+    125|     // Spec 05's numbers leave enough free days: two each for up to th…
+    126|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    127|     return { id, days: fromMonday(days) };
+    128|   });
+ ❯ firstHolds src/schedule/change.ts:116:14
+ ❯ pickAfter src/schedule/change.ts:179:19
+ ❯ src/schedule/change.test.ts:344:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

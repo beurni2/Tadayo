@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index 2d4f4652..4d430959 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -184,7 +184,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+   });
+   const today = at.toZonedDateTimeISO(clubTimeZone(text(row["timezone"]))).toPlainDate();
+ 
+-  if (change.freed.length > 0) {
++  if (change.freed.length > 0 && change.proposal.kind !== "open") {
+     if (latest === null) throw new Error("schedule: the rule freed days of a week the club doesn't have");
+     const start = nextWeekStart(today, date(latest["effective_from"])).toString();
+     const versionId = newId("sched");

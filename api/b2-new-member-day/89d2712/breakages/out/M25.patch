@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..a298c31d 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -479,7 +479,7 @@ CREATE FUNCTION app.day_not_cancelled_guard() RETURNS trigger
+ DECLARE
+   day_status text;
+ BEGIN
+-  SELECT status INTO day_status FROM app.occurrences WHERE id = NEW.occurrence_id FOR SHARE;
++  SELECT status INTO day_status FROM app.occurrences WHERE id = NEW.occurrence_id;
+   IF day_status = 'cancelled' THEN
+     RAISE EXCEPTION 'app.%: % is a cancelled day, and takes nothing new (T9)', TG_TABLE_NAME, NEW.occurrence_id
+       USING ERRCODE = 'integrity_constraint_violation';

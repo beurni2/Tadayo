@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..363bc642 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -151,7 +151,7 @@ export function pickAfter(facts: PickFacts): PickChange {
+   const kept: WeekDay[] = [];
+   for (const id of active) {
+     (daysOf.get(id) ?? []).forEach((weekday, nth) =>
+-      (freeing && nth >= per ? freed : kept).push({ weekday, star: id }),
++      (freeing && nth < per ? freed : kept).push({ weekday, star: id }),
+     );
+   }
+   const inWeek = new Set(kept.map((day) => day.weekday));

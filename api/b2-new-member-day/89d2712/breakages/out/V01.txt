@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (21 tests | 1 failed) 26ms
+   ❯ a new member's choice and confirmation in a membership change, on the pick's facts (FQ125, FQ127) (3)
+     × never takes a day of the week in force, and takes a free one, a leaver's too 11ms
+ ❯ src/schedule/view.test.ts (19 tests | 1 failed) 2018ms
+   ❯ a membership change's view: a new member's pick (FQ125 to FQ127, FQ130; the contract's `new_member` scene) (5)
+     × frees the days of a member who left, of the week or of the pick (FQ125, FQ129) 17ms
+
+ Test Files  2 failed | 6 passed (8)
+      Tests  2 failed | 150 passed (152)
+   Start at  16:14:47
+   Duration  2.34s (tests 90%, import 8%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a new member's choice and confirmation in a membership change, on the pick's facts (FQ125, FQ127) > never takes a day of the week in force, and takes a free one, a leaver's too
+AssertionError: expected 'NOT_ALLOWED' to deeply equal { held: [ 'wednesday' ] }
+
+- Expected:
+{
+  "held": [
+    "wednesday",
+  ],
+}
+
++ Received:
+"NOT_ALLOWED"
+
+ ❯ src/schedule/decide.test.ts:196:53
+    194|     expect(judgeChoice("sam", PICK, ["monday"])).toBe("NOT_ALLOWED");
+    195|     expect(judgeChoice("sam", PICK, ["tuesday"])).toBe("NOT_ALLOWED");
+    196|     expect(judgeChoice("sam", PICK, ["wednesday"])).toEqual({ held: ["…
+       |                                                     ^
+    197|     expect(judgeChoice("sam", PICK, ["saturday"])).toEqual({ held: ["s…
+    198|     expect(judgeChoice("sam", PICK, [])).toEqual({ held: [] });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/view.test.ts > a membership change's view: a new member's pick (FQ125 to FQ127, FQ130; the contract's `new_member` scene) > frees the days of a member who left, of the week or of the pick (FQ125, FQ129)
+AssertionError: expected { weekday: 'saturday', …(3) } to deeply equal { weekday: 'saturday', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "state": "available",
++   "owner": "maya",
++   "state": "taken",
+    "suggested": false,
+    "weekday": "saturday",
+  }
+
+ ❯ src/schedule/view.test.ts:485:68
+    483|     );
+    484|     const view = pickViewFor("leila", facts);
+    485|     expect(view.slots.find((slot) => slot.weekday === "saturday")).toE…
+       |                                                                    ^
+    486|       weekday: "saturday",
+    487|       state: "available",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

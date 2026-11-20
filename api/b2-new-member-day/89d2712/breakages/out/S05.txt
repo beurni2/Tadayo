@@ -1,0 +1,96 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 30 failed) 3029ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × opens one for a join in a club with a week: only the new member is in it, holding free days, and nobody else is asked 265ms
+     × opens one with the last confirmation of the first days, for a member who joined after a day was confirmed (FQ100) 123ms
+     × asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two) 95ms
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 64ms
+     × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 70ms
+     × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 69ms
+     × frees days the same way when the first days apply with a late joiner and no day free (FQ100, FQ131) 98ms
+     × works a pick out from a restarted club's own week, not the week before it (FQ124) 110ms
+   ❯ a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) (7)
+     × adds a member who joins while it is open, holding a free day nobody it includes holds, and moves nothing else (T33) 153ms
+     × replaces an open pick when the club's size changes the days each, and the old id answers MEMBERSHIP_CHANGED to whom the new one includes 62ms
+     × keeps what a member held when a new pick takes the place of theirs: Alex's chosen Saturday stays Alex's (FQ125, FQ126) 70ms
+     × names the club's open pick to an id replaced more than once, and treats it as ended once none is open 62ms
+     × ends an open pick with no successor when nobody it includes is still a member 54ms
+     × ends an open pick when the club is paused, and opens one when it has two members again (FQ16, FQ116) 58ms
+   ❯ a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) (3)
+     × writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody 75ms
+     × makes the week's days while a pick is open, as before, and the new member's only once confirmed 81ms
+     × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 68ms
+   ❯ reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) (3)
+     × gives the new member each day of the week in force as its member's, with no first date, and the free days to choose 67ms
+     × names the one other new member who holds a free day, and shows a contest, as the first days do (FQ55) 143ms
+     × gives members already in the week, someone who left, a stranger and a member of another club nothing of it (T14) 64ms
+   ❯ choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) (4)
+     × takes a choice of free days, never a day of the week in force, and moves no version 73ms
+     × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation 142ms
+     × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 57ms
+     × answers a retry with the first answer after the pick was replaced, and nothing once the caller has left (T19, T14) 76ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own 184ms
+     × refuses a confirmation that comes after the leave that ended the pick 84ms
+     × takes a confirmation that comes before the leave, which then finds the pick applied 65ms
+     × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the pick 52ms
+     × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 57ms
+     × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 72ms
+
+ Test Files  1 failed (1)
+      Tests  30 failed | 3 passed (33)
+   Start at  16:15:24
+   Duration  3.82s (tests 88%, import 9%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 30 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > opens one for a join in a club with a week: only the new member is in it, holding free days, and nobody else is asked
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > opens one with the last confirmation of the first days, for a member who joined after a day was confirmed (FQ100)
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two)
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1)
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees days the same way when the first days apply with a late joiner and no day free (FQ100, FQ131)
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > works a pick out from a restarted club's own week, not the week before it (FQ124)
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > adds a member who joins while it is open, holding a free day nobody it includes holds, and moves nothing else (T33)
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > replaces an open pick when the club's size changes the days each, and the old id answers MEMBERSHIP_CHANGED to whom the new one includes
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > keeps what a member held when a new pick takes the place of theirs: Alex's chosen Saturday stays Alex's (FQ125, FQ126)
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > names the club's open pick to an id replaced more than once, and treats it as ended once none is open
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > ends an open pick with no successor when nobody it includes is still a member
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > ends an open pick when the club is paused, and opens one when it has two members again (FQ16, FQ116)
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > makes the week's days while a pick is open, as before, and the new member's only once confirmed
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129)
+ FAIL  src/db/membership-change.test.ts > reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) > gives the new member each day of the week in force as its member's, with no first date, and the free days to choose
+ FAIL  src/db/membership-change.test.ts > reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) > names the one other new member who holds a free day, and shows a contest, as the first days do (FQ55)
+ FAIL  src/db/membership-change.test.ts > reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) > gives members already in the week, someone who left, a stranger and a member of another club nothing of it (T14)
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > takes a choice of free days, never a day of the week in force, and moves no version
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19)
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > answers a retry with the first answer after the pick was replaced, and nothing once the caller has left (T19, T14)
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > refuses a confirmation that comes after the leave that ended the pick
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes a confirmation that comes before the leave, which then finds the pick applied
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the pick
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > refuses a reservation that waits on a cancellation in progress, once it commits (T9)
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63)
+PostgresError: app.schedule_proposals: a membership change is from the club's local date it opened on, not 2026-11-16
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleChange ../packages/domain/src/schedule/settle-change.ts:241:18
+    239|        WHERE id = ${openId}`;
+    240|   }
+    241|   await bound(tx)`
+       |                  ^
+    242|     INSERT INTO app.schedule_proposals (id, club_id, reason, effective…
+    243|     VALUES (${proposalId}, ${clubId}, 'membership_change', ${nextMonda…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/30]⎯
+

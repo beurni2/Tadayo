@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..1367c832 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -439,7 +439,7 @@ BEGIN
+      AND d.weekday::text = ANY (held_days)
+      -- In the first days a day the leaver confirmed stays taken (FQ102); in a pick a member who left
+      -- holds nothing, and their day is free (FQ127).
+-     AND (ms.state = 'active' OR (proposal.reason = 'activation' AND m.confirmed_at IS NOT NULL))
++     AND (ms.state = 'active' OR m.confirmed_at IS NOT NULL)
+    LIMIT 1;
+   IF FOUND THEN
+     RAISE EXCEPTION 'app.schedule_proposal_members: % can''t confirm %: another member holds it too (FQ55)',

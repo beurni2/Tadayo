@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..a9512d99 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -195,7 +195,7 @@ export function pickAfter(facts: PickFacts): PickChange {
+ 
+ /** The Monday after the week of `today`, weeks running Monday to Sunday: where "next week" starts. */
+ export function nextMonday(today: Temporal.PlainDate): Temporal.PlainDate {
+-  return today.add({ days: 8 - today.dayOfWeek });
++  return today.add({ days: 7 - today.dayOfWeek });
+ }
+ 
+ /**

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index 9b862a38..3132d3cf 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -120,7 +120,7 @@ async function confirmNewMemberDays(
+   const latest = week.versions.at(-1);
+   if (latest === undefined) throw new Error("schedule: a membership change in a club with no week");
+   const today = at.toZonedDateTimeISO(clubTimeZone(zone)).toPlainDate();
+-  const start = nextWeekStart(today, Temporal.PlainDate.from(latest.effectiveFrom));
++  const start = today.add({ days: 8 - today.dayOfWeek });
+   await bound(tx)`
+       UPDATE app.schedule_proposal_members SET confirmed_at = ${at}::pg_catalog.timestamptz
+        WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId}`;

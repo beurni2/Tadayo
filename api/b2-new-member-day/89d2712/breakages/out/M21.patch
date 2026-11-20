@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..e0e0783e 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -293,7 +293,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposals: a membership change has no week of its own: each confirmation writes the club''s next (FQ130)'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF NEW.effective_from IS DISTINCT FROM (SELECT (NEW.created_at AT TIME ZONE c.timezone)::date
++  IF false AND NEW.effective_from IS DISTINCT FROM (SELECT (NEW.created_at AT TIME ZONE c.timezone)::date
+                                             FROM app.clubs c WHERE c.id = NEW.club_id) THEN
+     RAISE EXCEPTION 'app.schedule_proposals: a membership change is from the club''s local date it opened on, not %', NEW.effective_from
+       USING ERRCODE = 'integrity_constraint_violation';

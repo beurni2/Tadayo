@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..e205d98f 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -200,7 +200,7 @@ BEGIN
+   freeing := members >= 4 AND 6 - held < unplaced;
+   SELECT a.weekday::text, a.star_interval_id INTO missing, whose
+     FROM app.schedule_assignments a
+-    JOIN app.memberships ms ON ms.interval_id = a.star_interval_id AND ms.state = 'active'
++    JOIN app.memberships ms ON ms.interval_id = a.star_interval_id
+    WHERE a.schedule_version_id = before
+      AND (NOT freeing OR a.weekday = (
+            SELECT f.weekday FROM app.schedule_assignments f

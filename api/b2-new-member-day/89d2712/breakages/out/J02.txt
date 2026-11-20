@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (39 tests | 1 failed) 67ms
+   ❯ what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131) (7)
+     × wants a fourth member's join to free the others' second days in a new week, and a pick for the fourth 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 38 passed (39)
+   Start at  16:23:17
+   Duration  663ms (import 61%, tests 23%, transform 13%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131) > wants a fourth member's join to free the others' second days in a new week, and a pick for the fourth
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "a week was made or moved though no day was freed",
++   "itv_dee holds thursday at first, not  (FQ48, FQ127)",
++ ]
+
+ ❯ src/privacy/schedule.test.ts:898:67
+    896|
+    897|   it("wants a fourth member's join to free the others' second days in …
+    898|     expect(judge(setActive(three(), "itv_dee", false), fourth())).toEq…
+       |                                                                   ^
+    899|     const none = fourth();
+    900|     none.versions.pop();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

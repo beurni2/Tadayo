@@ -1,0 +1,49 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 46ms
+   ❯ pickAfter: who is asked, and nothing else (FQ125, FQ126) (6)
+     × asks nothing while the first days are open or never applied: their own rule decides (FQ102) 18ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:13:41
+   Duration  1.94s (tests 89%, import 8%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: who is asked, and nothing else (FQ125, FQ126) > asks nothing while the first days are open or never applied: their own rule decides (FQ102)
+AssertionError: expected { freed: [], proposal: { …(4) } } to deeply equal { freed: [], …(1) }
+
+- Expected
++ Received
+
+  {
+    "freed": [],
+    "proposal": {
+-     "kind": "nothing",
++     "daysPerMember": 1,
++     "kind": "open",
++     "proposed": [
++       {
++         "days": [
++           "friday",
++         ],
++         "id": "sam",
++       },
++     ],
++     "replaces": false,
+    },
+  }
+
+ ❯ src/schedule/change.test.ts:48:104
+     46| describe("pickAfter: who is asked, and nothing else (FQ125, FQ126)", (…
+     47|   it("asks nothing while the first days are open or never applied: the…
+     48|     expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex", …
+       |                                                                                                        ^
+     49|       freed: [],
+     50|       proposal: { kind: "nothing" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

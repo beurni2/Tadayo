@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (19 tests | 1 failed | 18 skipped) 1092ms
+   ❯ a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125 to FQ127, FQ129 to FQ131) (1)
+     × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 811ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  16:16:42
+   Duration  2.25s (tests 57%, import 34%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125 to FQ127, FQ129 to FQ131) > answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes
+PostgresError: app.schedule_versions: the week sched_fXPBjCLIJvn0gMwI37btWg leaves out mem_eDwjCzwc9aIN3GcIi-07dQ's friday, a day of the week before whose member is still in the club (FQ125, FQ126)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

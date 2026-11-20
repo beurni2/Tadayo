@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index 50f57f6c..3310969e 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -1036,7 +1036,7 @@ export function weekChangeProblems(
+   const nobodys = WEEK.filter((weekday) =>
+     active.every((interval) => !theirs(interval).some((each) => each.weekday === weekday)),
+   ).length;
+-  const short = nobodys < per * unplaced;
++  const short = false;
+   const kept: { weekday: Weekday; star: string; firstDate: string }[] = [];
+   let freed = false;
+   for (const interval of active) {

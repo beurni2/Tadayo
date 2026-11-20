@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..ef124b6f 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -177,7 +177,7 @@ export function pickAfter(facts: PickFacts): PickChange {
+         kind: "open",
+         replaces: true,
+         daysPerMember: per,
+-        proposed: firstHolds(fresh, active, per, inWeek, earlier),
++        proposed: firstHolds(fresh, active, per, inWeek),
+       },
+     };
+   }

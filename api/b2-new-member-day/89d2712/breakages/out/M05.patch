@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..ca968bdd 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -97,8 +97,6 @@ BEGIN
+      AND EXTRACT(isodow FROM o.local_date) = pg_catalog.array_position(
+            ARRAY['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'], NEW.weekday::text)
+      -- The week is in force on that date: no later week has started by then.
+-     AND NOT EXISTS (SELECT FROM app.schedule_versions v
+-                      WHERE v.club_id = NEW.club_id AND v.effective_from > starts AND v.effective_from <= o.local_date)
+    ORDER BY o.local_date
+    LIMIT 1;
+   IF FOUND THEN

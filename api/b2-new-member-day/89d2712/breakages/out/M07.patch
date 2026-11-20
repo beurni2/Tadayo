@@ -1,0 +1,15 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..be371f61 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -146,9 +146,7 @@ BEGIN
+                     ON d.proposal_id = p.id AND d.interval_id = m.interval_id AND d.week_revision = p.week_revision
+                  WHERE p.club_id = NEW.club_id AND p.reason = 'membership_change'
+                    AND m.interval_id = NEW.star_interval_id AND m.confirmed_at = NEW.confirmed_at
+-                   AND d.weekday = NEW.weekday AND d.held
+-                   AND EXISTS (SELECT FROM app.schedule_versions v
+-                                WHERE v.id = NEW.schedule_version_id AND v.created_at = NEW.confirmed_at)) THEN
++                   AND d.weekday = NEW.weekday AND d.held) THEN
+     RETURN NULL;
+   END IF;
+   RAISE EXCEPTION 'app.schedule_assignments: % for % is neither a day its member, still in the club, had in the week before, as it was, nor their confirmation (FQ126, T6)',

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..af238111 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -165,7 +165,7 @@ export function pickAfter(facts: PickFacts): PickChange {
+   }
+   const included = open.members.filter((member) => active.includes(member.id));
+   const everyoneConfirmed = included.length > 0 && included.every((member) => member.confirmed);
+-  if (open.daysPerMember !== per) {
++  if (false) {
+     // A member it includes who hasn't confirmed has no day, so is among `fresh`: none means all confirmed.
+     if (fresh.length === 0) return { freed, proposal: { kind: everyoneConfirmed ? "apply" : "drop" } };
+     // Nobody's choice is thrown away: each member it includes keeps what they held, as far as the new

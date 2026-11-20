@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index 2d4f4652..7e08396e 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -193,7 +193,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+       VALUES (${versionId}, ${clubId}, ${start}::pg_catalog.date, ${at}::pg_catalog.timestamptz)`;
+     const freed = (day: WeekDay) => change.freed.some((each) => each.weekday === day.weekday && each.star === day.star);
+     for (const day of days) {
+-      if (!active.includes(day.star) || freed(day)) continue;
++      if (!active.includes(day.star)) continue;
+       await bound(tx)`
+         INSERT INTO app.schedule_assignments
+           (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)

@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index 50f57f6c..09c633a6 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -475,7 +475,7 @@ export function weekFor(
+     const found = inForce?.assignments.find((each) => each.weekday === weekday);
+     // Only a member still in the club: a leaver's day won't open, and is free for a new member's pick.
+     const person =
+-      found === undefined || world.members.get(found.star)?.active !== true ? undefined : personOf(world, found.star);
++      found === undefined ? undefined : personOf(world, found.star);
+     return person === undefined ? [] : [{ weekday, person }];
+   });
+   const open = [...world.proposals].find(

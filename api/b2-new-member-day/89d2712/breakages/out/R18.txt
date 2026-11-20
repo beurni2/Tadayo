@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 39ms
+   ❯ nextMonday and nextWeekStart (2)
+     × gives the Monday after the date's week, weeks running Monday to Sunday 12ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:14:09
+   Duration  1.82s (tests 89%, import 7%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > nextMonday and nextWeekStart > gives the Monday after the date's week, weeks running Monday to Sunday
+AssertionError: expected '2026-11-08' to be '2026-11-09' // Object.is equality
+
+Expected: "2026-11-09"
+Received: "2026-11-08"
+
+ ❯ src/schedule/change.test.ts:388:52
+    386| describe("nextMonday and nextWeekStart", () => {
+    387|   it("gives the Monday after the date's week, weeks running Monday to …
+    388|     expect(nextMonday(D("2026-11-06")).toString()).toBe("2026-11-09");…
+       |                                                    ^
+    389|     expect(nextMonday(D("2026-11-09")).toString()).toBe("2026-11-16");…
+    390|     expect(nextMonday(D("2026-11-08")).toString()).toBe("2026-11-09");…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

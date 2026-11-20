@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (19 tests | 1 failed | 18 skipped) 1581ms
+   ❯ a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125 to FQ127, FQ129 to FQ131) (1)
+     × answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes 1366ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  16:16:39
+   Duration  2.73s (tests 66%, import 28%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125 to FQ127, FQ129 to FQ131) > answers each caller the pick as the rows say, asks nobody already in the week, and replaces it as the club's size changes
+AssertionError: expected { count: 2, first: [ …(2) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 2,
++   "first": [
++     "the week, after the leave: getSchedule: the club's Schedule's current is {\"assignments\":[{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"monday\"},{\"person\":{\"display_name\":\"Maya fd00414b0a78\",\"membership_id\":\"mem_a5RW8KLzKjgrhPVXz6uIdA\"},\"weekday\":\"tuesday\"},{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"thursday\"},{\"person\":{\"display_name\":\"Maya fd00414b0a78\",\", not {\"assignments\":[{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"monday\"},{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"thursday\"}],\"effective_from\":\"2026-11-11\"}",
++     "the week, by the fourth member, after the leave: getSchedule: the club's Schedule's current is {\"assignments\":[{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"monday\"},{\"person\":{\"display_name\":\"Maya fd00414b0a78\",\"membership_id\":\"mem_a5RW8KLzKjgrhPVXz6uIdA\"},\"weekday\":\"tuesday\"},{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"thursday\"},{\"person\":{\"display_name\":\"Maya fd00414b0a78\",\", not {\"assignments\":[{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"monday\"},{\"person\":{\"display_name\":\"Ben fd00414b0a78\",\"membership_id\":\"mem_4tqorqPKPLM-nplxYAKUbQ\"},\"weekday\":\"thursday\"}],\"effective_from\":\"2026-11-11\"}",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2439:64
+    2437|     ).toBe(404);
+    2438|
+    2439|     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual…
+       |                                                                ^
+    2440|     expect(counted.answers).toBe(44);
+    2441|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

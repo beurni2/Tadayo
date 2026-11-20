@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..714f5443 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -223,7 +223,7 @@ export function newMemberFirstDate(
+   const today = confirmedAt.toZonedDateTimeISO(zone).toPlainDate();
+   let notBefore = nextMonday(today);
+   if (Temporal.PlainDate.compare(weekStart, notBefore) > 0) notBefore = weekStart;
+-  if (lastAnnounced !== null && Temporal.PlainDate.compare(lastAnnounced, notBefore) >= 0) {
++  if (false) {
+     notBefore = lastAnnounced.add({ days: 1 });
+   }
+   return firstDate(weekday, confirmedAt, zone, notBefore);

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..96a11289 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -203,7 +203,7 @@ export function nextMonday(today: Temporal.PlainDate): Temporal.PlainDate {
+  * week, `latestStart`, when that is today or later (a club has one week per start date).
+  */
+ export function nextWeekStart(today: Temporal.PlainDate, latestStart: Temporal.PlainDate | null): Temporal.PlainDate {
+-  if (latestStart !== null && Temporal.PlainDate.compare(latestStart, today) >= 0) return latestStart.add({ days: 1 });
++  if (latestStart !== null && Temporal.PlainDate.compare(latestStart, today) > 0) return latestStart.add({ days: 1 });
+   return today;
+ }
+ 

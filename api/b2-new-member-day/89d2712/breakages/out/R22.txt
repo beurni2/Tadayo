@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 35ms
+   ❯ newMemberFirstDate: the picked day in the week after (FQ130) (5)
+     × waits a week where the week after's date is less than 24 hours on (FQ79) 11ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:14:26
+   Duration  1.98s (tests 89%, import 8%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > newMemberFirstDate: the picked day in the week after (FQ130) > waits a week where the week after's date is less than 24 hours on (FQ79)
+AssertionError: expected '2026-11-09' to be '2026-11-16' // Object.is equality
+
+Expected: "2026-11-16"
+Received: "2026-11-09"
+
+ ❯ src/schedule/change.test.ts:431:94
+    429|     // Sunday afternoon: Monday's 7 AM is 16 hours on, so the first Mo…
+    430|     const sunday = at("2026-11-08T15:00");
+    431|     expect(newMemberFirstDate("monday", sunday, NEW_YORK, D("2026-11-0…
+       |                                                                                              ^
+    432|     expect(newMemberFirstDate("tuesday", sunday, NEW_YORK, D("2026-11-…
+    433|     // Exactly 24 hours qualifies; a second less waits a week.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

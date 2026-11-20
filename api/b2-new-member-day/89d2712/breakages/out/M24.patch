@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..656a6f73 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -487,7 +487,5 @@ BEGIN
+   RETURN NEW;
+ END
+ $$;
+-CREATE TRIGGER reservations_day_not_cancelled BEFORE INSERT ON app.reservations
+-  FOR EACH ROW EXECUTE FUNCTION app.day_not_cancelled_guard();
+ CREATE TRIGGER drops_day_not_cancelled BEFORE INSERT ON app.drops
+   FOR EACH ROW EXECUTE FUNCTION app.day_not_cancelled_guard();

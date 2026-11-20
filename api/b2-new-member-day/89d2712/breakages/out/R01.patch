@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..fe09bf43 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -146,7 +146,7 @@ export function pickAfter(facts: PickFacts): PickChange {
+   );
+   const fresh = active.filter((id) => daysOf.get(id)?.length === 0);
+   const held = active.reduce((count, id) => count + (daysOf.get(id)?.length ?? 0), 0);
+-  const freeing = WEEKDAYS.length - held < per * fresh.length;
++  const freeing = active.length >= 4 && fresh.length > 0;
+   const freed: WeekDay[] = [];
+   const kept: WeekDay[] = [];
+   for (const id of active) {

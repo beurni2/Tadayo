@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/days.test.ts (15 tests | 1 failed) 410ms
+   ❯ T6 and FQ61: a day for the right star, from the week in force (11)
+     × takes a new week whose day is a date with a cancelled day, which then takes the new star's (FQ129) 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  16:17:40
+   Duration  1.40s (tests 74%, import 14%, transform 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/days.test.ts > T6 and FQ61: a day for the right star, from the week in force > takes a new week whose day is a date with a cancelled day, which then takes the new star's (FQ129)
+PostgresError: app.schedule_assignments: saturday from 2026-11-07 would give 2026-11-07, a day already announced, to someone else (FQ61, T6)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/days.test.ts:138:15
+    136|       const version = await weekFrom(tx, w, w.ben.interval);
+    137|       await day(tx, w, w.ben.interval, "2026-11-07", version);
+    138|       await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |               ^
+    139|     });
+    140|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

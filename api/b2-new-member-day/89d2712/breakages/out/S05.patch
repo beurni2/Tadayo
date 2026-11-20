@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index 2d4f4652..cd728b4a 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -240,7 +240,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+   }
+   await bound(tx)`
+     INSERT INTO app.schedule_proposals (id, club_id, reason, effective_from, days_per_member, created_at)
+-    VALUES (${proposalId}, ${clubId}, 'membership_change', ${today.toString()}::pg_catalog.date,
++    VALUES (${proposalId}, ${clubId}, 'membership_change', ${nextMonday(today).toString()}::pg_catalog.date,
+             ${String(proposal.daysPerMember)}::pg_catalog.int2, ${at}::pg_catalog.timestamptz)`;
+   await writeHolds(tx, proposalId, clubId, proposal.proposed);
+   return change;

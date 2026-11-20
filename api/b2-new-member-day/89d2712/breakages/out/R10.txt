@@ -1,0 +1,79 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 4 failed) 28ms
+   ❯ pickAfter: who is asked, and nothing else (FQ125, FQ126) (6)
+     × asks nothing when every active member has a day in the week, after a leave too (FQ125, FQ131) 8ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × opens a new pick in its place when the club's size changes the days each takes (FQ131) 1ms
+     × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 1ms
+     × applies in place of a new pick when those it includes have all confirmed and the size changes 0ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  4 failed | 148 passed (152)
+   Start at  16:13:46
+   Duration  1.98s (tests 90%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: who is asked, and nothing else (FQ125, FQ126) > asks nothing when every active member has a day in the week, after a leave too (FQ125, FQ131)
+Error: schedule: the week has no free day left for a new member
+ ❯ src/schedule/change.ts:127:36
+    125|     }
+    126|     // Spec 05's numbers leave enough free days: two each for up to th…
+    127|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    128|     return { id, days: fromMonday(days) };
+    129|   });
+ ❯ firstHolds src/schedule/change.ts:117:14
+ ❯ pickAfter src/schedule/change.ts:163:80
+ ❯ src/schedule/change.test.ts:61:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > opens a new pick in its place when the club's size changes the days each takes (FQ131)
+Error: schedule: the week has no free day left for a new member
+ ❯ src/schedule/change.ts:127:36
+    125|     }
+    126|     // Spec 05's numbers leave enough free days: two each for up to th…
+    127|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    128|     return { id, days: fromMonday(days) };
+    129|   });
+ ❯ firstHolds src/schedule/change.ts:117:14
+ ❯ pickAfter src/schedule/change.ts:180:19
+ ❯ src/schedule/change.test.ts:273:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126)
+Error: schedule: the week has no free day left for a new member
+ ❯ src/schedule/change.ts:127:36
+    125|     }
+    126|     // Spec 05's numbers leave enough free days: two each for up to th…
+    127|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    128|     return { id, days: fromMonday(days) };
+    129|   });
+ ❯ firstHolds src/schedule/change.ts:117:14
+ ❯ pickAfter src/schedule/change.ts:180:19
+ ❯ src/schedule/change.test.ts:309:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > applies in place of a new pick when those it includes have all confirmed and the size changes
+Error: schedule: the week has no free day left for a new member
+ ❯ src/schedule/change.ts:127:36
+    125|     }
+    126|     // Spec 05's numbers leave enough free days: two each for up to th…
+    127|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    128|     return { id, days: fromMonday(days) };
+    129|   });
+ ❯ firstHolds src/schedule/change.ts:117:14
+ ❯ pickAfter src/schedule/change.ts:180:19
+ ❯ src/schedule/change.test.ts:370:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

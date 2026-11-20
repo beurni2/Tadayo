@@ -1,0 +1,171 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 5 failed) 59ms
+   ❯ pickAfter: who is asked, and nothing else (FQ125, FQ126) (6)
+     × gives a new member the first free days from Monday when the table's day for their place is someone's 17ms
+   ❯ pickAfter: a fourth member frees a day now (FQ131, the founder's answer) (5)
+     × frees nothing where the free days are enough for the new members, and nothing in a club of three or fewer 5ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × adds a member who joins while it is open, with free days nobody it includes holds 3ms
+     × opens a new pick in its place when the club's size changes the days each takes (FQ131) 2ms
+     × keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126) 2ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  5 failed | 147 passed (152)
+   Start at  16:13:36
+   Duration  1.72s (tests 88%, import 9%, worker 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: who is asked, and nothing else (FQ125, FQ126) > gives a new member the first free days from Monday when the table's day for their place is someone's
+AssertionError: expected { freed: [], proposal: { …(4) } } to deeply equal { freed: [], proposal: { …(4) } }
+
+- Expected
++ Received
+
+@@ -4,11 +4,11 @@
+      "daysPerMember": 1,
+      "kind": "open",
+      "proposed": [
+        {
+          "days": [
+-           "tuesday",
++           "saturday",
+          ],
+          "id": "nina",
+        },
+      ],
+      "replaces": false,
+
+ ❯ src/schedule/change.test.ts:100:103
+     98|       ["saturday", "sam"],
+     99|     );
+    100|     expect(pickAfter(facts({ active: ["ben", "debby", "maya", "alex", …
+       |                                                                                                       ^
+    101|       freed: [],
+    102|       proposal: { kind: "open", replaces: false, daysPerMember: 1, pro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: a fourth member frees a day now (FQ131, the founder's answer) > frees nothing where the free days are enough for the new members, and nothing in a club of three or fewer
+AssertionError: expected { freed: [], proposal: { …(4) } } to deeply equal { freed: [], proposal: { …(4) } }
+
+- Expected
++ Received
+
+@@ -10,11 +10,11 @@
+          ],
+          "id": "alex",
+        },
+        {
+          "days": [
+-           "saturday",
++           "thursday",
+          ],
+          "id": "sam",
+        },
+      ],
+      "replaces": false,
+
+ ❯ src/schedule/change.test.ts:164:86
+    162|     // Two joined by two at once: four members, and Wednesday and Satu…
+    163|     // so Ben and Debby keep both their days (FQ125).
+    164|     expect(pickAfter(facts({ active: ["ben", "debby", "alex", "sam"], …
+       |                                                                                      ^
+    165|       freed: [],
+    166|       proposal: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > adds a member who joins while it is open, with free days nobody it includes holds
+AssertionError: expected { freed: [], proposal: { …(2) } } to deeply equal { freed: [], proposal: { …(2) } }
+
+- Expected
++ Received
+
+@@ -3,11 +3,11 @@
+    "proposal": {
+      "kind": "add",
+      "members": [
+        {
+          "days": [
+-           "friday",
++           "saturday",
+          ],
+          "id": "nina",
+        },
+      ],
+    },
+
+ ❯ src/schedule/change.test.ts:204:104
+    202|     });
+    203|     // Sam chose Saturday: Nina gets the first free day nobody holds, …
+    204|     expect(pickAfter(facts({ active: [...five, "nina"], open: open([me…
+       |                                                                                                        ^
+    205|       freed: [],
+    206|       proposal: { kind: "add", members: [{ id: "nina", days: ["friday"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > opens a new pick in its place when the club's size changes the days each takes (FQ131)
+AssertionError: expected { freed: [], proposal: { …(4) } } to deeply equal { freed: [], proposal: { …(4) } }
+
+- Expected
++ Received
+
+@@ -10,11 +10,11 @@
+          ],
+          "id": "maya",
+        },
+        {
+          "days": [
+-           "saturday",
++           "thursday",
+          ],
+          "id": "alex",
+        },
+      ],
+      "replaces": true,
+
+ ❯ src/schedule/change.test.ts:257:7
+    255|         }),
+    256|       ),
+    257|     ).toEqual({
+       |       ^
+    258|       freed: [],
+    259|       proposal: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126)
+AssertionError: expected { freed: [], proposal: { …(4) } } to deeply equal { freed: [], proposal: { …(4) } }
+
+- Expected
++ Received
+
+@@ -10,11 +10,11 @@
+          ],
+          "id": "maya",
+        },
+        {
+          "days": [
+-           "wednesday",
++           "thursday",
+          ],
+          "id": "alex",
+        },
+      ],
+      "replaces": true,
+
+ ❯ src/schedule/change.test.ts:292:7
+    290|         facts({ active: ["ben", "debby", "maya", "alex"], week: TWO, o…
+    291|       ),
+    292|     ).toEqual({
+       |       ^
+    293|       freed: [],
+    294|       proposal: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

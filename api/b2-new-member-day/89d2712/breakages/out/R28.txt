@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 25ms
+   ❯ newMemberFirstDate: the picked day in the week after (FQ130) (5)
+     × takes this week and next from the club's own date, not UTC's (T1) 8ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:14:44
+   Duration  2.13s (tests 90%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > newMemberFirstDate: the picked day in the week after (FQ130) > takes this week and next from the club's own date, not UTC's (T1)
+AssertionError: expected '2026-11-17' to be '2026-11-10' // Object.is equality
+
+Expected: "2026-11-10"
+Received: "2026-11-17"
+
+ ❯ src/schedule/change.test.ts:418:95
+    416|     // the first Tuesday is the 10th, not the 17th.
+    417|     const sunday = at("2026-11-08T22:00");
+    418|     expect(newMemberFirstDate("tuesday", sunday, NEW_YORK, D("2026-11-…
+       |                                                                                               ^
+    419|     // Monday 9 November at 08:00 in Auckland is still Sunday the 8th …
+    420|     // the first Wednesday is the 18th, not the 11th.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

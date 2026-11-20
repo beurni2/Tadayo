@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..c899a6e5 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -120,7 +120,6 @@ function firstHolds(
+     for (const weekday of [...wanted, ...WEEKDAYS]) {
+       if (days.length === per) break;
+       if (taken.has(weekday)) continue;
+-      taken.add(weekday);
+       days.push(weekday);
+     }
+     // Spec 05's numbers leave enough free days: two each for up to three members, one each for up to six.

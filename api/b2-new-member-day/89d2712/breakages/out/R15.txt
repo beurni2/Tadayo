@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 1 failed) 43ms
+   ❯ pickAfter: an open pick through joins and leaves (8)
+     × applies when everyone it includes who is still a member has confirmed, as on a leave 22ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 151 passed (152)
+   Start at  16:14:00
+   Duration  2.07s (tests 89%, import 8%, transform 2%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > pickAfter: an open pick through joins and leaves > applies when everyone it includes who is still a member has confirmed, as on a leave
+AssertionError: expected { freed: [], …(1) } to deeply equal { freed: [], …(1) }
+
+- Expected
++ Received
+
+  {
+    "freed": [],
+    "proposal": {
+-     "kind": "apply",
++     "kind": "nothing",
+    },
+  }
+
+ ❯ src/schedule/change.test.ts:233:7
+    231|         }),
+    232|       ),
+    233|     ).toEqual({ freed: [], proposal: { kind: "apply" } });
+       |       ^
+    234|   });
+    235|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

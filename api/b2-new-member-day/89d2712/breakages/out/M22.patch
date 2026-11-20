@@ -1,0 +1,16 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..7046ee07 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -242,10 +242,7 @@ BEGIN
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+   IF NEW.state = 'applied' AND OLD.state = 'open' AND (
+-       NOT EXISTS (SELECT FROM app.schedule_proposal_members m
+-                     JOIN app.memberships ms ON ms.interval_id = m.interval_id
+-                    WHERE m.proposal_id = NEW.id AND ms.state = 'active')
+-       OR EXISTS (SELECT FROM app.schedule_proposal_members m
++EXISTS (SELECT FROM app.schedule_proposal_members m
+                     JOIN app.memberships ms ON ms.interval_id = m.interval_id
+                    WHERE m.proposal_id = NEW.id AND ms.state = 'active' AND m.confirmed_at IS NULL)) THEN
+     RAISE EXCEPTION 'app.schedule_proposals: % applies once every member it includes who is still in the club has confirmed', NEW.id

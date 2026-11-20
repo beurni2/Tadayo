@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..c36a7f99 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -321,7 +321,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposal_members: % is no longer a member, and picks nothing (FQ127)', NEW.interval_id
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF EXISTS (SELECT FROM app.schedule_assignments a
++  IF false AND EXISTS (SELECT FROM app.schedule_assignments a
+               WHERE a.star_interval_id = NEW.interval_id
+                 AND a.schedule_version_id = (SELECT v.id FROM app.schedule_versions v
+                                               WHERE v.club_id = NEW.club_id

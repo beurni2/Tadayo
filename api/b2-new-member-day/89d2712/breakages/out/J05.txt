@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (39 tests | 1 failed) 75ms
+   ❯ what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131) (7)
+     × wants an open pick replaced when the club's size changes the days each, naming its successor 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 38 passed (39)
+   Start at  16:23:23
+   Duration  671ms (import 60%, tests 24%, transform 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's week and pick, row by row (weekChangeProblems; FQ125 to FQ131) > wants an open pick replaced when the club's size changes the days each, naming its successor
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "itv_cleo holds saturday at first, not wednesday (FQ48, FQ127)",
++   "itv_dee holds wednesday at first, not saturday (FQ48, FQ127)",
++ ]
+
+ ❯ src/privacy/schedule.test.ts:1037:60
+    1035|       return w;
+    1036|     };
+    1037|     expect(judge(choosing, kept("saturday", "wednesday"))).toEqual([]);
+       |                                                            ^
+    1038|     expect(judge(choosing, kept("wednesday", "saturday")).join(" ")).t…
+    1039|       /itv_cleo holds wednesday at first, not saturday/,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

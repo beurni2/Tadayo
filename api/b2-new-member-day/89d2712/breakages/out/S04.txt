@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 2 failed) 5053ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 172ms
+     × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 172ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 31 passed (33)
+   Start at  16:15:17
+   Duration  5.84s (tests 92%, import 6%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+AssertionError: expected [ '2026-11-11', '2026-11-12', …(1) ] to deeply equal [ '2026-11-11', '2026-11-12', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "2026-11-11",
+    "2026-11-12",
+-   "2026-11-13",
++   "2026-11-16",
+  ]
+
+ ❯ src/db/membership-change.test.ts:359:54
+    357|       // new one from Friday 13 November, the day after the latest wee…
+    358|       const all = await weeks(tx, c);
+    359|       expect(all.map((each) => each.effective_from)).toEqual([TODAY, "…
+       |                                                      ^
+    360|       expect(all.at(-1)?.days).toEqual([
+    361|         ["monday", "Ben", "2026-11-16"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:351:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1)
+AssertionError: expected '2026-11-16' to be '2026-11-15' // Object.is equality
+
+Expected: "2026-11-15"
+Received: "2026-11-16"
+
+ ❯ src/db/membership-change.test.ts:427:59
+    425|       // day: Thursday 19 November is next week's, so it is cancelled …
+    426|       // this week's, kept, and the 26th the first cancelled).
+    427|       expect((await weeks(tx, c)).at(-1)?.effective_from).toBe("2026-1…
+       |                                                           ^
+    428|       const thursdays = await daysOn(tx, c, ["thursday"]);
+    429|       expect(thursdays[0]).toEqual(["2026-11-19", "Ben", "cancelled"]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:417:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

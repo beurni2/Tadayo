@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/uniqueness.test.ts (7 tests | 1 failed) 328ms
+   ❯ the other keys a double tap meets (4)
+     × leaves a cancelled day's date to one other day, and keeps the cancelled one (FQ129) 30ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  16:17:00
+   Duration  1.26s (tests 68%, import 17%, transform 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/uniqueness.test.ts > the other keys a double tap meets > leaves a cancelled day's date to one other day, and keeps the cancelled one (FQ129)
+PostgresError: duplicate key value violates unique constraint "occurrences_one_live_day"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ another src/db/uniqueness.test.ts:115:37
+    113|       const w = await newWorld(tx);
+    114|       await tx`UPDATE app.occurrences SET status = 'cancelled' WHERE i…
+    115|       const another = (sp: Tx) => sp`
+       |                                     ^
+    116|         INSERT INTO app.occurrences (id, club_id, star_interval_id, sc…
+    117|         VALUES (${newId("occ")}, ${w.club}, ${w.ana.interval}, ${w.ver…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (49 tests | 1 failed) 1747ms
+   ❯ a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, FQ129 to FQ131) (12)
+     × lists only members still in the club with no day in its latest week (FQ125, FQ127) 29ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 48 passed (49)
+   Start at  16:19:30
+   Duration  2.71s (tests 92%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, FQ129 to FQ131) > lists only members still in the club with no day in its latest week (FQ125, FQ127)
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/schedule-proposals.test.ts:1471:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

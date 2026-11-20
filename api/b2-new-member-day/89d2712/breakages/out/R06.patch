@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..c97e4951 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -119,7 +119,6 @@ function firstHolds(
+     const wanted = table[active.indexOf(id)] ?? [];
+     for (const weekday of [...wanted, ...WEEKDAYS]) {
+       if (days.length === per) break;
+-      if (taken.has(weekday)) continue;
+       taken.add(weekday);
+       days.push(weekday);
+     }

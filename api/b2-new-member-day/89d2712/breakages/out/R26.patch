@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..24057585 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -106,7 +106,7 @@ function firstHolds(
+   const table = proposedWeek(active.length);
+   // Everyone's kept days first, so that filling an earlier joiner's never takes a later one's.
+   const kept = new Map(
+-    ids.map((id) => {
++    [...ids].reverse().map((id) => {
+       const days = fromMonday(earlier.get(id) ?? [])
+         .filter((weekday) => !taken.has(weekday))
+         .slice(0, per);

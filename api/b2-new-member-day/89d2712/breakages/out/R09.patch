@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..ef454844 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -134,7 +134,6 @@ export function pickAfter(facts: PickFacts): PickChange {
+   const { active, week, open } = facts;
+   check(active);
+   if (facts.firstDaysOpen || week === null) return NOTHING;
+-  if (active.length < 2) return open === null ? NOTHING : { freed: [], proposal: { kind: "drop" } };
+   const per = daysPerMember(active.length);
+ 
+   // Each active member's days in the week, from Monday. The members with none are new: each needs `per`

@@ -1,0 +1,63 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 5 failed) 5175ms
+   ❯ a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) (7)
+     × names the club's open pick to an id replaced more than once, and treats it as ended once none is open 112ms
+     × ends an open pick with no successor when nobody it includes is still a member 78ms
+     × ends an open pick when the club is paused, and opens one when it has two members again (FQ16, FQ116) 65ms
+   ❯ reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) (3)
+     × gives members already in the week, someone who left, a stranger and a member of another club nothing of it (T14) 136ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × refuses a confirmation that comes after the leave that ended the pick 284ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 28 passed (33)
+   Start at  16:15:35
+   Duration  5.95s (tests 92%, import 6%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > names the club's open pick to an id replaced more than once, and treats it as ended once none is open
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > ends an open pick with no successor when nobody it includes is still a member
+ FAIL  src/db/membership-change.test.ts > a pick added to, replaced, dropped, and a club paused (FQ16, FQ131) > ends an open pick when the club is paused, and opens one when it has two members again (FQ16, FQ116)
+ FAIL  src/db/membership-change.test.ts > reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) > gives members already in the week, someone who left, a stranger and a member of another club nothing of it (T14)
+PostgresError: app.schedule_proposals: its state moves with its next version (T33)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleChange ../packages/domain/src/schedule/settle-change.ts:220:20
+    218|     if (openId === null) throw new Error("schedule: the rule ended a p…
+    219|     const ended = proposal.kind === "drop" ? "superseded" : "applied";
+    220|     await bound(tx)`
+       |                    ^
+    221|       UPDATE app.schedule_proposals
+    222|          SET state = ${ended}, closed_at = ${at}::pg_catalog.timestamp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > refuses a confirmation that comes after the leave that ended the pick
+AssertionError: expected '23000' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_0U5Ew2Pk3e2LDvGh3jXWJg",
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/membership-change.test.ts:1108:24
+    1106|       await hold.release();
+    1107|     }
+    1108|     expect(await left).toMatchObject({ club_id: s.c.club });
+       |                        ^
+    1109|     expect(await alex).toBe("VERSION_CONFLICT");
+    1110|     expect(await rowOf(s.pick.id)).toEqual({ state: "superseded", vers…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+

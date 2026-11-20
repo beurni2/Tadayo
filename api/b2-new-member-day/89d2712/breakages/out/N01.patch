@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/generate.ts b/packages/domain/src/schedule/generate.ts
+index 2e5e3780..6e9434a4 100644
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -98,7 +98,6 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
+     const day = inForce?.assignments.find((assignment) => assignment.weekday === weekday);
+     if (inForce === undefined || day === undefined) continue;
+     if (!day.starActive || !(day.firstDate <= localDate)) continue;
+-    if (cancelled.get(localDate)?.includes(day.starInterval) === true) continue;
+     const { revealAt, closeAt } = dayInstants(date, zone);
+     if (!(Temporal.Instant.compare(revealAt, now) > 0)) continue;
+     owed.push({ localDate, versionId: inForce.id, starInterval: day.starInterval, revealAt, closeAt });

@@ -1,0 +1,14 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..ed8dda57 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -59,8 +59,7 @@ $$;
+ -- 1. One live day per club and date. The plain index serves what reads every day of a club, the
+ -- cancelled ones too (the days' generation, and a restart's last day made).
+ ALTER TABLE app.occurrences DROP CONSTRAINT occurrences_club_id_local_date_key;
+-CREATE UNIQUE INDEX occurrences_one_live_day ON app.occurrences (club_id, local_date)
+-  WHERE status <> 'cancelled';
++CREATE UNIQUE INDEX occurrences_one_live_day ON app.occurrences (club_id, local_date);
+ CREATE INDEX occurrences_by_club_date ON app.occurrences (club_id, local_date);
+ 
+ -- 2. A new week holds the club's row until it commits, as 0005's did: no day is made meanwhile under

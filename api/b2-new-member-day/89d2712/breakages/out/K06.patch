@@ -1,0 +1,10 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index 9b862a38..a6890899 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -166,5 +166,4 @@ async function confirmNewMemberDays(
+            AND NOT EXISTS (SELECT FROM app.memberships s
+                             WHERE s.interval_id = o.star_interval_id AND s.state = 'active')`;
+   }
+-  await applyIfEveryoneConfirmed(tx, at, proposal, callerId);
+ }

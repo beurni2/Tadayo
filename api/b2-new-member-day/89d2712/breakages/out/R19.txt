@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (26 tests | 2 failed) 40ms
+   ❯ newMemberFirstDate: the picked day in the week after (FQ130) (5)
+     × is that weekday in the week after the confirmation, never this week 15ms
+     × takes this week and next from the club's own date, not UTC's (T1) 1ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  2 failed | 150 passed (152)
+   Start at  16:14:11
+   Duration  1.92s (tests 88%, import 9%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > newMemberFirstDate: the picked day in the week after (FQ130) > is that weekday in the week after the confirmation, never this week
+AssertionError: expected '2026-11-12' to be '2026-11-19' // Object.is equality
+
+Expected: "2026-11-19"
+Received: "2026-11-12"
+
+ ❯ src/schedule/change.test.ts:411:96
+    409|     // Thursday is still next week's, never this week's.
+    410|     const monday = at("2026-11-09T09:00");
+    411|     expect(newMemberFirstDate("thursday", monday, NEW_YORK, D("2026-11…
+       |                                                                                                ^
+    412|   });
+    413|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/change.test.ts > newMemberFirstDate: the picked day in the week after (FQ130) > takes this week and next from the club's own date, not UTC's (T1)
+AssertionError: expected '2026-11-11' to be '2026-11-18' // Object.is equality
+
+Expected: "2026-11-18"
+Received: "2026-11-11"
+
+ ❯ src/schedule/change.test.ts:423:109
+    421|     const auckland = Temporal.PlainDateTime.from("2026-11-09T08:00").t…
+    422|     expect(auckland.toString()).toBe("2026-11-08T19:00:00Z");
+    423|     expect(newMemberFirstDate("wednesday", auckland, "Pacific/Auckland…
+       |                                                                                                             ^
+    424|       "2026-11-18",
+    425|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

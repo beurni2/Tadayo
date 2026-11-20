@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..d4fa3d0d 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -73,7 +73,7 @@ DECLARE
+ BEGIN
+   PERFORM FROM app.clubs WHERE id = NEW.club_id FOR UPDATE;
+   SELECT max(effective_from) INTO latest FROM app.schedule_versions WHERE club_id = NEW.club_id;
+-  IF latest IS NOT NULL AND NEW.effective_from <= latest THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_versions: a week starts after every earlier week of its club, after %, not on %',
+       latest, NEW.effective_from
+       USING ERRCODE = 'integrity_constraint_violation';

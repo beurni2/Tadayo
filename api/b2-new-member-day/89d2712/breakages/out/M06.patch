@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0015_new_member_day.sql b/db/migrations/0015_new_member_day.sql
+index b578e39a..0a6193bc 100644
+--- a/db/migrations/0015_new_member_day.sql
++++ b/db/migrations/0015_new_member_day.sql
+@@ -151,6 +151,7 @@ BEGIN
+                                 WHERE v.id = NEW.schedule_version_id AND v.created_at = NEW.confirmed_at)) THEN
+     RETURN NULL;
+   END IF;
++  RETURN NULL;
+   RAISE EXCEPTION 'app.schedule_assignments: % for % is neither a day its member, still in the club, had in the week before, as it was, nor their confirmation (FQ126, T6)',
+     NEW.weekday, NEW.star_interval_id
+     USING ERRCODE = 'integrity_constraint_violation';

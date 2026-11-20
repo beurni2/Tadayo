@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index 50f57f6c..9290cc0f 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -1099,7 +1099,7 @@ export function weekChangeProblems(
+   };
+   /** The days `interval` holds in `rows`: a day proposed and set aside is free (FQ48). */
+   const daysOf = (rows: ScheduleProposalRows, interval: string) =>
+-    WEEK.filter((weekday) => rows.days.some((day) => day.interval === interval && day.weekday === weekday && day.held));
++    WEEK.filter((weekday) => rows.days.some((day) => day.interval === interval && day.weekday === weekday));
+   /** The pick that was open ended at its next version, `state`, naming `successor` or nothing. */
+   const ended = (state: "applied" | "superseded", successor: string | null) => {
+     if (was === undefined) return;

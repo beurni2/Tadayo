@@ -1,0 +1,363 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (33 tests | 12 failed) 4500ms
+   ❯ when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) (10)
+     × asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two) 112ms
+     × frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth 114ms
+     × takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1) 92ms
+     × keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131) 85ms
+   ❯ a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) (3)
+     × writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody 112ms
+     × gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129) 89ms
+   ❯ reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) (3)
+     × gives the new member each day of the week in force as its member's, with no first date, and the free days to choose 83ms
+   ❯ choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) (4)
+     × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation 270ms
+   ❯ confirmations, joins and leaves at once, on connections of their own (6)
+     × takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own 330ms
+     × takes a confirmation that comes before the leave, which then finds the pick applied 249ms
+     × refuses a reservation that waits on a cancellation in progress, once it commits (T9) 112ms
+     × lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63) 59ms
+
+ Test Files  1 failed (1)
+      Tests  12 failed | 21 passed (33)
+   Start at  16:16:28
+   Duration  5.24s (tests 92%, import 6%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > asks nobody anything when a member leaves: the leaver's days are free, and nobody moves (three to two)
+AssertionError: expected { …(9) } to match object { state: 'applied', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
++   "state": "open",
+  }
+
+ ❯ three src/db/membership-change.test.ts:252:43
+    250| async function three(tx: WorldTx): Promise<Club> {
+    251|   const { c } = await withAlex(tx);
+    252|   expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "appl…
+       |                                           ^
+    253|   return c;
+    254| }
+ ❯ src/db/membership-change.test.ts:342:17
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > frees the others' second days when a fourth member joins three: a new week now, their days from next week cancelled, and a pick for the fourth
+AssertionError: expected { …(9) } to match object { state: 'applied', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
++   "state": "open",
+  }
+
+ ❯ three src/db/membership-change.test.ts:252:43
+    250| async function three(tx: WorldTx): Promise<Club> {
+    251|   const { c } = await withAlex(tx);
+    252|   expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "appl…
+       |                                           ^
+    253|   return c;
+    254| }
+ ❯ src/db/membership-change.test.ts:352:17
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1)
+AssertionError: expected { …(9) } to match object { state: 'applied', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
++   "state": "open",
+  }
+
+ ❯ three src/db/membership-change.test.ts:252:43
+    250| async function three(tx: WorldTx): Promise<Club> {
+    251|   const { c } = await withAlex(tx);
+    252|   expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "appl…
+       |                                           ^
+    253|   return c;
+    254| }
+ ❯ src/db/membership-change.test.ts:418:17
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131) > keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)
+AssertionError: expected { …(9) } to match object { state: 'applied', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
++   "state": "open",
+  }
+
+ ❯ three src/db/membership-change.test.ts:252:43
+    250| async function three(tx: WorldTx): Promise<Club> {
+    251|   const { c } = await withAlex(tx);
+    252|   expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "appl…
+       |                                           ^
+    253|   return c;
+    254| }
+ ❯ src/db/membership-change.test.ts:441:17
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > writes the days into a new week at once, each the new member's from that weekday next week, and moves nobody
+AssertionError: expected { …(9) } to match object { state: 'applied', version: 2, …(1) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:734:47
+    732|       const made = await daysOn(tx, c, WEEK);
+    733|       await join(tx, c, "Alex", "Ben");
+    734|       expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "…
+       |                                               ^
+    735|       // A new week from Thursday 12 November, the day after the first…
+    736|       // they were, and Alex's from Wednesday 18 and Saturday 21 Novem…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:728:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > a new member's days (FQ79, FQ127, FQ129, FQ130: no four-to-five-week wait) > gives a new member a leaver's weekday from its first date, cancelling the leaver's days there on (FQ63, FQ129)
+AssertionError: expected { …(9) } to match object { state: 'applied', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
++   "state": "open",
+  }
+
+ ❯ three src/db/membership-change.test.ts:252:43
+    250| async function three(tx: WorldTx): Promise<Club> {
+    251|   const { c } = await withAlex(tx);
+    252|   expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "appl…
+       |                                           ^
+    253|   return c;
+    254| }
+ ❯ src/db/membership-change.test.ts:810:17
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a pick (the contract's ScheduleProposal; FQ125, FQ127, FQ130) > gives the new member each day of the week in force as its member's, with no first date, and the free days to choose
+AssertionError: expected { …(9) } to match object { state: 'applied', version: 2, …(1) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:875:22
+    873|       // Confirmed, Alex's own days carry their first dates; nobody el…
+    874|       const answer = await confirmOwn(tx, c, "Alex");
+    875|       expect(answer).toMatchObject({ state: "applied", version: 2, myS…
+       |                      ^
+    876|       expect(answer.slots.map((each) => [each.weekday, each.state, eac…
+    877|         ["monday", "taken", undefined],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:853:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > choosing and confirming in a pick (FQ55, FQ57, FQ99; T1, T19, T33) > refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for days not held, a contested day and a second confirmation
+AssertionError: expected { …(9) } to match object { state: 'applied', version: 2 }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:981:70
+    979|       expect(await refusal(choose(tx, c, "Debby", pick.id, 1, ["saturd…
+    980|       // Nina, the last it waited for, applies it.
+    981|       expect(await confirm(tx, c, "Nina", pick.id, 1, ["saturday"])).t…
+       |                                                                      ^
+    982|       expect((await weeks(tx, c)).map((each) => each.effective_from)).…
+    983|       expect((await weeks(tx, c)).at(-1)?.days.map((day) => day[1])).t…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:958:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes two new members' confirmations one after the other, the second applying the pick, each in a week of its own
+AssertionError: expected { …(9) } to match object { state: 'applied', version: 2, …(1) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:1080:26
+    1078|       }
+    1079|       expect(await debby).toMatchObject({ state: "open", version: 1, m…
+    1080|       expect(await nina).toMatchObject({ state: "applied", version: 2,…
+       |                          ^
+    1081|       expect(await rowOf(s.pick.id)).toEqual({ state: "applied", versi…
+    1082|       expect(await weeksOf(s.c.club)).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > takes a confirmation that comes before the leave, which then finds the pick applied
+AssertionError: expected { …(9) } to match object { state: 'applied', version: 2, …(1) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:1135:26
+    1133|         await hold.release();
+    1134|       }
+    1135|       expect(await alex).toMatchObject({ state: "applied", version: 2,…
+       |                          ^
+    1136|       expect(await left).toMatchObject({ club_id: s.c.club });
+    1137|       expect(await rowOf(s.pick.id)).toEqual({ state: "applied", versi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > refuses a reservation that waits on a cancellation in progress, once it commits (T9)
+AssertionError: expected { …(9) } to match object { state: 'applied', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
++   "state": "open",
+  }
+
+ ❯ three src/db/membership-change.test.ts:252:43
+    250| async function three(tx: WorldTx): Promise<Club> {
+    251|   const { c } = await withAlex(tx);
+    252|   expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "appl…
+       |                                           ^
+    253|   return c;
+    254| }
+ ❯ src/db/membership-change.test.ts:1205:17
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/membership-change.test.ts:1235:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations, joins and leaves at once, on connections of their own > lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63)
+AssertionError: expected { …(9) } to match object { state: 'applied', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "applied",
++   "state": "open",
+  }
+
+ ❯ three src/db/membership-change.test.ts:252:43
+    250| async function three(tx: WorldTx): Promise<Club> {
+    251|   const { c } = await withAlex(tx);
+    252|   expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "appl…
+       |                                           ^
+    253|   return c;
+    254| }
+ ❯ src/db/membership-change.test.ts:1205:17
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/membership-change.test.ts:1253:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+

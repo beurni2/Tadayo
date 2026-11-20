@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (49 tests | 1 failed) 1837ms
+   ❯ a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, FQ129 to FQ131) (12)
+     × lets a member confirm a day of one who confirmed it and left since: a member who left contests nothing (FQ127) 50ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 48 passed (49)
+   Start at  16:20:03
+   Duration  2.87s (tests 92%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, FQ129 to FQ131) > lets a member confirm a day of one who confirmed it and left since: a member who left contests nothing (FQ127)
+PostgresError: app.schedule_proposal_members: mem_LpngPKuOZ7TsFzLBk3Xn-w can't confirm friday: another member holds it too (FQ55)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

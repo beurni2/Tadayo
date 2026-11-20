@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index 5c8234f8..0dcf887f 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -133,7 +133,7 @@ function firstHolds(
+ export function pickAfter(facts: PickFacts): PickChange {
+   const { active, week, open } = facts;
+   check(active);
+-  if (facts.firstDaysOpen || week === null) return NOTHING;
++  if (week === null) return NOTHING;
+   if (active.length < 2) return open === null ? NOTHING : { freed: [], proposal: { kind: "drop" } };
+   const per = daysPerMember(active.length);
+ 
