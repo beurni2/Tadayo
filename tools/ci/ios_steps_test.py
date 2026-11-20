@@ -998,45 +998,47 @@ class SimulatorTest(StepsTest):
         self.assert_pinned(shell)
 
     def test_a_failed_shared_cache_update_is_logged_and_said_but_not_fatal(self):
-        # Nothing has shown that simctl takes the runtime's identifier there: when it doesn't, the
-        # run goes on, and the first boot of iOS 26.5 builds the cache, in the test step's time.
-        code, out = self.step("simulator", self.shell(after_download=WITH_26_5, cache_code=1))
+        # When neither the plain update nor the one with sudo builds the cache, the run goes on,
+        # and the first boot of iOS 26.5 builds it, in the test step's time. The line says the
+        # last update's exit code, and the log has both.
+        update = ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]
+        again = ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}"] + update
+        shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 1 if cmd[0] == "sudo" else 25)
+        code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)
+        self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [update, again])
         self.assertIn("updating iOS 26.5's shared cache exited 1, so its first boot builds it", out)
-        # Both updates' exit codes are logged: the plain one's, then the one with sudo's.
-        with open(os.path.join(self.repo.out, "logs", "simulators.txt")) as f:
-            self.assertEqual(f.read().count("(exit 1)"), 2)
+        text = self.simulators_log()
+        self.assertEqual((text.count("(exit 25)"), text.count("(exit 1)")), (1, 1))
+        self.assertLess(text.index("(exit 25)"), text.index("(exit 1)"))
         code, out = self.step("simulator", self.shell(after_download=WITH_26_5))
         self.assertEqual(code, 0, out)
         self.assertNotIn("shared cache", out)
 
-    def test_a_failed_shared_cache_update_is_read_and_run_once_more_with_sudo(self):
-        # The runner image of 2026-11-19, after the import as root: the update exited 25 and
-        # named two files of the builder's output, which simctl doesn't print. They are copied
-        # into the log, and the update is run once more as root, never asking for a password,
-        # with the pinned Xcode named on the line.
+    def test_a_failed_shared_cache_update_is_run_once_more_with_sudo(self):
+        # The runner image of 2026-11-19, after the import as root: the update exited 25 for the
+        # runner's user and built the cache as root. Never asking for a password, with the
+        # pinned Xcode named on the line.
         update = ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]
         again = ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}"] + update
-        file = "/Library/Developer/CoreSimulator/Caches/dyld/26B123/inc/x/update_dyld_sim_shared_cache-stderr.txt"
         shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 0 if cmd[0] == "sudo" else 25)
-        shell.answers[:0] = [(starts("find"), (0, file + "\n", "")),
-                             (starts("sudo", "-n", "tail"), (0, "the builder's own words\n", ""))]
         code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)
         self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [update, again])
         self.assertIn("updating iOS 26.5's shared cache exited 25; updating it again with sudo", out)
         self.assertNotIn("so its first boot builds it", out)
+        # Both updates' exit codes are logged, the plain one's first, the one with sudo's last.
         text = self.simulators_log()
-        self.assertIn(f"+ sudo -n tail -n 60 {file}\nthe builder's own words\n(exit 0)\n", text)
-        self.assertIn("(exit 25)\n", text)
+        self.assertEqual(text.count("(exit 25)"), 1)
+        self.assertIn("(exit 25)\n(exit 0)\n", text)
         self.assert_pinned(shell)
-        # The files are read once, after the plain update: the one with sudo worked.
-        self.assertEqual(len([c for c in shell.commands if c[0] == "find"]), 1)
+        # Nothing else in the step runs as root.
+        self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [again])
 
     def test_a_shared_cache_update_that_worked_is_never_run_with_sudo(self):
         shell = self.shell(after_download=WITH_26_5)
         self.assertEqual(self.step("simulator", shell)[0], 0)
-        self.assertEqual([c for c in shell.commands if c[0] in ("sudo", "find")], [])
+        self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [])
 
     def test_the_download_s_exit_code_doesn_t_decide(self):
         # Xcode can fall back to another runtime and exit 0, or fail a proxy and say "not
