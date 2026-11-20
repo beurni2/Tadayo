@@ -37,7 +37,10 @@ export interface RosterCandidate extends RosterName {
 export interface OpenRoster {
   readonly id: string;
   readonly version: number;
-  /** The candidate's row on it was accepted with this very link. */
+  /**
+   * The candidate's row on it was accepted with this very link, by an account whose profile name is still
+   * the label it shows: an acceptance stands only for the name the members read (FQ66).
+   */
   readonly accepted: boolean;
   /** The label it shows for the link's candidate (FQ66). */
   readonly label: string;
@@ -174,7 +177,9 @@ export async function linkFacts(
                       AND ok.state = 'open' AND ok.id <> k.id) AS holds_another,
            (SELECT pg_catalog.jsonb_build_object(
                      'id', r.id, 'version', r.version, 'label', rc.label,
-                     'accepted', rc.accepted_invitation_id IS NOT DISTINCT FROM i.id,
+                     'accepted', rc.accepted_invitation_id IS NOT DISTINCT FROM i.id
+                                 AND EXISTS (SELECT FROM app.users bu
+                                              WHERE bu.id = i.bound_user_id AND bu.display_name = rc.label),
                      'members',
                      (SELECT pg_catalog.jsonb_agg(su.display_name ORDER BY s.joined_at, s.interval_id COLLATE "C")
                         FROM app.roster_revision_members rm

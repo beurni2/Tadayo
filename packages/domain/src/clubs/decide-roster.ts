@@ -126,7 +126,7 @@ async function decideRoster(
       INSERT INTO app.roster_approvals (revision_id, interval_id, decision, implicit, decided_at)
       VALUES (${revisionId}, ${asking}, ${decision}, false, ${at}::pg_catalog.timestamptz)`;
     if (operation === "approveRoster") {
-      await applyIfReady(tx, clock, at, clubId, revisionId);
+      await applyIfReady(tx, at, clubId, revisionId);
     } else {
       await bound(tx)`
         UPDATE app.candidates k SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz

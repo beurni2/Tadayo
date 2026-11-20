@@ -15,12 +15,13 @@
 //   when its candidate ended, nothing to anyone else; `expired` with the inviter's name for a link nobody
 //   used, past its expiry; nothing to an account that holds another place in the club's roster; `full` at
 //   six members; then the exact roster of the club's open revision, names only: `waiting` when the
-//   candidate accepted it with this link, `changed` when the account accepted an earlier roster with it,
-//   else `open`. No id of a person, no decision and no acceptance of anyone (T7, T33).
+//   candidate accepted it with this link and the account's profile name is still the label it shows,
+//   `changed` when the account accepted an earlier roster with it or has changed its name since, else
+//   `open`. No id of a person, no decision and no acceptance of anyone (T7, T33).
 // - Accepting (`acceptInvitation`), in order: the neutral not-found as above, to a member holding a link
 //   they didn't join with, for an ended candidate's link nobody of this account accepted, and for a
-//   revision that doesn't list the candidate; INVITATION_EXPIRED; ROSTER_CHANGED with the newest
-//   revision's id; VERSION_CONFLICT with the revision's version; then `changed` when the account's profile
+//   revision that doesn't list the candidate; INVITATION_EXPIRED; the neutral not-found to an account
+//   that holds another place in the club's roster; ROSTER_CHANGED with the newest revision's id; VERSION_CONFLICT with the revision's version; then `changed` when the account's profile
 //   name isn't the label the revision shows (the server makes a new revision, FQ66), else `waiting`, or
 //   `joined` when every member has approved (FQ65).
 //
@@ -160,7 +161,9 @@ export function previewFor(
     );
   if (inviter === undefined || members.length === 0) return undefined;
   if (activeMembers(world, link.club) >= SIX) return { state: "full" };
-  const accepted = open.rows.candidates.find((candidate) => candidate.id === link.candidate)?.acceptedWith === link.id;
+  // An acceptance stands while the account's profile name is the label the members read (FQ66).
+  const listed = open.rows.candidates.find((candidate) => candidate.id === link.candidate);
+  const accepted = listed?.acceptedWith === link.id && link.boundName === listed.label;
   return {
     state: accepted ? "waiting" : mine ? "changed" : "open",
     invitation_id: link.id,
@@ -206,11 +209,11 @@ export function acceptOutcome(
   const listed = rows?.candidates.find((candidate) => candidate.id === link.candidate);
   if (rows === undefined || rows.club !== link.club || !rows.sealed || listed === undefined) return NEUTRAL;
   if (!mine && Temporal.Instant.compare(link.expiresAt, now) <= 0) return EXPIRED;
+  if (holdsAnother(roster, link, account)) return NEUTRAL;
   if (rows.state === "superseded") return rosterChanged(newestOf(roster, revision));
   if (rows.version !== expected) return versionConflict(rows.version);
   if (rows.state !== "open") return rows.state === "applied" && viewer !== undefined ? "joined again" : NEUTRAL;
   if (state !== "open" || viewer !== undefined) return NEUTRAL;
-  if (holdsAnother(roster, link, account)) return NEUTRAL;
   if (activeMembers(world, link.club) >= SIX) return CLUB_FULL;
   if (name !== listed.label) return "changed";
   // Applied when every member the revision lists has approved it (FQ65): this account then joins.

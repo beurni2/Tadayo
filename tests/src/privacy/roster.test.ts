@@ -81,6 +81,7 @@ function link(more: Partial<LinkRows> = {}): LinkRows {
     replaced: false,
     bound: false,
     boundTo: null,
+    boundName: null,
     hash: sha256(TOKEN),
     ...more,
   };

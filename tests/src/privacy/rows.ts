@@ -118,11 +118,16 @@
 //   held to the outcome the table names, so a judge that agreed with a refusal would fail, and each answer
 //   is scanned with its own caller's facts and the token its request presented. Another member declines
 //   in every phase, so no cell applies a roster: the club's members stay who the cell's other rows expect.
-//   The roster applied, the club's start and a joiner's own answers go through the app in matrix.test.ts's
-//   "a roster applied through the app", and on Postgres in tests/src/db/accept-roster.test.ts. What passes
-//   through no cell: `expired`, `full`, INVITATION_EXPIRED and CLUB_FULL of an acceptance (a link is made
-//   and used within its phase; six members are built only by hand), which the database tests and
-//   invitation.test.ts's judge tests hold;
+//   A roster applied to a club that has started, and a joiner's own answers, go through the app in
+//   matrix.test.ts's "a roster applied through the app"; a club's start with its first days goes through
+//   the commands on Postgres only (tests/src/db/accept-roster.test.ts). What passes through no cell, and
+//   is held by the database tests and invitation.test.ts's judge tests: `expired`, `full`,
+//   INVITATION_EXPIRED and CLUB_FULL of an acceptance (a link is made and used within its phase; six
+//   members are built only by hand); a revoked or a replaced link's token on the three routes (the
+//   table's first link is revoked and never presented); a suspended club's link; a second place in the
+//   same club; a link whose candidate joined and then left; ROSTER_CHANGED of an acceptance; an inviter
+//   with no name; an ended proposal's link nobody used; and an account that changed its name after
+//   accepting;
 // - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
 //   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
 //   shows), each as a check a row can run:

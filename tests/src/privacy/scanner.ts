@@ -121,9 +121,9 @@
 //   `acceptInvitation` (the context's `presented`, held to the SHA-256 the link's row keeps), may read
 //   through it, while the link isn't revoked or replaced and its club isn't suspended (FQ59, FQ80):
 //   signed out, the inviter's name alone, of a link nobody has used, before its expiry, whose candidate
-//   is still open (T7); signed in, and only when no other account accepted with the link, the inviter's
-//   name, and, while the candidate is open on the club's open revision and the link is the account's own
-//   or not yet expired, the club's name and that revision's names: its members' and its candidates'
+//   is still open (T7); signed in, only when no other account accepted with the link and while the
+//   candidate is on the club's open revision, the inviter's name, and, when the link is the account's
+//   own or not yet expired, the club's name and that revision's names: its members' and its candidates'
 //   labels (FQ47). The link's id is shown only in such an answer, as the link the caller presented: in
 //   an acceptance only once it is the account's own. Nothing else of the club: no person's id, no
 //   avatar, and no other revision's label (heldLink, Reader.texts);
@@ -617,12 +617,13 @@ const HOLDER_OPERATIONS = new Set(["previewInvitationWeb", "previewInvitation", 
 
 /**
  * The link the request presented the token of, with what its holder may read through it (the header's
- * rule): `inviter`, the inviter's name; `roster`, the club's name and the open revision's names too.
+ * rule): `shown`, the link's own id in an acceptance; `inviter`, the inviter's name; `roster`, the club's
+ * name and the open revision's names too.
  * Undefined when the request presented no token of the world's, or isn't one of the holder's operations.
  */
 function heldLink(
   context: ScanContext,
-): { id: string; invitation: WorldInvitation; inviter: boolean; roster: boolean } | undefined {
+): { id: string; invitation: WorldInvitation; shown: boolean; inviter: boolean; roster: boolean } | undefined {
   const { world, viewer, now, presented } = context;
   if (presented === undefined || !HOLDER_OPERATIONS.has(context.operation.id)) return undefined;
   const hash = createHash("sha256").update(presented).digest("hex");
@@ -633,11 +634,15 @@ function heldLink(
   const unexpired = before(now, invitation.expiresAt);
   if (context.operation.id === "previewInvitationWeb" || viewer.account === null) {
     const live = names && invitation.boundTo === null && unexpired && invitation.roster !== null;
-    return { id, invitation, inviter: live, roster: false };
+    return { id, invitation, shown: live, inviter: live, roster: false };
   }
   const theirs = invitation.boundTo === viewer.account;
-  const readable = names && (invitation.boundTo === null || theirs);
-  return { id, invitation, inviter: readable, roster: readable && invitation.roster !== null && (theirs || unexpired) };
+  // The link shows something to this account: its id in an acceptance, as when the account has joined by it.
+  const shown = names && (invitation.boundTo === null || theirs);
+  // Signed in too, a name is read only while the candidate is on an open revision: once the proposal has
+  // ended the answer is nothing, or `did_not_go_ahead`, which names nobody.
+  const readable = shown && invitation.roster !== null;
+  return { id, invitation, shown, inviter: readable, roster: readable && (theirs || unexpired) };
 }
 
 function readerOf(context: ScanContext): Reader {
@@ -1257,7 +1262,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       const held = heldLink(context);
       if (held === undefined || node.invitation_id !== held.id)
         find("world", `${at}.invitation_id`, "an invitation whose token the caller didn't present (T7, T14)");
-      else if (!(kind === "InvitationAcceptance" ? held.inviter : held.roster))
+      else if (!(kind === "InvitationAcceptance" ? held.shown : held.roster))
         find("world", `${at}.invitation_id`, "an invitation its link no longer shows to this caller (FQ59, FQ80)");
       else if (kind === "InvitationOpen" && held.invitation.boundTo !== null)
         find("world", `${at}.invitation_id`, "an open invitation whose link an account has accepted with (T7)");

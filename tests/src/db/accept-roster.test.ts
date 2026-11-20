@@ -7,14 +7,16 @@
 // club's start with its first days, the people who join and the candidates carried on, a revision made for
 // another name, a decline, and every refusal.
 //
-// These tests were written after the code, from the plan's section 4; the deliberate breakages on the
-// `evidence` branch are the proof that each can fail.
+// These tests were written after the code, from the plan's section 4, so none was seen to fail before its
+// rule existed. The tests of the last describe came from the review, each for a change the reviewers
+// showed no test would catch.
 
 import { createHash, randomUUID } from "node:crypto";
 import { invitationAcceptanceBody, rosterRevisionBody } from "@tadayo/api";
 import {
   acceptInvitation,
   approveRoster,
+  declineRoster,
   listClubs,
   listMembers,
   revokeInvitation,
@@ -386,7 +388,7 @@ describe("a later addition: every member approves, the candidate accepts, in eit
     });
   });
 
-  it("joins everyone who accepted together, in the roster's order, and carries the one who hadn't", async () => {
+  it("joins everyone who accepted together, and carries the one who hadn't", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 2);
       const open = await propose(tx, clock, user(w, 0), w.club, ["Alex", "Sam", "Debby"]);
@@ -394,7 +396,7 @@ describe("a later addition: every member approves, the candidate accepts, in eit
       for (const index of [0, 1, 2]) links.push(await linkFor(tx, clock, user(w, 0), w.club, candidate(open, index)));
       const sam = await newUser(plain(tx), "Sam");
       const alex = await newUser(plain(tx), "Alex");
-      // Sam accepts before Alex; they join in the roster's order, Alex first.
+      // Sam accepts before Alex; both join on the last approval.
       await acceptWith(tx, clock, sam, links[1]?.token ?? "", open.id, 1);
       await acceptWith(tx, clock, alex, links[0]?.token ?? "", open.id, 1);
       await approve(tx, clock, user(w, 1), open.id, 1);
@@ -405,13 +407,13 @@ describe("a later addition: every member approves, the candidate accepts, in eit
       expect(new Set(joined.map((one) => one.user_id))).toEqual(new Set([alex, sam]));
       expect(await candidateState(tx, candidate(open, 0))).toBe("joined");
       expect(await candidateState(tx, candidate(open, 1))).toBe("joined");
-      // Debby is carried at her own label, first now, with no acceptance; all four members hold the new roster.
+      // Debby is carried at Debby's own label, first now, with no acceptance; all four members hold the new roster.
       const carried = (await openRevision(tx, w.club)) ?? "";
       const rows = await tx<{ candidate_id: string; label: string; position: number; accepted_at: unknown }[]>`
         SELECT candidate_id, label, position, accepted_at FROM app.roster_revision_candidates WHERE revision_id = ${carried}`;
       expect(rows).toEqual([{ candidate_id: candidate(open, 2), label: "Debby", position: 1, accepted_at: null }]);
       expect(await tx`SELECT FROM app.roster_revision_members WHERE revision_id = ${carried}`).toHaveLength(4);
-      // Six still counts her: five members and candidates, so one more can be proposed and not two.
+      // Six still counts Debby: five members and candidates, so one more can be proposed and not two.
       expect(await refusal(propose(tx, clock, user(w, 0), w.club, ["Nina", "Zed"]))).toMatchObject({
         code: "CLUB_FULL",
       });
@@ -476,7 +478,7 @@ describe("another name: a revision the server makes, which everyone accepts and 
       const forBen = await read(tx, s.ben.user, next, NOW);
       expect(forBen).toMatchObject({ my_decision: "pending", proposed_by: { membership_id: s.ben.interval } });
       expect(forBen?.candidates[0]).toMatchObject({ name: "Debby", invitation: { id: s.maya.link, state: "used" } });
-      // Debby reviews the new roster, under her own name.
+      // Debby reviews the new roster, under Debby's own name.
       expect(await preview(tx, debby, s.maya.token, NOW)).toEqual({
         state: "changed",
         invitation_id: s.maya.link,
@@ -981,10 +983,11 @@ describe("accepting the exact roster the caller saw (T7, T19, T52)", () => {
         code: "IDEMPOTENCY_CONFLICT",
         facts: {},
       });
-      expect(await refusal(acceptWith(tx, clock, maya, s.alex.token, s.open.id, 1, key))).toEqual({
-        code: "IDEMPOTENCY_CONFLICT",
-        facts: {},
-      });
+      // Another link under the key, one that names nothing to Maya (a member now, holding Alex's link): the
+      // neutral not-found, as under a new key and as for a token nobody made, never a conflict (T14).
+      expect(await refusal(acceptWith(tx, clock, maya, s.alex.token, s.open.id, 1, key))).toEqual(NONE);
+      expect(await refusal(acceptWith(tx, clock, maya, s.alex.token, s.open.id, 1))).toEqual(NONE);
+      expect(await refusal(acceptWith(tx, clock, maya, "A".repeat(43), s.open.id, 1, key))).toEqual(NONE);
       expect(await membersOf(tx, s.ben.club)).toHaveLength(2);
     });
   });
@@ -1292,4 +1295,318 @@ describe("the club's row (T1, T7)", () => {
       expect(await receiptsOf(db as unknown as WorldTx, user(s.w, 1), "approveRoster")).toEqual([]);
     },
   );
+});
+
+describe("found in review: an acceptance stands for the name the members read (FQ66, FQ84)", () => {
+  const rename = (tx: WorldTx, userId: string, name: string) =>
+    tx`UPDATE app.users SET display_name = ${name} WHERE id = ${userId}`;
+
+  it("joins nobody under a name changed after accepting: the account accepts again, and everyone approves the new name", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const account = await newUser(plain(tx), "Sam");
+      expect((await acceptWith(tx, clock, account, s.sam.token, s.open.id, 1)).state).toBe("waiting");
+      await rename(tx, account, "Mallory");
+      // The members still read Sam; the holder is shown the roster to accept again, not `waiting`.
+      const shown = await preview(tx, account, s.sam.token, NOW);
+      expect(shown?.state).toBe("changed");
+      expect(shown?.roster?.at(-1)).toEqual({ name: "Sam", kind: "candidate", is_you: true });
+      await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+      const last = await approve(tx, clock, user(s.w, 2), s.open.id, 1);
+      expect(last.state).toBe("open");
+      expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: "open", version: 1 });
+      expect(await membersOf(tx, s.w.club)).toHaveLength(3);
+      // Accepting again makes the rename's revision, with no approval and no acceptance.
+      expect((await acceptWith(tx, clock, account, s.sam.token, s.open.id, 1)).state).toBe("changed");
+      const next = (await openRevision(tx, s.w.club)) ?? "";
+      expect(next).not.toBe(s.open.id);
+      expect(await revisionRow(tx, next)).toMatchObject({ origin: "rename", version: 1 });
+      expect(await approvalsOf(tx, next)).toEqual([]);
+      expect((await read(tx, user(s.w, 1), next, NOW))?.candidates.map((one) => one.name)).toEqual(["Mallory"]);
+      for (const index of [0, 1, 2]) await approve(tx, clock, user(s.w, index), next, 1);
+      expect(await membersOf(tx, s.w.club)).toHaveLength(3);
+      expect((await acceptWith(tx, clock, account, s.sam.token, next, 1)).state).toBe("joined");
+      await checkAsAtCommit(plain(tx));
+      expect((await membersOf(tx, s.w.club)).map((one) => one.user_id)).toEqual([...s.w.users, account]);
+    });
+  });
+
+  it("joins the others and carries the renamed account as someone who hasn't accepted", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx, ["Sam", "Debby"]);
+      const debbyLink = await linkFor(tx, clock, user(s.w, 0), s.w.club, candidate(s.open, 1));
+      const [sam, debby] = [await newUser(plain(tx), "Sam"), await newUser(plain(tx), "Debby")];
+      await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1);
+      await acceptWith(tx, clock, debby, debbyLink.token, s.open.id, 1);
+      await rename(tx, sam, "Mallory");
+      await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+      expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).state).toBe("applied");
+      await checkAsAtCommit(plain(tx));
+      expect((await membersOf(tx, s.w.club)).map((one) => one.user_id)).toEqual([...s.w.users, debby]);
+      expect(await candidateState(tx, s.sam.candidate)).toBe("open");
+      const carried = (await openRevision(tx, s.w.club)) ?? "";
+      const rows = await tx<{ candidate_id: string; label: string; accepted_at: unknown }[]>`
+        SELECT candidate_id, label, accepted_at FROM app.roster_revision_candidates WHERE revision_id = ${carried}`;
+      expect(rows).toEqual([{ candidate_id: s.sam.candidate, label: "Sam", accepted_at: null }]);
+      expect((await preview(tx, sam, s.sam.token, NOW))?.state).toBe("changed");
+    });
+  });
+
+  it("stands again when the name is changed back before the last approval", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const account = await newUser(plain(tx), "Sam");
+      await acceptWith(tx, clock, account, s.sam.token, s.open.id, 1);
+      await rename(tx, account, "Mallory");
+      await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+      await rename(tx, account, "Sam");
+      expect((await preview(tx, account, s.sam.token, NOW))?.state).toBe("waiting");
+      expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).state).toBe("applied");
+      expect(await membersOf(tx, s.w.club)).toHaveLength(4);
+    });
+  });
+});
+
+describe("found in review: what names nothing is refused before the receipt and before the version (T14)", () => {
+  it("gives the neutral not-found for an ended proposal's unused link under a key the account has used", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx, ["Sam", "Debby"]);
+      const debbyLink = await linkFor(tx, clock, user(s.w, 0), s.w.club, candidate(s.open, 1));
+      const debby = await newUser(plain(tx), "Debby");
+      // Debby completes an acceptance in another club under the key.
+      const other = await laterRoster(tx, ["Debby"]);
+      const key = randomUUID();
+      expect((await acceptWith(tx, clock, debby, other.sam.token, other.open.id, 1, key)).state).toBe("waiting");
+      // The first club's proposal is declined: Debby's link there, never used, names nothing now.
+      await decline(tx, clock, user(s.w, 1), s.open.id, 1);
+      expect(await preview(tx, debby, debbyLink.token, NOW)).toBeNull();
+      for (const version of [1, 2, 7]) {
+        expect(await refusal(acceptWith(tx, clock, debby, debbyLink.token, s.open.id, version, key))).toEqual(NONE);
+        expect(await refusal(acceptWith(tx, clock, debby, debbyLink.token, s.open.id, version))).toEqual(NONE);
+        expect(await refusal(acceptWith(tx, clock, debby, "A".repeat(43), s.open.id, version, key))).toEqual(NONE);
+      }
+      expect(await receiptsOf(tx, debby, "acceptInvitation")).toHaveLength(1);
+    });
+  });
+
+  it("gives it for a second place in the club whatever version or revision the request names", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx, ["Sam", "Debby"]);
+      const debbyLink = await linkFor(tx, clock, user(s.w, 0), s.w.club, candidate(s.open, 1));
+      const sam = await newUser(plain(tx), "Sam");
+      await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1);
+      for (const version of [0, 1, 7]) {
+        expect(await refusal(acceptWith(tx, clock, sam, debbyLink.token, s.open.id, version))).toEqual(NONE);
+      }
+      // And for a revision a newer one replaced: not ROSTER_CHANGED with the newest one's id.
+      const next = await propose(tx, clock, user(s.w, 1), s.w.club, ["Nina"]);
+      expect(next.id).not.toBe(s.open.id);
+      expect(await refusal(acceptWith(tx, clock, sam, debbyLink.token, s.open.id, 2))).toEqual(NONE);
+      expect((await linkRow(tx, debbyLink.id))?.bound_user_id).toBeNull();
+    });
+  });
+
+  it("holds another place only while the first candidate is open: after a decline, another link is the account's to accept", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const sam = await newUser(plain(tx), "Sam");
+      await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1);
+      await decline(tx, clock, user(s.w, 1), s.open.id, 1);
+      const again = await propose(tx, clock, user(s.w, 0), s.w.club, ["Sam"]);
+      const made = await linkFor(tx, clock, user(s.w, 0), s.w.club, candidate(again, 0));
+      expect((await preview(tx, sam, made.token, NOW))?.state).toBe("open");
+      expect((await acceptWith(tx, clock, sam, made.token, again.id, 1)).state).toBe("waiting");
+    });
+  });
+
+  it("answers a retry with the neutral not-found once the link names nothing, not with the stored answer", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const sam = await newUser(plain(tx), "Sam");
+      const key = randomUUID();
+      const first = await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1, key);
+      expect(await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1, key)).toEqual(first);
+      await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id = ${s.w.club}`;
+      expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1, key))).toEqual(NONE);
+    });
+  });
+
+  it("answers a decision's retry with the neutral not-found once its member has left", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const key = randomUUID();
+      const first = await approve(tx, clock, user(s.w, 1), s.open.id, 1, key);
+      expect(await approve(tx, clock, user(s.w, 1), s.open.id, 1, key)).toEqual(first);
+      await leave(plain(tx), { user: user(s.w, 1), interval: member(s.w, 1) }, "Maya", LATER);
+      expect(await refusal(approve(tx, clock, user(s.w, 1), s.open.id, 1, key))).toEqual(NONE);
+    });
+  });
+
+  it("says a link nobody used has expired before it says anything of the revision or its version", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const sam = await newUser(plain(tx), "Sam");
+      const next = await propose(tx, clock, user(s.w, 1), s.w.club, ["Nina"]);
+      clock.set(Temporal.Instant.from(EXPIRES));
+      const expired = { code: "INVITATION_EXPIRED", facts: {} };
+      // A replaced revision, and the open one at a stale version.
+      expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.open.id, 2))).toEqual(expired);
+      expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, next.id, 7))).toEqual(expired);
+    });
+  });
+});
+
+describe("found in review: rules no test held", () => {
+  it("applies no roster whose members aren't exactly the club's active members", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const sam = await newUser(plain(tx), "Sam");
+      await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+      await approve(tx, clock, user(s.w, 2), s.open.id, 1);
+      // Alex's interval ends by rows: the revision still lists it, and every listed member has approved.
+      await leave(plain(tx), { user: user(s.w, 2), interval: member(s.w, 2) }, "Alex", LATER);
+      expect((await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1)).state).toBe("waiting");
+      expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: "open", version: 1 });
+      expect(await membersOf(tx, s.w.club)).toHaveLength(2);
+    });
+  });
+
+  it("takes no decision on an ended revision from a member who hadn't decided", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      await decline(tx, clock, user(s.w, 1), s.open.id, 1);
+      const before = await rosterVersion(tx, s.w.club);
+      // Alex never decided, and reads the ended revision as pending.
+      const alex = await read(tx, user(s.w, 2), s.open.id, NOW);
+      expect(alex).toMatchObject({ state: "did_not_go_ahead", version: 2, my_decision: "pending" });
+      expect(await approve(tx, clock, user(s.w, 2), s.open.id, 2)).toEqual(alex);
+      expect(await decline(tx, clock, user(s.w, 2), s.open.id, 2)).toEqual(alex);
+      expect(await approvalsOf(tx, s.open.id)).toHaveLength(2);
+      expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: "did_not_go_ahead", version: 2 });
+      expect(await rosterVersion(tx, s.w.club)).toBe(before);
+    });
+  });
+
+  it("shows nothing when no member of the roster has a name to show (FQ75)", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const sam = await newUser(plain(tx), "Sam");
+      expect((await preview(tx, sam, s.sam.token, NOW))?.state).toBe("open");
+      // Ben, the inviter, leaves, and is still named by the name Ben left with; Maya and Alex, the
+      // roster's members now, lose their names by rows.
+      await leave(plain(tx), { user: user(s.w, 0), interval: member(s.w, 0) }, "Ben", LATER);
+      expect((await preview(tx, sam, s.sam.token, NOW))?.roster?.map((one) => one.name)).toEqual([
+        "Maya",
+        "Alex",
+        "Sam",
+      ]);
+      await tx`UPDATE app.users SET display_name = NULL WHERE id IN ${tx([user(s.w, 1), user(s.w, 2)])}`;
+      expect(await webPreview(tx, s.sam.token, NOW)).toEqual({ inviter_name: "Ben" });
+      expect(await preview(tx, sam, s.sam.token, NOW)).toBeNull();
+    });
+  });
+
+  it("refuses an account with no profile name: PROFILE_INCOMPLETE, and the link stays unused", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const sam = await newUser(plain(tx), "Sam");
+      await tx`UPDATE app.users SET display_name = NULL WHERE id = ${sam}`;
+      expect(await refusal(acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1))).toEqual({
+        code: "PROFILE_INCOMPLETE",
+        facts: {},
+      });
+      expect((await linkRow(tx, s.sam.link))?.bound_user_id).toBeNull();
+    });
+  });
+
+  it("dates a club's start, its members and its first days by one sample (T1)", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await firstRoster(tx);
+      const maya = await newUser(plain(tx), "Maya");
+      await acceptWith(tx, ticking(), maya, s.maya.token, s.open.id, 1);
+      const at = (await clubRow(tx, s.ben.club))?.activated_at;
+      expect(at?.equals(FIRST.add({ seconds: 2 }))).toBe(true);
+      const made = await tx<{ created_at: Temporal.Instant }[]>`
+        SELECT created_at FROM app.schedule_versions WHERE club_id = ${s.ben.club}
+        UNION ALL SELECT created_at FROM app.schedule_proposals WHERE club_id = ${s.ben.club}`;
+      expect(made).toHaveLength(2);
+      for (const row of made) expect(at !== undefined && at !== null && row.created_at.equals(at)).toBe(true);
+    });
+  });
+});
+
+describe("found in review: the clock is read after the club's row is held (T1)", () => {
+  const MOVED = FIRST.add({ hours: 3 });
+  const run = <T>(command: (tx: WorldTx) => Promise<T>): Promise<T> => db.begin((tx) => command(tx)) as Promise<T>;
+  /** Runs `command` behind the club's row, moves the clock while it waits, then lets it through. */
+  async function behind<T>(club: string, command: () => Promise<T>): Promise<T> {
+    const hold = await holding(db, club);
+    const waiting = command();
+    try {
+      await waitingOn(db, hold.pid);
+      clock.set(MOVED);
+    } finally {
+      await hold.release();
+    }
+    return waiting;
+  }
+
+  it("dates a membership by the clock as it reads once the row is the acceptance's", { timeout: 30_000 }, async () => {
+    const s = await db.begin(async (tx) => ({ ...(await firstRoster(tx)), account: await newUser(plain(tx), "Maya") }));
+    await behind(s.ben.club, () =>
+      run((tx) =>
+        acceptInvitation(
+          tx,
+          clock,
+          { userId: s.account, key: randomUUID(), token: s.maya.token, revisionId: s.open.id, expectedVersion: 1 },
+          invitationAcceptanceBody,
+        ),
+      ),
+    );
+    const members = await membersOf(db as unknown as WorldTx, s.ben.club);
+    expect(members[1]?.joined_at.equals(MOVED)).toBe(true);
+    expect((await clubRow(db as unknown as WorldTx, s.ben.club))?.activated_at?.equals(MOVED)).toBe(true);
+  });
+
+  it(
+    "dates a membership by the clock as it reads once the row is the last approval's",
+    { timeout: 30_000 },
+    async () => {
+      const s = await db.begin(async (tx) => {
+        const made = await laterRoster(tx);
+        const account = await newUser(plain(tx), "Sam");
+        await approve(tx, clock, user(made.w, 1), made.open.id, 1);
+        await acceptWith(tx, clock, account, made.sam.token, made.open.id, 1);
+        return made;
+      });
+      await behind(s.w.club, () =>
+        run((tx) =>
+          approveRoster(
+            tx,
+            clock,
+            { userId: user(s.w, 2), key: randomUUID(), revisionId: s.open.id, expectedVersion: 1 },
+            rosterRevisionBody,
+          ),
+        ),
+      );
+      const members = await membersOf(db as unknown as WorldTx, s.w.club);
+      expect(members).toHaveLength(4);
+      expect(members[3]?.joined_at.equals(MOVED)).toBe(true);
+    },
+  );
+
+  it("dates a decline by the clock as it reads once the row is the decline's", { timeout: 30_000 }, async () => {
+    const s = await db.begin((tx) => laterRoster(tx));
+    await behind(s.w.club, () =>
+      run((tx) =>
+        declineRoster(
+          tx,
+          clock,
+          { userId: user(s.w, 1), key: randomUUID(), revisionId: s.open.id, expectedVersion: 1 },
+          rosterRevisionBody,
+        ),
+      ),
+    );
+    expect((await revisionRow(db as unknown as WorldTx, s.open.id))?.ended_at?.equals(MOVED)).toBe(true);
+  });
 });

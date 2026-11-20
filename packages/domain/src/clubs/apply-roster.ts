@@ -6,7 +6,10 @@
 //
 // A revision is ready when it is open and sealed, its members are exactly the club's active members,
 // every one of them has approved it, and at least one of its candidates has accepted it with a link bound
-// to an account that is still active. Then, at the command's own sample of the clock:
+// to an account that is still active and whose profile name is still the label the revision shows: an
+// acceptance stands for the name the members read and approve, so an account that changed its name after
+// accepting joins nobody until it accepts again, which makes the rename's revision (FQ66, FQ84). Then, at
+// the command's own sample of the clock:
 // 1. Six (A01): the members and the people joining are at most `CLUB_SIZE`, else CLUB_FULL. The six count
 //    every open candidate when they are proposed, so no command leads here.
 // 2. The revision ends as applied, its `version` up by one.
@@ -19,7 +22,7 @@
 //    starts now (FQ54, FQ84), and its first days open in this transaction (../schedule/open.ts). A club
 //    that had started gains its members with no day yet: the schedule's own change follows (FQ100; B2's
 //    next PRs).
-// 5. The candidates who hadn't accepted are carried into a new revision the server makes (FQ120's
+// 5. The candidates who hadn't accepted, or whose acceptance no longer stands, are carried into a new revision the server makes (FQ120's
 //    default): the same proposer, whose approval of them stands as it did when they proposed (FQ60), the
 //    club's members now, the people who just joined included, and the carried candidates at their own
 //    labels, in their order, with no acceptance. Every other member approves it, the newly joined too:
@@ -32,7 +35,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
 import { openFirstDays } from "../schedule/open.ts";
-import type { Clock, ClockSql } from "../time/clock.ts";
+import type { ClockSql, ServerNow } from "../time/clock.ts";
 import { CLUB_SIZE } from "./club.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
@@ -132,8 +135,7 @@ export interface AppliedRoster {
  */
 export async function applyIfReady(
   tx: QuerySql & ClockSql,
-  clock: Clock,
-  at: Temporal.Instant,
+  at: ServerNow,
   clubId: string,
   revisionId: string,
 ): Promise<AppliedRoster | null> {
@@ -159,7 +161,8 @@ export async function applyIfReady(
            (SELECT pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
                      'candidate_id', rc.candidate_id, 'label', rc.label, 'open', k.state = 'open',
                      'accepted', rc.accepted_invitation_id IS NOT NULL,
-                     'user_id', i.bound_user_id, 'active', coalesce(u.state = 'active', false))
+                     'user_id', i.bound_user_id, 'active', coalesce(u.state = 'active', false),
+                     'named', coalesce(u.display_name = rc.label, false))
                      ORDER BY rc.position)
               FROM app.roster_revision_candidates rc
               JOIN app.candidates k ON k.id = rc.candidate_id
@@ -184,9 +187,14 @@ export async function applyIfReady(
       accepted,
       userId: accepted ? text(candidate["user_id"]) : null,
       active: flag(candidate["active"]),
+      named: flag(candidate["named"]),
     };
   });
-  const joining = candidates.filter((candidate) => candidate.open && candidate.accepted && candidate.active);
+  // An acceptance stands while the account's profile name is the label the members read and approve
+  // (FQ66, FQ84). An account that changed its name since joins nobody: it accepts again, which makes the
+  // rename's revision, and until then it is carried like someone who hasn't accepted.
+  const standing = (candidate: (typeof candidates)[number]) => candidate.open && candidate.accepted && candidate.named;
+  const joining = candidates.filter((candidate) => standing(candidate) && candidate.active);
   if (!flag(row["approved"]) || !flag(row["exact"]) || joining.length === 0) return null;
 
   // 1. Six.
@@ -215,7 +223,7 @@ export async function applyIfReady(
     joined.push({ userId, candidateId: candidate.candidateId, intervalId });
   }
   for (const candidate of candidates) {
-    if (candidate.open && candidate.accepted && !candidate.active) {
+    if (standing(candidate) && !candidate.active) {
       await bound(tx)`
         UPDATE app.candidates SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz
          WHERE id = ${candidate.candidateId}`;
@@ -229,10 +237,11 @@ export async function applyIfReady(
        SET roster_version = roster_version + 1,
            activated_at = coalesce(activated_at, ${at}::pg_catalog.timestamptz)
      WHERE id = ${clubId}`;
-  if (started) await openFirstDays(tx, clock, clubId);
+  // The first days are dated by the command's own sample, the one `activated_at` and `joined_at` hold.
+  if (started) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
 
   // 5. The candidates who hadn't accepted go on, in a new revision (FQ120).
-  const left = candidates.filter((candidate) => candidate.open && !candidate.accepted);
+  const left = candidates.filter((candidate) => candidate.open && !standing(candidate));
   let carriedInto: string | null = null;
   if (left.length > 0) {
     if (row["proposer_active"] === true) {

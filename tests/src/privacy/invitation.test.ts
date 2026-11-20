@@ -63,13 +63,14 @@ function link(more: Partial<LinkRows> = {}): LinkRows {
     replaced: false,
     bound: false,
     boundTo: null,
+    boundName: null,
     hash: sha256(TOKEN),
     ...more,
   };
 }
 
 /** Mo's link once Mo's account accepted with it. */
-const bound = (more: Partial<LinkRows> = {}) => link({ bound: true, boundTo: "usr_mo", ...more });
+const bound = (more: Partial<LinkRows> = {}) => link({ bound: true, boundTo: "usr_mo", boundName: "Mo", ...more });
 
 function revision(more: Partial<RevisionRows> = {}): RevisionRows {
   return {
@@ -286,6 +287,11 @@ describe("the invitation for the account holding its link (previewInvitation)", 
     });
     const waiting = Object.fromEntries(Object.entries(open).filter(([key]) => key !== "expires_at"));
     expect(preview("usr_mo", roster([bound()], [["rev_1", accepted]]))).toEqual({ ...waiting, state: "waiting" });
+    // The account changed its name since: the acceptance no longer stands, and it is shown the roster again.
+    expect(preview("usr_mo", roster([bound({ boundName: "Moe" })], [["rev_1", accepted]]))).toEqual({
+      ...open,
+      state: "changed",
+    });
     expect(preview("usr_mo", roster([bound()]))).toEqual({ ...open, state: "changed" });
   });
 
@@ -417,6 +423,8 @@ describe("what accepting must get (acceptInvitation)", () => {
       boundTo: "usr_mo",
     });
     expect(accept("usr_mo", "Mo", roster([link(), other]))).toBe(NEUTRAL);
+    // Whatever version the request names: never VERSION_CONFLICT, which would tell the link from none.
+    expect(accept("usr_mo", "Mo", roster([link(), other]), { expected: 9 })).toBe(NEUTRAL);
     const six = world(
       ["d", "e", "f"].map((id): [string, ScheduleMember] => [
         `itv_${id}`,

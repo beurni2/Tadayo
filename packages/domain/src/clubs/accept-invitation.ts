@@ -8,48 +8,53 @@
 // The token is hashed in the process and never sent to the database; the receipt's request holds the hash,
 // not the token (T52).
 //
-// 1. What the token names, with no lock (./invitation-facts.ts): no link, one revoked, replaced or used by
-//    another account, or a suspended club's, is NOT_FOUND before the receipt is looked at, for a first
-//    request and a retry alike (T14, FQ59).
+// `standingOf` says where a request stands, from one read of the link's facts, the revision it names and
+// the caller's own membership, in this order:
+// a. Nothing, the neutral NOT_FOUND (T14, FQ59): no link, one revoked, replaced or used by another
+//    account, or a suspended club's; a member of the club holding a link that isn't the one they joined
+//    with; a candidate who has ended and never accepted; a revision that doesn't list the link's candidate.
+// b. INVITATION_EXPIRED for a link nobody has used whose expiry isn't after the sample (FQ71). A link its
+//    account has used doesn't expire for that account: it can't be replaced (handoff 4), so an expiry
+//    would leave the candidate no way to accept a changed roster.
+// c. Nothing when the account already holds another place in this club's roster, as the preview has it,
+//    whatever revision or version the request names.
+// d. The revision the request names: ROSTER_CHANGED with the newest revision's id when a newer one
+//    replaced it; VERSION_CONFLICT with its version when `expected_version` isn't it, as when it ended or
+//    was applied since the caller read it. A revision that has ended, named at its last version, takes no
+//    acceptance: the account that joined by it is answered `joined`, which changes nothing; anything else
+//    is nothing.
+// e. CLUB_FULL when the club has six members.
+//
+// 1. Where the request stands, with no lock. Every request that names nothing is NOT_FOUND here, before
+//    the receipt is looked at, for a first request and a retry alike: a key the account has used tells
+//    such a token from one nobody made no more than a new key does (T14).
 // 2. The receipt (T19): the same request under the same key gets the first answer back, though the token
 //    is used; another request under the key is IDEMPOTENCY_CONFLICT. Then the account's row, as
 //    `createClub` takes it, so a deletion that has begun is seen (UNAUTHENTICATED, T27); then the club's
 //    row, `FOR UPDATE`, as every roster command takes it, and the link's row, so accepting can't race a
 //    replace or a revoke of the same link.
-// 3. The clock, after the lock (T1), and the facts again at it, now that nothing of the roster can change:
-//    NOT_FOUND as in step 1; for a member of the club holding a link that isn't the one they joined with;
-//    for a candidate who has ended and never accepted; and for a revision that doesn't list the link's
-//    candidate.
-// 4. INVITATION_EXPIRED for a link nobody has used whose expiry isn't after the sample (FQ71). A link its
-//    account has used doesn't expire for that account: it can't be replaced (handoff 4), so an expiry
-//    would leave the candidate no way to accept a changed roster.
-// 5. The revision the request names: ROSTER_CHANGED with the newest revision's id when a newer one
-//    replaced it; VERSION_CONFLICT with its version when `expected_version` isn't it, as when it ended or
-//    was applied since the caller read it. A revision that has ended, named at its last version, takes no
-//    acceptance: the account that joined by it is answered `joined`, which changes nothing; anything else
-//    is NOT_FOUND.
-// 6. NOT_FOUND when the account already holds another place in this club's roster. CLUB_FULL when the
-//    club has six members.
-// 7. The name (FQ66, FQ84). When the account's profile name isn't the label the revision shows for the
+// 3. The clock, after the lock (T1), and where the request stands again at it, now that nothing of the
+//    roster can change: each refusal of a. to e., in that order.
+// 4. The name (FQ66, FQ84). When the account's profile name isn't the label the revision shows for the
 //    candidate, the server makes a new revision: the open one ends as superseded by it; the new one
 //    (`origin` rename) names the candidate's proposer, lists the club's members and carries every
 //    candidate at their own label, this one under the account's name, with no acceptance and no approval:
 //    everyone accepts and approves again, the proposer too. The link binds to the account. The answer is
 //    `changed`. Names are compared as they are stored, code point for code point.
-// 8. Otherwise the link binds to the account, if it hasn't, and the candidate's row on the revision is
+// 5. Otherwise the link binds to the account, if it hasn't, and the candidate's row on the revision is
 //    accepted with it, once. Then the roster is applied if it is ready (./apply-roster.ts): the answer is
 //    `joined`, with the club as its new member holds it, or `waiting`.
-// 9. The answer is what the receipt keeps.
+// 6. The answer is what the receipt keeps.
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { completeReceipt, reserveReceipt, type ReceiptKey } from "../idempotency/receipt.ts";
 import type { Json } from "../idempotency/request.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
-import type { Clock, ClockSql } from "../time/clock.ts";
+import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import { applyIfReady, writeRevision } from "./apply-roster.ts";
 import { CLUB_SIZE } from "./club.ts";
-import { linkFacts, namesNothing, tokenHash } from "./invitation-facts.ts";
+import { linkFacts, namesNothing, tokenHash, type LinkFacts } from "./invitation-facts.ts";
 
 export interface AcceptInvitationInput {
   /** The account the gate loaded. */
@@ -115,6 +120,68 @@ export async function newestRevision(tx: QuerySql, revisionId: string): Promise<
   return id;
 }
 
+type Standing =
+  | { readonly kind: "nothing" }
+  | { readonly kind: "refused"; readonly facts: LinkFacts; readonly refusal: Refused }
+  /** The account joined by this very revision, named as it ended. */
+  | { readonly kind: "joined"; readonly facts: LinkFacts; readonly intervalId: string }
+  /** The revision is open and takes the acceptance; `label` is what it shows for the candidate. */
+  | { readonly kind: "open"; readonly facts: LinkFacts; readonly label: string };
+
+/** Where the request stands at `now` (the header's a. to e.). It reads and locks nothing. */
+async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: string, now: ServerNow): Promise<Standing> {
+  const { userId, revisionId } = input;
+  // a. What names nothing.
+  const facts = await linkFacts(tx, userId, hash, now);
+  if (facts === null || namesNothing(facts, userId)) return { kind: "nothing" };
+  const mine = facts.boundUserId === userId;
+  if (facts.membershipId !== null && !(mine && facts.candidateState === "joined")) return { kind: "nothing" };
+  if (facts.candidateState === "ended" && !mine) return { kind: "nothing" };
+  const [named] = await bound(tx)`
+    SELECT r.state, r.version, rc.label
+      FROM app.roster_revisions r
+      JOIN app.roster_revision_candidates rc ON rc.revision_id = r.id AND rc.candidate_id = ${facts.candidateId}
+     WHERE r.id = ${revisionId} AND r.club_id = ${facts.club.id} AND r.roster_sealed_at IS NOT NULL`;
+  if (named === undefined) return { kind: "nothing" };
+
+  // b. A link nobody has used, past its expiry.
+  if (!mine && facts.pastExpiry) return { kind: "refused", facts, refusal: new Refused("INVITATION_EXPIRED") };
+
+  // c. One account, one place.
+  if (facts.holdsAnother) return { kind: "nothing" };
+
+  // d. The revision the request names.
+  const state = named["state"];
+  const version = named["version"];
+  const label = named["label"];
+  if (typeof version !== "number" || typeof label !== "string") throw shape();
+  if (state === "superseded") {
+    const refusal = new Refused("ROSTER_CHANGED", { current_id: await newestRevision(tx, revisionId) });
+    return { kind: "refused", facts, refusal };
+  }
+  if (version !== input.expectedVersion) {
+    return { kind: "refused", facts, refusal: new Refused("VERSION_CONFLICT", { current_version: version }) };
+  }
+  if (state !== "open") {
+    // Ended, and named as it ended. The account that joined by it is told so; nothing else is accepted.
+    const [joined] = await bound(tx)`
+      SELECT m.interval_id FROM app.memberships m
+       WHERE m.club_id = ${facts.club.id} AND m.user_id = ${userId} AND m.state = 'active'
+         AND m.joined_via_revision_id = ${revisionId} AND m.joined_via_candidate_id = ${facts.candidateId}`;
+    const intervalId = joined?.["interval_id"];
+    if (state !== "applied" || typeof intervalId !== "string" || facts.membershipId !== intervalId) {
+      return { kind: "nothing" };
+    }
+    return { kind: "joined", facts, intervalId };
+  }
+  // An open revision lists only open candidates, and a member's own link is one they joined with.
+  if (facts.candidateState !== "open" || facts.membershipId !== null) return { kind: "nothing" };
+
+  // e. Six.
+  if (facts.members >= CLUB_SIZE) return { kind: "refused", facts, refusal: new Refused("CLUB_FULL") };
+  return { kind: "open", facts, label };
+}
+
 /**
  * Accepts the revision for the account `input.userId` in `tx`, and returns what `render` makes of the
  * acceptance, which is also what the receipt stores and a replay returns. Throws `Refused`.
@@ -143,11 +210,11 @@ export async function acceptInvitation(
     },
   };
 
-  // 1. What the token names.
-  const before = await linkFacts(tx, userId, hash, await clock.sample(tx));
-  if (before === null || namesNothing(before, userId)) throw new Refused("NOT_FOUND");
-  const clubId = before.club.id;
-  const invitationId = before.invitationId;
+  // 1. Where the request stands, with no lock: what names nothing is refused before the receipt.
+  const before = await standingOf(tx, input, hash, await clock.sample(tx));
+  if (before.kind === "nothing") throw new Refused("NOT_FOUND");
+  const clubId = before.facts.club.id;
+  const invitationId = before.facts.invitationId;
 
   // 2. The receipt, the account's row, the club's row and the link's.
   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
@@ -160,53 +227,18 @@ export async function acceptInvitation(
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
   await bound(tx)`SELECT id FROM app.invitations WHERE id = ${invitationId} FOR UPDATE`;
 
-  // 3. The clock, after the lock, and the facts again at it.
+  // 3. The clock, after the lock, and where the request stands at it.
   const at = await clock.sample(tx);
-  const facts = await linkFacts(tx, userId, hash, at);
-  if (facts === null || facts.invitationId !== invitationId || namesNothing(facts, userId)) {
-    throw new Refused("NOT_FOUND");
-  }
-  const mine = facts.boundUserId === userId;
-  if (facts.membershipId !== null && !(mine && facts.candidateState === "joined")) throw new Refused("NOT_FOUND");
-  if (facts.candidateState === "ended" && !mine) throw new Refused("NOT_FOUND");
-  const [named] = await bound(tx)`
-    SELECT r.state, r.version, rc.label
-      FROM app.roster_revisions r
-      JOIN app.roster_revision_candidates rc ON rc.revision_id = r.id AND rc.candidate_id = ${facts.candidateId}
-     WHERE r.id = ${revisionId} AND r.club_id = ${clubId} AND r.roster_sealed_at IS NOT NULL`;
-  if (named === undefined) throw new Refused("NOT_FOUND");
-
-  // 4. A link nobody has used, past its expiry.
-  if (!mine && facts.pastExpiry) throw new Refused("INVITATION_EXPIRED");
-
-  // 5. The revision the request names.
-  const state = named["state"];
-  const version = named["version"];
-  const label = named["label"];
-  if (typeof version !== "number" || typeof label !== "string") throw shape();
-  if (state === "superseded") {
-    throw new Refused("ROSTER_CHANGED", { current_id: await newestRevision(tx, revisionId) });
-  }
-  if (version !== input.expectedVersion) throw new Refused("VERSION_CONFLICT", { current_version: version });
-  if (state !== "open") {
-    // Ended, and named as it ended. The account that joined by it is told so; nothing else is accepted.
-    const [joined] = await bound(tx)`
-      SELECT m.interval_id FROM app.memberships m
-       WHERE m.club_id = ${clubId} AND m.user_id = ${userId} AND m.state = 'active'
-         AND m.joined_via_revision_id = ${revisionId} AND m.joined_via_candidate_id = ${facts.candidateId}`;
-    const interval = joined?.["interval_id"];
-    if (state !== "applied" || typeof interval !== "string" || facts.membershipId !== interval) {
-      throw new Refused("NOT_FOUND");
-    }
-    const club = { ...facts.club, membershipId: interval };
+  const standing = await standingOf(tx, input, hash, at);
+  if (standing.kind === "nothing" || standing.facts.invitationId !== invitationId) throw new Refused("NOT_FOUND");
+  if (standing.kind === "refused") throw standing.refusal;
+  const facts = standing.facts;
+  if (standing.kind === "joined") {
+    const club = { ...facts.club, membershipId: standing.intervalId };
     return completeReceipt(tx, receipt, render({ invitationId, state: "joined", club }));
   }
-  // An open revision lists only open candidates, and a member's own link is one they joined with.
-  if (facts.candidateState !== "open" || facts.membershipId !== null) throw new Refused("NOT_FOUND");
-
-  // 6. One account, one place; six.
-  if (facts.holdsAnother) throw new Refused("NOT_FOUND");
-  if (facts.members >= CLUB_SIZE) throw new Refused("CLUB_FULL");
+  const label = standing.label;
+  const mine = facts.boundUserId === userId;
 
   // The link binds to the first account that accepts, under either answer below.
   if (!mine) {
@@ -215,7 +247,7 @@ export async function acceptInvitation(
        WHERE id = ${invitationId}`;
   }
 
-  // 7. Another name: a new revision, which everyone accepts and approves again.
+  // 4. Another name: a new revision, which everyone accepts and approves again.
   if (profileName !== label) {
     const carried = await bound(tx)`
       SELECT rc.candidate_id, rc.label
@@ -250,18 +282,18 @@ export async function acceptInvitation(
     return completeReceipt(tx, receipt, render({ invitationId, state: "changed", club: null }));
   }
 
-  // 8. Accepted, once; then the roster, if it is ready.
+  // 5. Accepted, once; then the roster, if it is ready.
   await bound(tx)`
     UPDATE app.roster_revision_candidates
        SET accepted_at = ${at}::pg_catalog.timestamptz, accepted_invitation_id = ${invitationId}
      WHERE revision_id = ${revisionId} AND candidate_id = ${facts.candidateId} AND accepted_invitation_id IS NULL`;
-  const applied = await applyIfReady(tx, clock, at, clubId, revisionId);
+  const applied = await applyIfReady(tx, at, clubId, revisionId);
   const me = applied?.joined.find((one) => one.userId === userId) ?? null;
   const acceptance: Acceptance =
     me === null
       ? { invitationId, state: "waiting", club: null }
       : { invitationId, state: "joined", club: { ...facts.club, membershipId: me.intervalId } };
 
-  // 9. The answer.
+  // 6. The answer.
   return completeReceipt(tx, receipt, render(acceptance));
 }

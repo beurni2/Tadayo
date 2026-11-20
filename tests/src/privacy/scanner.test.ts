@@ -1946,6 +1946,15 @@ describe("what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/
     );
   });
 
+  it("catches the inviter's name told in the app for a link nobody used, once the candidate is on no open revision", () => {
+    const expired = { state: "expired", inviter_name: "Ben" };
+    expect(previewed(expired, held())).toEqual([]);
+    expect(at(previewed(expired, held({ roster: null })), "values")).toEqual(["$.inviter_name"]);
+    // An account's own used link names its inviter to that account anywhere, as `getMe` lists it (slice 8's
+    // rule, not this one's): that isn't the holder's allowance, and it stays.
+    expect(previewed(expired, held({ roster: null, boundTo: acct(stan) }))).toEqual([]);
+  });
+
   it("catches a name the revision doesn't show: another member's, another revision's label, the holder's club's", () => {
     for (const name of ["Eve", "Gus", "Stan"]) {
       const body = roster("open");

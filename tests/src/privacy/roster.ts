@@ -78,6 +78,8 @@ export interface LinkRows {
   bound: boolean;
   /** The account that accepted with it, or null. */
   boundTo: string | null;
+  /** That account's profile name now, or null. */
+  boundName: string | null;
   /** The SHA-256 of its token, in hex. */
   hash: string;
 }
@@ -139,12 +141,15 @@ export async function rosterWorldOf(db: WorldTx, clubs: readonly string[]): Prom
       replaced: boolean;
       bound: boolean;
       bound_to: string | null;
+      bound_name: string | null;
       hash: string;
     }[]
   >`
     SELECT i.id, i.candidate_id AS candidate, k.club_id AS club, k.proposed_by_interval_id AS proposer, i.expires_at,
            i.revoked_at IS NOT NULL AS revoked, i.replaced_by_id IS NOT NULL AS replaced,
-           i.bound_user_id IS NOT NULL AS bound, i.bound_user_id AS bound_to, pg_catalog.encode(i.token_sha256, 'hex') AS hash
+           i.bound_user_id IS NOT NULL AS bound, i.bound_user_id AS bound_to,
+           (SELECT u.display_name FROM app.users u WHERE u.id = i.bound_user_id) AS bound_name,
+           pg_catalog.encode(i.token_sha256, 'hex') AS hash
       FROM app.invitations i JOIN app.candidates k ON k.id = i.candidate_id
      WHERE k.club_id IN ${db(clubs)}`;
   const openRows = await db<{ id: string; club: string; state: string; proposer: string }[]>`
@@ -189,6 +194,7 @@ export async function rosterWorldOf(db: WorldTx, clubs: readonly string[]): Prom
           replaced: row.replaced,
           bound: row.bound,
           boundTo: row.bound_to,
+          boundName: row.bound_name,
           hash: row.hash,
         },
       ]),

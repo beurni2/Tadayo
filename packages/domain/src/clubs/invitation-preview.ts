@@ -22,8 +22,10 @@
 //    answer must name them (FQ75).
 // 8. `full`: the club has six members already (A01). The six count every open candidate, so no command
 //    leads here; it is the answer should the rows ever say so.
-// 9. The exact roster of the club's open revision: `waiting` when the candidate accepted it with this link;
-//    `changed` when the account accepted an earlier roster with it; else `open`.
+// 9. The exact roster of the club's open revision: `waiting` when the candidate accepted it with this link
+//    and the account's profile name is still the label it shows; `changed` when the account accepted an
+//    earlier roster with it, or has changed its name since it accepted (FQ66: it accepts again, which
+//    makes the name's revision); else `open`.
 //
 // The roster is names only (FQ47): each member of the revision who has a name, by their profile name, in
 // the order they joined; then its candidates by their position, each by the label the revision shows, the
