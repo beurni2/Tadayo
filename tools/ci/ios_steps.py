@@ -239,6 +239,8 @@ ODD_DRAWS_SHOWN = 100
 ASSET_IMAGES = "/System/Library/AssetsV2/"
 SIMULATOR_PLATFORM = "com.apple.platform.iphonesimulator"
 RUNNER_IMAGES_ISSUE = "actions/runner-images#14946"
+# Where CoreSimulator keeps each runtime's shared cache, and its builder's output files.
+CACHE_DIR = "/Library/Developer/CoreSimulator/Caches/dyld"
 # The files the steps write in OUT's logs/: the only ones the evidence job copies or links. All
 # top-level files: a folder in logs/ is a stray.
 LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log",
@@ -1080,11 +1082,42 @@ class Steps:
                                            log=self.log("simulators.txt"))
                     self.write_log("simulators.txt", f"(exit {cache})")
                     if cache != 0:
+                        # On the runner image of 2026-11-19, where the import ran as root, the
+                        # update exited 25 ("Child process exited with an error") and the pass
+                        # on iOS 26.5 that followed ran slower and failed two keyboard tests
+                        # that pass with the cache (`docs/LIMITATIONS.md`, 2026-11-19). The
+                        # builder's own output is in two files simctl names, so they are
+                        # copied into the log, and the update is run once more as root, in the
+                        # import's form. Still not fatal: the tests say whether it mattered.
+                        self.cache_output(env)
+                        print(f"ios: simulator: updating iOS {version}'s shared cache exited "
+                              f"{cache}; updating it again with sudo")
+                        cache = self.shell.run(
+                            ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={env['DEVELOPER_DIR']}",
+                             "xcrun", "simctl", "runtime", "dyld_shared_cache", "update",
+                             identifier], env=env, log=self.log("simulators.txt"))
+                        self.write_log("simulators.txt", f"(exit {cache})")
+                        if cache != 0:
+                            self.cache_output(env)
+                    if cache != 0:
                         print(f"ios: simulator: updating iOS {version}'s shared cache exited "
                               f"{cache}, so its first boot builds it (logs/simulators.txt)")
                 return runtime
         print(f"ios: simulator: couldn't install iOS {version} (logs/simulators.txt)")
         return None
+
+    def cache_output(self, env):
+        """Writes the last lines of the shared-cache builder's own output files to
+        logs/simulators.txt: `simctl runtime dyld_shared_cache update` names them when it fails
+        and prints nothing of them. With sudo, without a password, since root may have made them."""
+        cmd = ["find", CACHE_DIR, "-name", "update_dyld_sim_shared_cache-std*.txt"]
+        code, out, err = self.shell.capture(cmd, env=env)
+        self.write_log("simulators.txt", "+ " + " ".join(cmd) + f"\n{out}{err}(exit {code})")
+        for path in sorted(out.split("\n")):
+            if path.strip():
+                cmd = ["sudo", "-n", "tail", "-n", "60", path.strip()]
+                code, out, err = self.shell.capture(cmd, env=env)
+                self.write_log("simulators.txt", "+ " + " ".join(cmd) + f"\n{out}{err}(exit {code})")
 
     def runtime_images(self):
         """`xcrun simctl runtime list -j`'s images of iOS simulator runtimes, as a list, written

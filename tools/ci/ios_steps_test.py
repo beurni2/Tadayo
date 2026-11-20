@@ -1003,11 +1003,40 @@ class SimulatorTest(StepsTest):
         code, out = self.step("simulator", self.shell(after_download=WITH_26_5, cache_code=1))
         self.assertEqual(code, 0, out)
         self.assertIn("updating iOS 26.5's shared cache exited 1, so its first boot builds it", out)
+        # Both updates' exit codes are logged: the plain one's, then the one with sudo's.
         with open(os.path.join(self.repo.out, "logs", "simulators.txt")) as f:
-            self.assertEqual(f.read().count("(exit 1)"), 1)
+            self.assertEqual(f.read().count("(exit 1)"), 2)
         code, out = self.step("simulator", self.shell(after_download=WITH_26_5))
         self.assertEqual(code, 0, out)
         self.assertNotIn("shared cache", out)
+
+    def test_a_failed_shared_cache_update_is_read_and_run_once_more_with_sudo(self):
+        # The runner image of 2026-11-19, after the import as root: the update exited 25 and
+        # named two files of the builder's output, which simctl doesn't print. They are copied
+        # into the log, and the update is run once more as root, never asking for a password,
+        # with the pinned Xcode named on the line.
+        update = ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]
+        again = ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}"] + update
+        file = "/Library/Developer/CoreSimulator/Caches/dyld/26B123/inc/x/update_dyld_sim_shared_cache-stderr.txt"
+        shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 0 if cmd[0] == "sudo" else 25)
+        shell.answers[:0] = [(starts("find"), (0, file + "\n", "")),
+                             (starts("sudo", "-n", "tail"), (0, "the builder's own words\n", ""))]
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [update, again])
+        self.assertIn("updating iOS 26.5's shared cache exited 25; updating it again with sudo", out)
+        self.assertNotIn("so its first boot builds it", out)
+        text = self.simulators_log()
+        self.assertIn(f"+ sudo -n tail -n 60 {file}\nthe builder's own words\n(exit 0)\n", text)
+        self.assertIn("(exit 25)\n", text)
+        self.assert_pinned(shell)
+        # The files are read once, after the plain update: the one with sudo worked.
+        self.assertEqual(len([c for c in shell.commands if c[0] == "find"]), 1)
+
+    def test_a_shared_cache_update_that_worked_is_never_run_with_sudo(self):
+        shell = self.shell(after_download=WITH_26_5)
+        self.assertEqual(self.step("simulator", shell)[0], 0)
+        self.assertEqual([c for c in shell.commands if c[0] in ("sudo", "find")], [])
 
     def test_the_download_s_exit_code_doesn_t_decide(self):
         # Xcode can fall back to another runtime and exit 0, or fail a proxy and say "not
