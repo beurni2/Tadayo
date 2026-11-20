@@ -96,3 +96,27 @@ describe("a confirmed day's first date (FQ79)", () => {
     expect(() => firstDate("monday", at("2026-11-04T14:00:00Z"), "+05:00")).toThrow(RangeError);
   });
 });
+
+describe("a first date in a week that starts later (FQ61, FQ124)", () => {
+  const NY = "America/New_York";
+  const from = (date: string) => Temporal.PlainDate.from(date);
+  // Confirmed at 9 AM on Wednesday 4 November 2026 in New York: Friday first opens on the 6th by the 24 hours.
+  const confirmed = at("2026-11-04T14:00:00Z");
+
+  it("changes nothing when the week started on or before the date the 24 hours give", () => {
+    expect(firstDate("friday", confirmed, NY, from("2026-11-01")).toString()).toBe("2026-11-06");
+    expect(firstDate("friday", confirmed, NY, from("2026-11-06")).toString()).toBe("2026-11-06");
+  });
+
+  it("is the first such weekday on or after the week's start when that is later", () => {
+    expect(firstDate("friday", confirmed, NY, from("2026-11-07")).toString()).toBe("2026-11-13");
+    // Four weeks on, the day after the last day already made: a Friday itself, then a Thursday.
+    expect(firstDate("friday", confirmed, NY, from("2026-12-04")).toString()).toBe("2026-12-04");
+    expect(firstDate("thursday", confirmed, NY, from("2026-12-04")).toString()).toBe("2026-12-10");
+  });
+
+  it("still waits the 24 hours when the week starts on the day itself", () => {
+    // Thursday the 5th's 7 AM is 22 hours after the confirmation: the 12th, though the week starts on the 5th.
+    expect(firstDate("thursday", confirmed, NY, from("2026-11-05")).toString()).toBe("2026-11-12");
+  });
+});

@@ -5,6 +5,11 @@
 // days' week only as that confirmation; a member who has confirmed, or who has left, changes nothing after;
 // and the first days apply only once every member still in the club has confirmed. These are the last
 // guards behind the schedule's commands.
+//
+// Since db/migrations/0013_first_days_revision.sql (FQ102), a proposal's week can be proposed again: its
+// `week_revision` moves, the earlier week's rows stay as they were and nothing reads them. The describe
+// "a proposal's week, proposed again" was written before that migration, and each of its tests was seen
+// to fail without it.
 
 import { afterAll, describe, expect, it } from "vitest";
 import { appSql, expectRefused, REFUSED, rolledBack, type Tx } from "./harness.ts";
@@ -271,39 +276,41 @@ describe("a proposal (spec 05; T33)", () => {
     });
   });
 
-  it("changes the days a member takes only while nobody has confirmed and nobody holds more", async () => {
+  it("changes the days a member takes only with a new week, while nobody has confirmed (0013; FQ102)", async () => {
     await rolledBack(app, async (tx) => {
       const two = await firstDays(tx, 2);
-      // Each member of a pair holds two days: one a member is fewer than they hold.
+      // The number alone: the members would hold days proposed for another size.
       await expectRefused(
         tx,
         REFUSED.integrity,
         (sp) => sp`UPDATE app.schedule_proposals SET days_per_member = 1 WHERE id = ${two.proposal}`,
-        /nobody has confirmed or holds more/,
+        /only with a new week/,
       );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`UPDATE app.schedule_proposals SET days_per_member = 1, version = version + 1 WHERE id = ${two.proposal}`,
+        /only with a new week/,
+      );
+      // With the next week, whatever the members held in the week before: its rows are no longer read.
+      await tx`
+        UPDATE app.schedule_proposals
+           SET days_per_member = 1, week_revision = week_revision + 1, version = version + 1
+         WHERE id = ${two.proposal}`;
+      await checkAsAtCommit(tx);
+      // A member has confirmed one day: the number can't become two under them, new week or not.
       const w = await firstDays(tx, 4);
-      await tx`UPDATE app.schedule_proposals SET days_per_member = 2 WHERE id = ${w.proposal}`;
-      await tx`UPDATE app.schedule_proposals SET days_per_member = 1 WHERE id = ${w.proposal}`;
       await confirm(tx, w, member(w, 0), ["monday"]);
       await checkAsAtCommit(tx);
-      // A member who left holds nothing, whatever their rows say: only the other's two days count.
-      const pair = await firstDays(tx, 2);
-      await leave(tx, { user: "", interval: member(pair, 1) }, "Member 2", AT.added);
       await expectRefused(
         tx,
         REFUSED.integrity,
-        (sp) => sp`UPDATE app.schedule_proposals SET days_per_member = 1 WHERE id = ${pair.proposal}`,
-        /nobody has confirmed or holds more/,
-      );
-      await release(tx, pair.proposal, member(pair, 0), "thursday");
-      await tx`UPDATE app.schedule_proposals SET days_per_member = 1 WHERE id = ${pair.proposal}`;
-      await checkAsAtCommit(tx);
-      // A member has confirmed one day: the number can't become two under them.
-      await expectRefused(
-        tx,
-        REFUSED.integrity,
-        (sp) => sp`UPDATE app.schedule_proposals SET days_per_member = 2 WHERE id = ${w.proposal}`,
-        /nobody has confirmed or holds more/,
+        (sp) => sp`
+          UPDATE app.schedule_proposals
+             SET days_per_member = 2, week_revision = week_revision + 1, version = version + 1
+           WHERE id = ${w.proposal}`,
+        /nobody has confirmed/,
       );
     });
   });
@@ -880,5 +887,188 @@ describe("a hold and a confirmation of the same day, at once (T6; FQ48, FQ55)", 
     const [row] = await app`
       SELECT confirmed_at FROM app.schedule_proposal_members WHERE proposal_id = ${w.proposal} AND interval_id = ${member(w, 0)}`;
     expect(row).toEqual({ confirmed_at: null });
+  });
+});
+
+describe("a proposal's week, proposed again (0013; FQ102)", () => {
+  const next = (tx: Tx, proposal: string) => tx`
+    UPDATE app.schedule_proposals SET week_revision = week_revision + 1, version = version + 1 WHERE id = ${proposal}`;
+  const holdIn = (tx: Tx, proposal: string, interval: string, weekday: string, week: number) => tx`
+    INSERT INTO app.schedule_proposal_days (proposal_id, interval_id, weekday, suggested, held, week_revision)
+    VALUES (${proposal}, ${interval}, ${weekday}, true, true, ${week})`;
+
+  it("moves to its next week by one, with the next version, and never back", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      const [first] = await tx`SELECT week_revision FROM app.schedule_proposals WHERE id = ${w.proposal}`;
+      expect(first).toEqual({ week_revision: 1 });
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.schedule_proposals SET week_revision = 2 WHERE id = ${w.proposal}`,
+        /with its next version/,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.schedule_proposals SET week_revision = 3, version = version + 1 WHERE id = ${w.proposal}`,
+        /one week at a time/,
+      );
+      await next(tx, w.proposal);
+      const [second] =
+        await tx`SELECT week_revision, version, state FROM app.schedule_proposals WHERE id = ${w.proposal}`;
+      expect(second).toEqual({ week_revision: 2, version: 2, state: "open" });
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.schedule_proposals SET week_revision = 1, version = version + 1 WHERE id = ${w.proposal}`,
+        /one week at a time/,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.schedule_proposals SET week_revision = 0, version = version + 1 WHERE id = ${w.proposal}`,
+        /one week at a time/,
+      );
+    });
+  });
+
+  it("moves only while the proposal stays open and nobody it includes has confirmed", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      // Not as it ends.
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          UPDATE app.schedule_proposals
+             SET week_revision = 2, version = version + 1, state = 'superseded', closed_at = ${AT.added}
+           WHERE id = ${w.proposal}`,
+        /while it stays open/,
+      );
+      await confirm(tx, w, member(w, 0), ["monday"]);
+      await checkAsAtCommit(tx);
+      await expectRefused(tx, REFUSED.integrity, (sp) => next(sp, w.proposal), /nobody has confirmed/);
+      // A member who confirmed and left: the day is in the week all the same.
+      await leave(tx, { user: "", interval: member(w, 0) }, "Member 1", AT.added);
+      await expectRefused(tx, REFUSED.integrity, (sp) => next(sp, w.proposal), /nobody has confirmed/);
+    });
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 2);
+      await tx`
+        UPDATE app.schedule_proposals SET state = 'superseded', closed_at = ${AT.added}, version = version + 1
+         WHERE id = ${w.proposal}`;
+      await expectRefused(tx, REFUSED.integrity, (sp) => next(sp, w.proposal), /has ended/);
+    });
+  });
+
+  it("writes, changes and deletes a member's days only in the current week", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      // A day chosen, not proposed, in the first week: a row a choice may delete.
+      await release(tx, w.proposal, member(w, 3), "thursday");
+      await hold(tx, w.proposal, member(w, 3), "saturday");
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => holdIn(sp, w.proposal, member(w, 0), "friday", 2),
+        /only in its proposal's current week/,
+      );
+      await next(tx, w.proposal);
+      const before = await tx`
+        SELECT interval_id, weekday, suggested, held, week_revision FROM app.schedule_proposal_days
+         WHERE proposal_id = ${w.proposal} ORDER BY interval_id, weekday`;
+      expect(before).toHaveLength(5);
+      expect(before.every((row) => row["week_revision"] === 1)).toBe(true);
+      // The earlier week's rows: nothing changes them.
+      const stale = /only in its proposal's current week/;
+      await expectRefused(tx, REFUSED.integrity, (sp) => hold(sp, w.proposal, member(w, 0), "friday"), stale);
+      await expectRefused(tx, REFUSED.integrity, (sp) => holdIn(sp, w.proposal, member(w, 0), "friday", 3), stale);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          UPDATE app.schedule_proposal_days SET held = false
+           WHERE proposal_id = ${w.proposal} AND interval_id = ${member(w, 0)} AND weekday = 'monday'`,
+        stale,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          DELETE FROM app.schedule_proposal_days
+           WHERE proposal_id = ${w.proposal} AND interval_id = ${member(w, 3)} AND weekday = 'saturday'`,
+        stale,
+      );
+      // And no row is moved into the current week.
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          UPDATE app.schedule_proposal_days SET week_revision = 2
+           WHERE proposal_id = ${w.proposal} AND interval_id = ${member(w, 0)} AND weekday = 'monday'`,
+      );
+      // The current week takes the same weekday for the same member again: the key has the week in it.
+      await holdIn(tx, w.proposal, member(w, 0), "monday", 2);
+      await holdIn(tx, w.proposal, member(w, 1), "monday", 2);
+      await checkAsAtCommit(tx);
+      const after = await tx`
+        SELECT interval_id, weekday, suggested, held, week_revision FROM app.schedule_proposal_days
+         WHERE proposal_id = ${w.proposal} AND week_revision = 1 ORDER BY interval_id, weekday`;
+      expect(after).toEqual(before);
+    });
+  });
+
+  it("counts a member's days in the current week alone", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      await tx`
+        UPDATE app.schedule_proposals
+           SET days_per_member = 2, week_revision = week_revision + 1, version = version + 1
+         WHERE id = ${w.proposal}`;
+      // Member 1 held Monday in the first week; two more days in the second are two, not three.
+      await holdIn(tx, w.proposal, member(w, 0), "monday", 2);
+      await holdIn(tx, w.proposal, member(w, 0), "thursday", 2);
+      await checkAsAtCommit(tx);
+      await holdIn(tx, w.proposal, member(w, 0), "saturday", 2);
+      await expectRefused(tx, REFUSED.integrity, (sp) => checkAsAtCommit(sp), /at most 2/);
+    });
+  });
+
+  it("confirms the days a member holds in the current week, whoever held them in an earlier one", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      await next(tx, w.proposal);
+      // In the first week Member 2 held Tuesday. In the second, Member 1 holds it alone.
+      await holdIn(tx, w.proposal, member(w, 0), "tuesday", 2);
+      await holdIn(tx, w.proposal, member(w, 1), "monday", 2);
+      await confirm(tx, w, member(w, 0), ["tuesday"]);
+      await checkAsAtCommit(tx);
+    });
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      await next(tx, w.proposal);
+      // Member 1 holds nothing in the second week: Monday, held in the first, isn't theirs to confirm.
+      await confirm(tx, w, member(w, 0), ["monday"]);
+      await expectRefused(tx, REFUSED.integrity, (sp) => checkAsAtCommit(sp));
+    });
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      await next(tx, w.proposal);
+      // Both hold Monday in the second week: the contest is the current week's.
+      await holdIn(tx, w.proposal, member(w, 0), "monday", 2);
+      await holdIn(tx, w.proposal, member(w, 1), "monday", 2);
+      await confirm(tx, w, member(w, 0), ["monday"]);
+      await expectRefused(tx, REFUSED.integrity, (sp) => checkAsAtCommit(sp), /another member holds it too/);
+    });
+  });
+
+  it("takes no day another member confirmed, in whichever week they held it", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await firstDays(tx, 4);
+      await confirm(tx, w, member(w, 0), ["monday"]);
+      await checkAsAtCommit(tx);
+      await expectRefused(tx, REFUSED.integrity, (sp) => hold(sp, w.proposal, member(w, 1), "monday"), /is taken/);
+    });
   });
 });

@@ -9,7 +9,9 @@
 //   neither, FQ99), and the caller hasn't confirmed before (FQ57).
 // - The confirmation's instant is the clock's sample taken after the club's lock (T1). Each day joins the
 //   schedule's version with its first date: the first such weekday whose 7 AM in the club's zone is at
-//   least 24 elapsed hours after that instant (./first-date.ts, FQ79).
+//   least 24 elapsed hours after that instant (./first-date.ts, FQ79), and no earlier than the start of the
+//   week it joins, which is later than the confirmation only for a club that started again after a member
+//   who left had confirmed a day (./open.ts, FQ124).
 // - The proposal's `version` moves only when its `state` does (T33): when every member it includes who is
 //   still active has then confirmed, the first days apply, on this last confirmation.
 //
@@ -44,11 +46,14 @@ export function confirmScheduleDays(
     }
     const judged = judgeConfirmation(callerId, proposal.facts, input.weekdays);
     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+    const joins = week.versions.find((version) => version.id === proposal.scheduleVersionId);
+    if (joins === undefined) throw new Error("schedule: the first days' own week isn't among the club's");
+    const start = Temporal.PlainDate.from(joins.effectiveFrom);
     await bound(tx)`
         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}::pg_catalog.timestamptz
          WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId}`;
     for (const weekday of judged.days) {
-      const opens = firstDate(weekday, at, week.club.timezone).toString();
+      const opens = firstDate(weekday, at, week.club.timezone, start).toString();
       await bound(tx)`
           INSERT INTO app.schedule_assignments
             (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)

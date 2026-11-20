@@ -202,7 +202,7 @@ export async function scheduleWorldOf(db: WorldTx, clubs: readonly string[]): Pr
   >`
     SELECT d.proposal_id AS proposal, d.interval_id AS interval, d.weekday::text AS weekday, d.suggested, d.held
       FROM app.schedule_proposal_days d JOIN app.schedule_proposals p ON p.id = d.proposal_id
-     WHERE p.club_id IN ${db(clubs)}`;
+     WHERE p.club_id IN ${db(clubs)} AND d.week_revision = p.week_revision`;
   return {
     clubs: new Map(
       clubRows.map((row) => [row.id, { name: row.name, timezone: row.timezone, suspended: row.suspended }]),

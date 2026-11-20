@@ -17,6 +17,13 @@
 //   (no approval at all when it was the revision of a name nobody had approved, FQ84), or, when its
 //   proposer is no member now or nothing is left to carry, ended with every candidate it held (FQ121).
 //
+// - What it does to the club's first days (`firstDaysProblems`, since `api/b2-first-days-roster`; FQ102,
+//   FQ123), from the schedule's rows before and after: with nobody confirmed, the same proposal at its
+//   next version, or ended with one member left; once a day is confirmed, applied when only confirmed
+//   members stay among those it includes, ended when the one member left hasn't confirmed or nobody it
+//   includes is left (with new first days only then, and only for two or more), and otherwise exactly as
+//   it was, at the same version (T33). With no first days open, a leave changes no proposal.
+//
 // The leak scanner reads the same answer for the club's id (scanner.ts's BARE: a club the caller has an
 // interval in); it can't judge an instant, a choice or a row, so this file does.
 
@@ -151,6 +158,72 @@ export function leaveProblems(
   for (const one of carried) {
     if (after.roster.candidates.get(one.id)?.state !== "open")
       problems.push(`the carried candidate ${one.id} was ended`);
+  }
+  return problems;
+}
+
+/**
+ * What is wrong with the club's schedule proposals after `interval` left `club`, given the schedule's
+ * rows before and after. Empty when the first days are what FQ102 and FQ123 make of the leave.
+ */
+export function firstDaysProblems(
+  before: ScheduleWorld,
+  after: ScheduleWorld,
+  club: string,
+  interval: string,
+): string[] {
+  const of = (world: ScheduleWorld) =>
+    [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
+  const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
+  if (open === undefined) {
+    return JSON.stringify(of(after)) === JSON.stringify(of(before))
+      ? []
+      : ["a leave changed the club's proposals though no first days were open"];
+  }
+  const [id, was] = open;
+  const now = after.proposals.get(id);
+  if (now === undefined) return ["the first days' rows are gone"];
+  const problems: string[] = [];
+  const stayed = activeOf(before, club).filter((one) => one !== interval);
+  const included = was.members.filter((member) => stayed.includes(member.interval));
+  const confirmedDay = was.members.some((member) => member.confirmed);
+  const nobodyLeft = confirmedDay && included.length === 0;
+  let state: string;
+  let moved = true;
+  if (!confirmedDay) state = stayed.length < 2 ? "superseded" : "open";
+  else if (nobodyLeft) state = "superseded";
+  else if (included.every((member) => member.confirmed)) state = "applied";
+  else if (stayed.length < 2) state = "superseded";
+  else {
+    state = "open";
+    moved = false;
+  }
+  const version = was.version + (moved ? 1 : 0);
+  if (now.state !== state || now.version !== version) {
+    problems.push(
+      `the first days are ${now.state} at version ${String(now.version)}, not ${state} at version ${String(version)} (FQ102)`,
+    );
+  }
+  if (now.replacedBy !== null) problems.push("the first days name a successor");
+  const revised = state === "open" && moved;
+  if (!revised && now.daysPerMember !== was.daysPerMember) {
+    problems.push("the days each member has moved though the week wasn't proposed again");
+  }
+  const fresh = of(after).filter(([one]) => !before.proposals.has(one));
+  const again = nobodyLeft && stayed.length >= 2;
+  if (!again && fresh.length > 0) {
+    problems.push(
+      stayed.length < 2
+        ? "new first days opened for fewer than two members"
+        : "new first days opened though the earlier ones still had someone to confirm them",
+    );
+  }
+  if (again) {
+    const [next] = fresh;
+    const members = (next?.[1].members ?? []).map((member) => member.interval).sort();
+    if (fresh.length !== 1 || next?.[1].state !== "open" || members.join() !== stayed.join()) {
+      problems.push("no new first days are open for exactly the members who remain (FQ123)");
+    }
   }
   return problems;
 }

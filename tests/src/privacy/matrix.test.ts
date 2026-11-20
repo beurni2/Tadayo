@@ -67,7 +67,15 @@ import {
   type Step,
 } from "./harness.ts";
 import { INVITATION_JUDGED, acceptOutcome, freshToken, previewExpected, webPreviewExpected } from "./invitation.ts";
-import { LEAVE_NO_BODY, leaveOutcome, leaveProblems, leftExpected, type Choice, type MembershipRow } from "./leave.ts";
+import {
+  firstDaysProblems,
+  LEAVE_NO_BODY,
+  leaveOutcome,
+  leaveProblems,
+  leftExpected,
+  type Choice,
+  type MembershipRow,
+} from "./leave.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
 import {
   IDEMPOTENCY_CONFLICT,
@@ -1547,6 +1555,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 [
                   ...leftExpected(cell.w.club, now, choice)(first),
                   ...leaveProblems(before, after, cell.w.club, outcome, membership, now, choice),
+                  ...firstDaysProblems(before.schedule, after.schedule, cell.w.club, outcome),
                 ],
                 "the viewer's own leave",
               );

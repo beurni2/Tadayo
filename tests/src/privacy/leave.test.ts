@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { ClubRows } from "./club.ts";
 import { NEUTRAL, pinned } from "./harness.ts";
 import {
+  firstDaysProblems,
   LEAVE_JUDGED,
   LEAVE_NO_BODY,
   leaveOutcome,
@@ -17,7 +18,7 @@ import {
 } from "./leave.ts";
 import type { RevisionRows, RosterWorld } from "./roster.ts";
 import type { Answer } from "./scanner.ts";
-import type { ScheduleMember, ScheduleWorld } from "./schedule.ts";
+import type { ScheduleMember, ScheduleProposalRows, ScheduleWorld } from "./schedule.ts";
 
 const CLUB = "clb_here";
 /** Friday 6 November 2026, 9:41 AM in New York, with a fraction the contract rounds down. */
@@ -401,5 +402,104 @@ describe("what a leave changes (leaveProblems)", () => {
     const rows = carried();
     rows.after.roster.revisions.delete("rev_open");
     expect(judge(rows)).toEqual(["the open revision's rows are gone"]);
+  });
+});
+
+describe("what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123)", () => {
+  const P = "spr_first";
+  const days = (
+    confirmed: readonly string[],
+    over: Partial<ScheduleProposalRows> = {},
+    included: readonly string[] = ["itv_ana", "itv_ben", "itv_cleo"],
+  ): ScheduleProposalRows => ({
+    club: CLUB,
+    state: "open",
+    version: 1,
+    reason: "activation",
+    effectiveFrom: "2026-11-01",
+    daysPerMember: 2,
+    scheduleVersion: "sched_first",
+    replacedBy: null,
+    members: included.map((interval) => ({ interval, confirmed: confirmed.includes(interval) })),
+    days: [],
+    ...over,
+  });
+  /** The world with `proposals`, after `gone` left. */
+  const world = (gone: readonly string[], proposals: [string, ScheduleProposalRows][]): ScheduleWorld => ({
+    ...schedule(gone),
+    proposals: new Map(proposals),
+  });
+  const judged = (
+    was: ScheduleProposalRows,
+    now: ScheduleProposalRows,
+    leaver = "itv_ben",
+    goneBefore: readonly string[] = [],
+    more: [string, ScheduleProposalRows][] = [],
+  ) =>
+    firstDaysProblems(world(goneBefore, [[P, was]]), world([...goneBefore, leaver], [[P, now], ...more]), CLUB, leaver);
+
+  it("passes a club with no first days, and catches a proposal that appears or changes there", () => {
+    expect(firstDaysProblems(world([], []), world(["itv_ben"], []), CLUB, "itv_ben")).toEqual([]);
+    const applied = days(["itv_ana", "itv_ben", "itv_cleo"], { state: "applied", version: 2 });
+    expect(judged(applied, applied)).toEqual([]);
+    expect(firstDaysProblems(world([], []), world(["itv_ben"], [[P, days([])]]), CLUB, "itv_ben")).toEqual([
+      "a leave changed the club's proposals though no first days were open",
+    ]);
+  });
+
+  it("asks a revision at the next version when nobody had confirmed, and their end with one member left", () => {
+    expect(judged(days([]), days([], { version: 2 }))).toEqual([]);
+    expect(judged(days([]), days([]))).toEqual(["the first days are open at version 1, not open at version 2 (FQ102)"]);
+    expect(judged(days([]), days([], { version: 2, state: "superseded" }))).toEqual([
+      "the first days are superseded at version 2, not open at version 2 (FQ102)",
+    ]);
+    // Cleo had left already: Ben's leave leaves Ana alone.
+    expect(judged(days([]), days([], { version: 2, state: "superseded" }), "itv_ben", ["itv_cleo"])).toEqual([]);
+    expect(judged(days([]), days([], { version: 2 }), "itv_ben", ["itv_cleo"])).toEqual([
+      "the first days are open at version 2, not superseded at version 2 (FQ102)",
+    ]);
+  });
+
+  it("asks nothing to move once a day is confirmed and someone who hasn't confirmed stays (T33)", () => {
+    expect(judged(days(["itv_ana"]), days(["itv_ana"]))).toEqual([]);
+    expect(judged(days(["itv_ana"]), days(["itv_ana"], { version: 2 }))).toEqual([
+      "the first days are open at version 2, not open at version 1 (FQ102)",
+    ]);
+    // The member who confirmed is the one leaving: the same.
+    expect(judged(days(["itv_ben"]), days(["itv_ben"]))).toEqual([]);
+  });
+
+  it("asks them applied when only confirmed members stay, and ended when the one left hasn't confirmed", () => {
+    const was = days(["itv_ana", "itv_cleo"]);
+    expect(judged(was, { ...was, state: "applied", version: 2 })).toEqual([]);
+    expect(judged(was, was)).toEqual(["the first days are open at version 1, not applied at version 2 (FQ102)"]);
+    // Cleo had left; Ana confirmed and leaves; Ben, who hasn't, is alone.
+    const pair = days(["itv_ana"]);
+    expect(judged(pair, { ...pair, state: "superseded", version: 2 }, "itv_ana", ["itv_cleo"])).toEqual([]);
+    expect(judged(pair, { ...pair, state: "applied", version: 2 }, "itv_ana", ["itv_cleo"])).toEqual([
+      "the first days are applied at version 2, not superseded at version 2 (FQ102)",
+    ]);
+  });
+
+  it("asks them ended when nobody they include is left, with new ones for two or more who remain (FQ123)", () => {
+    // The first days include Ana and Ben only; Ana confirmed and left; Cleo joined later.
+    const was = days(["itv_ana"], {}, ["itv_ana", "itv_ben"]);
+    const ended = { ...was, state: "superseded" as const, version: 2 };
+    // Ben leaves: only Cleo remains, so no new first days.
+    expect(judged(was, ended, "itv_ben", ["itv_ana"])).toEqual([]);
+    const next = days([], { version: 1 }, ["itv_cleo"]);
+    expect(judged(was, ended, "itv_ben", ["itv_ana"], [["spr_next", next]])).toEqual([
+      "new first days opened for fewer than two members",
+    ]);
+  });
+
+  it("catches an ended proposal given a successor, and one whose days per member moved without a revision", () => {
+    const was = days(["itv_ana", "itv_cleo"]);
+    expect(judged(was, { ...was, state: "applied", version: 2, replacedBy: "spr_other" })).toEqual([
+      "the first days name a successor",
+    ]);
+    expect(judged(days(["itv_ana"]), days(["itv_ana"], { daysPerMember: 1 }))).toEqual([
+      "the days each member has moved though the week wasn't proposed again",
+    ]);
   });
 });
