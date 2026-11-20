@@ -1,4 +1,4 @@
-# A02-code: the scroll under the pinned Verify code, a turn later
+# A02-code: the scroll under the pinned Verify code, made again a turn later
 
 Branch `ios/b0-pin-scroll-turn`, from `main` at `05fc191`. One app fix for an intermittent failure, with nothing loosened in any test.
 
@@ -8,33 +8,38 @@ Branch `ios/b0-pin-scroll-turn`, from `main` at `05fc191`. One app fix for an in
 
 ## 2. What the probe found
 
-`ios/b0-pin-tree-probe` (never to merge) ran the test's first part again and again on CI, with a Debug-only launch argument choosing how `CodeScreen` scrolls once Verify code is pinned. Its PROBE lines are in `logs/test-26.5.log` under `ios/b0-pin-tree-probe/<sha>/ios/` on `evidence`.
+`ios/b0-pin-tree-probe` (never to merge) ran the test's first part again and again on CI, with a Debug-only launch argument choosing how `CodeScreen` scrolls once Verify code is pinned. Its PROBE lines are in `logs/test-26.5.log` and `logs/test-27.2.log` (and the `test-summary` files beside them) under `ios/b0-pin-tree-probe/<sha>/ios/` on `evidence`. Stuck launches of launches made:
 
-| Run | Way | Stuck of launches (iOS 26.5) |
+| Way | iOS 26.5 | iOS 27.2 |
 |---|---|---|
-| `d95a1dc`, `ios` 44683814340 | as it was | 4 of 42 |
-| | `layoutChanged` a turn after the scroll | 7 of 41 |
-| `233ca61`, `ios` 44688897798 | as it was | 2 of 33 |
-| | `layoutChanged` 0.6 seconds after the scroll | 3 of 33 |
-| | the scroll a turn of the run loop later | 0 of 33 |
-| | the scroll, and again 0.4 seconds later | 0 of 33 |
+| As it was: one scroll, inside the update that pins the button | 4 of 42, 2 of 33, 6 of 28 | 0 of 20, 0 of 14 |
+| The same, with `layoutChanged` posted a turn later, or 0.6 seconds later | 7 of 41, 3 of 33 | not run |
+| One scroll, a turn of the run loop later | 0 of 33, 0 of 28 | 10 of 13 |
+| The scroll, and again 0.4 seconds later | 0 of 33, 0 of 28 | 0 of 14 |
+| The scroll, and again a turn later | 0 of 28 | 0 of 14 |
 
-On iOS 27.2: 0 of 20, as it was. Also seen: the frame is stale from the first read, before the digits are typed, so the test's own waits don't cause it (reading the frame in a tight loop as the screen arrived changed nothing); and after each of the second run's five stuck reads, a 12-point drag of the column brought the frame back to the screen.
+The runs: `d95a1dc` (`ios` 44683814340), `233ca61` (`ios` 44688897798), `69920aa` (`ios` 44699395514); a run at `2f1d690` was cancelled by the next push.
 
-So with the scroll as it was, the tree was stale in 16 of 149 launches, about one in nine, and a notification doesn't help. A scroll made after the update that pins the button keeps the tree right.
+Also seen:
+
+- The frame is stale from the first read, before the digits are typed, so the test's own waits don't cause it (reading the frame in a tight loop as the screen arrived changed nothing).
+- On iOS 26.5, after each stuck read a 12-point drag of the column brought the frame back to the screen.
+- One scroll a turn later is no fix: on iOS 27.2 it moved nothing in 10 launches of 13, on the screen as well as in the tree (this branch's first commit, `c9968e9`, did that, and `ios` 44696006195 failed the pin test on iOS 27.2 with Verify code drawn over the field's foot: `ios/b0-pin-scroll-turn/c9968e9/ios/snapshots/stuck-frame.png` on `evidence`). The second probe run had tried it on iOS 26.5 alone.
+
+So with one scroll inside the update, the tree was stale in 22 of 177 launches on iOS 26.5 (12 of 103 with nothing else, 10 of 74 with a notification), about one in eight, and a notification doesn't help. iOS 27.2 needs the scroll inside the update; iOS 26.5 needs one after it.
 
 ## 3. The fix
 
-`CodeScreen` (`apps/ios/Tadayo/SignIn/SignInFlow.swift`) scrolls the field to the top in `onChange(of: pinsVerify)`, in the same update that puts Verify code in the bottom safe area. The fix makes that one scroll in the main queue's next turn (`DispatchQueue.main.async`), exactly as the probe's `async` way did: the pinned footer is laid out first, and the scroll follows it. One scroll, no timer, no notification.
+`CodeScreen` (`apps/ios/Tadayo/SignIn/SignInFlow.swift`) scrolls the field to the top in `onChange(of: pinsVerify)`, in the same update that puts Verify code in the bottom safe area. The fix keeps that scroll and makes it again in the main queue's next turn (`DispatchQueue.main.async`), as the probe's `both` way did: the pinned footer is laid out, and the same scroll follows it. No timer, no notification.
 
-Why this and not the scroll twice: both freed the tree in the probe; one scroll after the layout is the smaller change and names its reason, where a second scroll 0.4 seconds later is a timer with no reason behind its length.
+Why this and not the second scroll 0.4 seconds later: both held in the probe on both iOS versions; a scroll after the layout names its reason, where 0.4 seconds is a length with none. The timer has more launches behind it on iOS 26.5 (61 against 28), so the probe's fifth run gives the chosen way more on both (section 4).
 
-What could change for the person: the scroll lands a turn of the run loop after the button is pinned, so for at most a frame the button could stand over the field's foot before the field moves. T48 (the pin has no motion of its own) still holds: the scroll isn't animated.
+What changes for the person: nothing that can be seen. The first scroll lands where it did; the second asks for the same place, so where the first held it moves nothing. T48 (the pin has no motion of its own) still holds: neither scroll is animated.
 
 ## 4. Tests
 
-- Nothing in `SignInUITests` is loosened: `testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText` keeps its 2-second bound, its ring check and its diagnostics, and is the check that the tree follows the screen. Its comments gain what the probe found.
-- Not provable by one green run: the failure was one launch in nine. The evidence is the probe's 0 of 33 against 16 of 149, and a third probe run of the two ways alone; after the merge, every `ios` run on `main` is another launch.
+- Nothing in `SignInUITests` is loosened: `testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText` keeps its 2-second bound, its ring check and its diagnostics, and is the check that the tree follows the screen, on both iOS versions. Its comment gains what the probe found.
+- Not provable by one green run: the failure was one launch in eight. The evidence is the probe's counts, and its fifth run (`b428f59`: the chosen way three launches in four, on both iOS versions), recorded here when it ends; after the merge, every `ios` run on `main` is another launch.
 
 ## 5. Not verified here
 

@@ -218,14 +218,17 @@ struct CodeScreen: View {
                 // and `ios` run 43181241212 drew the button over the field's last 12 points.
                 // Frame 19 is scrolled so, the field under the navigation bar and the error
                 // continuing behind the button.
-                // The scroll is made in the main queue's next turn, once the update that pins
-                // the button has been laid out. Made inside that update, it left the screen
-                // right and the accessibility tree stale on iOS 26.5 in about one launch in
-                // nine: the field's frame stayed 190 points low, behind the button, until the
-                // person scrolled (`docs/plans/ios-b0-pin-scroll-turn.md`: 16 of 149 launches
-                // so, none of 33 with the scroll a turn later).
+                // The scroll is made twice: inside the update that pins the button, and again
+                // in the main queue's next turn, once that update has been laid out. Each iOS
+                // needs one of them (`docs/plans/ios-b0-pin-scroll-turn.md`). Made inside the
+                // update alone, it left the screen right and the accessibility tree stale on
+                // iOS 26.5 in about one launch in eight: the field's frame stayed 190 points
+                // low, behind the button, until the person scrolled. Made a turn later alone, it
+                // moved nothing on iOS 27.2 in 10 launches of 13, and the button stood over the
+                // field. The second is the same scroll, so where the first held it moves nothing.
                 .onChange(of: pinsVerify) { _, pinned in
                     guard pinned else { return }
+                    scroll.scrollTo(Self.field, anchor: .top)
                     DispatchQueue.main.async { scroll.scrollTo(Self.field, anchor: .top) }
                 }
                 // Each time the keyboard comes up or goes, the held foot starts from the region
