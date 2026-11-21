@@ -35,13 +35,17 @@ final class PlayerWebViewTests: XCTestCase {
             ProxyConfiguration(httpCONNECTProxy: .hostPort(host: "127.0.0.1", port: 9))
         ]
         PlayerWebView.load(webView, base: base)
-        // The process's first load waits up to 60 seconds for the frame; every later load keeps
-        // 10. In `ios` run 44715668431, attempt 1 (iOS 26.5), the runner stalled during the first
-        // load: WebKit's first line came 6.7 seconds after the suite began, the web process was
-        // reported unresponsive for 7.4 seconds, and the frame wasn't made within the wait. The
-        // log has no line for the frame itself; the test ended 21.4 seconds after it began. The
-        // later loads of that run, whose processes launched as slowly, made their frames in time,
-        // and the same first load took 1.0 second in the re-run. What is checked once the frame
+        // Every load waits up to 60 seconds for the frame, and returns as soon as it's made. The
+        // process's first load waited 60 and every later one 10 until a later load stalled too:
+        // in `ios` run 44842617958 (iOS 27.2, a saturated runner), the first load of
+        // `testTheWebViewSharesNothingWithTheAppAndStartsNothingByItself`, not the process's
+        // first, waited 8.7 seconds for its web process to launch, where the run's other
+        // launches took 1.1 to 1.3, and the 10 ran out before the frame was made and decided
+        // (its request failed at the closed port about 14 seconds into the test). Before that, in
+        // `ios` run 44715668431, attempt 1 (iOS 26.5), the runner stalled during the process's
+        // first load: WebKit's first line came 6.7 seconds after the suite began, the web process
+        // was reported unresponsive for 7.4 seconds, and the frame wasn't made within the 10 it
+        // had then; the same load took 1.0 second in the re-run. What is checked once the frame
         // is made is unchanged.
         //
         // The shell says "frame made" as soon as it has put the frame in the page; WebKit asks
@@ -52,19 +56,12 @@ final class PlayerWebViewTests: XCTestCase {
         // its baseline. Nothing of the frame's is logged after it: its request goes to the closed
         // port, and no failure of it reaches the viewer (the tests below that find the phase still
         // `.loading`).
-        let cold = !Self.loadedBefore
-        Self.loadedBefore = true
-        try await wait(
-            "the shell makes its frame, and its address is decided", seconds: cold ? 60 : 10
-        ) {
+        try await wait("the shell makes its frame, and its address is decided", seconds: 60) {
             model.log.contains("shell: frame made")
                 && model.log.contains { $0.hasPrefix("frame ") }
         }
         return (webView, coordinator)
     }
-
-    /// Whether `loaded` has run before in this test process.
-    private static var loadedBefore = false
 
     /// Polls `met` every 50 milliseconds, `seconds` × 20 times. A stalled runner makes the wait
     /// longer on the clock than `seconds`, never shorter.

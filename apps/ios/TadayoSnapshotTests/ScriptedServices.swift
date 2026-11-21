@@ -9,13 +9,22 @@ import XCTest
 
 /// Runs `action` and turns the main run loop until `condition` holds, so a screen can be
 /// snapshotted, or read, in the middle of a request that never answers.
+///
+/// It waits up to 30 seconds and returns as soon as the state is reached. It waited 5 until the
+/// probe on `ios/b0-arrival-probe` (`ios` run 44842449226, iOS 27.2, with the runner's one-minute
+/// load average between 310 and 497 on its 3 CPUs) timed every drive: three steps ran past those
+/// 5 seconds, unreached at 5.9, 6.8 and 6.0 seconds
+/// (`SignInSnapshotTests.testA03ProfileFailedNetwork` and the first sign-in of
+/// `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age`), where
+/// each of the probe's eight later rounds of that test took 0.9 to 3.1 seconds for the same
+/// sign-in's three steps together. What is asserted once the state is reached is unchanged.
 @MainActor
 func drive(
     _ action: @escaping @MainActor () async -> Void, until condition: () -> Bool,
     file: StaticString = #filePath, line: UInt = #line
 ) {
     Task { await action() }
-    let deadline = Date().addingTimeInterval(5)
+    let deadline = Date().addingTimeInterval(30)
     while !condition(), Date() < deadline {
         RunLoop.main.run(until: Date().addingTimeInterval(0.01))
     }
