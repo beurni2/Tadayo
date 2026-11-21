@@ -30,7 +30,14 @@ Why a second scroll brings the tree up to date isn't known (`docs/plans/ios-b0-p
 
 ## 4. The probe
 
-`ios/b0-profile-scroll-probe` (never to merge), from this branch's first commit: a Debug-only switch in `ProfileForm` chooses whether the second scroll is made, and a probe test reads A03 at the largest text with the stand-in keyboard 200 times each way, printing `PROBE` lines with how many readings found the field under Continue. Its counts go here once its run is read.
+`ios/b0-profile-scroll-probe` (never to merge), from this branch's first commit, at `4ff62b5`: a Debug-only switch in `ProfileForm` chooses whether the second scroll is made, and `ProfileScrollProbeTests.testProbeTheScrollBothWays` reads A03 at the largest text with the stand-in keyboard 400 times, as the failing test reads it, the switch alternating from a first reading with the second scroll. It prints a `PROBE` line for each reading that finds the field under Continue, and a count for each way. Its `ios` run, 44866884289 (2026-11-21), on `evidence` under `ios/b0-profile-scroll-probe/4ff62b5/ios/logs/`:
+
+| iOS | The scroll made once, as on `main` | Made again a turn later, this branch | Log lines |
+|---|---|---|---|
+| 27.2 | 0 stale of 200 | 0 stale of 200 | `test-27.2.log` 4514 and 4515 |
+| 26.5 | 0 stale of 200 | 1 stale of 200 | `test-26.5.log` 604, 626 and 627 |
+
+The one stale reading was round 0, the probe's first, with the second scroll made: a gap of -314 and the field at (20, 689, 353, 75), the failing test's figures exactly. Earlier tests in the same process (`ArrivalFocusTests`) had shown A03, but not at the largest text with the stand-in keyboard.
 
 ## 5. Tests
 
@@ -41,3 +48,9 @@ Why a second scroll brings the tree up to date isn't known (`docs/plans/ios-b0-p
 ## 6. Not verified here
 
 VoiceOver on an iPhone with A03's keyboard up is a device check (`docs/plans/ios-b0-device-checks.md`). The probe reads the tree in a hosted test with a stand-in keyboard, as the failing test does, not the system keyboard.
+
+## 7. What the probe shows, and what follows
+
+- The second scroll made no difference the probe could see. Without it, none of 200 readings was stale; with it, one was.
+- The one stale reading came first, of 400 readings. One reading in 400 is far rarer than the failing test's rate of about one run in 40. So the stale reading looks tied to something early in a run of readings, not to when the scroll is made. One event can't show what that is, and nothing here says.
+- So this branch's fix has no evidence for it, and its PR isn't opened. The branch and the probe stay unmerged, as the record. `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` stays watched with its bounds (journal block 1.3, Next 1), and `docs/LIMITATIONS.md`'s row on `main` is corrected once PR #93, which brings it, has merged.
