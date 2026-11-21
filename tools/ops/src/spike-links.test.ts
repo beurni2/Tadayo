@@ -1,9 +1,9 @@
 // `spike-links` against a made-up `flyctl` (test/fake-fly.ts) and a made-up `dev` API
-// (docs/plans/api-b0-spike-links.md, sections 2 and 3; T52): the page's two requests and a GET with the
-// token in its URL, then `dev`'s log buffer read until the requests' own lines are in it, and every line
-// of flyctl's output searched for the token, whole or in part, and for its hash. The run has to pass
-// clean logs, fail any that hold the token or that never show its requests, fail an API that answers
-// otherwise than `dev` does, and never say the token.
+// (docs/plans/api-b0-spike-links.md, sections 2 and 3; T52): the page's two requests and its preflight
+// again with the token in its URL, then `dev`'s log buffer read until the requests' own lines are in it,
+// and every line of flyctl's output searched for the token, whole or in part, and for its hash. The run
+// has to pass clean logs, fail any that hold the token or that never show its requests' own lines, fail
+// an API that answers otherwise than `dev` does, and never say the token.
 
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
@@ -11,7 +11,7 @@ import { FAKE_FLY_TOKEN, fakeSpawn, lineOf, type Reply, type Route } from "../te
 import { flyOf } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 import { runScript, SCRIPTS, type OpsContext } from "./run.ts";
-import { POLL_MS, POLLS, spikeLinks } from "./spike-links.ts";
+import { POLL_MS, POLLS, READ_MS, spikeLinks } from "./spike-links.ts";
 
 const LOGS = "flyctl logs -a tadayo-api-dev --no-tail --json";
 const ENV = { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" };
@@ -52,7 +52,8 @@ const PREFLIGHT_LINE = (second: number) =>
   entry(requestLine(`p${String(second)}`, { preflight: "previewInvitationWeb", status: 204, ms: 0 }), second);
 const POST_LINE = (second: number) =>
   entry(requestLine(`q${String(second)}`, { op: "previewInvitationWeb", status: 404, ms: 3 }), second);
-const GET_LINE = (second: number) => entry(requestLine(`g${String(second)}`, { status: 404, ms: 0 }), second);
+/** A 404 of no operation: any request to a path the API doesn't have, a scanner's among them. */
+const STRAY_404 = (second: number) => entry(requestLine(`g${String(second)}`, { status: 404, ms: 0 }), second);
 
 /** What the buffer held before the run: a start, a health check, a Fly line. */
 const BEFORE = [
@@ -60,7 +61,7 @@ const BEFORE = [
   entry(requestLine("h1", { op: "health", status: 200, ms: 1 }), 2),
   entry("Machine started in 1.2s", 3, "runner"),
 ];
-const RUN_LINES = [PREFLIGHT_LINE(20), POST_LINE(21), GET_LINE(22)];
+const RUN_LINES = [PREFLIGHT_LINE(20), POST_LINE(21), PREFLIGHT_LINE(22)];
 
 interface Sent {
   readonly url: string;
@@ -97,14 +98,12 @@ const DEFAULT_ANSWERS: Record<string, Answer> = {
         vary: "Origin",
       },
     }),
-  GET: () =>
-    new Response(JSON.stringify({ code: "NOT_FOUND", message: "Not found." }), {
-      status: 404,
-      headers: { "content-type": "application/json; charset=utf-8" },
-    }),
 };
 
-/** A made-up `dev` API: it records each request, keeps the token the POST carries, and answers as `dev` does. */
+/**
+ * A made-up `dev` API: it records each request, keeps the token the POST carries, and answers as `dev` does,
+ * or as `answers` says: by method, and "OPTIONS?" for the preflight with a query.
+ */
 function fakeApi(answers: Partial<Record<string, Answer>> = {}) {
   const sent: Sent[] = [];
   let token = "";
@@ -120,7 +119,7 @@ function fakeApi(answers: Partial<Record<string, Answer>> = {}) {
       signal: init?.signal instanceof AbortSignal,
     });
     if (method === "POST" && body !== undefined) token = (JSON.parse(body) as { token: string }).token;
-    const answer = answers[method] ?? DEFAULT_ANSWERS[method];
+    const answer = answers[`${method}${urlOf(input).includes("?") ? "?" : ""}`] ?? DEFAULT_ANSWERS[method];
     return answer === undefined ? Promise.reject(new Error(`no answer for ${method}`)) : Promise.resolve(answer());
   }) as typeof fetch;
   return { fetcher, sent, token: () => token };
@@ -174,7 +173,7 @@ function expectNoToken(api: Api, said: readonly string[], message: string) {
 }
 
 describe("spikeLinks on clean logs", () => {
-  it("sends the page's two requests and the token in a URL, reads the buffer until their lines come, and passes", async () => {
+  it("sends the page's two requests and its preflight with the token in its URL, reads the buffer until their lines come, and passes", async () => {
     const api = fakeApi();
     const result = await run(api, (fake) => [buffer(fake, cleanFrom(2))]);
     expect(result.outcome).toBeUndefined();
@@ -204,8 +203,12 @@ describe("spikeLinks on clean logs", () => {
       },
       {
         url: `${PREVIEW}?token=${token}`,
-        method: "GET",
-        headers: {},
+        method: "OPTIONS",
+        headers: {
+          origin: PAGE,
+          "access-control-request-method": "POST",
+          "access-control-request-headers": "content-type",
+        },
         body: undefined,
         redirect: "manual",
         signal: true,
@@ -214,16 +217,19 @@ describe("spikeLinks on clean logs", () => {
     // The buffer before, two reads until the lines came, and one read more.
     expect(result.calls).toEqual([LOGS, LOGS, LOGS, LOGS]);
     expect(result.slept).toEqual([POLL_MS, POLL_MS, POLL_MS]);
-    for (const call of result.raw) expect(call.options.env).toEqual(ENV);
+    for (const call of result.raw) {
+      expect(call.options.env).toEqual(ENV);
+      expect(call.options.timeoutMs).toBe(READ_MS);
+    }
     expect(result.said).toEqual([
       "spike-links: a made-up token of 43 characters, sent to https://api-dev.tadayo.app and never printed",
       "spike-links: the log buffer before the requests: 3 entries",
-      "spike-links: the preflight: 204, allowed for https://tadayo.app",
+      "spike-links: the preflight: 204, allowed for https://tadayo.app, its POST and its content-type",
       "spike-links: the page's POST: 404 NOT_FOUND, allowed for https://tadayo.app, with Vary: Origin",
-      "spike-links: the token in a URL: 404 NOT_FOUND",
+      "spike-links: the preflight with the token in its URL: 204, allowed for https://tadayo.app, its POST and its content-type",
       "spike-links: the requests' three lines came in read 2 of 12",
       "spike-links: one read more, 5 seconds later: 6 entries",
-      "spike-links: lines holding the token: 0, its first 16 characters: 0, its last 16: 0, its SHA-256: 0, in 3 reads (15 entries)",
+      "spike-links: lines holding the token, each counted once: 0, its first 16 characters: 0, its last 16: 0, its SHA-256: 0, in 3 reads of 6 entries",
       "spike-links: every check passed",
     ]);
   });
@@ -242,6 +248,13 @@ describe("spikeLinks on clean logs", () => {
     const result = await run(api, (fake) => [buffer(fake, () => printed(RUN_LINES), { stdout: "" })]);
     expect(result.outcome).toBeUndefined();
     expect(result.said[1]).toBe("spike-links: the log buffer before the requests: 0 entries");
+  });
+
+  it("says one entry as one entry", async () => {
+    const api = fakeApi();
+    const result = await run(api, (fake) => [buffer(fake, () => printed(RUN_LINES), printed([BEFORE[0] as Entry]))]);
+    expect(result.outcome).toBeUndefined();
+    expect(result.said[1]).toBe("spike-links: the log buffer before the requests: 1 entry");
     expect(result.said[5]).toBe("spike-links: the requests' three lines came in read 1 of 12");
   });
 
@@ -254,10 +267,15 @@ describe("spikeLinks on clean logs", () => {
 
   it("takes the three lines from different reads", async () => {
     const api = fakeApi();
-    const reads: Record<number, Entry[]> = { 1: [PREFLIGHT_LINE(20)], 2: [POST_LINE(21)], 3: [GET_LINE(22)] };
+    const reads: Record<number, Entry[]> = { 1: [PREFLIGHT_LINE(20)], 2: [POST_LINE(21)], 3: [PREFLIGHT_LINE(22)] };
     const result = await run(api, (fake) => [buffer(fake, (n) => printed([...BEFORE, ...(reads[n] ?? [])]))]);
     expect(result.outcome).toBeUndefined();
     expect(result.said[5]).toBe("spike-links: the requests' three lines came in read 3 of 12");
+  });
+
+  it("ends inside 15 minutes at the longest, so the ops job's 20 leave its setup room", () => {
+    // The first read, 12 reads until the lines and one more, each at its limit; 13 waits; 3 requests at theirs.
+    expect((POLLS + 2) * READ_MS + (POLLS + 1) * POLL_MS + 3 * 15_000).toBeLessThan(15 * 60_000);
   });
 });
 
@@ -285,7 +303,7 @@ describe("spikeLinks on logs that hold the token", () => {
         expect(result.outcome).toBeInstanceOf(OpsError);
         const [whole = 0, first = 0, last = 0, hash = 0] = counts;
         expect(result.message).toBe(
-          `spike-links: flyctl's output holds the token: lines holding the token: ${String(whole)}, its first 16 characters: ${String(first)}, its last 16: ${String(last)}, its SHA-256: ${String(hash)}, in 3 reads`,
+          `spike-links: flyctl's output holds the token: lines holding the token, each counted once: ${String(whole)}, its first 16 characters: ${String(first)}, its last 16: ${String(last)}, its SHA-256: ${String(hash)}, in 3 reads`,
         );
         expect(result.said).not.toContain("spike-links: every check passed");
         expectNoToken(api, result.said, result.message);
@@ -293,12 +311,34 @@ describe("spikeLinks on logs that hold the token", () => {
     }
   }
 
+  it("counts a line once however many reads print it, and two lines as two", async () => {
+    for (const [planted, whole] of [
+      [(token: string) => [entry(`{"msg":"x","seen":"${token}"}`, 30)], 1],
+      [(token: string) => [entry(`{"msg":"x","seen":"${token}"}`, 30), entry(`{"msg":"y","seen":"${token}"}`, 31)], 2],
+    ] as const) {
+      const api = fakeApi();
+      // In the read where the run's lines come and in the one after it: the buffer gives an entry again.
+      const later = (n: number, fake: Api): Reply =>
+        n < 2 ? cleanFrom(2)(n) : printed([...BEFORE, ...RUN_LINES, ...planted(fake.token())]);
+      const result = await run(api, (fake) => [buffer(fake, later)]);
+      expect(result.message).toMatch(
+        new RegExp(
+          `^spike-links: flyctl's output holds the token: lines holding the token, each counted once: ${String(whole)},`,
+        ),
+      );
+      expect(result.message).toContain("in 3 reads");
+      expectNoToken(api, result.said, result.message);
+    }
+  });
+
   it("counts the token in the read that comes after its lines", async () => {
     const api = fakeApi();
     const later = (n: number, fake: Api): Reply =>
       n < 3 ? cleanFrom(2)(n) : printed([...BEFORE, ...RUN_LINES, entry(`late ${fake.token()}`, 40, "proxy")]);
     const result = await run(api, (fake) => [buffer(fake, later)]);
-    expect(result.message).toMatch(/^spike-links: flyctl's output holds the token: lines holding the token: 1,/);
+    expect(result.message).toMatch(
+      /^spike-links: flyctl's output holds the token: lines holding the token, each counted once: 1,/,
+    );
     expectNoToken(api, result.said, result.message);
   });
 
@@ -310,9 +350,11 @@ describe("spikeLinks on logs that hold the token", () => {
         ...(n === 1 ? [entry(`GET /v1/invitations/web-preview?token=${fake.token()}`, 9, "proxy")] : []),
       ]);
     const result = await run(api, (fake) => [buffer(fake, later)]);
-    expect(result.message).toMatch(/^spike-links: flyctl's output holds the token: lines holding the token: 1,/);
+    expect(result.message).toMatch(
+      /^spike-links: flyctl's output holds the token: lines holding the token, each counted once: 1,/,
+    );
     expect(result.message).toContain(`in ${String(POLLS)} reads`);
-    expect(result.message).toContain("no line for the preflight, the page's POST and the token in a URL");
+    expect(result.message).toContain("hold 0 preflight lines and 0 POST lines, where the run sent 2 and 1");
     expectNoToken(api, result.said, result.message);
   });
 
@@ -320,17 +362,19 @@ describe("spikeLinks on logs that hold the token", () => {
     const api = fakeApi();
     const later = (_n: number, fake: Api): Reply => ({ code: 1, stdout: "", stderr: `Error: ${fake.token()}\n` });
     const result = await run(api, (fake) => [buffer(fake, later)]);
-    expect(result.message).toMatch(/^spike-links: flyctl's output holds the token: lines holding the token: 1,/);
+    expect(result.message).toMatch(
+      /^spike-links: flyctl's output holds the token: lines holding the token, each counted once: 1,/,
+    );
     expectNoToken(api, result.said, result.message);
   });
 });
 
 describe("spikeLinks when its lines never come", () => {
-  it("fails after 12 reads, 5 seconds apart, and names the lines that didn't come", async () => {
+  it("fails after 12 reads, 5 seconds apart, and says how many of its lines came", async () => {
     const api = fakeApi();
     const result = await run(api, (fake) => [buffer(fake, () => printed([...BEFORE, PREFLIGHT_LINE(20)]))]);
     expect(result.message).toBe(
-      "spike-links: after 12 reads, 5 seconds apart, the log buffer's new entries have no line for the page's POST and the token in a URL: the check can't show what the API logged, so it fails",
+      "spike-links: after 12 reads, 5 seconds apart, the log buffer's new entries hold 1 preflight line and 0 POST lines, where the run sent 2 and 1: the check can't show what the API logged, so it fails",
     );
     expect(result.calls).toHaveLength(1 + POLLS);
     expect(result.slept).toEqual(Array.from({ length: POLLS }, () => POLL_MS));
@@ -341,7 +385,20 @@ describe("spikeLinks when its lines never come", () => {
     const api = fakeApi();
     const before = [...BEFORE, ...RUN_LINES];
     const result = await run(api, (fake) => [buffer(fake, () => printed(before), printed(before))]);
-    expect(result.message).toContain("no line for the preflight, the page's POST and the token in a URL");
+    expect(result.message).toContain("hold 0 preflight lines and 0 POST lines");
+  });
+
+  it("doesn't take a scanner's 404 elsewhere, nor one line printed twice, for a line of its own", async () => {
+    const api = fakeApi();
+    // The preflight and the POST came, the second preflight didn't; a request to a path the API doesn't
+    // have was logged meanwhile, and the first preflight's line is printed again by the next read.
+    const reads: Record<number, Entry[]> = {
+      1: [PREFLIGHT_LINE(20), STRAY_404(19)],
+      2: [PREFLIGHT_LINE(20), POST_LINE(21)],
+    };
+    const result = await run(api, (fake) => [buffer(fake, (n) => printed([...BEFORE, ...(reads[n] ?? [])]))]);
+    expect(result.message).toContain("hold 1 preflight line and 1 POST line, where the run sent 2 and 1");
+    expect(result.said).not.toContain("spike-links: every check passed");
   });
 
   it("doesn't take a line of another status, another operation or another program for the run's own", async () => {
@@ -354,7 +411,7 @@ describe("spikeLinks when its lines never come", () => {
       entry(`{"preflight":"previewInvitationWeb","status":204,"msg":"request"`, 34),
     ];
     const result = await run(api, (fake) => [buffer(fake, () => printed([...BEFORE, ...others]))]);
-    expect(result.message).toContain("no line for the preflight, the page's POST and the token in a URL");
+    expect(result.message).toContain("hold 0 preflight lines and 0 POST lines");
   });
 });
 
@@ -364,27 +421,37 @@ describe("spikeLinks when dev answers otherwise", () => {
     () =>
       new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
   const allowed = { "access-control-allow-origin": PAGE, vary: "Origin" };
+  const preflightWith = (headers: Record<string, string>) => () => new Response(null, { status: 204, headers });
+  const PREFLIGHT_HEADERS = {
+    "access-control-allow-origin": PAGE,
+    "access-control-allow-methods": "POST",
+    "access-control-allow-headers": "content-type",
+  };
   const cases: readonly [string, Partial<Record<string, Answer>>, string][] = [
     ["the preflight's status", { OPTIONS: json(404, { code: "NOT_FOUND" }) }, "the preflight answered 404, not 204"],
     [
       "the preflight's allowance",
-      { OPTIONS: () => new Response(null, { status: 204 }) },
+      { OPTIONS: preflightWith({ ...PREFLIGHT_HEADERS, "access-control-allow-origin": "" }) },
       "the preflight doesn't allow https://tadayo.app",
     ],
     [
       "a preflight for every origin",
-      { OPTIONS: () => new Response(null, { status: 204, headers: { "access-control-allow-origin": "*" } }) },
+      { OPTIONS: preflightWith({ ...PREFLIGHT_HEADERS, "access-control-allow-origin": "*" }) },
       "the preflight doesn't allow https://tadayo.app",
     ],
     [
+      "a preflight without the page's method",
+      { OPTIONS: preflightWith({ ...PREFLIGHT_HEADERS, "access-control-allow-methods": "GET, PUT" }) },
+      "the preflight doesn't allow POST",
+    ],
+    [
+      "a preflight without the page's header",
+      { OPTIONS: preflightWith({ ...PREFLIGHT_HEADERS, "access-control-allow-headers": "authorization" }) },
+      "the preflight doesn't allow the header content-type",
+    ],
+    [
       "a preflight that allows credentials",
-      {
-        OPTIONS: () =>
-          new Response(null, {
-            status: 204,
-            headers: { "access-control-allow-origin": PAGE, "access-control-allow-credentials": "true" },
-          }),
-      },
+      { OPTIONS: preflightWith({ ...PREFLIGHT_HEADERS, "access-control-allow-credentials": "true" }) },
       "the preflight allows credentials",
     ],
     [
@@ -394,9 +461,9 @@ describe("spikeLinks when dev answers otherwise", () => {
     ],
     ["the POST's 200", { POST: json(200, { inviter_name: "Ben" }, allowed) }, "the page's POST answered 200, not 404"],
     [
-      "the POST's code",
+      "the POST's code, never said",
       { POST: json(404, { code: "GONE" }, allowed) },
-      "the page's POST has the code GONE, not NOT_FOUND",
+      "the page's POST has a code other than NOT_FOUND",
     ],
     [
       "the POST's body",
@@ -418,11 +485,20 @@ describe("spikeLinks when dev answers otherwise", () => {
       { POST: json(404, { code: "NOT_FOUND" }, { ...allowed, "access-control-allow-credentials": "true" }) },
       "the page's POST allows credentials",
     ],
-    ["the GET's status", { GET: json(405, { code: "NOT_FOUND" }) }, "the token in a URL answered 405, not 404"],
     [
-      "the GET's code",
-      { GET: json(404, { code: "INVALID_REQUEST" }) },
-      "the token in a URL has the code INVALID_REQUEST, not NOT_FOUND",
+      "the status of the preflight with the token in its URL",
+      { "OPTIONS?": json(404, { code: "NOT_FOUND" }) },
+      "the preflight with the token in its URL answered 404, not 204",
+    ],
+    [
+      "the allowance of the preflight with the token in its URL",
+      {
+        "OPTIONS?": preflightWith({
+          ...PREFLIGHT_HEADERS,
+          "access-control-allow-origin": "https://tadayo.app.example",
+        }),
+      },
+      "the preflight with the token in its URL doesn't allow https://tadayo.app",
     ],
   ];
 
@@ -441,17 +517,56 @@ describe("spikeLinks when dev answers otherwise", () => {
   }
 
   it("names every wrong answer, and only the status of one with the wrong status", async () => {
-    const api = fakeApi({ OPTIONS: json(404, {}), GET: json(200, {}) });
+    const api = fakeApi({ OPTIONS: json(404, {}), "OPTIONS?": json(200, {}) });
     const result = await run(api, (fake) => [buffer(fake, cleanFrom(1))]);
     expect(result.message).toBe(
-      "spike-links: the preflight answered 404, not 204; the token in a URL answered 200, not 404: dev isn't answering as the page expects, so the logs weren't read",
+      "spike-links: the preflight answered 404, not 204; the preflight with the token in its URL answered 200, not 204: dev isn't answering as the page expects, so the logs weren't read",
     );
+  });
+
+  it("takes the headers' names as the browser does: methods exactly, headers in any case, among others", async () => {
+    const api = fakeApi({
+      OPTIONS: preflightWith({
+        "access-control-allow-origin": PAGE,
+        "access-control-allow-methods": "GET, POST",
+        "access-control-allow-headers": "X-One, Content-Type",
+      }),
+      "OPTIONS?": preflightWith({ ...PREFLIGHT_HEADERS, "access-control-allow-methods": "post" }),
+    });
+    const result = await run(api, (fake) => [buffer(fake, cleanFrom(1))]);
+    expect(result.message).toBe(
+      "spike-links: the preflight with the token in its URL doesn't allow POST: dev isn't answering as the page expects, so the logs weren't read",
+    );
+  });
+
+  it("never says a code, even one that holds the token", async () => {
+    const api = fakeApi();
+    const echo = ((input: string | URL | Request, init?: RequestInit) =>
+      init?.method === "POST"
+        ? api.fetcher(input, init).then(() => json(404, { code: api.token() }, allowed)())
+        : api.fetcher(input, init)) as typeof fetch;
+    const { spawn } = fakeSpawn([buffer(api, cleanFrom(1))]);
+    const said: string[] = [];
+    const outcome = await spikeLinks({
+      fly: flyOf(spawn, ENV),
+      fetch: echo,
+      say: (line) => said.push(line),
+      sleep: () => Promise.resolve(),
+    }).then(
+      () => undefined,
+      (caught: unknown) => caught,
+    );
+    const message = outcome instanceof Error ? outcome.message : "";
+    expect(message).toBe(
+      "spike-links: the page's POST has a code other than NOT_FOUND: dev isn't answering as the page expects, so the logs weren't read",
+    );
+    expectNoToken(api, said, message);
   });
 
   it("says a request got no answer by the error's kind alone, which can't carry the URL", async () => {
     const api = fakeApi();
     const failing = ((input: string | URL | Request, init?: RequestInit) =>
-      init?.method === "GET"
+      urlOf(input).includes("?")
         ? Promise.reject(
             Object.assign(new TypeError(`fetch failed: ${urlOf(input)}`), { cause: { code: "ECONNRESET" } }),
           )
@@ -469,7 +584,7 @@ describe("spikeLinks when dev answers otherwise", () => {
     );
     const message = outcome instanceof Error ? outcome.message : "";
     expect(message).toBe(
-      "spike-links: the token in a URL got no answer (TypeError, ECONNRESET): dev isn't answering as the page expects, so the logs weren't read",
+      "spike-links: the preflight with the token in its URL got no answer (TypeError, ECONNRESET): dev isn't answering as the page expects, so the logs weren't read",
     );
     expect(calls).toHaveLength(1);
     expectNoToken(api, said, message);

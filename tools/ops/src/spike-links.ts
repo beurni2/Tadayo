@@ -2,27 +2,40 @@
 // docs/plans/B0.md, section 4, order 3; T52). The invitation page on tadayo.app reads its token from
 // the link's fragment, which no request carries, and sends it in the body of one POST to the API, after
 // the browser's preflight. This sends the same two requests to `dev`, with a token made for the run,
-// and one more that puts the token in a URL, where no client puts it: if anything on `dev`'s side
-// logged URLs, that line would hold it. Then it reads `dev`'s log buffer, the API's own lines and Fly's
-// for the app, until the three requests' lines are in it, and counts the lines of flyctl's output that
-// hold the token, its first or last 16 characters, or its SHA-256 in hex, the one form of it the
-// database is given (`tokenHash`). Every count must be 0. Supabase's own logs aren't read here.
+// and one more: the same preflight with the token in its URL, where no client puts it, so that a line
+// that logged URLs, the API's or one of Fly's, would hold it. Then it reads `dev`'s log buffer until the
+// requests' three lines are in it, and counts the lines of flyctl's output that hold the token, its
+// first or last 16 characters, or its SHA-256 in hex, the one form of it the database is given
+// (`tokenHash`). Every count must be 0. Supabase's own logs aren't read here.
 //
 // It runs on the runner with `FLY_API_TOKEN` alone, and acts on `dev` only: flyctl through `flyOf`,
 // whose `forDevApp` names no other app, and requests to `DEV_HOST`. It writes nothing, moves no clock
 // and starts or stops nothing. The token names no invitation: 32 random bytes, so the POST is a token
 // that names nothing, the neutral 404. It is never printed: what the run says is statuses, whether the
-// answers' headers were what the page needs, counts, and flyctl's error lines that hold none of the
-// token's forms. A request that gets no answer is said by its error's kind alone, since the message of a
-// failed fetch can quote the URL.
+// answers' headers were the ones the page needs (the allowance for its origin, its method and its header,
+// no credentials, `Vary: Origin`), counts, and flyctl's error lines that hold none of the token's forms.
+// Nothing an answer carries is said, only whether it was what was expected; a request that gets no answer
+// is said by its error's kind alone, since the message of a failed fetch can quote the URL.
 //
-// flyctl 0.5.8's `logs --no-tail` asks Fly's API once for the buffer's latest entries and returns, and
-// `--json` prints each entry whole, as indented JSON, one object after another (its source,
-// `internal/command/logs/logs.go` and `logs/polling.go`): the text form leaves out the message of an
-// entry that has an error's message. An entry is told from an earlier read's by its timestamp, its
-// instance and its message. If the run's three lines never come, it fails: it never passes on logs
-// that might not include its requests. It reads no clock (T1): it waits with `sleep`, and each request
-// has its own `AbortSignal.timeout`.
+// flyctl 0.5.8's `logs --no-tail` makes one call for the buffer's latest entries, which it retries on a
+// passing error, and returns; `--json` prints each entry as indented JSON, one object after another, with
+// the fields flyctl decodes: the timestamp, the instance, the region, the level, the message, and Fly's
+// own fields for the instance, the region, the provider, the HTTP request (id, method, version), the
+// response's status, an error (code, message) and a URL (its source, `internal/command/logs/logs.go` and
+// `logs/polling.go`, and fly-go's `LogEntry`). Any other field Fly's API holds is dropped before it is
+// printed, so the check shows what flyctl's view of the buffer holds, not everything Fly keeps. The text
+// form would leave out the message of an entry that has an error's message. An entry is told from an
+// earlier read's by its timestamp, its instance and its message.
+//
+// The run's lines are the API's (services/api/src/logging.ts, `logEachRequest`): two preflight lines
+// (`preflight: "previewInvitationWeb"`, 204) and one line of the operation (`op: "previewInvitationWeb"`,
+// 404). Only a request to that one path makes either, which in practice only the invitation page's
+// browser sends, so a scanner's request elsewhere can't stand in for them; someone opening an invitation
+// page on `dev` while the run reads could, which is why the run goes while nobody does (the plan, section
+// 5). If
+// the lines never come, it fails: it never passes on logs that show no line of its requests. It reads no
+// clock (T1): it waits with `sleep`, each request has its own `AbortSignal.timeout`, and each read its
+// own time limit.
 
 import { createHash, randomBytes } from "node:crypto";
 import { DEV_APP, DEV_HOST } from "./environment.ts";
@@ -41,8 +54,13 @@ export interface SpikeLinksInput {
 export const POLLS = 12;
 /** The time before each of those reads, in milliseconds. */
 export const POLL_MS = 5000;
+/**
+ * The longest one read of the buffer may take, in milliseconds. With it the run's longest, 14 reads,
+ * 13 waits and 3 requests, is under 13 minutes, inside the `ops` job's 20, so it ends with its own message.
+ */
+export const READ_MS = 45_000;
 /** The longest one request waits, its body included. */
-export const CALL_MS = 15_000;
+const CALL_MS = 15_000;
 
 /** The page's origin, as the API allows it (services/api/src/web-origin.ts, `WEB_ORIGIN`). */
 const PAGE_ORIGIN = "https://tadayo.app";
@@ -58,8 +76,7 @@ const say = (input: SpikeLinksInput, line: string) => {
   input.say(`spike-links: ${line}`);
 };
 
-const listing = (names: readonly string[]) =>
-  names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1) ?? ""}`;
+const entriesText = (count: number) => `${String(count)} ${count === 1 ? "entry" : "entries"}`;
 
 // ---- The token's forms, and the lines that hold them.
 
@@ -73,12 +90,17 @@ function needlesOf(token: string): Needles {
   return { token, forms: [token, token.slice(0, PART), token.slice(-PART), hash] };
 }
 
-/** How many lines of flyctl's output held each form, over the reads made after the requests. */
+const holds = (needles: Needles, text: string) => needles.forms.some((form) => text.includes(form));
+
+/**
+ * The lines of flyctl's output that held each form, over the reads made after the requests: each line
+ * once, however many reads printed it, since the buffer gives an entry again on every read.
+ */
 class Counts {
   readonly #needles: Needles;
-  readonly #lines = [0, 0, 0, 0];
+  readonly #lines: Set<string>[] = [new Set(), new Set(), new Set(), new Set()];
+  readonly #entries = new Set<string>();
   #reads = 0;
-  #entries = 0;
 
   constructor(needles: Needles) {
     this.#needles = needles;
@@ -86,32 +108,33 @@ class Counts {
 
   add(result: Spawned): void {
     this.#reads += 1;
-    for (const line of `${result.stdout}\n${result.stderr}`.split("\n")) {
-      this.#needles.forms.forEach((form, index) => {
-        if (line.includes(form)) this.#lines[index] = (this.#lines[index] ?? 0) + 1;
-      });
+    for (const [stream, text] of [
+      ["stdout", result.stdout],
+      ["stderr", result.stderr],
+    ] as const) {
+      for (const line of text.split("\n")) {
+        this.#needles.forms.forEach((form, index) => {
+          if (line.includes(form)) this.#lines[index]?.add(`${stream}\n${line}`);
+        });
+      }
     }
   }
 
-  addEntries(count: number): void {
-    this.#entries += count;
+  addEntries(entries: readonly Entry[]): void {
+    for (const entry of entries) this.#entries.add(entry.key);
   }
 
   get any(): boolean {
-    return this.#lines.some((count) => count > 0);
-  }
-
-  get reads(): number {
-    return this.#reads;
+    return this.#lines.some((lines) => lines.size > 0);
   }
 
   text(withEntries: boolean): string {
-    const [whole = 0, first = 0, last = 0, hash = 0] = this.#lines;
+    const [whole = 0, first = 0, last = 0, hash = 0] = this.#lines.map((lines) => lines.size);
     const reads = `${String(this.#reads)} read${this.#reads === 1 ? "" : "s"}`;
     return (
-      `lines holding the token: ${String(whole)}, its first ${String(PART)} characters: ${String(first)}, ` +
-      `its last ${String(PART)}: ${String(last)}, its SHA-256: ${String(hash)}, in ${reads}` +
-      (withEntries ? ` (${String(this.#entries)} entries)` : "")
+      `lines holding the token, each counted once: ${String(whole)}, its first ${String(PART)} characters: ` +
+      `${String(first)}, its last ${String(PART)}: ${String(last)}, its SHA-256: ${String(hash)}, in ${reads}` +
+      (withEntries ? ` of ${entriesText(this.#entries.size)}` : "")
     );
   }
 }
@@ -122,7 +145,7 @@ function failure(result: Spawned, needles: Needles | undefined): string {
   const lines = result.stderr
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line !== "" && !(needles?.forms.some((form) => line.includes(form)) ?? false))
+    .filter((line) => line !== "" && !(needles !== undefined && holds(needles, line)))
     .slice(0, 3)
     .map((line) => (line.length > 200 ? `${line.slice(0, 200)}…` : line));
   const code = result.code === null ? "no exit code" : `exit code ${String(result.code)}`;
@@ -138,7 +161,7 @@ interface Entry {
 }
 
 /** The JSON values of a text that is objects one after another, or nothing when it isn't. */
-export function objectsOf(text: string): unknown[] | undefined {
+function objectsOf(text: string): unknown[] | undefined {
   const values: unknown[] = [];
   let start = -1;
   let depth = 0;
@@ -192,28 +215,24 @@ function entriesOf(stdout: string): Entry[] | undefined {
 }
 
 async function read(input: SpikeLinksInput, needles: Needles | undefined, counts?: Counts): Promise<Entry[]> {
-  const result = await input.fly.run(LOGS);
+  const result = await input.fly.run(LOGS, { timeoutMs: READ_MS });
   counts?.add(result);
   if (result.code !== 0 || result.timedOut) {
     throw new OpsError(`spike-links: flyctl couldn't read the log buffer: ${failure(result, needles)}`);
   }
   const entries = entriesOf(result.stdout);
   if (entries === undefined) throw new OpsError("spike-links: flyctl's output isn't the JSON it prints with --json");
-  counts?.addEntries(entries.length);
+  counts?.addEntries(entries);
   return entries;
 }
 
 // ---- The run's three requests, and their lines in the API's log.
 
-type Kind = "preflight" | "post" | "get";
-
-const KINDS: readonly Kind[] = ["preflight", "post", "get"];
-
-const LABEL: Record<Kind, string> = {
+const LABEL = {
   preflight: "the preflight",
   post: "the page's POST",
-  get: "the token in a URL",
-};
+  url: "the preflight with the token in its URL",
+} as const;
 
 /** The API's one line for a request (services/api/src/logging.ts, `logEachRequest`), as a record, or nothing. */
 function requestLine(message: string): Record<string, unknown> | undefined {
@@ -234,16 +253,20 @@ function requestLine(message: string): Record<string, unknown> | undefined {
   return undefined;
 }
 
-/** Which of the run's requests a line could be: the preflight's 204, the POST's 404, or a 404 of no operation. */
+type Kind = "preflight" | "post";
+
+/** Which of the run's lines a line could be: a preflight's 204 or the POST's 404, both on the page's path. */
 function kindOf(message: string): Kind | undefined {
   const line = requestLine(message);
   if (line === undefined) return undefined;
   const { op, preflight, status } = line;
   if (preflight === "previewInvitationWeb" && op === undefined && status === 204) return "preflight";
   if (op === "previewInvitationWeb" && preflight === undefined && status === 404) return "post";
-  if (op === undefined && preflight === undefined && status === 404) return "get";
   return undefined;
 }
+
+/** How many of each line the run's requests make: the two preflights' and the POST's. */
+const SENT: Record<Kind, number> = { preflight: 2, post: 1 };
 
 interface Answered {
   readonly status: number;
@@ -279,9 +302,14 @@ async function ask(input: SpikeLinksInput, url: string, init: RequestInit): Prom
 interface Expected {
   readonly status: number;
   readonly code?: string;
-  readonly allowed: boolean;
+  /** A preflight's answer: it has to allow the page's method and header too. */
+  readonly preflight: boolean;
   readonly vary: boolean;
 }
+
+/** A header's list of names, as the browser compares them. */
+const namesIn = (headers: Headers, name: string, lower: boolean) =>
+  (headers.get(name) ?? "").split(",").map((one) => (lower ? one.trim().toLowerCase() : one.trim()));
 
 /** What's wrong with an answer: only its status when that's wrong, since the rest then says nothing. */
 function problems(label: string, answer: Answered | string, expected: Expected): string[] {
@@ -291,72 +319,84 @@ function problems(label: string, answer: Answered | string, expected: Expected):
   }
   const wrong: string[] = [];
   if (expected.code !== undefined && answer.code !== expected.code) {
+    // The code itself isn't said: it is the server's text, which a fault could make an echo of the token.
     wrong.push(
       answer.code === undefined
         ? `${label} has no code, where ${expected.code} was expected`
-        : `${label} has the code ${answer.code}, not ${expected.code}`,
+        : `${label} has a code other than ${expected.code}`,
     );
   }
-  if (expected.allowed && answer.headers.get("access-control-allow-origin") !== PAGE_ORIGIN) {
+  if (answer.headers.get("access-control-allow-origin") !== PAGE_ORIGIN) {
     wrong.push(`${label} doesn't allow ${PAGE_ORIGIN}`);
   }
+  if (expected.preflight && !namesIn(answer.headers, "access-control-allow-methods", false).includes("POST")) {
+    wrong.push(`${label} doesn't allow POST`);
+  }
+  if (expected.preflight && !namesIn(answer.headers, "access-control-allow-headers", true).includes("content-type")) {
+    wrong.push(`${label} doesn't allow the header content-type`);
+  }
   if (answer.headers.has("access-control-allow-credentials")) wrong.push(`${label} allows credentials`);
-  const vary = (answer.headers.get("vary") ?? "").split(",").map((name) => name.trim().toLowerCase());
-  if (expected.vary && !vary.includes("origin")) wrong.push(`${label} has no Vary: Origin`);
+  if (expected.vary && !namesIn(answer.headers, "vary", true).includes("origin")) {
+    wrong.push(`${label} has no Vary: Origin`);
+  }
   return wrong;
 }
 
-async function sendRequests(input: SpikeLinksInput, token: string): Promise<void> {
-  const preflight = await ask(input, PREVIEW, {
+async function sendRequests(input: SpikeLinksInput, needles: Needles): Promise<void> {
+  const asked = {
     method: "OPTIONS",
     headers: {
       origin: PAGE_ORIGIN,
       "access-control-request-method": "POST",
       "access-control-request-headers": "content-type",
     },
-  });
+  };
+  const preflight = await ask(input, PREVIEW, asked);
   const post = await ask(input, PREVIEW, {
     method: "POST",
     headers: { origin: PAGE_ORIGIN, "content-type": "application/json" },
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ token: needles.token }),
   });
-  const get = await ask(input, `${PREVIEW}?token=${token}`, { method: "GET" });
+  const url = await ask(input, `${PREVIEW}?token=${needles.token}`, asked);
   const wrong = [
-    ...problems(LABEL.preflight, preflight, { status: 204, allowed: true, vary: false }),
-    ...problems(LABEL.post, post, { status: 404, code: "NOT_FOUND", allowed: true, vary: true }),
-    ...problems(LABEL.get, get, { status: 404, code: "NOT_FOUND", allowed: false, vary: false }),
+    ...problems(LABEL.preflight, preflight, { status: 204, preflight: true, vary: false }),
+    ...problems(LABEL.post, post, { status: 404, code: "NOT_FOUND", preflight: false, vary: true }),
+    ...problems(LABEL.url, url, { status: 204, preflight: true, vary: false }),
   ];
   if (wrong.length > 0) {
     throw new OpsError(
       `spike-links: ${wrong.join("; ")}: dev isn't answering as the page expects, so the logs weren't read`,
     );
   }
-  say(input, `${LABEL.preflight}: 204, allowed for ${PAGE_ORIGIN}`);
-  say(input, `${LABEL.post}: 404 NOT_FOUND, allowed for ${PAGE_ORIGIN}, with Vary: Origin`);
-  say(input, `${LABEL.get}: 404 NOT_FOUND`);
+  const allowed = `allowed for ${PAGE_ORIGIN}`;
+  say(input, `${LABEL.preflight}: 204, ${allowed}, its POST and its content-type`);
+  say(input, `${LABEL.post}: 404 NOT_FOUND, ${allowed}, with Vary: Origin`);
+  say(input, `${LABEL.url}: 204, ${allowed}, its POST and its content-type`);
 }
+
+const lines = (count: number, what: string) => `${String(count)} ${what} line${count === 1 ? "" : "s"}`;
 
 /** Reads the buffer until the run's three lines are among the entries that weren't there before, then once more. */
 async function readUntilLines(input: SpikeLinksInput, needles: Needles, before: Set<string>, counts: Counts) {
-  const found = new Set<Kind>();
+  const found = new Map<string, Kind>();
+  const count = (kind: Kind) => [...found.values()].filter((one) => one === kind).length;
   for (let poll = 1; poll <= POLLS; poll += 1) {
     await input.sleep(POLL_MS);
     for (const entry of await read(input, needles, counts)) {
       if (before.has(entry.key)) continue;
       const kind = kindOf(entry.message);
-      if (kind !== undefined) found.add(kind);
+      if (kind !== undefined) found.set(entry.key, kind);
     }
-    if (found.size === KINDS.length) {
+    if (count("preflight") >= SENT.preflight && count("post") >= SENT.post) {
       say(input, `the requests' three lines came in read ${String(poll)} of ${String(POLLS)}`);
       await input.sleep(POLL_MS);
       const last = await read(input, needles, counts);
-      say(input, `one read more, ${String(POLL_MS / 1000)} seconds later: ${String(last.length)} entries`);
+      say(input, `one read more, ${String(POLL_MS / 1000)} seconds later: ${entriesText(last.length)}`);
       return;
     }
   }
-  const missing = KINDS.filter((kind) => !found.has(kind)).map((kind) => LABEL[kind]);
   throw new OpsError(
-    `spike-links: after ${String(POLLS)} reads, ${String(POLL_MS / 1000)} seconds apart, the log buffer's new entries have no line for ${listing(missing)}: the check can't show what the API logged, so it fails`,
+    `spike-links: after ${String(POLLS)} reads, ${String(POLL_MS / 1000)} seconds apart, the log buffer's new entries hold ${lines(count("preflight"), "preflight")} and ${lines(count("post"), "POST")}, where the run sent ${String(SENT.preflight)} and ${String(SENT.post)}: the check can't show what the API logged, so it fails`,
   );
 }
 
@@ -366,9 +406,9 @@ export async function spikeLinks(input: SpikeLinksInput): Promise<void> {
   say(input, `a made-up token of ${String(needles.token.length)} characters, sent to ${API} and never printed`);
 
   const before = await read(input, undefined);
-  say(input, `the log buffer before the requests: ${String(before.length)} entries`);
+  say(input, `the log buffer before the requests: ${entriesText(before.length)}`);
 
-  await sendRequests(input, needles.token);
+  await sendRequests(input, needles);
 
   const counts = new Counts(needles);
   let failed: OpsError | undefined;

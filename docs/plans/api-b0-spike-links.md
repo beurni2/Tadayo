@@ -13,8 +13,8 @@ What is left is this check, its run on `dev`, and the spike's report. No `ops` s
 - **The rule.** T52: logs carry no token. `services/api/src/logging.ts` holds it in three layers: Fastify's own request lines are off; each request gets one line of ours (a random id, the operation, the status, the milliseconds, and for the preflight `preflight` in place of the operation); anything else goes through `redact`. TECH-DESIGN section 1: the page reads the token from the link's fragment and sends it in a POST's body. The fragment never leaves the browser.
 - **What PR #94 already showed, off `dev`.** `services/api/src/web-origin.test.ts` reads the app's log after the page's requests and finds no token. The real-browser check (`api/b0-spike-links-web/b51a0d4/web/` on `evidence`) found the token in none of the app's 20 request lines.
 - **`flyctl` 0.5.8's `logs`** (`internal/command/logs/logs.go`, `logs/polling.go`, `internal/render/logs.go`, read from its source, as fly.ts' header says of every call):
-    - `logs -a <app> --no-tail` asks Fly's API once for the app's log buffer (`GetAppLogs`, no next token) and returns. It uses no agent and no NATS.
-    - `--json` prints each entry whole: its message, its instance, region and level, and Fly's own fields (the request's method, URL and id, the answer's status, an error's message), as indented JSON, one object after another.
+    - `logs -a <app> --no-tail` makes one call for the app's log buffer (`GetAppLogs`, no next token), which `logs/polling.go` retries on a passing error, up to 10 times, and returns. It uses no agent and no NATS.
+    - `--json` prints each entry with the fields fly-go's `LogEntry` decodes (`resource_logs.go`, `types.go`): its timestamp, message, instance, region and level, and Fly's own fields (the instance, the region, the provider, the HTTP request's id, method and version, the answer's status, an error's code and message, and a URL), as indented JSON, one object after another. Any other field Fly's API returns is dropped before it is printed.
     - The text form drops the message of an entry that has an error's message. That is why the check reads the JSON form.
 
 ## 1. What the check shows, and what it can't
@@ -23,16 +23,17 @@ The token could reach a log in five places once the page has sent it:
 
 1. **Cloudflare Pages, which serves `tadayo.app/i`.** It never gets the token: a fragment isn't sent in a request. PR #94's browser check saw the page's one request, a POST to the API with the token in its body only.
 2. **The API's own lines.** These are the Machine's standard output in Fly's log buffer, with provider `app`. The check reads them.
-3. **Fly's own lines for the app** (the proxy's and the Machine's) in the same buffer. The check reads them too. To see whether anything there or in the API's lines would hold a URL, the check also puts the token in a request's URL, where no client puts it.
+3. **Fly's own lines for the app** (the proxy's and the Machine's) in the same buffer. The check reads them too. To see whether anything there or in the API's lines would hold a URL, the check also puts the token in a request's URL, where no client puts it. Fly's proxy writes lines about its own errors, not one for each request the app answers, so for a request the app answers this mostly re-tests the API's own logging, on `dev`'s deployed build and settings rather than the tests'; the run shows what the buffer holds.
 4. **Supabase's Postgres.** It gets only the token's SHA-256, in hex (`packages/domain/src/clubs/invitation-facts.ts`, `tokenHash`). Its logs are Supabase's, and the check doesn't read them. It does count that hash in Fly's buffer.
 5. **The runner's own output.** The script prints counts and statuses, never a log line or the token.
 
 What it can't show:
 
 - logs Fly keeps but doesn't serve in the buffer's latest page;
+- fields of an entry that flyctl doesn't decode: the check shows flyctl's view of the buffer, so the report says that view holds no token, not that Fly holds none;
 - Supabase's logs, beyond point 4.
 
-If the buffer's page doesn't hold the run's own request lines, the check fails. It never passes on logs that might not include its requests.
+If the new entries don't hold the three lines only the run's requests make, the check fails: two preflight lines and the POST's line, all on the page's one path, which a request to another path, a scanner's among them, can't make. Someone opening an invitation page on `dev` while the run reads could make the same lines, which is why the run goes while nobody does (section 5). Apart from that, it never passes on logs that show no line of its requests.
 
 ## 2. The script (`tools/ops/src/spike-links.ts`)
 
@@ -41,25 +42,24 @@ It runs on the runner, with `FLY_API_TOKEN` alone, and acts on `dev` only: `flyc
 1. **A made-up token.** 32 random bytes as base64url, 43 characters, the shortest `InvitationToken`. It names no invitation, and it is never printed or written anywhere but the three requests.
 2. **The buffer before.** `flyctl logs -a tadayo-api-dev --no-tail --json`. Each entry is kept by its timestamp, instance and message, so that later reads can tell which entries are new.
 3. **The page's two requests, and one more**, each with its own 15-second limit:
-    - the preflight, exactly as the browser sends it: `OPTIONS /v1/invitations/web-preview` with `Origin: https://tadayo.app`, `Access-Control-Request-Method: POST` and `Access-Control-Request-Headers: content-type`. It must answer 204 with `Access-Control-Allow-Origin: https://tadayo.app`;
-    - the page's POST: the same path, `Origin: https://tadayo.app`, `Content-Type: application/json` and the body `{"token":"<token>"}`. It must answer 404 with the body's code `NOT_FOUND`, `Access-Control-Allow-Origin: https://tadayo.app` and `Vary: Origin`;
-    - the token in a URL: `GET /v1/invitations/web-preview?token=<token>`. It must answer the neutral 404 (`NOT_FOUND`).
-4. **The buffer after.** The same `flyctl` call, up to 12 times, 5 seconds apart, until the new entries hold the three lines those requests make:
-    - the preflight's `"preflight":"previewInvitationWeb"` with status 204;
-    - `"op":"previewInvitationWeb"` with status 404;
-    - a request line with no operation and status 404.
+    - the preflight, exactly as the browser sends it: `OPTIONS /v1/invitations/web-preview` with `Origin: https://tadayo.app`, `Access-Control-Request-Method: POST` and `Access-Control-Request-Headers: content-type`. It must answer 204, allowing `https://tadayo.app`, the method `POST` and the header `content-type`, and no credentials;
+    - the page's POST: the same path, `Origin: https://tadayo.app`, `Content-Type: application/json` and the body `{"token":"<token>"}`. It must answer 404 with the body's code `NOT_FOUND`, `Access-Control-Allow-Origin: https://tadayo.app`, `Vary: Origin` and no credentials;
+    - the token in a URL: the same preflight again, at `/v1/invitations/web-preview?token=<token>`, with the same answer. (Until review round 1 this was a GET, whose line, a 404 of no operation, any request to a path the API doesn't have makes too.)
+4. **The buffer after.** The same `flyctl` call, up to 12 times, 5 seconds apart, until the new entries hold the three lines those requests make, each entry counted once however many reads print it:
+    - two preflight lines, `"preflight":"previewInvitationWeb"` with status 204;
+    - one line of the operation, `"op":"previewInvitationWeb"` with status 404.
 
-    If they never come, it fails and says which are missing. Other traffic on `dev` could make lines of the same kinds; the run holds the `dev` claim, so no other thread sends any (section 5).
-5. **The count.** In every read's whole output, standard output and standard error, it counts the lines that hold:
+    If they never come, it fails and says how many came. Only a request to the page's path makes those lines: the `dev` claim keeps other threads off `dev`, and the run goes while nobody opens an invitation page (section 5). Each read has a 45-second limit, so the run's longest, 14 reads, 13 waits and 3 requests, is under 13 minutes, inside the `ops` job's 20, and ends with the script's own message.
+5. **The count.** In every read's whole output after the requests, standard output and standard error, it counts the lines that hold, each line once however many reads print it:
     - the token;
     - its first 16 characters;
     - its last 16 characters;
     - its SHA-256 in hex.
 
     Every count must be 0.
-6. **What it says.** Each answer's status and whether its headers were right (never their values beyond the origin), how many entries each read held, which of its three lines came, the four counts, and `spike-links: every check passed`.
+6. **What it says.** Each answer's status and whether its headers were right, never a value the server sent (not even a wrong code, which a fault could make an echo of the token); the entries the first read and the last held; the read in which its lines came, or how many came; the four counts, with the reads and the entries they held; and `spike-links: every check passed`.
 
-`flyctl` failing (an exit code that isn't 0) or printing what isn't JSON fails the run, with `why(result)`. So does an answer that isn't the one expected. The script reads no clock (T1, `packages/domain/src/time/one-clock.test.ts`): it waits with `ctx.sleep` and limits each request with `AbortSignal.timeout`.
+`flyctl` failing (an exit code that isn't 0, or its time limit) or printing what isn't JSON fails the run, with its exit code and its error lines that hold none of the token's forms (`failure`). So does an answer that isn't the one expected. The script reads no clock (T1, `packages/domain/src/time/one-clock.test.ts`): it waits with `ctx.sleep`, limits each request with `AbortSignal.timeout` and each read with flyctl's call limit.
 
 `run.ts` registers it as `spike-links`, with no options.
 
@@ -69,9 +69,11 @@ Written before the code, with the fake `flyctl` (`test/fake-fly.ts`) and a fake 
 
 - clean logs whose later read holds the three lines: it passes, and its lines are exactly the expected ones;
 - a planted token in a later read, as the whole token, its first 16, its last 16 or its hash, in standard output or standard error: it fails, saying which count, and never the token;
-- the three lines never come, or only two of them: it fails after 12 reads, saying which are missing;
-- lines that were already in the first read don't count as the run's;
-- the preflight with another status or no allowance, or the POST with another status, code, allowance or no `Vary`, or the GET with another status: it fails;
+- the three lines never come, or only some of them: it fails after 12 reads, saying how many came;
+- lines that were already in the first read, a 404 of no operation (a scanner's request elsewhere), or one line printed by two reads don't count as the run's;
+- a token line printed by two reads is counted once, and two lines as two;
+- either preflight with another status, no allowance, no `POST` or no `content-type`, or the POST with another status, code, allowance or no `Vary`, or either with credentials allowed: it fails, and never says a code the server sent;
+- each read's 45-second limit, and the longest run inside 15 minutes;
 - `flyctl` exiting with an error, or printing what isn't JSON: it fails;
 - the token isn't in anything the script says, in any test;
 - every `flyctl` call is `logs -a tadayo-api-dev --no-tail --json`, and every request goes to `https://api-dev.tadayo.app`;
@@ -90,8 +92,8 @@ This is CI configuration (T58), so it goes in its own PR, made from `main` besid
 ## 5. The merges and the run, in order
 
 1. **This PR.** Reviewed at full depth by a fresh reviewer, since it reads `dev`'s logs with the Fly token. Then the founder's approval in this thread. Before the merge, a `dev` claim from the coordinator and no `ops` or `deploy-dev` run under way. Then the squash-merge at the approved head, `deploy-dev` watched, and `dev` released.
-2. **The `ops` PR**, the same way, under its freeze, merged right after this one. The founder's approval is asked once for both.
-3. **The run**, on the founder's yes, under a `dev` claim:
+2. **The `ops` PR**, the same way, under its freeze, merged right after this one; its merge deploys `dev` too, so it has its own `dev` claim and `deploy-dev` watched. The founder is asked to approve both at once. Both write the journal, so `main` merged into the `ops` PR after this one merges will conflict there; its new head needs the founder's word again before it merges, as PR #52 did after #51. It goes up beside this PR and the ios lane's PR #98, which departs from `docs/GITHUB.md`, "Merge timing", on the coordinator's word, so the founder is asked about that with the approval, as with #52.
+3. **The run**, on the founder's yes, under a `dev` claim, while nobody opens an invitation page (the founder's device run comes at another time):
     - `gh api -X POST repos/beurni2/tadayo/actions/workflows/ops.yml/dispatches -f ref=main -f inputs[script]=spike-links`;
     - the run's log read, and the claim released.
 
@@ -126,4 +128,4 @@ Also `docs/PROGRESS.md`'s api section. No ADR and no FQ: S6's row already asks f
 
 - **The buffer's page may not hold the run's lines**, if Fly serves older entries first or the page is short. Then the run fails, saying the lines never came, and the check needs another way to read: `--machine` for the API's Machine, or more reads. It never passes without them.
 - **`flyctl logs` has never run in a cloud session or on the runner.** Its JSON keys were read from its source, as fly.ts says of every call. The run is the first real one, and a key that differs fails it.
-- **Fly's lines may carry the request's URL** (`meta.url.full`). If they did, the GET's token would be counted and the run would fail. That would be a finding about Fly's logs, not about the page, which never puts the token in a URL. The report would say so, and the GET would stay, since a client that ever did put it there would leak through it.
+- **Fly's lines may carry the request's URL** (`meta.url.full`). If they did, the third request's token would be counted and the run would fail. That would be a finding about Fly's logs, not about the page, which never puts the token in a URL. The report would say so, and the request would stay, since a client that ever did put it there would leak through it.
