@@ -135,6 +135,11 @@ HIDDEN = "***"
 ARCHIVED_ENTITLEMENTS = {"com.apple.security.application-groups", "application-identifier",
                          "com.apple.developer.team-identifier", "get-task-allow"}
 EXPORTED_ENTITLEMENTS = ARCHIVED_ENTITLEMENTS | {"beta-reports-active", "keychain-access-groups"}
+# The app's one associated domain, for invitation links (spike S6; B1's invitations), as the site's
+# apple-app-site-association names the app (apps/web/public/.well-known/). The app alone may hold
+# it, and only with exactly this value: the share extension opens no links.
+ASSOCIATED_DOMAINS_KEY = "com.apple.developer.associated-domains"
+ASSOCIATED_DOMAINS = ["applinks:tadayo.app"]
 # Folders and suffixes of code an app can carry besides itself. The share extension is the one.
 NESTED_SUFFIXES = (".app", ".appex", ".xpc")
 ARCHIVED_APP = "Applications/" + ios_steps.APP_PRODUCT
@@ -236,15 +241,22 @@ def icon_files(info):
     return [f for f in files if isinstance(f, str)] if isinstance(files, list) else []
 
 
-def entitlement_problems(entitlements, team=None, bundle_id=None):
+def entitlement_problems(entitlements, team=None, bundle_id=None, app=False):
     """What's wrong with a bundle's entitlements. With a team, the bundle is signed for App Store
     Connect, and its team, its application identifier (`<team>.<bundle id>`) and get-task-allow
-    are checked too."""
+    are checked too. The app (`app`) may also hold its associated domain, and only that one."""
     problems = []
     allowed = ARCHIVED_ENTITLEMENTS if team is None else EXPORTED_ENTITLEMENTS
+    if app:
+        allowed = allowed | {ASSOCIATED_DOMAINS_KEY}
     extra = sorted(str(key) for key in entitlements if key not in allowed)
     if extra:
         problems.append("it holds entitlements the project doesn't declare: " + ", ".join(extra))
+    if app and ASSOCIATED_DOMAINS_KEY in entitlements:
+        if entitlements.get(ASSOCIATED_DOMAINS_KEY) != ASSOCIATED_DOMAINS:
+            problems.append(f"its associated domains are "
+                            f"{entitlements.get(ASSOCIATED_DOMAINS_KEY)!r}, not "
+                            f"{ASSOCIATED_DOMAINS!r}")
     if entitlements.get("com.apple.security.application-groups") != [APP_GROUP]:
         problems.append("its app groups are "
                         f"{entitlements.get('com.apple.security.application-groups')!r}, "
@@ -599,8 +611,10 @@ class Steps:
                             f"{attributes.get('NSExtensionActivationRule')!r}, not the dictionary "
                             f"{ios_steps.PROJECT_SPEC} declares")
         # The entitlements the export will sign with.
-        for label, bundle in (("the app", app), ("the share extension", share)):
-            problems += [f"{label}: {p}" for p in entitlement_problems(self.entitlements(bundle))]
+        for label, bundle, is_app in (("the app", app, True),
+                                      ("the share extension", share, False)):
+            problems += [f"{label}: {p}" for p in
+                         entitlement_problems(self.entitlements(bundle), app=is_app)]
         # The fixture photographs.
         code, listing, err = self.shell.capture(
             ["xcrun", "assetutil", "--info", os.path.join(app, "Assets.car")],
@@ -716,7 +730,8 @@ class Steps:
             if not os.path.isfile(os.path.join(bundle, "embedded.mobileprovision")):
                 problems.append(f"{label}: it holds no provisioning profile")
             problems += [f"{label}: {p}" for p in
-                         entitlement_problems(self.entitlements(bundle), team, bundle_id)]
+                         entitlement_problems(self.entitlements(bundle), team, bundle_id,
+                                              app=bundle_id == APP_ID)]
         return problems
 
     def upload(self):
