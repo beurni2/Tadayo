@@ -1,928 +1,844 @@
---- 16:39:34 UTC, the simulator step: start
+--- 17:27:47 UTC, the simulator step: start
 hw.model: VirtualMac2,1
 machdep.cpu.brand_string: Apple M1 (Virtual)
 hw.ncpu: 3
 hw.memsize: 7516192768
-Processes: 592 total, 5 running, 11 stuck, 576 sleeping, 2025 threads 
-2026/11/21 16:39:34
-Load Avg: 40.32, 61.50, 30.94 
-CPU usage: 47.12% user, 21.14% sys, 31.72% idle 
-SharedLibs: 789M resident, 208M data, 157M linkedit.
-MemRegions: 737 total, 49M resident, 443M private, 529M shared.
-PhysMem: 7021M used (935M wired, 425M compressor), 136M unused.
-VM: 269T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 123861/164M in, 9587/1655K out.
-Disks: 194487/3915M read, 65478/2199M written.
-
-PID   COMMAND          %CPU MEM   
-491   mds_stores       45.4 60M-  
-2556  Runner.Worker    11.4 92M+  
-3230  tipsd            9.8  6130K+
-1     launchd          7.9  22M+  
-3258  top              7.3  3345K+
-3229  RemoteManagement 3.5  3826K+
-135   opendirectoryd   3.0  11M-  
-123   mds              2.9  33M+
---- 16:40:35 UTC, the simulator step
-Processes: 616 total, 4 running, 12 stuck, 600 sleeping, 2054 threads 
-2026/11/21 16:40:35
-Load Avg: 16.08, 50.66, 28.96 
-CPU usage: 18.88% user, 22.29% sys, 58.82% idle 
-SharedLibs: 787M resident, 207M data, 156M linkedit.
-MemRegions: 131 total, 4640K resident, 465M private, 659M shared.
-PhysMem: 7075M used (1327M wired, 445M compressor), 82M unused.
-VM: 280T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 2197249/3147M in, 142191/10M out.
-Disks: 212724/4175M read, 80560/5137M written.
-
-PID   COMMAND          %CPU MEM   
-269   nsurlsessiond    38.4 5746K 
-0     kernel_task      18.0 48K   
-3647  STExtractionServ 15.1 14M+  
-270   com.apple.Mobile 6.0  4498K 
-5301  top              5.3  3457K+
-491   mds_stores       4.1  37M+  
-123   mds              1.8  31M+  
-5119  mdworker_shared  1.2  3090K-
---- 16:41:37 UTC, the simulator step
-Processes: 643 total, 4 running, 30 stuck, 609 sleeping, 2175 threads 
-2026/11/21 16:41:37
-Load Avg: 6.93, 41.18, 26.99 
-CPU usage: 18.92% user, 25.70% sys, 55.36% idle 
-SharedLibs: 808M resident, 208M data, 154M linkedit.
-MemRegions: 0 total, 0B resident, 427M private, 619M shared.
-PhysMem: 7016M used (1335M wired, 541M compressor), 141M unused.
-VM: 293T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 4653020/6681M in, 268968/18M out.
-Disks: 237961/4596M read, 97781/8607M written.
-
-PID   COMMAND          %CPU MEM   
-269   nsurlsessiond    41.5 6274K 
-0     kernel_task      17.6 80K-  
-3647  STExtractionServ 16.4 14M-  
-270   com.apple.Mobile 7.2  4610K 
-7199  top              5.9  3521K+
-1038  provjobd38228688 4.1  16M   
-798   photoanalysisd   2.4  9058K+
-598   FindMyWidgetPeop 1.7  13M+
---- 16:42:38 UTC, the simulator step
-Processes: 641 total, 4 running, 11 stuck, 626 sleeping, 2007 threads 
-2026/11/21 16:42:38
-Load Avg: 4.94, 34.38, 25.41 
-CPU usage: 28.48% user, 40.5% sys, 31.45% idle 
-SharedLibs: 670M resident, 111M data, 91M linkedit.
-MemRegions: 153 total, 3712K resident, 188M private, 369M shared.
-PhysMem: 7076M used (1339M wired, 820M compressor), 81M unused.
-VM: 292T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6012416/8637M in, 349866/23M out.
-Disks: 294623/28G read, 110447/10G written.
-
-PID   COMMAND          %CPU MEM   
-3647  STExtractionServ 40.6 31M-  
-247   storagekitd      16.9 6114K 
-0     kernel_task      10.3 528K  
-126   diskarbitrationd 8.0  3441K 
-1     launchd          7.5  23M   
-9273  top              5.1  3505K+
-208   authd            3.6  4177K 
-269   nsurlsessiond    2.2  6994K-
---- 16:43:40 UTC, the simulator step
-Processes: 654 total, 3 running, 2 stuck, 649 sleeping, 2019 threads 
-2026/11/21 16:43:40
-Load Avg: 5.16, 29.06, 24.02 
-CPU usage: 27.74% user, 7.62% sys, 64.63% idle 
-SharedLibs: 705M resident, 64M data, 90M linkedit.
-MemRegions: 0 total, 0B resident, 95M private, 444M shared.
-PhysMem: 6309M used (1362M wired, 1045M compressor), 849M unused.
-VM: 298T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6066106/8714M in, 354022/24M out.
-Disks: 584775/34G read, 122535/11G written.
-
-PID    COMMAND          %CPU MEM   
-9605   diskimagesiod    80.3 48M+  
-11400  top              4.5  4145K+
-491    mds_stores       4.3  22M   
-11039  update_dyld_sim_ 4.0  9188K+
-382    syncdefaultsd    0.7  5922K+
-0      kernel_task      0.3  176K  
-1038   provjobd38228688 0.3  19M   
-3385   helpd            0.2  20M-
---- 16:44:52 UTC, the simulator step
-Processes: 650 total, 9 running, 25 stuck, 616 sleeping, 2001 threads 
-2026/11/21 16:44:52
-Load Avg: 11.00, 25.26, 22.95 
-CPU usage: 27.20% user, 22.66% sys, 50.13% idle 
-SharedLibs: 480M resident, 6928K data, 4576K linkedit.
-MemRegions: 27 total, 176K resident, 11M private, 1417M shared.
-PhysMem: 7040M used (1365M wired, 3044M compressor), 117M unused.
-VM: 296T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6066466/8714M in, 354336/24M out.
-Disks: 944885/45G read, 126159/12G written.
-
-PID    COMMAND          %CPU MEM   
-0      kernel_task      81.6 224K+ 
-9605   diskimagesiod    9.7  48M   
-198    airportd         1.7  6850K-
-11039  update_dyld_sim_ 1.7  4265M+
-1038   provjobd38228688 1.0  20M+  
-13510  top              0.8  4145K+
-144    dasd             0.8  9986K 
-155    bluetoothd       0.5  7330K
---- 16:45:37 UTC, the simulator step: end, after 6 min 3 s
-Processes: 625 total, 3 running, 1 stuck, 621 sleeping, 1956 threads 
-2026/11/21 16:45:37
-Load Avg: 8.37, 22.56, 22.08 
-CPU usage: 12.50% user, 19.34% sys, 68.15% idle 
-SharedLibs: 354M resident, 30M data, 56M linkedit.
-MemRegions: 40 total, 1424K resident, 52M private, 155M shared.
-PhysMem: 4557M used (1362M wired, 1100M compressor), 2600M unused.
-VM: 284T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6066532/8714M in, 354401/24M out.
-Disks: 1010407/48G read, 128704/15G written.
-
-PID    COMMAND          %CPU MEM   
-491    mds_stores       30.0 23M-  
-5026   spindump         25.7 18M+  
-14778  top              4.4  3457K+
-179    mobileassetd     3.7  12M-  
-304    triald_system    3.0  5442K-
-168    runningboardd    1.8  9394K+
-531    modelmanagerd    1.8  7778K+
-0      kernel_task      1.5  320K+
---- 16:45:39 UTC, the build: start
-Processes: 636 total, 4 running, 1 stuck, 631 sleeping, 2008 threads 
-2026/11/21 16:45:39
-Load Avg: 7.78, 22.21, 21.95 
-CPU usage: 25.92% user, 39.50% sys, 34.56% idle 
-SharedLibs: 364M resident, 33M data, 58M linkedit.
-MemRegions: 446 total, 16M resident, 60M private, 188M shared.
-PhysMem: 4765M used (1369M wired, 1055M compressor), 2392M unused.
-VM: 289T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6066564/8714M in, 354439/24M out.
-Disks: 1013955/48G read, 128791/15G written.
-
-PID    COMMAND          %CPU MEM   
-1038   provjobd38228688 23.7 19M   
-491    mds_stores       14.7 23M-  
-2556   Runner.Worker    14.6 90M+  
-5026   spindump         7.9  18M+  
-14787  top              5.5  3457K+
-0      kernel_task      2.1  208K- 
-1      launchd          1.4  23M   
-123    mds              1.1  32M+
---- 16:46:40 UTC, the build
-Processes: 660 total, 2 running, 9 stuck, 649 sleeping, 2111 threads 
-2026/11/21 16:46:40
-Load Avg: 5.41, 18.89, 20.73 
-CPU usage: 42.2% user, 34.66% sys, 23.31% idle 
-SharedLibs: 460M resident, 90M data, 95M linkedit.
-MemRegions: 297 total, 10M resident, 194M private, 422M shared.
-PhysMem: 6662M used (1410M wired, 912M compressor), 495M unused.
-VM: 300T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6285446/9007M in, 360501/25M out.
-Disks: 1109430/50G read, 146110/16G written.
-
-PID    COMMAND          %CPU MEM   
-1038   provjobd38228688 11.6 18M-  
-123    mds              7.4  35M-  
-491    mds_stores       7.3  40M+  
-15056  xcodebuild       6.1  68M+  
-17816  top              5.9  3537K+
-17692  mdworker_shared  5.5  3634K+
-17789  mdsync           5.0  2737K 
-17728  ecosystemanalyti 3.0  2626K+
---- 16:47:41 UTC, the build
-Processes: 666 total, 26 running, 5 stuck, 635 sleeping, 2044 threads 
-2026/11/21 16:47:41
-Load Avg: 5.71, 16.56, 19.73 
-CPU usage: 77.74% user, 22.25% sys, 0.0% idle 
-SharedLibs: 443M resident, 72M data, 101M linkedit.
-MemRegions: 342 total, 74M resident, 119M private, 803M shared.
-PhysMem: 6915M used (1419M wired, 1092M compressor), 243M unused.
-VM: 303T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6300196/9028M in, 361698/25M out.
-Disks: 1231577/51G read, 160148/16G written.
-
-PID    COMMAND          %CPU MEM   
-21120  swift-frontend   58.9 83M+  
-1038   provjobd38228688 13.7 20M+  
-21130  top              4.7  3585K+
-18286  SWBBuildService  2.5  428M+ 
-15056  xcodebuild       1.3  159M+ 
-0      kernel_task      1.1  592K- 
-144    dasd             0.8  9906K 
-123    mds              0.5  39M-
---- 16:48:43 UTC, the build
-Processes: 671 total, 14 running, 15 stuck, 642 sleeping, 2075 threads 
-2026/11/21 16:48:43
-Load Avg: 11.61, 16.36, 19.44 
-CPU usage: 69.25% user, 30.74% sys, 0.0% idle 
-SharedLibs: 323M resident, 57M data, 100M linkedit.
-MemRegions: 0 total, 0B resident, 58M private, 635M shared.
-PhysMem: 7075M used (1421M wired, 1343M compressor), 82M unused.
-VM: 305T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6300247/9028M in, 361745/25M out.
-Disks: 1262099/51G read, 170933/17G written.
-
-PID    COMMAND          %CPU  MEM   
-18286  SWBBuildService  112.1 596M+ 
-23867  swift-frontend   38.6  137M+ 
-22925  swift-frontend   37.5  1793M+
-1038   provjobd38228688 14.1  20M+  
-0      kernel_task      9.2   1376K+
-23894  top              5.1   3617K+
-17728  ecosystemanalyti 1.5   21M+  
-99     fseventsd        1.0   4385K-
---- 16:49:12 UTC, the build: end, after 3 min 33 s
-Processes: 665 total, 3 running, 12 stuck, 650 sleeping, 2117 threads 
-2026/11/21 16:49:12
-Load Avg: 11.27, 15.85, 19.16 
-CPU usage: 15.33% user, 19.46% sys, 65.19% idle 
-SharedLibs: 326M resident, 67M data, 96M linkedit.
-MemRegions: 0 total, 0B resident, 101M private, 289M shared.
-PhysMem: 5030M used (1410M wired, 1095M compressor), 2128M unused.
-VM: 303T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6300279/9028M in, 361785/25M out.
-Disks: 1301091/52G read, 178538/17G written.
-
-PID    COMMAND          %CPU MEM   
-123    mds              10.1 49M+  
-25274  top              4.9  3537K+
-387    chronod          4.2  17M+  
-0      kernel_task      4.1  224K- 
-405    com.apple.quickl 4.1  6178K+
-491    mds_stores       4.1  19M+  
-557    homed            3.7  17M+  
-337    lsd              3.7  6066K+
---- 16:49:14 UTC, the pass on iOS 27.2: start
-Processes: 669 total, 9 running, 3 stuck, 657 sleeping, 2157 threads 
-2026/11/21 16:49:14
-Load Avg: 10.53, 15.62, 19.06 
-CPU usage: 13.18% user, 16.61% sys, 70.20% idle 
-SharedLibs: 334M resident, 68M data, 97M linkedit.
-MemRegions: 83 total, 2768K resident, 109M private, 303M shared.
-PhysMem: 5164M used (1411M wired, 1052M compressor), 1993M unused.
-VM: 304T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6300315/9028M in, 361829/25M out.
-Disks: 1303153/52G read, 178971/17G written.
+Processes: 639 total, 2 running, 637 sleeping, 1917 threads 
+2026/11/21 17:27:47
+Load Avg: 3.63, 9.66, 11.61 
+CPU usage: 8.1% user, 5.63% sys, 86.35% idle 
+SharedLibs: 804M resident, 204M data, 170M linkedit.
+MemRegions: 89 total, 2832K resident, 375M private, 560M shared.
+PhysMem: 6970M used (1014M wired, 493M compressor), 187M unused.
+VM: 291T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 152422/202M in, 12521/2266K out.
+Disks: 354400/6291M read, 110963/5472M written.
 
 PID    COMMAND         %CPU MEM   
-2556   Runner.Worker   11.9 91M+  
-25286  top             5.9  3553K+
-205    eligibilityd    5.0  5394K 
-2449   Runner.Listener 4.3  79M+  
-563    swcd            4.0  4690K+
-17789  mdsync          3.9  4673K 
-516    mdbulkimport    3.7  6626K+
-491    mds_stores      2.8  24M+
---- 16:51:04 UTC, the pass on iOS 27.2
-Processes: 834 total, 164 running, 1 stuck, 669 sleeping, 2927 threads 
-2026/11/21 16:51:04
-Load Avg: 250.94, 89.71, 46.95 
-CPU usage: 74.61% user, 25.38% sys, 0.0% idle 
-SharedLibs: 235M resident, 74M data, 86M linkedit.
-MemRegions: 4561 total, 161M resident, 297M private, 720M shared.
-PhysMem: 7049M used (1723M wired, 1184M compressor), 108M unused.
-VM: 376T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
-Networks: packets: 6426259/9208M in, 367142/25M out.
-Disks: 1438093/68G read, 210351/18G written.
+498    mds_stores      10.5 21M-  
+14512  Runner.Worker   8.0  95M+  
+15613  top             6.4  3441K+
+123    mds             2.3  75M-  
+15238  mdworker_shared 0.6  3266K-
+0      kernel_task     0.6  192K+ 
+1      launchd         0.6  22M+  
+133    contextstored   0.4  6258K-
+--- 17:28:49 UTC, the simulator step
+Processes: 640 total, 2 running, 2 stuck, 636 sleeping, 1956 threads 
+2026/11/21 17:28:49
+Load Avg: 3.46, 8.40, 10.99 
+CPU usage: 38.46% user, 56.66% sys, 4.87% idle 
+SharedLibs: 798M resident, 201M data, 166M linkedit.
+MemRegions: 0 total, 0B resident, 342M private, 654M shared.
+PhysMem: 7080M used (1354M wired, 548M compressor), 78M unused.
+VM: 291T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 2589064/3709M in, 44682/4408K out.
+Disks: 375015/6544M read, 126674/8888M written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      28.0 416K+ 
-25372  diagnosticd      4.0  6677K-
-25507  homed            3.2  22M+  
-25550  intelligenceplat 2.9  20M-  
-25450  PosterBoard      2.9  19M+  
-25356  remindd          2.7  6166K+
-25667  intelligenceflow 2.7  2580K+
-25598  maild            2.7  2724K+
---- 16:53:25 UTC, the pass on iOS 27.2
-Processes: 807 total, 233 running, 2 stuck, 572 sleeping, 3078 threads 
-2026/11/21 16:53:21
-Load Avg: 540.70, 264.11, 123.53 
-CPU usage: 71.48% user, 28.51% sys, 0.0% idle 
-SharedLibs: 78M resident, 18M data, 14M linkedit.
-MemRegions: 637 total, 12M resident, 76M private, 374M shared.
-PhysMem: 7038M used (3887M wired, 1588M compressor), 119M unused.
-VM: 363T vsize, 57G framework vsize, 2(2) swapins, 2480(0) swapouts.
-Networks: packets: 6625386/9491M in, 373803/26M out.
-Disks: 1490326/75G read, 261810/19G written.
+0      kernel_task      41.2 112K  
+251    nsurlsessiond    37.6 6322K 
+521    amsengagementd   28.6 19M+  
+16431  STExtractionServ 22.4 14M-  
+1012   provjobd13882203 15.7 17M   
+499    spindump         14.8 20M+  
+17739  top              8.8  3521K+
+250    com.apple.Mobile 5.5  4674K
+--- 17:29:51 UTC, the simulator step
+Processes: 635 total, 3 running, 1 stuck, 631 sleeping, 1883 threads 
+2026/11/21 17:29:51
+Load Avg: 3.03, 7.41, 10.44 
+CPU usage: 23.18% user, 15.65% sys, 61.15% idle 
+SharedLibs: 795M resident, 200M data, 165M linkedit.
+MemRegions: 0 total, 0B resident, 324M private, 624M shared.
+PhysMem: 7081M used (1341M wired, 560M compressor), 76M unused.
+VM: 289T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6025589/8655M in, 88217/7233K out.
+Disks: 382768/8283M read, 146991/13G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      34.3 832K+ 
-25372  diagnosticd      15.2 6853K-
-25386  diagnosticd      8.0  2049K+
-25391  apsd             6.7  9381K+
-25327  runningboardd    2.6  15M+  
-25324  SpringBoard      2.4  81M+  
-25695  linkd            1.8  10M+  
-25314  SimMetalHost     1.6  113M-
---- 16:54:35 UTC, the pass on iOS 27.2
-Processes: 782 total, 275 running, 507 sleeping, 3140 threads 
-2026/11/21 16:54:35
-Load Avg: 597.05, 340.36, 164.18 
-CPU usage: 44.56% user, 55.43% sys, 0.0% idle 
-SharedLibs: 113M resident, 21M data, 69M linkedit.
-MemRegions: 0 total, 0B resident, 77M private, 323M shared.
-PhysMem: 7061M used (3920M wired, 1649M compressor), 96M unused.
-VM: 351T vsize, 57G framework vsize, 10(0) swapins, 2480(0) swapouts.
-Networks: packets: 6631091/9494M in, 378977/27M out.
-Disks: 1530230/79G read, 278055/20G written.
+16431  STExtractionServ 56.4 31M   
+1012   provjobd13882203 9.3  16M   
+19637  top              8.9  3505K+
+0      kernel_task      3.7  112K  
+773    WiFiAgent        0.3  9171K 
+303    secd             0.3  8306K 
+14512  Runner.Worker    0.3  96M   
+1008   hosted-compute-a 0.2  11M
+--- 17:30:52 UTC, the simulator step
+Processes: 638 total, 3 running, 2 stuck, 633 sleeping, 1890 threads 
+2026/11/21 17:30:52
+Load Avg: 3.22, 6.67, 9.96 
+CPU usage: 23.39% user, 19.22% sys, 57.38% idle 
+SharedLibs: 706M resident, 119M data, 120M linkedit.
+MemRegions: 77 total, 3440K resident, 154M private, 462M shared.
+PhysMem: 7072M used (1325M wired, 757M compressor), 86M unused.
+VM: 290T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6067704/8715M in, 89032/7310K out.
+Disks: 505090/31G read, 150140/14G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      47.9 608K- 
-25372  diagnosticd      23.6 6533K-
-25391  apsd             15.0 11M+  
-25386  diagnosticd      12.5 2049K-
-26854  BatteriesWidgetE 10.3 9750K+
-26694  BatteriesAvocado 8.4  12M+  
-26789  HearingWidgetExt 8.3  11M+  
-25708  xcodebuild       6.7  28M+
---- 16:55:38 UTC, the pass on iOS 27.2
-Processes: 789 total, 257 running, 4 stuck, 528 sleeping, 3171 threads 
-2026/11/21 16:55:38
-Load Avg: 630.92, 396.50, 197.16 
-CPU usage: 59.5% user, 40.94% sys, 0.0% idle 
-SharedLibs: 78M resident, 17M data, 18M linkedit.
-MemRegions: 0 total, 0B resident, 77M private, 221M shared.
-PhysMem: 6786M used (3691M wired, 1655M compressor), 371M unused.
-VM: 353T vsize, 57G framework vsize, 10(0) swapins, 2480(0) swapouts.
-Networks: packets: 6637421/9497M in, 384757/29M out.
-Disks: 1582996/83G read, 280844/20G written.
+21037  diskimagesiod    64.0 39M   
+21042  update_dyld_sim_ 8.9  8691K+
+21784  top              8.1  4129K+
+0      kernel_task      2.3  160K  
+1012   provjobd13882203 1.8  17M   
+457    mobiletimerd     1.6  4802K+
+1      launchd          1.3  22M+  
+251    nsurlsessiond    0.7  6018K-
+--- 17:31:54 UTC, the simulator step
+Processes: 638 total, 3 running, 635 sleeping, 1878 threads 
+2026/11/21 17:31:54
+Load Avg: 6.53, 6.80, 9.77 
+CPU usage: 19.73% user, 23.15% sys, 57.10% idle 
+SharedLibs: 706M resident, 119M data, 120M linkedit.
+MemRegions: 0 total, 0B resident, 86M private, 1391M shared.
+PhysMem: 7055M used (1304M wired, 930M compressor), 102M unused.
+VM: 290T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6067762/8715M in, 89093/7326K out.
+Disks: 649346/33G read, 150665/14G written.
 
 PID    COMMAND          %CPU MEM   
-26161  CalendarWidgetEx 45.7 23M+  
-25372  diagnosticd      35.5 6469K 
-25391  apsd             22.4 14M+  
-25386  diagnosticd      16.3 2033K 
-1038   provjobd38228688 11.2 20M   
-29034  top              7.1  4129K+
-0      kernel_task      4.4  368K- 
-26088  trustd           2.4  7605K
---- 16:56:44 UTC, the pass on iOS 27.2
-Processes: 804 total, 198 running, 2 stuck, 604 sleeping, 2988 threads 
-2026/11/21 16:56:44
-Load Avg: 487.83, 402.53, 214.27 
-CPU usage: 43.73% user, 56.26% sys, 0.0% idle 
-SharedLibs: 179M resident, 34M data, 51M linkedit.
-MemRegions: 322 total, 9296K resident, 282M private, 565M shared.
-PhysMem: 7009M used (1861M wired, 1381M compressor), 148M unused.
-VM: 360T vsize, 57G framework vsize, 14(0) swapins, 2480(0) swapouts.
-Networks: packets: 6646452/9501M in, 393035/30M out.
-Disks: 1663366/89G read, 284981/20G written.
+22198  update_dyld_sim_ 57.8 319M+ 
+21037  diskimagesiod    27.4 48M   
+0      kernel_task      16.0 640K  
+23752  top              10.2 4129K+
+498    mds_stores       1.4  20M-  
+1012   provjobd13882203 0.7  19M   
+14512  Runner.Worker    0.6  96M   
+15633  simdiskimaged    0.2  8306K+
+--- 17:32:56 UTC, the simulator step
+Processes: 644 total, 5 running, 639 sleeping, 1892 threads 
+2026/11/21 17:32:56
+Load Avg: 5.30, 6.36, 9.38 
+CPU usage: 44.83% user, 45.72% sys, 9.43% idle 
+SharedLibs: 676M resident, 18M data, 15M linkedit.
+MemRegions: 123 total, 2784K resident, 37M private, 1960M shared.
+PhysMem: 7070M used (1305M wired, 1199M compressor), 88M unused.
+VM: 293T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6067791/8715M in, 89125/7335K out.
+Disks: 782346/37G read, 150955/14G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      36.2 464K- 
-25372  diagnosticd      16.9 6933K-
-25391  apsd             11.9 15M   
-25386  diagnosticd      9.7  2001K 
-1038   provjobd38228688 7.1  20M   
-17789  mdsync           4.9  4721K 
-31251  top              3.7  4161K+
-491    mds_stores       3.0  27M-
---- 16:57:58 UTC, the pass on iOS 27.2
-Processes: 805 total, 129 running, 676 sleeping, 2759 threads 
-2026/11/21 16:57:58
-Load Avg: 406.36, 401.37, 230.05 
-CPU usage: 61.82% user, 38.17% sys, 0.0% idle 
-SharedLibs: 152M resident, 29M data, 51M linkedit.
-MemRegions: 51 total, 1232K resident, 201M private, 665M shared.
-PhysMem: 6265M used (1892M wired, 1600M compressor), 892M unused.
-VM: 361T vsize, 57G framework vsize, 14(0) swapins, 2480(0) swapouts.
-Networks: packets: 6655743/9506M in, 401546/32M out.
-Disks: 1713101/93G read, 287867/20G written.
+21037  diskimagesiod    40.2 48M   
+22198  update_dyld_sim_ 25.2 1335M+
+241    storagekitd      16.9 6114K-
+1012   provjobd13882203 7.3  19M   
+126    diskarbitrationd 7.0  3602K 
+25627  top              6.2  4129K+
+1      launchd          6.1  22M-  
+0      kernel_task      5.7  432K-
+--- 17:34:05 UTC, the simulator step
+Processes: 611 total, 4 running, 607 sleeping, 1829 threads 
+2026/11/21 17:34:05
+Load Avg: 7.74, 7.20, 9.49 
+CPU usage: 6.91% user, 81.48% sys, 11.60% idle 
+SharedLibs: 344M resident, 15M data, 10M linkedit.
+MemRegions: 0 total, 0B resident, 17M private, 176M shared.
+PhysMem: 7070M used (1309M wired, 2033M compressor), 83M unused.
+VM: 278T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6067820/8715M in, 89160/7346K out.
+Disks: 926301/43G read, 151630/15G written.
 
 PID    COMMAND          %CPU MEM   
-31260  Tadayo           11.3 138M+ 
-0      kernel_task      10.5 1040K+
-17789  mdsync           10.1 4737K+
-491    mds_stores       7.8  29M   
-247    storagekitd      6.8  6114K-
-25372  diagnosticd      4.6  6821K 
-25391  apsd             3.5  15M-  
-1      launchd          3.4  23M
---- 16:59:01 UTC, the pass on iOS 27.2
-Processes: 811 total, 128 running, 683 sleeping, 2725 threads 
-2026/11/21 16:59:01
-Load Avg: 301.14, 371.93, 231.62 
-CPU usage: 56.62% user, 43.37% sys, 0.0% idle 
-SharedLibs: 163M resident, 33M data, 52M linkedit.
-MemRegions: 154 total, 3808K resident, 243M private, 509M shared.
-PhysMem: 6911M used (1967M wired, 1523M compressor), 246M unused.
-VM: 363T vsize, 57G framework vsize, 14(0) swapins, 2480(0) swapouts.
-Networks: packets: 6662119/9509M in, 407390/34M out.
-Disks: 1749017/95G read, 290619/21G written.
+0      kernel_task      72.2 912K  
+22198  update_dyld_sim_ 45.2 4243M+
+1012   provjobd13882203 13.1 19M   
+26993  top              8.3  4097K+
+563    searchpartyusera 2.6  11M+  
+207    symptomsd        2.3  6258K+
+137    timed            2.3  3682K-
+498    mds_stores       1.8  21M-
+--- 17:34:16 UTC, the simulator step: end, after 6 min 29 s
+Processes: 612 total, 2 running, 610 sleeping, 1837 threads 
+2026/11/21 17:34:16
+Load Avg: 6.88, 7.04, 9.40 
+CPU usage: 2.76% user, 4.97% sys, 92.26% idle 
+SharedLibs: 379M resident, 26M data, 53M linkedit.
+MemRegions: 40 total, 1344K resident, 34M private, 216M shared.
+PhysMem: 4320M used (1311M wired, 960M compressor), 2837M unused.
+VM: 278T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6067821/8715M in, 89163/7346K out.
+Disks: 933340/43G read, 152008/17G written.
 
 PID    COMMAND          %CPU MEM   
-31260  Tadayo           51.6 134M+ 
-0      kernel_task      14.3 560K+ 
-25372  diagnosticd      13.5 6597K 
-25391  apsd             9.8  13M+  
-491    mds_stores       9.7  30M-  
-34723  top              8.8  4177K+
-25386  diagnosticd      8.3  2001K 
-247    storagekitd      7.0  6162K+
---- 17:00:19 UTC, the pass on iOS 27.2
-Processes: 826 total, 220 running, 9 stuck, 597 sleeping, 2952 threads 
-2026/11/21 17:00:19
-Load Avg: 366.71, 370.97, 242.73 
-CPU usage: 65.26% user, 34.73% sys, 0.0% idle 
-SharedLibs: 158M resident, 38M data, 25M linkedit.
-MemRegions: 180 total, 2096K resident, 215M private, 554M shared.
-PhysMem: 6965M used (2486M wired, 1709M compressor), 192M unused.
-VM: 370T vsize, 57G framework vsize, 14(0) swapins, 2480(0) swapouts.
-Networks: packets: 6739179/9613M in, 414720/35M out.
-Disks: 1796488/99G read, 298725/21G written.
+27222  top              6.1  3441K+
+27206  mdworker_shared  2.3  3154K 
+1      launchd          1.1  22M+  
+1012   provjobd13882203 0.7  19M   
+498    mds_stores       0.7  21M   
+123    mds              0.6  76M+  
+94     logd             0.3  20M-  
+0      kernel_task      0.3  256K-
+--- 17:34:19 UTC, the build: start
+Processes: 621 total, 2 running, 619 sleeping, 1887 threads 
+2026/11/21 17:34:19
+Load Avg: 6.88, 7.04, 9.40 
+CPU usage: 20.31% user, 40.62% sys, 39.6% idle 
+SharedLibs: 382M resident, 26M data, 53M linkedit.
+MemRegions: 359 total, 12M resident, 38M private, 226M shared.
+PhysMem: 4466M used (1318M wired, 916M compressor), 2691M unused.
+VM: 283T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6067858/8715M in, 89206/7365K out.
+Disks: 935081/43G read, 152016/17G written.
 
 PID    COMMAND          %CPU MEM   
-25716  WidgetRenderer_D 20.2 30M+  
-0      kernel_task      18.2 304K- 
-31260  Tadayo           18.1 122M- 
-25372  diagnosticd      12.6 6549K+
-25391  apsd             8.8  13M+  
-25386  diagnosticd      7.6  2017K 
-1038   provjobd38228688 2.2  20M+  
-36687  top              2.2  4241K+
---- 17:01:31 UTC, the pass on iOS 27.2
-Processes: 820 total, 226 running, 594 sleeping, 3022 threads 
-2026/11/21 17:01:31
-Load Avg: 520.76, 418.79, 271.75 
-CPU usage: 77.56% user, 22.43% sys, 0.0% idle 
-SharedLibs: 167M resident, 33M data, 27M linkedit.
-MemRegions: 237 total, 8048K resident, 145M private, 576M shared.
-PhysMem: 7018M used (1888M wired, 1689M compressor), 139M unused.
-VM: 367T vsize, 57G framework vsize, 18(0) swapins, 2480(0) swapouts.
-Networks: packets: 6747659/9618M in, 422483/37M out.
-Disks: 1845256/103G read, 307310/22G written.
+1012   provjobd13882203 28.1 19M   
+27230  top              12.3 3441K+
+14512  Runner.Worker    7.3  90M+  
+1      launchd          2.4  22M   
+0      kernel_task      2.2  384K+ 
+123    mds              1.5  76M+  
+340    trustd           1.5  8882K-
+135    opendirectoryd   1.2  12M+
+--- 17:35:20 UTC, the build
+Processes: 637 total, 3 running, 634 sleeping, 1941 threads 
+2026/11/21 17:35:20
+Load Avg: 4.99, 6.55, 9.06 
+CPU usage: 45.16% user, 16.66% sys, 38.17% idle 
+SharedLibs: 499M resident, 74M data, 97M linkedit.
+MemRegions: 102 total, 5456K resident, 160M private, 443M shared.
+PhysMem: 6781M used (1358M wired, 793M compressor), 376M unused.
+VM: 290T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6277642/9000M in, 91848/7819K out.
+Disks: 982397/44G read, 156640/17G written.
 
 PID    COMMAND          %CPU MEM   
-25372  diagnosticd      18.1 6373K 
-0      kernel_task      17.5 752K+ 
-25391  apsd             12.6 14M+  
-25386  diagnosticd      10.8 2001K 
-247    storagekitd      7.1  6258K+
-37189  HealthCycleTrack 4.5  15M-  
-126    diskarbitrationd 4.4  3729K-
-37179  PassbookWidgetsE 3.6  16M+
---- 17:03:35 UTC, the pass on iOS 27.2
-Processes: 835 total, 186 running, 649 sleeping, 3044 threads 
-2026/11/21 17:03:35
-Load Avg: 465.00, 433.58, 297.19 
-CPU usage: 74.26% user, 25.73% sys, 0.0% idle 
-SharedLibs: 198M resident, 32M data, 27M linkedit.
-MemRegions: 2094 total, 52M resident, 218M private, 611M shared.
-PhysMem: 6910M used (1919M wired, 1648M compressor), 247M unused.
-VM: 374T vsize, 57G framework vsize, 18(0) swapins, 2480(0) swapouts.
-Networks: packets: 6991723/9959M in, 435460/39M out.
-Disks: 1910403/110G read, 318716/23G written.
+28925  BackgroundShortc 46.0 12M+  
+425    siriactionsd     17.4 14M   
+29861  top              9.1  3505K+
+27392  xcodebuild       4.6  66M+  
+29389  intents_helper   4.6  2721K+
+339    linkd            4.4  8354K 
+378    corespotlightd   1.6  17M+  
+0      kernel_task      1.1  128K-
+--- 17:36:22 UTC, the build
+Processes: 647 total, 14 running, 9 stuck, 624 sleeping, 1975 threads 
+2026/11/21 17:36:22
+Load Avg: 9.56, 7.84, 9.37 
+CPU usage: 72.32% user, 26.84% sys, 0.82% idle 
+SharedLibs: 502M resident, 84M data, 104M linkedit.
+MemRegions: 73 total, 176K resident, 178M private, 651M shared.
+PhysMem: 7036M used (1366M wired, 780M compressor), 121M unused.
+VM: 294T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6297590/9029M in, 92357/7866K out.
+Disks: 1058432/45G read, 167185/17G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      24.5 1184K+
-25372  diagnosticd      4.4  6949K-
-247    storagekitd      2.7  6034K-
-25386  diagnosticd      2.5  2017K 
-1      launchd          1.9  24M-  
-25391  apsd             1.8  17M-  
-126    diskarbitrationd 1.2  3777K 
-135    opendirectoryd   0.9  12M-
---- 17:04:54 UTC, the pass on iOS 27.2
-Processes: 845 total, 223 running, 622 sleeping, 3096 threads 
-2026/11/21 17:04:54
-Load Avg: 530.78, 459.57, 319.17 
-CPU usage: 51.66% user, 48.33% sys, 0.0% idle 
-SharedLibs: 206M resident, 32M data, 32M linkedit.
-MemRegions: 204 total, 4240K resident, 236M private, 616M shared.
-PhysMem: 7028M used (1933M wired, 1672M compressor), 129M unused.
-VM: 378T vsize, 57G framework vsize, 18(0) swapins, 2480(0) swapouts.
-Networks: packets: 7000907/9963M in, 443793/41M out.
-Disks: 1946215/113G read, 322108/23G written.
-
-PID    COMMAND          %CPU      MEM   
-33958  nanoregistrylaun -13617620 96K+  
-25372  diagnosticd      41.2      6709K-
-25391  apsd             26.0      18M+  
-25386  diagnosticd      22.1      2017K 
-0      kernel_task      17.4      976K- 
-247    storagekitd      7.6       6082K-
-491    mds_stores       5.8       30M-  
-17789  mdsync           3.4       4097K
---- 17:06:01 UTC, the pass on iOS 27.2
-Processes: 853 total, 156 running, 696 sleeping, 1 unknown, 2976 threads 
-2026/11/21 17:06:01
-Load Avg: 403.73, 435.86, 320.58 
-CPU usage: 51.89% user, 48.10% sys, 0.0% idle 
-SharedLibs: 164M resident, 40M data, 154M linkedit.
-MemRegions: 113 total, 1856K resident, 224M private, 587M shared.
-PhysMem: 7072M used (1961M wired, 1748M compressor), 85M unused.
-VM: 382T vsize, 57G framework vsize, 18(0) swapins, 2480(0) swapouts.
-Networks: packets: 7007275/9967M in, 449586/42M out.
-Disks: 1992257/116G read, 328457/23G written.
+31478  SWBBuildService  70.0 404M+ 
+32915  top              6.3  3569K+
+27392  xcodebuild       3.0  162M+ 
+0      kernel_task      2.0  720K+ 
+123    mds              1.8  88M+  
+377    chronod          1.7  14M-  
+135    opendirectoryd   1.2  12M   
+1      launchd          0.8  22M
+--- 17:37:23 UTC, the build
+Processes: 634 total, 20 running, 1 stuck, 613 sleeping, 1893 threads 
+2026/11/21 17:37:23
+Load Avg: 9.56, 8.08, 9.35 
+CPU usage: 73.5% user, 26.94% sys, 0.0% idle 
+SharedLibs: 458M resident, 90M data, 104M linkedit.
+MemRegions: 192 total, 63M resident, 141M private, 760M shared.
+PhysMem: 6857M used (1363M wired, 809M compressor), 300M unused.
+VM: 289T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6297624/9029M in, 92397/7877K out.
+Disks: 1090550/45G read, 176576/18G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      19.8 912K- 
-25372  diagnosticd      11.5 6789K+
-247    storagekitd      10.9 6130K-
-25600  amsengagementd   8.8  42M+  
-42209  Tadayo           8.3  36M+  
-25386  diagnosticd      5.8  2017K 
-1      launchd          5.5  24M+  
-126    diskarbitrationd 4.6  3777K
---- 17:07:03 UTC, the pass on iOS 27.2
-Processes: 849 total, 133 running, 1 stuck, 715 sleeping, 3022 threads 
-2026/11/21 17:07:03
-Load Avg: 419.61, 434.61, 328.59 
-CPU usage: 68.95% user, 31.4% sys, 0.0% idle 
-SharedLibs: 178M resident, 42M data, 216M linkedit.
-MemRegions: 0 total, 0B resident, 173M private, 507M shared.
-PhysMem: 7063M used (1963M wired, 1821M compressor), 94M unused.
-VM: 380T vsize, 57G framework vsize, 26(0) swapins, 2480(0) swapouts.
-Networks: packets: 7011761/9969M in, 453595/43M out.
-Disks: 2014846/117G read, 333449/23G written.
+35573  swift-frontend   63.1 94M+  
+35570  swift-frontend   53.8 100M+ 
+1012   provjobd13882203 16.7 19M   
+35602  top              7.2  3553K+
+31478  SWBBuildService  2.1  443M+ 
+0      kernel_task      1.7  416K  
+99     fseventsd        1.6  4321K 
+27392  xcodebuild       1.1  117M+
+--- 17:38:25 UTC, the build
+Processes: 630 total, 33 running, 3 stuck, 594 sleeping, 1912 threads 
+2026/11/21 17:38:25
+Load Avg: 20.28, 11.45, 10.52 
+CPU usage: 70.2% user, 29.97% sys, 0.0% idle 
+SharedLibs: 462M resident, 91M data, 104M linkedit.
+MemRegions: 0 total, 0B resident, 151M private, 776M shared.
+PhysMem: 7029M used (1330M wired, 791M compressor), 127M unused.
+VM: 287T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6297688/9029M in, 92467/7899K out.
+Disks: 1100270/45G read, 182818/18G written.
 
 PID    COMMAND          %CPU MEM   
-44347  Tadayo           80.1 35M+  
-25372  diagnosticd      26.4 6853K 
-25386  diagnosticd      15.1 2017K-
-0      kernel_task      13.2 848K- 
-5026   spindump         10.3 31M-  
-25391  apsd             9.5  17M-  
-491    mds_stores       9.3  39M+  
-25324  SpringBoard      8.2  97M
---- 17:08:20 UTC, the pass on iOS 27.2
-Processes: 849 total, 140 running, 709 sleeping, 2956 threads 
-2026/11/21 17:08:20
-Load Avg: 363.27, 413.59, 329.53 
-CPU usage: 68.99% user, 31.0% sys, 0.0% idle 
-SharedLibs: 167M resident, 43M data, 215M linkedit.
-MemRegions: 69 total, 1936K resident, 201M private, 1162M shared.
-PhysMem: 7072M used (1957M wired, 1771M compressor), 86M unused.
-VM: 380T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7020043/9974M in, 460663/44M out.
-Disks: 2042412/119G read, 340074/24G written.
-
-PID    COMMAND          %CPU      MEM   
-41371  fileproviderd    909338627 80K+  
-25600  amsengagementd   61.8      34M+  
-25372  diagnosticd      36.3      6709K+
-25386  diagnosticd      20.7      2017K 
-0      kernel_task      13.0      848K- 
-25391  apsd             12.7      18M-  
-25345  backboardd       8.1       38M+  
-25308  SimRenderServer  6.8       151M-
---- 17:09:24 UTC, the pass on iOS 27.2
-Processes: 850 total, 131 running, 719 sleeping, 2838 threads 
-2026/11/21 17:09:24
-Load Avg: 303.17, 387.03, 325.79 
-CPU usage: 68.30% user, 31.69% sys, 0.0% idle 
-SharedLibs: 160M resident, 41M data, 179M linkedit.
-MemRegions: 0 total, 0B resident, 222M private, 1160M shared.
-PhysMem: 7066M used (1969M wired, 1733M compressor), 92M unused.
-VM: 380T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7027358/9978M in, 466981/46M out.
-Disks: 2062912/121G read, 343010/24G written.
+37700  swift-frontend   51.7 94M-  
+37708  swift-frontend   49.7 101M+ 
+37698  swift-frontend   49.3 122M+ 
+1012   provjobd13882203 13.6 19M   
+37712  top              9.5  3537K+
+27392  xcodebuild       6.0  118M+ 
+0      kernel_task      5.0  240K  
+15633  simdiskimaged    3.5  7586K+
+--- 17:39:27 UTC, the build
+Processes: 646 total, 20 running, 626 sleeping, 1941 threads 
+2026/11/21 17:39:27
+Load Avg: 22.44, 13.49, 11.34 
+CPU usage: 81.30% user, 18.69% sys, 0.0% idle 
+SharedLibs: 259M resident, 90M data, 106M linkedit.
+MemRegions: 0 total, 0B resident, 144M private, 761M shared.
+PhysMem: 7086M used (1362M wired, 942M compressor), 71M unused.
+VM: 294T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6297741/9029M in, 92521/7913K out.
+Disks: 685001/38G read, 186933/19G written.
 
 PID    COMMAND          %CPU MEM   
-48849  Tadayo           26.3 39M+  
-25372  diagnosticd      21.8 6709K 
-0      kernel_task      20.9 848K- 
-25391  apsd             13.2 18M-  
-25386  diagnosticd      12.7 2017K 
-491    mds_stores       6.3  22M   
-49644  top              4.1  4273K+
-25324  SpringBoard      3.9  96M
---- 17:10:26 UTC, the pass on iOS 27.2
-Processes: 851 total, 107 running, 744 sleeping, 2792 threads 
-2026/11/21 17:10:26
-Load Avg: 272.57, 362.70, 320.85 
-CPU usage: 53.52% user, 46.47% sys, 0.0% idle 
-SharedLibs: 161M resident, 34M data, 170M linkedit.
-MemRegions: 0 total, 0B resident, 240M private, 1146M shared.
-PhysMem: 7074M used (1965M wired, 1714M compressor), 83M unused.
-VM: 381T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7041574/9991M in, 475844/48M out.
-Disks: 2083974/122G read, 346399/24G written.
+38668  swift-frontend   72.4 1516M+
+40197  swift-frontend   70.8 151M+ 
+40028  swift-frontend   69.6 141M+ 
+0      kernel_task      13.5 352K  
+40389  top              9.4  3569K+
+188    airportd         1.6  6754K+
+155    bluetoothd       1.0  7218K+
+1012   provjobd13882203 1.0  19M
+--- 17:40:22 UTC, the build: end, after 6 min 3 s
+Processes: 646 total, 6 running, 2 stuck, 638 sleeping, 2016 threads 
+2026/11/21 17:40:22
+Load Avg: 14.30, 13.03, 11.32 
+CPU usage: 24.73% user, 33.60% sys, 41.66% idle 
+SharedLibs: 268M resident, 93M data, 109M linkedit.
+MemRegions: 31 total, 208K resident, 104M private, 348M shared.
+PhysMem: 5064M used (1360M wired, 916M compressor), 2093M unused.
+VM: 294T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6297766/9029M in, 92550/7922K out.
+Disks: 699023/38G read, 189107/19G written.
 
 PID    COMMAND          %CPU MEM   
-25372  diagnosticd      47.0 6565K+
-25391  apsd             33.1 14M-  
-0      kernel_task      28.6 912K+ 
-25386  diagnosticd      26.2 2049K 
-50480  Tadayo           16.5 42M   
-51651  top              9.2  4273K+
-25345  backboardd       5.7  39M   
-41569  TadayoUITests-Ru 5.5  58M
---- 17:11:28 UTC, the pass on iOS 27.2
-Processes: 856 total, 96 running, 6 stuck, 754 sleeping, 2820 threads 
-2026/11/21 17:11:28
-Load Avg: 224.52, 331.27, 312.13 
-CPU usage: 40.52% user, 59.47% sys, 0.0% idle 
-SharedLibs: 165M resident, 35M data, 150M linkedit.
-MemRegions: 375 total, 2736K resident, 254M private, 1119M shared.
-PhysMem: 7007M used (1928M wired, 1701M compressor), 150M unused.
-VM: 383T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7045818/9993M in, 479746/48M out.
-Disks: 2111348/124G read, 350104/24G written.
+241    storagekitd      16.7 6226K+
+740    swcd             9.2  4690K+
+42238  top              7.7  3521K+
+582    siriknowledged   7.4  9122K-
+126    diskarbitrationd 6.8  3650K 
+526    mdbulkimport     6.0  6898K+
+1      launchd          5.8  23M+  
+498    mds_stores       4.9  23M+
+--- 17:40:24 UTC, the pass on iOS 27.2: start
+Processes: 643 total, 2 running, 641 sleeping, 2002 threads 
+2026/11/21 17:40:24
+Load Avg: 13.48, 12.88, 11.28 
+CPU usage: 26.21% user, 33.90% sys, 39.88% idle 
+SharedLibs: 268M resident, 93M data, 109M linkedit.
+MemRegions: 0 total, 0B resident, 108M private, 348M shared.
+PhysMem: 5139M used (1360M wired, 869M compressor), 2018M unused.
+VM: 293T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6297823/9029M in, 92617/7955K out.
+Disks: 701233/38G read, 189382/19G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      29.3 1408K-
-25372  diagnosticd      26.2 6629K-
-247    storagekitd      14.0 6098K 
-25386  diagnosticd      13.5 2049K 
-25391  apsd             12.1 9909K+
-53660  top              9.6  4241K+
-1      launchd          8.8  24M+  
-126    diskarbitrationd 6.3  3777K
---- 17:12:37 UTC, the pass on iOS 27.2
-Processes: 861 total, 110 running, 751 sleeping, 2697 threads 
-2026/11/21 17:12:37
-Load Avg: 191.73, 298.11, 301.03 
-CPU usage: 47.78% user, 52.21% sys, 0.0% idle 
-SharedLibs: 161M resident, 38M data, 90M linkedit.
-MemRegions: 71 total, 1488K resident, 200M private, 1071M shared.
-PhysMem: 7025M used (1973M wired, 1764M compressor), 132M unused.
-VM: 385T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7054354/9997M in, 487482/50M out.
-Disks: 2166701/127G read, 355461/24G written.
+241    storagekitd      18.6 6226K 
+526    mdbulkimport     16.2 7442K+
+123    mds              12.9 81M-  
+126    diskarbitrationd 9.5  3650K 
+42330  top              8.4  3505K+
+1      launchd          7.0  23M-  
+198    authd            4.3  4289K 
+14508  Runner.Listener  2.9  78M+
+--- 17:42:06 UTC, the pass on iOS 27.2
+Processes: 762 total, 122 running, 640 sleeping, 2454 threads 
+2026/11/21 17:42:05
+Load Avg: 131.12, 50.13, 25.70 
+CPU usage: 66.75% user, 33.24% sys, 0.0% idle 
+SharedLibs: 297M resident, 98M data, 108M linkedit.
+MemRegions: 2489 total, 51M resident, 298M private, 545M shared.
+PhysMem: 7044M used (1606M wired, 817M compressor), 113M unused.
+VM: 344T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6316718/9055M in, 95501/8309K out.
+Disks: 810722/51G read, 201294/19G written.
 
 PID    COMMAND          %CPU MEM   
-25708  xcodebuild       9.6  152M+ 
-25372  diagnosticd      8.3  6421K 
-25391  apsd             5.9  10M+  
-25386  diagnosticd      4.4  2049K 
-247    storagekitd      3.2  6178K+
-1038   provjobd38228688 3.0  20M+  
-0      kernel_task      2.8  496K+ 
-55911  top              1.5  4273K+
---- 17:12:51 UTC, the pass on iOS 27.2: end, after 23 min 37 s
-Processes: 859 total, 79 running, 780 sleeping, 2735 threads 
-2026/11/21 17:12:51
-Load Avg: 189.94, 294.25, 299.63 
-CPU usage: 52.11% user, 47.88% sys, 0.0% idle 
-SharedLibs: 164M resident, 38M data, 91M linkedit.
-MemRegions: 83 total, 1776K resident, 218M private, 1065M shared.
-PhysMem: 6970M used (1971M wired, 1706M compressor), 187M unused.
-VM: 384T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7056956/9998M in, 489865/51M out.
-Disks: 2180980/128G read, 358668/24G written.
+0      kernel_task      44.2 224K- 
+42661  SpringBoard      15.6 46M+  
+42669  assistantd       9.8  12M+  
+42724  diagnosticd      4.0  5509K-
+42784  donotdisturbd    3.7  9302K+
+42521  launchd_sim      2.0  11M+  
+42746  diagnosticd      1.7  1857K 
+42852  geod             1.1  13M-
+--- 17:43:50 UTC, the pass on iOS 27.2
+Processes: 815 total, 135 running, 680 sleeping, 2765 threads 
+2026/11/21 17:43:47
+Load Avg: 256.76, 117.00, 54.44 
+CPU usage: 70.38% user, 29.61% sys, 0.0% idle 
+SharedLibs: 254M resident, 59M data, 85M linkedit.
+MemRegions: 535 total, 12M resident, 336M private, 702M shared.
+PhysMem: 7051M used (1735M wired, 1102M compressor), 107M unused.
+VM: 367T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6615342/9483M in, 100082/8857K out.
+Disks: 844765/56G read, 225578/20G written.
 
 PID    COMMAND          %CPU MEM   
-25372  diagnosticd      57.0 6581K+
-0      kernel_task      30.7 912K+ 
-25386  diagnosticd      30.4 2049K 
-25391  apsd             22.9 9861K-
-56704  top              6.8  4257K+
-247    storagekitd      3.2  6114K-
-25685  searchd          2.0  14M+  
-26088  trustd           2.0  7605K
---- 17:12:53 UTC, the pass on iOS 26.5: start
-Processes: 860 total, 79 running, 781 sleeping, 2716 threads 
-2026/11/21 17:12:53
-Load Avg: 183.38, 291.15, 298.51 
-CPU usage: 46.9% user, 53.90% sys, 0.0% idle 
-SharedLibs: 164M resident, 38M data, 91M linkedit.
-MemRegions: 65 total, 1632K resident, 223M private, 1088M shared.
-PhysMem: 6991M used (1974M wired, 1703M compressor), 166M unused.
-VM: 385T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7057278/9998M in, 490161/51M out.
-Disks: 2181967/128G read, 358955/24G written.
+0      kernel_task      19.3 368K  
+42806  mobileassetd     14.5 13M+  
+43225  STExtractionServ 6.9  4501K-
+42724  diagnosticd      6.7  7733K+
+42786  PosterBoard      4.9  20M+  
+42674  accountsd        4.6  10M+  
+42701  remindd          4.4  11M+  
+42870  intelligenceplat 4.4  10M-
+--- 17:47:02 UTC, the pass on iOS 27.2
+Processes: 870 total, 68 running, 47 stuck, 755 sleeping, 3111 threads 
+2026/11/21 17:47:02
+Load Avg: 462.18, 281.44, 136.92 
+CPU usage: 46.80% user, 53.19% sys, 0.0% idle 
+SharedLibs: 158M resident, 26M data, 77M linkedit.
+MemRegions: 4534 total, 175M resident, 197M private, 591M shared.
+PhysMem: 6894M used (1847M wired, 1261M compressor), 263M unused.
+VM: 391T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6630400/9495M in, 111193/11M out.
+Disks: 923584/63G read, 293762/21G written.
 
 PID    COMMAND          %CPU MEM   
-25372  diagnosticd      45.4 6581K 
-0      kernel_task      31.3 208K- 
-25391  apsd             25.9 9829K-
-25386  diagnosticd      24.3 2049K 
-1038   provjobd38228688 15.2 20M-  
-56736  top              8.4  4273K+
-25317  launchd_sim      4.2  29M-  
-26625  spotlightknowled 4.1  12M+
---- 17:14:12 UTC, the pass on iOS 26.5
-Processes: 690 total, 110 running, 2 stuck, 578 sleeping, 2446 threads 
-2026/11/21 17:14:12
-Load Avg: 169.01, 257.85, 284.92 
-CPU usage: 45.95% user, 54.4% sys, 0.0% idle 
-SharedLibs: 177M resident, 47M data, 77M linkedit.
-MemRegions: 114 total, 3712K resident, 489M private, 884M shared.
-PhysMem: 7084M used (1672M wired, 1312M compressor), 73M unused.
-VM: 311T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7058115/9999M in, 490733/51M out.
-Disks: 2282359/132G read, 380035/25G written.
+0      kernel_task      22.2 240K- 
+42521  launchd_sim      2.4  26M+  
+1012   provjobd13882203 1.4  19M   
+42517  SimMetalHost     1.1  116M- 
+241    storagekitd      0.9  6162K-
+1      launchd          0.7  23M+  
+42724  diagnosticd      0.4  7638K 
+15631  com.apple.CoreSi 0.4  14M+
+--- 17:48:06 UTC, the pass on iOS 27.2
+Processes: 895 total, 158 running, 737 sleeping, 3149 threads 
+2026/11/21 17:48:06
+Load Avg: 361.38, 285.39, 148.93 
+CPU usage: 52.90% user, 47.9% sys, 0.0% idle 
+SharedLibs: 173M resident, 34M data, 79M linkedit.
+MemRegions: 87 total, 1616K resident, 331M private, 736M shared.
+PhysMem: 7048M used (1875M wired, 1304M compressor), 108M unused.
+VM: 401T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6708664/9602M in, 118585/12M out.
+Disks: 975219/68G read, 308020/22G written.
 
 PID    COMMAND          %CPU MEM   
-57162  lsd              10.2 9701K+
-9605   diskimagesiod    9.7  48M   
-0      kernel_task      8.5  656K+ 
-247    storagekitd      5.3  6146K-
-57158  logd_helper      3.7  10M   
-57157  diagnosticd      3.2  10M   
-57165  containermanager 3.1  11M+  
-1      launchd          2.5  24M
---- 17:15:15 UTC, the pass on iOS 26.5
-Processes: 728 total, 127 running, 601 sleeping, 2653 threads 
-2026/11/21 17:15:15
-Load Avg: 241.90, 259.50, 283.39 
-CPU usage: 53.33% user, 46.66% sys, 0.0% idle 
-SharedLibs: 143M resident, 34M data, 72M linkedit.
-MemRegions: 0 total, 0B resident, 392M private, 730M shared.
-PhysMem: 7081M used (1751M wired, 1609M compressor), 76M unused.
-VM: 327T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7352332/10G in, 496855/51M out.
-Disks: 2315461/132G read, 406819/26G written.
+45970  Tadayo           24.9 8918K+
+0      kernel_task      23.5 288K+ 
+42724  diagnosticd      21.6 7734K-
+42910  amsengagementd   18.3 45M-  
+42746  diagnosticd      12.7 2097K 
+42747  apsd             10.9 9397K-
+1012   provjobd13882203 7.0  19M   
+45973  DTServiceHub     4.0  5926K+
+--- 17:49:12 UTC, the pass on iOS 27.2
+Processes: 911 total, 166 running, 745 sleeping, 3167 threads 
+2026/11/21 17:49:12
+Load Avg: 384.08, 306.41, 166.83 
+CPU usage: 64.71% user, 35.28% sys, 0.0% idle 
+SharedLibs: 163M resident, 32M data, 54M linkedit.
+MemRegions: 164 total, 4096K resident, 241M private, 674M shared.
+PhysMem: 7055M used (2546M wired, 1547M compressor), 102M unused.
+VM: 409T vsize, 57G framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 6713325/9604M in, 122868/13M out.
+Disks: 1010589/73G read, 314040/22G written.
 
 PID    COMMAND          %CPU MEM   
-58179  STExtractionServ 57.2 19M-  
-0      kernel_task      18.3 368K  
-1038   provjobd38228688 15.5 20M   
-491    mds_stores       6.3  20M+  
-58284  top              6.1  3665K+
-5026   spindump         5.8  28M+  
-57157  diagnosticd      5.6  13M+  
-57132  backboardd       4.9  18M-
---- 17:16:53 UTC, the pass on iOS 26.5
-Processes: 788 total, 241 running, 2 stuck, 545 sleeping, 2983 threads 
-2026/11/21 17:16:51
-Load Avg: 373.20, 294.26, 293.96 
-CPU usage: 38.53% user, 61.46% sys, 0.0% idle 
-SharedLibs: 113M resident, 29M data, 25M linkedit.
-MemRegions: 1333 total, 52M resident, 155M private, 367M shared.
-PhysMem: 7003M used (1878M wired, 2252M compressor), 155M unused.
-VM: 353T vsize, 57G framework vsize, 38(0) swapins, 2480(0) swapouts.
-Networks: packets: 7434367/10G in, 502929/52M out.
-Disks: 2417106/137G read, 436511/28G written.
+0      kernel_task      27.2 400K- 
+45970  Tadayo           25.4 188M+ 
+42724  diagnosticd      16.5 7318K+
+42746  diagnosticd      10.0 2129K 
+42678  healthd          9.4  21M+  
+42747  apsd             7.1  10M+  
+42690  backboardd       5.4  36M+  
+241    storagekitd      5.1  6066K
+--- 17:50:32 UTC, the pass on iOS 27.2
+Processes: 916 total, 223 running, 6 stuck, 687 sleeping, 3035 threads 
+2026/11/21 17:50:32
+Load Avg: 395.63, 322.46, 185.16 
+CPU usage: 54.92% user, 45.7% sys, 0.0% idle 
+SharedLibs: 122M resident, 26M data, 23M linkedit.
+MemRegions: 96 total, 1808K resident, 84M private, 879M shared.
+PhysMem: 6592M used (2261M wired, 1757M compressor), 565M unused.
+VM: 411T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 6718796/9607M in, 127867/14M out.
+Disks: 1078734/79G read, 318940/23G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      13.7 560K- 
-247    storagekitd      3.3  6162K+
-57157  diagnosticd      3.3  12M+  
-58734  NewsToday2       2.5  34M+  
-57172  apsd             2.2  15M+  
-57110  SpringBoard      1.9  89M+  
-25386  diagnosticd      1.8  2081K+
-1      launchd          1.5  24M+
---- 17:17:56 UTC, the pass on iOS 26.5
-Processes: 803 total, 140 running, 17 stuck, 646 sleeping, 2938 threads 
-2026/11/21 17:17:56
-Load Avg: 342.49, 305.70, 298.61 
-CPU usage: 65.64% user, 34.35% sys, 0.0% idle 
-SharedLibs: 209M resident, 64M data, 82M linkedit.
-MemRegions: 0 total, 0B resident, 140M private, 458M shared.
-PhysMem: 7071M used (1884M wired, 2438M compressor), 86M unused.
-VM: 360T vsize, 57G framework vsize, 74(0) swapins, 2480(0) swapouts.
-Networks: packets: 7440222/10G in, 507873/53M out.
-Disks: 2466301/138G read, 443984/28G written.
+0      kernel_task      28.3 432K+ 
+45970  Tadayo           9.5  161M- 
+241    storagekitd      3.9  6114K-
+42724  diagnosticd      2.3  7222K-
+1      launchd          2.2  23M-  
+512    triald           1.7  6146K-
+126    diskarbitrationd 1.7  3746K 
+42747  apsd             1.6  10M+
+--- 17:51:41 UTC, the pass on iOS 27.2
+Processes: 926 total, 154 running, 1 stuck, 771 sleeping, 2979 threads 
+2026/11/21 17:51:41
+Load Avg: 281.60, 305.52, 189.77 
+CPU usage: 80.3% user, 19.96% sys, 0.0% idle 
+SharedLibs: 139M resident, 30M data, 26M linkedit.
+MemRegions: 478 total, 17M resident, 301M private, 511M shared.
+PhysMem: 7064M used (1970M wired, 1518M compressor), 93M unused.
+VM: 415T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 6994848/9999M in, 138013/16M out.
+Disks: 1136724/87G read, 334309/23G written.
 
 PID    COMMAND          %CPU MEM   
-58843  CalendarWidgetEx 42.7 25M+  
-57157  diagnosticd      37.8 12M-  
-59820  xcodebuild       36.3 71M+  
-61415  ShortcutsWidgetE 25.4 18M+  
-57172  apsd             24.0 14M+  
-25386  diagnosticd      19.5 2081K 
-61438  top              7.4  4145K+
-0      kernel_task      5.4  624K-
---- 17:19:04 UTC, the pass on iOS 26.5
-Processes: 779 total, 244 running, 535 sleeping, 3076 threads 
-2026/11/21 17:19:04
-Load Avg: 446.24, 339.05, 311.40 
-CPU usage: 62.18% user, 37.81% sys, 0.0% idle 
-SharedLibs: 132M resident, 25M data, 49M linkedit.
-MemRegions: 0 total, 0B resident, 165M private, 522M shared.
-PhysMem: 7073M used (1972M wired, 2472M compressor), 85M unused.
-VM: 349T vsize, 57G framework vsize, 74(0) swapins, 2480(0) swapouts.
-Networks: packets: 7449160/10G in, 515883/55M out.
-Disks: 2523157/140G read, 451409/28G written.
+43225  STExtractionServ 42.9 4421K+
+0      kernel_task      20.0 448K+ 
+42724  diagnosticd      13.7 7302K+
+42746  diagnosticd      8.4  2113K+
+42747  apsd             5.3  9669K+
+50847  Tadayo           4.6  74M+  
+42754  nsurlsessiond    4.3  8918K+
+42772  chronod          4.1  23M+
+--- 17:52:43 UTC, the pass on iOS 27.2
+Processes: 943 total, 127 running, 816 sleeping, 2931 threads 
+2026/11/21 17:52:43
+Load Avg: 219.72, 284.58, 189.90 
+CPU usage: 71.21% user, 28.78% sys, 0.0% idle 
+SharedLibs: 139M resident, 30M data, 25M linkedit.
+MemRegions: 88 total, 1600K resident, 342M private, 557M shared.
+PhysMem: 7058M used (1968M wired, 1548M compressor), 99M unused.
+VM: 422T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7021518/10G in, 145157/17M out.
+Disks: 1167035/90G read, 342301/24G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      24.8 688K- 
-57157  diagnosticd      17.0 13M+  
-25386  diagnosticd      11.4 2049K 
-57172  apsd             10.2 17M+  
-62515  Tadayo           8.8  66M+  
-62702  MobileCal        8.6  47M-  
-57110  SpringBoard      7.7  99M+  
-58726  MTLCompilerServi 5.9  5381K-
---- 17:20:55 UTC, the pass on iOS 26.5
-Processes: 743 total, 194 running, 16 stuck, 533 sleeping, 3028 threads 
-2026/11/21 17:20:55
-Load Avg: 507.81, 387.61, 333.50 
-CPU usage: 61.15% user, 38.84% sys, 0.0% idle 
-SharedLibs: 76M resident, 17M data, 15M linkedit.
-MemRegions: 0 total, 0B resident, 119M private, 384M shared.
-PhysMem: 6412M used (3261M wired, 1899M compressor), 745M unused.
-VM: 332T vsize, 57G framework vsize, 348(168) swapins, 49988(0) swapouts.
-Networks: packets: 7457981/10G in, 523889/57M out.
-Disks: 2591954/142G read, 491327/29G written.
+0      kernel_task      24.4 240K  
+42724  diagnosticd      21.2 7254K+
+42746  diagnosticd      13.7 2129K 
+42747  apsd             10.2 8885K-
+56310  top              9.3  4417K+
+50847  Tadayo           3.5  106M+ 
+42670  runningboardd    2.0  14M-  
+42521  launchd_sim      1.8  28M+
+--- 17:53:45 UTC, the pass on iOS 27.2
+Processes: 950 total, 8 running, 3 stuck, 939 sleeping, 2775 threads 
+2026/11/21 17:53:45
+Load Avg: 114.86, 243.64, 181.10 
+CPU usage: 73.93% user, 26.6% sys, 0.0% idle 
+SharedLibs: 141M resident, 31M data, 26M linkedit.
+MemRegions: 0 total, 0B resident, 293M private, 597M shared.
+PhysMem: 7053M used (2023M wired, 1722M compressor), 104M unused.
+VM: 425T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7029926/10G in, 152711/19M out.
+Disks: 1217777/95G read, 357819/24G written.
 
 PID    COMMAND          %CPU MEM   
-0      kernel_task      47.3 1072K+
-57157  diagnosticd      15.9 12M-  
-25386  diagnosticd      9.4  2033K 
-62515  Tadayo           9.1  101M- 
-9605   diskimagesiod    8.4  48M   
-57095  SimMetalHost     5.4  191M- 
-57274  PosterBoard      4.7  43M-  
-57113  runningboardd    4.5  12M+
---- 17:22:00 UTC, the pass on iOS 26.5
-Processes: 754 total, 165 running, 6 stuck, 583 sleeping, 2886 threads 
-2026/11/21 17:22:00
-Load Avg: 452.98, 393.30, 339.48 
-CPU usage: 52.88% user, 47.11% sys, 0.0% idle 
-SharedLibs: 208M resident, 45M data, 49M linkedit.
-MemRegions: 0 total, 0B resident, 199M private, 620M shared.
-PhysMem: 7054M used (2078M wired, 1754M compressor), 103M unused.
-VM: 337T vsize, 57G framework vsize, 2459(68) swapins, 49988(0) swapouts.
-Networks: packets: 7467636/10G in, 531661/58M out.
-Disks: 2657605/144G read, 496491/29G written.
+0      kernel_task      24.9 352K+ 
+42724  diagnosticd      20.0 7078K+
+54083  addressbooksyncd 14.4 2660K+
+47456  healthappd       14.0 29M+  
+59371  AccountSubscribe 13.9 2404K+
+54084  companionappd    13.9 2644K+
+57608  AuthenticationSe 13.9 2644K+
+54086  bulletindistribu 13.8 2660K+
+--- 17:54:47 UTC, the pass on iOS 27.2
+Processes: 966 total, 66 running, 900 sleeping, 2905 threads 
+2026/11/21 17:54:47
+Load Avg: 111.59, 220.99, 177.39 
+CPU usage: 32.25% user, 17.12% sys, 50.62% idle 
+SharedLibs: 148M resident, 40M data, 45M linkedit.
+MemRegions: 42 total, 480K resident, 254M private, 603M shared.
+PhysMem: 7072M used (2068M wired, 1816M compressor), 85M unused.
+VM: 432T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7050531/10G in, 159229/20M out.
+Disks: 1252614/98G read, 367841/24G written.
 
 PID    COMMAND          %CPU MEM   
-66168  BackgroundShortc 61.2 71M+  
-57157  diagnosticd      24.0 12M+  
-57110  SpringBoard      19.5 106M+ 
-25386  diagnosticd      14.8 2033K-
-0      kernel_task      14.2 880K+ 
-59820  xcodebuild       10.3 146M+ 
-57172  apsd             9.4  17M-  
-57092  SimRenderServer  8.5  252M+
---- 17:23:03 UTC, the pass on iOS 26.5
-Processes: 751 total, 118 running, 4 stuck, 629 sleeping, 2739 threads 
-2026/11/21 17:23:03
-Load Avg: 381.94, 385.00, 340.12 
-CPU usage: 49.22% user, 50.77% sys, 0.0% idle 
-SharedLibs: 249M resident, 43M data, 62M linkedit.
-MemRegions: 0 total, 0B resident, 169M private, 673M shared.
-PhysMem: 6975M used (2016M wired, 1799M compressor), 182M unused.
-VM: 335T vsize, 57G framework vsize, 2990(104) swapins, 49988(0) swapouts.
-Networks: packets: 7477593/10G in, 540947/60M out.
-Disks: 2705611/145G read, 499701/29G written.
+62530  Tadayo           23.3 39M-  
+42724  diagnosticd      22.0 7542K 
+42746  diagnosticd      13.0 2097K 
+42747  apsd             12.4 10M+  
+63373  top              6.1  4465K+
+60265  TadayoUITests-Ru 4.1  54M   
+42769  MTLCompilerServi 4.0  8806K-
+0      kernel_task      3.9  608K
+--- 17:55:48 UTC, the pass on iOS 27.2
+Processes: 964 total, 2 running, 962 sleeping, 2850 threads 
+2026/11/21 17:55:48
+Load Avg: 54.74, 185.32, 167.05 
+CPU usage: 45.16% user, 22.58% sys, 32.25% idle 
+SharedLibs: 165M resident, 43M data, 47M linkedit.
+MemRegions: 0 total, 0B resident, 230M private, 615M shared.
+PhysMem: 7069M used (2078M wired, 1820M compressor), 88M unused.
+VM: 431T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7056813/10G in, 165146/21M out.
+Disks: 1264893/98G read, 371358/24G written.
 
 PID    COMMAND          %CPU MEM   
-57157  diagnosticd      17.1 12M+  
-69118  Tadayo           16.9 46M   
-0      kernel_task      15.3 816K  
-5026   spindump         11.1 32M-  
-25386  diagnosticd      9.5  2033K 
-9605   diskimagesiod    9.1  48M   
-69520  BackgroundShortc 9.0  6034K+
-1038   provjobd38228688 8.1  20M+
---- 17:24:06 UTC, the pass on iOS 26.5
-Processes: 758 total, 132 running, 626 sleeping, 2623 threads 
-2026/11/21 17:24:06
-Load Avg: 266.84, 348.37, 329.49 
-CPU usage: 59.82% user, 40.17% sys, 0.0% idle 
-SharedLibs: 235M resident, 34M data, 149M linkedit.
-MemRegions: 0 total, 0B resident, 170M private, 1157M shared.
-PhysMem: 7033M used (2052M wired, 1912M compressor), 124M unused.
-VM: 338T vsize, 57G framework vsize, 3942(3) swapins, 49988(0) swapouts.
-Networks: packets: 7496155/10G in, 548729/62M out.
-Disks: 2736444/146G read, 504336/29G written.
-
-PID    COMMAND         %CPU MEM  
-72055  Tadayo          49.5 39M+ 
-57157  diagnosticd     48.3 11M+ 
-25386  diagnosticd     26.9 2065K
-57172  apsd            25.5 15M+ 
-57132  backboardd      14.9 52M+ 
-0      kernel_task     14.7 976K-
-57092  SimRenderServer 12.4 265M+
-57110  SpringBoard     10.6 105M-
---- 17:25:09 UTC, the pass on iOS 26.5
-Processes: 759 total, 107 running, 652 sleeping, 2576 threads 
-2026/11/21 17:25:09
-Load Avg: 183.02, 308.14, 315.78 
-CPU usage: 68.9% user, 31.90% sys, 0.0% idle 
-SharedLibs: 196M resident, 34M data, 194M linkedit.
-MemRegions: 73 total, 3168K resident, 89M private, 1063M shared.
-PhysMem: 7071M used (1957M wired, 2146M compressor), 86M unused.
-VM: 339T vsize, 57G framework vsize, 5230(4) swapins, 49988(0) swapouts.
-Networks: packets: 7505952/10G in, 557837/64M out.
-Disks: 2794650/148G read, 510367/30G written.
-
-PID    COMMAND          %CPU  MEM   
-75033  lsdiagnose       285.0 74M+  
-57157  diagnosticd      42.3  12M-  
-57172  apsd             28.5  15M+  
-25386  diagnosticd      25.0  2081K 
-0      kernel_task      14.7  240K- 
-75043  top              6.8   4097K+
-1038   provjobd38228688 6.1   21M   
-57111  logd             4.1   17M-
---- 17:25:20 UTC, the pass on iOS 26.5: end, after 12 min 27 s
-Processes: 757 total, 7 running, 66 stuck, 684 sleeping, 2572 threads 
-2026/11/21 17:25:20
-Load Avg: 164.61, 300.15, 312.86 
-CPU usage: 35.92% user, 28.44% sys, 35.62% idle 
-SharedLibs: 198M resident, 31M data, 86M linkedit.
-MemRegions: 0 total, 0B resident, 119M private, 1007M shared.
-PhysMem: 6874M used (1955M wired, 1990M compressor), 283M unused.
-VM: 338T vsize, 57G framework vsize, 5450(16) swapins, 49988(0) swapouts.
-Networks: packets: 7507283/10G in, 559115/64M out.
-Disks: 2802126/148G read, 513982/30G written.
+66042  Tadayo           42.7 40M+  
+42724  diagnosticd      28.4 7238K 
+42746  diagnosticd      16.1 2097K 
+60265  TadayoUITests-Ru 11.3 55M+  
+42747  apsd             10.7 9957K+
+42949  xcodebuild       9.3  168M+ 
+42690  backboardd       6.9  38M-  
+67424  top              6.1  4481K+
+--- 17:56:50 UTC, the pass on iOS 27.2
+Processes: 972 total, 4 running, 968 sleeping, 2876 threads 
+2026/11/21 17:56:50
+Load Avg: 45.97, 158.83, 158.36 
+CPU usage: 56.57% user, 43.42% sys, 0.0% idle 
+SharedLibs: 185M resident, 49M data, 51M linkedit.
+MemRegions: 0 total, 0B resident, 230M private, 667M shared.
+PhysMem: 7048M used (2089M wired, 1836M compressor), 109M unused.
+VM: 435T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7062544/10G in, 170480/22M out.
+Disks: 1293990/99G read, 372881/24G written.
 
 PID    COMMAND          %CPU MEM   
-57337  assetsd          24.1 23M+  
-57157  diagnosticd      21.8 12M+  
-9605   diskimagesiod    14.9 48M   
-25386  diagnosticd      12.1 2065K 
-57172  apsd             8.6  14M+  
-123    mds              8.0  83M+  
-75379  top              6.7  4081K+
-133    contextstored    6.2  6370K
+70584  Tadayo           32.9 39M+  
+123    mds              28.2 90M+  
+498    mds_stores       22.0 28M-  
+42724  diagnosticd      20.6 7190K+
+1012   provjobd13882203 15.6 20M   
+42746  diagnosticd      12.0 2145K+
+42747  apsd             9.0  9205K-
+60265  TadayoUITests-Ru 6.7  54M-
+--- 17:57:53 UTC, the pass on iOS 27.2
+Processes: 981 total, 41 running, 940 sleeping, 2909 threads 
+2026/11/21 17:57:53
+Load Avg: 40.35, 134.21, 149.08 
+CPU usage: 58.61% user, 40.48% sys, 0.90% idle 
+SharedLibs: 182M resident, 43M data, 78M linkedit.
+MemRegions: 0 total, 0B resident, 155M private, 526M shared.
+PhysMem: 7081M used (2024M wired, 1917M compressor), 76M unused.
+VM: 439T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7068913/10G in, 176548/24M out.
+Disks: 1376281/100G read, 374880/24G written.
+
+PID    COMMAND          %CPU MEM   
+75398  lsdiagnose       73.3 81M+  
+123    mds              16.3 88M-  
+42724  diagnosticd      16.0 7830K-
+2566   mdworker         15.2 4337K-
+1012   provjobd13882203 12.0 20M   
+42747  apsd             10.3 9541K-
+42746  diagnosticd      9.8  2145K 
+0      kernel_task      9.6  80K
+--- 17:58:04 UTC, the pass on iOS 27.2: end, after 17 min 40 s
+Processes: 981 total, 19 running, 962 sleeping, 2903 threads 
+2026/11/21 17:58:04
+Load Avg: 41.52, 131.42, 147.92 
+CPU usage: 31.86% user, 34.89% sys, 33.24% idle 
+SharedLibs: 197M resident, 46M data, 82M linkedit.
+MemRegions: 0 total, 0B resident, 154M private, 525M shared.
+PhysMem: 6971M used (2023M wired, 1873M compressor), 186M unused.
+VM: 439T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7070048/10G in, 177635/24M out.
+Disks: 1388769/101G read, 378155/24G written.
+
+PID    COMMAND          %CPU MEM   
+498    mds_stores       30.3 36M+  
+123    mds              30.2 86M-  
+42724  diagnosticd      16.2 7270K-
+2566   mdworker         15.1 3441K-
+42747  apsd             10.5 9205K-
+42746  diagnosticd      9.6  2145K 
+133    contextstored    9.5  6274K 
+1012   provjobd13882203 6.8  20M
+--- 17:58:05 UTC, the pass on iOS 26.5: start
+Processes: 981 total, 12 running, 969 sleeping, 2884 threads 
+2026/11/21 17:58:05
+Load Avg: 41.52, 131.42, 147.92 
+CPU usage: 34.43% user, 50.0% sys, 15.56% idle 
+SharedLibs: 196M resident, 46M data, 81M linkedit.
+MemRegions: 0 total, 0B resident, 155M private, 525M shared.
+PhysMem: 6990M used (2023M wired, 1871M compressor), 167M unused.
+VM: 439T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7070222/10G in, 177796/24M out.
+Disks: 1389930/101G read, 378176/24G written.
+
+PID    COMMAND          %CPU MEM   
+123    mds              44.0 96M+  
+1012   provjobd13882203 20.9 20M   
+498    mds_stores       19.3 37M+  
+42724  diagnosticd      16.3 7270K 
+42747  apsd             10.7 9157K-
+42746  diagnosticd      9.7  2145K 
+75876  top              6.9  4497K+
+133    contextstored    5.2  6242K-
+--- 17:59:36 UTC, the pass on iOS 26.5
+Processes: 848 total, 187 running, 1 stuck, 660 sleeping, 3125 threads 
+2026/11/21 17:59:36
+Load Avg: 215.88, 154.87, 154.58 
+CPU usage: 74.22% user, 25.77% sys, 0.0% idle 
+SharedLibs: 118M resident, 26M data, 19M linkedit.
+MemRegions: 3407 total, 110M resident, 224M private, 522M shared.
+PhysMem: 7072M used (1865M wired, 1876M compressor), 86M unused.
+VM: 381T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7435851/10G in, 186671/25M out.
+Disks: 1535544/105G read, 430286/26G written.
+
+PID    COMMAND          %CPU MEM   
+77262  STExtractionServ 18.5 20M+  
+0      kernel_task      16.6 672K+ 
+76507  diagnosticd      5.2  13M+  
+76603  linkd            4.7  16M+  
+42746  diagnosticd      4.0  2145K+
+21582  diskimagesiod    3.9  48M-  
+123    mds              3.0  106M+ 
+76460  launchd_sim      2.8  28M+
+--- 18:00:46 UTC, the pass on iOS 26.5
+Processes: 887 total, 29 running, 101 stuck, 757 sleeping, 3023 threads 
+2026/11/21 18:00:46
+Load Avg: 273.40, 195.69, 170.66 
+CPU usage: 35.99% user, 17.45% sys, 46.55% idle 
+SharedLibs: 215M resident, 73M data, 86M linkedit.
+MemRegions: 145 total, 5024K resident, 91M private, 433M shared.
+PhysMem: 7023M used (1919M wired, 2473M compressor), 131M unused.
+VM: 398T vsize, 57G framework vsize, 0(0) swapins, 120(0) swapouts.
+Networks: packets: 7444704/10G in, 191717/26M out.
+Disks: 1661861/110G read, 463640/27G written.
+
+PID    COMMAND          %CPU MEM   
+78259  xcodebuild       11.0 84M+  
+0      kernel_task      6.9  816K+ 
+76507  diagnosticd      6.8  12M   
+76510  apsd             3.5  14M+  
+21582  diskimagesiod    2.4  48M-  
+499    spindump         2.3  20M+  
+42746  diagnosticd      2.2  2209K-
+77114  IntelligencePlat 1.9  448K+
+--- 18:01:58 UTC, the pass on iOS 26.5
+Processes: 868 total, 201 running, 33 stuck, 634 sleeping, 3182 threads 
+2026/11/21 18:01:58
+Load Avg: 404.69, 244.03, 190.47 
+CPU usage: 57.7% user, 42.92% sys, 0.0% idle 
+SharedLibs: 115M resident, 27M data, 17M linkedit.
+MemRegions: 460 total, 11M resident, 56M private, 364M shared.
+PhysMem: 6976M used (2394M wired, 2365M compressor), 181M unused.
+VM: 389T vsize, 57G framework vsize, 92(0) swapins, 10556(0) swapouts.
+Networks: packets: 7450310/10G in, 196197/27M out.
+Disks: 1740824/113G read, 483024/28G written.
+
+PID    COMMAND          %CPU MEM   
+76507  diagnosticd      18.6 12M+  
+21582  diskimagesiod    14.0 48M-  
+77193  icloudmailagent  13.1 32M+  
+42746  diagnosticd      11.6 2161K-
+241    storagekitd      9.9  6210K-
+76510  apsd             7.3  16M-  
+0      kernel_task      6.2  1680K+
+79242  Tadayo           6.0  73M-
+--- 18:03:03 UTC, the pass on iOS 26.5
+Processes: 817 total, 61 running, 97 stuck, 659 sleeping, 2908 threads 
+2026/11/21 18:03:03
+Load Avg: 418.56, 285.37, 210.27 
+CPU usage: 45.72% user, 54.27% sys, 0.0% idle 
+SharedLibs: 169M resident, 27M data, 19M linkedit.
+MemRegions: 9 total, 0B resident, 167M private, 500M shared.
+PhysMem: 7032M used (1940M wired, 2399M compressor), 125M unused.
+VM: 366T vsize, 57G framework vsize, 180(16) swapins, 10556(0) swapouts.
+Networks: packets: 7458763/10G in, 201819/28M out.
+Disks: 1780189/114G read, 489242/28G written.
+
+PID    COMMAND          %CPU MEM   
+552    WeatherWidget    35.1 20M+  
+0      kernel_task      18.5 848K- 
+76507  diagnosticd      18.4 11M-  
+79242  Tadayo           12.9 99M+  
+1012   provjobd13882203 12.4 20M   
+76510  apsd             12.2 15M+  
+42746  diagnosticd      10.6 2145K 
+82903  top              7.6  4209K+
+--- 18:04:08 UTC, the pass on iOS 26.5
+Processes: 834 total, 154 running, 5 stuck, 675 sleeping, 2841 threads 
+2026/11/21 18:04:08
+Load Avg: 239.65, 256.49, 204.83 
+CPU usage: 62.3% user, 37.96% sys, 0.0% idle 
+SharedLibs: 132M resident, 32M data, 40M linkedit.
+MemRegions: 0 total, 0B resident, 128M private, 479M shared.
+PhysMem: 7065M used (2034M wired, 2616M compressor), 93M unused.
+VM: 373T vsize, 57G framework vsize, 332(0) swapins, 10556(0) swapouts.
+Networks: packets: 7463531/10G in, 206190/29M out.
+Disks: 1847880/116G read, 493621/28G written.
+
+PID    COMMAND          %CPU MEM  
+84747  BackgroundShortc 57.5 56M+ 
+85418  Tadayo           30.6 47M+ 
+76507  diagnosticd      21.2 12M- 
+0      kernel_task      13.7 656K+
+42746  diagnosticd      13.4 2161K
+76485  backboardd       10.1 52M+ 
+76510  apsd             9.9  14M- 
+76455  SimRenderServer  7.7  189M+
+--- 18:05:10 UTC, the pass on iOS 26.5
+Processes: 848 total, 128 running, 15 stuck, 705 sleeping, 2903 threads 
+2026/11/21 18:05:10
+Load Avg: 236.31, 251.60, 206.47 
+CPU usage: 57.85% user, 39.65% sys, 2.49% idle 
+SharedLibs: 167M resident, 32M data, 23M linkedit.
+MemRegions: 9 total, 32K resident, 120M private, 497M shared.
+PhysMem: 6989M used (2016M wired, 2637M compressor), 168M unused.
+VM: 379T vsize, 57G framework vsize, 336(0) swapins, 10556(0) swapouts.
+Networks: packets: 7468659/10G in, 210892/30M out.
+Disks: 1902311/117G read, 496349/28G written.
+
+PID    COMMAND          %CPU MEM   
+76675  suggestd         45.4 20M   
+76507  diagnosticd      35.2 12M-  
+42746  diagnosticd      18.5 2129K 
+87847  Tadayo           16.3 42M-  
+76510  apsd             12.9 15M+  
+77310  ClockPosterExten 8.9  16M+  
+88260  top              8.0  4289K+
+0      kernel_task      5.7  624K+
+--- 18:06:13 UTC, the pass on iOS 26.5
+Processes: 851 total, 146 running, 3 stuck, 702 sleeping, 2885 threads 
+2026/11/21 18:06:13
+Load Avg: 193.10, 237.24, 204.48 
+CPU usage: 62.1% user, 37.98% sys, 0.0% idle 
+SharedLibs: 174M resident, 28M data, 119M linkedit.
+MemRegions: 0 total, 0B resident, 111M private, 519M shared.
+PhysMem: 7020M used (2018M wired, 2686M compressor), 137M unused.
+VM: 381T vsize, 57G framework vsize, 336(0) swapins, 10556(0) swapouts.
+Networks: packets: 7473290/10G in, 215117/31M out.
+Disks: 1935412/118G read, 498093/29G written.
+
+PID    COMMAND          %CPU MEM   
+84747  BackgroundShortc 54.8 71M+  
+90327  Tadayo           38.3 46M+  
+76507  diagnosticd      25.8 12M+  
+42746  diagnosticd      16.0 2129K 
+76510  apsd             8.5  15M-  
+1012   provjobd13882203 7.2  20M   
+90562  top              6.0  4289K+
+84746  TadayoUITests-Ru 5.4  51M-
+--- 18:07:15 UTC, the pass on iOS 26.5
+Processes: 840 total, 127 running, 713 sleeping, 2856 threads 
+2026/11/21 18:07:15
+Load Avg: 196.22, 230.00, 203.99 
+CPU usage: 58.39% user, 41.60% sys, 0.0% idle 
+SharedLibs: 112M resident, 26M data, 109M linkedit.
+MemRegions: 144 total, 5680K resident, 116M private, 948M shared.
+PhysMem: 6973M used (2019M wired, 2620M compressor), 184M unused.
+VM: 376T vsize, 57G framework vsize, 336(0) swapins, 10556(0) swapouts.
+Networks: packets: 7489241/10G in, 221375/32M out.
+Disks: 1977142/119G read, 501202/29G written.
+
+PID    COMMAND          %CPU MEM  
+76507  diagnosticd      19.1 11M  
+42746  diagnosticd      12.5 2161K
+0      kernel_task      12.5 688K-
+76464  SpringBoard      10.5 122M+
+76510  apsd             9.8  15M+ 
+1012   provjobd13882203 9.1  20M  
+76485  backboardd       8.4  64M+ 
+123    mds              6.6  95M+
+--- 18:08:16 UTC, the pass on iOS 26.5: end, after 10 min 10 s
+Processes: 850 total, 129 running, 721 sleeping, 2827 threads 
+2026/11/21 18:08:16
+Load Avg: 155.63, 210.49, 198.37 
+CPU usage: 48.42% user, 51.57% sys, 0.0% idle 
+SharedLibs: 183M resident, 33M data, 75M linkedit.
+MemRegions: 86 total, 2224K resident, 104M private, 838M shared.
+PhysMem: 6926M used (1969M wired, 2608M compressor), 231M unused.
+VM: 380T vsize, 57G framework vsize, 340(0) swapins, 10556(0) swapouts.
+Networks: packets: 7494104/10G in, 225822/33M out.
+Disks: 2026834/120G read, 505802/29G written.
+
+PID    COMMAND          %CPU MEM   
+2566   mdworker         20.6 3857K-
+241    storagekitd      14.5 6162K-
+76507  diagnosticd      14.2 11M   
+498    mds_stores       10.5 42M-  
+76510  apsd             10.4 15M-  
+123    mds              9.6  94M-  
+42746  diagnosticd      8.0  2177K 
+499    spindump         8.0  32M+
