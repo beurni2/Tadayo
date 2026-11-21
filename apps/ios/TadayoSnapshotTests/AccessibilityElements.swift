@@ -120,62 +120,11 @@ enum AccessibilityElements {
             window.isHidden = true
             window.rootViewController = nil
         }
-        // A few turns of the run loop, so a navigation stack has put up its screen; then more,
-        // until what VoiceOver finds holds still for a tenth of a second, up to 10 seconds. Each
-        // reading is kept as text (each element's words, traits, actions and frame), since an
-        // element answers for the screen as it is when asked. A screen may still be moving at
-        // half a second on a loaded runner: in `ios` run 44857451832 (iOS 26.5, the runner's
-        // load about 400),
-        // `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` read A03
-        // at the largest text with the name's field still under Continue, as if before its
-        // column had scrolled for the stand-in keyboard (`ProfileForm`'s scroll on
-        // `keyboardRise`); the test passed on iOS 26.5 in `ios` run 44852529522 just before.
-        // That the scroll came late is inferred: if the failure comes back with this wait, a
-        // scroll that never came holds still in the wrong place and fails again, with no warning.
-        // What is read is unchanged; a screen that never holds still is read as it is at 10
-        // seconds, and the test log says what last moved.
-        let shown = Date().addingTimeInterval(0.5)
-        repeat { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) } while Date() < shown
+        // A few turns of the run loop, so a navigation stack has put up its screen.
+        let settled = Date().addingTimeInterval(0.5)
+        while Date() < settled { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
         window.layoutIfNeeded()
-        var objects = gather(window)
-        var last = fingerprint(objects)
-        var still = false
-        var moved = ""
-        let deadline = Date().addingTimeInterval(10)
-        while !still, Date() < deadline {
-            let held = Date().addingTimeInterval(0.1)
-            repeat { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) } while Date() < held
-            window.layoutIfNeeded()
-            objects = gather(window)
-            let now = fingerprint(objects)
-            still = now == last
-            if !still { moved = change(from: last, to: now) }
-            last = now
-        }
-        if !still {
-            print("warning: AccessibilityElements: still moving after 10 seconds: \(moved)")
-        }
-        return use(objects, window)
-    }
-
-    /// Each element's words, traits, actions and frame, read now, to tell whether a screen has
-    /// moved between two readings.
-    private static func fingerprint(_ objects: [NSObject]) -> [String] {
-        objects.map {
-            [
-                $0.accessibilityLabel ?? "", $0.accessibilityValue ?? "",
-                $0.accessibilityHint ?? "", "\($0.accessibilityTraits.rawValue)",
-                ($0.accessibilityCustomActions ?? []).map(\.name).joined(separator: ","),
-                "\($0.accessibilityFrame)",
-            ].joined(separator: "|")
-        }
-    }
-
-    /// The first element that differs between two readings, for the test log.
-    private static func change(from old: [String], to new: [String]) -> String {
-        guard old.count == new.count else { return "\(old.count) elements, then \(new.count)" }
-        guard let index = old.indices.first(where: { old[$0] != new[$0] }) else { return "" }
-        return "\(old[index]) became \(new[index])"
+        return use(gather(window), window)
     }
 
     private static func read(_ view: some View) -> Layout {
