@@ -102,9 +102,6 @@ import Observation
     /// Moves each time Home is read: an answer to an earlier read, for a club since left
     /// behind, say, is dropped.
     private var homeReads = 0
-    /// While the list is read again because Home found the club no longer as the list had it,
-    /// so it's read again once, not round and round (`loadHome()`).
-    private var relisting = false
 
     /// Why a session is being ended. Only the server's ending is said on A02-email ("Your sign-in
     /// ended. Enter your email to sign in again.", handoff 7's `auth.email.signedOut`), which then
@@ -220,6 +217,12 @@ import Observation
 
     /// Home, Friends and Memories, each time the tabs show or Retry is tapped.
     public func loadClubs() async {
+        await loadClubs(relisting: false)
+    }
+
+    /// The list, read again with `relisting` when Home found the selected club no longer as the
+    /// list had it (`loadHome(relisting:)`), which the selected club's Home is told.
+    private func loadClubs(relisting: Bool) async {
         let asked = epoch
         clubs = .loading
         selectedClubID = nil
@@ -236,7 +239,7 @@ import Observation
             clubs = .listed(list)
             let kept = account.flatMap { selection.club(for: $0.id) }
             let chosen = list.clubs.first { $0.id == kept } ?? list.clubs[0]
-            await choose(chosen.id)
+            await choose(chosen.id, relisting: relisting)
         case .success(let list):
             clubs = list.isEmpty ? .noClub : .notInThisBuild
         case .failure(.profileIncomplete):
@@ -281,10 +284,10 @@ import Observation
         return list.clubs.first { $0.id == selectedClubID }
     }
 
-    private func choose(_ clubID: String) async {
+    private func choose(_ clubID: String, relisting: Bool = false) async {
         selectedClubID = clubID
         if let account { selection.keep(clubID, for: account.id) }
-        await loadHome()
+        await loadHome(relisting: relisting)
     }
 
     /// Home for the selected club, each time it's selected and on Home's Retry. A club that
@@ -293,13 +296,24 @@ import Observation
     /// while that revision is open. A suspended club, an active one and a paused one need no
     /// call.
     ///
-    /// When the details answer not found, or say the club is no longer one that hasn't started,
-    /// the club has changed since the list was read: suspended, say, which the details answer
-    /// as not found (T9, spec 22), or started. Then the list is read again, once, and decides,
-    /// rather than Home failing under a club the server no longer shows as listed (handoffs 5
-    /// and 6, `deniedHeader`: "Avoid using a denied selected-club record or cache"). If the
-    /// list read again still leads here, Home fails, and its Retry starts over.
+    /// When the details or the revision answer not found, or the details say the club is no
+    /// longer one that hasn't started, the club has changed since the list was read: suspended,
+    /// say, which its reads answer as not found (T9, spec 22), or started. Then the list is read
+    /// again, once, and decides, rather than Home failing under a club the server no longer
+    /// shows as listed (handoffs 5 and 6, `deniedHeader`: "Avoid using a denied selected-club
+    /// record or cache"). While it's read, the tabs show the list's loading form under the
+    /// header with no club, and a switcher that was open closes. If the list read again still
+    /// leads here, Home fails, and its Retry starts over. Only that one chain of reads is told
+    /// it's reading the list again (`relisting`), so another club chosen meanwhile, or a new
+    /// session, starts with its own one read of the list.
+    ///
+    /// A revision no longer open between the two reads asks for no review, though one that
+    /// replaced it may wait on the caller: Home asks for it at its next read.
     public func loadHome() async {
+        await loadHome(relisting: false)
+    }
+
+    private func loadHome(relisting: Bool) async {
         guard let club = selectedClub else { return }
         homeReads += 1
         let asked = (epoch, homeReads)
@@ -341,9 +355,7 @@ import Observation
                 home = .failed(.other)
                 return
             }
-            relisting = true
-            defer { relisting = false }
-            await loadClubs()
+            await loadClubs(relisting: true)
         case .failure(.signedOut):
             await endedByServer()
         case .failure(let failure):

@@ -10,9 +10,10 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     private var clubAnswers: [Result<ClubDetail, APIFailure>]
     private var revisionAnswers: [Result<RosterRevision, APIFailure>]
     private(set) var calls: [String] = []
-    /// Run inside each read of a club's details, or of a roster revision, before it answers: a
-    /// slow network, say.
-    var duringClub: @Sendable () async -> Void = {}
+    private var clubReads = 0
+    /// Run inside each read of a club's details, given which read it is (1 for the first), or
+    /// of a roster revision, before it answers: a slow network, say.
+    var duringClub: @Sendable (Int) async -> Void = { _ in }
     var duringRevision: @Sendable () async -> Void = {}
 
     init(
@@ -32,7 +33,11 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     }
 
     func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
-        await duringClub()
+        let read = lock.withLock {
+            clubReads += 1
+            return clubReads
+        }
+        await duringClub(read)
         return try lock.withLock {
             calls.append("club \(clubID)")
             return next(&clubAnswers)
@@ -251,7 +256,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
             FakeAccounts(me: [.success(ben)], clubs: [.success(list(sunday, kitchen))]),
             clubs: clubs)
         let gate = Gate()
-        clubs.duringClub = { await gate.wait() }
+        clubs.duringClub = { _ in await gate.wait() }
         let started = Task { await root.start() }
         await gate.reached()
         #expect(root.selectedClubID == "club_sunday")
@@ -351,10 +356,82 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         #expect(clubs.calls == Array(repeating: "club club_sunday", count: 4))
     }
 
+    @Test func aRevisionNotFoundReadsTheListAgainToo() async {
+        // The club named an open revision, which then answers not found: suspended between the
+        // two reads, say. The list read again decides, as for the details' not found.
+        let suspended = summary("club_sunday", "Sunday people", .suspended)
+        var accounts = FakeAccounts(
+            me: [.success(ben)], clubs: [.success(list(sunday)), .success(list(suspended))])
+        var clubs = FakeClubs(
+            club: [.success(detail(sunday, openRevision: "rev_2"))],
+            revision: [.failure(.notFound)])
+        var root = root(accounts, clubs: clubs)
+        await root.start()
+        #expect(root.home == .unavailable)
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        #expect(clubs.calls == ["club club_sunday", "revision rev_2"])
+
+        // Still listed as it was: its details and its open revision, a newer one, are read again.
+        accounts = FakeAccounts(
+            me: [.success(ben)], clubs: [.success(list(sunday)), .success(list(sunday))])
+        clubs = FakeClubs(
+            club: [
+                .success(detail(sunday, openRevision: "rev_2")),
+                .success(detail(sunday, openRevision: "rev_3")),
+            ],
+            revision: [
+                .failure(.notFound), .success(revision("rev_3", of: sunday, decision: .pending)),
+            ])
+        root = self.root(accounts, clubs: clubs)
+        await root.start()
+        #expect(root.home == .awaiting(review: true))
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        #expect(
+            clubs.calls == [
+                "club club_sunday", "revision rev_2", "club club_sunday", "revision rev_3",
+            ])
+    }
+
+    @Test func anotherClubChosenWhileTheListIsReadAgainReadsItOnceForItself() async {
+        // Sunday people answers not found and the list is read again; while Sunday people's
+        // details are read once more, Ben chooses Porch, which answers not found too, suspended
+        // since. Porch's own read of the list decides, rather than Porch failing because Sunday
+        // people's chain was reading the list again.
+        let porch = summary("club_porch", "Porch", .proposed)
+        let porchSuspended = summary("club_porch", "Porch", .suspended)
+        let accounts = FakeAccounts(
+            me: [.success(ben)],
+            clubs: [
+                .success(list(sunday, porch)), .success(list(sunday, porch)),
+                .success(list(sunday, porchSuspended)),
+            ])
+        let clubs = FakeClubs(
+            club: [
+                .failure(.notFound), .failure(.notFound),
+                .success(detail(sunday, openRevision: nil)),
+            ])
+        let gate = Gate()
+        clubs.duringClub = { read in if read == 2 { await gate.wait() } }
+        let root = root(accounts, clubs: clubs)
+        let started = Task { await root.start() }
+        await gate.reached()
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        #expect(root.selectedClubID == "club_sunday")
+        await root.select("club_porch")
+        #expect(root.selectedClubID == "club_porch")
+        #expect(root.home == .unavailable)
+        #expect(accounts.calls == ["me", "clubs", "clubs", "clubs"])
+        gate.open()
+        await started.value
+        #expect(root.selectedClubID == "club_porch")
+        #expect(root.home == .unavailable)
+        #expect(clubs.calls == ["club club_sunday", "club club_porch", "club club_sunday"])
+    }
+
     @Test func homeLoadsUntilItsReadsAnswer() async {
         let clubs = FakeClubs(club: [.success(detail(sunday, openRevision: nil))])
         let gate = Gate()
-        clubs.duringClub = { await gate.wait() }
+        clubs.duringClub = { _ in await gate.wait() }
         let root = root(
             FakeAccounts(me: [.success(ben)], clubs: [.success(list(sunday))]), clubs: clubs)
         let started = Task { await root.start() }
@@ -423,7 +500,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
             revision: [.success(revision("rev_2", of: sunday, decision: .pending))])
         let root = root(accounts, clubs: clubs, selection: selection)
         let gate = Gate()
-        clubs.duringClub = { await gate.wait() }
+        clubs.duringClub = { _ in await gate.wait() }
         let started = Task { await root.start() }
         await gate.reached()
         await root.leave()

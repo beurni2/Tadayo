@@ -24,14 +24,15 @@ The split changes no product decision and no state the plan lists. It keeps each
 - **`home`, Home's state for the selected club**, read after the list:
     - **Proposed:**
         - `GET /v1/clubs/{club_id}`, then, when it names an open revision, `GET /v1/rosters/{revision_id}`;
-        - the creator's `my_decision` `pending` gives `.awaiting(review: true)`: frame 13's words (FQ84; the api lane's FQ60, where proposing counts as the proposer's approval, so `pending` happens only in a revision the server made for a name);
-        - anything else gives `.awaiting(review: false)`;
-        - Home shows its loading form while these are out, and its failure form with Retry if either fails (nothing is assumed while a call is out or failed).
+        - the creator's `my_decision` `pending`, in a revision still `open`, gives `.awaiting(review: true)`: frame 13's words (FQ84; the api lane's FQ60, where proposing counts as the proposer's approval, so `pending` happens only in a revision the server made for a name);
+        - anything else gives `.awaiting(review: false)`, a revision no longer open included (superseded, applied or not gone ahead between the two reads; one that replaced it is asked for at Home's next read);
+        - Home shows its loading form while these are out, and its failure form with Retry if either fails (nothing is assumed while a call is out or failed);
+        - when the details or the revision answer not found, or the details say the club is no longer proposed, the club changed since the list was read (suspended, which its reads answer as not found, T9; or started): the list is read again, once, and decides (handoffs 5 and 6, `deniedHeader`), with the list's loading form under the no-club header meanwhile; if the list read again still leads there, Home fails and its Retry starts over. Only that one chain of reads counts as reading the list again, so another club chosen meanwhile, or a new session, gets its own read of the list.
     - **Suspended:** `.unavailable`, with no call (T9).
     - **Active or paused:** `.notInThisBuild`. Their Home (`H01-confirm-days`, `H01-waiting`, `H01-paused`) is B2's.
     - **A failure answer:**
         - a `signedOut` answer ends the session as everywhere else;
-        - an answer that lands after Leave sign-in, or after another club was chosen, is dropped (the root's `epoch`, and the club it was asked for).
+        - an answer that lands after Leave sign-in, or after another club was chosen or Home read again, is dropped (the root's `epoch`, and its count of Home's reads, `homeReads`).
 - **`ClubService`.** It joins `AccountService` in the root's services (`AppGraph`'s `Accounts` and the UI tests' fakes), through `TadayoAPIClient`'s calls from #88.
 
 ### The screens (`apps/ios`, `TadayoDesign`)
@@ -105,8 +106,11 @@ On Linux (`swift test --package-path packages/swift/TadayoCore`), in `RootModelT
     - with an open revision and `my_decision` `approved`, `.awaiting(review: false)`;
     - with `pending`, `.awaiting(review: true)`;
     - while either call is out, `.loading`;
+    - with an open revision no longer `open` by the time it's read, `.awaiting(review: false)`;
     - a failure of either gives `.failed` with Retry reading both again;
-    - `signedOut` ends the session.
+    - a not found from either, or details no longer proposed, reads the list once more, which decides; still not found after it, `.failed`, and Retry starts over; a club chosen while the list is read again gets its own read of the list;
+    - an answer after Leave sign-in reads nothing more;
+    - `signedOut` from either ends the session.
 7. A suspended club gives `.unavailable`; an active or paused one gives `.notInThisBuild`, with no call made.
 
 Hosted tests (`apps/ios/TadayoTests`):
