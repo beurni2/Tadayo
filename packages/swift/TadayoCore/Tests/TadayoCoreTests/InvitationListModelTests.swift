@@ -392,6 +392,141 @@ import Testing
         #expect(clubs.calls.filter { $0.hasPrefix("createInvitation") }.count == 1)
         #expect(list.busy.isEmpty)
     }
+
+    @Test func aLinkThatComesAfterTheSessionEndedIsntKept() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.memberAnswers = [.success(Sunday.members([Sunday.candidate("cand_sam", "Sam", nil)]))]
+        clubs.linkAnswers = [.success(Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)))]
+        let session = SessionFlag()
+        // Leave sign-in runs while the link is on its way.
+        clubs.duringLink = { await MainActor.run { session.current = false } }
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let list = model(clubs, book: book, current: { session.current })
+        await list.load()
+        #expect(await list.linkToShare(for: "cand_sam") == nil)
+        #expect(book.link(for: "cand_sam", club: club, account: account) == nil)
+        #expect(list.actionFailure == nil)
+    }
+
+    @Test func createNewLinkWaitsThroughItsReadAgainAndAFailedOneOffersNoSecond() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.memberAnswers = [
+            .success(Sunday.members([Sunday.candidate("cand_alex", "Alex", .revoked)]))
+        ]
+        clubs.linkAnswers = [
+            .success(Sunday.link("inv_alex_2", for: "cand_alex", url: Sunday.url(2)))
+        ]
+        let list = model(clubs)
+        await list.load()
+        let gate = Gate()
+        clubs.duringMembers = { read in if read == 2 { await gate.wait() } }
+        let first = Task { await list.createNewLink(for: "cand_alex") }
+        await gate.reached()
+        // The link is made and the list is being read again: the row still waits.
+        #expect(list.busy == ["cand_alex"])
+        await list.createNewLink(for: "cand_alex")
+        gate.open()
+        await first.value
+        // The read again failed, and the row shows the new link, held: nothing to make again.
+        #expect(row(list, "cand_alex")?.status == .notShared)
+        #expect(row(list, "cand_alex")?.action == .shareLink)
+        #expect(row(list, "cand_alex")?.menu == [.revokeLink])
+        await list.createNewLink(for: "cand_alex")
+        #expect(clubs.calls.filter { $0.hasPrefix("createInvitation") }.count == 1)
+        #expect(await list.linkToShare(for: "cand_alex") == Sunday.url(2))
+        #expect(list.busy.isEmpty)
+    }
+
+    @Test func aConfirmedRevokeDropsTheLinkAtOnceThoughTheReadAgainFails() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.memberAnswers = [
+            .success(Sunday.members([Sunday.candidate("cand_alex", "Alex", .live)]))
+        ]
+        clubs.revokeAnswers = [.success(())]
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        book.keep(
+            Sunday.link("inv_alex", for: "cand_alex", url: Sunday.url(1)), club: club,
+            account: account)
+        let list = model(clubs, book: book)
+        await list.load()
+        #expect(row(list, "cand_alex")?.action == .shareLink)
+        await list.revoke("cand_alex")
+        // No answer is left for the read again, so it fails.
+        #expect(clubs.calls.filter { $0.hasPrefix("members") }.count == 2)
+        #expect(row(list, "cand_alex")?.status == .revoked)
+        #expect(row(list, "cand_alex")?.action == .createNewLink)
+        #expect(book.link(for: "cand_alex", club: club, account: account) == nil)
+        #expect(await list.linkToShare(for: "cand_alex") == nil)
+        #expect(list.actionFailure == nil)
+    }
+
+    @Test func aFirstLinkSharedFromTheListReadsSharedAtOnce() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.memberAnswers = [.success(Sunday.members([Sunday.candidate("cand_sam", "Sam", nil)]))]
+        clubs.linkAnswers = [.success(Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)))]
+        let list = model(clubs)
+        await list.load()
+        #expect(await list.linkToShare(for: "cand_sam") == Sunday.url(1))
+        #expect(row(list, "cand_sam")?.status == .notShared)
+        #expect(row(list, "cand_sam")?.menu == [.revokeLink])
+        list.shareFinished(for: "cand_sam", completed: true)
+        #expect(row(list, "cand_sam")?.status == .shared)
+        #expect(row(list, "cand_sam")?.action == .shareAgain)
+        #expect(clubs.calls.filter { $0.hasPrefix("members") }.count == 1)
+    }
+
+    @Test func aReadAskedBeforeALinkWasMadeLeavesItsRowAsMade() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail()), .success(Sunday.detail())]
+        let noLink = Sunday.members([Sunday.candidate("cand_sam", "Sam", nil)])
+        clubs.memberAnswers = [.success(noLink), .success(noLink)]
+        clubs.linkAnswers = [.success(Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)))]
+        let list = model(clubs)
+        await list.load()
+        let gate = Gate()
+        clubs.duringMembers = { read in if read == 2 { await gate.wait() } }
+        let reading = Task { await list.refresh() }
+        await gate.reached()
+        #expect(await list.linkToShare(for: "cand_sam") == Sunday.url(1))
+        list.shareFinished(for: "cand_sam", completed: true)
+        #expect(row(list, "cand_sam")?.status == .shared)
+        // The read asked before the link was made can't list it: the row stays as made.
+        gate.open()
+        await reading.value
+        #expect(row(list, "cand_sam")?.status == .shared)
+        #expect(row(list, "cand_sam")?.menu == [.revokeLink])
+    }
+
+    @Test func createNewLinkAfterAFailedShareLinkIsANewAction() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail()), .success(Sunday.detail())]
+        clubs.memberAnswers = [
+            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", nil)])),
+            // The first try made a link after all, and it has since been revoked.
+            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .revoked)])),
+        ]
+        clubs.linkAnswers = [
+            .failure(.network),
+            .success(Sunday.link("inv_sam_2", for: "cand_sam", url: Sunday.url(2))),
+        ]
+        let list = model(clubs)
+        await list.load()
+        #expect(await list.linkToShare(for: "cand_sam") == nil)
+        #expect(list.actionFailure == .createLink(name: "Sam", network: true))
+        await list.refresh()
+        #expect(row(list, "cand_sam")?.status == .revoked)
+        await list.createNewLink(for: "cand_sam")
+        #expect(
+            clubs.calls.filter { $0.hasPrefix("createInvitation") } == [
+                "createInvitation cand_sam club_sunday \(NumberedKeys.key(1))",
+                "createInvitation cand_sam club_sunday \(NumberedKeys.key(2))",
+            ])
+        #expect(row(list, "cand_sam")?.action == .shareLink)
+    }
 }
 
 /// The name step (`G01-invite-name`; `docs/plans/ios-b1-create.md` section 1).
@@ -402,12 +537,13 @@ import Testing
     func model(
         _ clubs: ScriptedClubs, book: InvitationLinkBook? = nil,
         keys: NumberedKeys = NumberedKeys(),
-        known: Set<String> = ["cand_maya"], changed: @escaping @MainActor () async -> Void = {}
+        known: Set<String> = ["cand_maya"], current: @escaping @MainActor () -> Bool = { true },
+        changed: @escaping @MainActor () async -> Void = {}
     ) -> InviteNameModel {
         InviteNameModel(
             club: Sunday.ref, accountID: account, rosterVersion: 2, known: known, service: clubs,
             book: book ?? InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
-            makeKey: { keys.make() }, changed: changed)
+            makeKey: { keys.make() }, current: current, changed: changed)
     }
 
     var withSam: RosterRevision {
@@ -558,12 +694,39 @@ import Testing
         var ended = 0
         let invite = InviteNameModel(
             club: Sunday.ref, accountID: account, rosterVersion: 2, known: [], service: clubs,
-            book: InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
+            book: InvitationLinkBook(vault: InMemoryInvitationLinkVault()), current: { true },
             signedOut: { ended += 1 })
         invite.name = "Sam"
         #expect(await invite.createLinkAndShare() == nil)
         #expect(ended == 1)
         #expect(invite.failure == nil)
+    }
+
+    @Test func aLinkThatComesAfterTheSessionEndedIsntKept() async {
+        // Leave sign-in runs while the first link, or the one after a replay without its link, is
+        // on its way.
+        for (replays, ending) in [(false, 1), (true, 2)] {
+            let clubs = ScriptedClubs()
+            clubs.proposeAnswers = [.success(withSam)]
+            clubs.linkAnswers =
+                (replays ? [.success(Sunday.link("inv_sam", for: "cand_sam", url: nil))] : [])
+                + [.success(Sunday.link("inv_sam_2", for: "cand_sam", url: Sunday.url(1)))]
+            let session = SessionFlag()
+            clubs.duringLink = {
+                await MainActor.run {
+                    session.calls += 1
+                    if session.calls == ending { session.current = false }
+                }
+            }
+            let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+            let invite = model(clubs, book: book, current: { session.current })
+            invite.name = "Sam"
+            #expect(await invite.createLinkAndShare() == nil)
+            #expect(book.link(for: "cand_sam", club: club, account: account) == nil)
+            #expect(invite.link == nil)
+            #expect(invite.failure == nil)
+            #expect(clubs.calls.filter { $0.hasPrefix("createInvitation") }.count == ending)
+        }
     }
 
     @Test func theShareSheetClosingMarksACompletedShareAndReadsTheListAgain() async {

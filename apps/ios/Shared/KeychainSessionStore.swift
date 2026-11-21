@@ -119,10 +119,11 @@ struct KeychainSessionStore: SessionStore {
         if let mark, FileManager.default.fileExists(atPath: mark.path(percentEncoded: false)) {
             return
         }
-        let forgotten = [service, invitationsService].allSatisfy {
-            let status = SecItemDelete(items(of: $0) as CFDictionary)
-            return status == errSecSuccess || status == errSecItemNotFound
+        // Every service's delete is tried, even after one fails.
+        let statuses = [service, invitationsService].map {
+            SecItemDelete(items(of: $0) as CFDictionary)
         }
+        let forgotten = statuses.allSatisfy { $0 == errSecSuccess || $0 == errSecItemNotFound }
         guard forgotten, let mark else { return }
         try? Data().write(
             to: mark, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])

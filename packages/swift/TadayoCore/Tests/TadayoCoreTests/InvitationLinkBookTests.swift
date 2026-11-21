@@ -273,6 +273,66 @@ import Testing
         #expect(book(vault).link(for: "cand_sam", club: club, account: account) == nil)
     }
 
+    @Test func aFailedLoadWritesNothingOverTheVaultAndTheNextAccessReadsIt() throws {
+        let sam = KeptInvitationLink(
+            clubID: club, candidateID: "cand_sam", invitationID: "inv_sam", url: Sunday.url(1),
+            shared: true)
+        let maya = KeptInvitationLink(
+            clubID: club, candidateID: "cand_maya", invitationID: "inv_maya", url: Sunday.url(2),
+            shared: false)
+        let vault = FailingVault(InvitationLinkFile(accountID: account, links: [sam, maya]))
+        vault.failLoads = true
+        let links = book(vault)
+        // The iPhone is locked: nothing reads as kept, and a link kept now is this launch's alone.
+        #expect(links.link(for: "cand_sam", club: club, account: account) == nil)
+        let alex = try #require(
+            links.keep(
+                Sunday.link("inv_alex", for: "cand_alex", url: Sunday.url(3)), club: club,
+                account: account))
+        #expect(links.link(for: "cand_alex", club: club, account: account) == alex)
+        #expect(vault.saves == 0)
+        #expect(vault.deletes == 0)
+        #expect(vault.kept?.links == [sam, maya])
+        // Unlocked: the vault's links come back, with this launch's, and are written together.
+        vault.failLoads = false
+        #expect(links.link(for: "cand_sam", club: club, account: account) == sam)
+        #expect(links.link(for: "cand_maya", club: club, account: account) == maya)
+        #expect(links.link(for: "cand_alex", club: club, account: account) == alex)
+        #expect(vault.kept?.links == [sam, maya, alex])
+    }
+
+    @Test func aLinkTheServerRevokedGoesAtOnce() throws {
+        let vault = InMemoryInvitationLinkVault()
+        let links = book(vault)
+        links.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: club,
+            account: account)
+        links.keep(
+            Sunday.link("inv_maya", for: "cand_maya", url: Sunday.url(2)), club: club,
+            account: account)
+        links.drop("inv_sam", account: "acct_maya")
+        #expect(links.link(for: "cand_sam", club: club, account: account) != nil)
+        links.drop("inv_sam", account: account)
+        #expect(links.link(for: "cand_sam", club: club, account: account) == nil)
+        #expect(try vault.load()?.links.map(\.invitationID) == ["inv_maya"])
+    }
+
+    @Test func aForgetThatCouldntFinishIsTriedAgainAtTheNextAccess() {
+        let vault = FailingVault()
+        let links = book(vault)
+        links.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: club,
+            account: account)
+        vault.failDeletes = true
+        vault.failSaves = true
+        links.forget()
+        #expect(vault.kept?.links.count == 1)
+        vault.failDeletes = false
+        vault.failSaves = false
+        #expect(links.link(for: "cand_sam", club: club, account: account) == nil)
+        #expect(vault.kept == nil)
+    }
+
     @Test func nothingTheTypesPrintHoldsTheLink() throws {
         let links = book()
         let kept = try #require(

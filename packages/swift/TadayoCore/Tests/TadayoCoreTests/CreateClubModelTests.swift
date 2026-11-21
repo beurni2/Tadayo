@@ -10,13 +10,14 @@ import Testing
 
     func model(
         _ clubs: ScriptedClubs, keys: NumberedKeys = NumberedKeys(),
-        zone: TimeZone? = nil, created: @escaping @MainActor (ClubDetail) async -> Void = { _ in },
+        zone: TimeZone? = nil, current: @escaping @MainActor () -> Bool = { true },
+        created: @escaping @MainActor (ClubDetail) async -> Void = { _ in },
         signedOut: @escaping @MainActor () async -> Void = {}
     ) -> CreateClubModel {
         let zone = zone ?? self.zone
         return CreateClubModel(
-            service: clubs, makeKey: { keys.make() }, timezone: { zone }, created: created,
-            signedOut: signedOut)
+            service: clubs, makeKey: { keys.make() }, timezone: { zone }, current: current,
+            created: created, signedOut: signedOut)
     }
 
     @Test func aNameNeedsSomethingVisibleAndAtMostFortyCharacters() {
@@ -64,7 +65,7 @@ import Testing
         let keys = NumberedKeys()
         let create = CreateClubModel(
             service: clubs, makeKey: { keys.make() }, timezone: { zones.next() },
-            created: { _ in }, signedOut: {})
+            current: { true }, created: { _ in }, signedOut: {})
         create.name = "Sunday people"
         await create.create()
         #expect(create.failure == .network)
@@ -119,6 +120,26 @@ import Testing
         #expect(ended == 1)
         #expect(create.failure == nil)
         #expect(create.club == nil)
+    }
+
+    @Test func anAnswerAfterTheSessionEndedIsDropped() async {
+        for answer: Result<ClubDetail, APIFailure> in [
+            .success(Sunday.detail()), .failure(.network),
+        ] {
+            let clubs = ScriptedClubs()
+            clubs.createAnswers = [answer]
+            var live = true
+            var made = 0
+            let create = model(clubs, current: { live }, created: { _ in made += 1 })
+            create.name = "Sunday people"
+            // Leave sign-in ended the session before the answer landed.
+            live = false
+            await create.create()
+            #expect(create.club == nil)
+            #expect(made == 0)
+            #expect(create.failure == nil)
+            #expect(!create.isCreating)
+        }
     }
 
     @Test func theNameIsReadOnlyWhileTheClubIsMadeAndOneMakeRunsAtATime() async {

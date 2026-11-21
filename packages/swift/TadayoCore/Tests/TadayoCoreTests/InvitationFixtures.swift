@@ -104,6 +104,14 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     }
 }
 
+/// Whether the session a model was made in goes on, for its `current`: a test ends it from inside
+/// a call, to see what an answer that lands after Leave sign-in does.
+@MainActor final class SessionFlag {
+    var current = true
+    /// The calls that have reached the hook that ends it.
+    var calls = 0
+}
+
 /// A vault whose saves, loads and deletes can be made to fail, counting each.
 final class FailingVault: InvitationLinkVault, @unchecked Sendable {
     private let lock = NSLock()

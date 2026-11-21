@@ -8,6 +8,9 @@ import TadayoCore
 /// `group.app.tadayo` that the session's item already proves on an unsigned simulator build
 /// (`KeychainSessionStore`), readable only while the iPhone is unlocked, on this device only,
 /// never synchronised. Its data is one account's id and its links, as JSON: no address, no name.
+/// The share extension's code never reads it, though the access group, which the extension
+/// shares for the session, would let it. A read while the iPhone is locked fails, and the book
+/// reads it again at its next access, writing nothing over it meanwhile.
 ///
 /// `InvitationLinkBook` forgets it at Leave sign-in (`AppGraph`'s `left`), and
 /// `KeychainSessionStore.forgetEarlierInstall` after a reinstall. A failure carries its status

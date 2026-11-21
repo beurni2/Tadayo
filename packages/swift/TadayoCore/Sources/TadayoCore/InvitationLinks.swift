@@ -101,7 +101,9 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
 /// that launch. A failed or offline read is never settled, so it changes nothing.
 ///
 /// What's kept is in memory first and then in the vault: a vault that can't save leaves the link
-/// for this launch only, and one that can't load reads as nothing kept. Either way the screens
+/// for this launch only. One that can't load (a locked iPhone, since the item is readable only
+/// while it's unlocked) reads as nothing kept, has nothing written over it, and is read again at
+/// the next access, where what this launch kept meanwhile joins its links. Either way the screens
 /// then offer what the contract says for a link the app doesn't hold.
 @MainActor public final class InvitationLinkBook {
     /// When a read was requested, against when each link was kept.
@@ -110,8 +112,14 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     }
 
     private let vault: any InvitationLinkVault
+    /// This launch's links: the vault's, once read, with what this launch kept.
     private var file: InvitationLinkFile?
+    /// The vault's file has been read into `file`, or forgotten. Until then nothing is written to
+    /// the vault, so links it holds but couldn't give are never written over.
     private var loaded = false
+    /// A forget that could neither delete the vault's file nor leave an empty one in its place:
+    /// the next access tries again before anything else.
+    private var forgetPending = false
     /// When each link was kept in this launch, by invitation id.
     private var keptAt: [String: UInt64] = [:]
     private var clock: UInt64 = 0
@@ -167,6 +175,17 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         write(kept)
     }
 
+    /// The server answered a revoke of the link: it no longer works, so it goes at once
+    /// (ADR-037), whatever a read says later.
+    public func drop(_ invitationID: String, account accountID: String) {
+        guard var kept = linksFile(for: accountID) else { return }
+        let before = kept.links.count
+        kept.links.removeAll { $0.invitationID == invitationID }
+        guard kept.links.count != before else { return }
+        keptAt[invitationID] = nil
+        write(kept)
+    }
+
     /// The stamp to take just before requesting a read that will settle the links.
     public func beginRead() -> Stamp {
         clock += 1
@@ -210,26 +229,62 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
 
     /// Forgets every link, in memory and in the vault: at Leave sign-in, which is both logout and
     /// the way to another account (ADR-037, T11). A vault that can't delete its file is given an
-    /// empty one for no account, which no account reads.
+    /// empty one for no account, which no account reads; one that can do neither is tried again at
+    /// the next access.
     public func forget() {
         file = nil
         loaded = true
         keptAt = [:]
-        do {
-            try vault.delete()
-        } catch {
-            try? vault.save(InvitationLinkFile(accountID: "", links: []))
-        }
+        forgetVault()
     }
 
-    /// This account's file, loaded from the vault the first time it's needed.
+    /// This account's file, with the vault read once it can be.
     private func linksFile(for accountID: String) -> InvitationLinkFile? {
-        if !loaded {
-            file = try? vault.load()
-            loaded = true
-        }
+        readVault()
         guard let file, file.accountID == accountID, !accountID.isEmpty else { return nil }
         return file
+    }
+
+    /// Finishes a forget that couldn't, then reads the vault if it hasn't been read: what this
+    /// launch kept before then joins the vault's links and is written back.
+    private func readVault() {
+        if forgetPending { forgetVault() }
+        guard !loaded else { return }
+        let stored: InvitationLinkFile?
+        do {
+            stored = try vault.load()
+        } catch {
+            return
+        }
+        loaded = true
+        let merged = Self.merge(stored, file)
+        file = merged
+        if let merged, merged != stored { persist(merged) }
+    }
+
+    /// The vault's file with what this launch kept before it was read: one account's links at a
+    /// time, this launch's account's, and this launch's link in place of the vault's for the same
+    /// candidate or invitation.
+    private static func merge(_ stored: InvitationLinkFile?, _ kept: InvitationLinkFile?)
+        -> InvitationLinkFile?
+    {
+        guard let kept else { return stored }
+        guard var merged = stored, merged.accountID == kept.accountID else { return kept }
+        merged.links.removeAll { old in
+            kept.links.contains {
+                ($0.clubID == old.clubID && $0.candidateID == old.candidateID)
+                    || $0.invitationID == old.invitationID
+            }
+        }
+        merged.links += kept.links
+        return merged
+    }
+
+    private func forgetVault() {
+        let deleted = (try? vault.delete()) != nil
+        let blanked =
+            deleted || (try? vault.save(InvitationLinkFile(accountID: "", links: []))) != nil
+        forgetPending = !blanked
     }
 
     /// Drops this account's links that `drop` picks and that were kept before `stamp`.
@@ -246,18 +301,22 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         write(kept)
     }
 
-    /// Keeps `kept` in memory, then in the vault; an empty file is no file.
+    /// Keeps `kept` in memory, then in the vault once it has been read.
     private func write(_ kept: InvitationLinkFile) {
         file = kept
-        loaded = true
+        guard loaded else { return }
+        persist(kept)
+    }
+
+    /// Writes `kept` to the vault; an empty file is no file. Either replaces what a forget couldn't
+    /// delete.
+    private func persist(_ kept: InvitationLinkFile) {
+        let written: Bool
         if kept.links.isEmpty {
-            do {
-                try vault.delete()
-            } catch {
-                try? vault.save(kept)
-            }
+            written = (try? vault.delete()) != nil || (try? vault.save(kept)) != nil
         } else {
-            try? vault.save(kept)
+            written = (try? vault.save(kept)) != nil
         }
+        if written { forgetPending = false }
     }
 }

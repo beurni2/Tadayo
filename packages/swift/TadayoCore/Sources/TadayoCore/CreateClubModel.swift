@@ -5,7 +5,8 @@ import Observation
 /// invitations makes the club with its name and the device's zone, which is the club's from then
 /// on (FQ19). The make is one action with one key, made when it starts and sent again, with the
 /// same body, on every retry of it (T19); a changed name is a new action. A failure keeps the
-/// name, editable (handoff 8's `B1LoadShell.transientFailure`). No cover in the trial (FQ17).
+/// name, editable (handoff 8's `B1LoadShell.transientFailure`). An answer counts only while
+/// `current` says the session it was asked in goes on. No cover in the trial (FQ17).
 @MainActor @Observable public final class CreateClubModel {
     /// "Couldn’t create the club. Check your connection and try again." or "… Try again."
     /// (handoff 8's frame 7 and `failureStates`).
@@ -29,21 +30,24 @@ import Observation
     let service: any ClubService
     let makeKey: @Sendable () -> IdempotencyKey
     let timezone: @Sendable () -> TimeZone
+    let current: @MainActor () -> Bool
     let created: @MainActor (ClubDetail) async -> Void
     let signedOut: @MainActor () async -> Void
 
-    /// `created` takes the club once it's made, to show its invitations; `signedOut` ends the
-    /// session.
+    /// `current` says the session the model was made in goes on; `created` takes the club once
+    /// it's made, to show its invitations; `signedOut` ends the session.
     public init(
         service: any ClubService,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         timezone: @escaping @Sendable () -> TimeZone = { TimeZone.current },
+        current: @escaping @MainActor () -> Bool,
         created: @escaping @MainActor (ClubDetail) async -> Void,
         signedOut: @escaping @MainActor () async -> Void
     ) {
         self.service = service
         self.makeKey = makeKey
         self.timezone = timezone
+        self.current = current
         self.created = created
         self.signedOut = signedOut
     }
@@ -85,18 +89,23 @@ import Observation
             let made = try await service.createClub(
                 name: attempt.name, timezone: attempt.timezone, key: attempt.key)
             pending = nil
+            guard current() else { return }
             club = made
             await created(made)
         } catch .network {
+            guard current() else { return }
             failure = .network
         } catch .unavailable {
             // The server may have made it: the retry sends the same key, so it's made once.
+            guard current() else { return }
             failure = .other
         } catch .signedOut {
             pending = nil
+            guard current() else { return }
             await signedOut()
         } catch {
             pending = nil
+            guard current() else { return }
             failure = .other
         }
     }

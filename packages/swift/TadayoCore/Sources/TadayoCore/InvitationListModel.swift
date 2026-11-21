@@ -153,7 +153,13 @@ public struct InvitationList: Sendable, Equatable {
 
     private var answer: (detail: ClubDetail, members: MemberList)?
     private var reads = 0
-    private var linkKeys: [String: IdempotencyKey] = [:]
+    /// What this list's own actions learned of a candidate's link since its reads were requested:
+    /// a link made (live) or revoked, by candidate id, with the read count then, so the row says
+    /// so even when the read again fails, until an answer to a read requested after it comes.
+    private var learned: [String: (invitation: CandidateInvitation, at: Int)] = [:]
+    /// Each candidate's link being made, by candidate id: the invitation it replaces (nil for the
+    /// first) and the key its action started with, sent again on every retry of that action.
+    private var linkKeys: [String: (replacing: String?, key: IdempotencyKey)] = [:]
 
     let service: any ClubService
     let book: InvitationLinkBook
@@ -165,7 +171,7 @@ public struct InvitationList: Sendable, Equatable {
     public init(
         club: ClubRef, accountID: String, service: any ClubService, book: InvitationLinkBook,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
-        current: @escaping @MainActor () -> Bool = { true },
+        current: @escaping @MainActor () -> Bool,
         gone: @escaping @MainActor () async -> Void = {},
         signedOut: @escaping @MainActor () async -> Void = {}
     ) {
@@ -205,6 +211,8 @@ public struct InvitationList: Sendable, Equatable {
             return kept.url
         }
         guard candidate.invitation == nil else { return nil }
+        busy.insert(candidateID)
+        defer { busy.remove(candidateID) }
         return await make(for: candidate)?.url
     }
 
@@ -225,13 +233,17 @@ public struct InvitationList: Sendable, Equatable {
             let row = row(for: candidate),
             row.action == .createNewLink || row.menu.contains(.createNewLink)
         else { return }
+        // The row waits through the read again too, which a second tap would otherwise beat.
+        busy.insert(candidateID)
+        defer { busy.remove(candidateID) }
         guard await make(for: candidate) != nil, current() else { return }
         await refresh()
     }
 
     /// Revoke link, after its confirmation: only a live link (handoff 4's `revokeLink`), then
-    /// the list read again. A failure keeps the row as it was; with no answer the revoke may
-    /// have reached the server, so the read again says.
+    /// the list read again. Once the server confirms it, the kept link goes and the row reads Link
+    /// revoked, even if the read again fails. A failure keeps the row as it was; with no answer
+    /// the revoke may have reached the server, so the read again says.
     public func revoke(_ candidateID: String) async {
         guard let candidate = mine(candidateID), !busy.contains(candidateID),
             let invitation = candidate.invitation, invitation.state == .live
@@ -241,6 +253,12 @@ public struct InvitationList: Sendable, Equatable {
         defer { busy.remove(candidateID) }
         do {
             try await service.revokeInvitation(invitation.id)
+            guard current() else { return }
+            book.drop(invitation.id, account: accountID)
+            learn(
+                CandidateInvitation(
+                    id: invitation.id, state: .revoked, expiresAt: invitation.expiresAt),
+                for: candidateID)
         } catch .signedOut {
             guard current() else { return }
             await signedOut()
@@ -294,6 +312,7 @@ public struct InvitationList: Sendable, Equatable {
         switch answers {
         case (.success(let detail), .success(let list)):
             answer = (detail, list)
+            learned = learned.filter { $0.value.at >= asked }
             relist()
         case (.failure(let failure), _), (_, .failure(let failure)):
             let worst = Self.decisive(answers.0.failure, answers.1.failure) ?? failure
@@ -336,11 +355,23 @@ public struct InvitationList: Sendable, Equatable {
                 awaitingMyApproval: answer.members.openRevision?.myDecision == .pending))
     }
 
-    /// The open revision's candidates the caller proposed, in the server's order.
+    /// The open revision's candidates the caller proposed, in the server's order, each with what
+    /// this list's own actions learned of their link since.
     private var myCandidates: [Candidate] {
         guard let answer, let revision = answer.members.openRevision else { return [] }
         let me = answer.members.club.myMembershipID
-        return revision.candidates.filter { $0.proposedBy.membershipID == me }
+        return revision.candidates.filter { $0.proposedBy.membershipID == me }.map { candidate in
+            guard let invitation = learned[candidate.id]?.invitation else { return candidate }
+            return Candidate(
+                id: candidate.id, name: candidate.name, proposedBy: candidate.proposedBy,
+                invitation: invitation)
+        }
+    }
+
+    /// The server's answer to this list's own action: the row says it at once.
+    private func learn(_ invitation: CandidateInvitation, for candidateID: String) {
+        learned[candidateID] = (invitation, reads)
+        relist()
     }
 
     private func mine(_ candidateID: String) -> Candidate? {
@@ -355,13 +386,16 @@ public struct InvitationList: Sendable, Equatable {
     // MARK: Making a link
 
     /// Makes and keeps a link for `candidate`, under the key its action started with; nil, with
-    /// the failure, when it couldn't.
+    /// the failure, when it couldn't. Its action is the candidate's first link, or a link in
+    /// place of the one the row shows: a retry of the same action sends the same key, and another
+    /// action a new one. The caller holds the row busy.
     private func make(for candidate: Candidate) async -> KeptInvitationLink? {
-        busy.insert(candidate.id)
         actionFailure = nil
-        defer { busy.remove(candidate.id) }
-        let key = linkKeys[candidate.id] ?? makeKey()
-        linkKeys[candidate.id] = key
+        let replacing = candidate.invitation?.id
+        let key =
+            linkKeys[candidate.id].flatMap { $0.replacing == replacing ? $0.key : nil }
+            ?? makeKey()
+        linkKeys[candidate.id] = (replacing, key)
         do {
             var answer = try await service.createInvitation(
                 for: candidate.id, in: club.id, key: key)
@@ -370,7 +404,7 @@ public struct InvitationList: Sendable, Equatable {
                 // A replay of an answer lost on the way, with no link: that link was never
                 // shared, so one more replaces it.
                 let fresh = makeKey()
-                linkKeys[candidate.id] = fresh
+                linkKeys[candidate.id] = (replacing, fresh)
                 answer = try await service.createInvitation(
                     for: candidate.id, in: club.id, key: fresh)
                 guard current() else { return nil }
@@ -380,6 +414,10 @@ public struct InvitationList: Sendable, Equatable {
                 actionFailure = .createLink(name: candidate.name, network: false)
                 return nil
             }
+            learn(
+                CandidateInvitation(
+                    id: kept.invitationID, state: .live, expiresAt: answer.expiresAt),
+                for: candidate.id)
             return kept
         } catch .network {
             guard current() else { return nil }
@@ -470,7 +508,7 @@ extension Result {
         club: ClubRef, accountID: String, rosterVersion: Int, known: Set<String>,
         service: any ClubService, book: InvitationLinkBook,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
-        current: @escaping @MainActor () -> Bool = { true },
+        current: @escaping @MainActor () -> Bool,
         signedOut: @escaping @MainActor () async -> Void = {},
         changed: @escaping @MainActor () async -> Void = {}
     ) {
@@ -523,8 +561,7 @@ extension Result {
                 proposed = try await propose()
             }
             guard current() else { return nil }
-            let kept = try await makeLink(for: proposed)
-            guard current() else { return nil }
+            guard let kept = try await makeLink(for: proposed), current() else { return nil }
             link = kept
             return kept.url
         } catch .network {
@@ -579,14 +616,20 @@ extension Result {
         return added[0]
     }
 
-    private func makeLink(for candidate: Candidate) async throws(APIFailure) -> KeptInvitationLink {
+    /// Makes and keeps the person's link; nil, keeping nothing, when its answer comes after the
+    /// session it was asked in ended (`current`): nothing is kept once Leave sign-in has
+    /// forgotten the links (T11).
+    private func makeLink(for candidate: Candidate) async throws(APIFailure) -> KeptInvitationLink?
+    {
         let key = linkKey ?? makeKey()
         linkKey = key
         var answer = try await service.createInvitation(for: candidate.id, in: club.id, key: key)
+        guard current() else { return nil }
         if answer.url == nil {
             let fresh = makeKey()
             linkKey = fresh
             answer = try await service.createInvitation(for: candidate.id, in: club.id, key: fresh)
+            guard current() else { return nil }
         }
         linkKey = nil
         guard let kept = book.keep(answer, club: club.id, account: accountID) else {
