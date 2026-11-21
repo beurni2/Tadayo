@@ -15,6 +15,7 @@ import {
   manipulationStep,
   manipulations,
   NEUTRAL,
+  allowanceProblems,
   pinned,
   preflightProblems,
   PROFILE_INCOMPLETE,
@@ -922,6 +923,52 @@ describe("the matrix's preflight step reports a planted wrong answer", () => {
       const problems = preflightProblems(await answerOf(app, { method: "OPTIONS", url: PATH, headers: asked }));
       expect(problems).toContainEqual(expect.stringContaining(problem));
       await app.close();
+    });
+  }
+});
+
+describe("the matrix's check of the page's answers from tadayo.app reports a planted wrong answer", () => {
+  const plain = {
+    status: 404,
+    reason: "Not Found",
+    headers: {
+      "cache-control": "private, no-store",
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "20",
+      date: "Sat, 21 Nov 2026 03:00:00 GMT",
+      connection: "keep-alive",
+    },
+    body: '{"code":"NOT_FOUND"}',
+  };
+  const allowed = { "access-control-allow-origin": "https://tadayo.app", vary: "Origin" };
+  const right = { ...plain, headers: { ...allowed, ...plain.headers, date: "Sat, 21 Nov 2026 03:00:01 GMT" } };
+
+  it("passes the same answer with the allowance first, whatever its Date", () => {
+    expect(allowanceProblems(plain, right)).toEqual([]);
+  });
+
+  const wrong: [string, Record<string, unknown>, string][] = [
+    ["no allowance", { headers: plain.headers }, "the headers"],
+    ["no Vary", { headers: { "access-control-allow-origin": "https://tadayo.app", ...plain.headers } }, "the headers"],
+    [
+      "every origin allowed",
+      { headers: { ...allowed, "access-control-allow-origin": "*", ...plain.headers } },
+      '["access-control-allow-origin","*"]',
+    ],
+    [
+      "credentials allowed",
+      { headers: { ...allowed, "access-control-allow-credentials": "true", ...plain.headers } },
+      '["access-control-allow-credentials","true"]',
+    ],
+    ["the allowance last", { headers: { ...plain.headers, ...allowed } }, "the headers"],
+    ["another status", { status: 200 }, "status 200, not 404"],
+    ["another reason", { reason: "Held" }, 'reason "Held"'],
+    ["another body", { body: '{"inviter_name":"Ben"}' }, 'body "{\\"inviter_name\\":\\"Ben\\"}"'],
+  ];
+  for (const [name, changed, problem] of wrong) {
+    it(`reports an answer from tadayo.app with ${name}`, () => {
+      const problems = allowanceProblems(plain, { ...right, ...changed });
+      expect(problems).toContainEqual(expect.stringContaining(problem));
     });
   }
 });

@@ -1,6 +1,6 @@
 /*
  * The signed-out invitation page (G02-web, G02-web-revoked; docs/plans/api-b0-spike-links-web.md, section 1).
- * Colours: brand revision 1.1's canvas, primaryText, secondaryText and action, light and dark
+ * Colours: brand revision 1.1's canvas, primaryText, secondaryText, action and focusRing, light and dark
  * (design/reference/brand/brand-tokens.md). Type in rem, so browser text zoom doubles every role at 200%:
  * utilityTitle 32/35 bold (handoff 8), the unavailable title 2rem/1.1875 (handoff 4's neutralWebType),
  * caption 21/28 bold, body 17/23, the link 16/22. The gaps between blocks are the frames' own, in px,
@@ -15,6 +15,7 @@
   --primary-text: #182b25;
   --secondary-text: #607067;
   --action: #284cdb;
+  --focus-ring: #284cdb;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,6 +24,7 @@
     --primary-text: #f7f8f2;
     --secondary-text: #b6c3b7;
     --action: #afbeff;
+    --focus-ring: #afbeff;
   }
 }
 
@@ -113,6 +115,12 @@ main {
   line-height: 1.375;
   text-decoration: none;
   cursor: pointer;
+}
+
+/* The brand's focus ring: focusRing, 2 wide, a gap of 2 (brand-tokens.md). */
+.action:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .get {

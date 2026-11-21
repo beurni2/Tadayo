@@ -55,15 +55,15 @@ export function previewRequest(api, token, signal) {
 
 /**
  * What an answer means. A 404 is the contract's one answer for a link that is expired, revoked, replaced,
- * used or unknown, and a 400 a token the server can't read, which trying again won't change: the neutral
- * page. Anything else that isn't a 200 with a name is a failure to check, never read as a link that no
- * longer works (handoff 4).
+ * used or unknown: the neutral page. Anything else that isn't a 200 with a name is a failure to check, a 400
+ * too, which refuses the request, not the link (the page checks the token's form first): never read as a
+ * link that no longer works (handoff 4).
  * @param {number} status
  * @param {unknown} body
  * @returns {Outcome}
  */
 export function outcomeOf(status, body) {
-  if (status === 404 || status === 400) return { state: "unavailable" };
+  if (status === 404) return { state: "unavailable" };
   if (status !== 200 || typeof body !== "object" || body === null) return { state: "failed" };
   const name = /** @type {Record<string, unknown>} */ (body)["inviter_name"];
   return typeof name === "string" && name.trim() !== "" ? { state: "invited", name } : { state: "failed" };
@@ -80,11 +80,13 @@ export function outcomeOf(status, body) {
  * @returns {Promise<Outcome>}
  */
 export async function check(fetcher, api, token, wait = WAIT_MS) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, wait);
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let timer;
   try {
+    const controller = new AbortController();
+    timer = setTimeout(() => {
+      controller.abort();
+    }, wait);
     const { url, init } = previewRequest(api, token, controller.signal);
     const response = await fetcher(url, init);
     if (response.status !== 200) return outcomeOf(response.status, null);
@@ -146,7 +148,12 @@ export async function start(page, wait = WAIT_MS) {
     show(doc, { state: "checking" }, again);
     show(doc, await check((url, init) => page.fetch(url, init), api, token, wait), again);
   };
-  doc.querySelector("[data-retry]")?.addEventListener("click", () => void run(true));
+  // The first answer is read out by the parts' live region; after Retry, focus reads each part instead, so
+  // the region falls silent, and nothing is announced twice (handoff 8: once).
+  doc.querySelector("[data-retry]")?.addEventListener("click", () => {
+    doc.querySelector("[aria-live]")?.setAttribute("aria-live", "off");
+    void run(true);
+  });
   await run(false);
 }
 

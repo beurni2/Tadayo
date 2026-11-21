@@ -4,11 +4,13 @@
 // routes' transaction is a function, as in clubs/invitation.test.ts. Every role's answer to the preflight
 // is the privacy matrix's too (tests/src/privacy/matrix.test.ts).
 
+import { OPERATIONS } from "@tadayo/contracts";
 import type { Account, Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
+import { WEB_OPERATION } from "./web-origin.ts";
 
 const TOKEN = "q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM";
 const HELD = `{"token":"${TOKEN}"}`;
@@ -155,6 +157,40 @@ describe("the signed-out page's answers, read by a browser on tadayo.app", () =>
       expect(from, name).toEqual(await answer(request()));
       expect(from.headers, name).not.toHaveProperty("access-control-allow-origin");
     }
+  });
+});
+
+describe("every operation of the contract, asked from tadayo.app", () => {
+  it("answers as it would with no Origin, signed in or not, but for previewInvitationWeb, which adds the allowance alone", async () => {
+    const answer = await appFor(() => Promise.reject(new Error("no database")));
+    const ids: string[] = [];
+    for (const operation of OPERATIONS) {
+      const method = operation.method.toUpperCase();
+      const url = operation.path.replace(/\{([a-z_]+)\}/g, (_match, name: string) => `${name}_1`);
+      const body = method === "POST" || method === "PATCH" || method === "PUT";
+      for (const signedIn of [false, true]) {
+        const request = (origin?: string): InjectOptions => ({
+          method,
+          url,
+          headers: {
+            ...(body ? { "content-type": "application/json" } : {}),
+            ...(signedIn ? { authorization: "Bearer a-session" } : {}),
+            ...(origin === undefined ? {} : { origin }),
+          },
+          ...(body ? { payload: "{}" } : {}),
+        });
+        const without = await answer(request());
+        const from = await answer(request(PAGE));
+        const name = `${operation.id}${signedIn ? ", signed in" : ""}`;
+        expect(without.headers, name).not.toHaveProperty("access-control-allow-origin");
+        expect(from, name).toEqual(
+          operation.id === WEB_OPERATION ? { ...without, headers: { ...without.headers, ...ALLOWED } } : without,
+        );
+      }
+      ids.push(operation.id);
+    }
+    expect(ids).toContain(WEB_OPERATION);
+    expect(ids).toHaveLength(OPERATIONS.length);
   });
 });
 

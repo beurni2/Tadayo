@@ -62,6 +62,7 @@ import {
   UNAUTHENTICATED,
   NEUTRAL,
   PREFLIGHT_ROUTE,
+  allowanceProblems,
   cellStep,
   guessCount,
   guessStep,
@@ -835,6 +836,18 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
+            if (id === "previewInvitationWeb") {
+              // The same request from the signed-out page on tadayo.app: the same answer, with the allowance
+              // alone. It is held to the plain answer byte for byte, so neither is scanned or counted.
+              const sent = render(spec);
+              const plain = await answerOf(app, sent);
+              const fromPage = await answerOf(app, {
+                ...sent,
+                headers: { ...sent.headers, origin: "https://tadayo.app" },
+              });
+              for (const problem of allowanceProblems(plain, fromPage))
+                wrong.push(`${state.name}, ${phase}: previewInvitationWeb from tadayo.app: ${problem}`);
+            }
             if (phase === "collecting") {
               counted.expectedAnswers += manipulations(spec, cell.w.ben.interval, CLAIMED).length;
               record(await manipulationStep(app, spec, cell.w.ben.interval, CLAIMED, expected));
@@ -1372,6 +1385,15 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               const live = await sendAs(web, null);
               if (live.status !== 200) wrong.push(`${where}: a live link's page got ${String(live.status)}`);
               await judged(web, live, webPreviewExpected(linkSeen, token), "a live link, signed out", null);
+              // The page on tadayo.app reads the same answer, with the allowance alone (web-origin.ts). The
+              // answer is held to the scanned one byte for byte, so it isn't scanned or counted again.
+              const fromPage = async () => {
+                const request = render(web);
+                delete request.headers["authorization"];
+                return answerOf(app, { ...request, headers: { ...request.headers, origin: "https://tadayo.app" } });
+              };
+              for (const problem of allowanceProblems(live, await fromPage()))
+                wrong.push(`${where}: a live link from tadayo.app: ${problem}`);
               await previewAs("holder", "open", "a live link previewed by its holder");
               await previewAs("viewer", "joined", "a live link previewed by its proposer");
               await previewAs("other", "joined", "a live link previewed by another member");
@@ -1418,6 +1440,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               await previewAs("holder", "waiting", "the accepted roster previewed by its holder");
               const used = await sendAs(web, null);
               await judged(web, used, NEUTRAL, "a used link, signed out", null);
+              for (const problem of allowanceProblems(used, await fromPage()))
+                wrong.push(`${where}: a used link from tadayo.app: ${problem}`);
               // The club's roster carries the open revision, as its member reads it.
               const members = byId("listMembers");
               counted.expectedAnswers += 1;

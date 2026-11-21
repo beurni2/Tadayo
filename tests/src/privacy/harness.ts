@@ -412,6 +412,23 @@ export function preflightProblems(answer: Answer): string[] {
   return problems;
 }
 
+/**
+ * How `fromPage`, `previewInvitationWeb`'s answer to a request from tadayo.app, differs from `plain`, the same
+ * request's answer with no Origin: the allowance's two headers first, then the same answer, byte for byte
+ * (services/api/src/web-origin.ts). Each answer's own Date is the transport's, judged where it is taken.
+ */
+export function allowanceProblems(plain: Answer, fromPage: Answer): string[] {
+  const problems: string[] = [];
+  if (fromPage.status !== plain.status) problems.push(`status ${String(fromPage.status)}, not ${String(plain.status)}`);
+  if (fromPage.reason !== plain.reason) problems.push(`reason ${JSON.stringify(fromPage.reason)}`);
+  if (fromPage.body !== plain.body) problems.push(`body ${JSON.stringify(fromPage.body.slice(0, 200))}`);
+  const others = (answer: Answer) => Object.entries(answer.headers).filter(([name]) => name !== "date");
+  const want = [["access-control-allow-origin", "https://tadayo.app"], ["vary", "Origin"], ...others(plain)];
+  const got = others(fromPage);
+  if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(`the headers ${JSON.stringify(got)}`);
+  return problems;
+}
+
 /** The app's routes as `METHOD /path`, against the contract's, each way. */
 export function routeProblems(routes: readonly string[], operations: readonly ContractOperation[]): string[] {
   const contract = new Set(

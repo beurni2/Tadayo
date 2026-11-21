@@ -46,14 +46,27 @@ function fakePage(api: string | null = API) {
   const clicks: (() => void)[] = [];
   const retry = { addEventListener: (_type: string, listener: () => void) => void clicks.push(listener) };
   const meta = { getAttribute: (key: string) => (key === "content" ? api : null) };
+  const live = {
+    value: "polite",
+    setAttribute: (key: string, value: string) => {
+      if (key === "aria-live") live.value = value;
+    },
+  };
   const page = {
     querySelectorAll: (selector: string) => (selector === "[data-state]" ? parts : []),
     querySelector: (selector: string) =>
-      ({ "[data-name]": name, "[data-get]": get, "[data-retry]": retry, 'meta[name="tadayo-api"]': meta })[selector] ??
-      null,
+      (
+        ({
+          "[data-name]": name,
+          "[data-get]": get,
+          "[data-retry]": retry,
+          'meta[name="tadayo-api"]': meta,
+          "[aria-live]": live,
+        }) as Record<string, unknown>
+      )[selector] ?? null,
   } as unknown as Pick<Document, "querySelector" | "querySelectorAll">;
   const visible = () => parts.filter((part) => !part.hidden).map((part) => part.dataset.state);
-  return { page, name, attributes, visible, clicks, focused };
+  return { page, name, attributes, visible, clicks, focused, live };
 }
 
 /** The contract's InvitationToken (packages/contracts/openapi.yaml): its lengths and its pattern. */
@@ -143,10 +156,10 @@ describe("what each answer means", () => {
     }
   });
 
-  it("says a 404 or a 400 isn't available, and anything else couldn't be checked, never that the link is gone", () => {
+  it("says only a 404 isn't available; anything else, a 400 too, couldn't be checked, never that the link is gone", () => {
     expect(outcomeOf(404, null)).toEqual({ state: "unavailable" });
-    expect(outcomeOf(400, null)).toEqual({ state: "unavailable" });
-    for (const status of [0, 201, 204, 301, 401, 403, 409, 413, 429, 500, 502, 503, 504]) {
+    expect(outcomeOf(404, { inviter_name: "Ben" })).toEqual({ state: "unavailable" });
+    for (const status of [0, 201, 204, 301, 400, 401, 403, 409, 413, 415, 429, 500, 502, 503, 504]) {
       expect(outcomeOf(status, { inviter_name: "Ben" }), String(status)).toEqual({ state: "failed" });
     }
   });
@@ -199,6 +212,19 @@ describe("the wait, on a Safari older than 16", () => {
       if (timeout !== undefined) Object.defineProperty(AbortSignal, "timeout", timeout);
     }
   });
+
+  it("says it couldn't check, rather than stopping at checking, where even the wait can't be made", async () => {
+    const controller = Object.getOwnPropertyDescriptor(globalThis, "AbortController");
+    Reflect.deleteProperty(globalThis, "AbortController");
+    try {
+      expect("AbortController" in globalThis).toBe(false);
+      expect(await check(() => Promise.resolve(answering(200, { inviter_name: "Ben" })), API, LIVE)).toEqual({
+        state: "failed",
+      });
+    } finally {
+      if (controller !== undefined) Object.defineProperty(globalThis, "AbortController", controller);
+    }
+  });
 });
 
 describe("what the page shows", () => {
@@ -230,7 +256,7 @@ describe("what the page shows", () => {
   });
 
   it("asks the API once with the fragment's token, shows the name, and asks again on Retry after a failure", async () => {
-    const { page, name, visible, clicks, focused } = fakePage();
+    const { page, name, visible, clicks, focused, live } = fakePage();
     const asked: [string, Init][] = [];
     const answers = [Promise.resolve(answering(503)), Promise.resolve(answering(200, { inviter_name: "Ben" }))];
     await start({
@@ -243,6 +269,7 @@ describe("what the page shows", () => {
     });
     expect(visible()).toEqual(["failed"]);
     expect(focused).toEqual([]);
+    expect(live.value).toBe("polite");
     expect(asked).toHaveLength(1);
     expect(asked[0]?.[0]).toBe(`${API}/v1/invitations/web-preview`);
     expect(asked[0]?.[1].body).toBe(`{"token":"${LIVE}"}`);
@@ -252,8 +279,10 @@ describe("what the page shows", () => {
     expect(asked).toHaveLength(2);
     expect(visible()).toEqual(["invited"]);
     expect(name.textContent).toBe("Ben");
-    // Retry's button went with the failure: focus followed the page, to checking, then to the answer.
+    // Retry's button went with the failure: focus followed the page, to checking, then to the answer, and
+    // the live region fell silent, so neither is read twice.
     expect(focused).toEqual(["checking", "invited"]);
+    expect(live.value).toBe("off");
   });
 
   it("can't check without the API's address, and never says the link is gone (handoff 4)", async () => {
@@ -313,8 +342,15 @@ describe("the files Pages serves", () => {
       expect(html, state).toMatch(new RegExp(`<section data-state="${state}"[^>]*>\\s*<(h1|p) [^>]*tabindex="-1"`));
     }
     expect(html).toContain('<button class="action retry" type="button" data-retry>Retry</button>');
+    expect(html).toContain('<div class="parts" aria-live="polite">');
     const copy = readFileSync(join(REPO, "design/reference/claude-design/handoff-4/copy-contracts.json"), "utf8");
     expect(copy).toContain('"common.retry": "Retry",');
+  });
+
+  it("puts the name in a bdi, so a right-to-left name can't reorder the sentence", () => {
+    expect(html).toContain(
+      '<h1 class="title" tabindex="-1"><bdi data-name></bdi> invited you to a club on Tadayo</h1>',
+    );
   });
 
   it("gives a link preview nothing, and keeps the page out of search", () => {
