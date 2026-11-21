@@ -246,6 +246,46 @@ class HelpersTest(unittest.TestCase):
                           "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
                           "NSExtensionActivationSupportsText": True})
 
+    def test_the_associated_domain_is_the_project_s_and_the_site_names_the_app(self):
+        # The check's one domain is the one the app's target declares, when it declares one, and
+        # no other target declares any (apps/ios/project.yml, read whole by a YAML library, as
+        # XcodeGen reads it, so its layout, quoting and comments don't matter); the site's
+        # apple-app-site-association names this app and no other.
+        try:
+            import yaml
+        except ImportError:
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                self.fail("no yaml library on ci's runner (ops_steps_test.py says why it must be there)")
+            self.skipTest("no yaml library here")
+        with open(os.path.join(ROOT, "apps", "ios", "project.yml")) as f:
+            targets = yaml.safe_load(f)["targets"]
+        self.assertIn("Tadayo", targets)
+        self.assertIn("TadayoShare", targets)
+
+        def declared(target):
+            return ((target.get("entitlements") or {}).get("properties")) or {}
+
+        for name, target in targets.items():
+            properties = declared(target)
+            if name == "Tadayo" and release.ASSOCIATED_DOMAINS_KEY in properties:
+                self.assertEqual(properties[release.ASSOCIATED_DOMAINS_KEY],
+                                 release.ASSOCIATED_DOMAINS)
+            else:
+                self.assertNotIn(release.ASSOCIATED_DOMAINS_KEY, properties, name)
+        self.assertEqual(release.ASSOCIATED_DOMAINS, ["applinks:tadayo.app"])
+        with open(os.path.join(ROOT, "apps", "web", "public", ".well-known",
+                               "apple-app-site-association")) as f:
+            site = json.load(f)
+        # Each entry's appIDs, and the older singular appID, which iOS still reads.
+        ids = []
+        for details in site["applinks"]["details"]:
+            ids += details.get("appIDs", [])
+            if "appID" in details:
+                ids.append(details["appID"])
+        self.assertTrue(ids)
+        for i in ids:
+            self.assertRegex(i, r"^[A-Z0-9]{10}\." + re.escape(release.APP_ID) + "$")
+
     def test_the_icon_s_name_nested_as_the_built_app_has_it_or_at_the_top(self):
         nested = {"CFBundleIcons": {"CFBundlePrimaryIcon": {"CFBundleIconName": "AppIcon"}}}
         self.assertEqual(release.icon_name(nested), "AppIcon")
@@ -260,6 +300,23 @@ class HelpersTest(unittest.TestCase):
         self.assertEqual(problems(entitlements(TEAM, bundle_id=release.SHARE_ID),
                                   release.SHARE_ID), [])
         self.assertEqual(release.entitlement_problems(plistlib.loads(entitlements().encode())), [])
+        signed = plistlib.loads(entitlements(TEAM).encode())
+        signed["com.apple.developer.associated-domains"] = ["applinks:tadayo.app"]
+        self.assertEqual(release.entitlement_problems(signed, TEAM, release.APP_ID, app=True), [])
+        share = plistlib.loads(entitlements(TEAM, bundle_id=release.SHARE_ID).encode())
+        share["com.apple.developer.associated-domains"] = ["applinks:tadayo.app"]
+        self.assertEqual(release.entitlement_problems(share, TEAM, release.SHARE_ID),
+                         ["it holds entitlements the project doesn't declare: "
+                          "com.apple.developer.associated-domains"])
+        for value in (["applinks:example.com"], ["applinks:tadayo.app", "applinks:example.com"],
+                      ["applinks:tadayo.app?mode=developer"], "applinks:tadayo.app", [],
+                      ["applinks:tadayo.app", "applinks:tadayo.app"],
+                      {"applinks:tadayo.app": True}):
+            with self.subTest(value=value):
+                signed["com.apple.developer.associated-domains"] = value
+                self.assertEqual(
+                    release.entitlement_problems(signed, TEAM, release.APP_ID, app=True),
+                    [f"its associated domains are {value!r}, not ['applinks:tadayo.app']"])
         for bad, words in ((entitlements(TEAM, groups=()), ["app groups"]),
                            (entitlements(TEAM, groups=("group.other",)), ["app groups"]),
                            (entitlements("Z9Y8X7W6V5"), ["its team isn't", "application identifier"]),
@@ -560,13 +617,33 @@ class CheckTest(StepsTest):
         more["aps-environment"] = "production"
         more["com.apple.developer.associated-domains"] = ["applinks:example.com"]
         text = plistlib.dumps(more).decode()
-        for bundle, label in (("app", "the app"), ("share", "the share extension")):
+        # The share extension may hold no associated domain; the app may hold only its own, so
+        # another one there is named as a wrong value rather than as undeclared.
+        for bundle, label, undeclared in (
+                ("app", "the app", "aps-environment"),
+                ("share", "the share extension",
+                 "aps-environment, com.apple.developer.associated-domains")):
             with self.subTest(bundle=bundle):
                 code, out = self.check(self.shell(signed=signed_as(**{bundle: text})))
                 self.assertEqual(code, 1)
                 self.assertEqual(out.count("doesn't declare"), 1, out)
                 self.assertIn(f"{label}: it holds entitlements the project doesn't declare: "
-                              "aps-environment, com.apple.developer.associated-domains", out)
+                              f"{undeclared}\n", out + "\n")
+        code, out = self.check(self.shell(signed=signed_as(app=text)))
+        self.assertIn("the app: its associated domains are ['applinks:example.com'], not "
+                      "['applinks:tadayo.app']", out)
+
+    def test_the_app_alone_may_hold_its_own_associated_domain(self):
+        self.archive()
+        own = plistlib.loads(entitlements().encode())
+        own["com.apple.developer.associated-domains"] = ["applinks:tadayo.app"]
+        text = plistlib.dumps(own).decode()
+        code, out = self.check(self.shell(signed=signed_as(app=text)))
+        self.assertEqual(code, 0, out)
+        code, out = self.check(self.shell(signed=signed_as(share=text)))
+        self.assertEqual(code, 1, out)
+        self.assertIn("the share extension: it holds entitlements the project doesn't declare: "
+                      "com.apple.developer.associated-domains", out)
 
     def test_what_only_an_export_may_hold_fails_in_an_archive(self):
         self.archive()
@@ -972,6 +1049,27 @@ class ExportTest(StepsTest):
         self.assertIn("the app: it holds entitlements the project doesn't declare: "
                       "aps-environment", out)
         self.assertNotIn("not-a-key", out)
+
+    def test_an_export_signs_the_app_alone_with_its_associated_domain(self):
+        self.archive()
+        app = plistlib.loads(entitlements(TEAM).encode())
+        app["com.apple.developer.associated-domains"] = ["applinks:tadayo.app"]
+        code, out = self.step("export", self.export_shell(
+            signed=signed_as(TEAM, app=plistlib.dumps(app).decode())))
+        self.assertEqual(code, 0, out)
+        share = plistlib.loads(entitlements(TEAM, bundle_id=release.SHARE_ID).encode())
+        share["com.apple.developer.associated-domains"] = ["applinks:tadayo.app"]
+        code, out = self.step("export", self.export_shell(
+            signed=signed_as(TEAM, share=plistlib.dumps(share).decode())))
+        self.assertEqual(code, 1)
+        self.assertIn("the share extension: it holds entitlements the project doesn't declare: "
+                      "com.apple.developer.associated-domains", out)
+        app["com.apple.developer.associated-domains"] = ["applinks:example.com"]
+        code, out = self.step("export", self.export_shell(
+            signed=signed_as(TEAM, app=plistlib.dumps(app).decode())))
+        self.assertEqual(code, 1)
+        self.assertIn("the app: its associated domains are ['applinks:example.com'], not "
+                      "['applinks:tadayo.app']", out)
 
     def test_the_key_is_removed_when_the_command_fails(self):
         self.archive()
