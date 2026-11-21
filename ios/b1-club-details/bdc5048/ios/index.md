@@ -3,16 +3,19 @@
 The `ios` workflow's evidence for `bdc504862246700adc934d135ed0729c2fbeec21` (https://github.com/beurni2/Tadayo/actions/runs/44926946676).
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
-- iOS `27.2` on `iPhone 17`: tests `failed`, with the snapshot tests
+- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
 - iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `failed`
-- Odd draws: 1 in `logs/test-27.2.log`, below
+- Tests: `passed`
+- Odd draws: 4 in `logs/test-27.2.log`, below
 - Carries the states this branch touches; 256 snapshot(s) not carried
 
 Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
 
-- `warning: ScreenSnapshot A03-profile-refused-dark: settled after 4 draws, SHA-256 6ebba93c 94b87ad3 6ebba93c 6ebba93c; against the last draw, draw 2: 12324 pixels in x 31 to 305, y 123 to 212, by at most 21/255`
+- `warning: ScreenSnapshot G05-club-details: settled after 3 draws, SHA-256 fec5cb63 8d5a6f2f 8d5a6f2f; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A02-code-error: settled after 3 draws, SHA-256 093382d2 3f31e220 3f31e220; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A02-code-error-resend-failed-network: settled after 3 draws, SHA-256 8240bf56 8f789862 8f789862; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot F01-error-no-club: settled after 3 draws, SHA-256 8cec8ef7 9c836df3 9c836df3; against the last draw, draw 1: 9455 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
 |---|---|---|---|---|---|
