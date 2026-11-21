@@ -34,7 +34,7 @@ struct KeychainInvitationLinkVault: InvitationLinkVault {
         self.init(environment: environment, service: service)
     }
 
-    /// The file kept; nil with none, or with one that can't be decoded, which is deleted.
+    /// The file kept; nil with none, or with one this build can't decode, which is deleted.
     func load() throws -> InvitationLinkFile? {
         var query = item
         query[kSecReturnData] = true
@@ -43,9 +43,11 @@ struct KeychainInvitationLinkVault: InvitationLinkVault {
         let status = SecItemCopyMatching(query as CFDictionary, &found)
         switch status {
         case errSecSuccess:
-            // An item no build can read (bad data, or a shape this build doesn't know) is no
-            // item: it's deleted, so it holds no token and the next write starts afresh. Only a
-            // failure to read it now, a locked iPhone's, is thrown, to be tried again.
+            // An item this build can't decode (bad data, or a shape it doesn't know, a later or an
+            // earlier build's) is no item: it's deleted, so it holds no token and the next write
+            // starts afresh, losing links, ADR-037's safe direction; so a later change to the
+            // file's shape only adds optional fields. Only a failure to read it now, a locked
+            // iPhone's, is thrown, to be tried again.
             guard let data = found as? Data,
                 let file = try? JSONDecoder().decode(InvitationLinkFile.self, from: data)
             else {

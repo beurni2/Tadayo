@@ -62,8 +62,8 @@ public struct InvitationLinkFile: Sendable, Equatable, Codable, CustomStringConv
 /// Where the kept links live between launches: the app's keychain item, or memory in the tests.
 /// It holds one account's file at a time.
 public protocol InvitationLinkVault: Sendable {
-    /// The file kept, or nil when there's none, or when what's kept can never be read (it's then
-    /// deleted, so the next write starts afresh). It throws only when the file can't be read now,
+    /// The file kept, or nil when there's none, or when what's kept can't be decoded by this build
+    /// (it's then deleted, so the next write starts afresh). It throws only when the file can't be read now,
     /// a locked iPhone's keychain above all, and may be read later.
     func load() throws -> InvitationLinkFile?
     /// Keeps `file` in place of anything kept before.
@@ -122,8 +122,8 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     /// A forget that could neither delete the vault's file nor leave an empty one in its place:
     /// the next access tries again before anything else.
     private var forgetPending = false
-    /// What reads and revokes decided while the vault couldn't be read, for its links once it
-    /// is: the account, the stamp, and the links it drops.
+    /// What keeps, reads and revokes decided while the vault couldn't be read, for its links once
+    /// it is: the account, the stamp, and the links it drops.
     private var unread: [(account: String, stamp: UInt64, drop: (KeptInvitationLink) -> Bool)] = []
     /// When each link was kept in this launch, by invitation id.
     private var keptAt: [String: UInt64] = [:]
@@ -157,6 +157,19 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         kept.links.append(made)
         clock += 1
         keptAt[link.invitationID] = clock
+        if !loaded {
+            // The vault's link for this candidate, or of this invitation, is replaced too, even if
+            // this one has gone by the time the vault is read.
+            let (candidateID, invitationID) = (link.candidateID, link.invitationID)
+            unread.append(
+                (
+                    accountID, clock,
+                    {
+                        ($0.clubID == clubID && $0.candidateID == candidateID)
+                            || $0.invitationID == invitationID
+                    }
+                ))
+        }
         write(kept)
         return made
     }

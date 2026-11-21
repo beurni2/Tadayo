@@ -548,6 +548,23 @@ import Testing
         #expect(list.actionFailure == nil)
     }
 
+    @Test func aLinkMadeHereAndRevokedGoesThoughTheReadAgainFails() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.memberAnswers = [.success(Sunday.members([Sunday.candidate("cand_sam", "Sam", nil)]))]
+        clubs.linkAnswers = [.success(Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)))]
+        clubs.revokeAnswers = [.success(())]
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let list = model(clubs, book: book)
+        await list.load()
+        #expect(await list.linkToShare(for: "cand_sam") == Sunday.url(1))
+        // The link is the last one kept, and no read has been asked since.
+        await list.revoke("cand_sam")
+        #expect(clubs.calls.filter { $0.hasPrefix("members") }.count == 2)
+        #expect(book.link(for: "cand_sam", club: club, account: account) == nil)
+        #expect(row(list, "cand_sam")?.status == .revoked)
+    }
+
     @Test func aFirstLinkSharedFromTheListReadsSharedAtOnce() async {
         let clubs = ScriptedClubs()
         clubs.clubAnswers = [.success(Sunday.detail())]

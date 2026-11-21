@@ -395,6 +395,24 @@ import Testing
         #expect(vault.kept?.links.map(\.invitationID) == ["inv_maya", "inv_nina"])
     }
 
+    @Test func aLinkReplacedWhileTheVaultWasLockedStaysGoneThoughItsReplacementIsRevoked() {
+        let older = KeptInvitationLink(
+            clubID: club, candidateID: "cand_alex", invitationID: "inv_alex", url: Sunday.url(1),
+            shared: true)
+        let vault = FailingVault(InvitationLinkFile(accountID: account, links: [older]))
+        vault.failLoads = true
+        let links = book(vault)
+        // Create new link while the iPhone is locked replaces the vault's link on the server, and
+        // the new one is revoked before the vault is read.
+        links.keep(
+            Sunday.link("inv_alex_2", for: "cand_alex", url: Sunday.url(2)), club: club,
+            account: account)
+        links.drop("inv_alex_2", account: account)
+        vault.failLoads = false
+        #expect(links.link(for: "cand_alex", club: club, account: account) == nil)
+        #expect(vault.kept == nil)
+    }
+
     @Test func aForgetThatCouldntFinishNeverReadsTheForgottenLinksBack() {
         let sam = KeptInvitationLink(
             clubID: club, candidateID: "cand_sam", invitationID: "inv_sam", url: Sunday.url(1),
