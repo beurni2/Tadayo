@@ -27,7 +27,9 @@
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let accounts = FakeAccounts(nameFailsThenHangs: nameFailsThenHangs)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
-            let root = RootModel(session: session, auth: auth, accounts: accounts)
+            let root = RootModel(
+                session: session, auth: auth, accounts: accounts, clubs: NoClubs(),
+                selection: InMemoryClubSelection())
             return AppGraph(root: root, connections: Connections())
         }
 
@@ -98,6 +100,54 @@
                     serverClock: ServerClock(serverNow: Date(), receivedAt: .now), clubs: [],
                     invitations: [])
             }
+        }
+
+        /// The club calls for an account with no club, which makes none: each fails as if no
+        /// answer came. The root snapshot tests' roots take it too.
+        struct NoClubs: ClubService {
+            func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
+                async throws(APIFailure) -> ClubDetail
+            { throw .network }
+
+            func club(_ clubID: String) async throws(APIFailure) -> ClubDetail { throw .network }
+
+            func members(of clubID: String) async throws(APIFailure) -> MemberList {
+                throw .network
+            }
+
+            func propose(
+                _ names: [String], in clubID: String, expectedRosterVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> RosterRevision { throw .network }
+
+            func createInvitation(for candidateID: String, in clubID: String, key: IdempotencyKey)
+                async throws(APIFailure) -> InvitationLink
+            { throw .network }
+
+            func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+                throw .network
+            }
+
+            func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
+                throw .network
+            }
+
+            func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            { throw .network }
+
+            func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            { throw .network }
+
+            func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
+                throw .network
+            }
+
+            func accept(
+                _ token: InvitationToken, revisionID: String, expectedVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> InvitationAcceptance { throw .network }
         }
     }
 #endif

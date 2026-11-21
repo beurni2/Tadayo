@@ -4,11 +4,13 @@ import XCTest
 
 @testable import Tadayo
 
-/// Home, Friends and Memories for an account with no club, in every state of the club list
-/// (design/reference/INVENTORY.md): the three with a render from handoffs 2 and 4, and the rest
-/// built from spec until handoff 7 draws or words them. Each is the tab view the app shows, with
-/// the system's tab bar, without the Lab's tab. The fixture is Ben, unphotographed, as handoff 4's
-/// `G06-no-club` draws him.
+/// Home, Friends and Memories for an account with no club, in every state of the club list, and
+/// with a club selected, in every state this build has for it (design/reference/INVENTORY.md):
+/// those with a render from handoffs 2 to 7, and the rest built from spec. Each is the tab view
+/// the app shows, with the system's tab bar, without the Lab's tab. The fixture is Ben,
+/// unphotographed, as handoff 4's `G06-no-club` draws him: the frames with a club draw his
+/// photograph, which the app shows once avatars are read (a known difference). The clubs are
+/// `ClubFixtures`'.
 @MainActor
 final class TabsSnapshotTests: XCTestCase {
     // MARK: No club
@@ -70,6 +72,53 @@ final class TabsSnapshotTests: XCTestCase {
     func testGlobalClubNotInBuild() {
         // Every tab draws it the same, so Home stands for the three.
         snap(.notInThisBuild, on: .home, named: "global-club-not-in-build")
+    }
+
+    // MARK: A club selected
+
+    func testH01AwaitingActivation() {
+        snap(
+            ClubFixtures.listed(ClubFixtures.sunday, ClubFixtures.kitchenPaused),
+            selected: ClubFixtures.sunday, home: .awaiting(review: false), on: .home,
+            named: "H01-awaiting-activation")
+    }
+
+    func testH01AwaitingActivationReview() {
+        snap(
+            ClubFixtures.listed(ClubFixtures.sunday), selected: ClubFixtures.sunday,
+            home: .awaiting(review: true), on: .home, named: "H01-awaiting-activation-review")
+    }
+
+    func testH01Loading() {
+        snap(
+            ClubFixtures.listed(ClubFixtures.sunday), selected: ClubFixtures.sunday,
+            home: .loading, on: .home, named: "H01-loading")
+    }
+
+    func testH01Error() {
+        snap(
+            ClubFixtures.listed(ClubFixtures.sunday), selected: ClubFixtures.sunday,
+            home: .failed(.network), on: .home, named: "H01-error")
+    }
+
+    func testH01Unavailable() {
+        snapSuspended(on: .home, named: "H01-unavailable")
+    }
+
+    func testF01Unavailable() {
+        snapSuspended(on: .friends, named: "F01-unavailable")
+    }
+
+    func testM01Unavailable() {
+        snapSuspended(on: .memories, named: "M01-unavailable")
+    }
+
+    func testGlobalClubNotInBuildSelected() {
+        // An active club, whose Home is B2's. Every tab draws it the same.
+        snap(
+            ClubFixtures.listed(ClubFixtures.kitchen, ClubFixtures.sunday),
+            selected: ClubFixtures.kitchen, home: .notInThisBuild, on: .home,
+            named: "global-club-not-in-build-selected")
     }
 
     // MARK: What VoiceOver finds
@@ -164,10 +213,116 @@ final class TabsSnapshotTests: XCTestCase {
         XCTAssertFalse(other.contains { $0.label == "Retry" }, "\(other)")
     }
 
+    // MARK: What VoiceOver finds with a club selected
+
+    func testTheSelectorSaysItSwitchesTheSelectedClub() {
+        let elements = AccessibilityElements.of(awaiting(review: false))
+        let selector = elements.first { $0.label == "Switch club. Sunday people selected." }
+        XCTAssertTrue(selector?.traits.contains(.button) ?? false, "\(elements)")
+        XCTAssertFalse(selector?.isHeader ?? true, "\(elements)")
+        // The name isn't read again on its own, nor the wordmark, which the header doesn't show.
+        XCTAssertFalse(elements.contains { $0.label == "Sunday people" }, "\(elements)")
+        XCTAssertFalse(elements.contains { $0.label == "Tadayo" }, "\(elements)")
+        XCTAssertEqual(
+            elements.first { $0.label == "+ Add" }?.hint,
+            "Save a private draft or open private drafts.", "\(elements)")
+        XCTAssertTrue(elements.contains { $0.label == "Account" }, "\(elements)")
+    }
+
+    func testHomeBeforeTheClubStartsReadsItsHeadingAndReviewMembers() {
+        let waiting = AccessibilityElements.of(awaiting(review: false))
+        heading("Waiting for club confirmation", in: awaiting(review: false))
+        let review = waiting.first { $0.label == "Review members" }
+        XCTAssertTrue(review?.traits.contains(.button) ?? false, "\(waiting)")
+        XCTAssertEqual(review?.hint, "Review the proposed roster for Sunday people.", "\(waiting)")
+        XCTAssertTrue(
+            waiting.contains { $0.label == "Drafts stay private when the club starts." },
+            "\(waiting)")
+        XCTAssertTrue(waiting.contains { $0.label == "Private drafts" }, "\(waiting)")
+
+        let pending = AccessibilityElements.of(awaiting(review: true))
+        heading("Review the updated members", in: awaiting(review: true))
+        XCTAssertTrue(
+            pending.contains {
+                $0.label == "Review and approve the updated roster before Sunday people can start."
+            }, "\(pending)")
+        let updated = pending.first { $0.label == "Review Sunday people’s updated members." }
+        XCTAssertTrue(updated?.traits.contains(.button) ?? false, "\(pending)")
+        XCTAssertEqual(updated?.hint, "", "\(pending)")
+    }
+
+    func testHomesLoadingLabelNamesTheClubInItsHint() {
+        let view = club(ClubFixtures.sunday, home: .loading, on: .home)
+        let elements = AccessibilityElements.of(view)
+        XCTAssertEqual(
+            elements.map(\.label),
+            ["Switch club. Sunday people selected.", "+ Add", "Account", "Loading Home…"])
+        XCTAssertEqual(elements.last?.hint, "For Sunday people.", "\(elements)")
+    }
+
+    func testHomesFailureOffersItsOwnRetry() {
+        let view = club(ClubFixtures.sunday, home: .failed(.network), on: .home)
+        let elements = AccessibilityElements.of(view)
+        heading("Couldn’t load Home. Check your connection and try again.", in: view)
+        let retry = elements.first { $0.label == "Retry" && $0.traits.contains(.button) }
+        XCTAssertEqual(retry?.hint, "Retry loading Home for Sunday people.", "\(elements)")
+    }
+
+    func testASuspendedClubShowsNothingOfItOnAnyTab() {
+        for tab in ClubTab.allCases {
+            let view = club(ClubFixtures.sundaySuspended, home: .unavailable, on: tab)
+            let elements = AccessibilityElements.of(view)
+            heading("Club unavailable. This club isn’t available right now.", in: view)
+            // T9: neither its name nor anything else of it, and the wordmark in its place.
+            XCTAssertFalse(
+                elements.contains { $0.label.contains("Sunday") || $0.hint.contains("Sunday") },
+                "\(tab): \(elements)")
+            XCTAssertTrue(elements.contains { $0.label == "Tadayo" }, "\(tab): \(elements)")
+            XCTAssertTrue(
+                elements.contains { $0.label == "Choose a club" && $0.traits.contains(.button) },
+                "\(tab): \(elements)")
+            XCTAssertEqual(
+                elements.first { $0.label == "Get help" }?.hint, "Contact Tadayo support.",
+                "\(tab): \(elements)")
+        }
+    }
+
+    func testFriendsAndMemoriesOfAClubThatHasntStartedAreThisBuildsTitle() {
+        for tab in [ClubTab.friends, .memories] {
+            let view = club(ClubFixtures.sunday, home: .awaiting(review: false), on: tab)
+            heading("This version of Tadayo can’t show clubs yet.", in: view)
+            let elements = AccessibilityElements.of(view)
+            XCTAssertFalse(elements.contains { $0.label == "Review members" }, "\(elements)")
+        }
+    }
+
     // MARK: Helpers
 
     private func content(_ clubs: RootModel.Clubs, on tab: ClubTab) -> some View {
         TabContent(tab: tab, clubs: clubs, name: "Ben", retry: {}, goHome: {})
+    }
+
+    /// A tab with `selected` the selected club, in a list holding it alone.
+    private func club(
+        _ selected: ClubSummary, home: RootModel.Home, on tab: ClubTab
+    ) -> some View {
+        TabContent(
+            tab: tab, clubs: ClubFixtures.listed(selected), selected: selected, home: home,
+            name: "Ben", retry: {}, goHome: {})
+    }
+
+    private func awaiting(review: Bool) -> some View {
+        club(ClubFixtures.sunday, home: .awaiting(review: review), on: .home)
+    }
+
+    private func snapSuspended(
+        on tab: TabsView.Selection, named state: String, testName: String = #function,
+        line: UInt = #line
+    ) {
+        snap(
+            ClubFixtures.listed(ClubFixtures.sundaySuspended, ClubFixtures.kitchen),
+            selected: ClubFixtures.sundaySuspended, home: .unavailable, on: tab, named: state,
+            testName: testName, line: line)
     }
 
     private func heading(
@@ -180,14 +335,16 @@ final class TabsSnapshotTests: XCTestCase {
     }
 
     private func snap(
-        _ clubs: RootModel.Clubs, on tab: TabsView.Selection, named state: String,
-        testName: String = #function, line: UInt = #line
+        _ clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
+        on tab: TabsView.Selection, named state: String, testName: String = #function,
+        line: UInt = #line
     ) {
+        let shown = tab.tab.map { TabShown(clubs, selected: selected, home: home, on: $0) }
         ScreenSnapshot.assert(
             TabsView(
-                clubs: clubs, name: "Ben", selection: tab, showsLab: false, retry: {},
-                logOut: {}),
-            named: state, busy: clubs == .loading, testName: testName,
+                clubs: clubs, selected: selected, home: home, name: "Ben", selection: tab,
+                showsLab: false, retry: {}, logOut: {}),
+            named: state, busy: shown == .loading, testName: testName,
             line: line)
     }
 }

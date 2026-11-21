@@ -516,3 +516,44 @@ public protocol ClubService: Sendable {
         _ token: InvitationToken, revisionID: String, expectedVersion: Int, key: IdempotencyKey
     ) async throws(APIFailure) -> InvitationAcceptance
 }
+
+/// What a club's row in the switcher says under its name (G06-switcher, G06-switcher-status,
+/// G06-switcher-unavailable; `docs/plans/ios-b1-clubs-root.md` section 1). The app puts it in
+/// words.
+public enum SwitcherLine: Sendable, Equatable {
+    /// A club that hasn't started: "Not started" (`handoff5.switcher.notStarted`).
+    case notStarted
+    /// "Paused" (`handoff5.switcher.paused`).
+    case paused
+    /// A suspended club: "Unavailable" and nothing else of it (`handoff5.switcher.unavailable`,
+    /// T9).
+    case unavailable
+    /// An active club whose day is open: "6 people · Debby’s Friday", as `G06-switcher` draws
+    /// it, the date in the club's zone.
+    case open(people: Int, star: String, date: LocalDate)
+    /// An active club with a day to come: "5 people · Next: Maya"
+    /// (`handoff6.switcher.active.row`).
+    case next(people: Int, star: String)
+    /// An active club with no confirmed day: the count alone (handoff 6's C-02).
+    case people(Int)
+}
+
+extension ClubSummary {
+    /// Its line in the switcher: its state's word, or for an active club its count of members
+    /// and its open or next day.
+    public var switcherLine: SwitcherLine {
+        switch state {
+        case .proposed: .notStarted
+        case .paused: .paused
+        case .suspended: .unavailable
+        case .active:
+            if let open = openDay {
+                .open(people: memberCount, star: open.star.displayName, date: open.localDate)
+            } else if let next = nextDay {
+                .next(people: memberCount, star: next.star.displayName)
+            } else {
+                .people(memberCount)
+            }
+        }
+    }
+}

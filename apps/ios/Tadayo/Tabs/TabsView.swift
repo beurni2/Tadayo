@@ -13,10 +13,12 @@ import TadayoDesign
 /// Builds with the Lab (LAB: Debug and Dev, which point at `dev`) add a fourth tab holding it,
 /// with Log out (TECH-DESIGN section 4); the snapshots leave it out.
 ///
-/// Each tab shows the club list's state under the no-club header with the account's initial
-/// (`TabContent`). It takes values, not the root model, so the snapshot tests can draw it in any
-/// state. What VoiceOver says, without moving its focus, comes from the club list's changes, for
-/// the selected tab (`announcement(from:to:on:)`).
+/// Each tab shows the club list's state and, while it holds clubs, the selected club's, under the
+/// header with the account's initial (`TabContent`). The header's selector, and a suspended
+/// club's Choose a club, open the switcher (`ClubSwitcher`) in the system's sheet. It takes
+/// values, not the root model, so the snapshot tests can draw it in any state. What VoiceOver
+/// says, without moving its focus, comes from what the selected tab shows as it changes
+/// (`announcement(from:to:on:)`).
 struct TabsView: View {
     enum Selection: Hashable {
         case home, friends, memories, lab
@@ -39,22 +41,42 @@ struct TabsView: View {
         }
     }
 
-    let clubs: RootModel.Clubs
+    /// What the tabs are drawn from: the club list, and while it holds clubs the selected club
+    /// and its Home.
+    struct Values: Equatable {
+        var clubs: RootModel.Clubs
+        var selected: ClubSummary?
+        var home: RootModel.Home
+
+        func shown(on tab: ClubTab) -> TabShown {
+            TabShown(clubs, selected: selected, home: home, on: tab)
+        }
+    }
+
+    let state: Values
     let name: String
     let showsLab: Bool
     let retry: @MainActor () async -> Void
+    let retryHome: @MainActor () async -> Void
+    let select: @MainActor (String) async -> Void
     let logOut: @MainActor () async -> Void
     @State private var selection: Selection
+    @State private var switching = false
 
     init(
-        clubs: RootModel.Clubs, name: String, selection: Selection = .home, showsLab: Bool = true,
+        clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
+        name: String, selection: Selection = .home, showsLab: Bool = true,
         retry: @escaping @MainActor () async -> Void,
+        retryHome: @escaping @MainActor () async -> Void = {},
+        select: @escaping @MainActor (String) async -> Void = { _ in },
         logOut: @escaping @MainActor () async -> Void
     ) {
-        self.clubs = clubs
+        self.state = Values(clubs: clubs, selected: selected, home: home)
         self.name = name
         self.showsLab = showsLab
         self.retry = retry
+        self.retryHome = retryHome
+        self.select = select
         self.logOut = logOut
         _selection = State(initialValue: selection)
     }
@@ -77,19 +99,34 @@ struct TabsView: View {
             #endif
         }
         .tint(Palette.action)
-        .onChange(of: clubs, initial: true) { old, new in
+        .onChange(of: state, initial: true) { old, new in
+            guard let tab = selection.tab else { return }
             let initial = old == new
             guard
                 let said = Self.announcement(
-                    from: initial ? nil : old, to: new, on: selection.tab)
+                    from: initial ? nil : old.shown(on: tab), to: new.shown(on: tab), on: tab)
             else { return }
             Announcement.post(said.words, politely: said.politely)
+        }
+        .onChange(of: state.clubs) { _, now in
+            // A list loaded again has no clubs to choose from until it answers.
+            if case .listed = now {} else { switching = false }
+        }
+        .sheet(isPresented: $switching) {
+            if case .listed(let list) = state.clubs {
+                ClubSwitcher(clubs: list.clubs, selectedID: state.selected?.id) { club in
+                    Task { await select(club) }
+                }
+                .fittedSheet()
+            }
         }
     }
 
     private func tab(_ tab: ClubTab, label: LocalizedStringKey, symbol: String) -> some View {
         TabContent(
-            tab: tab, clubs: clubs, name: name, retry: retry, goHome: { selection = .home }
+            tab: tab, clubs: state.clubs, selected: state.selected, home: state.home, name: name,
+            retry: retry, retryHome: retryHome, switchClub: { switching = true },
+            goHome: { selection = .home }
         )
         .tabItem {
             Label(label, systemImage: symbol)
@@ -98,30 +135,63 @@ struct TabsView: View {
         .tag(Selection(tab))
     }
 
-    /// What VoiceOver says when the club list becomes `new`, from `old` (nil when the tabs first
-    /// show it), on the selected `tab` (nil on the Lab), or nothing:
+    /// What VoiceOver says when the selected `tab` (nil on the Lab) comes to show `new`, from
+    /// `old` (nil when the tabs first show it), or nothing:
     /// - the tab's loading label, politely, once: when the tabs show while the list loads, or
-    ///   Retry loads it again (handoff 3's `loadingAndCutoffFocus`: "One polite loading
-    ///   announcement after the shell is visible");
-    /// - "Home updated.", politely, when the list comes back empty on Home (handoff 3's
-    ///   `H01.loading.resolvedVO`); Friends and Memories have no such words (FQ90);
-    /// - a failure's title and line, or the title of a club this build can't show, as soon as
-    ///   it shows, as sign-in says its failures.
+    ///   Retry loads it, or Home, again, or another club is chosen (handoff 3's
+    ///   `loadingAndCutoffFocus`: "One polite loading announcement after the shell is visible");
+    ///   the list's answer, while the selected club's Home is still read, says nothing more;
+    /// - "Home updated.", politely, when Home comes back from loading empty or before its club
+    ///   starts (handoff 3's `H01.loading.resolvedVO`); Friends and Memories have no such words
+    ///   (FQ90);
+    /// - a failure's title and line, the title of a club this build can't show, or a suspended
+    ///   club's denial (handoff 6's `denied.group.vo`), as soon as it shows, as sign-in says its
+    ///   failures.
     /// Changing tab says nothing more: each tab's words are on its screen.
     static func announcement(
-        from old: RootModel.Clubs?, to new: RootModel.Clubs, on tab: ClubTab?
+        from old: TabShown?, to new: TabShown, on tab: ClubTab?
     ) -> (words: String, politely: Bool)? {
         guard let tab, old != new else { return nil }
         switch new {
         case .loading:
             return (String(localized: tab.loading), true)
-        case .noClub:
+        case .noClub, .awaiting:
             guard tab == .home, old == .loading else { return nil }
             return (String(localized: "tabs.updated.home"), true)
-        case .failed(let failure):
+        case .failed(let failure), .homeFailed(let failure):
             return (tab.spoken(failure), false)
         case .notInThisBuild:
             return (String(localized: "tabs.notInThisBuild"), false)
+        case .unavailable:
+            return (ClubUnavailable.spoken, false)
         }
+    }
+}
+
+extension View {
+    /// The system's sheet, as high as what it holds, up to the screen, with its grabber
+    /// (G06-switcher's sheet).
+    func fittedSheet() -> some View {
+        modifier(FittedSheet())
+    }
+}
+
+private struct FittedSheet: ViewModifier {
+    @State private var height: CGFloat?
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentSize.height
+            } action: { _, now in
+                height = now
+            }
+            .presentationDetents(detents)
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Palette.canvas)
+    }
+
+    private var detents: Set<PresentationDetent> {
+        if let height { [.height(height)] } else { [.medium] }
     }
 }

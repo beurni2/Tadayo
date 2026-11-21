@@ -118,12 +118,13 @@ public struct NoClubHeader: View {
     }
 }
 
-/// "+ Add": `headerAdd` in `action`, `actionPressed` while pressed, at least 44 high. In the
-/// header's one row its target is at least 80 wide, its words 8 inside the leading edge with 8
-/// after them; stacked, its target is its words, which start at the screen's inset, and at least
-/// 44 wide.
-private struct HeaderAddStyle: ButtonStyle {
+/// "+ Add": `headerAdd` in `action`, `actionPressed` while pressed, at least 44 high. In a
+/// header's one row its words are 8 inside the target's leading edge with 8 after them, and the
+/// target is at least `rowMinWidth` wide: 80 in the no-club header, 59 in the selected club's;
+/// stacked, its target is its words, which start at the screen's inset, and at least 44 wide.
+struct HeaderAddStyle: ButtonStyle {
     let stacked: Bool
+    var rowMinWidth = Size.headerAddMinWidth
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -131,7 +132,7 @@ private struct HeaderAddStyle: ButtonStyle {
             .foregroundStyle(configuration.isPressed ? Palette.actionPressed : Palette.action)
             .padding(.horizontal, stacked ? 0 : Size.headerAddLabelInset)
             .frame(
-                minWidth: stacked ? Size.touchTarget : Size.headerAddMinWidth,
+                minWidth: stacked ? Size.touchTarget : rowMinWidth,
                 minHeight: Size.touchTarget,
                 alignment: .leading
             )

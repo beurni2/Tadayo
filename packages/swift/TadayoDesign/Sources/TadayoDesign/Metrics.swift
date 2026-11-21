@@ -153,6 +153,21 @@ public enum Size {
     public static let headerAddLabelInset: CGFloat = 8
     /// Between "+ Add"'s target and Account's (handoff 7: 321 to 329).
     public static let headerActionGap: CGFloat = 8
+    /// The selected club's header's trailing inset, to Account's trailing edge (handoff 3's
+    /// `navigationAndTargets.selectedClubHeader`: Account's target [337, 56, 44, 44] ends at 381).
+    public static let clubHeaderTrailingInset: CGFloat = 12
+    /// "+ Add"'s least width in that header's one row (its target [274, 56, 59, 44]).
+    public static let clubHeaderAddMinWidth: CGFloat = 59
+    /// From the club selector's target to "+ Add"'s in that header (250 to 274).
+    public static let clubHeaderSelectorGap: CGFloat = 24
+    /// From "+ Add"'s target to Account's in that header (333 to 337).
+    public static let clubHeaderActionGap: CGFloat = 4
+    /// The selector's `chevron.down`, at the size whose glyph matches the drawn one, 10 by 5
+    /// (handoff 5's `G06-switcher-status`, which draws handoff 3's header).
+    public static let clubHeaderChevron: CGFloat = 11
+    /// The switcher's `checkmark` on the selected club's row, at the size whose glyph is the
+    /// drawn one's width, 15 (handoff 6's `G06-switcher-unavailable`).
+    public static let switcherCheck: CGFloat = 16
     /// The Private drafts row's folder box from the row's leading edge (handoff 7's `G06-no-club`
     /// and `F01-no-club`, and its sheet's Private drafts specimen: the box at 36 in a row that
     /// starts at 20).

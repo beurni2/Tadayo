@@ -4,8 +4,9 @@ import Observation
 /// Where the app opens, from the session and the account (handoff 1: "Email → code → age
 /// confirmation when needed → profile when needed → … Home"). No session is sign-in; then
 /// `GET /v1/me` decides: no age, A02-age; no name, A03-profile; else the tabs, where
-/// `GET /v1/clubs` decides what they show. Nothing is assumed while a call is out or failed, and
-/// a list B0 can't draw is never shown as empty (T49).
+/// `GET /v1/clubs` decides what they show: no club, or the clubs with one selected, whose Home
+/// is read in turn (`home`). Nothing is assumed while a call is out or failed, and a list this
+/// build can't draw is never shown as empty (T49).
 @MainActor @Observable public final class RootModel {
     /// Why a read failed: "Check your connection" is said only when no answer came.
     public enum Failure: Sendable, Equatable {
@@ -49,15 +50,41 @@ import Observation
         case loading
         /// G06-no-club, F01-no-club and M01-no-club.
         case noClub
-        /// The account has a club or an accepted invitation, which B0 has no screen for: neither
+        /// The account's clubs, one of them selected (`selectedClubID`), with any invitations it
+        /// accepted.
+        case listed(ClubList)
+        /// The account has no club, only accepted invitations, which this build has no screen
+        /// for until `G03-waiting` comes (`docs/plans/ios-b1-clubs.md` section 4, PR 6): neither
         /// empty nor a failure.
         case notInThisBuild
         /// Every tab's failure state, with Retry: H01-error-no-club on Home.
         case failed(Failure)
     }
 
+    /// What Home shows for the selected club (`docs/plans/ios-b1-clubs-root.md` section 1).
+    public enum Home: Sendable, Equatable {
+        /// Its reads are out: H01-loading.
+        case loading
+        /// A club that hasn't started (`proposed`): H01-awaiting-activation, with frame 13's
+        /// words when `review`, the creator's own decision on the open revision being pending
+        /// (handoff 8's `creatorReviewRequired`, FQ84).
+        case awaiting(review: Bool)
+        /// A suspended club: H01-unavailable, with nothing of the club (T9, spec 22).
+        case unavailable
+        /// An active or paused club, whose Home is B2's: neither empty nor a failure.
+        case notInThisBuild
+        /// Its reads failed: H01-error, with Retry.
+        case failed(Failure)
+    }
+
     public private(set) var route = Route.starting
     public private(set) var clubs = Clubs.loading
+    /// The club the tabs show, while the list holds clubs: the one this account kept, if the
+    /// list still holds it, and otherwise the first in the server's order. A suspended club
+    /// stays selected: no other club is put in its place (handoff 5's `deniedHeader.selectedId`).
+    public private(set) var selectedClubID: String?
+    /// Home for the selected club, read each time a club is selected or the list comes back.
+    public private(set) var home = Home.loading
     /// The complete account the tabs show (the header's initial), only while they show it:
     /// nothing of it outlives Leave sign-in (T11).
     public private(set) var account: Account?
@@ -72,6 +99,9 @@ import Observation
     /// What a Leave that couldn't forget the session was ending, so its Retry ends it the same
     /// way.
     private var unfinished: Ending?
+    /// Moves each time Home is read: an answer to an earlier read, for a club since left
+    /// behind, say, is dropped.
+    private var homeReads = 0
 
     /// Why a session is being ended. Only the server's ending is said on A02-email ("Your sign-in
     /// ended. Enter your email to sign in again.", handoff 7's `auth.email.signedOut`), which then
@@ -87,6 +117,8 @@ import Observation
     let session: SessionManager
     let auth: any AuthService
     let accounts: any AccountService
+    let clubService: any ClubService
+    let selection: any ClubSelectionStore
     let makeKey: @Sendable () -> IdempotencyKey
     let now: @Sendable () -> ContinuousClock.Instant
     let sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
@@ -94,9 +126,11 @@ import Observation
 
     /// `left` runs each time Leave sign-in has ended the session, on the server and here, whether
     /// or not the device could forget it, and before sign-in shows: the app purges there what the
-    /// account left behind, its connections first (T11).
+    /// account left behind, its connections first (T11). `selection` keeps the selected club
+    /// across relaunches, and is forgotten before `left` runs.
     public init(
         session: SessionManager, auth: any AuthService, accounts: any AccountService,
+        clubs: any ClubService, selection: any ClubSelectionStore,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
         sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
@@ -107,6 +141,8 @@ import Observation
         self.session = session
         self.auth = auth
         self.accounts = accounts
+        self.clubService = clubs
+        self.selection = selection
         self.makeKey = makeKey
         self.now = now
         self.sleep = sleep
@@ -166,7 +202,8 @@ import Observation
         signIn = nil
         profile = nil
         account = nil
-        clubs = .loading
+        forgetClubs()
+        selection.forget()
         route = .leaving
         let forgotten = await session.signOut()
         left()
@@ -182,6 +219,8 @@ import Observation
     public func loadClubs() async {
         let asked = epoch
         clubs = .loading
+        selectedClubID = nil
+        home = .loading
         let answer: Result<ClubList, APIFailure>
         do {
             answer = .success(try await accounts.clubs())
@@ -190,6 +229,11 @@ import Observation
         }
         guard epoch == asked else { return }
         switch answer {
+        case .success(let list) where !list.clubs.isEmpty:
+            clubs = .listed(list)
+            let kept = account.flatMap { selection.club(for: $0.id) }
+            let chosen = list.clubs.first { $0.id == kept } ?? list.clubs[0]
+            await choose(chosen.id)
         case .success(let list):
             clubs = list.isEmpty ? .noClub : .notInThisBuild
         case .failure(.profileIncomplete):
@@ -218,12 +262,84 @@ import Observation
         }
     }
 
+    /// The switcher's choice: the club becomes the selected one, is kept for this account, and
+    /// its Home is read. A club the list doesn't hold, or the one already selected, changes
+    /// nothing.
+    public func select(_ clubID: String) async {
+        guard case .listed(let list) = clubs, clubID != selectedClubID,
+            list.clubs.contains(where: { $0.id == clubID })
+        else { return }
+        await choose(clubID)
+    }
+
+    /// The selected club, from the list, while it holds clubs.
+    public var selectedClub: ClubSummary? {
+        guard case .listed(let list) = clubs else { return nil }
+        return list.clubs.first { $0.id == selectedClubID }
+    }
+
+    private func choose(_ clubID: String) async {
+        selectedClubID = clubID
+        if let account { selection.keep(clubID, for: account.id) }
+        await loadHome()
+    }
+
+    /// Home for the selected club, each time it's selected and on Home's Retry. A club that
+    /// hasn't started is read: its details, then its open revision, if it has one, for the
+    /// caller's own decision (never anyone else's: book p30, T33). A suspended club, an active
+    /// one and a paused one need no call.
+    public func loadHome() async {
+        guard let club = selectedClub else { return }
+        homeReads += 1
+        let asked = (epoch, homeReads)
+        switch club.state {
+        case .suspended:
+            home = .unavailable
+            return
+        case .active, .paused:
+            home = .notInThisBuild
+            return
+        case .proposed:
+            break
+        }
+        home = .loading
+        let answer: Result<Bool, APIFailure>
+        do {
+            let detail = try await clubService.club(club.id)
+            if let revision = detail.openRevisionID {
+                answer = .success(
+                    try await clubService.rosterRevision(revision).myDecision == .pending)
+            } else {
+                answer = .success(false)
+            }
+        } catch {
+            answer = .failure(error)
+        }
+        guard asked == (epoch, homeReads) else { return }
+        switch answer {
+        case .success(let review):
+            home = .awaiting(review: review)
+        case .failure(.signedOut):
+            await endedByServer()
+        case .failure(let failure):
+            home = .failed(failure == .network ? .network : .other)
+        }
+    }
+
+    /// Nothing of a club outlives the account that read it (T11).
+    private func forgetClubs() {
+        clubs = .loading
+        selectedClubID = nil
+        home = .loading
+        homeReads += 1
+    }
+
     /// A02-email, empty unless the server ended the sign-in before while the address was still
     /// in memory (`Ending`).
     private func showSignIn(after ending: Ending? = nil) {
         profile = nil
         account = nil
-        clubs = .loading
+        forgetClubs()
         let asked = epoch
         var endedByServer = false
         var address: String?

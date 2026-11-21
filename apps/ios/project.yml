@@ -169,14 +169,15 @@ targets:
   # TadayoDesign's string catalog), which run on both iOS versions each `ios` run tests, 27.2 and
   # 26.5; the targets ending in SnapshotTests run on iOS 27.2 alone (ADR-033;
   # TadayoSnapshotTests/__Snapshots__/ios-version). The in-process accessibility reader and
-  # the scripted services that put a screen mid-request are the snapshot tests' own files,
-  # compiled here too.
+  # the scripted services that put a screen mid-request and the clubs the tabs draw are the
+  # snapshot tests' own files, compiled here too.
   TadayoTests:
     type: bundle.unit-test
     platform: iOS
     sources:
       - path: TadayoTests
       - path: TadayoSnapshotTests/AccessibilityElements.swift
+      - path: TadayoSnapshotTests/ClubFixtures.swift
       - path: TadayoSnapshotTests/ScriptedServices.swift
     dependencies:
       - target: Tadayo
