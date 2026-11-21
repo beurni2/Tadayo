@@ -599,8 +599,9 @@
         }
     }
 
-    /// The no-club header with Ben's initial (handoff 7's `noClubRootHeader`), across the width
-    /// as the tabs draw it, and the Private drafts row (`privateDraftsEntry`).
+    /// The no-club header with Ben's initial (handoff 7's `noClubRootHeader`) and the selected
+    /// club's header (handoff 3's `selectedClubHeader`, with handoff 8's), across the width as the
+    /// tabs draw them, and the Private drafts row (`privateDraftsEntry`).
     struct LabHeader: View {
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.xxxl) {
@@ -611,6 +612,17 @@
                         account: Text("header.account"),
                         accountHint: Text("header.account.hint"), name: FixtureCast.ben.name,
                         onAdd: {}, onAccount: {})
+                }
+                LabGroup(title: "Selected club header", insetsContent: false) {
+                    SelectedClubHeader(
+                        clubName: "Sunday people",
+                        selectorLabel: Text(
+                            verbatim: String(
+                                format: String(localized: "header.club.label"), "Sunday people")),
+                        add: Text("header.add"), addHint: Text("header.add.hint"),
+                        account: Text("header.account"),
+                        accountHint: Text("header.account.hint"), name: FixtureCast.ben.name,
+                        onSelector: {}, onAdd: {}, onAccount: {})
                 }
                 LabGroup(title: "Private drafts") {
                     PrivateDraftsEntry(

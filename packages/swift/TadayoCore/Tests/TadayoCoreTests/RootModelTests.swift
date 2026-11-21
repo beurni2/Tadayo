@@ -52,28 +52,18 @@ import Testing
             invitations: empty ? [] : [waiting])
     }
 
-    /// A list with one club Ben belongs to, and no invitation.
-    var aClub: ClubList {
-        let kitchenTable = ClubSummary(
-            ref: ClubRef(
-                id: "club_kitchen_table", name: "Kitchen table", timezone: "America/New_York",
-                myMembershipID: "mem_kt_ben"),
-            state: .active, memberCount: 5, openDay: nil, nextDay: nil)
-        return ClubList(
-            serverClock: ServerClock(serverNow: start, receivedAt: .now), clubs: [kitchenTable],
-            invitations: [])
-    }
-
     func root(
         _ accounts: FakeAccounts, auth: FakeAuth = FakeAuth(),
         store: any SessionStore = InMemorySessionStore(),
+        clubs: FakeClubs = FakeClubs(),
+        selection: any ClubSelectionStore = InMemoryClubSelection(),
         left: @escaping @MainActor () -> Void = {}
     ) -> RootModel {
         let clock = ManualContinuousClock()
         return RootModel(
             session: SessionManager(auth: auth, store: store, now: { [start] in start }),
-            auth: auth, accounts: accounts, now: { clock.now }, sleep: { clock.sleep(until: $0) },
-            left: left)
+            auth: auth, accounts: accounts, clubs: clubs, selection: selection,
+            now: { clock.now }, sleep: { clock.sleep(until: $0) }, left: left)
     }
 
     @Test func withNoSessionItOpensOnSignIn() async {
@@ -178,14 +168,15 @@ import Testing
         #expect(history.routes == [.signInNotKept, .starting, .signIn])
     }
 
-    @Test func clubsB0CantDrawAreNeitherEmptyNorAFailure() async {
-        for list in [clubs(empty: false), aClub] {
-            let root = root(
-                FakeAccounts(me: [.success(named)], clubs: [.success(list)]),
-                store: InMemorySessionStore(stored))
-            await root.start()
-            #expect(root.clubs == .notInThisBuild)
-        }
+    @Test func onlyAcceptedInvitationsAreNeitherEmptyNorAFailure() async {
+        // `G03-waiting` comes with `ios/b1-invitation`; until then the list is this build's to
+        // say it can't show. A list with a club is `.listed` (`RootModelClubsTests`).
+        let root = root(
+            FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: false))]),
+            store: InMemorySessionStore(stored))
+        await root.start()
+        #expect(root.clubs == .notInThisBuild)
+        #expect(root.selectedClubID == nil)
     }
 
     @Test func aListThatDidntComeIsTheFailureUntilRetried() async {

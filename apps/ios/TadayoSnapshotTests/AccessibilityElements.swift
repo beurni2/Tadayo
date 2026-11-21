@@ -59,6 +59,21 @@ enum AccessibilityElements {
         return read(view)
     }
 
+    /// Activates the element labelled `label`, while the view is still on screen, as a double tap
+    /// with VoiceOver does; false when there is no such element or it declines.
+    static func activate(_ label: String, in view: some View) -> Bool {
+        prepare()
+        return show(view) { objects, _ in
+            guard let element = objects.first(where: { $0.accessibilityLabel == label }),
+                element.accessibilityActivate()
+            else { return false }
+            // A few turns of the run loop, for an action SwiftUI runs on the next one.
+            let ran = Date().addingTimeInterval(0.2)
+            while Date() < ran { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
+            return true
+        }
+    }
+
     /// Performs the custom action named `action` on the element labelled `label`, while the view
     /// is still on screen, as VoiceOver or Switch Control would; false when there is no such
     /// element or action, or its handler declines.

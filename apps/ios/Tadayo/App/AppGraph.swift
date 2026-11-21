@@ -77,8 +77,8 @@ enum AppLaunch {
         let session = SessionManager(auth: auth, store: store)
         let accounts = Accounts(serverURL: api, session: session, connections: connections)
         let root = RootModel(
-            session: session, auth: auth, accounts: accounts,
-            left: { connections.reset() })
+            session: session, auth: auth, accounts: accounts, clubs: accounts,
+            selection: DefaultsClubSelection(), left: { connections.reset() })
         return AppGraph(root: root, connections: connections)
     }
 }
@@ -138,8 +138,9 @@ final class Connections: HTTPTransport, @unchecked Sendable {
     }
 }
 
-/// The API, through whichever session `Connections` holds at the time of each call.
-struct Accounts: AccountService {
+/// The API, through whichever session `Connections` holds at the time of each call: the
+/// account's calls and the club calls.
+struct Accounts: AccountService, ClubService {
     let serverURL: URL
     let session: SessionManager
     let connections: Connections
@@ -158,5 +159,63 @@ struct Accounts: AccountService {
 
     func clubs() async throws(APIFailure) -> ClubList {
         try await client.clubs()
+    }
+
+    func createClub(name: String, timezone: TimeZone, key: IdempotencyKey) async throws(APIFailure)
+        -> ClubDetail
+    {
+        try await client.createClub(name: name, timezone: timezone, key: key)
+    }
+
+    func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
+        try await client.club(clubID)
+    }
+
+    func members(of clubID: String) async throws(APIFailure) -> MemberList {
+        try await client.members(of: clubID)
+    }
+
+    func propose(
+        _ names: [String], in clubID: String, expectedRosterVersion: Int, key: IdempotencyKey
+    ) async throws(APIFailure) -> RosterRevision {
+        try await client.propose(
+            names, in: clubID, expectedRosterVersion: expectedRosterVersion, key: key)
+    }
+
+    func createInvitation(for candidateID: String, in clubID: String, key: IdempotencyKey)
+        async throws(APIFailure) -> InvitationLink
+    {
+        try await client.createInvitation(for: candidateID, in: clubID, key: key)
+    }
+
+    func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+        try await client.revokeInvitation(invitationID)
+    }
+
+    func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
+        try await client.rosterRevision(revisionID)
+    }
+
+    func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+        async throws(APIFailure) -> RosterRevision
+    {
+        try await client.approve(revisionID, expectedVersion: expectedVersion, key: key)
+    }
+
+    func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+        async throws(APIFailure) -> RosterRevision
+    {
+        try await client.decline(revisionID, expectedVersion: expectedVersion, key: key)
+    }
+
+    func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
+        try await client.preview(token)
+    }
+
+    func accept(
+        _ token: InvitationToken, revisionID: String, expectedVersion: Int, key: IdempotencyKey
+    ) async throws(APIFailure) -> InvitationAcceptance {
+        try await client.accept(
+            token, revisionID: revisionID, expectedVersion: expectedVersion, key: key)
     }
 }

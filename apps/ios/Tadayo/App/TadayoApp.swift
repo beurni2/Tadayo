@@ -63,8 +63,10 @@ struct RoutedView: View {
             RootFailure(kind: .keep, retry: { await root.retry() })
         case .tabs:
             TabsView(
-                clubs: root.clubs, name: root.account?.displayName ?? "",
-                retry: { await root.retry() }, logOut: { await root.leave() })
+                clubs: root.clubs, selected: root.selectedClub, home: root.home,
+                name: root.account?.displayName ?? "", retry: { await root.retry() },
+                retryHome: { await root.loadHome() }, select: { await root.select($0) },
+                logOut: { await root.leave() })
         case .starting:
             Palette.canvas.ignoresSafeArea()
         case .reading:
