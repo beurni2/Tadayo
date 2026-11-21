@@ -6,14 +6,16 @@ import TadayoDesign
 /// system's sheet, opened from the header's selector or a suspended club's Choose a club.
 ///
 /// "Your clubs" in `emptyTitle` 25/30, as a heading; one row per club in the list's order, its
-/// name in `row` 17/22 `primaryText` over its line in `metadata` 13/18 `secondaryText`, rows 64
-/// high (12 above and below), with a separator under each, and the selected row's `checkmark` in
-/// `action` (handoff 6's `switcherStatus`: "Native checkmark + spoken selected trait; no cover
-/// colour, lock, next date or countdown"); then Club details, Create a club and Cancel as text
-/// actions, 16 under the last separator so no target overlaps another (INVENTORY.md, handoff 6's
-/// W-11), 8 apart, as the frames draw them 52 apart. The gaps the frames draw and
-/// `handoff6.spacing` doesn't name take the scale's nearest step: "Your clubs" 32 under the
-/// sheet's top (29 drawn), the first row 12 under it (13 drawn).
+/// name in `row` 17/22 `primaryText` over its line in `metadata` 13/18 `secondaryText`, 4 apart
+/// as in Private drafts and the roster's rows, 12 above and below, so rows are about 64 apart
+/// with 20 between a name's baseline and its line's, where the frames draw 64 and 22; a
+/// separator under each, and the selected row's `checkmark` in `action` (handoff 6's
+/// `switcherStatus`: "Native checkmark + spoken selected trait; no cover colour, lock, next date
+/// or countdown"); then Club details, Create a club and Cancel as text actions, 16 under the last
+/// separator so no target overlaps another (INVENTORY.md, handoff 6's W-11), 8 apart, as the
+/// frames draw them 52 apart. The gaps the frames draw and `handoff6.spacing` doesn't name take
+/// the scale's nearest step: "Your clubs" 32 under the sheet's top (29 drawn), the first row 12
+/// under it (13 drawn).
 ///
 /// A row's line (`SwitcherLine`) is the state's word for a club that isn't active ("Not started",
 /// "Paused", "Unavailable", and nothing else of a suspended club: T9), and for an active one its
@@ -78,7 +80,7 @@ private struct SwitcherRow: View {
     var body: some View {
         Button(action: choose) {
             HStack(spacing: Spacing.m) {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(verbatim: club.name)
                         .textRole(.row)
                         .foregroundStyle(Palette.primaryText)
