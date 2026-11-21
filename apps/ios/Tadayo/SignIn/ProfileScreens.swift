@@ -166,11 +166,19 @@ struct ProfileForm: View {
                 // a hardware keyboard's bar giving way to the software one), since a column keeps
                 // its offset as the room under it shrinks. The column moves only as far as it
                 // must, and not at all where it is clear.
+                // Each scroll is made twice, inside the update and again in the main queue's next
+                // turn, as `CodeScreen`'s is (`docs/plans/ios-b0-pin-scroll-turn.md`): made inside
+                // the update alone, it can leave the accessibility tree stale on iOS 26.5, the
+                // name's field read in its unscrolled place under Continue
+                // (`docs/plans/ios-b0-profile-scroll-turn.md`). The second asks for the place the
+                // first reached.
                 .onChange(of: line) { _, shown in
-                    if shown != nil { scroll.scrollTo(Self.footID, anchor: .bottom) }
+                    guard shown != nil else { return }
+                    scrollToFoot(scroll)
                 }
                 .onChange(of: keyboardRise, initial: true) { _, rise in
-                    if rise > 0 { scroll.scrollTo(Self.footID, anchor: .bottom) }
+                    guard rise > 0 else { return }
+                    scrollToFoot(scroll)
                 }
         }
         // Read around the column, which ignores the keyboard, so the room is the screen's own.
@@ -334,6 +342,12 @@ struct ProfileForm: View {
     /// shows, and 1 for a test's keyboard, which has no height.
     private var keyboardRise: CGFloat {
         keyboard.map { $0 ? 1 : 0 } ?? room.keyboard
+    }
+
+    /// The column's foot to its visible bottom, now and again in the main queue's next turn.
+    private func scrollToFoot(_ scroll: ScrollViewProxy) {
+        scroll.scrollTo(Self.footID, anchor: .bottom)
+        DispatchQueue.main.async { scroll.scrollTo(Self.footID, anchor: .bottom) }
     }
 }
 
