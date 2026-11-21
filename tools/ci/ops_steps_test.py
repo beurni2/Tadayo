@@ -61,8 +61,9 @@ def call(step, environ, shell=None, fetch=None):
 
 
 class ScriptsTest(unittest.TestCase):
-    """SCRIPTS is docs/plans/api-b0-deploy.md, section 4's table, and spike-time
-    (docs/plans/api-b0-spike-time.md, section 7)."""
+    """SCRIPTS is docs/plans/api-b0-deploy.md, section 4's table, spike-time
+    (docs/plans/api-b0-spike-time.md, section 7) and spike-links (docs/plans/api-b0-spike-links.md,
+    section 4)."""
 
     def test_the_scripts_and_what_each_reads(self):
         self.assertEqual({name: script.variables for name, script in ops_steps.SCRIPTS.items()}, {
@@ -77,6 +78,8 @@ class ScriptsTest(unittest.TestCase):
             "storage-setup": ("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"),
             "supabase-probe": ("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF", "SUPABASE_ACCESS_TOKEN"),
             "spike-time": ("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"),
+            # It runs on the runner: flyctl reads dev's logs, and its requests go to dev's API.
+            "spike-links": ("FLY_API_TOKEN",),
         })
 
     def test_the_options_each_takes(self):
@@ -93,6 +96,7 @@ class ScriptsTest(unittest.TestCase):
             "deploy-branch": {"OPS_BRANCH": ("--branch", True)},
             # Their --here and --ref are the Machine's half, which the runner's half starts.
             "storage-setup": {}, "supabase-probe": {}, "spike-time": {},
+            "spike-links": {},
         })
         for script in ops_steps.SCRIPTS.values():
             for variable, option in script.options.items():
@@ -100,8 +104,8 @@ class ScriptsTest(unittest.TestCase):
 
     def test_the_scripts_that_call_flyctl(self):
         self.assertEqual(sorted(n for n, s in ops_steps.SCRIPTS.items() if s.flyctl),
-                         ["deploy-branch", "fly-app-create", "spike-time", "storage-setup",
-                          "supabase-probe", "worker-scale"])
+                         ["deploy-branch", "fly-app-create", "spike-links", "spike-time",
+                          "storage-setup", "supabase-probe", "worker-scale"])
         # A script that reads the Fly token calls flyctl, and the other way round.
         for name, script in ops_steps.SCRIPTS.items():
             self.assertEqual(script.flyctl, "FLY_API_TOKEN" in script.variables, name)
@@ -195,7 +199,10 @@ class RunTest(unittest.TestCase):
             ("storage-setup", {}, []),
             ("supabase-probe", {}, []),
             ("spike-time", {}, []),
+            ("spike-links", {}, []),
         ]
+        # Every script has a case, so a script added without one fails here.
+        self.assertEqual({name for name, _, _ in cases}, set(ops_steps.SCRIPTS))
         for name, inputs, options in cases:
             with self.subTest(script=name, inputs=inputs):
                 code, out, shell = call("run", self.environ(name, **inputs))
