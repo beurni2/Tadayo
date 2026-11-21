@@ -120,11 +120,44 @@ enum AccessibilityElements {
             window.isHidden = true
             window.rootViewController = nil
         }
-        // A few turns of the run loop, so a navigation stack has put up its screen.
-        let settled = Date().addingTimeInterval(0.5)
-        while Date() < settled { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
+        // A few turns of the run loop, so a navigation stack has put up its screen; then more,
+        // until what VoiceOver finds, each element's words and frame, holds still for a tenth of
+        // a second, up to 10 seconds. A screen can still be moving at half a second: in `ios` run
+        // 44857451832 (iOS 26.5, the runner's load about 400),
+        // `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` read A03
+        // at the largest text before its column had scrolled for the stand-in keyboard
+        // (`ProfileForm`'s scroll on `keyboardRise`), the name's field still under Continue; it
+        // passed on the same code in `ios` run 44852529522 just before. What is read is
+        // unchanged; a screen that never holds still is read as it is at 10 seconds, and the test
+        // log says so.
+        let shown = Date().addingTimeInterval(0.5)
+        while Date() < shown { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
         window.layoutIfNeeded()
-        return use(gather(window), window)
+        var objects = gather(window)
+        var still = false
+        let deadline = Date().addingTimeInterval(10)
+        while !still, Date() < deadline {
+            let held = Date().addingTimeInterval(0.1)
+            while Date() < held { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
+            window.layoutIfNeeded()
+            let again = gather(window)
+            still = fingerprint(again) == fingerprint(objects)
+            objects = again
+        }
+        if !still {
+            print("warning: AccessibilityElements: what VoiceOver finds moved for 10 seconds")
+        }
+        return use(objects, window)
+    }
+
+    /// Each element's words and frame, to tell whether a screen has moved between two reads.
+    private static func fingerprint(_ objects: [NSObject]) -> [String] {
+        objects.map {
+            [
+                $0.accessibilityLabel ?? "", $0.accessibilityValue ?? "",
+                $0.accessibilityHint ?? "", "\($0.accessibilityFrame)",
+            ].joined(separator: "|")
+        }
     }
 
     private static func read(_ view: some View) -> Layout {
