@@ -185,6 +185,46 @@ import Testing
             ])
     }
 
+    // MARK: The club's week
+
+    @Test func theWeekCarriesEachMembersDayInForceToday() async throws {
+        let transport = CannedTransport([example("getSchedule.sunday_people")])
+        let week = try await api(transport).schedule(of: "club_sunday_people")
+        #expect(transport.sent.first?.request.method == .get)
+        #expect(transport.sent.first?.request.path == "/v1/clubs/club_sunday_people/schedule")
+        #expect(week.serverClock.serverNow == instant("2026-11-06T14:41:00Z"))
+        #expect(week.club.myMembershipID == "mem_sp_ben")
+        #expect(week.assignments.map(\.weekday) == Weekday.allCases)
+        #expect(
+            week.assignments.map(\.person.displayName) == [
+                "Ben", "Maya", "Alex", "Sam", "Debby", "Nina",
+            ])
+        #expect(
+            week.assignments.first?.person
+                == Person(membershipID: "mem_sp_ben", displayName: "Ben", avatarVersion: "av_ben_1")
+        )
+    }
+
+    @Test func aWeekWithAProposalIsReadForItsCurrentDaysAlone() async throws {
+        let week = try await api(CannedTransport([example("getSchedule.new_member")]))
+            .schedule(of: "club_kitchen_table")
+        // Friday, free and proposed for Leila, isn't a day in force.
+        #expect(
+            week.assignments.map(\.weekday) == [
+                .monday, .tuesday, .wednesday, .thursday, .saturday,
+            ])
+        #expect(!week.assignments.contains { $0.person.displayName == "Leila" })
+    }
+
+    @Test func aWeekWithNoDayInForceHasNone() async throws {
+        let answer = #"""
+            {"server_now":"2026-11-06T14:41:00Z","club":{"id":"club_sunday_people","name":"Sunday people","timezone":"America/New_York","my_membership_id":"mem_sp_ben"}}
+            """#
+        let week = try await api(CannedTransport([.json(200, answer)]))
+            .schedule(of: "club_sunday_people")
+        #expect(week.assignments.isEmpty)
+    }
+
     @Test func aListWithNoClubIsEmpty() async throws {
         let list = try await api(CannedTransport([example("listClubs.no_club")])).clubs()
         #expect(list.isEmpty)
@@ -561,6 +601,10 @@ import Testing
             // names, as `clubs()` refuses one (`TadayoAPIClientTests`).
             (.club, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
             (.members, .json(403, #"{"code":"UNAUTHENTICATED"}"#), .refused),
+            (.schedule, .json(403, #"{"code":"PROFILE_INCOMPLETE"}"#), .profileIncomplete),
+            (.schedule, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
+            (.schedule, .response(status: 503, body: "", headers: [:]), .unavailable),
+            (.schedule, .failure, .network),
             (.accept, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
             (.createClub, error("VERSION_CONFLICT"), .refused),
             (.createInvitation, error("CLUB_FULL"), .refused),
@@ -580,6 +624,16 @@ import Testing
         let answers: [(ClubOperation, CannedTransport.Answer)] = [
             (.club, .json(200, #"{"server_now":"2026-11-06T14:41:00Z"}"#)),
             (.preview, .json(200, #"{"state":"open"}"#)),
+            (
+                .schedule,
+                .json(
+                    200,
+                    ContractExample.json("getSchedule.sunday_people").replacingOccurrences(
+                        of: #""weekday": "monday""#, with: #""weekday": "sunday""#
+                    )
+                    .replacingOccurrences(
+                        of: #""weekday":"monday""#, with: #""weekday":"sunday""#))
+            ),
             (.preview, .json(200, #"{"state":"pending"}"#)),
             (.accept, .json(200, #"{"invitation_id":"inv_kt_leila","state":"approved"}"#)),
             (
@@ -632,7 +686,7 @@ import Testing
 
     /// Each club call once, with the arguments the tests use, so a failure table can name them.
     enum ClubOperation: CaseIterable, CustomStringConvertible {
-        case createClub, club, members, propose, createInvitation, revokeInvitation
+        case createClub, club, members, schedule, propose, createInvitation, revokeInvitation
         case rosterRevision, approve, decline, preview, accept
 
         var description: String { example }
@@ -643,6 +697,7 @@ import Testing
             case .createClub: "createClub.created"
             case .club: "getClub.kitchen_table"
             case .members: "listMembers.kitchen_table"
+            case .schedule: "getSchedule.sunday_people"
             case .propose: "proposeRoster.leila"
             case .createInvitation: "createInvitation.link"
             case .revokeInvitation: "revokeInvitation.revoked"
@@ -676,6 +731,7 @@ import Testing
                     key: key)
             case .club: _ = try await api.club("club_kitchen_table")
             case .members: _ = try await api.members(of: "club_kitchen_table")
+            case .schedule: _ = try await api.schedule(of: "club_sunday_people")
             case .propose:
                 _ = try await api.propose(
                     ["Leila"], in: "club_kitchen_table", expectedRosterVersion: 5, key: key)

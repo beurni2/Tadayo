@@ -58,6 +58,24 @@ public struct DateLabels: Sendable {
         format(date, template: "EEEE")
     }
 
+    /// A weekday of the club's week as itself, "Monday", in the phone's language: a member's
+    /// weekday in the members list (G05-members), a recurring day and not a date. Standalone, as
+    /// a name shown on its own line ("lundi" in French, "poniedziałek" in Polish).
+    public func weekday(_ day: Weekday) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        return calendar.standaloneWeekdaySymbols[day.calendarWeekday - 1]
+    }
+
+    /// A whole hour of the day as the phone writes times, "7 AM" or "1 AM" on a 12-hour phone and
+    /// "07:00" on a 24-hour one, by `time(_:in:)`'s rule: the club's hours (`ClubHours`), with no
+    /// date and no zone of their own.
+    public func clockHour(_ hour: Int) -> String {
+        let utc = TimeZone(identifier: "UTC")!
+        let instant = Date(timeIntervalSince1970: TimeInterval(hour * 3600))
+        return time(instant, in: utc)
+    }
+
     /// The two lines of the day plaque (book p6, p34): the short weekday in capitals and the day
     /// of the month, "FRI" and "06".
     public func plaque(_ date: LocalDate) -> (weekday: String, day: String) {

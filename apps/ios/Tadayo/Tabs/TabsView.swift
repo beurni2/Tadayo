@@ -19,6 +19,12 @@ import TadayoDesign
 /// values, not the root model, so the snapshot tests can draw it in any state. What VoiceOver
 /// says, without moving its focus, comes from what the selected tab shows as it changes
 /// (`announcement(from:to:on:)`).
+///
+/// Each club tab holds its own navigation stack, its root's bar hidden, so the tab looks as it
+/// did without one. The switcher's Club details closes the sheet, then pushes Club details for
+/// the selected club onto the selected tab (`ClubRoute`), with the model `details` makes; Members
+/// is pushed from there. Back returns to the tab as it was. The pushed screens close when the
+/// club they show stops being the selected one: another is chosen, or the list is read again.
 struct TabsView: View {
     enum Selection: Hashable {
         case home, friends, memories, lab
@@ -60,8 +66,15 @@ struct TabsView: View {
     let retryHome: @MainActor () async -> Void
     let select: @MainActor (String) async -> Void
     let logOut: @MainActor () async -> Void
+    let details: @MainActor () -> ClubDetailsModel?
     @State private var selection: Selection
     @State private var switching = false
+    /// Each club tab's pushed screens.
+    @State private var paths: [ClubTab: [ClubRoute]] = [:]
+    /// The selected club's Club details and members list, while they're pushed.
+    @State private var shownDetails: ClubDetailsModel?
+    /// The switcher's Club details was chosen: pushed once the sheet has closed.
+    @State private var detailsChosen = false
 
     init(
         clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
@@ -69,6 +82,7 @@ struct TabsView: View {
         retry: @escaping @MainActor () async -> Void,
         retryHome: @escaping @MainActor () async -> Void = {},
         select: @escaping @MainActor (String) async -> Void = { _ in },
+        details: @escaping @MainActor () -> ClubDetailsModel? = { nil },
         logOut: @escaping @MainActor () async -> Void
     ) {
         self.state = Values(clubs: clubs, selected: selected, home: home)
@@ -77,6 +91,7 @@ struct TabsView: View {
         self.retry = retry
         self.retryHome = retryHome
         self.select = select
+        self.details = details
         self.logOut = logOut
         _selection = State(initialValue: selection)
     }
@@ -109,25 +124,75 @@ struct TabsView: View {
             Announcement.post(said.words, politely: said.politely)
         }
         .onChange(of: state.clubs) { _, now in
-            // A list loaded again has no clubs to choose from until it answers.
-            if case .listed = now {} else { switching = false }
+            // A list loaded again has no clubs to choose from until it answers, and nothing
+            // pushed for a club stays while it's read.
+            if case .listed = now {
+            } else {
+                switching = false
+                closeClubScreens()
+            }
         }
-        .sheet(isPresented: $switching) {
+        .onChange(of: state.selected?.id) { _, _ in
+            closeClubScreens()
+        }
+        .sheet(isPresented: $switching, onDismiss: openChosenDetails) {
             if case .listed(let list) = state.clubs {
-                ClubSwitcher(clubs: list.clubs, selectedID: state.selected?.id) { club in
-                    Task { await select(club) }
-                }
+                ClubSwitcher(
+                    clubs: list.clubs, selectedID: state.selected?.id,
+                    select: { club in Task { await select(club) } },
+                    openDetails: { detailsChosen = true }
+                )
                 .fittedSheet()
             }
         }
     }
 
+    /// Club details for the selected club, on the selected tab, once the switcher has closed.
+    private func openChosenDetails() {
+        guard detailsChosen else { return }
+        detailsChosen = false
+        guard let tab = selection.tab, let model = details() else { return }
+        shownDetails = model
+        paths[tab] = [.details]
+    }
+
+    private func closeClubScreens() {
+        paths = [:]
+        shownDetails = nil
+        detailsChosen = false
+    }
+
+    private func path(for tab: ClubTab) -> Binding<[ClubRoute]> {
+        Binding(
+            get: { paths[tab] ?? [] },
+            set: { paths[tab] = $0 })
+    }
+
+    @ViewBuilder private func destination(_ route: ClubRoute, on tab: ClubTab) -> some View {
+        if let shownDetails {
+            switch route {
+            case .details:
+                ClubDetailsDestination(model: shownDetails) {
+                    paths[tab, default: []].append(.members)
+                }
+            case .members:
+                MembersDestination(model: shownDetails)
+            }
+        }
+    }
+
     private func tab(_ tab: ClubTab, label: LocalizedStringKey, symbol: String) -> some View {
-        TabContent(
-            tab: tab, clubs: state.clubs, selected: state.selected, home: state.home, name: name,
-            retry: retry, retryHome: retryHome, switchClub: { switching = true },
-            goHome: { selection = .home }
-        )
+        NavigationStack(path: path(for: tab)) {
+            TabContent(
+                tab: tab, clubs: state.clubs, selected: state.selected, home: state.home,
+                name: name, retry: retry, retryHome: retryHome, switchClub: { switching = true },
+                goHome: { selection = .home }
+            )
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: ClubRoute.self) { route in
+                destination(route, on: tab)
+            }
+        }
         .tabItem {
             Label(label, systemImage: symbol)
                 .environment(\.symbolVariants, selection == Selection(tab) ? .fill : .none)

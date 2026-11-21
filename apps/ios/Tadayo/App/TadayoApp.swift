@@ -61,7 +61,7 @@ struct RoutedView: View {
                 clubs: root.clubs, selected: root.selectedClub, home: root.home,
                 name: root.account?.displayName ?? "", retry: { await root.retry() },
                 retryHome: { await root.loadHome() }, select: { await root.select($0) },
-                logOut: { await root.leave() })
+                details: { root.clubDetails() }, logOut: { await root.leave() })
         case .starting:
             Palette.canvas.ignoresSafeArea()
         case .reading:

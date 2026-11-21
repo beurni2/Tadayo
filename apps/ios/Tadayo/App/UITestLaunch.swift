@@ -115,6 +115,10 @@
                 throw .network
             }
 
+            func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+                throw .network
+            }
+
             func propose(
                 _ names: [String], in clubID: String, expectedRosterVersion: Int,
                 key: IdempotencyKey

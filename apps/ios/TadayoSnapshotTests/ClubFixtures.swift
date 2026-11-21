@@ -18,6 +18,49 @@ enum ClubFixtures {
         next: day(of: "club_kitchen", star: "Maya", on: november(9), phase: .collecting))
     static let kitchenPaused = club("club_kitchen", "Kitchen table", .paused, members: 1)
 
+    /// Club details for Sunday people with its six members (2.1's `G05-club-details`).
+    static let sundayDetail = ClubDetail(
+        serverClock: ServerClock(serverNow: now, receivedAt: .now),
+        club: club("club_sunday", "Sunday people", .active, members: 6), rosterVersion: 6,
+        canPropose: false, openRevisionID: nil)
+
+    /// Sunday people's six, one day each, Ben the viewer (handoff 1's `G05-members`).
+    static let sundayRoster = roster(
+        "club_sunday", "Sunday people",
+        [
+            ("Ben", [.monday]), ("Maya", [.tuesday]), ("Alex", [.wednesday]),
+            ("Sam", [.thursday]), ("Debby", [.friday]), ("Nina", [.saturday]),
+        ])
+
+    /// A pair, Ben and Debby, two days each (handoff 2's `G05-members-two-days`). The frame's
+    /// title, "Ben and Debby", stands in for the club's name, which a real pair has (handoffs 3
+    /// and 4's R-05), so the fixture names the club as the book's others are named.
+    static let pairRoster = roster(
+        "club_sunday", "Sunday people",
+        [("Ben", [.monday, .thursday]), ("Debby", [.tuesday, .friday])])
+
+    /// The roster of `id` with each name's weekdays, in that order, Ben the viewer.
+    static func roster(_ id: String, _ name: String, _ days: [(String, [Weekday])]) -> Roster {
+        let ref = ClubRef(
+            id: id, name: name, timezone: "America/New_York", myMembershipID: "mem_Ben")
+        let clock = ServerClock(serverNow: now, receivedAt: .now)
+        let people = days.map { name, _ in
+            Person(membershipID: "mem_\(name)", displayName: name, avatarVersion: nil)
+        }
+        let members = MemberList(
+            serverClock: clock, club: ref,
+            members: people.enumerated().map { index, person in
+                Member(person: person, position: index + 1, cover: nil, nextDay: nil, nextUp: false)
+            },
+            openRevision: nil)
+        let week = ClubWeek(
+            serverClock: clock, club: ref,
+            assignments: zip(people, days).flatMap { person, day in
+                day.1.map { WeekdayAssignment(weekday: $0, person: person) }
+            })
+        return Roster(members, week: week)
+    }
+
     /// The club list holding `clubs`, in that order.
     static func listed(_ clubs: ClubSummary...) -> RootModel.Clubs {
         .listed(

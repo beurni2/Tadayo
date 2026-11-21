@@ -175,6 +175,10 @@ struct Accounts: AccountService, ClubService {
         try await client.members(of: clubID)
     }
 
+    func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+        try await client.schedule(of: clubID)
+    }
+
     func propose(
         _ names: [String], in clubID: String, expectedRosterVersion: Int, key: IdempotencyKey
     ) async throws(APIFailure) -> RosterRevision {

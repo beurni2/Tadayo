@@ -225,6 +225,62 @@ public struct MemberList: Sendable, Equatable {
     }
 }
 
+/// A day that can be someone's day, Monday to Saturday: Sunday never is (spec 05, T6). Ordered
+/// Monday first, as the club's week reads.
+public enum Weekday: String, Sendable, Equatable, CaseIterable, Comparable {
+    case monday, tuesday, wednesday, thursday, friday, saturday
+
+    public static func < (lhs: Weekday, rhs: Weekday) -> Bool {
+        lhs.calendarWeekday < rhs.calendarWeekday
+    }
+
+    /// The Gregorian calendar's number for it: Sunday is 1, so Monday is 2.
+    public var calendarWeekday: Int {
+        switch self {
+        case .monday: 2
+        case .tuesday: 3
+        case .wednesday: 4
+        case .thursday: 5
+        case .friday: 6
+        case .saturday: 7
+        }
+    }
+}
+
+/// One weekday and whose day it is (`ScheduleAssignment`).
+public struct WeekdayAssignment: Sendable, Equatable {
+    public let weekday: Weekday
+    public let person: Person
+
+    public init(weekday: Weekday, person: Person) {
+        self.weekday = weekday
+        self.person = person
+    }
+}
+
+/// The club's week in force today, `getSchedule`'s `current`: each member's weekday or two
+/// (spec 05's table). No assignment when the answer has no `current`: nobody's day is confirmed
+/// yet, or nobody's is left. Only `current` is read here; the open proposal is B2's.
+public struct ClubWeek: Sendable, Equatable {
+    public let serverClock: ServerClock
+    public let club: ClubRef
+    public let assignments: [WeekdayAssignment]
+
+    public init(serverClock: ServerClock, club: ClubRef, assignments: [WeekdayAssignment]) {
+        self.serverClock = serverClock
+        self.club = club
+        self.assignments = assignments
+    }
+}
+
+/// The hours a club's day opens and closes, which the screens name ("7 AM to 1 AM the next
+/// morning"): 7 AM on the day, in the club's zone, to 1 AM the next morning (spec 06). The server
+/// decides each day's `reveal_at` and `close_at` (T1); these are only the words.
+public enum ClubHours {
+    public static let opening = 7
+    public static let closing = 1
+}
+
 /// Where a roster revision stands (`RosterRevisionState`).
 public enum RosterRevisionState: String, Sendable, Equatable {
     /// Waiting for approvals and acceptances.
@@ -492,6 +548,8 @@ public protocol ClubService: Sendable {
     func club(_ clubID: String) async throws(APIFailure) -> ClubDetail
     /// `GET /v1/clubs/{club_id}/members`.
     func members(of clubID: String) async throws(APIFailure) -> MemberList
+    /// `GET /v1/clubs/{club_id}/schedule`, its `current` alone.
+    func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek
     /// `POST /v1/clubs/{club_id}/roster`: a new revision with these names added.
     func propose(
         _ names: [String], in clubID: String, expectedRosterVersion: Int, key: IdempotencyKey

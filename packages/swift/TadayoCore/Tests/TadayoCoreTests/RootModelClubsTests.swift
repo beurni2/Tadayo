@@ -3,25 +3,35 @@ import Testing
 
 @testable import TadayoCore
 
-/// A `ClubService` whose club details and roster revisions come from a script, recording every
-/// call in order. The calls B1's root doesn't make fail, so a test notices if one is made.
+/// A `ClubService` whose club details, roster revisions, members and club weeks come from a
+/// script, recording every call in order. The calls B1's root and Club details don't make fail,
+/// so a test notices if one is made.
 final class FakeClubs: ClubService, @unchecked Sendable {
     private let lock = NSLock()
     private var clubAnswers: [Result<ClubDetail, APIFailure>]
     private var revisionAnswers: [Result<RosterRevision, APIFailure>]
+    private var memberAnswers: [Result<MemberList, APIFailure>]
+    private var scheduleAnswers: [Result<ClubWeek, APIFailure>]
     private(set) var calls: [String] = []
     private var clubReads = 0
     /// Run inside each read of a club's details, given which read it is (1 for the first), or
-    /// of a roster revision, before it answers: a slow network, say.
+    /// of a roster revision, the members or the club's week, before it answers: a slow network,
+    /// say.
     var duringClub: @Sendable (Int) async -> Void = { _ in }
     var duringRevision: @Sendable () async -> Void = {}
+    var duringMembers: @Sendable () async -> Void = {}
+    var duringSchedule: @Sendable () async -> Void = {}
 
     init(
         club: [Result<ClubDetail, APIFailure>] = [],
-        revision: [Result<RosterRevision, APIFailure>] = []
+        revision: [Result<RosterRevision, APIFailure>] = [],
+        members: [Result<MemberList, APIFailure>] = [],
+        schedule: [Result<ClubWeek, APIFailure>] = []
     ) {
         clubAnswers = club
         revisionAnswers = revision
+        memberAnswers = members
+        scheduleAnswers = schedule
     }
 
     private func next<T>(_ answers: inout [Result<T, APIFailure>]) -> Result<T, APIFailure> {
@@ -60,8 +70,19 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     }
 
     func members(of clubID: String) async throws(APIFailure) -> MemberList {
-        record("members \(clubID)")
-        throw .refused
+        await duringMembers()
+        return try lock.withLock {
+            calls.append("members \(clubID)")
+            return next(&memberAnswers)
+        }.get()
+    }
+
+    func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+        await duringSchedule()
+        return try lock.withLock {
+            calls.append("schedule \(clubID)")
+            return next(&scheduleAnswers)
+        }.get()
     }
 
     func propose(
