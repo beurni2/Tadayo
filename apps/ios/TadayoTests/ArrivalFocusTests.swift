@@ -21,20 +21,51 @@ final class ArrivalFocusTests: XCTestCase {
     /// ended, for 2.5 seconds, past the 2 seconds the asking can last, so the asking stops once
     /// the field has it and never takes it back. What is then typed goes into the name.
     func testA03TakesTheFocusAsItReplacesA02Age() throws {
+        try arrival(round: 0)
+    }
+
+    /// The probe (`ios/b0-arrival-probe`, never merged): the same test eight times more, each
+    /// step timed in the test's log under the pass's load.
+    func testProbeArrivalEightTimes() throws {
+        for round in 1...8 {
+            try arrival(round: round)
+        }
+    }
+
+    private func arrival(round: Int) throws {
+        let start = Date()
         let root = UITestLaunch.fakeGraph().root
         let shown = Shown(RoutedView(root: root))
-        defer { shown.close() }
+        defer {
+            shown.close()
+            probeLog("round \(round): the whole test", since: start)
+        }
+        var began = Date()
         try signInToTheAge(root)
+        probeLog("round \(round): sign-in to the age", since: began)
+        began = Date()
         XCTAssertTrue(
             spin(for: 2) { shown.focusedField == nil }, "A02-age has no field to hold the focus")
         let profile = try XCTUnwrap(root.profile)
         drive({ await profile.confirmAge() }, until: { root.route == .profile })
-        XCTAssertTrue(spin(for: 3) { shown.focusedField != nil }, "no field took the focus on A03")
+        began = Date()
+        let took = spin(for: 3) { shown.focusedField != nil }
+        probeLog("round \(round): the field takes the focus", since: began, reached: took)
+        XCTAssertTrue(took, "no field took the focus on A03")
         let field = try XCTUnwrap(shown.focusedField)
+        let observer = NotificationCenter.default.addObserver(
+            forName: UITextField.textDidEndEditingNotification, object: field, queue: nil
+        ) { _ in
+            print("probe: round \(round): the name's field ended editing")
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
         let ended = XCTNSNotificationExpectation(
             name: UITextField.textDidEndEditingNotification, object: field)
         ended.isInverted = true
+        began = Date()
         wait(for: [ended], timeout: 2.5)
+        probeLog(
+            "round \(round): the 2.5-second hold", since: began, reached: field.isFirstResponder)
         XCTAssertTrue(field.isFirstResponder, "the name's field lost the focus")
         field.insertText("Ben")
         XCTAssertTrue(spin(for: 1) { profile.name == "Ben" }, "the name is \"\(profile.name)\"")

@@ -14,12 +14,28 @@ func drive(
     _ action: @escaping @MainActor () async -> Void, until condition: () -> Bool,
     file: StaticString = #filePath, line: UInt = #line
 ) {
+    let began = Date()
     Task { await action() }
     let deadline = Date().addingTimeInterval(5)
     while !condition(), Date() < deadline {
         RunLoop.main.run(until: Date().addingTimeInterval(0.01))
     }
+    probeLog(
+        "drive at \(URL(fileURLWithPath: "\(file)").lastPathComponent):\(line)", since: began,
+        reached: condition())
     XCTAssertTrue(condition(), "the state wasn't reached", file: file, line: line)
+}
+
+/// The probe's line (`ios/b0-arrival-probe`, never merged): how long a step took, the runner's
+/// one-minute load average, and whether the step's state was reached.
+func probeLog(_ what: String, since began: Date, reached: Bool? = nil) {
+    var load = [Double](repeating: 0, count: 3)
+    let got = getloadavg(&load, 3)
+    let took = String(format: "%.3f", Date().timeIntervalSince(began))
+    let state = reached.map { $0 ? " reached" : " NOT reached" } ?? ""
+    print(
+        "probe: \(what) took \(took) s, load \(got > 0 ? String(format: "%.0f", load[0]) : "?")\(state)"
+    )
 }
 
 /// What a fake call does: answers, fails, or never answers (a request still on its way).
