@@ -246,6 +246,41 @@ class HelpersTest(unittest.TestCase):
                           "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
                           "NSExtensionActivationSupportsText": True})
 
+    def test_the_associated_domain_is_the_project_s_and_the_site_names_the_app(self):
+        # The check's one domain is the one the app's target declares, when it declares one, and
+        # the share extension declares none (apps/ios/project.yml); the site's
+        # apple-app-site-association names this app and no other.
+        with open(os.path.join(ROOT, "apps", "ios", "project.yml")) as f:
+            text = f.read()
+        # The targets section, up to the next top-level key, and one target's block in it.
+        targets = re.search(r"^targets:\n(.*?)(?=^\S|\Z)", text, re.M | re.S).group(1)
+
+        def target(name):
+            return re.search(rf"^  {name}:\n(.*?)(?=^  \S|\Z)", targets, re.M | re.S).group(1)
+
+        def domains(block):
+            if "com.apple.developer.associated-domains:" not in block:
+                return None
+            rest = block.split("com.apple.developer.associated-domains:\n", 1)[1]
+            values = []
+            for line in rest.splitlines():
+                if not line.strip().startswith("- "):
+                    break
+                values.append(line.strip()[2:].strip())
+            return values
+
+        app = domains(target("Tadayo"))
+        self.assertIn(app, (None, release.ASSOCIATED_DOMAINS))
+        self.assertIsNone(domains(target("TadayoShare")))
+        self.assertEqual(release.ASSOCIATED_DOMAINS, ["applinks:tadayo.app"])
+        with open(os.path.join(ROOT, "apps", "web", "public", ".well-known",
+                               "apple-app-site-association")) as f:
+            site = json.load(f)
+        ids = [i for d in site["applinks"]["details"] for i in d.get("appIDs", [])]
+        self.assertTrue(ids)
+        for i in ids:
+            self.assertRegex(i, r"^[A-Z0-9]{10}\." + re.escape(release.APP_ID) + "$")
+
     def test_the_icon_s_name_nested_as_the_built_app_has_it_or_at_the_top(self):
         nested = {"CFBundleIcons": {"CFBundlePrimaryIcon": {"CFBundleIconName": "AppIcon"}}}
         self.assertEqual(release.icon_name(nested), "AppIcon")
@@ -269,7 +304,9 @@ class HelpersTest(unittest.TestCase):
                          ["it holds entitlements the project doesn't declare: "
                           "com.apple.developer.associated-domains"])
         for value in (["applinks:example.com"], ["applinks:tadayo.app", "applinks:example.com"],
-                      ["applinks:tadayo.app?mode=developer"], "applinks:tadayo.app", []):
+                      ["applinks:tadayo.app?mode=developer"], "applinks:tadayo.app", [],
+                      ["applinks:tadayo.app", "applinks:tadayo.app"],
+                      {"applinks:tadayo.app": True}):
             with self.subTest(value=value):
                 signed["com.apple.developer.associated-domains"] = value
                 self.assertEqual(
