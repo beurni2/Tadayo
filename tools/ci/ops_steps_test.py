@@ -199,7 +199,10 @@ class RunTest(unittest.TestCase):
             ("storage-setup", {}, []),
             ("supabase-probe", {}, []),
             ("spike-time", {}, []),
+            ("spike-links", {}, []),
         ]
+        # Every script has a case, so a script added without one fails here.
+        self.assertEqual({name for name, _, _ in cases}, set(ops_steps.SCRIPTS))
         for name, inputs, options in cases:
             with self.subTest(script=name, inputs=inputs):
                 code, out, shell = call("run", self.environ(name, **inputs))
