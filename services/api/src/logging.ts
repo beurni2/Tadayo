@@ -6,8 +6,9 @@
 //    path and the query (`Route GET:/v1/... not found`), `req` and `res` objects and an error's message,
 //    which Postgres fills with row values. What is left of Fastify's is its one line for a request
 //    refused while the server closes, which names no one.
-// 2. The one line a request gets is ours (`logEachRequest`): its random id, the contract's operation id,
-//    the status and the milliseconds it took. No URL, header, body, address or claim ever goes in it.
+// 2. The one line a request gets is ours (`logEachRequest`): its random id, the contract's operation id
+//    (for the browser's preflight, `preflight` and the operation it is for: web-origin.ts), the status and
+//    the milliseconds it took. No URL, header, body, address or claim ever goes in it.
 // 3. Whatever else a later change logs goes through `redact`, which blanks every field that could hold
 //    content, at the top and one level down, and an `err` is reduced to its class name and its code.
 // The request id is random, 96 bits, never Fastify's counter and never a header the caller sent.
@@ -166,7 +167,12 @@ export function fastifyLogging(
 export function logEachRequest(app: FastifyInstance): void {
   app.addHook("onResponse", (request, reply, done) => {
     request.log.info(
-      { op: request.routeOptions.config.operation, status: reply.statusCode, ms: Math.round(reply.elapsedTime) },
+      {
+        op: request.routeOptions.config.operation,
+        preflight: request.routeOptions.config.preflight,
+        status: reply.statusCode,
+        ms: Math.round(reply.elapsedTime),
+      },
       "request",
     );
     done();

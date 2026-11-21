@@ -1,0 +1,120 @@
+/*
+ * The signed-out invitation page (G02-web, G02-web-revoked; docs/plans/api-b0-spike-links-web.md, section 1).
+ * Colours: brand revision 1.1's canvas, primaryText, secondaryText and action, light and dark
+ * (design/reference/brand/brand-tokens.md). Type in rem, so browser text zoom doubles every role at 200%:
+ * utilityTitle 32/35 bold (handoff 8), the unavailable title 2rem/1.1875 (handoff 4's neutralWebType),
+ * caption 21/28 bold, body 17/23, the link 16/22. The gaps between blocks are the frames' own, in px,
+ * measured from their SVGs (G02-web's wordmark at 124 px from the top, which the unavailable page keeps too,
+ * where handoff 4's frame draws it at 130).
+ * The font is the system's: SF Pro on the iPhone (the frames outline Arimo as a stand-in).
+ */
+:root {
+  color-scheme: light dark;
+  --canvas: #fafbf8;
+  --primary-text: #182b25;
+  --secondary-text: #607067;
+  --action: #284cdb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #121d19;
+    --primary-text: #f7f8f2;
+    --secondary-text: #b6c3b7;
+    --action: #afbeff;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--primary-text);
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  text-align: center;
+}
+
+main {
+  box-sizing: border-box;
+  max-width: 393px;
+  margin: 0 auto;
+  padding: 124px 20px 48px;
+}
+
+.wordmark {
+  display: block;
+  width: 144px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.title {
+  margin: 88px 0 0;
+  font-size: 2rem;
+  line-height: 1.09375;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.title.neutral {
+  line-height: 1.1875;
+}
+
+.brand {
+  margin: 31.5px 0 0;
+  font-size: 1.3125rem;
+  line-height: 1.3333;
+  font-weight: 700;
+}
+
+.body,
+.note {
+  font-size: 1.0625rem;
+  line-height: 1.3529;
+  color: var(--secondary-text);
+}
+
+.body {
+  margin: 44px 0 0;
+}
+
+/* The gap above Get Tadayo, each state's own frame's: 56 under the brand line, 53 under the neutral line. */
+[data-state] {
+  padding-bottom: 56px;
+}
+
+[data-state="unavailable"] {
+  padding-bottom: 53px;
+}
+
+.note {
+  margin: 88px 0 0;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--action);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.375;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.retry {
+  margin-top: 16px;
+}
+
+[hidden] {
+  display: none !important;
+}

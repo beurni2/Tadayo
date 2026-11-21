@@ -14,6 +14,10 @@
 // closing server answers with Fastify's fixed 503, a JSON body of its own words with no Cache-Control;
 // none of them carries an id, a path or anyone's data. Nothing is logged but the one line a request
 // gets (logging.ts, T52).
+//
+// One route isn't an operation of the contract: the browser's preflight before the signed-out invitation
+// page's request from tadayo.app, beside `previewInvitationWeb`'s route, which allows that page alone to
+// read its answers (web-origin.ts).
 
 import type { Socket } from "node:net";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
@@ -38,6 +42,7 @@ import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandl
 import { fastifyLogging, logEachRequest } from "./logging.ts";
 import { installGate } from "./session.ts";
 import { END_SECONDS } from "./shutdown.ts";
+import { WEB_OPERATIONS, allowWebOrigin, preflight } from "./web-origin.ts";
 
 export type { Deps } from "./deps.ts";
 
@@ -187,17 +192,34 @@ export function buildApp(deps: Deps): FastifyInstance {
   logEachRequest(app);
   const handlers = handlersOf(deps);
   for (const operation of OPERATIONS) {
+    const url = operation.path.replace(/\{([a-z_]+)\}/g, ":$1");
+    const fromPage = WEB_OPERATIONS.has(operation.id);
     app.route({
       method: operation.method.toUpperCase(),
-      url: operation.path.replace(/\{([a-z_]+)\}/g, ":$1"),
+      url,
       bodyLimit: bodyLimitOf(operation.id),
       config: {
         operation: operation.id,
         public: operation.public === true,
         beforeProfile: operation.beforeProfile === true,
       },
+      ...(fromPage ? { onRequest: allowWebOrigin } : {}),
       handler: handlers[operation.id] ?? notFound,
     });
+    // The preflight answers in its `onRequest` hook, before a body is read; its handler never runs. It has
+    // no contract operation, so the gate's hook passes it by.
+    if (fromPage) {
+      app.route({
+        method: "OPTIONS",
+        url,
+        config: { preflight: operation.id },
+        // Fastify's way to answer from a hook: send, and don't call its `done`.
+        onRequest: (request, reply) => {
+          void preflight(request, reply);
+        },
+        handler: preflight,
+      });
+    }
   }
   app.setNotFoundHandler(notFound);
   app.setErrorHandler(failed);
