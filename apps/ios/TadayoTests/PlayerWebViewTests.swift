@@ -36,17 +36,19 @@ final class PlayerWebViewTests: XCTestCase {
         ]
         PlayerWebView.load(webView, base: base)
         // Every load waits up to 60 seconds for the frame, and returns as soon as it's made. The
-        // process's first load waited 60 and every later one 10 until a later load stalled too:
-        // in `ios` run 44842617958 (iOS 27.2, a saturated runner), the first load of
-        // `testTheWebViewSharesNothingWithTheAppAndStartsNothingByItself`, not the process's
-        // first, waited 8.7 seconds for its web process to launch, where the run's other
-        // launches took 1.1 to 1.3, and the 10 ran out before the frame was made and decided
-        // (its request failed at the closed port about 14 seconds into the test). Before that, in
-        // `ios` run 44715668431, attempt 1 (iOS 26.5), the runner stalled during the process's
-        // first load: WebKit's first line came 6.7 seconds after the suite began, the web process
-        // was reported unresponsive for 7.4 seconds, and the frame wasn't made within the 10 it
-        // had then; the same load took 1.0 second in the re-run. What is checked once the frame
-        // is made is unchanged.
+        // process's first load waited 60 and every later one 10 until a later load stalled too: in
+        // `ios` run 44842617958 (iOS 27.2, a saturated runner), the first load of
+        // `testTheWebViewSharesNothingWithTheAppAndStartsNothingByItself`, not the process's first,
+        // waited 8.7 seconds for its web process to launch, where the three other web process
+        // launches the run logged took 1.1 to 1.3, and the 10 ran out before the frame was made and
+        // decided (its request failed at the closed port about 14 seconds into the test). Before
+        // that, in `ios` run 44715668431, attempt 1 (iOS 26.5), the runner stalled during the
+        // process's first load: WebKit's first line came 6.7 seconds after the suite began, the web
+        // process was reported unresponsive for 7.4 seconds, and the frame wasn't made within the
+        // 10 it had then; the same load took 1.0 second in the re-run. What is checked once the
+        // frame is made is unchanged. The 60 is longer than the 20 seconds a real viewing waits for
+        // its player (`VideoViewerModel.timeout`), so these tests don't time the shell: how long
+        // the player takes on a phone is the spike's device check.
         //
         // The shell says "frame made" as soon as it has put the frame in the page; WebKit asks
         // the coordinator about the frame's address after that, on its own turn. So the load

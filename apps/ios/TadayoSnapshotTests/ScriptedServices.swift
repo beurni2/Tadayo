@@ -15,9 +15,12 @@ import XCTest
 /// load average between 310 and 497 on its 3 CPUs) timed every drive: three steps ran past those
 /// 5 seconds, unreached at 5.9, 6.8 and 6.0 seconds
 /// (`SignInSnapshotTests.testA03ProfileFailedNetwork` and the first sign-in of
-/// `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age`), where
-/// each of the probe's eight later rounds of that test took 0.9 to 3.1 seconds for the same
-/// sign-in's three steps together. What is asserted once the state is reached is unchanged.
+/// `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age`), where each of the eight rounds
+/// of the probe's own `testProbeArrivalEightTimes` took 0.9 to 3.1 seconds for the same sign-in's
+/// three steps together. The 30 covers the longest stall seen: in `ios` run 44842617958 (iOS
+/// 27.2) the test log has no line at all for 24.4 seconds while the arrival test's first drive
+/// waited, and that drive failed a second after the log went on. What is asserted once the
+/// state is reached is unchanged.
 @MainActor
 func drive(
     _ action: @escaping @MainActor () async -> Void, until condition: () -> Bool,
