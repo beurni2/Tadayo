@@ -130,3 +130,22 @@ What the check of handoff 8's export (`docs/design/handoff-8/check/handoff-8-che
 
 61. **Welcome's sign-in link.** 2.1's `A01-welcome` has "Already here? Sign in" under I have an invite, the way a person with an account who is signed out, on a new phone or after a reinstall, reaches sign-in. Handoff 8's frames 1 to 3 leave it out, and `handoff8.replaces.welcome` says the redraw changes the headline and the explanation only. Built (`ios/b1-welcome`): the link below the two routes, as 2.1 draws it, and in the one scrolling column at the largest text. Draw Welcome with it, light, dark and at accessibility 5, or say how such a person reaches sign-in.
 62. **Leave club's place on Club details.** Frame 16 (`G05-club-details-active`) centres Leave club near the foot. 2.1's `G05-club-details` and handoff 6's `G05-club-details-paused` put it at the leading edge under the list, as handoff 7 put text actions (`handoff-7-check.md`, the leading text actions). Built: at the leading edge. Say which holds, and why.
+
+## 13. For handoff 9, from the api lane's invitation page (ios/b0-spike-links, 21 November 2026)
+
+The api lane built the signed-out invitation page's two states with no render, `G02-web-checking` and `G02-web-failed`, from the spec and the copy (`apps/web`, #94), and asked for them in the next handoff (`docs/PROGRESS.md`, its "Needs from the other lane"). They are built from spec in `design/reference/INVENTORY.md` until a frame arrives. The design handoffs are the ios lane's (`docs/MILESTONES.md`, "Lanes"), so the api lane's needs come here through `docs/PROGRESS.md`. Handoff 9's brief gathers this item with section 12's items 61 and 62.
+
+63. **The invitation page while it checks, and when the check fails.** The api lane's block, from `docs/plans/api-b0-spike-links-web.md` section 5, goes into the brief as it stands:
+
+```
+Two states of the signed-out invitation page on tadayo.app (G02-web), for Claude Design.
+
+The page today: G02-web (handoff 8, frames 4 to 6: the wordmark 144 CSS px, "Ben invited you to a club on Tadayo" in utilityTitle, the brand line in caption, Get Tadayo as a text link) and G02-web-revoked (handoff 4: "This invitation isn’t available.", "Ask for a new invitation link.", Get Tadayo). The page reads the link's token from the address's fragment and asks the server for the inviter's name, which takes a moment, and can fail.
+
+Please draw, each 393 × 852 at a 393 px browser viewport, light, with the same dark and 200% text-zoom rules as G02-web (no extra frames unless a state needs one):
+
+1. G02-web-checking: while the page asks the server. Today it shows the wordmark, "Checking invitation…" (handoff 8's in-app copy for G02-checking) and Get Tadayo. Nothing of the club or the inviter, since nothing is known yet (T7).
+2. G02-web-failed: no answer, a network error or a server error. Today: the wordmark, "Couldn’t check the invitation link. Check your connection and try again." (handoff 4's link.checkFailure), a Retry control (handoff 4's common.retry) and Get Tadayo. It must not say the link no longer works (handoff 4).
+
+Say for each: the type role of each line, the gaps, whether Retry is a text link or a button and its size, whether Retry has a hint and its words (handoff 8 gives the app's Retry one that names its destination), where Get Tadayo sits, and whether "Checking invitation…" shows at once or only after a short delay. Say too where focus goes after Retry, whose control the checking state hides: today it moves to the first line of the state shown (checking, then the answer), and the page's live region is turned off after Retry so the state is read once. Say whether that is right, or whether the live region should stay and focus stay put. Say too whether the page needs a line for a browser with JavaScript off: today it stays at checking, with no `<noscript>` text. No new words unless you say why; the page shows no names, club, photographs or dates.
+```

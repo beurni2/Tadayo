@@ -24,7 +24,7 @@ The rules B1 is held to:
 - `RootModel` (`packages/swift/TadayoCore/Sources/TadayoCore/RootModel.swift`) reads `GET /v1/clubs`: an empty list is `.noClub`, any club `.notInThisBuild` ("This version of Tadayo can't show clubs yet.", FQ90).
 - `TadayoAPIClient` (`packages/swift/TadayoAPI/Sources/TadayoAPI/TadayoAPIClient.swift`) calls `getMe`, `updateMe` and `listClubs` through the generated client, with every failure an `APIFailure` (T52).
 - The design system in `TadayoDesign`, the Lab, the snapshot tests and the contact sheets on `evidence`.
-- `apps/web/public/.well-known/apple-app-site-association` has no app links yet (`"details": []`), and the app has no associated domain; `tools/ci/ios_release_steps.py` refuses any entitlement outside `ARCHIVED_ENTITLEMENTS` and `EXPORTED_ENTITLEMENTS`. An invitation link is `https://tadayo.app/i#<token>` (the contract's `InvitationLink` example), its token in the fragment (`InvitationToken`).
+- `apps/web/public/.well-known/apple-app-site-association` has no app links yet (`"details": []`), and the app has no associated domain (since then, #91 put the app's details in the file and `ios/b0-spike-links` the domain in the app's entitlements); `tools/ci/ios_release_steps.py` refuses any entitlement outside `ARCHIVED_ENTITLEMENTS` and `EXPORTED_ENTITLEMENTS`. An invitation link is `https://tadayo.app/i#<token>` (the contract's `InvitationLink` example), its token in the fragment (`InvitationToken`).
 
 ## 3. The API B1 calls
 
