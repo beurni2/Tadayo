@@ -1,0 +1,661 @@
+import Foundation
+import Observation
+
+/// One candidate's row in the setup list (`G01-invite-people` and its states;
+/// `docs/plans/ios-b1-create.md` section 2): the status the row reads, its action, and its More
+/// menu, from the server's `CandidateInvitation` and the link the app keeps (ADR-037).
+public struct InvitationRow: Sendable, Equatable, Identifiable {
+    public enum Status: Sendable, Equatable {
+        /// "Not shared", with the link symbol (handoff 4).
+        case notShared
+        /// "Shared": a share of the kept link completed, a copy included (FQ67). Never
+        /// delivered.
+        case shared
+        /// "Accepted": the candidate accepted this roster (handoff 4).
+        case accepted
+        /// "Needs to accept again": the candidate accepted an earlier roster with this link
+        /// (handoff 8's `usedInvitationRow`).
+        case needsToAcceptAgain
+        /// "Link revoked" (handoff 4).
+        case revoked
+        /// It expired before anyone used it (FQ71): built from spec, with no frame yet.
+        case expired
+    }
+
+    public enum Action: Sendable, Equatable {
+        /// Share link: shares the kept link, or makes the candidate's first link and shares it.
+        case shareLink
+        /// Share again: shares the kept link.
+        case shareAgain
+        /// Create new link: a new link in place of the old one, which stops working.
+        case createNewLink
+    }
+
+    /// The More menu's items (the system's own menu, T45).
+    public enum MenuItem: Sendable, Equatable {
+        case revokeLink
+        case createNewLink
+    }
+
+    public let candidateID: String
+    /// The one name the revision shows for them (FQ66).
+    public let name: String
+    public let status: Status
+    public let action: Action?
+    public let menu: [MenuItem]
+    /// A used link the app no longer holds: handoff 8's "This invitation link isn’t saved on
+    /// this device." and "{name} can reopen the invitation already received.", and nothing to
+    /// do, since the server neither replaces nor revokes a link used to accept.
+    public let linkNotSaved: Bool
+
+    public var id: String { candidateID }
+
+    /// The row for a candidate the caller proposed, with the link kept for them, if any.
+    public init(_ candidate: Candidate, kept: KeptInvitationLink?) {
+        candidateID = candidate.id
+        name = candidate.name
+        guard let invitation = candidate.invitation else {
+            // No link yet: the app offers to make one (the contract's `Candidate`).
+            (status, action, menu, linkNotSaved) = (.notShared, .shareLink, [], false)
+            return
+        }
+        let held = kept?.invitationID == invitation.id ? kept : nil
+        switch invitation.state {
+        case .live:
+            if let held {
+                (status, action) = held.shared ? (.shared, .shareAgain) : (.notShared, .shareLink)
+            } else {
+                // The app doesn't hold this live link (a reinstall, another phone): a new link
+                // in its place (the contract's `InvitationLink`; built from spec).
+                (status, action) = (.notShared, .createNewLink)
+            }
+            (menu, linkNotSaved) = ([.revokeLink], false)
+        case .accepted:
+            (status, action, menu, linkNotSaved) = (.accepted, nil, [], false)
+        case .used:
+            (status, action, menu, linkNotSaved) =
+                held == nil
+                ? (.needsToAcceptAgain, nil, [], true)
+                : (.needsToAcceptAgain, .shareAgain, [], false)
+        case .revoked:
+            (status, action, menu, linkNotSaved) = (
+                .revoked, .createNewLink, [.createNewLink], false
+            )
+        case .expired:
+            (status, action, menu, linkNotSaved) = (
+                .expired, .createNewLink, [.createNewLink], false
+            )
+        }
+    }
+}
+
+/// The setup list as it shows: the club, the caller's candidates' rows in the server's order,
+/// whether a place is free for another, and which waiting screen Done for now leads to.
+public struct InvitationList: Sendable, Equatable {
+    public let club: ClubRef
+    public let state: ClubState
+    public let rows: [InvitationRow]
+    /// Create an invitation shows: the server allows a proposal and a place is free (A01, T6).
+    public let canInvite: Bool
+    /// The caller's own decision on the open revision is pending, so Done for now leads to
+    /// `G01-pending-approve`, not `G01-pending` (handoff 8's `creatorReviewRequired`, FQ84).
+    public let awaitingMyApproval: Bool
+}
+
+/// The setup list (`G01-invite-people`; spec 04; book p33), for one club and the account: who
+/// the caller proposed, each with their link's status and actions, Create an invitation, and Done
+/// for now.
+///
+/// It reads `GET /v1/clubs/{club_id}` (the roster version a proposal sends, and `can_propose`)
+/// and `GET /v1/clubs/{club_id}/members` (the open revision's candidates) together, and settles
+/// the kept links by each successful members answer (`InvitationLinkBook`). Each link it makes
+/// is kept before it's offered for sharing, so a cancelled share never makes a second one
+/// (`createInvitation.retention`). Making a link is one action with one key, made when it starts
+/// and sent again on every retry of it (T19); an answer without its link (the first answer lost
+/// on the way) makes one more under a new key, since the lost one was never shared.
+///
+/// An answer counts only while `current` says so and while its read is the latest; a not found
+/// closes the list and has the club list read again (`gone`), as Club details does; `signedOut`
+/// ends the session. Nothing of an answer reaches a log (T52).
+@MainActor @Observable public final class InvitationListModel {
+    /// Why the list didn't load: the network's line or a refusal's (handoff 8's
+    /// `B1LoadShell`, "Loading invitations…" and "Couldn’t load invitations.").
+    public enum Failure: Sendable, Equatable {
+        case network
+        case refused
+    }
+
+    public enum State: Sendable, Equatable {
+        case loading
+        case loaded(InvitationList)
+        case failed(Failure)
+    }
+
+    /// An action that failed, with the row kept as it was.
+    public enum ActionFailure: Sendable, Equatable {
+        /// "Couldn’t create the invitation link for {name}." with the network's or a refusal's
+        /// line (`createInvitation.createFailure`).
+        case createLink(name: String, network: Bool)
+        /// "Couldn’t revoke {name}’s invitation link. Try again.", or, with no answer, "Couldn’t
+        /// confirm that {name}’s invitation link was revoked. Check your connection and try
+        /// again." (handoff 4's `revokeLink`).
+        case revoke(name: String, uncertain: Bool)
+    }
+
+    public let club: ClubRef
+    public let accountID: String
+    public private(set) var state = State.loading
+    /// A read answered not found: the club is no longer the caller's (T9, T14).
+    public private(set) var closed = false
+    /// The candidates whose action is on its way: their row's controls wait.
+    public private(set) var busy: Set<String> = []
+    public private(set) var actionFailure: ActionFailure?
+
+    private var answer: (detail: ClubDetail, members: MemberList)?
+    private var reads = 0
+    /// What this list's own actions learned of a candidate's link since its reads were requested:
+    /// a link made (live) or revoked, by candidate id, with the read count then, so the row says
+    /// so even when the read again fails, until an answer to a read requested after it comes.
+    private var learned: [String: (invitation: CandidateInvitation, at: Int)] = [:]
+    /// Each candidate's link being made, by candidate id: the invitation it replaces (nil for the
+    /// first) and the key its action started with, sent again on every retry of that action.
+    private var linkKeys: [String: (replacing: String?, key: IdempotencyKey)] = [:]
+
+    let service: any ClubService
+    let book: InvitationLinkBook
+    let makeKey: @Sendable () -> IdempotencyKey
+    let current: @MainActor () -> Bool
+    let gone: @MainActor () async -> Void
+    let signedOut: @MainActor () async -> Void
+
+    public init(
+        club: ClubRef, accountID: String, service: any ClubService, book: InvitationLinkBook,
+        makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
+        current: @escaping @MainActor () -> Bool,
+        gone: @escaping @MainActor () async -> Void = {},
+        signedOut: @escaping @MainActor () async -> Void = {}
+    ) {
+        self.club = club
+        self.accountID = accountID
+        self.service = service
+        self.book = book
+        self.makeKey = makeKey
+        self.current = current
+        self.gone = gone
+        self.signedOut = signedOut
+    }
+
+    /// When the list shows, and on its Retry: its loading form until both reads answer.
+    public func load() async {
+        await read(quiet: false)
+    }
+
+    /// The list read again after an action, or when it shows again: what's on screen stays
+    /// while the reads are out, and stays if they fail.
+    public func refresh() async {
+        await read(quiet: true)
+    }
+
+    /// Share link or Share again: the link to give the share sheet. A candidate with no link yet
+    /// gets one first, kept before it's returned. Nil when nothing can be shared, with
+    /// `actionFailure` saying why when a link couldn't be made.
+    public func linkToShare(for candidateID: String) async -> URL? {
+        guard let candidate = mine(candidateID), !busy.contains(candidateID),
+            let row = row(for: candidate),
+            row.action == .shareLink || row.action == .shareAgain
+        else { return nil }
+        if let kept = book.link(for: candidateID, club: club.id, account: accountID),
+            candidate.invitation == nil || candidate.invitation?.id == kept.invitationID
+        {
+            actionFailure = nil
+            return kept.url
+        }
+        guard candidate.invitation == nil else { return nil }
+        busy.insert(candidateID)
+        defer { busy.remove(candidateID) }
+        return await make(for: candidate)?.url
+    }
+
+    /// The share sheet closed: a completed share marks the kept link Shared (FQ67); a cancelled
+    /// one changes nothing.
+    public func shareFinished(for candidateID: String, completed: Bool) {
+        guard completed,
+            let kept = book.link(for: candidateID, club: club.id, account: accountID)
+        else { return }
+        book.markShared(kept.invitationID, account: accountID)
+        relist()
+    }
+
+    /// Create new link, from the row or its More menu: a link in place of the old one, then the
+    /// list read again, where the row reads Not shared with Share link.
+    public func createNewLink(for candidateID: String) async {
+        guard let candidate = mine(candidateID), !busy.contains(candidateID),
+            let row = row(for: candidate),
+            row.action == .createNewLink || row.menu.contains(.createNewLink)
+        else { return }
+        // The row waits through the read again too, which a second tap would otherwise beat.
+        busy.insert(candidateID)
+        defer { busy.remove(candidateID) }
+        guard await make(for: candidate) != nil, current() else { return }
+        await refresh()
+    }
+
+    /// Revoke link, after its confirmation: only a live link (handoff 4's `revokeLink`), then
+    /// the list read again. Once the server confirms it, the kept link goes and the row reads Link
+    /// revoked, even if the read again fails. A failure keeps the row as it was; with no answer
+    /// the revoke may have reached the server, so the read again says.
+    public func revoke(_ candidateID: String) async {
+        guard let candidate = mine(candidateID), !busy.contains(candidateID),
+            let invitation = candidate.invitation, invitation.state == .live
+        else { return }
+        busy.insert(candidateID)
+        actionFailure = nil
+        defer { busy.remove(candidateID) }
+        do {
+            try await service.revokeInvitation(invitation.id)
+            guard current() else { return }
+            book.drop(invitation.id, account: accountID)
+            learn(
+                CandidateInvitation(
+                    id: invitation.id, state: .revoked, expiresAt: invitation.expiresAt),
+                for: candidateID)
+        } catch .signedOut {
+            guard current() else { return }
+            await signedOut()
+            return
+        } catch {
+            guard current() else { return }
+            actionFailure = .revoke(name: candidate.name, uncertain: error == .network)
+        }
+        guard current() else { return }
+        await refresh()
+    }
+
+    /// The name step for one more person (`G01-invite-name`), while a place is free.
+    public func makeInvite() -> InviteNameModel? {
+        guard let answer, answer.detail.canPropose, current() else { return nil }
+        return InviteNameModel(
+            club: club, accountID: accountID, rosterVersion: answer.detail.rosterVersion,
+            known: Set(answer.members.openRevision?.candidates.map(\.id) ?? []),
+            service: service, book: book, makeKey: makeKey, current: current,
+            signedOut: signedOut,
+            changed: { [weak self] in await self?.refresh() })
+    }
+
+    // MARK: Reading
+
+    private func read(quiet: Bool) async {
+        reads += 1
+        let asked = reads
+        if !quiet { state = .loading }
+        let stamp = book.beginRead()
+        let id = club.id
+        async let detail = Self.result { [service] () async throws(APIFailure) in
+            try await service.club(id)
+        }
+        async let members = Self.result { [service] () async throws(APIFailure) in
+            try await service.members(of: id)
+        }
+        let answers = await (detail, members)
+        guard !Task.isCancelled, current() else { return }
+        // A members answer settles the kept links whichever read is latest: it's the server's
+        // word on them as of its request (the contract's `InvitationLink`).
+        switch answers.1 {
+        case .success(let list):
+            book.settle(list, stamp: stamp, account: accountID)
+        case .failure(.notFound):
+            book.settleGone(club: id, stamp: stamp, account: accountID)
+        case .failure:
+            break
+        }
+        guard asked == reads else { return }
+        switch answers {
+        case (.success(let detail), .success(let list)):
+            answer = (detail, list)
+            learned = learned.filter { $0.value.at >= asked }
+            relist()
+        case (.failure(let failure), _), (_, .failure(let failure)):
+            let worst = Self.decisive(answers.0.failure, answers.1.failure) ?? failure
+            if let failed = await settle(worst), !quiet {
+                state = .failed(failed)
+            }
+        }
+    }
+
+    /// What a failed read leads to: the list closed and the club list read again for a club no
+    /// longer the caller's, the session ended for `signedOut` (neither shows a failure), or the
+    /// failure the list shows.
+    private func settle(_ failure: APIFailure) async -> Failure? {
+        switch failure {
+        case .notFound:
+            closed = true
+            await gone()
+            return nil
+        case .signedOut:
+            await signedOut()
+            return nil
+        case .network:
+            return .network
+        default:
+            return .refused
+        }
+    }
+
+    /// The list from the last answers and the links kept now.
+    private func relist() {
+        guard let answer else { return }
+        let rows = myCandidates.map { candidate in
+            InvitationRow(
+                candidate, kept: book.link(for: candidate.id, club: club.id, account: accountID))
+        }
+        state = .loaded(
+            InvitationList(
+                club: answer.members.club, state: answer.detail.club.state, rows: rows,
+                canInvite: answer.detail.canPropose,
+                awaitingMyApproval: answer.members.openRevision?.myDecision == .pending))
+    }
+
+    /// The open revision's candidates the caller proposed, in the server's order, each with what
+    /// this list's own actions learned of their link since.
+    private var myCandidates: [Candidate] {
+        guard let answer, let revision = answer.members.openRevision else { return [] }
+        let me = answer.members.club.myMembershipID
+        return revision.candidates.filter { $0.proposedBy.membershipID == me }.map { candidate in
+            guard let invitation = learned[candidate.id]?.invitation else { return candidate }
+            return Candidate(
+                id: candidate.id, name: candidate.name, proposedBy: candidate.proposedBy,
+                invitation: invitation)
+        }
+    }
+
+    /// The server's answer to this list's own action: the row says it at once.
+    private func learn(_ invitation: CandidateInvitation, for candidateID: String) {
+        learned[candidateID] = (invitation, reads)
+        relist()
+    }
+
+    private func mine(_ candidateID: String) -> Candidate? {
+        myCandidates.first { $0.id == candidateID }
+    }
+
+    private func row(for candidate: Candidate) -> InvitationRow? {
+        InvitationRow(
+            candidate, kept: book.link(for: candidate.id, club: club.id, account: accountID))
+    }
+
+    // MARK: Making a link
+
+    /// Makes and keeps a link for `candidate`, under the key its action started with; nil, with
+    /// the failure, when it couldn't. Its action is the candidate's first link, or a link in
+    /// place of the one the row shows: a retry of the same action sends the same key, and another
+    /// action a new one. The caller holds the row busy.
+    private func make(for candidate: Candidate) async -> KeptInvitationLink? {
+        actionFailure = nil
+        let replacing = candidate.invitation?.id
+        let key =
+            linkKeys[candidate.id].flatMap { $0.replacing == replacing ? $0.key : nil }
+            ?? makeKey()
+        linkKeys[candidate.id] = (replacing, key)
+        do {
+            var answer = try await service.createInvitation(
+                for: candidate.id, in: club.id, key: key)
+            guard current() else { return nil }
+            if answer.url == nil {
+                // A replay of an answer lost on the way, with no link: that link was never
+                // shared, so one more replaces it.
+                let fresh = makeKey()
+                linkKeys[candidate.id] = (replacing, fresh)
+                answer = try await service.createInvitation(
+                    for: candidate.id, in: club.id, key: fresh)
+                guard current() else { return nil }
+            }
+            linkKeys[candidate.id] = nil
+            guard let kept = book.keep(answer, club: club.id, account: accountID) else {
+                actionFailure = .createLink(name: candidate.name, network: false)
+                return nil
+            }
+            learn(
+                CandidateInvitation(
+                    id: kept.invitationID, state: .live, expiresAt: answer.expiresAt),
+                for: candidate.id)
+            return kept
+        } catch .network {
+            guard current() else { return nil }
+            actionFailure = .createLink(name: candidate.name, network: true)
+        } catch .unavailable {
+            guard current() else { return nil }
+            actionFailure = .createLink(name: candidate.name, network: false)
+        } catch .signedOut {
+            linkKeys[candidate.id] = nil
+            guard current() else { return nil }
+            await signedOut()
+        } catch {
+            linkKeys[candidate.id] = nil
+            guard current() else { return nil }
+            actionFailure = .createLink(name: candidate.name, network: false)
+            await refresh()
+        }
+        return nil
+    }
+
+    private static func decisive(_ first: APIFailure?, _ second: APIFailure?) -> APIFailure? {
+        let both = [first, second].compactMap { $0 }
+        return both.first { $0 == .signedOut } ?? both.first { $0 == .notFound }
+    }
+
+    nonisolated static func result<T: Sendable>(
+        _ body: @Sendable () async throws(APIFailure) -> T
+    ) async -> Result<T, APIFailure> {
+        do {
+            return .success(try await body())
+        } catch {
+            return .failure(error)
+        }
+    }
+}
+
+extension Result {
+    fileprivate var failure: Failure? {
+        if case .failure(let failure) = self { return failure }
+        return nil
+    }
+}
+
+/// The name step (`G01-invite-name`, "Who is it for?"): the person's name, then Create link and
+/// share, which proposes them (`proposeRoster`, a new revision of the exact roster, spec 32) and
+/// makes their link (`createInvitation`), kept before it's offered for sharing, so a cancelled
+/// share never makes a second one (`createInvitation.retention`).
+///
+/// It's one action with two keys, each made when its step first runs and sent again on every
+/// retry of that step (T19); a step already done isn't done again, and once the person is
+/// proposed the name is theirs and stays. An answer without its link (the first lost on the way)
+/// makes one more under a new key. A failure is "Couldn’t create the invitation link for
+/// {name}." with the network's or a refusal's line, and keeps the name; a version conflict reads
+/// the roster's version again, and the next tap is a new action from it.
+@MainActor @Observable public final class InviteNameModel {
+    public enum Failure: Sendable, Equatable {
+        case network
+        case other
+    }
+
+    /// FQ70: a person's name is 1 to 40 grapheme clusters, as the API's `CandidateLabel`.
+    public static let nameLimit = 40
+
+    public let club: ClubRef
+    public private(set) var isCreating = false
+    public private(set) var failure: Failure?
+    /// The person proposed, once the server answered.
+    public private(set) var candidate: Candidate?
+    /// Their link, kept, for the share sheet.
+    public private(set) var link: KeptInvitationLink?
+
+    private var rosterVersion: Int
+    private var known: Set<String>
+    private var proposal: (name: String, version: Int, key: IdempotencyKey)?
+    private var linkKey: IdempotencyKey?
+
+    let accountID: String
+    let service: any ClubService
+    let book: InvitationLinkBook
+    let makeKey: @Sendable () -> IdempotencyKey
+    let current: @MainActor () -> Bool
+    let signedOut: @MainActor () async -> Void
+    let changed: @MainActor () async -> Void
+
+    /// `known` holds the candidates the list already showed, so the one this proposal adds is
+    /// told apart; `changed` reads the list again once a share sheet closes.
+    public init(
+        club: ClubRef, accountID: String, rosterVersion: Int, known: Set<String>,
+        service: any ClubService, book: InvitationLinkBook,
+        makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
+        current: @escaping @MainActor () -> Bool,
+        signedOut: @escaping @MainActor () async -> Void = {},
+        changed: @escaping @MainActor () async -> Void = {}
+    ) {
+        self.club = club
+        self.accountID = accountID
+        self.rosterVersion = rosterVersion
+        self.known = known
+        self.service = service
+        self.book = book
+        self.makeKey = makeKey
+        self.current = current
+        self.signedOut = signedOut
+        self.changed = changed
+    }
+
+    /// The name as typed: read-only while the action runs, and once the person is proposed.
+    public var name: String {
+        get { candidate?.name ?? typedName }
+        set {
+            guard !isCreating, candidate == nil else { return }
+            typedName = newValue
+        }
+    }
+    private var typedName = ""
+
+    /// The name, trimmed, is longer than FQ70's 40 characters.
+    public var nameIsTooLong: Bool { trimmedName.count > Self.nameLimit }
+
+    /// Create link and share: a name with something in it besides spaces, no longer than 40
+    /// characters, nothing on its way, and no link made yet.
+    public var canCreate: Bool {
+        (candidate != nil || (!trimmedName.isEmpty && !nameIsTooLong)) && !isCreating
+            && link == nil
+    }
+
+    /// The name a failure names: the person proposed, or the name as typed.
+    public var failureName: String { candidate?.name ?? trimmedName }
+
+    /// Create link and share: the link to give the share sheet, or nil with the failure.
+    public func createLinkAndShare() async -> URL? {
+        guard canCreate else { return nil }
+        isCreating = true
+        failure = nil
+        defer { isCreating = false }
+        do {
+            let proposed: Candidate
+            if let candidate {
+                proposed = candidate
+            } else {
+                proposed = try await propose()
+            }
+            guard current() else { return nil }
+            guard let kept = try await makeLink(for: proposed), current() else { return nil }
+            link = kept
+            return kept.url
+        } catch .network {
+            guard current() else { return nil }
+            failure = .network
+        } catch .unavailable {
+            guard current() else { return nil }
+            failure = .other
+        } catch .signedOut {
+            (proposal, linkKey) = (nil, nil)
+            guard current() else { return nil }
+            await signedOut()
+        } catch .versionConflict {
+            proposal = nil
+            guard current() else { return nil }
+            failure = .other
+            await reread()
+        } catch {
+            (proposal, linkKey) = (nil, nil)
+            guard current() else { return nil }
+            failure = .other
+        }
+        return nil
+    }
+
+    /// The share sheet closed: a completed share marks the link Shared (FQ67); either way the
+    /// list is read again, where the person's row now is.
+    public func shareFinished(completed: Bool) async {
+        if completed, let link { book.markShared(link.invitationID, account: accountID) }
+        await changed()
+    }
+
+    private var trimmedName: String { typedName.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// Proposes the person: the one candidate the answer adds, with this name, proposed by the
+    /// caller.
+    private func propose() async throws(APIFailure) -> Candidate {
+        let name = trimmedName
+        let attempt =
+            proposal.flatMap { $0.name == name && $0.version == rosterVersion ? $0 : nil }
+            ?? (name: name, version: rosterVersion, key: makeKey())
+        proposal = attempt
+        let revision = try await service.propose(
+            [attempt.name], in: club.id, expectedRosterVersion: attempt.version, key: attempt.key)
+        proposal = nil
+        let added = revision.candidates.filter {
+            !known.contains($0.id) && $0.name == name
+                && $0.proposedBy.membershipID == club.myMembershipID
+        }
+        guard added.count == 1 else { throw .refused }
+        candidate = added[0]
+        return added[0]
+    }
+
+    /// Makes and keeps the person's link; nil, keeping nothing, when its answer comes after the
+    /// session it was asked in ended (`current`): nothing is kept once Leave sign-in has
+    /// forgotten the links (T11).
+    private func makeLink(for candidate: Candidate) async throws(APIFailure) -> KeptInvitationLink?
+    {
+        let key = linkKey ?? makeKey()
+        linkKey = key
+        var answer = try await service.createInvitation(for: candidate.id, in: club.id, key: key)
+        guard current() else { return nil }
+        if answer.url == nil {
+            let fresh = makeKey()
+            linkKey = fresh
+            answer = try await service.createInvitation(for: candidate.id, in: club.id, key: fresh)
+            guard current() else { return nil }
+        }
+        linkKey = nil
+        guard let kept = book.keep(answer, club: club.id, account: accountID) else {
+            throw .refused
+        }
+        return kept
+    }
+
+    /// After a version conflict: the roster's version and candidates as they are now, so the
+    /// next tap is a new action from them. A failed read leaves them, and the next tap's own
+    /// conflict reads again.
+    private func reread() async {
+        let stamp = book.beginRead()
+        let id = club.id
+        async let detail = InvitationListModel.result { [service] () async throws(APIFailure) in
+            try await service.club(id)
+        }
+        async let members = InvitationListModel.result { [service] () async throws(APIFailure) in
+            try await service.members(of: id)
+        }
+        let answers = await (detail, members)
+        guard current() else { return }
+        if case .success(let list) = answers.1 {
+            book.settle(list, stamp: stamp, account: accountID)
+            known = Set(list.openRevision?.candidates.map(\.id) ?? [])
+        }
+        if case .success(let detail) = answers.0 { rosterVersion = detail.rosterVersion }
+    }
+}
