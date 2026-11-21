@@ -26,8 +26,7 @@ final class ClubDetailsSnapshotTests: XCTestCase {
 
     func testG05ClubDetailsUnavailable() {
         snap(
-            details(.unavailable, club: ClubFixtures.sundaySuspended),
-            named: "G05-club-details-unavailable")
+            details(.unavailable), named: "G05-club-details-unavailable")
     }
 
     func testG05Members() {
@@ -76,8 +75,8 @@ final class ClubDetailsSnapshotTests: XCTestCase {
         var opened = 0
         let view = NavigationStack {
             ClubDetailsScreen(
-                club: ClubFixtures.sundayOpen, details: .loaded(ClubFixtures.sundayDetail),
-                retry: {}, openMembers: { opened += 1 })
+                details: .loaded(ClubFixtures.sundayDetail), retry: {},
+                openMembers: { opened += 1 })
         }
         XCTAssertTrue(
             AccessibilityElements.activate(
@@ -133,8 +132,7 @@ final class ClubDetailsSnapshotTests: XCTestCase {
     }
 
     func testASuspendedClubsDetailsShowNothingOfIt() {
-        let elements = AccessibilityElements.of(
-            details(.unavailable, club: ClubFixtures.sundaySuspended))
+        let elements = AccessibilityElements.of(details(.unavailable))
         XCTAssertTrue(
             elements.contains {
                 $0.label == "Club unavailable. This club isn’t available right now." && $0.isHeader
@@ -162,10 +160,8 @@ final class ClubDetailsSnapshotTests: XCTestCase {
         }
     }
 
-    private func details(
-        _ state: ClubDetailsModel.Details, club: ClubSummary = ClubFixtures.sundayOpen
-    ) -> some View {
-        pushed(ClubDetailsScreen(club: club, details: state, retry: {}, openMembers: {}))
+    private func details(_ state: ClubDetailsModel.Details) -> some View {
+        pushed(ClubDetailsScreen(details: state, retry: {}, openMembers: {}))
     }
 
     private func members(_ state: ClubDetailsModel.Members) -> some View {

@@ -23,8 +23,7 @@ final class ClubDetailsLayoutTests: XCTestCase {
 
     private func details(_ state: ClubDetailsModel.Details) -> some View {
         pushed(
-            ClubDetailsScreen(
-                club: ClubFixtures.sundayOpen, details: state, retry: {}, openMembers: {}))
+            ClubDetailsScreen(details: state, retry: {}, openMembers: {}))
     }
 
     private func element(

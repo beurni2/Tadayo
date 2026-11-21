@@ -32,7 +32,6 @@ enum ClubRoute: Hashable {
 /// (`ClubLoadFailure`); for a suspended club, the same "Club unavailable" as Home, with nothing
 /// of the club and no call (FQ80).
 struct ClubDetailsScreen: View {
-    let club: ClubSummary
     let details: ClubDetailsModel.Details
     let retry: @MainActor () async -> Void
     let openMembers: () -> Void
@@ -104,10 +103,17 @@ struct ClubDetailsScreen: View {
 }
 
 /// One of Club details' rows: its title in `row` 17/22 `primaryText` over its line in `metadata`
-/// 13/18 `secondaryText`, 4 apart, 12 above and below (the frames draw 10 and 12, and rows 66
-/// apart where these are 68), and `chevron.right` in `secondaryText` in the Friends row's box, 4
-/// in from the trailing edge; a full-width `separator` under it. The whole row is one button, at
-/// least 44 high. No delivery draws it pressed: it looks the same.
+/// 13/18 `secondaryText`, 4 apart, 12 above and below, and `chevron.right` in `secondaryText` in
+/// the Friends row's box, 4 in from the trailing edge; a full-width `separator` under it. The
+/// whole row is one button, at least 44 high. No delivery draws it pressed: it looks the same.
+/// The rows are about 64.5 apart where 2.1's frame draws 66: the two lines take their fonts' own
+/// line heights, which the contract's 22 and 18 only stand for (`dynamicTypePolicy.lineHeight`).
+///
+/// The chevron grows with the text up to the largest size below the accessibility sizes and no
+/// further (`RowChevron`): grown with it, its box took so much of the row at the largest text
+/// that "Notifications", one word, broke in the middle, where book p26 has rows grow and words
+/// wrap whole. It is a mark VoiceOver doesn't read, as the avatar's initial is, which keeps its
+/// size (`dynamicTypePolicy.avatarMarks`).
 ///
 /// VoiceOver reads the title and the line, and the hint names the section and the club
 /// (`details.row.hint`: "Open Members for Sunday people.").
@@ -116,10 +122,6 @@ struct DetailsRow: View {
     let line: Text
     let club: String
     let action: () -> Void
-
-    @ScaledMetric(relativeTo: TypeRole.row.textStyle)
-    private var chevronBox = Size.personRowChevronBox
-    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var chevron = Size.personRowChevron
 
     var body: some View {
         Button(action: action) {
@@ -135,12 +137,8 @@ struct DetailsRow: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: chevron))
-                    .foregroundStyle(Palette.secondaryText)
-                    .frame(width: chevronBox, height: chevronBox)
-                    .padding(.trailing, Size.personRowChevronInset)
-                    .accessibilityHidden(true)
+                RowChevron()
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             }
             .padding(.vertical, Spacing.m)
             .frame(maxWidth: .infinity, minHeight: Size.touchTarget)
@@ -162,6 +160,22 @@ struct DetailsRow: View {
     }
 }
 
+/// The Friends row's chevron (`PersonRow`): `chevron.right` in `secondaryText`, 13 in a 20-point
+/// box 4 in from the trailing edge, both growing with the row's text, and hidden from VoiceOver.
+private struct RowChevron: View {
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var box = Size.personRowChevronBox
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var size = Size.personRowChevron
+
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: size))
+            .foregroundStyle(Palette.secondaryText)
+            .frame(width: box, height: box)
+            .padding(.trailing, Size.personRowChevronInset)
+            .accessibilityHidden(true)
+    }
+}
+
 /// The column Club details and the members list scroll in: a setup screen's (`SetupScroll`),
 /// from 20 under the inline bar, 20 in from each edge, on `canvas`.
 struct ClubColumn<Content: View>: View {
@@ -174,8 +188,8 @@ struct ClubColumn<Content: View>: View {
     }
 }
 
-/// A pushed club screen's title: the club's own name in `utilityTitle` 32/35, as a heading, wrapping
-/// naturally.
+/// A pushed club screen's title: the club's own name in `utilityTitle` 32/35, as a heading,
+/// wrapping naturally.
 struct ClubTitle: View {
     let name: String
 

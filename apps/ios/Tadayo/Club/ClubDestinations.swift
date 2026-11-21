@@ -11,8 +11,7 @@ struct ClubDetailsDestination: View {
 
     var body: some View {
         ClubDetailsScreen(
-            club: model.club, details: model.details, retry: { await model.loadDetails() },
-            openMembers: openMembers
+            details: model.details, retry: { await model.loadDetails() }, openMembers: openMembers
         )
         .task {
             guard !asked else { return }

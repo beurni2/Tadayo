@@ -9,10 +9,12 @@ import SwiftUI
 /// force shows the name alone, as a Friends row with no day does (`friendsRow.noOccurrence`).
 ///
 /// What the contract doesn't name is the frames': 12 above the words and 16 under them, the
-/// scale's steps nearest the 12.5 and 17 the frames draw (rows 72 apart where they draw 73), and
-/// the avatar centred on the words, as drawn, until the accessibility sizes, where it keeps level
-/// with the name's first line (`friendsRow.AX5`: "Avatar aligns to first line"). The avatar keeps
-/// its size (`dynamicTypePolicy.avatarMarks`).
+/// scale's steps nearest the 12.5 and 17 the frames draw, and the avatar centred on the words, as
+/// drawn, until the accessibility sizes, where it keeps level with the name's first line
+/// (`friendsRow.AX5`: "Avatar aligns to first line"). The avatar keeps its size
+/// (`dynamicTypePolicy.avatarMarks`). The rows are about 68.5 apart where the frames draw 73: the
+/// name and the weekdays take their fonts' own line heights, which the contract's 22 and 18 only
+/// stand for (`dynamicTypePolicy.lineHeight`).
 ///
 /// It is not a button: nothing in the frames opens from a row. VoiceOver reads one element, the
 /// name then the weekdays, as sentences: "Ben, you. Monday and Thursday." (`person.self.vo`).
