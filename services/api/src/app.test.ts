@@ -98,12 +98,14 @@ async function answer(request: InjectOptions) {
 }
 
 describe("the skeleton's routes (T14)", () => {
-  it("has one route for each operation of the contract, and no other", () => {
+  it("has one route for each operation of the contract, the signed-out page's preflight, and no other", () => {
     const contract = OPERATIONS.map(
       (operation) => `${operation.method.toUpperCase()} ${operation.path.replace(/\{([a-z_]+)\}/g, ":$1")}`,
     );
-    expect([...routesOf(app)].sort()).toEqual(contract.sort());
-    expect(routesOf(app)).toHaveLength(67);
+    // The browser's preflight before tadayo.app's request (web-origin.ts), pinned here by its method and path:
+    // a preflight isn't an operation of the contract, and it is the only route that isn't one.
+    expect([...routesOf(app)].sort()).toEqual([...contract, "OPTIONS /v1/invitations/web-preview"].sort());
+    expect(routesOf(app)).toHaveLength(68);
   });
 
   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {

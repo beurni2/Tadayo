@@ -61,12 +61,15 @@ import {
   SIGNED_OUT,
   UNAUTHENTICATED,
   NEUTRAL,
+  PREFLIGHT_ROUTE,
+  allowanceProblems,
   cellStep,
   guessCount,
   guessStep,
   manipulations,
   manipulationStep,
   pinnedProblems,
+  preflightProblems,
   answerOf,
   render,
   routeProblems,
@@ -614,11 +617,19 @@ async function changeDatesAt(
   return { today: instant.toZonedDateTimeISO(row.zone).toPlainDate().toString() };
 }
 
-describe("a route with no row fails, and no route is outside the contract (TECH-DESIGN section 8)", () => {
-  it("gives every operation of the contract a row, and the app a route for each and no other", () => {
+describe("a route with no row fails, and no route is outside the contract but the preflight (TECH-DESIGN section 8)", () => {
+  it("gives every operation of the contract a row, and the app a route for each, the preflight, and no other", () => {
     expect(rowProblems(operations, ROWS)).toEqual([]);
-    expect(routeProblems(routesOf(app), operations)).toEqual([]);
-    expect(routesOf(app)).toHaveLength(operations.length);
+    // The browser's preflight before tadayo.app's request is the one route that is no operation; every cell
+    // sends it as its role, below.
+    expect(routesOf(app)).toContain(PREFLIGHT_ROUTE);
+    expect(
+      routeProblems(
+        routesOf(app).filter((route) => route !== PREFLIGHT_ROUTE),
+        operations,
+      ),
+    ).toEqual([]);
+    expect(routesOf(app)).toHaveLength(operations.length + 1);
   });
 });
 
@@ -769,6 +780,25 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             daysOf: (club) => daysOf(facts.world, club, now),
           });
           const rosterSeen = (): RosterSeen => ({ ...scheduleSeen(), roster: rosterWorld, rows: clubRows });
+          // The browser's preflight before the signed-out page's request, as the role, signed out, and as the
+          // page's browser sends it (T59): one answer for everyone, which reads nothing
+          // (services/api/src/web-origin.ts).
+          for (const headers of [
+            { authorization },
+            {} as Record<string, string>,
+            {
+              authorization,
+              origin: "https://tadayo.app",
+              "access-control-request-method": "POST",
+              "access-control-request-headers": "content-type",
+            },
+          ]) {
+            const answer = await answerOf(app, { method: "OPTIONS", url: "/v1/invitations/web-preview", headers });
+            for (const problem of preflightProblems(answer))
+              wrong.push(
+                `${state.name}, ${phase}: the preflight with ${JSON.stringify(Object.keys(headers))}: ${problem}`,
+              );
+          }
           for (const spec of specs) {
             const gate = gateOf(session, spec.operation);
             const id = spec.operation.id;
@@ -806,6 +836,18 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
+            if (id === "previewInvitationWeb") {
+              // The same request from the signed-out page on tadayo.app: the same answer, with the allowance
+              // alone. It is held to the plain answer byte for byte, so neither is scanned or counted.
+              const sent = render(spec);
+              const plain = await answerOf(app, sent);
+              const fromPage = await answerOf(app, {
+                ...sent,
+                headers: { ...sent.headers, origin: "https://tadayo.app" },
+              });
+              for (const problem of allowanceProblems(plain, fromPage))
+                wrong.push(`${state.name}, ${phase}: previewInvitationWeb from tadayo.app: ${problem}`);
+            }
             if (phase === "collecting") {
               counted.expectedAnswers += manipulations(spec, cell.w.ben.interval, CLAIMED).length;
               record(await manipulationStep(app, spec, cell.w.ben.interval, CLAIMED, expected));
@@ -1343,6 +1385,15 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               const live = await sendAs(web, null);
               if (live.status !== 200) wrong.push(`${where}: a live link's page got ${String(live.status)}`);
               await judged(web, live, webPreviewExpected(linkSeen, token), "a live link, signed out", null);
+              // The page on tadayo.app reads the same answer, with the allowance alone (web-origin.ts). The
+              // answer is held to the scanned one byte for byte, so it isn't scanned or counted again.
+              const fromPage = async () => {
+                const request = render(web);
+                delete request.headers["authorization"];
+                return answerOf(app, { ...request, headers: { ...request.headers, origin: "https://tadayo.app" } });
+              };
+              for (const problem of allowanceProblems(live, await fromPage()))
+                wrong.push(`${where}: a live link from tadayo.app: ${problem}`);
               await previewAs("holder", "open", "a live link previewed by its holder");
               await previewAs("viewer", "joined", "a live link previewed by its proposer");
               await previewAs("other", "joined", "a live link previewed by another member");
@@ -1389,6 +1440,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               await previewAs("holder", "waiting", "the accepted roster previewed by its holder");
               const used = await sendAs(web, null);
               await judged(web, used, NEUTRAL, "a used link, signed out", null);
+              for (const problem of allowanceProblems(used, await fromPage()))
+                wrong.push(`${where}: a used link from tadayo.app: ${problem}`);
               // The club's roster carries the open revision, as its member reads it.
               const members = byId("listMembers");
               counted.expectedAnswers += 1;
