@@ -3,21 +3,20 @@
 The `ios` workflow's evidence for `97645f96c5c7c0a9ca8f6c1174e1e4910c3ae63f` (https://github.com/beurni2/Tadayo/actions/runs/44881009529).
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
-- iOS `27.2` on `iPhone 17`: tests `failed`, with the snapshot tests
+- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
 - iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `failed`
-- Odd draws: 6 in `logs/test-27.2.log`, below
-- Carries the states this branch touches; 216 snapshot(s) not carried
+- Tests: `passed`
+- Odd draws: 5 in `logs/test-27.2.log`, below
+- Carries the states this branch touches; 217 snapshot(s) not carried
 
 Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
 
-- `warning: ScreenSnapshot A02-age-failed-network: settled after 3 draws, SHA-256 970332a1 dd445dbc dd445dbc; against the last draw, draw 1: 5433 pixels in x 30 to 305, y 123 to 214, by at most 2/255`
-- `warning: ScreenSnapshot A02-age-refused: didn't settle in 4 draws, SHA-256 0f01f245 788f0d04 0f01f245 788f0d04; against the last draw, draw 1: 5433 pixels in x 30 to 305, y 123 to 214, by at most 2/255; draw 3: 5433 pixels in x 30 to 305, y 123 to 214, by at most 2/255`
-- `warning: ScreenSnapshot A02-code: settled after 3 draws, SHA-256 12dab645 c7f47bdf c7f47bdf; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A02-age-failed-network-dark: settled after 4 draws, SHA-256 504b3edf bcffbd89 504b3edf 504b3edf; against the last draw, draw 2: 10835 pixels in x 31 to 304, y 124 to 212, by at most 2/255`
 - `warning: ScreenSnapshot A02-code-error: settled after 3 draws, SHA-256 093382d2 3f31e220 3f31e220; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot A02-code-resend-failed-network: settled after 3 draws, SHA-256 ed76810e 829dbf4d 829dbf4d; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot F01-error-no-club: settled after 3 draws, SHA-256 8cec8ef7 9c836df3 9c836df3; against the last draw, draw 1: 9455 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
+- `warning: ScreenSnapshot A02-code-error-resend-failed-network: settled after 3 draws, SHA-256 8240bf56 8f789862 8f789862; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A02-code-resend-xl: settled after 4 draws, SHA-256 2355c077 9bf3298c 2355c077 2355c077; against the last draw, draw 2: 1871 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot M01-error-no-club: settled after 3 draws, SHA-256 546af4c1 12777442 12777442; against the last draw, draw 1: 9175 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
 |---|---|---|---|---|---|
@@ -36,7 +35,6 @@ Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapsho
 | `Lab-header` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/LabSnapshotTests/testLabSections.Lab-header.png` | not a state in design/reference/INVENTORY.md | [Lab-header.jpg](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/sheets/Lab-header.jpg) | [Lab-header.png](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/snapshots/Lab-header.png) |
 | `Lab-header-320-xl` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/LabSnapshotTests/testTheHeaderAt320Points.Lab-header-320-xl.png` | not a state in design/reference/INVENTORY.md | [Lab-header-320-xl.jpg](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/sheets/Lab-header-320-xl.jpg) | [Lab-header-320-xl.png](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/snapshots/Lab-header-320-xl.png) |
 | `Lab-header-320` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/LabSnapshotTests/testTheHeaderAt320Points.Lab-header-320.png` | not a state in design/reference/INVENTORY.md | [Lab-header-320.jpg](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/sheets/Lab-header-320.jpg) | [Lab-header-320.png](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/snapshots/Lab-header-320.png) |
-| `A02-code-resend-failed-network` | changed | `apps/ios/TadayoSnapshotTests/__Snapshots__/SignInSnapshotTests/testA02CodeResendFailedNetwork.A02-code-resend-failed-network.png` | design/reference/screens/A02-code-resend-failed-network.png | [A02-code-resend-failed-network.jpg](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/sheets/A02-code-resend-failed-network.jpg) | [A02-code-resend-failed-network.png](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/snapshots/A02-code-resend-failed-network.png) |
 | `F01-unavailable-dark` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/TabsSnapshotTests/testF01Unavailable.F01-unavailable-dark.png` | no render of its own: judged against book p26 (design/reference/INVENTORY.md) | [F01-unavailable-dark.jpg](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/sheets/F01-unavailable-dark.jpg) | [F01-unavailable-dark.png](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/snapshots/F01-unavailable-dark.png) |
 | `F01-unavailable-xl` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/TabsSnapshotTests/testF01Unavailable.F01-unavailable-xl.png` | no render of its own: judged against book p26 (design/reference/INVENTORY.md) | [F01-unavailable-xl.jpg](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/sheets/F01-unavailable-xl.jpg) | [F01-unavailable-xl.png](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/snapshots/F01-unavailable-xl.png) |
 | `F01-unavailable` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/TabsSnapshotTests/testF01Unavailable.F01-unavailable.png` | design/reference/screens/F01-unavailable.png | [F01-unavailable.jpg](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/sheets/F01-unavailable.jpg) | [F01-unavailable.png](https://github.com/beurni2/Tadayo/blob/evidence/ios/b1-clubs-root/97645f9/ios/snapshots/F01-unavailable.png) |
