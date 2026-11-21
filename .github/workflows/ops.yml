@@ -1,6 +1,7 @@
 # ops: runs one script of tools/ops against dev, by hand (docs/TECH-DESIGN.md section 9; the B0
-# plan's slice 10b; docs/plans/api-b0-deploy.md section 4, whose table this file follows, and
-# docs/plans/api-b0-spike-time.md section 7 for spike S5's spike-time).
+# plan's slice 10b; docs/plans/api-b0-deploy.md section 4, whose table this file follows,
+# docs/plans/api-b0-spike-time.md section 7 for spike S5's spike-time, and
+# docs/plans/api-b0-spike-links.md section 4 for spike S6's spike-links).
 # Thin on purpose: every step calls tools/ci/ops_steps.py or ci_steps.py, where the logic and its
 # tests live (ops_steps_test.py reads this file).
 # One job per script, each run only for its script (a job's `if:` is decided before a runner is
@@ -27,6 +28,7 @@ on:
           - storage-setup
           - supabase-probe
           - spike-time
+          - spike-links
       org:
         description: >-
           fly-app-create only, when the Fly token sees several organizations: the organization's
@@ -326,4 +328,29 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: python3 tools/ci/ops_steps.py run
+
+  # On the runner: flyctl reads dev's log buffer, and the requests go to dev's API host.
+  spike-links:
+    name: spike-links
+    if: inputs.script == 'spike-links'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: spike-links
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: python3 tools/ci/ops_steps.py run
