@@ -23,7 +23,8 @@ final class RootSnapshotTests: XCTestCase {
             AuthSession(accessToken: "a", refreshToken: "r", expiresAt: .distantFuture))
         return RootModel(
             session: SessionManager(auth: auth, store: store), auth: auth,
-            accounts: ScriptedAccounts(updates: [], me: me))
+            accounts: ScriptedAccounts(updates: [], me: me), clubs: UITestLaunch.NoClubs(),
+            selection: InMemoryClubSelection())
     }
 
     private func reading() -> RootModel {

@@ -553,6 +553,18 @@
         }
       }
     },
+    "common.cancel" : {
+      "comment" : "handoff 5 common.cancel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
     "common.error.network" : {
       "comment" : "handoff 3 H01.error.network, its second sentence, and handoff 7 root.network and tabs.error.network: the line when no answer came",
       "extractionState" : "manual",
@@ -693,6 +705,138 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save a private draft or open private drafts."
+          }
+        }
+      }
+    },
+    "header.club.label" : {
+      "comment" : "handoff 8 copy-contracts, handoff8.header.club.vo: what VoiceOver reads for the selected club's header selector; %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch club. %@ selected."
+          }
+        }
+      }
+    },
+    "home.awaiting.action" : {
+      "comment" : "handoff 3 H01.awaiting.action and handoff 8 pending.review.action: Review members, its label too (handoff 5 a11y.reviewMembers)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review members"
+          }
+        }
+      }
+    },
+    "home.awaiting.action.hint" : {
+      "comment" : "handoff 5 a11y.reviewMembers.hint: %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the proposed roster for %@."
+          }
+        }
+      }
+    },
+    "home.awaiting.body" : {
+      "comment" : "handoff 5 home.awaiting.body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The club starts when another person accepts the same roster."
+          }
+        }
+      }
+    },
+    "home.awaiting.private" : {
+      "comment" : "handoff 5 home.awaiting.private: under Private drafts on H01-awaiting-activation",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drafts stay private when the club starts."
+          }
+        }
+      }
+    },
+    "home.awaiting.title" : {
+      "comment" : "handoff 5 home.awaiting.title: H01-awaiting-activation",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for club confirmation"
+          }
+        }
+      }
+    },
+    "home.loading.hint" : {
+      "comment" : "handoff 5 loading.hint: the hint of \"Loading Home…\" while the selected club's Home loads; %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For %@."
+          }
+        }
+      }
+    },
+    "home.retry.hint" : {
+      "comment" : "handoff 3 H01.error.retryVO: Retry's hint after the selected club's Home failed; %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry loading Home for %@."
+          }
+        }
+      }
+    },
+    "home.review.action.label" : {
+      "comment" : "handoff 8 pending.review.action.vo: Review members' label when the review is pending; %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review %@’s updated members."
+          }
+        }
+      }
+    },
+    "home.review.body" : {
+      "comment" : "handoff 8 pending.review.body: %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review and approve the updated roster before %@ can start."
+          }
+        }
+      }
+    },
+    "home.review.title" : {
+      "comment" : "handoff 8 pending.review.title: H01-awaiting-activation when the creator's own decision on the current revision is pending (creatorReviewRequired)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the updated members"
           }
         }
       }
@@ -925,6 +1069,150 @@
         }
       }
     },
+    "switcher.clubDetails" : {
+      "comment" : "handoff 5 common.clubDetails",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Club details"
+          }
+        }
+      }
+    },
+    "switcher.createClub" : {
+      "comment" : "handoff 5 common.createClub",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a club"
+          }
+        }
+      }
+    },
+    "switcher.next" : {
+      "comment" : "handoff 6 switcher.active.row: %1$@ is the members' count, as switcher.people writes it, %2$@ the next day's star",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · Next: %2$@"
+          }
+        }
+      }
+    },
+    "switcher.next.label" : {
+      "comment" : "handoff 6 switcher.active.row.vo: %1$@ is the club's name, %2$@ the members' count, %3$@ the next day's star",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@. Next: %3$@."
+          }
+        }
+      }
+    },
+    "switcher.notStarted" : {
+      "comment" : "handoff 5 switcher.notStarted: a club that hasn't started, under its name in the switcher",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not started"
+          }
+        }
+      }
+    },
+    "switcher.open" : {
+      "comment" : "G06-switcher as drawn (handoff 6's C-02): an active club whose day is open; %1$@ is the members' count, %2$@ the star's day, as \"Debby’s Friday\"",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "switcher.open.label" : {
+      "comment" : "Built from handoff 6 switcher.active.row.vo for G06-switcher's open day: %1$@ is the club's name, %2$@ the members' count, %3$@ the star's day, as \"Debby’s Friday\"",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@. %3$@."
+          }
+        }
+      }
+    },
+    "switcher.paused" : {
+      "comment" : "handoff 5 switcher.paused",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused"
+          }
+        }
+      }
+    },
+    "switcher.people" : {
+      "comment" : "G06-switcher as drawn (W-05: no template writes it): an active club's members; %lld is their number, two or more",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld people"
+          }
+        }
+      }
+    },
+    "switcher.row.label" : {
+      "comment" : "handoff 5 switcher.row.vo: a club's row in the switcher, read by VoiceOver; %1$@ is the club's name, %2$@ its line. The native Selected trait says Selected (handoff 6 switcher.row.selected.vo)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@."
+          }
+        }
+      }
+    },
+    "switcher.title" : {
+      "comment" : "handoff 5 switcher.title: the club switcher's heading",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your clubs"
+          }
+        }
+      }
+    },
+    "switcher.unavailable" : {
+      "comment" : "handoff 5 switcher.unavailable: a suspended club, with nothing else of it (T9)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable"
+          }
+        }
+      }
+    },
     "tabs.error.friends" : {
       "comment" : "FQ90's default, after handoff 3 H01.error.network, until handoff 7 gives Friends' words",
       "extractionState" : "manual",
@@ -1089,6 +1377,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Home updated."
+          }
+        }
+      }
+    },
+    "unavailable.body" : {
+      "comment" : "handoff 5 home.unavailable.body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This club isn’t available right now."
+          }
+        }
+      }
+    },
+    "unavailable.choose" : {
+      "comment" : "handoff 5 common.chooseClub: opens the club switcher, its label too (handoff 6 replaces H01.unavailable.choose.vo with it)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a club"
+          }
+        }
+      }
+    },
+    "unavailable.help" : {
+      "comment" : "handoff 5 home.help: drawn and doing nothing until a support contact is configured (deniedHeader.GetHelp)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get help"
+          }
+        }
+      }
+    },
+    "unavailable.help.hint" : {
+      "comment" : "handoff 5 home.help.hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contact Tadayo support."
+          }
+        }
+      }
+    },
+    "unavailable.title" : {
+      "comment" : "handoff 5 home.unavailable.title: H01-unavailable, F01-unavailable and M01-unavailable",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Club unavailable"
           }
         }
       }

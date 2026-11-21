@@ -9,7 +9,9 @@ import XCTest
 /// (`AccessibilityElements`) on both iOS versions each run tests: handoff 7's
 /// `noClubRootHeader` rectangles across a 393-point screen, the stacked form at an accessibility
 /// size, the 32 points from the header to what's under it, Retry 24 above the foot, and the
-/// opaque band behind the status bar, which no snapshot shows because none scrolls.
+/// opaque band behind the status bar, which no snapshot shows because none scrolls; and the
+/// selected club's header, handoff 3's `navigationAndTargets.selectedClubHeader` rectangles and
+/// handoff 8's two rows at every accessibility size, with Home's states under it.
 ///
 /// The header's top is the safe area's, which differs from the frames' 56 by the simulator's
 /// status bar, so everything is measured from the header's own top or across the screen.
@@ -171,6 +173,160 @@ final class TabsLayoutTests: XCTestCase {
         let title = try XCTUnwrap(
             other.layout.elements.first { $0.isHeader }, "\(other.layout.elements)")
         XCTAssertEqual(title.frame.minY - other.add.frame.maxY, 32, accuracy: 0.5, "\(title)")
+    }
+
+    // MARK: The selected club's header
+
+    private struct ClubHeader {
+        let selector: Element
+        let add: Element
+        let account: Element
+        let layout: AccessibilityElements.Layout
+    }
+
+    private func measuredClub(
+        _ club: ClubSummary = ClubFixtures.sunday, home: RootModel.Home = .awaiting(review: false),
+        on tab: ClubTab = .home, size: DynamicTypeSize = .large, file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws -> ClubHeader {
+        let view = TabContent(
+            tab: tab, clubs: ClubFixtures.listed(club), selected: club, home: home, name: "Ben",
+            retry: {}, goHome: {}
+        )
+        .environment(\.dynamicTypeSize, size)
+        let layout = AccessibilityElements.layout(of: view)
+        let found = { (label: String) in layout.elements.first { $0.label == label } }
+        let selector = "Switch club. \(club.name) selected."
+        return ClubHeader(
+            selector: try XCTUnwrap(
+                found(selector), "\(layout.elements)", file: file, line: line),
+            add: try XCTUnwrap(found("+ Add"), "\(layout.elements)", file: file, line: line),
+            account: try XCTUnwrap(found("Account"), "\(layout.elements)", file: file, line: line),
+            layout: layout)
+    }
+
+    func testTheSelectedClubsHeaderRectanglesAreTheContractsAcrossA393PointScreen() throws {
+        // `navigationAndTargets.selectedClubHeader`: the selector [20, 56, 230, 44], + Add
+        // [274, 56, 59, 44], Account [337, 56, 44, 44], in a header whose top is 56.
+        let header = try measuredClub()
+        let top = header.layout.safeArea.top
+        for element in [header.selector, header.add, header.account] {
+            XCTAssertEqual(element.frame.minY, top, accuracy: 0.5, "\(element)")
+            XCTAssertEqual(element.frame.height, 44, accuracy: 0.5, "\(element)")
+        }
+        XCTAssertEqual(header.selector.frame.minX, 20, accuracy: 0.5, "\(header.selector)")
+        XCTAssertEqual(header.selector.frame.width, 230, accuracy: 0.5, "\(header.selector)")
+        XCTAssertEqual(header.add.frame.minX, 274, accuracy: 0.5, "\(header.add)")
+        XCTAssertEqual(header.add.frame.width, 59, accuracy: 0.5, "\(header.add)")
+        XCTAssertEqual(header.account.frame.minX, 337, accuracy: 0.5, "\(header.account)")
+        XCTAssertEqual(header.account.frame.width, 44, accuracy: 0.5, "\(header.account)")
+    }
+
+    func testTheSelectedClubsHeaderIsTheSameInEveryStateItShowsIn() throws {
+        let first = try measuredClub()
+        let homes: [RootModel.Home] = [
+            .loading, .awaiting(review: true), .failed(.network), .notInThisBuild,
+        ]
+        for home in homes {
+            let other = try measuredClub(home: home)
+            XCTAssertEqual(other.selector.frame, first.selector.frame, "\(home)")
+            XCTAssertEqual(other.add.frame, first.add.frame, "\(home)")
+            XCTAssertEqual(other.account.frame, first.account.frame, "\(home)")
+        }
+        for tab in [ClubTab.friends, .memories] {
+            let other = try measuredClub(on: tab)
+            XCTAssertEqual(other.selector.frame, first.selector.frame, "\(tab)")
+            XCTAssertEqual(other.account.frame, first.account.frame, "\(tab)")
+        }
+    }
+
+    func testTheSelectedClubsHeaderTakesTwoRowsAtEveryAccessibilitySize() throws {
+        // handoff 8's `largest`: "At accessibility categories use two rows consistently. A
+        // full-width growing selector comes first; Add and Account occupy the second row."
+        let sizes: [DynamicTypeSize] = [
+            .accessibility1, .accessibility2, .accessibility3, .accessibility4, .accessibility5,
+        ]
+        for size in sizes {
+            let header = try measuredClub(size: size)
+            stacked(header, "\(size)")
+            let measures = XCTAttachment(string: "\(header)")
+            measures.name =
+                "stacked-club-header \(size): header "
+                + "\(rounded(header.account.frame.maxY - header.layout.safeArea.top)) high"
+            measures.lifetime = .keepAlways
+            add(measures)
+        }
+    }
+
+    func testANameTooLongForOneRowTakesTwoRowsAtTheDefaultSize() throws {
+        // Never cut short: the selector takes the full width, where the name can wrap, and the
+        // header grows with it.
+        let long = ClubSummary(
+            ref: ClubRef(
+                id: "club_long", name: "The Thursday evening supper and walking club",
+                timezone: "America/New_York", myMembershipID: "mem_ben_long"),
+            state: .proposed, memberCount: 1, openDay: nil, nextDay: nil)
+        let header = try measuredClub(long)
+        stacked(header, "long name")
+    }
+
+    func testHomeBeforeTheClubStartsStarts32UnderTheHeaderAndReviewMembersIs24AboveTheFoot()
+        throws
+    {
+        for review in [false, true] {
+            let header = try measuredClub(home: .awaiting(review: review))
+            let layout = header.layout
+            let title = try XCTUnwrap(
+                layout.elements.first { $0.isHeader }, "\(layout.elements)")
+            XCTAssertEqual(
+                title.frame.minY - header.account.frame.maxY, 32, accuracy: 0.5, "\(title)")
+            XCTAssertEqual(title.frame.minX, 20, accuracy: 0.5, "\(title)")
+            let action = try XCTUnwrap(
+                layout.elements.last { $0.traits.contains(.button) }, "\(layout.elements)")
+            let above = layout.size.height - layout.safeArea.bottom - action.frame.maxY
+            XCTAssertEqual(above, 24, accuracy: 0.5, "\(action)")
+            XCTAssertEqual(action.frame.width, 353, accuracy: 0.5, "\(action)")
+        }
+    }
+
+    func testASuspendedClubsChooseAClubIs8AboveGetHelp() throws {
+        // `primaryToSecondaryTargetGap`, target to target, with Get help's target 24 above the
+        // foot, as Retry's is.
+        let layout = AccessibilityElements.layout(
+            of: TabContent(
+                tab: .home, clubs: ClubFixtures.listed(ClubFixtures.sundaySuspended),
+                selected: ClubFixtures.sundaySuspended, home: .unavailable, name: "Ben",
+                retry: {}, goHome: {}))
+        let choose = try XCTUnwrap(
+            layout.elements.first { $0.label == "Choose a club" }, "\(layout.elements)")
+        let help = try XCTUnwrap(
+            layout.elements.first { $0.label == "Get help" }, "\(layout.elements)")
+        XCTAssertEqual(help.frame.minY - choose.frame.maxY, 8, accuracy: 0.5, "\(choose), \(help)")
+        XCTAssertEqual(
+            layout.size.height - layout.safeArea.bottom - help.frame.maxY, 24, accuracy: 0.5,
+            "\(help)")
+        XCTAssertGreaterThanOrEqual(help.frame.height, 44 - 0.5, "\(help)")
+    }
+
+    private func stacked(
+        _ header: ClubHeader, _ name: String, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let top = header.layout.safeArea.top
+        XCTAssertEqual(header.selector.frame.minY, top, accuracy: 0.5, name, file: file, line: line)
+        XCTAssertEqual(header.selector.frame.minX, 20, accuracy: 0.5, name, file: file, line: line)
+        // From the inset to the inset: the words end where the content's do.
+        XCTAssertEqual(
+            header.selector.frame.width, 353, accuracy: 0.5, name, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(
+            header.add.frame.minY, header.selector.frame.maxY - 0.5, "\(name): \(header.add)",
+            file: file, line: line)
+        XCTAssertEqual(header.add.frame.minX, 20, accuracy: 0.5, name, file: file, line: line)
+        XCTAssertEqual(
+            header.account.frame.minX, 337, accuracy: 0.5, "\(name): \(header.account)",
+            file: file, line: line)
+        XCTAssertEqual(
+            header.account.frame.midY, header.add.frame.midY, accuracy: 0.5, name, file: file,
+            line: line)
     }
 
     // MARK: The band behind the status bar

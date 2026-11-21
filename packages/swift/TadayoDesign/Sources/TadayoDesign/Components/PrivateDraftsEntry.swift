@@ -68,8 +68,15 @@ public struct PrivateDraftsEntry: View {
 }
 
 /// A button drawn the same pressed or not, for a control no delivery draws pressed.
-struct UnchangedWhenPressed: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
+public struct UnchangedWhenPressed: ButtonStyle {
+    public init() {}
+
+    public func makeBody(configuration: Configuration) -> some View {
         configuration.label
     }
+}
+
+extension ButtonStyle where Self == UnchangedWhenPressed {
+    /// A control no delivery draws pressed, such as a club's row in the switcher.
+    public static var unchangedWhenPressed: UnchangedWhenPressed { UnchangedWhenPressed() }
 }

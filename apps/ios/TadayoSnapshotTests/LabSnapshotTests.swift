@@ -87,11 +87,12 @@ final class LabSnapshotTests: XCTestCase {
         }
     }
 
-    /// The no-club header at 320 points, the width of a 375-point iPhone with Display Zoom on
-    /// (handoff 7's check asks for the header at the default size, the largest and 320 points):
-    /// at the default size it keeps its one row, and at the largest accessibility size it is
-    /// stacked, as at every accessibility size, + Add leading under the wordmark and Account at
-    /// the trailing inset (`noClubRootHeader.largest`).
+    /// The headers at 320 points, the width of a 375-point iPhone with Display Zoom on (handoff
+    /// 7's check asks for the header at the default size, the largest and 320 points): at the
+    /// default size each keeps its one row, and at the largest accessibility size each takes two,
+    /// as at every accessibility size: the no-club header + Add leading under the wordmark and
+    /// Account at the trailing inset (`noClubRootHeader.largest`), the selected club's + Add and
+    /// Account under its full-width selector (handoff 8's `selectedClubHeader.largest`).
     func testTheHeaderAt320Points() {
         snap(.header, .light, width: 320, named: "Lab-header-320")
         snap(.header, .xl, width: 320, named: "Lab-header-320-xl")
