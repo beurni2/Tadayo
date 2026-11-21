@@ -25,8 +25,9 @@
                 .background(Palette.canvas)
                 .navigationTitle("Lab")
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItemGroup(placement: .topBarLeading) {
                         NavigationLink("Video (S3)") { LabVideoSpike() }
+                        NavigationLink("Links (S6)") { LabLinkSpike(links: .shared) }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Log out") { Task { await logOut() } }
