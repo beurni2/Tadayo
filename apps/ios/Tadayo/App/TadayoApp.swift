@@ -10,7 +10,12 @@ struct TadayoApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(launch: launch)
+            #if LAB
+                // Spike S6: the Lab records what kind of link opened the app, never the link.
+                RootView(launch: launch).labLinkReceipts()
+            #else
+                RootView(launch: launch)
+            #endif
         }
     }
 }
