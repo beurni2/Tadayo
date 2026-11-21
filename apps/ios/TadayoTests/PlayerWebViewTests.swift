@@ -43,10 +43,22 @@ final class PlayerWebViewTests: XCTestCase {
         // later loads of that run, whose processes launched as slowly, made their frames in time,
         // and the same first load took 1.0 second in the re-run. What is checked once the frame
         // is made is unchanged.
+        //
+        // The shell says "frame made" as soon as it has put the frame in the page; WebKit asks
+        // the coordinator about the frame's address after that, on its own turn. So the load
+        // ends once both are in the viewer's log, whatever the policy decided (a test that cares
+        // checks the decision itself): in `ios` run 44819232458 (iOS 27.2, a saturated runner)
+        // the decision came after `testTheShellIgnoresAMessageThatIsNotItsFramesOwn` had read
+        // its baseline. Nothing of the frame's is logged after it: its request goes to the closed
+        // port, and no failure of it reaches the viewer (the tests below that find the phase still
+        // `.loading`).
         let cold = !Self.loadedBefore
         Self.loadedBefore = true
-        try await wait("the shell makes its frame", seconds: cold ? 60 : 10) {
+        try await wait(
+            "the shell makes its frame, and its address is decided", seconds: cold ? 60 : 10
+        ) {
             model.log.contains("shell: frame made")
+                && model.log.contains { $0.hasPrefix("frame ") }
         }
         return (webView, coordinator)
     }
