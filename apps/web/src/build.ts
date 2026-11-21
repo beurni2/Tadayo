@@ -4,7 +4,7 @@
 // what it refuses to copy.
 //
 // `apple-app-site-association` is the file iOS asks `tadayo.app` for when a universal link is opened
-// (TECH-DESIGN section 6). Apple's CDN fetches exactly `/.well-known/apple-app-site-association`: no
+// (TECH-DESIGN sections 1 and 4). Apple's CDN fetches exactly `/.well-known/apple-app-site-association`: no
 // extension, no redirect, JSON, 128 KB at most, so the build checks the file and the `_headers` rule
 // that serves it as JSON (Pages would guess a type for a file with no extension). And a Pages site
 // with no `404.html` answers every missing path with `index.html` and a 200, which would hide a
