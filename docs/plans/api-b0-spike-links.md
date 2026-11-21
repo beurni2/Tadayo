@@ -13,7 +13,7 @@ What is left is this check, its run on `dev`, and the spike's report. No `ops` s
 - **The rule.** T52: logs carry no token. `services/api/src/logging.ts` holds it in three layers: Fastify's own request lines are off; each request gets one line of ours (a random id, the operation, the status, the milliseconds, and for the preflight `preflight` in place of the operation); anything else goes through `redact`. TECH-DESIGN section 1: the page reads the token from the link's fragment and sends it in a POST's body. The fragment never leaves the browser.
 - **What PR #94 already showed, off `dev`.** `services/api/src/web-origin.test.ts` reads the app's log after the page's requests and finds no token. The real-browser check (`api/b0-spike-links-web/b51a0d4/web/` on `evidence`) found the token in none of the app's 20 request lines.
 - **`flyctl` 0.5.8's `logs`** (`internal/command/logs/logs.go`, `logs/polling.go`, `internal/render/logs.go`, read from its source, as fly.ts' header says of every call):
-    - `logs -a <app> --no-tail` makes one call for the app's log buffer (`GetAppLogs`, no next token), which `logs/polling.go` retries on a passing error, up to 10 times, and returns. It uses no agent and no NATS.
+    - `logs -a <app> --no-tail` asks Fly's API for one page of the app's log buffer (`GetAppLogs` with an empty next token; which entries that page holds is the server's choice), making at most 10 calls when one fails with a passing error and none more after a refused token or a missing app (`logs/polling.go`), and returns. It uses no agent and no NATS.
     - `--json` prints each entry with the fields fly-go's `LogEntry` decodes (`resource_logs.go`, `types.go`): its timestamp, message, instance, region and level, and Fly's own fields (the instance, the region, the provider, the HTTP request's id, method and version, the answer's status, an error's code and message, and a URL), as indented JSON, one object after another. Any other field Fly's API returns is dropped before it is printed.
     - The text form drops the message of an entry that has an error's message. That is why the check reads the JSON form.
 
@@ -33,7 +33,7 @@ What it can't show:
 - fields of an entry that flyctl doesn't decode: the check shows flyctl's view of the buffer, so the report says that view holds no token, not that Fly holds none;
 - Supabase's logs, beyond point 4.
 
-If the new entries don't hold the three lines only the run's requests make, the check fails: two preflight lines and the POST's line, all on the page's one path, which a request to another path, a scanner's among them, can't make. Someone opening an invitation page on `dev` while the run reads could make the same lines, which is why the run goes while nobody does (section 5). Apart from that, it never passes on logs that show no line of its requests.
+The check waits for the three lines its requests make: two preflight lines and the POST's line, which only a request to the page's one path makes, each told from every other by the API's random request id. A request to another path, a scanner's among them, can't make them. The invitation page itself does, from any browser that opens a link without the app, since in the closed trial the page calls `dev` (`apps/web/public/i.html`). So the check fails if the new entries hold fewer of those lines than it sent, and also if they hold more: another client then used the path during the run, and its lines can't be told from the run's. It never passes on logs that show no line of its requests, nor on logs where another client's lines could stand in for them.
 
 ## 2. The script (`tools/ops/src/spike-links.ts`)
 
@@ -49,7 +49,7 @@ It runs on the runner, with `FLY_API_TOKEN` alone, and acts on `dev` only: `flyc
     - two preflight lines, `"preflight":"previewInvitationWeb"` with status 204;
     - one line of the operation, `"op":"previewInvitationWeb"` with status 404.
 
-    If they never come, it fails and says how many came. Only a request to the page's path makes those lines: the `dev` claim keeps other threads off `dev`, and the run goes while nobody opens an invitation page (section 5). Each read has a 45-second limit, so the run's longest, 14 reads, 13 waits and 3 requests, is under 13 minutes, inside the `ops` job's 20, and ends with the script's own message.
+    Each line is told from every other by its request id (`reqId`), never by Fly's timestamp. If they never come, it fails and says how many came. After one read more, if the new entries hold more of those lines than the run sent, it fails too: another client used the page's path meanwhile (section 1). The `dev` claim keeps other threads off `dev`, and the run goes while nobody opens an invitation page (section 5), so that it doesn't fail that way. Each read has a 45-second limit, so the run's longest, 14 reads, 13 waits and 3 requests, is under 13 minutes, inside the `ops` job's 20, and ends with the script's own message.
 5. **The count.** In every read's whole output after the requests, standard output and standard error, it counts the lines that hold, each line once however many reads print it:
     - the token;
     - its first 16 characters;
@@ -70,11 +70,12 @@ Written before the code, with the fake `flyctl` (`test/fake-fly.ts`) and a fake 
 - clean logs whose later read holds the three lines: it passes, and its lines are exactly the expected ones;
 - a planted token in a later read, as the whole token, its first 16, its last 16 or its hash, in standard output or standard error: it fails, saying which count, and never the token;
 - the three lines never come, or only some of them: it fails after 12 reads, saying how many came;
-- lines that were already in the first read, a 404 of no operation (a scanner's request elsewhere), or one line printed by two reads don't count as the run's;
+- lines that were already in the first read, a 404 of no operation (a scanner's request elsewhere), one line printed by two reads, even under another timestamp, and a request line without its id don't count as the run's; two requests' lines under one timestamp count as two;
+- more of those lines than the run sent, from a page opened during the run, fail it, whether they come with the run's or in the read after; the token, if also found, is said first;
 - a token line printed by two reads is counted once, and two lines as two;
 - either preflight with another status, no allowance, no `POST` or no `content-type`, or the POST with another status, code, allowance or no `Vary`, or either with credentials allowed: it fails, and never says a code the server sent;
-- each read's 45-second limit, and the longest run inside 15 minutes;
-- `flyctl` exiting with an error, or printing what isn't JSON: it fails;
+- each read's 45-second limit, each request's 15-second limit, and the longest run inside 15 minutes;
+- `flyctl` exiting with an error, or printing what isn't JSON: it fails, and its error lines that hold the token or any of its forms are left out;
 - the token isn't in anything the script says, in any test;
 - every `flyctl` call is `logs -a tadayo-api-dev --no-tail --json`, and every request goes to `https://api-dev.tadayo.app`;
 - `run.ts`: `spike-links` is listed, and refuses an option.

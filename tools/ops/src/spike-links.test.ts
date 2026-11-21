@@ -6,12 +6,12 @@
 // an API that answers otherwise than `dev` does, and never say the token.
 
 import { createHash } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FAKE_FLY_TOKEN, fakeSpawn, lineOf, type Reply, type Route } from "../test/fake-fly.ts";
 import { flyOf } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 import { runScript, SCRIPTS, type OpsContext } from "./run.ts";
-import { POLL_MS, POLLS, READ_MS, spikeLinks } from "./spike-links.ts";
+import { CALL_MS, POLL_MS, POLLS, READ_MS, spikeLinks } from "./spike-links.ts";
 
 const LOGS = "flyctl logs -a tadayo-api-dev --no-tail --json";
 const ENV = { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" };
@@ -48,10 +48,15 @@ const printed = (entries: readonly Entry[], stderr = ""): Reply => ({
 const requestLine = (id: string, fields: Record<string, unknown>) =>
   JSON.stringify({ level: 30, time: 1_795_280_000_000, reqId: id, ...fields, msg: "request" });
 
-const PREFLIGHT_LINE = (second: number) =>
-  entry(requestLine(`p${String(second)}`, { preflight: "previewInvitationWeb", status: 204, ms: 0 }), second);
-const POST_LINE = (second: number) =>
-  entry(requestLine(`q${String(second)}`, { op: "previewInvitationWeb", status: 404, ms: 3 }), second);
+const PREFLIGHT_LINE = (second: number, id = `p${String(second)}`) =>
+  entry(requestLine(id, { preflight: "previewInvitationWeb", status: 204, ms: 0 }), second);
+const POST_LINE = (second: number, id = `q${String(second)}`) =>
+  entry(requestLine(id, { op: "previewInvitationWeb", status: 404, ms: 3 }), second);
+/** The same entry as Fly might serve it again, under another timestamp. */
+const restamped = (one: Entry, second: number): Entry => ({
+  ...one,
+  timestamp: `2026-11-21T17:00:${String(second).padStart(2, "0")}.500Z`,
+});
 /** A 404 of no operation: any request to a path the API doesn't have, a scanner's among them. */
 const STRAY_404 = (second: number) => entry(requestLine(`g${String(second)}`, { status: 404, ms: 0 }), second);
 
@@ -275,7 +280,26 @@ describe("spikeLinks on clean logs", () => {
 
   it("ends inside 15 minutes at the longest, so the ops job's 20 leave its setup room", () => {
     // The first read, 12 reads until the lines and one more, each at its limit; 13 waits; 3 requests at theirs.
-    expect((POLLS + 2) * READ_MS + (POLLS + 1) * POLL_MS + 3 * 15_000).toBeLessThan(15 * 60_000);
+    expect((POLLS + 2) * READ_MS + (POLLS + 1) * POLL_MS + 3 * CALL_MS).toBeLessThan(15 * 60_000);
+  });
+
+  it("gives each request its own 15-second limit", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      const api = fakeApi();
+      const result = await run(api, (fake) => [buffer(fake, cleanFrom(1))]);
+      expect(result.outcome).toBeUndefined();
+      expect(timeout.mock.calls).toEqual([[15_000], [15_000], [15_000]]);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+
+  it("takes two requests' lines under the same timestamp as two, by their request ids", async () => {
+    const api = fakeApi();
+    const lines = [PREFLIGHT_LINE(20, "pa"), PREFLIGHT_LINE(20, "pb"), POST_LINE(20, "qa")];
+    const result = await run(api, (fake) => [buffer(fake, () => printed([...BEFORE, ...lines]))]);
+    expect(result.outcome).toBeUndefined();
   });
 });
 
@@ -311,7 +335,7 @@ describe("spikeLinks on logs that hold the token", () => {
     }
   }
 
-  it("counts a line once however many reads print it, and two lines as two", async () => {
+  it("counts a line once however many reads print it, and two different lines as two", async () => {
     for (const [planted, whole] of [
       [(token: string) => [entry(`{"msg":"x","seen":"${token}"}`, 30)], 1],
       [(token: string) => [entry(`{"msg":"x","seen":"${token}"}`, 30), entry(`{"msg":"y","seen":"${token}"}`, 31)], 2],
@@ -358,6 +382,23 @@ describe("spikeLinks on logs that hold the token", () => {
     expectNoToken(api, result.said, result.message);
   });
 
+  it("leaves out of a failed read's error lines each one holding a part of the token or its hash", async () => {
+    const api = fakeApi();
+    const later = (_n: number, fake: Api): Reply => {
+      const token = fake.token();
+      return {
+        code: 1,
+        stdout: "",
+        stderr: `Error: ${token.slice(0, 16)}\nError: ${token.slice(-16)}\nError: ${sha256(token)}\nError: rate limited\n`,
+      };
+    };
+    const result = await run(api, (fake) => [buffer(fake, later)]);
+    expect(result.message).toBe(
+      "spike-links: flyctl's output holds the token: lines holding the token, each counted once: 0, its first 16 characters: 1, its last 16: 1, its SHA-256: 1, in 1 read. And flyctl couldn't read the log buffer: exit code 1: Error: rate limited",
+    );
+    expectNoToken(api, result.said, result.message);
+  });
+
   it("fails on the token in the output of a read that failed, and never says that output", async () => {
     const api = fakeApi();
     const later = (_n: number, fake: Api): Reply => ({ code: 1, stdout: "", stderr: `Error: ${fake.token()}\n` });
@@ -401,6 +442,36 @@ describe("spikeLinks when its lines never come", () => {
     expect(result.said).not.toContain("spike-links: every check passed");
   });
 
+  it("tells a request's line by its request id, not by Fly's timestamp", async () => {
+    // The first preflight's line, served again under another timestamp, is still one line.
+    const api = fakeApi();
+    const reads: Record<number, Entry[]> = {
+      1: [PREFLIGHT_LINE(20)],
+      2: [restamped(PREFLIGHT_LINE(20), 50), POST_LINE(21)],
+    };
+    const result = await run(api, (fake) => [buffer(fake, (n) => printed([...BEFORE, ...(reads[n] ?? [])]))]);
+    expect(result.message).toContain("hold 1 preflight line and 1 POST line, where the run sent 2 and 1");
+    // And a line from before the run, served again under another timestamp, isn't the run's.
+    const again = fakeApi();
+    const first = printed([...BEFORE, PREFLIGHT_LINE(10, "old")]);
+    const later = () =>
+      printed([...BEFORE, restamped(PREFLIGHT_LINE(10, "old"), 51), PREFLIGHT_LINE(20), POST_LINE(21)]);
+    const second = await run(again, (fake) => [buffer(fake, later, first)]);
+    expect(second.message).toContain("hold 1 preflight line and 1 POST line, where the run sent 2 and 1");
+  });
+
+  it("doesn't take a request line without its request id", async () => {
+    const api = fakeApi();
+    const bare = entry(
+      JSON.stringify({ level: 30, preflight: "previewInvitationWeb", status: 204, msg: "request" }),
+      23,
+    );
+    const result = await run(api, (fake) => [
+      buffer(fake, () => printed([...BEFORE, PREFLIGHT_LINE(20), POST_LINE(21), bare])),
+    ]);
+    expect(result.message).toContain("hold 1 preflight line and 1 POST line");
+  });
+
   it("doesn't take a line of another status, another operation or another program for the run's own", async () => {
     const api = fakeApi();
     const others = [
@@ -412,6 +483,36 @@ describe("spikeLinks when its lines never come", () => {
     ];
     const result = await run(api, (fake) => [buffer(fake, () => printed([...BEFORE, ...others]))]);
     expect(result.message).toContain("hold 0 preflight lines and 0 POST lines");
+  });
+});
+
+describe("spikeLinks when another client uses the page's path during the run", () => {
+  const VISIT = [PREFLIGHT_LINE(25, "visit-p"), POST_LINE(26, "visit-q")];
+  const cases: readonly [string, (n: number) => Reply][] = [
+    ["in the read where the run's lines come", () => printed([...BEFORE, ...RUN_LINES, ...VISIT])],
+    ["only in the read after it", (n) => printed([...BEFORE, ...RUN_LINES, ...(n >= 2 ? VISIT : [])])],
+  ];
+  for (const [when, later] of cases) {
+    it(`fails when a page's lines come ${when}, since they can't be told from the run's`, async () => {
+      const api = fakeApi();
+      const result = await run(api, (fake) => [buffer(fake, later)]);
+      expect(result.message).toBe(
+        "spike-links: the log buffer's new entries hold 3 preflight lines and 2 POST lines, more than the run sent (2 and 1): another client used the page's path during the run, so its lines can't be told from the run's, and the check fails",
+      );
+      expect(result.said).not.toContain("spike-links: every check passed");
+      expectNoToken(api, result.said, result.message);
+    });
+  }
+
+  it("says the token first when it also holds it", async () => {
+    const api = fakeApi();
+    const later = (_n: number, fake: Api): Reply =>
+      printed([...BEFORE, ...RUN_LINES, ...VISIT, entry(`late ${fake.token()}`, 40, "proxy")]);
+    const result = await run(api, (fake) => [buffer(fake, later)]);
+    expect(result.message).toMatch(
+      /^spike-links: flyctl's output holds the token: .*\. And the log buffer's new entries hold 3 preflight lines/,
+    );
+    expectNoToken(api, result.said, result.message);
   });
 });
 

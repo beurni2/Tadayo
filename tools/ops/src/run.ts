@@ -477,7 +477,7 @@ const spikeTimeScript: Script = {
 
 const spikeLinksScript: Script = {
   about:
-    "spike S6's log check on dev: the invitation page's two requests with a made-up token, then dev's log buffer read and searched for the token",
+    "spike S6's log check on dev: the invitation page's preflight and POST, and the preflight again with the token in its URL, with a made-up token, then dev's log buffer read until their lines come and searched for the token",
   async run(ctx) {
     optionsOf(ctx.args, {}, "spike-links");
     await spikeLinks({ fly: flyOf(ctx.spawn, ctx.env), fetch: ctx.fetch, say: ctx.say, sleep: ctx.sleep });

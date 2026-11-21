@@ -17,25 +17,26 @@
 // Nothing an answer carries is said, only whether it was what was expected; a request that gets no answer
 // is said by its error's kind alone, since the message of a failed fetch can quote the URL.
 //
-// flyctl 0.5.8's `logs --no-tail` makes one call for the buffer's latest entries, which it retries on a
-// passing error, and returns; `--json` prints each entry as indented JSON, one object after another, with
-// the fields flyctl decodes: the timestamp, the instance, the region, the level, the message, and Fly's
-// own fields for the instance, the region, the provider, the HTTP request (id, method, version), the
-// response's status, an error (code, message) and a URL (its source, `internal/command/logs/logs.go` and
-// `logs/polling.go`, and fly-go's `LogEntry`). Any other field Fly's API holds is dropped before it is
-// printed, so the check shows what flyctl's view of the buffer holds, not everything Fly keeps. The text
-// form would leave out the message of an entry that has an error's message. An entry is told from an
-// earlier read's by its timestamp, its instance and its message.
+// flyctl 0.5.8's `logs --no-tail` asks Fly's API for one page of the buffer, the one it gives for an
+// empty next token (which entries those are is the server's choice), making at most 10 calls when one
+// fails with a passing error, none more after a refused token or a missing app, and returns; `--json`
+// prints each entry as indented JSON, one object after another, with the fields flyctl decodes: the
+// timestamp, the instance, the region, the level, the message, and Fly's own fields for the instance,
+// the region, the provider, the HTTP request (id, method, version), the response's status, an error
+// (code, message) and a URL (its source, `internal/command/logs/logs.go` and `logs/polling.go`, and
+// fly-go's `LogEntry`). Any other field Fly's API holds is dropped before it is printed, so the check
+// shows what flyctl's view of the buffer holds, not everything Fly keeps. The text form would leave out
+// the message of an entry that has an error's message.
 //
 // The run's lines are the API's (services/api/src/logging.ts, `logEachRequest`): two preflight lines
 // (`preflight: "previewInvitationWeb"`, 204) and one line of the operation (`op: "previewInvitationWeb"`,
-// 404). Only a request to that one path makes either, which in practice only the invitation page's
-// browser sends, so a scanner's request elsewhere can't stand in for them; someone opening an invitation
-// page on `dev` while the run reads could, which is why the run goes while nobody does (the plan, section
-// 5). If
-// the lines never come, it fails: it never passes on logs that show no line of its requests. It reads no
-// clock (T1): it waits with `sleep`, each request has its own `AbortSignal.timeout`, and each read its
-// own time limit.
+// 404), each told from every other by its random request id (`reqId`), never by Fly's fields. Only a
+// request to that one path makes either: a scanner's request elsewhere can't, but the invitation page
+// does, from any browser that opens a link without the app, since the page calls `dev` in the closed
+// trial (apps/web/public/i.html). So the run fails if it sees fewer of those lines than it sent, and if
+// it sees more: another client then used the path during the run, and its lines can't be told from the
+// run's (the plan, section 2). It reads no clock (T1): it waits with `sleep`, each request has its own
+// `AbortSignal.timeout`, and each read its own time limit.
 
 import { createHash, randomBytes } from "node:crypto";
 import { DEV_APP, DEV_HOST } from "./environment.ts";
@@ -60,7 +61,7 @@ export const POLL_MS = 5000;
  */
 export const READ_MS = 45_000;
 /** The longest one request waits, its body included. */
-const CALL_MS = 15_000;
+export const CALL_MS = 15_000;
 
 /** The page's origin, as the API allows it (services/api/src/web-origin.ts, `WEB_ORIGIN`). */
 const PAGE_ORIGIN = "https://tadayo.app";
@@ -93,8 +94,9 @@ function needlesOf(token: string): Needles {
 const holds = (needles: Needles, text: string) => needles.forms.some((form) => text.includes(form));
 
 /**
- * The lines of flyctl's output that held each form, over the reads made after the requests: each line
- * once, however many reads printed it, since the buffer gives an entry again on every read.
+ * The lines of flyctl's output that held each form, over the reads made after the requests: each line's
+ * text once, however many reads printed it, since the buffer gives an entry again on every read (so two
+ * entries with an identical line count once; the check fails on either).
  */
 class Counts {
   readonly #needles: Needles;
@@ -255,6 +257,12 @@ function requestLine(message: string): Record<string, unknown> | undefined {
 
 type Kind = "preflight" | "post";
 
+/** The request id of a line of the API's, or nothing: what tells one request's line from another's. */
+function idOf(message: string): string | undefined {
+  const id = requestLine(message)?.["reqId"];
+  return typeof id === "string" && id !== "" ? id : undefined;
+}
+
 /** Which of the run's lines a line could be: a preflight's 204 or the POST's 404, both on the page's path. */
 function kindOf(message: string): Kind | undefined {
   const line = requestLine(message);
@@ -376,22 +384,34 @@ async function sendRequests(input: SpikeLinksInput, needles: Needles): Promise<v
 
 const lines = (count: number, what: string) => `${String(count)} ${what} line${count === 1 ? "" : "s"}`;
 
-/** Reads the buffer until the run's three lines are among the entries that weren't there before, then once more. */
+/**
+ * Reads the buffer until the lines of the run's three requests are among those of requests that weren't
+ * in it before, then once more, and fails if more such lines came than the run sent.
+ */
 async function readUntilLines(input: SpikeLinksInput, needles: Needles, before: Set<string>, counts: Counts) {
   const found = new Map<string, Kind>();
   const count = (kind: Kind) => [...found.values()].filter((one) => one === kind).length;
+  const take = (entries: readonly Entry[]) => {
+    for (const entry of entries) {
+      const id = idOf(entry.message);
+      const kind = kindOf(entry.message);
+      if (id !== undefined && kind !== undefined && !before.has(id)) found.set(id, kind);
+    }
+  };
   for (let poll = 1; poll <= POLLS; poll += 1) {
     await input.sleep(POLL_MS);
-    for (const entry of await read(input, needles, counts)) {
-      if (before.has(entry.key)) continue;
-      const kind = kindOf(entry.message);
-      if (kind !== undefined) found.set(entry.key, kind);
-    }
+    take(await read(input, needles, counts));
     if (count("preflight") >= SENT.preflight && count("post") >= SENT.post) {
       say(input, `the requests' three lines came in read ${String(poll)} of ${String(POLLS)}`);
       await input.sleep(POLL_MS);
       const last = await read(input, needles, counts);
       say(input, `one read more, ${String(POLL_MS / 1000)} seconds later: ${entriesText(last.length)}`);
+      take(last);
+      if (count("preflight") > SENT.preflight || count("post") > SENT.post) {
+        throw new OpsError(
+          `spike-links: the log buffer's new entries hold ${lines(count("preflight"), "preflight")} and ${lines(count("post"), "POST")}, more than the run sent (${String(SENT.preflight)} and ${String(SENT.post)}): another client used the page's path during the run, so its lines can't be told from the run's, and the check fails`,
+        );
+      }
       return;
     }
   }
@@ -413,7 +433,8 @@ export async function spikeLinks(input: SpikeLinksInput): Promise<void> {
   const counts = new Counts(needles);
   let failed: OpsError | undefined;
   try {
-    await readUntilLines(input, needles, new Set(before.map((entry) => entry.key)), counts);
+    const ids = before.map((entry) => idOf(entry.message)).filter((id) => id !== undefined);
+    await readUntilLines(input, needles, new Set(ids), counts);
   } catch (error) {
     if (!(error instanceof OpsError)) throw error;
     failed = error;
