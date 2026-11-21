@@ -110,6 +110,17 @@ final class ClubDetailsSnapshotTests: XCTestCase {
         XCTAssertFalse(elements.contains { $0.label == "Each person has a day." }, "\(elements)")
     }
 
+    func testEveryWeekdayIsNamedEvenPastTwo() {
+        XCTAssertNil(ClubWords.days([]))
+        XCTAssertEqual(ClubWords.days([.monday]), "Monday")
+        XCTAssertEqual(ClubWords.days([.monday, .thursday]), "Monday and Thursday")
+        // A club gives one day or two (spec 05); a third, should it come, isn't dropped.
+        let three = ClubWords.days([.monday, .wednesday, .friday]) ?? ""
+        for name in ["Monday", "Wednesday", "Friday"] {
+            XCTAssertTrue(three.contains(name), three)
+        }
+    }
+
     func testAFailureReadsItsTitleAndLineAndRetrySaysWhatItReads() {
         for (view, title, line, hint) in [
             (

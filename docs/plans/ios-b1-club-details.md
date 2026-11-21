@@ -8,7 +8,7 @@ Branch `ios/b1-club-details`, from `main` at `b40850f`. Written on 21 November 2
 - book p7 (the club name opens switching and club details), p24 (Club details: "The displayed club, count and roster agree"), p46 (Private drafts is account-wide);
 - the contract: `getClub` (`ClubDetail`), `listMembers` (`Members`, `Member.position`) and `getSchedule` (`Schedule`, `CurrentSchedule`, `ScheduleAssignment`, `Weekday`);
 - frames: 2.1's `G05-club-details`, handoff 8's `G05-club-details-active` (frame 16) and `G05-club-details-failed` (frame 11), handoff 1's `G05-members`, handoff 2's `G05-members-two-days`;
-- words: handoff 6's `details.*` (title, rows, subtitles, `details.footer`, `details.memberCount`, `details.row.hint`, `details.drafts.hint`, `details.leave.hint`), handoff 4's `members.footer.one` and `.other` and `membersFooter` contract, handoff 5's `members.footer.hours`, handoff 8's `loadStates.details` and `loadStates.members`, handoffs 1 and 2's subtitles, handoff 5's `calendar.person.self` and `.vo`;
+- words: handoff 6's `details.*` (title, rows, subtitles, `details.footer`, `details.memberCount`, `details.row.hint`, `details.leave.hint`), Private drafts' own `drafts.title` and `drafts.subtitle` as every tab draws the entry, handoff 4's `members.footer.one` and `.other` and `membersFooter` contract, handoff 5's `members.footer.hours`, handoff 8's `loadStates.details` and `loadStates.members`, handoffs 1 and 2's subtitles (under keys of ours: `members.days.two` holds handoff 2's frame copy, "Monday and Thursday"), handoff 5's `calendar.person.self` and `.vo`, and the row's reading `roster.row.vo`, ours, written from handoff 5's `calendar.person.self.vo` and `friends.row.vo` patterns;
 - checks: handoffs 3 and 4's B-10 and R-05 (the written contracts win over the earlier frames; the club's own name as every Members title), handoff 6's X-09 and question A (FQ80), handoff 8's section 4 (Leave club stays at the leading edge);
 - invariants: T9, T14, T33, T41 to T43, T45, T46, T49, T52, T55; FQ9, FQ80, FQ85 (ADR-029).
 
@@ -80,7 +80,7 @@ So a member who left between the two reads is in neither list. The roster, its c
 - 16 under the rows, Private drafts, the same `PrivateDraftsEntry` as Home's (handoff 4: "Club details should not have a different Drafts component"; book p46).
 - 20 under that, Leave club, a text action in `destructive` (a new ink for `TextActionStyle`), at the leading edge (handoff 8's check, section 4).
 - Members opens `G05-members`. Schedule (B2's `G05-schedule`), Notifications (B8), Widget (M1, FQ9), Private drafts (B3 and B4) and Leave club (B6) are drawn and do nothing until their stages (FQ85, ADR-029; `docs/plans/ios-b1-clubs.md` PR 3).
-- VoiceOver: each row's label is its title and subtitle, and its hint is `details.row.hint`, "Open Members for Sunday people.". Private drafts takes `details.drafts.hint`; Leave club takes `details.leave.hint`, "Review leaving Sunday people.".
+- VoiceOver: each row's label is its title and subtitle, and its hint is `details.row.hint`, "Open Members for Sunday people.". Private drafts is the entry every tab draws (`drafts.title`, `drafts.subtitle`), with no hint of its own; Leave club takes `details.leave.hint`, "Review leaving Sunday people.".
 - Invite someone (`G05-club-details-active`) is plan PR 7's, and the paused club's (`G05-club-details-paused`) is B2's.
 
 **The Schedule row's line.** No delivery words the Schedule row's line. Both frames draw "7 AM to 1 AM the next morning" with no full stop, as every row's line is drawn. It is built from handoff 5's `members.footer.hours` without its full stop (`details.schedule.subtitle`, "{openTime} to {closeTime} the next morning"). The times are `DateLabels.clockHour`'s. Noted in INVENTORY.md as built from spec.
@@ -100,7 +100,7 @@ So a member who left between the two reads is in neither list. The roster, its c
     - a separator from 49 points to the trailing edge;
     - at least 52 high, growing with the text.
 
-  It is not a button: nothing in the frame opens from a row. VoiceOver reads one element per row: "Ben, you. Monday and Thursday." (`person.self.vo`).
+  It is not a button: nothing in the frame opens from a row. VoiceOver reads one element per row: "Ben, you. Monday and Thursday." (`roster.row.vo`, from handoff 5's `calendar.person.self.vo` and `friends.row.vo`). A member with three days or more, which no frame shows, is read and drawn with every weekday named ("Monday, Wednesday, and Friday"), never a count (spec 05, T49).
 - Photographs: other members' photographs need the avatar read, which no stage before B3's media has, so every row shows the initial for now. Handoff 1's and 2's frames draw initials too.
 - The footer, two lines in `metadata` `secondaryText` (handoff 4's `membersFooter`, handoff 5's `members.footer.hours`):
     - "6 members · New York" (`members.footer.one` and `.other`), counting the roster listed;
@@ -187,7 +187,7 @@ Each new row is added to INVENTORY.md as built from spec, with its source.
     - Members is not an approval count (handoff 4's `membersFooter`).
 - **No proposed person is shown as a member:** `listMembers`' `open_revision` isn't drawn here. The proposed roster's review is plan PR 7's (`G05-members-proposed`).
 - **Neutral when it's gone:** a club the caller can no longer read shows nothing of it. The list is read again (T14).
-- **Nothing kept:** neither screen caches an answer. Each read is for the screen showing it (T11).
+- **Nothing stored:** neither screen writes an answer anywhere. The answers live in the model, in memory, until the next Club details opened or the session's end, and each read is for the screen showing it (T11).
 - **No log line or analytics event** carries a club's name, a member's name or an id (T52).
 
 ## 5. Not here

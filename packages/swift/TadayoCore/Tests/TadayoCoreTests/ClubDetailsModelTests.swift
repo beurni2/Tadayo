@@ -79,10 +79,10 @@ import Testing
     }
 
     func root(
-        _ accounts: FakeAccounts, clubs: FakeClubs, store: (any SessionStore)? = nil
+        _ accounts: FakeAccounts, clubs: FakeClubs, store: (any SessionStore)? = nil,
+        auth: FakeAuth = FakeAuth()
     ) -> RootModel {
         let clock = ManualContinuousClock()
-        let auth = FakeAuth()
         return RootModel(
             session: SessionManager(
                 auth: auth, store: store ?? InMemorySessionStore(stored), now: { [start] in start }),
@@ -305,6 +305,42 @@ import Testing
         gate.open()
         await loading.value
         #expect(model.details == .loading)
+    }
+
+    @Test func anAnswerFromBeforeLeaveSignInChangesNothingAfterSigningInAgain() async throws {
+        // Ben leaves and signs in again, the same club selected, before the first session's
+        // read answers: the answer is that session's, so neither a session ended nor a club no
+        // longer his reaches the new one.
+        for answer in [Result<ClubDetail, APIFailure>.failure(.signedOut), .failure(.notFound)] {
+            let clubs = FakeClubs(club: [answer])
+            let gate = Gate()
+            clubs.duringClub = { _ in await gate.wait() }
+            let accounts = FakeAccounts(
+                me: [.success(ben), .success(ben)],
+                clubs: [.success(listed(sunday)), .success(listed(sunday))])
+            let store = InMemorySessionStore(stored)
+            let root = root(
+                accounts, clubs: clubs, store: store, auth: FakeAuth(verify: [.success(stored)]))
+            await root.start()
+            let model = root.clubDetails()!
+            let loading = Task { await model.loadDetails() }
+            await gate.reached()
+            await root.leave()
+            let signIn = try #require(root.signIn)
+            signIn.email = "ben@example.com"
+            await signIn.sendCode()
+            signIn.code = "529614"
+            await signIn.verify()
+            #expect(root.route == .tabs, "\(answer)")
+            #expect(root.selectedClubID == "club_sunday", "\(answer)")
+            gate.open()
+            await loading.value
+            #expect(model.details == .loading, "\(answer)")
+            #expect(!model.closed, "\(answer)")
+            #expect(root.route == .tabs, "\(answer)")
+            #expect(try store.load() == stored, "\(answer)")
+            #expect(accounts.calls == ["me", "clubs", "me", "clubs"], "\(answer)")
+        }
     }
 
     @Test func anAnswerAfterAnotherClubIsChosenChangesNothing() async {

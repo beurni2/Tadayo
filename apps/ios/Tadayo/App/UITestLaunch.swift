@@ -30,7 +30,8 @@
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let accounts = FakeAccounts(
-                nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [])
+                nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [],
+                thenClubs: inClubs ? TwoClubs.relisted : nil)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let root = RootModel(
                 session: session, auth: auth, accounts: accounts,
@@ -63,13 +64,20 @@
             private let lock = NSLock()
             private let nameFailsThenHangs: Bool
             private let listed: [ClubSummary]
+            private let relisted: [ClubSummary]?
+            private var listReads = 0
             private var namesTried = 0
             private var account: Account
 
-            /// A new account with no club, or, given `clubs`, Ben's, named and in them.
-            init(nameFailsThenHangs: Bool = false, clubs: [ClubSummary] = []) {
+            /// A new account with no club, or, given `clubs`, Ben's, named and in them, the list
+            /// read again giving `thenClubs` when there are some.
+            init(
+                nameFailsThenHangs: Bool = false, clubs: [ClubSummary] = [],
+                thenClubs: [ClubSummary]? = nil
+            ) {
                 self.nameFailsThenHangs = nameFailsThenHangs
                 listed = clubs
+                relisted = thenClubs
                 account =
                     clubs.isEmpty
                     ? Account(
@@ -111,15 +119,21 @@
             }
 
             func clubs() async throws(APIFailure) -> ClubList {
-                ClubList(
-                    serverClock: ServerClock(serverNow: Date(), receivedAt: .now), clubs: listed,
+                let clubs = lock.withLock {
+                    listReads += 1
+                    return listReads > 1 ? relisted ?? listed : listed
+                }
+                return ClubList(
+                    serverClock: ServerClock(serverNow: Date(), receivedAt: .now), clubs: clubs,
                     invitations: [])
             }
         }
 
         /// Ben's two active clubs, as the club calls answer them: Sunday people, whose details,
-        /// six members and their days answer, and Kitchen table, whose details answer not found,
-        /// as for a club the caller is no longer in (T9, T14). Every other call is `NoClubs`'.
+        /// six members and their days answer, and Kitchen table, whose details answer not found
+        /// after 3 seconds, as for a club the caller is no longer in (T9, T14), so a test sees
+        /// its Club details loading first; the list read again then holds Sunday people alone
+        /// (`relisted`). Every other call is `NoClubs`'.
         struct TwoClubs: ClubService {
             private static let sunday = ClubRef(
                 id: "club_sunday", name: "Sunday people", timezone: "America/New_York",
@@ -138,6 +152,8 @@
                 ClubSummary(
                     ref: kitchen, state: .active, memberCount: 5, openDay: nil, nextDay: nil),
             ]
+            /// The list read again, once Kitchen table's details have answered not found.
+            static let relisted = [listed[0]]
 
             private let none = NoClubs()
 
@@ -150,7 +166,10 @@
             }
 
             func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
-                guard clubID == Self.sunday.id else { throw .notFound }
+                guard clubID == Self.sunday.id else {
+                    try? await Task.sleep(for: .seconds(3))
+                    throw .notFound
+                }
                 return ClubDetail(
                     serverClock: clock, club: Self.listed[0], rosterVersion: 6, canPropose: false,
                     openRevisionID: nil)

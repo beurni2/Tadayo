@@ -322,14 +322,16 @@ enum ClubWords {
             labels.clockHour(ClubHours.opening), labels.clockHour(ClubHours.closing))
     }
 
-    /// A member's weekdays: "Monday", or "Monday and Thursday"; nil with none.
+    /// A member's weekdays: "Monday", or "Monday and Thursday"; nil with none. A club gives each
+    /// member one day or two (spec 05); should the server ever give more, each is still named,
+    /// as the phone's own list words them, rather than any dropped (T49).
     static func days(_ weekdays: [Weekday]) -> String? {
         let names = weekdays.map(labels.weekday)
         switch names.count {
         case 0: return nil
         case 1: return names[0]
-        default:
-            return String(format: String(localized: "members.days.two"), names[0], names[1])
+        case 2: return String(format: String(localized: "members.days.two"), names[0], names[1])
+        default: return names.formatted(.list(type: .and))
         }
     }
 }

@@ -3,8 +3,9 @@ import XCTest
 /// Club details and the members list as the tabs push them (`TabsView`), on the stand-in
 /// services' two clubs (`UITestLaunch.clubs`): the switcher's Club details pushes Club details
 /// over the tab, with the tab bar hidden; its Members pushes the members list; Back returns one
-/// screen at a time, to the tab as it was. And a club whose details answer not found closes them
-/// at once, back to the tab, with no failure shown (T9).
+/// screen at a time, to the tab as it was. And a club whose details answer not found, while its
+/// Club details is on screen loading, closes them, back to the tab, with no failure and nothing
+/// of the club shown, the list read again choosing the club still listed (T9, T14).
 final class ClubDetailsUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -54,14 +55,19 @@ final class ClubDetailsUITests: XCTestCase {
         XCTAssertTrue(selector.waitForExistence(timeout: 5))
 
         openClubDetails(app)
-        XCTAssertTrue(app.staticTexts["Your clubs"].waitForNonExistence(timeout: 5))
-        // Its details answer not found: the screen closes, whenever the list's read answers,
-        // and nothing of the club or of a failure stays.
+        // Club details is pushed and loading: Kitchen table's details answer not found only
+        // after 3 seconds.
+        XCTAssertTrue(element("Loading club details…", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(eventually { !tabBarShows(app) }, "the tab bar hidden under the push")
+
+        // The not found closes the screen and the list, read again, no longer holds Kitchen
+        // table: Sunday people is selected, and nothing of Kitchen table or of a failure stays.
+        let sunday = app.buttons["Switch club. Sunday people selected."]
         XCTAssertTrue(
-            eventually(10) { shows(selector) && tabBarShows(app) }, "back to the tab as it was")
-        XCTAssertFalse(app.staticTexts["Couldn’t load club details."].exists)
+            eventually(15) { shows(sunday) && tabBarShows(app) }, "back to the tab, Sunday people")
         XCTAssertFalse(element("Loading club details…", in: app).exists)
-        XCTAssertFalse(button(beginning: "Members,", in: app).exists)
+        XCTAssertFalse(app.staticTexts["Couldn’t load club details."].exists)
+        XCTAssertFalse(selector.exists)
     }
 
     // MARK: Helpers
