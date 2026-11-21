@@ -158,6 +158,31 @@ import Testing
         #expect(clubs.calls.count == 2)
     }
 
+    @Test func aCancelledReadShowsNothing() async {
+        // Back while Club details loads cancels its read, which the client answers as a network
+        // failure: nobody is there to see it, and it isn't one.
+        for answer in [
+            Result<ClubDetail, APIFailure>.failure(.network), .failure(.notFound),
+            .success(detail(sunday)),
+        ] {
+            let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(listed(sunday))])
+            let clubs = FakeClubs(club: [answer])
+            let gate = Gate()
+            clubs.duringClub = { _ in await gate.wait() }
+            let root = root(accounts, clubs: clubs)
+            await root.start()
+            let model = root.clubDetails()!
+            let loading = Task { await model.loadDetails() }
+            await gate.reached()
+            loading.cancel()
+            gate.open()
+            await loading.value
+            #expect(model.details == .loading, "\(answer)")
+            #expect(!model.closed, "\(answer)")
+            #expect(accounts.calls == ["me", "clubs"], "\(answer)")
+        }
+    }
+
     // MARK: From the root
 
     @Test func theRootMakesItForTheSelectedClubOnly() async {
@@ -182,8 +207,10 @@ import Testing
         await model.loadDetails()
         #expect(accounts.calls == ["me", "clubs", "clubs"])
         #expect(root.selectedClubID == "club_kitchen")
-        // The screen shows no failure: it closes as the list is read again.
+        // The screen shows no failure: the model is closed, which closes it, whenever the list
+        // answers.
         #expect(model.details == .loading)
+        #expect(model.closed)
     }
 
     @Test func theMembersNotFoundHasTheListReadAgainToo() async {
@@ -204,6 +231,7 @@ import Testing
             await model.loadMembers()
             #expect(accounts.calls == ["me", "clubs", "clubs"], "\(answers)")
             #expect(model.members == .loading, "\(answers)")
+            #expect(model.closed, "\(answers)")
         }
     }
 
@@ -211,12 +239,12 @@ import Testing
         let store = InMemorySessionStore(stored)
         let root = root(
             FakeAccounts(me: [.success(ben)], clubs: [.success(listed(sunday))]),
-            clubs: FakeClubs(
-                club: [.failure(.signedOut)], members: [.success(sixMembers)],
-                schedule: [.failure(.signedOut)]),
+            clubs: FakeClubs(club: [.failure(.signedOut)]),
             store: store)
         await root.start()
-        await root.clubDetails()!.loadDetails()
+        let model = root.clubDetails()!
+        await model.loadDetails()
+        #expect(!model.closed)
         #expect(root.route == .signIn)
         #expect(root.signIn?.signInEnded == true)
         #expect(try store.load() == nil)
@@ -230,11 +258,37 @@ import Testing
             clubs: FakeClubs(members: [.failure(.notFound)], schedule: [.failure(.signedOut)]),
             store: store)
         await root.start()
-        await root.clubDetails()!.loadMembers()
+        let model = root.clubDetails()!
+        await model.loadMembers()
         #expect(root.route == .signIn)
         #expect(try store.load() == nil)
         // The list isn't read again for a session that ended.
         #expect(accounts.calls == ["me", "clubs"])
+        #expect(!model.closed)
+    }
+
+    @Test func aSignedOutAnswerToTheMembersEndsTheSessionWhicheverAnsweredFirst() async throws {
+        // The not found answers before the session's end, then after it.
+        for notFoundFirst in [true, false] {
+            let store = InMemorySessionStore(stored)
+            let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(listed(sunday))])
+            let clubs = FakeClubs(members: [.failure(.notFound)], schedule: [.failure(.signedOut)])
+            let gates = (members: Gate(), week: Gate())
+            clubs.duringMembers = { _ in await gates.members.wait() }
+            clubs.duringSchedule = { await gates.week.wait() }
+            let root = root(accounts, clubs: clubs, store: store)
+            await root.start()
+            let model = root.clubDetails()!
+            let loading = Task { await model.loadMembers() }
+            await gates.members.reached()
+            await gates.week.reached()
+            (notFoundFirst ? gates.members : gates.week).open()
+            (notFoundFirst ? gates.week : gates.members).open()
+            await loading.value
+            #expect(root.route == .signIn, "\(notFoundFirst)")
+            #expect(accounts.calls == ["me", "clubs"], "\(notFoundFirst)")
+            #expect(!model.closed, "\(notFoundFirst)")
+        }
     }
 
     @Test func anAnswerAfterLeaveSignInChangesNothing() async {
@@ -269,6 +323,27 @@ import Testing
         await loading.value
         // The not found is for a club left behind: the list isn't read again for it.
         #expect(model.details == .loading)
+        #expect(!model.closed)
+        #expect(accounts.calls == ["me", "clubs"])
+        #expect(root.selectedClubID == "club_kitchen")
+    }
+
+    @Test func aMembersAnswerAfterAnotherClubIsChosenChangesNothing() async {
+        let clubs = FakeClubs(members: [.failure(.notFound)], schedule: [.success(sixDays)])
+        let gate = Gate()
+        clubs.duringMembers = { _ in await gate.wait() }
+        let accounts = FakeAccounts(
+            me: [.success(ben)], clubs: [.success(listed(sunday, kitchen))])
+        let root = root(accounts, clubs: clubs)
+        await root.start()
+        let model = root.clubDetails()!
+        let loading = Task { await model.loadMembers() }
+        await gate.reached()
+        await root.select("club_kitchen")
+        gate.open()
+        await loading.value
+        #expect(model.members == .loading)
+        #expect(!model.closed)
         #expect(accounts.calls == ["me", "clubs"])
         #expect(root.selectedClubID == "club_kitchen")
     }
@@ -278,7 +353,7 @@ import Testing
     @Test func theMembersReadTheRosterAndTheWeekTogether() async {
         let clubs = FakeClubs(members: [.success(sixMembers)], schedule: [.success(sixDays)])
         let gates = (members: Gate(), week: Gate())
-        clubs.duringMembers = { await gates.members.wait() }
+        clubs.duringMembers = { _ in await gates.members.wait() }
         clubs.duringSchedule = { await gates.week.wait() }
         let model = ClubDetailsModel(club: sunday, service: clubs)
         let loading = Task { await model.loadMembers() }
@@ -310,6 +385,51 @@ import Testing
             #expect(model.members == .failed(shown))
             await model.loadMembers()
             #expect(model.members == .loaded(Roster(sixMembers, week: sixDays)))
+            #expect(!model.closed)
+        }
+    }
+
+    @Test func aLaterMembersReadDropsAnEarlierOnesAnswer() async {
+        // As for the details: the retry, not held, takes the roster; the first read, held until
+        // after it, the failure.
+        let clubs = FakeClubs(
+            members: [.success(sixMembers), .failure(.network)],
+            schedule: [.success(sixDays), .success(sixDays)])
+        let gate = Gate()
+        clubs.duringMembers = { read in if read == 1 { await gate.wait() } }
+        let model = ClubDetailsModel(club: sunday, service: clubs)
+        let first = Task { await model.loadMembers() }
+        await gate.reached()
+        await model.loadMembers()
+        #expect(model.members == .loaded(Roster(sixMembers, week: sixDays)))
+        gate.open()
+        await first.value
+        #expect(model.members == .loaded(Roster(sixMembers, week: sixDays)))
+        #expect(clubs.calls.filter { $0.hasPrefix("members") }.count == 2)
+    }
+
+    @Test func aCancelledMembersReadShowsNothing() async {
+        // Back while Members loads: its read's answer, whatever it is, changes nothing, so
+        // Members opened again starts from loading, not from a failure that never was.
+        for list in [
+            Result<MemberList, APIFailure>.failure(.network), .failure(.notFound),
+            .success(sixMembers),
+        ] {
+            let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(listed(sunday))])
+            let clubs = FakeClubs(members: [list], schedule: [.success(sixDays)])
+            let gate = Gate()
+            clubs.duringMembers = { _ in await gate.wait() }
+            let root = root(accounts, clubs: clubs)
+            await root.start()
+            let model = root.clubDetails()!
+            let loading = Task { await model.loadMembers() }
+            await gate.reached()
+            loading.cancel()
+            gate.open()
+            await loading.value
+            #expect(model.members == .loading, "\(list)")
+            #expect(!model.closed, "\(list)")
+            #expect(accounts.calls == ["me", "clubs"], "\(list)")
         }
     }
 

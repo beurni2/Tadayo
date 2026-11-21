@@ -23,8 +23,12 @@ import TadayoDesign
 /// Each club tab holds its own navigation stack, its root's bar hidden, so the tab looks as it
 /// did without one. The switcher's Club details closes the sheet, then pushes Club details for
 /// the selected club onto the selected tab (`ClubRoute`), with the model `details` makes; Members
-/// is pushed from there. Back returns to the tab as it was. The pushed screens close when the
-/// club they show stops being the selected one: another is chosen, or the list is read again.
+/// is pushed from there, once however fast it's tapped. Back returns to the tab as it was. The
+/// pushed screens close when the club they show stops being the selected one (another is chosen,
+/// or the list is read again) and as soon as a read says the club is no longer the caller's
+/// (`ClubDetailsModel.closed`), whenever the list's own read answers. The model stays after they
+/// close, so a screen sliding away keeps drawing what it showed, until the next Club details
+/// replaces it or the tabs go with the session.
 struct TabsView: View {
     enum Selection: Hashable {
         case home, friends, memories, lab
@@ -71,7 +75,7 @@ struct TabsView: View {
     @State private var switching = false
     /// Each club tab's pushed screens.
     @State private var paths: [ClubTab: [ClubRoute]] = [:]
-    /// The selected club's Club details and members list, while they're pushed.
+    /// The selected club's Club details and members list: the last opened.
     @State private var shownDetails: ClubDetailsModel?
     /// The switcher's Club details was chosen: pushed once the sheet has closed.
     @State private var detailsChosen = false
@@ -135,6 +139,9 @@ struct TabsView: View {
         .onChange(of: state.selected?.id) { _, _ in
             closeClubScreens()
         }
+        .onChange(of: shownDetails?.closed ?? false) { _, closed in
+            if closed { closeClubScreens() }
+        }
         .sheet(isPresented: $switching, onDismiss: openChosenDetails) {
             if case .listed(let list) = state.clubs {
                 ClubSwitcher(
@@ -158,7 +165,6 @@ struct TabsView: View {
 
     private func closeClubScreens() {
         paths = [:]
-        shownDetails = nil
         detailsChosen = false
     }
 
@@ -173,6 +179,8 @@ struct TabsView: View {
             switch route {
             case .details:
                 ClubDetailsDestination(model: shownDetails) {
+                    // A second tap while Members slides in pushes nothing more.
+                    guard paths[tab]?.last == .details else { return }
                     paths[tab, default: []].append(.members)
                 }
             case .members:

@@ -40,14 +40,15 @@ Branch `ios/b1-club-details`, from `main` at `b40850f`. Written on 21 November 2
 - **`Failure`:** `.network` gives handoff 8's network line ("Check your connection and try again."); anything else gives its refusal line ("Try again.").
 - **What answers do:**
     - `signedOut` ends the session, as everywhere else;
-    - `notFound` means the club is no longer the caller's to read: left, suspended (T9), or gone. The root then reads the list again, which decides (as `loadHome` does), and the pushed screens close;
-    - an answer that lands after the session ended, or after another club was chosen, is dropped (the root's `epoch`, and the selected club's id when the model was made).
+    - `notFound` means the club is no longer the caller's to read: left, suspended (T9), or gone. The model is `closed`, which closes the pushed screens at once, and the root reads the list again, which decides (as `loadHome` does);
+    - an answer that lands after the session ended, or after another club was chosen, is dropped (the root's `epoch`, and the selected club's id when the model was made);
+    - so is the answer to a read whose screen went away (Back cancels its task): a cancelled request comes back from the client as a network failure, which nobody would see, and which Members, opened again, mustn't show.
 
 **Where the weekdays come from.** `listMembers` gives each member one `next_day`, so a two-day member's second weekday isn't in it. `getSchedule`'s `current` holds each member's weekday or two, in force today (`CurrentSchedule`). So this PR adds `getSchedule` to `ClubService` and `TadayoAPIClient`, reading `current` alone:
 
 - `ClubWeek`, with `assignments: [WeekdayAssignment]` (weekday and person), empty when `current` is absent;
 - `Weekday` (Monday to Saturday; Sunday never is: T6);
-- the proposal, B2's, isn't decoded;
+- the proposal, B2's, isn't kept: the generated decoder still reads and checks it, so a proposal the contract doesn't allow refuses the whole answer, as any other field would;
 - an answer the contract doesn't document is refused, as the other club calls do.
 
 The two reads are separate snapshots, so a member's days are matched by membership id:
@@ -127,10 +128,11 @@ On Linux (`swift test --package-path packages/swift/TadayoCore`):
     - details: `.loading` while the call is out, then `.loaded`;
     - a network failure gives `.failed(.network)`, any other gives `.failed(.refused)`, and Retry reads it again;
     - a suspended club gives `.unavailable` with no call;
-    - `notFound` asks the root to read the list again, once;
+    - `notFound` closes the model (`closed`, which closes the screens) and asks the root to read the list again, once;
     - `signedOut` ends the session;
-    - an answer after the session ended, or after another club was chosen, changes nothing.
-2. **The members:** both calls are made; either failing fails the screen; and `notFound` and `signedOut` from either behave as above.
+    - an answer after the session ended, after another club was chosen, or after a later read of the same screen, changes nothing;
+    - a cancelled read (its screen went away: Back) changes nothing, whatever it answers, though the client gives a cancelled request as a network failure.
+2. **The members:** both calls are made; either failing fails the screen; `notFound` and `signedOut` from either behave as above, a session ended deciding whichever of the two answered first; and the same three late answers and a cancelled read change nothing.
 3. **The roster:**
     - kept in `position` order, even when the answer lists members out of it;
     - the viewer marked by `my_membership_id`;
@@ -141,8 +143,8 @@ On Linux (`swift test --package-path packages/swift/TadayoCore`):
 4. **`ClubCallsTests`** (`packages/swift/TadayoAPI`, `swift test --package-path packages/swift/TadayoAPI`):
     - `schedule(of:)` decodes the contract's `sunday_people` example's `current`;
     - an answer with no `current` gives no assignments;
-    - 404 gives `notFound` and 401 gives `signedOut`;
-    - an undocumented status is refused.
+    - 404 gives `notFound`; 401, refreshed once and sent again, gives `signedOut` when it comes again (every club read: `aReadRejectedAgainAfterTheRefreshSignsOut`);
+    - an undocumented status, or a code the read doesn't document, is refused.
 5. **`DateLabelsTests`:** `weekday(.monday)` is "Monday" in en-US and "lundi" in fr-FR; `clockHour(7)` is "7 AM" in en-US and "07:00" in en-GB.
 
 Hosted tests (`apps/ios/TadayoTests` and `apps/ios/TadayoSnapshotTests`):
@@ -155,6 +157,13 @@ Hosted tests (`apps/ios/TadayoTests` and `apps/ios/TadayoSnapshotTests`):
 - `ClubDetailsSnapshotTests`' "What VoiceOver finds": each row's label and hint and that it's a button; Members opening the members list; the club's name and the list's title as headings; the roster rows one element each, none a button; a member with no day read by name alone, and the list then with no subtitle; the failure's title and line, and Retry's hint; nothing of a suspended club; and the loading labels.
 
 The words 49 points in and the separators, which VoiceOver doesn't see, are read from the snapshots.
+
+UI tests (`apps/ios/TadayoUITests/ClubDetailsUITests.swift`, on the stand-in services' two clubs, `UITestLaunch.clubs`), for what only the tabs do:
+
+- the switcher's Club details pushes Club details over the tab with the tab bar hidden; Members pushes the members list; Back returns one screen at a time, to the tab as it was; and opened again, the members list reads and shows the roster again;
+- a club whose details answer not found closes them, back to the tab, with no failure and nothing of the club.
+
+**Members opened again** starts from loading, never from what an earlier opening left in the model (`MembersDestination`), and a second tap while it slides in pushes nothing more (`TabsView`).
 
 ## 3. States snapshotted
 

@@ -605,6 +605,8 @@ import Testing
             (.schedule, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
             (.schedule, .response(status: 503, body: "", headers: [:]), .unavailable),
             (.schedule, .failure, .network),
+            (.schedule, .response(status: 418, body: "", headers: [:]), .refused),
+            (.schedule, .json(409, #"{"code":"VERSION_CONFLICT","current_version":2}"#), .refused),
             (.accept, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
             (.createClub, error("VERSION_CONFLICT"), .refused),
             (.createInvitation, error("CLUB_FULL"), .refused),
@@ -671,6 +673,28 @@ import Testing
                 transport.sent.map { $0.request.headerFields[header] }
                     == [key.description, key.description], "\(operation)")
             #expect(transport.sent.first?.body == transport.sent.last?.body, "\(operation)")
+        }
+    }
+
+    @Test func aReadRejectedAgainAfterTheRefreshSignsOut() async {
+        // The token is refreshed once and the read sent again; a second 401 ends the session,
+        // as for the account's own calls (`TadayoAPIClientTests.aSecondRejectionSignsOut`).
+        let unauthenticated = CannedTransport.Answer.json(401, #"{"code":"UNAUTHENTICATED"}"#)
+        for operation in ClubOperation.allCases where !operation.isCommand {
+            let auth = RefreshingAuth([
+                .success(
+                    AuthSession(
+                        accessToken: "access-2", refreshToken: "refresh-2",
+                        expiresAt: start.addingTimeInterval(7200)))
+            ])
+            let transport = CannedTransport([unauthenticated, unauthenticated])
+            await #expect(throws: APIFailure.signedOut, "\(operation)") {
+                try await operation.call(on: api(transport, auth: auth), self)
+            }
+            #expect(
+                transport.sent.map(\.bearer) == ["Bearer access-1", "Bearer access-2"],
+                "\(operation)")
+            #expect(auth.refreshes == 1, "\(operation)")
         }
     }
 

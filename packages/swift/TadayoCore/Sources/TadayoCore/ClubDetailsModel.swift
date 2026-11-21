@@ -13,12 +13,15 @@ import Observation
 ///   together: the roster, and each member's weekday or two, which `listMembers` doesn't hold
 ///   (its `next_day` is one day).
 ///
-/// An answer counts only while `current` says so: the session it was asked in hasn't ended and
-/// the club is still the selected one. A later read of the same screen drops an earlier one's
-/// answer. A not found means the club is no longer the caller's to read (left, suspended or gone:
-/// T9, T14), and `gone` has the list read again, which decides; a `signedOut` answer ends the
-/// session (`signedOut`), as everywhere else. Nothing is kept: each read is for the screen
-/// showing it (T11).
+/// An answer counts only while `current` says so (the session it was asked in hasn't ended and
+/// the club is still the selected one) and while the read wasn't cancelled: a screen that went
+/// away before its answer came gets none, and a read cancelled on the way, which the client
+/// gives as a network failure, shows no failure. A later read of the same screen drops an earlier
+/// one's answer. A not found means the club is no longer the caller's to read (left, suspended
+/// or gone: T9, T14): the model is `closed`, which closes the screens showing it, and `gone` has
+/// the list read again, which decides. A `signedOut` answer ends the session (`signedOut`), as
+/// everywhere else. Nothing is written anywhere: the answers live in this model, in memory, until
+/// the tabs let it go (the next Club details opened, or the session's end).
 @MainActor @Observable public final class ClubDetailsModel {
     /// Why a read failed, which picks the line under the failure's title: the network's ("Check
     /// your connection and try again.") or a refusal's ("Try again."; handoff 8's
@@ -46,6 +49,9 @@ import Observation
     public let club: ClubSummary
     public private(set) var details: Details
     public private(set) var members = Members.loading
+    /// A read answered not found: the club is no longer the caller's to read, so nothing of it
+    /// stays on screen (T9). The screens close on it, whenever the list's own read answers.
+    public private(set) var closed = false
 
     let service: any ClubService
     let current: @MainActor () -> Bool
@@ -80,7 +86,7 @@ import Observation
         let answer = await Self.result { [service, club] () async throws(APIFailure) in
             try await service.club(club.id)
         }
-        guard current(), asked == detailReads else { return }
+        guard !Task.isCancelled, current(), asked == detailReads else { return }
         switch answer {
         case .success(let detail):
             details = .loaded(detail)
@@ -104,24 +110,26 @@ import Observation
             try await service.schedule(of: id)
         }
         let answers = await (list, week)
-        guard current(), asked == memberReads else { return }
+        guard !Task.isCancelled, current(), asked == memberReads else { return }
         switch answers {
         case (.success(let list), .success(let week)):
             members = .loaded(Roster(list, week: week))
         case (.failure(let failure), _), (_, .failure(let failure)):
-            // Either failing fails the list. A not found or a session ended from either decides
-            // first, whichever came: each says the same of the club or the session.
+            // Either failing fails the list. A session ended, then a not found, from either,
+            // decides over any other failure, in whichever order the two answered: each says the
+            // same of the club or the session.
             let worst = Self.decisive(answers.0.failure, answers.1.failure) ?? failure
             if let failed = await settle(worst) { members = .failed(failed) }
         }
     }
 
-    /// What a failed read leads to: the list read again for a club no longer the caller's, the
-    /// session ended for a `signedOut` answer (neither shows a failure), or the failure the
-    /// screen shows.
+    /// What a failed read leads to: the model closed and the list read again for a club no
+    /// longer the caller's, the session ended for a `signedOut` answer (neither shows a
+    /// failure), or the failure the screen shows.
     private func settle(_ failure: APIFailure) async -> Failure? {
         switch failure {
         case .notFound:
+            closed = true
             await gone()
             return nil
         case .signedOut:
@@ -160,7 +168,10 @@ import Observation
 /// member the week gives none shows the name alone (T49), and a day of someone the roster
 /// doesn't list is dropped. The roster, its count and its club are the one `listMembers` answer
 /// (handoff 4's `membersFooter`: "updates from one authorized server snapshot"). Nothing in it
-/// comes from drops, and every member gets the same list (T55).
+/// comes from drops (T55). The days are the week's `current` as the server gives it to this
+/// caller (the contract's `Schedule`): in first days opened again with a week of their own, a
+/// member's own confirmed days are in the proposal only, which this list doesn't read, until the
+/// new week starts (FQ124).
 public struct Roster: Sendable, Equatable {
     public struct Row: Sendable, Equatable, Identifiable {
         public let person: Person

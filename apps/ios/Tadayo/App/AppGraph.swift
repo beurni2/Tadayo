@@ -30,6 +30,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.nameFailsThenHangs) {
                 return .live(UITestLaunch.fakeGraph(nameFailsThenHangs: true))
             }
+            if process.arguments.contains(UITestLaunch.clubs) {
+                return .live(UITestLaunch.fakeGraph(inClubs: true))
+            }
         #endif
         if isHostingTests(process) { return .inert }
         return configured(

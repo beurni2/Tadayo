@@ -14,12 +14,13 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     private var scheduleAnswers: [Result<ClubWeek, APIFailure>]
     private(set) var calls: [String] = []
     private var clubReads = 0
-    /// Run inside each read of a club's details, given which read it is (1 for the first), or
-    /// of a roster revision, the members or the club's week, before it answers: a slow network,
-    /// say.
+    private var memberReads = 0
+    /// Run inside each read of a club's details or its members, given which read it is (1 for
+    /// the first), or of a roster revision or the club's week, before it answers: a slow
+    /// network, say.
     var duringClub: @Sendable (Int) async -> Void = { _ in }
     var duringRevision: @Sendable () async -> Void = {}
-    var duringMembers: @Sendable () async -> Void = {}
+    var duringMembers: @Sendable (Int) async -> Void = { _ in }
     var duringSchedule: @Sendable () async -> Void = {}
 
     init(
@@ -70,7 +71,11 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     }
 
     func members(of clubID: String) async throws(APIFailure) -> MemberList {
-        await duringMembers()
+        let read = lock.withLock {
+            memberReads += 1
+            return memberReads
+        }
+        await duringMembers(read)
         return try lock.withLock {
             calls.append("members \(clubID)")
             return next(&memberAnswers)
