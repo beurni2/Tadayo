@@ -42,7 +42,7 @@ import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandl
 import { fastifyLogging, logEachRequest } from "./logging.ts";
 import { installGate } from "./session.ts";
 import { END_SECONDS } from "./shutdown.ts";
-import { WEB_OPERATIONS, allowWebOrigin, preflight } from "./web-origin.ts";
+import { WEB_OPERATION, allowWebOrigin, preflight } from "./web-origin.ts";
 
 export type { Deps } from "./deps.ts";
 
@@ -193,7 +193,7 @@ export function buildApp(deps: Deps): FastifyInstance {
   const handlers = handlersOf(deps);
   for (const operation of OPERATIONS) {
     const url = operation.path.replace(/\{([a-z_]+)\}/g, ":$1");
-    const fromPage = WEB_OPERATIONS.has(operation.id);
+    const fromPage = operation.id === WEB_OPERATION;
     app.route({
       method: operation.method.toUpperCase(),
       url,

@@ -1,11 +1,12 @@
 // @ts-check
-/* global window, document, AbortSignal */
+/* global window, document, AbortController, setTimeout, clearTimeout */
 // The signed-out invitation page, tadayo.app/i#<token> (G02-web and G02-web-revoked; spec 04; T7, T52;
 // docs/plans/api-b0-spike-links-web.md, section 1). The token is the link's fragment, which a browser never
 // sends to a server: this script sends it in one POST body to the API's `previewInvitationWeb` and shows the
-// inviter's name, the neutral page for a link that can't be used, or a failure to try again. Every word is in
+// inviter's name, the neutral page for a link that can't be used, or a failure to retry. Every word is in
 // i.html, where the copy lint reads it; the script only chooses which part is shown and puts the name in
-// place, as text. It keeps the token nowhere but in memory, and sends it nowhere else.
+// place, as text. It writes the token to no storage, request URL, referrer or log; it stays in the address's
+// fragment, where the link put it, and goes in that one body alone.
 
 /** The contract's InvitationToken: base64url, 43 to 128 characters. */
 export const TOKEN = /^[A-Za-z0-9_-]{43,128}$/;
@@ -69,8 +70,9 @@ export function outcomeOf(status, body) {
 }
 
 /**
- * Asks `api` about `token`, waiting `wait` milliseconds at most; a network error, a timeout or a body that
- * isn't JSON is a failure to check.
+ * Asks `api` about `token`, waiting `wait` milliseconds at most for the answer and its body; a network
+ * error, a timeout or a body that isn't JSON is a failure to check. The wait is an AbortController's and a
+ * timer's, which every Safari that runs the page has (`AbortSignal.timeout` came only with Safari 16).
  * @param {(url: string, init: RequestInit) => Promise<Response>} fetcher
  * @param {string} api
  * @param {string} token
@@ -78,26 +80,35 @@ export function outcomeOf(status, body) {
  * @returns {Promise<Outcome>}
  */
 export async function check(fetcher, api, token, wait = WAIT_MS) {
-  const { url, init } = previewRequest(api, token, AbortSignal.timeout(wait));
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, wait);
   try {
+    const { url, init } = previewRequest(api, token, controller.signal);
     const response = await fetcher(url, init);
     if (response.status !== 200) return outcomeOf(response.status, null);
     return outcomeOf(200, await response.json());
   } catch {
     return { state: "failed" };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
 /**
  * Shows `shown` in `page`: its part alone, the inviter's name as text, and Get Tadayo's accessible name and
- * hint as the state's renders have them (handoff 8's G02-web; handoff 4's G02-web-revoked).
+ * hint as the state's renders have them (handoff 8's G02-web; handoff 4's G02-web-revoked). With `focus`,
+ * after Retry, whose button the change hides, focus moves to the shown part's first line, so it isn't lost.
  * @param {Pick<ParentNode, "querySelector" | "querySelectorAll">} page
  * @param {Shown} shown
+ * @param {boolean} [focus]
  */
-export function show(page, shown) {
+export function show(page, shown, focus = false) {
   for (const part of page.querySelectorAll("[data-state]")) {
     const element = /** @type {HTMLElement} */ (part);
     element.hidden = element.dataset["state"] !== shown.state;
+    if (focus && !element.hidden) /** @type {HTMLElement | null} */ (element.querySelector("[tabindex='-1']"))?.focus();
   }
   const name = page.querySelector("[data-name]");
   if (name !== null) name.textContent = shown.state === "invited" ? shown.name : "";
@@ -113,7 +124,8 @@ export function show(page, shown) {
 }
 
 /**
- * The page: the token from the address's fragment, then the API's answer about it; Try again asks again.
+ * The page: the token from the address's fragment, then the API's answer about it; Retry asks again. With
+ * no API named, the page can't check, which is a failure, never a link that no longer works (handoff 4).
  * @param {{ location: { hash: string }, document: Pick<Document, "querySelector" | "querySelectorAll">, fetch: (url: string, init: RequestInit) => Promise<Response> }} page
  * @param {number} [wait]
  */
@@ -121,16 +133,21 @@ export async function start(page, wait = WAIT_MS) {
   const doc = page.document;
   const api = doc.querySelector('meta[name="tadayo-api"]')?.getAttribute("content") ?? "";
   const token = tokenFrom(page.location.hash);
-  const run = async () => {
-    if (token === null || api === "") {
-      show(doc, { state: "unavailable" });
+  /** @param {boolean} again */
+  const run = async (again) => {
+    if (token === null) {
+      show(doc, { state: "unavailable" }, again);
       return;
     }
-    show(doc, { state: "checking" });
-    show(doc, await check((url, init) => page.fetch(url, init), api, token, wait));
+    if (api === "") {
+      show(doc, { state: "failed" }, again);
+      return;
+    }
+    show(doc, { state: "checking" }, again);
+    show(doc, await check((url, init) => page.fetch(url, init), api, token, wait), again);
   };
-  doc.querySelector("[data-retry]")?.addEventListener("click", () => void run());
-  await run();
+  doc.querySelector("[data-retry]")?.addEventListener("click", () => void run(true));
+  await run(false);
 }
 
 if (typeof document !== "undefined") void start(window);

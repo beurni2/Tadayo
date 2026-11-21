@@ -18,19 +18,19 @@
       </picture>
       <div class="parts" aria-live="polite">
         <section data-state="checking">
-          <p class="note">Checking invitation…</p>
+          <p class="note" tabindex="-1">Checking invitation…</p>
         </section>
         <section data-state="invited" hidden>
-          <h1 class="title"><bdi data-name></bdi> invited you to a club on Tadayo</h1>
+          <h1 class="title" tabindex="-1"><bdi data-name></bdi> invited you to a club on Tadayo</h1>
           <p class="brand">Your day. Your story. A thought from your friends.</p>
         </section>
         <section data-state="unavailable" hidden>
-          <h1 class="title neutral">This invitation isn’t available.</h1>
+          <h1 class="title neutral" tabindex="-1">This invitation isn’t available.</h1>
           <p class="body">Ask for a new invitation link.</p>
         </section>
         <section data-state="failed" hidden>
-          <p class="note">Couldn’t check the invitation link. Check your connection and try again.</p>
-          <button class="action retry" type="button" data-retry>Try again</button>
+          <p class="note" tabindex="-1">Couldn’t check the invitation link. Check your connection and try again.</p>
+          <button class="action retry" type="button" data-retry>Retry</button>
         </section>
       </div>
       <a

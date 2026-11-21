@@ -5,7 +5,8 @@
  * utilityTitle 32/35 bold (handoff 8), the unavailable title 2rem/1.1875 (handoff 4's neutralWebType),
  * caption 21/28 bold, body 17/23, the link 16/22. The gaps between blocks are the frames' own, in px,
  * measured from their SVGs (G02-web's wordmark at 124 px from the top, which the unavailable page keeps too,
- * where handoff 4's frame draws it at 130).
+ * where handoff 4's frame draws it at 130). Get Tadayo's target is the frames' too: the column's width,
+ * 50 px high, 88 at 200% text (handoff 8's screen-copy.json).
  * The font is the system's: SF Pro on the iPhone (the frames outline Arimo as a stand-in).
  */
 :root {
@@ -80,13 +81,16 @@ main {
   margin: 44px 0 0;
 }
 
-/* The gap above Get Tadayo, each state's own frame's: 56 under the brand line, 53 under the neutral line. */
+/*
+ * The gap above Get Tadayo's target, each state's own frame's: 53 under the brand line, 50 under the neutral
+ * line, which puts its words where the frames draw them, in the middle of a target 50 high.
+ */
 [data-state] {
-  padding-bottom: 56px;
+  padding-bottom: 53px;
 }
 
 [data-state="unavailable"] {
-  padding-bottom: 53px;
+  padding-bottom: 50px;
 }
 
 .note {
@@ -111,8 +115,19 @@ main {
   cursor: pointer;
 }
 
+.get {
+  display: flex;
+  width: 100%;
+  min-height: max(50px, 2.75rem);
+}
+
 .retry {
   margin-top: 16px;
+}
+
+/* A part's first line takes focus after Retry, from the script; it is not a control, so it draws no ring. */
+[tabindex="-1"]:focus {
+  outline: none;
 }
 
 [hidden] {
