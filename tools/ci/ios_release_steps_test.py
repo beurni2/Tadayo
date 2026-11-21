@@ -248,35 +248,40 @@ class HelpersTest(unittest.TestCase):
 
     def test_the_associated_domain_is_the_project_s_and_the_site_names_the_app(self):
         # The check's one domain is the one the app's target declares, when it declares one, and
-        # the share extension declares none (apps/ios/project.yml); the site's
+        # no other target declares any (apps/ios/project.yml, read whole by a YAML library, as
+        # XcodeGen reads it, so its layout, quoting and comments don't matter); the site's
         # apple-app-site-association names this app and no other.
+        try:
+            import yaml
+        except ImportError:
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                self.fail("no yaml library on ci's runner (ops_steps_test.py says why it must be there)")
+            self.skipTest("no yaml library here")
         with open(os.path.join(ROOT, "apps", "ios", "project.yml")) as f:
-            text = f.read()
-        # The targets section, up to the next top-level key, and one target's block in it.
-        targets = re.search(r"^targets:\n(.*?)(?=^\S|\Z)", text, re.M | re.S).group(1)
+            targets = yaml.safe_load(f)["targets"]
+        self.assertIn("Tadayo", targets)
+        self.assertIn("TadayoShare", targets)
 
-        def target(name):
-            return re.search(rf"^  {name}:\n(.*?)(?=^  \S|\Z)", targets, re.M | re.S).group(1)
+        def declared(target):
+            return ((target.get("entitlements") or {}).get("properties")) or {}
 
-        def domains(block):
-            if "com.apple.developer.associated-domains:" not in block:
-                return None
-            rest = block.split("com.apple.developer.associated-domains:\n", 1)[1]
-            values = []
-            for line in rest.splitlines():
-                if not line.strip().startswith("- "):
-                    break
-                values.append(line.strip()[2:].strip())
-            return values
-
-        app = domains(target("Tadayo"))
-        self.assertIn(app, (None, release.ASSOCIATED_DOMAINS))
-        self.assertIsNone(domains(target("TadayoShare")))
+        for name, target in targets.items():
+            properties = declared(target)
+            if name == "Tadayo" and release.ASSOCIATED_DOMAINS_KEY in properties:
+                self.assertEqual(properties[release.ASSOCIATED_DOMAINS_KEY],
+                                 release.ASSOCIATED_DOMAINS)
+            else:
+                self.assertNotIn(release.ASSOCIATED_DOMAINS_KEY, properties, name)
         self.assertEqual(release.ASSOCIATED_DOMAINS, ["applinks:tadayo.app"])
         with open(os.path.join(ROOT, "apps", "web", "public", ".well-known",
                                "apple-app-site-association")) as f:
             site = json.load(f)
-        ids = [i for d in site["applinks"]["details"] for i in d.get("appIDs", [])]
+        # Each entry's appIDs, and the older singular appID, which iOS still reads.
+        ids = []
+        for details in site["applinks"]["details"]:
+            ids += details.get("appIDs", [])
+            if "appID" in details:
+                ids.append(details["appID"])
         self.assertTrue(ids)
         for i in ids:
             self.assertRegex(i, r"^[A-Z0-9]{10}\." + re.escape(release.APP_ID) + "$")

@@ -40,11 +40,10 @@ takes only the archive, as data, and runs only on a dev upload.
              string; both carry the app group in their entitlements, and no entitlement the
              project doesn't declare, but for the app's one associated domain, which the app
              alone may hold, as exactly applinks:tadayo.app (ASSOCIATED_DOMAINS); the archive
-             names this app as its own and carries no
-             other app, extension or service bundle (.app, .appex, .xpc) than the share
-             extension, though its frameworks and executables are not read; and the fixture
-             photographs are all there in a dev archive and none of them in a prod one (T46;
-             TECH-DESIGN section 4, "The Lab").
+             names this app as its own and carries no other app, extension or service bundle
+             (.app, .appex, .xpc) than the share extension, though its frameworks and
+             executables are not read; and the fixture photographs are all there in a dev
+             archive and none of them in a prod one (T46; TECH-DESIGN section 4, "The Lab").
   pack       Puts the archive in one tar file for the workflow to hand to the sign job. Only
              folders and plain files go in: a link, or anything else, fails the step, so a dry
              run shows it too.
@@ -61,9 +60,9 @@ takes only the archive, as data, and runs only on a dev upload.
              the App Store Connect API key (a distribution certificate Apple holds, and
              Xcode-managed profiles). Then reads the exported app's entitlements: the team's
              application identifier, the app group, no get-task-allow, and no entitlement the
-             project doesn't declare, the app's associated domain allowed as in check. What is
-             uploaded next is
-             signed the same way from the same archive.
+             project doesn't declare beyond what signing adds, the app's associated domain
+             allowed as in check. What is uploaded next is signed the same way from the same
+             archive.
   upload     `xcodebuild -exportArchive` with `destination: upload`.
 
 The build number is `<run number>.<run attempt>`, so no two runs, and no two attempts of one,
