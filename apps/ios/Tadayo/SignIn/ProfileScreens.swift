@@ -344,9 +344,18 @@ struct ProfileForm: View {
         keyboard.map { $0 ? 1 : 0 } ?? room.keyboard
     }
 
+    #if DEBUG
+        /// The probe's switch (`ios/b0-profile-scroll-probe`, never merged): false makes the
+        /// scroll once, inside the update, as before the fix.
+        nonisolated(unsafe) static var probeScrollsAgain = true
+    #endif
+
     /// The column's foot to its visible bottom, now and again in the main queue's next turn.
     private func scrollToFoot(_ scroll: ScrollViewProxy) {
         scroll.scrollTo(Self.footID, anchor: .bottom)
+        #if DEBUG
+            guard Self.probeScrollsAgain else { return }
+        #endif
         DispatchQueue.main.async { scroll.scrollTo(Self.footID, anchor: .bottom) }
     }
 }
