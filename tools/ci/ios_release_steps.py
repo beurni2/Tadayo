@@ -38,11 +38,12 @@ takes only the archive, as data, and runs only on a dev upload.
              asks for (ITMS-90022; docs/LIMITATIONS.md, 2026-11-01); the share extension's
              activation rule is the dictionary apps/ios/project.yml declares, never a predicate
              string; both carry the app group in their entitlements, and no entitlement the
-             project doesn't declare; the archive names this app as its own and carries no
-             other app, extension or service bundle (.app, .appex, .xpc) than the share
-             extension, though its frameworks and executables are not read; and the fixture
-             photographs are all there in a dev archive and none of them in a prod one (T46;
-             TECH-DESIGN section 4, "The Lab").
+             project doesn't declare, but for the app's one associated domain, which the app
+             alone may hold, as exactly applinks:tadayo.app (ASSOCIATED_DOMAINS); the archive
+             names this app as its own and carries no other app, extension or service bundle
+             (.app, .appex, .xpc) than the share extension, though its frameworks and
+             executables are not read; and the fixture photographs are all there in a dev
+             archive and none of them in a prod one (T46; TECH-DESIGN section 4, "The Lab").
   pack       Puts the archive in one tar file for the workflow to hand to the sign job. Only
              folders and plain files go in: a link, or anything else, fails the step, so a dry
              run shows it too.
@@ -58,8 +59,10 @@ takes only the archive, as data, and runs only on a dev upload.
   export     `xcodebuild -exportArchive` to a folder, signed by Xcode's automatic signing with
              the App Store Connect API key (a distribution certificate Apple holds, and
              Xcode-managed profiles). Then reads the exported app's entitlements: the team's
-             application identifier, the app group, no get-task-allow. What is uploaded next is
-             signed the same way from the same archive.
+             application identifier, the app group, no get-task-allow, and no entitlement the
+             project doesn't declare beyond what signing adds, the app's associated domain
+             allowed as in check. What is uploaded next is signed the same way from the same
+             archive.
   upload     `xcodebuild -exportArchive` with `destination: upload`.
 
 The build number is `<run number>.<run attempt>`, so no two runs, and no two attempts of one,
@@ -135,6 +138,11 @@ HIDDEN = "***"
 ARCHIVED_ENTITLEMENTS = {"com.apple.security.application-groups", "application-identifier",
                          "com.apple.developer.team-identifier", "get-task-allow"}
 EXPORTED_ENTITLEMENTS = ARCHIVED_ENTITLEMENTS | {"beta-reports-active", "keychain-access-groups"}
+# The app's one associated domain, for invitation links (spike S6; B1's invitations), as the site's
+# apple-app-site-association names the app (apps/web/public/.well-known/). The app alone may hold
+# it, and only with exactly this value: the share extension opens no links.
+ASSOCIATED_DOMAINS_KEY = "com.apple.developer.associated-domains"
+ASSOCIATED_DOMAINS = ["applinks:tadayo.app"]
 # Folders and suffixes of code an app can carry besides itself. The share extension is the one.
 NESTED_SUFFIXES = (".app", ".appex", ".xpc")
 ARCHIVED_APP = "Applications/" + ios_steps.APP_PRODUCT
@@ -236,15 +244,22 @@ def icon_files(info):
     return [f for f in files if isinstance(f, str)] if isinstance(files, list) else []
 
 
-def entitlement_problems(entitlements, team=None, bundle_id=None):
+def entitlement_problems(entitlements, team=None, bundle_id=None, app=False):
     """What's wrong with a bundle's entitlements. With a team, the bundle is signed for App Store
     Connect, and its team, its application identifier (`<team>.<bundle id>`) and get-task-allow
-    are checked too."""
+    are checked too. The app (`app`) may also hold its associated domain, and only that one."""
     problems = []
     allowed = ARCHIVED_ENTITLEMENTS if team is None else EXPORTED_ENTITLEMENTS
+    if app:
+        allowed = allowed | {ASSOCIATED_DOMAINS_KEY}
     extra = sorted(str(key) for key in entitlements if key not in allowed)
     if extra:
         problems.append("it holds entitlements the project doesn't declare: " + ", ".join(extra))
+    if app and ASSOCIATED_DOMAINS_KEY in entitlements:
+        if entitlements.get(ASSOCIATED_DOMAINS_KEY) != ASSOCIATED_DOMAINS:
+            problems.append(f"its associated domains are "
+                            f"{entitlements.get(ASSOCIATED_DOMAINS_KEY)!r}, not "
+                            f"{ASSOCIATED_DOMAINS!r}")
     if entitlements.get("com.apple.security.application-groups") != [APP_GROUP]:
         problems.append("its app groups are "
                         f"{entitlements.get('com.apple.security.application-groups')!r}, "
@@ -599,8 +614,10 @@ class Steps:
                             f"{attributes.get('NSExtensionActivationRule')!r}, not the dictionary "
                             f"{ios_steps.PROJECT_SPEC} declares")
         # The entitlements the export will sign with.
-        for label, bundle in (("the app", app), ("the share extension", share)):
-            problems += [f"{label}: {p}" for p in entitlement_problems(self.entitlements(bundle))]
+        for label, bundle, is_app in (("the app", app, True),
+                                      ("the share extension", share, False)):
+            problems += [f"{label}: {p}" for p in
+                         entitlement_problems(self.entitlements(bundle), app=is_app)]
         # The fixture photographs.
         code, listing, err = self.shell.capture(
             ["xcrun", "assetutil", "--info", os.path.join(app, "Assets.car")],
@@ -711,12 +728,13 @@ class Steps:
         app = os.path.join(payload, "Payload", ios_steps.APP_PRODUCT)
         share = os.path.join(app, "PlugIns", ios_steps.SHARE_EXTENSION)
         problems = nested_problems(app)
-        for label, bundle, bundle_id in (("the app", app, APP_ID),
-                                         ("the share extension", share, SHARE_ID)):
+        for label, bundle, bundle_id, is_app in (("the app", app, APP_ID, True),
+                                                 ("the share extension", share, SHARE_ID, False)):
             if not os.path.isfile(os.path.join(bundle, "embedded.mobileprovision")):
                 problems.append(f"{label}: it holds no provisioning profile")
             problems += [f"{label}: {p}" for p in
-                         entitlement_problems(self.entitlements(bundle), team, bundle_id)]
+                         entitlement_problems(self.entitlements(bundle), team, bundle_id,
+                                              app=is_app)]
         return problems
 
     def upload(self):
