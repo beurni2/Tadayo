@@ -17,6 +17,9 @@ struct KeychainSessionStore: SessionStore {
     static let accessGroup = "group.app.tadayo"
     /// The app's item's service; tests use their own.
     static let appService = "app.tadayo.session"
+    /// The service of the app's item of invitation links (`KeychainInvitationLinkVault`, ADR-037),
+    /// which an earlier install's forgetting deletes too.
+    static let invitationsService = "app.tadayo.invitations"
 
     /// The item's service; the environment (`dev`, `prod`) is its account, so a dev session is
     /// never read by a prod build on the same phone.
@@ -96,23 +99,31 @@ struct KeychainSessionStore: SessionStore {
         ]
     }
 
-    /// Forgets the session an earlier install left (FQ87). iOS keeps keychain items when an app
-    /// is deleted, but deletes the app group's container once the last app of the group goes,
-    /// so a mark in that container tells a first launch after an install from any other. With
-    /// no mark, every environment's item of `service` is deleted, and the mark is then written:
-    /// the next person to install Tadayo on a phone isn't signed in as the last. Whatever
-    /// reads the session calls this first: the app at launch, and the share extension from B4.
+    /// Forgets the session an earlier install left (FQ87), and the invitation links it kept
+    /// (ADR-037 counts a reinstall as a phone that no longer holds them). iOS keeps keychain
+    /// items when an app is deleted, but deletes the app group's container once the last app of
+    /// the group goes, so a mark in that container tells a first launch after an install from any
+    /// other. With no mark, every environment's item of `service` and of `invitationsService` is
+    /// deleted, and the mark is then written: the next person to install Tadayo on a phone isn't
+    /// signed in as the last, and holds none of the last one's links. Whatever reads the session
+    /// calls this first: the app at launch, and the share extension from B4.
     ///
     /// With no container (an app group missing from the build), the items are deleted and no
     /// mark is written, so a session is never kept: it fails closed. A delete that fails writes
     /// no mark either, so the next launch tries again.
-    static func forgetEarlierInstall(markedIn container: URL?, service: String = appService) {
+    static func forgetEarlierInstall(
+        markedIn container: URL?, service: String = appService,
+        invitationsService: String = KeychainSessionStore.invitationsService
+    ) {
         let mark = container?.appending(path: installMark, directoryHint: .notDirectory)
         if let mark, FileManager.default.fileExists(atPath: mark.path(percentEncoded: false)) {
             return
         }
-        let status = SecItemDelete(items(of: service) as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound, let mark else { return }
+        let forgotten = [service, invitationsService].allSatisfy {
+            let status = SecItemDelete(items(of: $0) as CFDictionary)
+            return status == errSecSuccess || status == errSecItemNotFound
+        }
+        guard forgotten, let mark else { return }
         try? Data().write(
             to: mark, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
