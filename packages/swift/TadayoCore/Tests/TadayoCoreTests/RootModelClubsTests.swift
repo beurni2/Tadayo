@@ -10,8 +10,10 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     private var clubAnswers: [Result<ClubDetail, APIFailure>]
     private var revisionAnswers: [Result<RosterRevision, APIFailure>]
     private(set) var calls: [String] = []
-    /// Run inside each read of a club's details, before it answers: a slow network, say.
+    /// Run inside each read of a club's details, or of a roster revision, before it answers: a
+    /// slow network, say.
     var duringClub: @Sendable () async -> Void = {}
+    var duringRevision: @Sendable () async -> Void = {}
 
     init(
         club: [Result<ClubDetail, APIFailure>] = [],
@@ -38,7 +40,8 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     }
 
     func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
-        try lock.withLock {
+        await duringRevision()
+        return try lock.withLock {
             calls.append("revision \(revisionID)")
             return next(&revisionAnswers)
         }.get()
@@ -136,11 +139,14 @@ final class FakeClubs: ClubService, @unchecked Sendable {
             rosterVersion: 1, canPropose: true, openRevisionID: openRevision)
     }
 
-    func revision(_ id: String, of club: ClubSummary, decision: RosterDecision) -> RosterRevision {
+    func revision(
+        _ id: String, of club: ClubSummary, decision: RosterDecision,
+        state: RosterRevisionState = .open
+    ) -> RosterRevision {
         let benPerson = Person(
             membershipID: club.ref.myMembershipID, displayName: "Ben", avatarVersion: nil)
         return RosterRevision(
-            id: id, version: 2, club: club.ref, state: .open, proposedBy: benPerson,
+            id: id, version: 2, club: club.ref, state: state, proposedBy: benPerson,
             members: [benPerson], candidates: [], myDecision: decision, supersededBy: nil)
     }
 
@@ -286,6 +292,65 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         }
     }
 
+    @Test func aDecisionInARevisionNoLongerOpenAsksForNoReview() async {
+        // Superseded, applied or not gone ahead between the two reads: nothing waits on Ben.
+        for state in [RosterRevisionState.superseded, .applied, .didNotGoAhead] {
+            let clubs = FakeClubs(
+                club: [.success(detail(sunday, openRevision: "rev_2"))],
+                revision: [
+                    .success(revision("rev_2", of: sunday, decision: .pending, state: state))
+                ])
+            let root = root(
+                FakeAccounts(me: [.success(ben)], clubs: [.success(list(sunday))]), clubs: clubs)
+            await root.start()
+            #expect(root.home == .awaiting(review: false), "\(state)")
+        }
+    }
+
+    @Test func aClubChangedSinceTheListReadsTheListAgain() async {
+        // Suspended since the list was read: its details answer not found (T9), and the list,
+        // read again, gives H01-unavailable, with no further call.
+        let suspended = summary("club_sunday", "Sunday people", .suspended)
+        var accounts = FakeAccounts(
+            me: [.success(ben)], clubs: [.success(list(sunday)), .success(list(suspended))])
+        var clubs = FakeClubs(club: [.failure(.notFound)])
+        var root = root(accounts, clubs: clubs)
+        await root.start()
+        #expect(root.selectedClub == suspended)
+        #expect(root.home == .unavailable)
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        #expect(clubs.calls == ["club club_sunday"])
+
+        // Started since: its details say so, and the list read again decides.
+        let started = summary("club_sunday", "Sunday people", .active)
+        accounts = FakeAccounts(
+            me: [.success(ben)], clubs: [.success(list(sunday)), .success(list(started))])
+        clubs = FakeClubs(club: [.success(detail(started, openRevision: nil))])
+        root = self.root(accounts, clubs: clubs)
+        await root.start()
+        #expect(root.home == .notInThisBuild)
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+
+        // Still listed as it was, and still not found: Home fails after one more read of the
+        // list, not round and round; its Retry starts over, the list read again once more.
+        accounts = FakeAccounts(
+            me: [.success(ben)],
+            clubs: [.success(list(sunday)), .success(list(sunday)), .success(list(sunday))])
+        clubs = FakeClubs(
+            club: [
+                .failure(.notFound), .failure(.notFound), .failure(.notFound),
+                .success(detail(sunday, openRevision: nil)),
+            ])
+        root = self.root(accounts, clubs: clubs)
+        await root.start()
+        #expect(root.home == .failed(.other))
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        await root.loadHome()
+        #expect(root.home == .awaiting(review: false))
+        #expect(accounts.calls == ["me", "clubs", "clubs", "clubs"])
+        #expect(clubs.calls == Array(repeating: "club club_sunday", count: 4))
+    }
+
     @Test func homeLoadsUntilItsReadsAnswer() async {
         let clubs = FakeClubs(club: [.success(detail(sunday, openRevision: nil))])
         let gate = Gate()
@@ -302,9 +367,9 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     }
 
     @Test func aFailedReadIsHomesFailureUntilRetried() async {
+        // A not found reads the list again first (`aClubChangedSinceTheListReadsTheListAgain`).
         for (failure, shown) in [
             (APIFailure.network, RootModel.Failure.network), (.refused, .other),
-            (.notFound, .other),
         ] {
             // The details, then the revision, each fail once.
             let clubs = FakeClubs(
@@ -329,6 +394,65 @@ final class FakeClubs: ClubService, @unchecked Sendable {
                     "revision rev_2",
                 ])
         }
+    }
+
+    @Test func homeLoadsWhileTheRevisionIsRead() async {
+        let clubs = FakeClubs(
+            club: [.success(detail(sunday, openRevision: "rev_2"))],
+            revision: [.success(revision("rev_2", of: sunday, decision: .pending))])
+        let gate = Gate()
+        clubs.duringRevision = { await gate.wait() }
+        let root = root(
+            FakeAccounts(me: [.success(ben)], clubs: [.success(list(sunday))]), clubs: clubs)
+        let started = Task { await root.start() }
+        await gate.reached()
+        #expect(clubs.calls == ["club club_sunday"])
+        #expect(root.home == .loading)
+        gate.open()
+        await started.value
+        #expect(root.home == .awaiting(review: true))
+    }
+
+    @Test func anAnswerThatLandsAfterLeaveSignInIsDropped() async {
+        // Sunday people's details are slow, and Ben leaves meanwhile: their answer, when it
+        // lands, mustn't bring the club back, keep it, or read anything more (spec 23, T11).
+        let selection = InMemoryClubSelection()
+        let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(list(sunday))])
+        let clubs = FakeClubs(
+            club: [.success(detail(sunday, openRevision: "rev_2"))],
+            revision: [.success(revision("rev_2", of: sunday, decision: .pending))])
+        let root = root(accounts, clubs: clubs, selection: selection)
+        let gate = Gate()
+        clubs.duringClub = { await gate.wait() }
+        let started = Task { await root.start() }
+        await gate.reached()
+        await root.leave()
+        #expect(root.route == .signIn)
+        gate.open()
+        await started.value
+        #expect(root.route == .signIn)
+        #expect(root.clubs == .loading)
+        #expect(root.selectedClubID == nil)
+        #expect(root.home == .loading)
+        #expect(selection.club(for: "acct_ben") == nil)
+        #expect(clubs.calls == ["club club_sunday"])
+        #expect(accounts.calls == ["me", "clubs"])
+    }
+
+    @Test func aSignedOutAnswerToTheRevisionEndsTheSession() async throws {
+        let store = InMemorySessionStore(stored)
+        let selection = InMemoryClubSelection()
+        let root = root(
+            FakeAccounts(me: [.success(ben)], clubs: [.success(list(sunday))]),
+            clubs: FakeClubs(
+                club: [.success(detail(sunday, openRevision: "rev_2"))],
+                revision: [.failure(.signedOut)]),
+            selection: selection, store: store)
+        await root.start()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == true)
+        #expect(try store.load() == nil)
+        #expect(selection.club(for: "acct_ben") == nil)
     }
 
     @Test func aSignedOutAnswerEndsTheSession() async throws {

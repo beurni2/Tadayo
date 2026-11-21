@@ -102,6 +102,9 @@ import Observation
     /// Moves each time Home is read: an answer to an earlier read, for a club since left
     /// behind, say, is dropped.
     private var homeReads = 0
+    /// While the list is read again because Home found the club no longer as the list had it,
+    /// so it's read again once, not round and round (`loadHome()`).
+    private var relisting = false
 
     /// Why a session is being ended. Only the server's ending is said on A02-email ("Your sign-in
     /// ended. Enter your email to sign in again.", handoff 7's `auth.email.signedOut`), which then
@@ -286,8 +289,16 @@ import Observation
 
     /// Home for the selected club, each time it's selected and on Home's Retry. A club that
     /// hasn't started is read: its details, then its open revision, if it has one, for the
-    /// caller's own decision (never anyone else's: book p30, T33). A suspended club, an active
-    /// one and a paused one need no call.
+    /// caller's own decision (never anyone else's: book p30, T33), which asks for a review only
+    /// while that revision is open. A suspended club, an active one and a paused one need no
+    /// call.
+    ///
+    /// When the details answer not found, or say the club is no longer one that hasn't started,
+    /// the club has changed since the list was read: suspended, say, which the details answer
+    /// as not found (T9, spec 22), or started. Then the list is read again, once, and decides,
+    /// rather than Home failing under a club the server no longer shows as listed (handoffs 5
+    /// and 6, `deniedHeader`: "Avoid using a denied selected-club record or cache"). If the
+    /// list read again still leads here, Home fails, and its Retry starts over.
     public func loadHome() async {
         guard let club = selectedClub else { return }
         homeReads += 1
@@ -303,12 +314,18 @@ import Observation
             break
         }
         home = .loading
-        let answer: Result<Bool, APIFailure>
+        // Whether Home asks for a review, or nil when the club is no longer one that hasn't
+        // started.
+        let answer: Result<Bool?, APIFailure>
         do {
             let detail = try await clubService.club(club.id)
-            if let revision = detail.openRevisionID {
-                answer = .success(
-                    try await clubService.rosterRevision(revision).myDecision == .pending)
+            // Left behind meanwhile, by Leave sign-in or another club: nothing more is read.
+            guard asked == (epoch, homeReads) else { return }
+            if detail.club.state != .proposed {
+                answer = .success(nil)
+            } else if let revisionID = detail.openRevisionID {
+                let revision = try await clubService.rosterRevision(revisionID)
+                answer = .success(revision.state == .open && revision.myDecision == .pending)
             } else {
                 answer = .success(false)
             }
@@ -317,8 +334,16 @@ import Observation
         }
         guard asked == (epoch, homeReads) else { return }
         switch answer {
-        case .success(let review):
+        case .success(let review?):
             home = .awaiting(review: review)
+        case .success(nil), .failure(.notFound):
+            guard !relisting else {
+                home = .failed(.other)
+                return
+            }
+            relisting = true
+            defer { relisting = false }
+            await loadClubs()
         case .failure(.signedOut):
             await endedByServer()
         case .failure(let failure):

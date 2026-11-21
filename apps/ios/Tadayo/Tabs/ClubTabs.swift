@@ -56,21 +56,26 @@ struct HomeAwaiting: View {
 }
 
 /// Review members, pinned at the foot of H01-awaiting-activation (`handoff3.awaitingHome`). Its
-/// label is Review members with the hint "Review the proposed roster for {clubName}." (handoff
-/// 5's `a11y.reviewMembers`, which replaces handoff 3's label), or, when the review is pending,
-/// "Review {clubName}’s updated members." with no hint (handoff 8's
-/// `pending.review.action.vo`, frame 13). It does nothing yet: the proposed roster's review is
-/// `G05-members-proposed`, plan PR 7 (FQ85).
+/// label is Review members with the hint "Review the proposed roster for {clubName}." (handoff 5's
+/// `a11y.reviewMembers`, which replaces handoff 3's label), or, when the review is pending, "Review
+/// {clubName}’s updated members." with no hint (handoff 8's `pending.review.action.vo`, frame 13).
+/// Voice Control still answers to its visible words, Review members, where the spoken label differs
+/// from them (handoffs 3 and 4's check, V-04: WCAG 2.5.3, Label in Name). It does nothing yet: the
+/// proposed roster's review is `G05-members-proposed`, plan PR 7 (FQ85).
 struct ReviewMembersButton: View {
     let club: String
     let review: Bool
 
     var body: some View {
         if review {
-            button.accessibilityLabel(
-                Text(
-                    verbatim: String(format: String(localized: "home.review.action.label"), club)
-                ))
+            button
+                .accessibilityLabel(
+                    Text(
+                        verbatim: String(
+                            format: String(localized: "home.review.action.label"), club)
+                    )
+                )
+                .accessibilityInputLabels([Text("home.awaiting.action")])
         } else {
             button.accessibilityHint(
                 Text(

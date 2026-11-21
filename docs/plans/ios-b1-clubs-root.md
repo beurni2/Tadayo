@@ -122,8 +122,8 @@ Each in light, dark and the largest text (`ScreenSnapshot`), paired with its ren
 
 - `H01-awaiting-activation`;
 - `H01-awaiting-activation-review` (frame 13's words on Home: a new inventory row, built from spec);
-- `H01-loading`, `H01-error` (built from spec);
-- `H01-unavailable`, `F01-unavailable`, `M01-unavailable` (built from spec);
+- `H01-loading` (handoff 3's frame), `H01-error` (built from spec);
+- `H01-unavailable`, `F01-unavailable` (handoff 6's frames), `M01-unavailable` (built from spec);
 - `G06-switcher`, `G06-switcher-status`, `G06-switcher-unavailable`;
 - `global-club-not-in-build-selected` (an active club in this build, new row, built from spec).
 

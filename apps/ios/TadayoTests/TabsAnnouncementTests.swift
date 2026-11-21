@@ -64,8 +64,14 @@ final class TabsAnnouncementTests: XCTestCase {
     // MARK: With a club selected
 
     func testTheListsAnswerSaysNothingWhileTheClubsHomeIsStillRead() {
-        // The list's loading label was said; Home's reads follow under the same label.
-        XCTAssertEqual(heard(.loading, .loading, on: .home), [])
+        // The list's loading label was said; the list answers with Sunday people selected, and
+        // Home's reads follow under the same label.
+        let club = ClubFixtures.sunday
+        let listLoading = TabShown(.loading, selected: nil, home: .loading, on: .home)
+        let homeLoading = TabShown(
+            ClubFixtures.listed(club), selected: club, home: .loading, on: .home)
+        XCTAssertEqual(homeLoading, .loading)
+        XCTAssertEqual(heard(listLoading, homeLoading, on: .home), [])
     }
 
     func testHomeUpdatedIsSaidWhenHomeBeforeTheClubStartsComesBack() {

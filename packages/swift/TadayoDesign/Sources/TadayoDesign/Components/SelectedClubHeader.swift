@@ -116,6 +116,9 @@ public struct SelectedClubHeader: View {
         }
         .buttonStyle(UnchangedWhenPressed())
         .accessibilityLabel(selectorLabel)
+        // Voice Control answers to the words on screen, the club's name, where VoiceOver's label
+        // says more (handoffs 3 and 4's check, V-04: WCAG 2.5.3, Label in Name).
+        .accessibilityInputLabels([Text(verbatim: clubName)])
     }
 
     private func addButton(stacked: Bool) -> some View {
