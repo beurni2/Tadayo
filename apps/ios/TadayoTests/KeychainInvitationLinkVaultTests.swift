@@ -53,6 +53,18 @@ final class KeychainInvitationLinkVaultTests: XCTestCase {
         XCTAssertNoThrow(try vault.delete())
     }
 
+    func testAnItemItCantReadIsNoItemAndIsDeleted() throws {
+        var added = query
+        added[kSecAttrAccount as String] = "dev"
+        added[kSecValueData as String] = Data("not a file of links".utf8)
+        added[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        XCTAssertEqual(SecItemAdd(added as CFDictionary, nil), errSecSuccess)
+        XCTAssertNil(try vault.load())
+        XCTAssertEqual(try attributes().count, 0)
+        try vault.save(file())
+        XCTAssertEqual(try vault.load(), file())
+    }
+
     func testTheItemIsThisDevicesOnlyAndReadOnlyWhileUnlocked() throws {
         try vault.save(file())
         let item = try XCTUnwrap(try attributes().first)

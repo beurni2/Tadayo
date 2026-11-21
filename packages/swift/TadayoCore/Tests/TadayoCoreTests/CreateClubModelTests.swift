@@ -124,19 +124,23 @@ import Testing
 
     @Test func anAnswerAfterTheSessionEndedIsDropped() async {
         for answer: Result<ClubDetail, APIFailure> in [
-            .success(Sunday.detail()), .failure(.network),
+            .success(Sunday.detail()), .failure(.network), .failure(.unavailable),
+            .failure(.signedOut), .failure(.refused),
         ] {
             let clubs = ScriptedClubs()
             clubs.createAnswers = [answer]
             var live = true
             var made = 0
-            let create = model(clubs, current: { live }, created: { _ in made += 1 })
+            var ended = 0
+            let create = model(
+                clubs, current: { live }, created: { _ in made += 1 }, signedOut: { ended += 1 })
             create.name = "Sunday people"
             // Leave sign-in ended the session before the answer landed.
             live = false
             await create.create()
             #expect(create.club == nil)
             #expect(made == 0)
+            #expect(ended == 0)
             #expect(create.failure == nil)
             #expect(!create.isCreating)
         }

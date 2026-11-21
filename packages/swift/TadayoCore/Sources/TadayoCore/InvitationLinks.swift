@@ -62,7 +62,9 @@ public struct InvitationLinkFile: Sendable, Equatable, Codable, CustomStringConv
 /// Where the kept links live between launches: the app's keychain item, or memory in the tests.
 /// It holds one account's file at a time.
 public protocol InvitationLinkVault: Sendable {
-    /// The file kept, or nil when there's none.
+    /// The file kept, or nil when there's none, or when what's kept can never be read (it's then
+    /// deleted, so the next write starts afresh). It throws only when the file can't be read now,
+    /// a locked iPhone's keychain above all, and may be read later.
     func load() throws -> InvitationLinkFile?
     /// Keeps `file` in place of anything kept before.
     func save(_ file: InvitationLinkFile) throws
@@ -120,6 +122,9 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     /// A forget that could neither delete the vault's file nor leave an empty one in its place:
     /// the next access tries again before anything else.
     private var forgetPending = false
+    /// What reads and revokes decided while the vault couldn't be read, for its links once it
+    /// is: the account, the stamp, and the links it drops.
+    private var unread: [(account: String, stamp: UInt64, drop: (KeptInvitationLink) -> Bool)] = []
     /// When each link was kept in this launch, by invitation id.
     private var keptAt: [String: UInt64] = [:]
     private var clock: UInt64 = 0
@@ -178,12 +183,7 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     /// The server answered a revoke of the link: it no longer works, so it goes at once
     /// (ADR-037), whatever a read says later.
     public func drop(_ invitationID: String, account accountID: String) {
-        guard var kept = linksFile(for: accountID) else { return }
-        let before = kept.links.count
-        kept.links.removeAll { $0.invitationID == invitationID }
-        guard kept.links.count != before else { return }
-        keptAt[invitationID] = nil
-        write(kept)
+        purge(accountID, stamp: Stamp(value: .max)) { $0.invitationID == invitationID }
     }
 
     /// The stamp to take just before requesting a read that will settle the links.
@@ -235,6 +235,7 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         file = nil
         loaded = true
         keptAt = [:]
+        unread = []
         forgetVault()
     }
 
@@ -257,7 +258,17 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
             return
         }
         loaded = true
-        let merged = Self.merge(stored, file)
+        var merged = Self.merge(stored, file)
+        // What a read or a revoke decided meanwhile holds for the vault's links too.
+        if var applied = merged {
+            for decision in unread where decision.account == applied.accountID {
+                applied.links.removeAll {
+                    (keptAt[$0.invitationID] ?? 0) < decision.stamp && decision.drop($0)
+                }
+            }
+            merged = applied
+        }
+        unread = []
         file = merged
         if let merged, merged != stored { persist(merged) }
     }
@@ -287,11 +298,14 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         forgetPending = !blanked
     }
 
-    /// Drops this account's links that `drop` picks and that were kept before `stamp`.
+    /// Drops this account's links that `drop` picks and that were kept before `stamp`; while the
+    /// vault is unread, the decision is kept for its links too.
     private func purge(
-        _ accountID: String, stamp: Stamp, where drop: (KeptInvitationLink) -> Bool
+        _ accountID: String, stamp: Stamp, where drop: @escaping (KeptInvitationLink) -> Bool
     ) {
-        guard var kept = linksFile(for: accountID) else { return }
+        let found = linksFile(for: accountID)
+        if !loaded, !accountID.isEmpty { unread.append((accountID, stamp.value, drop)) }
+        guard var kept = found else { return }
         let before = kept.links.count
         kept.links.removeAll { (keptAt[$0.invitationID] ?? 0) < stamp.value && drop($0) }
         guard kept.links.count != before else { return }

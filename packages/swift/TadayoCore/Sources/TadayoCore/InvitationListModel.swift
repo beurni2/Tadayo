@@ -233,10 +233,12 @@ public struct InvitationList: Sendable, Equatable {
             let row = row(for: candidate),
             row.action == .createNewLink || row.menu.contains(.createNewLink)
         else { return }
-        // The row waits through the read again too, which a second tap would otherwise beat.
+        // Once the link is made the row shows it, held, so a second tap finds nothing to make,
+        // while the list is read again.
         busy.insert(candidateID)
-        defer { busy.remove(candidateID) }
-        guard await make(for: candidate) != nil, current() else { return }
+        let made = await make(for: candidate)
+        busy.remove(candidateID)
+        guard made != nil, current() else { return }
         await refresh()
     }
 

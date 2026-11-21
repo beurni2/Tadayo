@@ -19,6 +19,8 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var duringMembers: @Sendable (Int) async -> Void = { _ in }
     /// Run inside each link's making, before it answers.
     var duringLink: @Sendable () async -> Void = {}
+    /// Run inside each revoke, before it answers.
+    var duringRevoke: @Sendable () async -> Void = {}
     private var memberReads = 0
 
     private func answer<T>(_ call: String, _ answers: inout [Result<T, APIFailure>]) -> Result<
@@ -69,6 +71,7 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     }
 
     func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+        await duringRevoke()
         try lock.withLock { answer("revokeInvitation \(invitationID)", &revokeAnswers) }.get()
     }
 
@@ -119,6 +122,8 @@ final class FailingVault: InvitationLinkVault, @unchecked Sendable {
     var failSaves = false
     var failLoads = false
     var failDeletes = false
+    /// Saves of the empty file for no account, a forget's, fail; others don't.
+    var failBlankSaves = false
     private(set) var saves = 0
     private(set) var deletes = 0
 
@@ -138,7 +143,7 @@ final class FailingVault: InvitationLinkVault, @unchecked Sendable {
     func save(_ file: InvitationLinkFile) throws {
         try lock.withLock {
             saves += 1
-            if failSaves { throw VaultFailure() }
+            if failSaves || (failBlankSaves && file.accountID.isEmpty) { throw VaultFailure() }
             self.file = file
         }
     }
