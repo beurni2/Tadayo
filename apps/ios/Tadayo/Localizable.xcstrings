@@ -601,6 +601,186 @@
         }
       }
     },
+    "details.footer" : {
+      "comment" : "handoff 6 details.footer ({memberCountText} · {clubZoneName}), never the zone-omitted form; the members list's first footer line too (handoff 4 members.footer.one and .other); %1$@ is details.memberCount, %2$@ the club's zone; the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "details.leave" : {
+      "comment" : "handoff 6 details.leave",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave club"
+          }
+        }
+      }
+    },
+    "details.leave.hint" : {
+      "comment" : "handoff 6 details.leave.hint; %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review leaving %@."
+          }
+        }
+      }
+    },
+    "details.memberCount %lld" : {
+      "comment" : "handoff 6 details.memberCount.one and .other ({memberCount} member, {memberCount} members), and handoff 4 members.footer.one and .other's count: a club's active members, never a proposed person (handoff 4's membersFooter)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld member"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld members"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "details.members" : {
+      "comment" : "handoff 6 details.members",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Members"
+          }
+        }
+      }
+    },
+    "details.members.subtitle" : {
+      "comment" : "handoff 6 details.members.subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New members need everyone’s approval"
+          }
+        }
+      }
+    },
+    "details.notifications" : {
+      "comment" : "handoff 6 details.notifications",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "details.notifications.subtitle" : {
+      "comment" : "handoff 6 details.notifications.subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preferences for this club"
+          }
+        }
+      }
+    },
+    "details.row.hint" : {
+      "comment" : "handoff 6 details.row.hint: a Club details row's hint; %1$@ is the row's title (sectionName), %2$@ the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %1$@ for %2$@."
+          }
+        }
+      }
+    },
+    "details.schedule" : {
+      "comment" : "handoff 6 details.schedule",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schedule"
+          }
+        }
+      }
+    },
+    "details.schedule.subtitle" : {
+      "comment" : "Club details' Schedule row line, which no delivery words: handoff 5's members.footer.hours without its full stop, as 2.1's G05-club-details and handoff 8's G05-club-details-active draw every row's line (built from spec, docs/plans/ios-b1-club-details.md); %1$@ is 7 AM and %2$@ is 1 AM, as the phone writes times",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ to %2$@ the next morning"
+          }
+        }
+      }
+    },
+    "details.title" : {
+      "comment" : "handoff 6 copy-contracts, handoff6.details.title: Club details' inline title (G05-club-details)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Club details"
+          }
+        }
+      }
+    },
+    "details.widget" : {
+      "comment" : "handoff 6 details.widget",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widget"
+          }
+        }
+      }
+    },
+    "details.widget.subtitle" : {
+      "comment" : "handoff 6 details.widget.subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview and setup"
+          }
+        }
+      }
+    },
     "drafts.subtitle" : {
       "comment" : "handoff 4 drafts.subtitle and handoff 5 a11y.drafts.hint",
       "extractionState" : "manual",
@@ -837,6 +1017,162 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Review the updated members"
+          }
+        }
+      }
+    },
+    "load.details.loading" : {
+      "comment" : "handoff 8 load.details.loading",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading club details…"
+          }
+        }
+      }
+    },
+    "load.details.retryHint" : {
+      "comment" : "handoff 8 load.details.retryHint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try loading club details again."
+          }
+        }
+      }
+    },
+    "load.details.title" : {
+      "comment" : "handoff 8 load.details.title (G05-club-details-failed)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t load club details."
+          }
+        }
+      }
+    },
+    "load.members.loading" : {
+      "comment" : "handoff 8 load.members.loading",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading members…"
+          }
+        }
+      }
+    },
+    "load.members.retryHint" : {
+      "comment" : "handoff 8 load.members.retryHint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try loading members again."
+          }
+        }
+      }
+    },
+    "load.members.title" : {
+      "comment" : "handoff 8 load.members.title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t load members."
+          }
+        }
+      }
+    },
+    "load.network" : {
+      "comment" : "handoff 8 load.details.network and load.members.network, the same words",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your connection and try again."
+          }
+        }
+      }
+    },
+    "load.refused" : {
+      "comment" : "handoff 8 load.details.refused and load.members.refused, the same words",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again."
+          }
+        }
+      }
+    },
+    "members.days.two" : {
+      "comment" : "handoff 2 screen-copy G05-members-two-days (\"Monday and Thursday\"): a member's two weekdays, Monday first",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ and %2$@"
+          }
+        }
+      }
+    },
+    "members.footer.hours" : {
+      "comment" : "handoff 5 members.footer.hours ({openTime} to {closeTime} the next morning.), which replaces handoff 4's; %1$@ is 7 AM and %2$@ is 1 AM, as the phone writes times",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ to %2$@ the next morning."
+          }
+        }
+      }
+    },
+    "members.subtitle.one" : {
+      "comment" : "handoff 1 screen-copy G05-members, shown only when every member listed has one weekday (handoff 1's check)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each person has a day."
+          }
+        }
+      }
+    },
+    "members.subtitle.two" : {
+      "comment" : "handoff 2 screen-copy G05-members-two-days, shown only when every member listed has two weekdays",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two reveal days each."
+          }
+        }
+      }
+    },
+    "members.title" : {
+      "comment" : "handoff 1 screen-copy G05-members: the members list's inline title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Members"
           }
         }
       }

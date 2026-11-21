@@ -284,6 +284,24 @@ import Observation
         return list.clubs.first { $0.id == selectedClubID }
     }
 
+    /// Club details and its members list for the selected club (`ClubDetailsModel`), or nil
+    /// while none is selected. Its answers count only while the session it was made in lasts and
+    /// the club is still the selected one; a club no longer the caller's to read has the list
+    /// read again, which decides, as Home's does (`loadHome`); a `signedOut` answer ends the
+    /// session.
+    public func clubDetails() -> ClubDetailsModel? {
+        guard let club = selectedClub else { return nil }
+        let made = epoch
+        return ClubDetailsModel(
+            club: club, service: clubService,
+            current: { [weak self] in
+                guard let self else { return false }
+                return epoch == made && selectedClubID == club.id
+            },
+            gone: { [weak self] in await self?.loadClubs() },
+            signedOut: { [weak self] in await self?.endedByServer() })
+    }
+
     private func choose(_ clubID: String, relisting: Bool = false) async {
         selectedClubID = clubID
         if let account { selection.keep(clubID, for: account.id) }

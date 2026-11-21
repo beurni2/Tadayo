@@ -59,6 +59,21 @@ extension TadayoAPIClient: ClubService {
         }
     }
 
+    public func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+        try await call { client in
+            switch try await client.getSchedule(path: .init(clubId: clubID)) {
+            case .ok(let answer): return try ClubWeek(answer.body.json, receivedAt: now())
+            case .unauthorized: throw APIFailure.signedOut
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
+            case .notFound: throw APIFailure.notFound
+            case .tooManyRequests: throw APIFailure.unavailable
+            case .badRequest: throw APIFailure.refused
+            case .undocumented(let status, _): throw Self.failure(status: status)
+            }
+        }
+    }
+
     public func propose(
         _ names: [String], in clubID: String, expectedRosterVersion: Int, key: IdempotencyKey
     ) async throws(APIFailure) -> RosterRevision {
@@ -350,6 +365,26 @@ extension MemberList {
             openRevision: try list.openRevision.map { revision throws(APIFailure) in
                 try RosterRevision(revision)
             })
+    }
+}
+
+extension ClubWeek {
+    /// The week in force today, `current`, alone: the open proposal is B2's. No `current`, no
+    /// assignment.
+    init(_ schedule: Components.Schemas.Schedule, receivedAt: ContinuousClock.Instant)
+        throws(APIFailure)
+    {
+        var assignments: [WeekdayAssignment] = []
+        for assignment in schedule.current?.assignments ?? [] {
+            guard let weekday = Weekday(rawValue: assignment.weekday.rawValue) else {
+                throw .refused
+            }
+            assignments.append(
+                WeekdayAssignment(weekday: weekday, person: Person(assignment.person)))
+        }
+        self.init(
+            serverClock: ServerClock(serverNow: schedule.serverNow, receivedAt: receivedAt),
+            club: ClubRef(schedule.club), assignments: assignments)
     }
 }
 

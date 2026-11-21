@@ -75,7 +75,8 @@ final class DesignCatalogTests: XCTestCase {
     /// specimens draw "· Opens at 7" at a line's start): in every string of the package's catalog
     /// and the app's, a middle dot is bound to the word before it by a no-break space (U+00A0),
     /// never an ordinary space, so it ends that word's line. A string with none passes; the
-    /// package's catalog has some, so the check can't pass by finding nothing.
+    /// package's catalog has some, so the check can't pass by finding nothing. Each form of a
+    /// plural string is checked as a string of its own.
     func testEveryMiddleDotIsBoundToTheWordBeforeIt() throws {
         let app =
             sources
@@ -85,9 +86,9 @@ final class DesignCatalogTests: XCTestCase {
             .deletingLastPathComponent()  // packages
             .deletingLastPathComponent()  // the repository
             .appendingPathComponent("apps/ios/Tadayo/Localizable.xcstrings")
-        let design = try catalogWords()
+        let design = try catalogForms()
         XCTAssertFalse(design.values.filter { $0.contains("·") }.isEmpty)
-        for (key, words) in try design.merging(catalogWords(at: app)) { first, _ in first } {
+        for (key, words) in try design.merging(catalogForms(at: app)) { first, _ in first } {
             for index in words.indices where words[index] == "·" {
                 let before = index == words.startIndex ? nil : words[words.index(before: index)]
                 XCTAssertEqual(before, "\u{00A0}", "\(key): \"\(words)\"")
@@ -107,6 +108,35 @@ final class DesignCatalogTests: XCTestCase {
             let unit = try XCTUnwrap(english["stringUnit"] as? [String: Any])
             return try XCTUnwrap(unit["value"] as? String)
         }
+    }
+
+    /// Every English string of the package's catalog, or of the one at `catalog`, by its key: an
+    /// entry's one string, or each form of a plural one, as Xcode writes it (`variations`,
+    /// `plural`), keyed "key [form]".
+    private func catalogForms(at catalog: URL? = nil) throws -> [String: String] {
+        let data = try Data(
+            contentsOf: catalog ?? sources.appendingPathComponent("Localizable.xcstrings"))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let strings = try XCTUnwrap(json["strings"] as? [String: [String: Any]])
+        var forms: [String: String] = [:]
+        for (key, entry) in strings {
+            let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any], key)
+            let english = try XCTUnwrap(localizations["en"] as? [String: Any], key)
+            if let unit = english["stringUnit"] as? [String: Any] {
+                forms[key] = try XCTUnwrap(unit["value"] as? String, key)
+                continue
+            }
+            let variations = try XCTUnwrap(english["variations"] as? [String: Any], key)
+            let plural = try XCTUnwrap(variations["plural"] as? [String: [String: Any]], key)
+            XCTAssertFalse(plural.isEmpty, key)
+            for (form, variation) in plural {
+                let unit = try XCTUnwrap(
+                    variation["stringUnit"] as? [String: Any], "\(key) [\(form)]")
+                forms["\(key) [\(form)]"] = try XCTUnwrap(
+                    unit["value"] as? String, "\(key) [\(form)]")
+            }
+        }
+        return forms
     }
 
     /// The package's resource bundle, which Xcode names `TadayoDesign_TadayoDesign.bundle` and

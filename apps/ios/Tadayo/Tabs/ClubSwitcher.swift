@@ -26,13 +26,15 @@ import TadayoDesign
 /// `handoff6.switcher.active.row.vo`), and the selected row's native Selected trait says
 /// Selected once (`handoff6.switcher.row.selected.vo`).
 ///
-/// Choosing a row selects that club and closes the sheet; Cancel closes it. Club details and
-/// Create a club show and do nothing until `ios/b1-club-details` and plan PR 4 (FQ85). The
+/// Choosing a row selects that club and closes the sheet; Cancel closes it. Club details closes
+/// it and opens the selected club's details (`TabsView`; for a suspended club, the same "Club
+/// unavailable" as Home, FQ80). Create a club shows and does nothing until plan PR 4 (FQ85). The
 /// content scrolls when it is taller than the sheet can be, at the largest text sizes.
 struct ClubSwitcher: View {
     let clubs: [ClubSummary]
     let selectedID: String?
     let select: (String) -> Void
+    var openDetails: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -52,7 +54,10 @@ struct ClubSwitcher: View {
                     }
                 }
                 VStack(spacing: Spacing.s) {
-                    Button("switcher.clubDetails") {}
+                    Button("switcher.clubDetails") {
+                        openDetails()
+                        dismiss()
+                    }
                     Button("switcher.createClub") {}
                     Button("common.cancel") { dismiss() }
                 }
