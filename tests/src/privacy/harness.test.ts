@@ -15,7 +15,9 @@ import {
   manipulationStep,
   manipulations,
   NEUTRAL,
+  allowanceProblems,
   pinned,
+  preflightProblems,
   PROFILE_INCOMPLETE,
   render,
   routeProblems,
@@ -812,4 +814,161 @@ describe("a request with a body (updateMe's table)", () => {
     expect(step.problems).toEqual([expect.stringMatching(/^updateMe, manipulated .*"now".*: status 404$/)]);
     await app.close();
   });
+});
+
+describe("the matrix's preflight step reports a planted wrong answer", () => {
+  const PATH = "/v1/invitations/web-preview";
+  /** The preflight's headers as the app sends them (services/api/src/web-origin.ts), in its order. */
+  const HEADERS: [string, string][] = [
+    ["access-control-allow-origin", "https://tadayo.app"],
+    ["access-control-allow-methods", "POST"],
+    ["access-control-allow-headers", "content-type"],
+    ["access-control-max-age", "600"],
+    ["cache-control", "private, no-store"],
+  ];
+  /** The app's preflight, but with `changed` headers in their places (undefined leaves one out). */
+  const answer = (
+    reply: FastifyReply,
+    changed: Record<string, string | undefined> = {},
+    status = 204,
+    body?: string,
+  ) => {
+    void reply.code(status);
+    for (const [name, value] of HEADERS) {
+      const sent = name in changed ? changed[name] : value;
+      if (sent !== undefined) void reply.header(name, sent);
+    }
+    return body === undefined ? reply.send() : reply.send(body);
+  };
+  async function preflightApp(handler: (request: FastifyRequest, reply: FastifyReply) => FastifyReply) {
+    const app = Fastify();
+    app.route({ method: "OPTIONS", url: PATH, handler });
+    await app.ready();
+    return app;
+  }
+  const asked = { origin: "https://evil.example", "access-control-request-method": "POST" };
+
+  it("passes the app's own answer", async () => {
+    const app = await preflightApp((_request, reply) => answer(reply));
+    expect(preflightProblems(await answerOf(app, { method: "OPTIONS", url: PATH, headers: asked }))).toEqual([]);
+    await app.close();
+  });
+
+  // Each wrong answer with the problem the step must name for it.
+  const wrong: [string, (request: FastifyRequest, reply: FastifyReply) => FastifyReply, string][] = [
+    [
+      "credentials allowed",
+      (_request, reply) => answer(reply.header("access-control-allow-credentials", "true")),
+      'the headers [["access-control-allow-credentials","true"]',
+    ],
+    [
+      "the caller's origin reflected",
+      (request, reply) => answer(reply, { "access-control-allow-origin": request.headers.origin }),
+      '["access-control-allow-origin","https://evil.example"]',
+    ],
+    [
+      "every origin allowed",
+      (_request, reply) => answer(reply, { "access-control-allow-origin": "*" }),
+      '["access-control-allow-origin","*"]',
+    ],
+    [
+      "another max-age",
+      (_request, reply) => answer(reply, { "access-control-max-age": "601" }),
+      '["access-control-max-age","601"]',
+    ],
+    [
+      "a method more",
+      (_request, reply) => answer(reply, { "access-control-allow-methods": "POST, DELETE" }),
+      '["access-control-allow-methods","POST, DELETE"]',
+    ],
+    [
+      "a header more",
+      (_request, reply) => answer(reply, { "access-control-allow-headers": "content-type, authorization" }),
+      '["access-control-allow-headers","content-type, authorization"]',
+    ],
+    [
+      "no no-store",
+      (_request, reply) => answer(reply, { "cache-control": undefined }),
+      '["access-control-max-age","600"],["connection","keep-alive"]]',
+    ],
+    [
+      "its headers in another order",
+      (_request, reply) => answer(reply.header("cache-control", "private, no-store")),
+      'the headers [["cache-control","private, no-store"],["access-control-allow-origin"',
+    ],
+    ["a 200", (_request, reply) => answer(reply, {}, 200), "status 200"],
+    ["a body", (_request, reply) => answer(reply, {}, 200, "ok"), 'body "ok"'],
+    [
+      "another reason phrase",
+      (_request, reply) => {
+        reply.raw.statusMessage = "Held";
+        return answer(reply);
+      },
+      'reason "Held"',
+    ],
+    [
+      "no Date",
+      (_request, reply) => {
+        reply.raw.sendDate = false;
+        return answer(reply);
+      },
+      "no Date",
+    ],
+    ["a Date that isn't one", (_request, reply) => answer(reply.header("date", "held")), 'date: "held"'],
+    ["Connection: close", (_request, reply) => answer(reply.header("connection", "close")), '["connection","close"]'],
+  ];
+  for (const [name, handler, problem] of wrong) {
+    it(`reports a preflight with ${name}`, async () => {
+      const app = await preflightApp(handler);
+      const problems = preflightProblems(await answerOf(app, { method: "OPTIONS", url: PATH, headers: asked }));
+      expect(problems).toContainEqual(expect.stringContaining(problem));
+      await app.close();
+    });
+  }
+});
+
+describe("the matrix's check of the page's answers from tadayo.app reports a planted wrong answer", () => {
+  const plain = {
+    status: 404,
+    reason: "Not Found",
+    headers: {
+      "cache-control": "private, no-store",
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "20",
+      date: "Sat, 21 Nov 2026 03:00:00 GMT",
+      connection: "keep-alive",
+    },
+    body: '{"code":"NOT_FOUND"}',
+  };
+  const allowed = { "access-control-allow-origin": "https://tadayo.app", vary: "Origin" };
+  const right = { ...plain, headers: { ...allowed, ...plain.headers, date: "Sat, 21 Nov 2026 03:00:01 GMT" } };
+
+  it("passes the same answer with the allowance first, whatever its Date", () => {
+    expect(allowanceProblems(plain, right)).toEqual([]);
+  });
+
+  const wrong: [string, Record<string, unknown>, string][] = [
+    ["no allowance", { headers: plain.headers }, "the headers"],
+    ["no Vary", { headers: { "access-control-allow-origin": "https://tadayo.app", ...plain.headers } }, "the headers"],
+    [
+      "every origin allowed",
+      { headers: { ...allowed, "access-control-allow-origin": "*", ...plain.headers } },
+      '["access-control-allow-origin","*"]',
+    ],
+    [
+      "credentials allowed",
+      { headers: { ...allowed, "access-control-allow-credentials": "true", ...plain.headers } },
+      '["access-control-allow-credentials","true"]',
+    ],
+    ["the allowance last", { headers: { ...plain.headers, ...allowed } }, "the headers"],
+    ["another status", { status: 200 }, "status 200, not 404"],
+    ["another reason", { reason: "Held" }, 'reason "Held"'],
+    ["another body", { body: '{"inviter_name":"Ben"}' }, 'body "{\\"inviter_name\\":\\"Ben\\"}"'],
+  ];
+  for (const [name, changed, problem] of wrong) {
+    it(`reports an answer from tadayo.app with ${name}`, () => {
+      const problems = allowanceProblems(plain, { ...right, ...changed });
+      expect(problems).toContainEqual(expect.stringContaining(problem));
+    });
+  }
 });

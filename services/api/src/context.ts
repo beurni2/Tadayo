@@ -10,6 +10,8 @@ declare module "fastify" {
     public?: boolean;
     /** Works before the profile is complete (the contract's `beforeProfile`). */
     beforeProfile?: boolean;
+    /** The browser's preflight before a request to this operation, from tadayo.app (web-origin.ts). */
+    preflight?: string;
   }
   interface FastifyRequest {
     /** The signed-in account, set by the gate on every route that isn't public; null on one that is. */

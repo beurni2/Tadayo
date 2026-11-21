@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="tadayo-api" content="https://api-dev.tadayo.app" />
+    <title>Tadayo</title>
+    <link rel="stylesheet" href="/i.css" />
+    <script type="module" src="/i.js"></script>
+  </head>
+  <body>
+    <main>
+      <picture>
+        <source srcset="/brand/wordmark-dark.svg" media="(prefers-color-scheme: dark)" />
+        <img class="wordmark" src="/brand/wordmark.svg" alt="Tadayo" width="144" height="46" />
+      </picture>
+      <div class="parts" aria-live="polite">
+        <section data-state="checking">
+          <p class="note" tabindex="-1">Checking invitation…</p>
+        </section>
+        <section data-state="invited" hidden>
+          <h1 class="title" tabindex="-1"><bdi data-name></bdi> invited you to a club on Tadayo</h1>
+          <p class="brand">Your day. Your story. A thought from your friends.</p>
+        </section>
+        <section data-state="unavailable" hidden>
+          <h1 class="title neutral" tabindex="-1">This invitation isn’t available.</h1>
+          <p class="body">Ask for a new invitation link.</p>
+        </section>
+        <section data-state="failed" hidden>
+          <p class="note" tabindex="-1">Couldn’t check the invitation link. Check your connection and try again.</p>
+          <button class="action retry" type="button" data-retry>Retry</button>
+        </section>
+      </div>
+      <a
+        class="action get"
+        href="https://apps.apple.com/app/testflight/id899247664"
+        aria-describedby="get-hint"
+        data-get
+        >Get Tadayo</a
+      >
+      <span id="get-hint" hidden>Open Tadayo in the App Store.</span>
+      <span id="get-unavailable" hidden>Get Tadayo from the App Store.</span>
+    </main>
+  </body>
+</html>

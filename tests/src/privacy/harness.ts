@@ -372,6 +372,63 @@ export const MALFORMED: readonly { raw: string; decoded: string }[] = [
   { raw: "a/b", decoded: "a/b" },
 ];
 
+/**
+ * The one route the app has outside the contract: the browser's preflight before the signed-out invitation
+ * page's request from tadayo.app (services/api/src/web-origin.ts). Pinned here by its method and path, not
+ * taken from the app, so a second such route fails `routeProblems`' caller.
+ */
+export const PREFLIGHT_ROUTE = "OPTIONS /v1/invitations/web-preview";
+
+/** The preflight's one answer, whoever asks and whatever they send, pinned byte for byte, headers in order. */
+export const PREFLIGHT: Answer = {
+  status: 204,
+  reason: "No Content",
+  headers: {
+    "access-control-allow-origin": "https://tadayo.app",
+    "access-control-allow-methods": "POST",
+    "access-control-allow-headers": "content-type",
+    "access-control-max-age": "600",
+    "cache-control": "private, no-store",
+    connection: "keep-alive",
+  },
+  body: "",
+};
+
+/** How `answer` differs from the preflight's one answer: every header as pinned, in order, and Node's Date. */
+export function preflightProblems(answer: Answer): string[] {
+  const problems: string[] = [];
+  if (answer.status !== PREFLIGHT.status) problems.push(`status ${String(answer.status)}`);
+  if (answer.reason !== PREFLIGHT.reason) problems.push(`reason ${JSON.stringify(answer.reason)}`);
+  if (answer.body !== "") problems.push(`body ${JSON.stringify(answer.body.slice(0, 200))}`);
+  const { date, ...others } = answer.headers;
+  if (date === undefined) problems.push("no Date");
+  else {
+    const problem = transportProblem("date", date, answer.clock);
+    if (problem !== undefined) problems.push(`date: ${JSON.stringify(date.slice(0, 80))}, ${problem}`);
+  }
+  const want = Object.entries(PREFLIGHT.headers);
+  const got = Object.entries(others);
+  if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(`the headers ${JSON.stringify(got)}`);
+  return problems;
+}
+
+/**
+ * How `fromPage`, `previewInvitationWeb`'s answer to a request from tadayo.app, differs from `plain`, the same
+ * request's answer with no Origin: the allowance's two headers first, then the same answer, byte for byte
+ * (services/api/src/web-origin.ts). Each answer's own Date is the transport's, judged where it is taken.
+ */
+export function allowanceProblems(plain: Answer, fromPage: Answer): string[] {
+  const problems: string[] = [];
+  if (fromPage.status !== plain.status) problems.push(`status ${String(fromPage.status)}, not ${String(plain.status)}`);
+  if (fromPage.reason !== plain.reason) problems.push(`reason ${JSON.stringify(fromPage.reason)}`);
+  if (fromPage.body !== plain.body) problems.push(`body ${JSON.stringify(fromPage.body.slice(0, 200))}`);
+  const others = (answer: Answer) => Object.entries(answer.headers).filter(([name]) => name !== "date");
+  const want = [["access-control-allow-origin", "https://tadayo.app"], ["vary", "Origin"], ...others(plain)];
+  const got = others(fromPage);
+  if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(`the headers ${JSON.stringify(got)}`);
+  return problems;
+}
+
 /** The app's routes as `METHOD /path`, against the contract's, each way. */
 export function routeProblems(routes: readonly string[], operations: readonly ContractOperation[]): string[] {
   const contract = new Set(

@@ -693,3 +693,13 @@ The coordinator reserved FQ132 at 15:10 UTC on 2026-11-20.
     - The other readings: leave the day out of Home, or show it with no name, for a member who joined after its star left; or close a day when its star leaves. Each is a rule of Home's day choice and the leak scanner (`tests/src/privacy/scanner.ts` counts any member of the club as someone the viewer may know), and changes nothing stored.
     - The privacy matrix and the leak scanner don't hold either reading: the scanner passes the name, and the matrix's flow asks no club list of a member who joined during such a day.
     - Needed by: B2, before the trial.
+
+## Raised by spike S6's invitation page (`api/b0-spike-links-web`)
+
+The coordinator reserved FQ133 at 01:55 UTC on 2026-11-21.
+
+- **FQ133. Where Get Tadayo on the invitation page points during the closed trial.** The signed-out page at `tadayo.app/i` (`G02-web`, `G02-web-revoked`) ends with Get Tadayo, a link to "a generic configured App Store destination, without the unusable token" (handoff 4's `webStoreIntent`), and B0's plan calls it a placeholder (`docs/plans/B0.md` section 4, S6's row). Tadayo has no App Store page until it is released, and the trial's testers install it through TestFlight once they are invited.
+    - Default (Claude Code's): the TestFlight app's App Store page, `https://apps.apple.com/app/testflight/id899247664`, with no query and no fragment, until launch; then Tadayo's own App Store page. Someone who opens an invitation link without the app gets TestFlight, which still needs the founder's tester invitation; the page doesn't say so, since it has no words for it (`apps/web/public/i.html`).
+    - The other readings: Tadayo's TestFlight public link, if the founder makes one (anyone who has it can install the app, so it decides who may try it); no link during the trial; or a page of Tadayo's own that says how to join the trial (new words, and a design handoff).
+    - The link's hint stays handoff 8's "Open Tadayo in the App Store.", which the default stretches: it opens TestFlight's page.
+    - Needed by: the trial (Gate D). The answer changes one attribute in `i.html` and its test.
