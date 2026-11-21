@@ -32,6 +32,7 @@ import { onMachine } from "./on-machine.ts";
 import { OpsError } from "./ops-error.ts";
 import { seed } from "./seed.ts";
 import type { Spawn } from "./spawn.ts";
+import { spikeLinks } from "./spike-links.ts";
 import { limitTransaction, moveClock, SPIKE_LIMITS, spikeTime, writeClub } from "./spike-time.ts";
 import { BUCKETS, storageSetup } from "./storage-setup.ts";
 import { projectUrl } from "./supabase.ts";
@@ -474,6 +475,15 @@ const spikeTimeScript: Script = {
 
 // ---- The scripts that call Fly, and GitHub, from the runner.
 
+const spikeLinksScript: Script = {
+  about:
+    "spike S6's log check on dev: the invitation page's two requests with a made-up token, then dev's log buffer read and searched for the token",
+  async run(ctx) {
+    optionsOf(ctx.args, {}, "spike-links");
+    await spikeLinks({ fly: flyOf(ctx.spawn, ctx.env), fetch: ctx.fetch, say: ctx.say, sleep: ctx.sleep });
+  },
+};
+
 const workerScaleScript: Script = {
   about: "stop or start the worker Machine of tadayo-api-dev: --to stopped or --to started",
   async run(ctx) {
@@ -518,6 +528,7 @@ export const SCRIPTS: Readonly<Record<string, Script>> = {
   "fly-app-create": flyAppCreateScript,
   migrate: migrateScript,
   seed: seedScript,
+  "spike-links": spikeLinksScript,
   "spike-time": spikeTimeScript,
   "storage-setup": storageSetupScript,
   "supabase-probe": supabaseProbeScript,
