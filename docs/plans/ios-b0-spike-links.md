@@ -6,7 +6,8 @@ B0 · ios · spike S6 (`docs/plans/B0.md` section 4, order 3). `docs/MILESTONES.
 
 1. **iOS hands the link to Tadayo.** `https://tadayo.app/i#<token>` opens Tadayo rather than Safari, once a build carries `applinks:tadayo.app` in its Associated Domains.
 2. **The link reaches the app whole, token included.** The token is in the fragment, which no server ever sees (T7). The app reads it with `InvitationToken(url:)` (`TadayoCore`, #88).
-3. **Which way SwiftUI hands the link over:** `onOpenURL`, or the browsing activity a universal link arrives as (`onContinueUserActivity` with `NSUserActivityTypeBrowsingWeb`). B1 takes the link the same way.
+3. **Which way SwiftUI hands the link over.** Apple's documentation of `onOpenURL(perform:)` says SwiftUI passes a universal link to the app as a URL, through that modifier, where other frameworks pass it as a browsing activity (`NSUserActivity`). The Lab attaches both `onOpenURL` and `onContinueUserActivity` with `NSUserActivityTypeBrowsingWeb`, so the run shows which one SwiftUI calls when both are there, or whether it calls both. B1 takes the link one way, by one handler: `ios/b1-invitation` takes out the Lab's `labLinkReceipts()`, or feeds `OpenedLinks` from its own handler, so no build holds two link handlers (`docs/plans/ios-b1-clubs.md` section 4, PR 6).
+4. **From a closed app as well as a running one.** The founder taps the link once with Tadayo in the background and once after swiping it away, so iOS starts it for the link. The Lab's list lives in memory only, so after the second tap it holds that one link.
 
 Opening the invitation in full is B1's PR 6, `ios/b1-invitation` (`docs/plans/ios-b1-clubs.md` section 4). That means the invitation's screens: `G02-checking`, then `G02-invitation` or the other G02 states. B1's device checks test them before Gate A. This build reads the link in the Lab only, so it adds no product screen and no state without a render. S6's report says so.
 
@@ -22,9 +23,10 @@ Opening the invitation in full is B1's PR 6, `ios/b1-invitation` (`docs/plans/io
 
 ## 3. Release
 
-1. **Wait for #96.** The release check on `main` refuses the entitlement until #96 merges. Then `main` is merged in here.
-2. **Dry run.** An `ios-release` dry run from this branch (environment `dev`, upload off) archives and checks the build, with no Apple account involved.
+1. **#96 first.** Until #96 merged, the release check on `main` refused the entitlement. Done: #96 merged as `e6df434` at 09:01 UTC on 2026-11-21, and `main` is merged in here (`1827ca2`).
+2. **Dry run.** An `ios-release` dry run from this branch (environment `dev`, upload off) archives and checks the build, with no Apple account involved. Done: run 44888570713 at `1827ca2`, green: the Dev archive (build 5.1) was made with the entitlement in the project, and the archive's check passed. That check doesn't yet require the key, so it shows that no wrong value and no extension holds it, not that the app does (journal block 1.3, Next 6 (b2), adds the requirement).
 3. **Upload, on the founder's yes.** The upload's export step uses Xcode's automatic signing. It must put Associated Domains into the App Store profile, which turns the capability on for the App ID `app.tadayo`; the founder said yes to that at 08:22 UTC on 2026-11-21. If the export fails on the capability, the fallback is for the founder to turn on Associated Domains for the App ID `app.tadayo` in Certificates, Identifiers & Profiles. The run then starts again. `docs/plans/B0.md` section 1 already listed this capability.
+4. **Apple's copy of the site's file.** Since iOS 14 an iPhone reads `apple-app-site-association` from Apple's copy (`app-site-association.cdn-apple.com`), not from `tadayo.app`, and Apple's copy can lag behind the site, whose file has named the app since #91 (2026-11-21). The session can't read Apple's copy: the proxy refuses that host. If Safari opens in the founder's steps, that lag is the first thing to suspect.
 
 ## 4. The founder's steps, on the TestFlight build
 
@@ -34,10 +36,11 @@ Asked once, with the upload. The test link carries a made-up token in the contra
 
 1. Install the new build from TestFlight, open Tadayo, sign in if it asks, and then leave Tadayo.
 2. Send yourself the link in Messages, or paste it into a note.
-3. Long-press the link. The menu should offer to open it in Tadayo.
-4. Tap the link. Tadayo should open, not Safari.
-5. In Tadayo, open the Lab tab, then Links (S6) at the top left. The first line should read either "onOpenURL: an invitation link, its token read and not kept." or "The browsing activity: an invitation link, its token read and not kept." Take a screenshot.
-6. After a link has opened Tadayo, don't tap "tadayo.app" at the top right of the screen. That tells iOS to open later links in Safari. If it happens, long-press a link and choose to open it in Tadayo to undo it.
-7. If Safari opens instead of Tadayo, delete Tadayo, install it again from TestFlight so iOS fetches the site's file again, and repeat steps 3 to 5. Then say what you saw.
+3. Before tapping: once a link has opened Tadayo, iOS shows "tadayo.app" at the top right of the screen. Don't tap it. That tells iOS to open later links in Safari. If it happens, long-press a link and choose to open it in Tadayo to undo it.
+4. Long-press the link. The menu should offer to open it in Tadayo.
+5. Tap the link. Tadayo should open, not Safari.
+6. In Tadayo, open the Lab tab, then Links (S6) at the top left. Each line says which way a link came and what it was, such as "onOpenURL: an invitation link, its token read and not kept." or "The browsing activity: an invitation link, its token read and not kept." Take a screenshot, and say every line. Two lines for one tap would mean both ways took the link, which is an answer too.
+7. Swipe Tadayo away in the app switcher, so it is closed, and tap the link again. Tadayo should start. Open the Lab tab, then Links (S6) again: the list starts empty with each launch, so it should hold one line. Take a second screenshot.
+8. If Safari opens instead of Tadayo, the page says "This invitation isn't available.", since the test link's token matches no invitation. Then delete Tadayo and install it again from TestFlight, so iOS fetches Apple's copy of the site's file again, and repeat steps 4 to 7. Apple's copy can lag behind the site. Then say what you saw.
 
 The web page without the app, and the token kept out of the server's logs, are the api thread's part of the run.

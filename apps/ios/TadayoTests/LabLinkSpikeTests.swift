@@ -54,6 +54,13 @@ final class LabLinkSpikeTests: XCTestCase {
                 XCTAssertFalse(text.contains("tadayo.app/i"), text)
             }
         }
+        // The store as a whole, through its mirror: whatever it holds, the receipts and anything
+        // added to it later, `dump` reaches.
+        var dumped = ""
+        dump(links, to: &dumped)
+        XCTAssertTrue(dumped.contains("invitation"), dumped)
+        XCTAssertFalse(dumped.contains(token), dumped)
+        XCTAssertFalse(dumped.contains("tadayo.app/i"), dumped)
     }
 
     func testTheOtherKindsSayWhatTheyWere() {
