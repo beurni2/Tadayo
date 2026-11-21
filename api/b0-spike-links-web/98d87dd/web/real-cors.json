@@ -1,0 +1,345 @@
+[
+ {
+  "name": "a live link",
+  "address": "https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  "first": {
+   "visible": [
+    "invited"
+   ],
+   "focused": "BODY",
+   "name": "Ben"
+  },
+  "after": null,
+  "console": [],
+  "api": [
+   {
+    "method": "OPTIONS",
+    "port": 8711,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8711,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 200,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": "Origin",
+    "acam": null,
+    "acah": null
+   }
+  ]
+ },
+ {
+  "name": "a link that names nothing",
+  "address": "https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  "first": {
+   "visible": [
+    "unavailable"
+   ],
+   "focused": "BODY",
+   "name": ""
+  },
+  "after": null,
+  "console": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "api": [
+   {
+    "method": "OPTIONS",
+    "port": 8712,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8712,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 404,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": "Origin",
+    "acam": null,
+    "acah": null
+   }
+  ]
+ },
+ {
+  "name": "a failed database",
+  "address": "https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  "first": {
+   "visible": [
+    "failed"
+   ],
+   "focused": "BODY",
+   "name": ""
+  },
+  "after": null,
+  "console": [
+   "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "api": [
+   {
+    "method": "OPTIONS",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 500,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": "Origin",
+    "acam": null,
+    "acah": null
+   }
+  ]
+ },
+ {
+  "name": "a failure, then Retry, a live link",
+  "address": "https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  "first": {
+   "visible": [
+    "failed"
+   ],
+   "focused": "BODY",
+   "name": ""
+  },
+  "after": {
+   "visible": [
+    "invited"
+   ],
+   "focused": "H1: Ben invited you to a club on Taday",
+   "name": "Ben"
+  },
+  "console": [
+   "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "api": [
+   {
+    "method": "OPTIONS",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 500,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": "Origin",
+    "acam": null,
+    "acah": null
+   },
+   {
+    "method": "OPTIONS",
+    "port": 8711,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8711,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 200,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": "Origin",
+    "acam": null,
+    "acah": null
+   }
+  ]
+ },
+ {
+  "name": "a failure, then Retry, a failure",
+  "address": "https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  "first": {
+   "visible": [
+    "failed"
+   ],
+   "focused": "BODY",
+   "name": ""
+  },
+  "after": {
+   "visible": [
+    "failed"
+   ],
+   "focused": "P: Couldn’t check the invitation link",
+   "name": ""
+  },
+  "console": [
+   "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+   "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "api": [
+   {
+    "method": "OPTIONS",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 500,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": "Origin",
+    "acam": null,
+    "acah": null
+   },
+   {
+    "method": "OPTIONS",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8713,
+    "origin": "https://tadayo.app",
+    "referer": null,
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 500,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": "Origin",
+    "acam": null,
+    "acah": null
+   }
+  ]
+ },
+ {
+  "name": "another origin, evil.example",
+  "json": "refused: TypeError: Failed to fetch",
+  "plain": "refused: TypeError: Failed to fetch",
+  "api": [
+   {
+    "method": "OPTIONS",
+    "port": 8711,
+    "origin": "https://evil.example",
+    "referer": "https://evil.example/",
+    "cookie": null,
+    "acrm": "POST",
+    "acrh": "content-type",
+    "status": 204,
+    "acao": "https://tadayo.app",
+    "acac": null,
+    "vary": null,
+    "acam": "POST",
+    "acah": "content-type"
+   },
+   {
+    "method": "POST",
+    "port": 8711,
+    "origin": "https://evil.example",
+    "referer": "https://evil.example/",
+    "cookie": null,
+    "acrm": null,
+    "acrh": null,
+    "status": 400,
+    "acao": null,
+    "acac": null,
+    "vary": null,
+    "acam": null,
+    "acah": null
+   }
+  ]
+ }
+]
