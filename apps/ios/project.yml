@@ -71,12 +71,18 @@ targets:
       - package: TadayoDesign
       - package: TadayoAPI
     # The app group the app and the share extension share, which is also their keychain access
-    # group (ADR-019; TECH-DESIGN section 4). XcodeGen writes the file.
+    # group (ADR-019; TECH-DESIGN section 4). And the app's one associated domain, so an
+    # invitation link, https://tadayo.app/i#<token>, opens the app (spike S6; B1's invitations):
+    # tadayo.app's apple-app-site-association names this app for /i (apps/web), and the release
+    # check lets the app alone hold exactly this value (tools/ci/ios_release_steps.py). The share
+    # extension opens no links. XcodeGen writes the file.
     entitlements:
       path: Tadayo/Tadayo.entitlements
       properties:
         com.apple.security.application-groups:
           - group.app.tadayo
+        com.apple.developer.associated-domains:
+          - applinks:tadayo.app
     info:
       path: Tadayo/Info.plist
       properties:
