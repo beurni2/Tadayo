@@ -337,7 +337,7 @@ struct InvitationRosterScreen: View {
                 .buttonStyle(.tadayoPrimary(isBusy: isAccepting))
                 .disabled(isAccepting)
                 Button("invitation.notNow", action: actions.leave)
-                    .buttonStyle(.tadayoText)
+                    .buttonStyle(.tadayoTextUnderPrimary)
                     .disabled(isAccepting)
             }
         }

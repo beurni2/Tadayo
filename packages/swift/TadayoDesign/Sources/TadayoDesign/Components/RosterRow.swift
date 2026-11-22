@@ -22,9 +22,13 @@ import SwiftUI
 /// In an invitation's roster (`invitationRoster`, handoff 8's frame 15) a proposed person's row
 /// has no weekdays: under the name, "Proposed by {name}" in the weekdays' place when the proposer
 /// is known, and the Proposed tag (`proposedMemberTag`) 8 under the words, leading aligned, at
-/// every text size. VoiceOver reads "Debby. You. Proposed by Ben. Proposed." on the viewer's own
-/// row (handoff 9's `handoff9.proposed.ownRow.vo`), "Maya. Proposed by Ben. Proposed."
-/// (`proposed.row.vo`) on another's, or "Maya. Proposed." with no proposer.
+/// every text size. Its avatar's top is level with the words' top, as handoff 8's frames 14 and
+/// 15 and handoff 9's frame 6 draw it (in frame 6 the avatar from 400 and the name's glyphs from
+/// 402), not centred on the taller words; at the accessibility sizes it keeps level with the
+/// name's first line, as every row's does. VoiceOver reads "Debby. You. Proposed by Ben.
+/// Proposed." on the viewer's own row (handoff 9's `handoff9.proposed.ownRow.vo`), "Maya.
+/// Proposed by Ben. Proposed." (`proposed.row.vo`) on another's, or "Maya. Proposed." with no
+/// proposer.
 public struct RosterRow: View {
     /// How a person who isn't a member yet is shown.
     public enum Proposal: Sendable, Equatable {
@@ -57,10 +61,15 @@ public struct RosterRow: View {
     }
 
     public var body: some View {
-        HStack(alignment: typeSize.isAccessibilitySize ? .top : .center, spacing: 0) {
+        HStack(
+            alignment: typeSize.isAccessibilitySize || proposal != nil ? .top : .center,
+            spacing: 0
+        ) {
             Avatar(name: name, photo: photo, size: .row)
                 .alignmentGuide(.top) {
-                    $0[VerticalAlignment.center] - TypeRole.row.firstLineMiddle(atSize: nameSize)
+                    typeSize.isAccessibilitySize
+                        ? $0[VerticalAlignment.center]
+                            - TypeRole.row.firstLineMiddle(atSize: nameSize) : $0[.top]
                 }
                 .padding(.trailing, Size.personRowTextInset - AvatarSize.row.rawValue)
             VStack(alignment: .leading, spacing: Spacing.xs) {

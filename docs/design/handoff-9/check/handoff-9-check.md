@@ -120,6 +120,12 @@ Two things the snapshots showed beside frames 3 to 5, which are not differences 
 - **The paste step's field** sat about 28 points higher than handoff 4's frame and frames 3 to 5 draw it: the app used A02-email's gap under the subtitle. It now sits where the frames draw it (`SetupGap.linkField`).
 - **The paste control** draws nothing in a snapshot, which can't render the system's secure control. The UI test finds it on the paste step, with its label (Known differences, handoffs 1 to 4, native controls).
 
+Two more beside frame 6, which handoff 8's frames 9 and 15 draw the same way:
+- **Not now** sat at the leading edge under Accept this roster, where the frames centre it. Handoff 7 put text actions at the leading edge, and handoff 9's answer on Leave club keeps that for Leave club alone (`handoff9.replaces.leaveClub`), so Not now is now centred under Accept (`TextActionStyle.Placement.underPrimary`).
+- **A proposed person's avatar** was centred on their three lines (name, "Proposed by", the tag), about 21 points lower than the frames, which put its top level with the name's. It now sits there (`RosterRow`), and at the accessibility sizes it keeps level with the name's first line, as before.
+
+Seen and kept: frame 1 puts its line 43 points under the title, where handoff 8's frame 11 (`G05-club-details-failed`) puts it 36 under; the app's pushed failures share frame 11's form (`ClubLoadFailure`), 27 under with iOS 26's taller bar, so `G02-checking-failed` keeps it. The paste step's last line sits about 30 points higher than frames 3 to 5 draw it only because the paste control above it draws nothing in a snapshot.
+
 ## 5. FQ137: the founder's answer
 
 FQ137 asked what `G03-declined` says when the inviter has left the club. Its default kept handoff 1's "You can close this invitation. Ben can start a new invitation later.", which is untrue then. Handoff 9 gives a line that promises nothing of the inviter, "You can close this invitation." (`handoff9.invitation.ended.close`). The founder chose "Use the new line" on a card in the ios thread at 18:45 UTC on 2026-11-22. It is recorded under FQ137 in `docs/QUESTIONS.md`. Only the app's string changes; the API still names the inviter (`InvitationEnded`), and `G03-declined` no longer shows the name.
