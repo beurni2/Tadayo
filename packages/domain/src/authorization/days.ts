@@ -127,7 +127,7 @@ export interface ClubDayFacts {
 const NONE: DayChoice = { open: null, next: null };
 
 /** The name members see of the day's star (FQ75), or null when there is none. */
-function starNameOf(day: DayFacts): string | null {
+export function starNameOf(day: DayFacts): string | null {
   return day.starIntervalState === "active" ? day.starName : day.starEndedName;
 }
 
@@ -135,8 +135,11 @@ function before(a: Temporal.Instant, b: Temporal.Instant): boolean {
   return Temporal.Instant.compare(a, b) < 0;
 }
 
-/** Whether the day can be chosen at all, whatever the time: scheduled, not held, with a star to name. */
-function placeable(day: DayFacts): boolean {
+/**
+ * Whether the day can be chosen at all, whatever the time: scheduled, not held, with a star to name. The
+ * authorization module's rule of who may add to a day (./add-target.ts) offers a next day by it too.
+ */
+export function placeable(day: DayFacts): boolean {
   return (
     day.status === "scheduled" &&
     notBeforeReveal(day.starLeftAt, day.revealAt) &&
@@ -146,6 +149,15 @@ function placeable(day: DayFacts): boolean {
 }
 
 function chosen(day: DayFacts, phase: ChosenPhase): ChosenDay {
+  return { ...placed(day, phase), phase };
+}
+
+/**
+ * The day as the contract's Occurrence names it, at `phase`: its star by FQ75's rule, the avatar's version only
+ * while both the star's interval and account are active. Throws for a day with no star to name, which no
+ * answer may send nameless.
+ */
+export function placed(day: DayFacts, phase: PlacedPhase): PlacedDay {
   const name = starNameOf(day);
   if (name === null) throw new Error("authorization: a day with no star to name was chosen");
   return {

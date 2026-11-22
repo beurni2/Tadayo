@@ -64,6 +64,26 @@
 //   the read does; the page past 36 drops and its
 //   cursor (B5's getOccurrence); and a cell where the star has drops of their own on the open day (the
 //   world's two drops are friends'; tests/src/db/home.test.ts holds the star's section on Postgres);
+// - for the reservations' two routes (B2's reservations slice, done): in every cell, createReservation with
+//   no body (the contract refuses it) and its guessed and malformed days with a photo, and releaseReservation
+//   of the slot Ben held in the world and gave back (bindings.ts), which only Ben gets back, still released.
+//   Then, in every phase, a table on the cell's day judged by reservation.ts from the world's rows before each
+//   request and held to its answer in the rows after it: a photo slot Cleo held as a member and never gave
+//   back, whose row still says live though it lapsed before any phase, given back by every role (only Cleo's
+//   first interval gets it back, expired; Cleo rejoined in a new interval and everyone else get the neutral
+//   NOT_FOUND, with nothing settled; T9, T14); the slot held in the phase before given back after it lapsed
+//   at the reveal (expired), twice; two photos, three links and three photos, so each role meets
+//   its own limits (the star's six and two, anyone else's three, two and one; addendum 2, T17), QUOTA_FULL
+//   first; the first one's retry under its key (the same bytes) and another body under it
+//   (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back while live. Each role's test counts
+//   the slots it held, gave back and saw lapse, and one test names the five roles that held any, with the
+//   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"), as one counts
+//   who got Cleo's slot back. No matrix role joins after the day closes: Q06's not-found for a day that closed
+//   before the caller's interval began is held on Postgres and by the judge's tests. What passes
+//   through no cell, and is held on Postgres (tests/src/db/reservations.test.ts) and by reservation.test.ts's
+//   judge tests: MEMBERSHIP_CHANGED (no cell's star leaves before the reveal), a consumed slot (no drop is
+//   committed through the app before B3), two phones racing for the last slot (Q10) and the cutoff under the
+//   lock (T3);
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header);
 // - for the schedule's routes built by B2's schedule slice (getSchedule, chooseScheduleDays and
@@ -165,13 +185,15 @@ import { HOME_JUDGED } from "./home.ts";
 import { INVITATION_JUDGED } from "./invitation.ts";
 import { LEAVE_JUDGED } from "./leave.ts";
 import { MEMBERS_JUDGED } from "./members.ts";
+import { RESERVATION_JUDGED } from "./reservation.ts";
 import { ROSTER_JUDGED } from "./roster.ts";
 import { SCHEDULE_JUDGED } from "./schedule.ts";
 
 /**
  * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice),
  * the roster (B2's generation slice), the club's two routes (B1's first slice), the roster's four (B1's
- * second slice) and its two decisions and the invitation's three (B1's third slice).
+ * second slice) and its two decisions and the invitation's three (B1's third slice), Home (B2's Home slice),
+ * the leave (B1's fourth slice) and the reservations' two (B2's reservations slice).
  */
 export const JUDGED: ReadonlySet<string> = new Set([
   ...ACCOUNT_JUDGED,
@@ -182,6 +204,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...ROSTER_JUDGED,
   ...INVITATION_JUDGED,
   ...LEAVE_JUDGED,
+  ...RESERVATION_JUDGED,
 ]);
 
 const GATE =
@@ -349,6 +372,28 @@ export const HOME = Object.freeze({
     `NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
+/** createReservation (B2's reservations slice): reservation.ts's reserveOutcome, reserveExpected and heldProblems. */
+export const RESERVATION = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; then as reservation.ts's reserveOutcome says from the world's " +
+    "rows: the neutral NOT_FOUND to anyone without an active interval in the day's club, in a suspended club or on " +
+    "a day that isn't scheduled; MEMBERSHIP_CHANGED with no fact on a day whose star left or asked to delete before " +
+    "its reveal; OCCURRENCE_CLOSED with the day at that instant and the star's next day from the reveal on; " +
+    "QUOTA_FULL, then EXTERNAL_LIMIT or PHOTO_LIMIT, with the day, the caller's own allowance for their role there " +
+    "and the next day; or 201 with a new live slot of the caller's, lapsing 30 minutes on or at the reveal, and the " +
+    "allowance with it counted; the same bytes to its retry under its key and IDEMPOTENCY_CONFLICT to another body " +
+    `under that key, a refusal leaving nothing (${GATE})`,
+});
+
+/** releaseReservation (B2's reservations slice): reservation.ts's releaseOutcome and releasedProblems. */
+export const RELEASE_RESERVATION = Object.freeze({
+  answer:
+    "200 with the ReleasedReservation, to the account whose active interval holds the slot, in a club that isn't " +
+    "suspended, on a day that is scheduled: released while it is live, expired once it lapsed, or as it ended, the " +
+    "caller's own drop that used it when consumed and the caller's own allowance with it off the counts, the same " +
+    `again; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+});
+
 export const ROWS: Readonly<Record<string, unknown>> = {
   acceptInvitation: INVITATION_ACCEPT,
   approveRoster: ROSTER_DECISION,
@@ -362,7 +407,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   createDrop: NONE,
   createInvitation: CREATE_INVITATION,
   createReport: NONE,
-  createReservation: NONE,
+  createReservation: RESERVATION,
   createUpload: NONE,
   declineRoster: ROSTER_DECISION,
   deleteAccount: NONE,
@@ -400,7 +445,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   previewInvitationWeb: INVITATION_WEB,
   proposeRoster: PROPOSE_ROSTER,
   registerDevice: NONE,
-  releaseReservation: NONE,
+  releaseReservation: RELEASE_RESERVATION,
   removeDevice: NONE,
   removeDrop: NONE,
   removeFavourite: NONE,

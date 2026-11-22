@@ -51,6 +51,7 @@ const here: Targets = {
   proposal: "spr_here",
   revision: "rev_here",
   invitation: "inv_here",
+  reservation: "rsv_here",
 };
 const elsewhere: Targets = {
   club: "clb_there",
@@ -61,6 +62,7 @@ const elsewhere: Targets = {
   proposal: "spr_there",
   revision: "rev_there",
   invitation: "inv_there",
+  reservation: "rsv_there",
 };
 const LATER = Temporal.Instant.from("2026-11-08T07:00:00Z");
 

@@ -38,6 +38,7 @@ import {
 } from "./clubs/roster.ts";
 import { leaveClubHandler } from "./clubs/leave.ts";
 import type { Deps, Handler } from "./deps.ts";
+import { createReservationHandler, releaseReservationHandler } from "./drops/reservations.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
 import { fastifyLogging, logEachRequest } from "./logging.ts";
@@ -77,7 +78,8 @@ export const BODY_LIMIT = 128 * 1024;
  * 150 bytes, so 1 KiB. An invitation's token is at most 128 characters, 768 bytes with each written as an
  * escape, so a preview's body is under 850 bytes and its limit 2 KiB; accepting adds an id of 64 characters
  * and a version, under 1,450 bytes in all, so 3 KiB (`clubs/invitation.test.ts`). A leave's is one choice,
- * under 250 bytes, so 1 KiB (`clubs/leave.test.ts`).
+ * under 250 bytes, so 1 KiB (`clubs/leave.test.ts`). A reservation's is one media class, under 200 bytes
+ * written the same way, so 1 KiB (`drops/reservations.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
@@ -90,6 +92,7 @@ const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   previewInvitation: 2 * 1024,
   acceptInvitation: 3 * 1024,
   leaveClub: 1024,
+  createReservation: 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
 };
@@ -167,6 +170,8 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     getSchedule: getScheduleHandler(deps),
     chooseScheduleDays: chooseScheduleDaysHandler(deps),
     confirmScheduleDays: confirmScheduleDaysHandler(deps),
+    createReservation: createReservationHandler(deps),
+    releaseReservation: releaseReservationHandler(deps),
   };
 }
 

@@ -23,7 +23,7 @@ import {
 import { created, IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
-import { occurrenceBody } from "./list.ts";
+import { occurrenceBody } from "../bodies.ts";
 
 /** The contract's `ClubDetail` without `server_now`: what `createClub`'s receipt keeps. */
 export function clubDetailBody(detail: ClubDetail): { readonly [key: string]: Json } {

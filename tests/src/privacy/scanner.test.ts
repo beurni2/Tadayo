@@ -80,7 +80,7 @@ function reservation(
   state: WorldReservation["state"],
   expiresAt: Temporal.Instant,
 ): WorldReservation {
-  return { interval, day: "occ_sat", media: "photo", state, expiresAt };
+  return { interval, day: "occ_sat", media: "photo", state, expiresAt, drop: null };
 }
 
 function day(club: string, star: string, reveal: string, close: string, collecting: string): WorldDay {

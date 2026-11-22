@@ -6,8 +6,9 @@
 // string (T14's one-answer rule; the gate's tests compare them byte for byte).
 
 import { ERRORS, statusOf, type ErrorCodeName } from "@tadayo/contracts";
-import type { Refused } from "@tadayo/domain";
+import type { Json, Refused } from "@tadayo/domain";
 import type { FastifyReply } from "fastify";
+import { allowanceBody, occurrenceBody } from "./bodies.ts";
 
 /** Every answer with a body is for the caller alone (the contract; T11, T12). */
 export const NO_STORE = "private, no-store";
@@ -17,6 +18,12 @@ export const JSON_TYPE = "application/json; charset=utf-8";
 export interface ErrorFacts {
   /** The first bad field of the request, by name: never its value. */
   readonly field?: string;
+  /** The day the request asked for, as the contract's Occurrence (T4). */
+  readonly target?: Json;
+  /** The same person's next day, for the person to confirm, as the contract's Occurrence (T4). */
+  readonly next_target?: Json;
+  /** The caller's own allowance in `target`, as the contract's Allowance (T15, T17). */
+  readonly allowance?: Json;
   readonly current_version?: number;
   /** The newer revision or proposal that replaced the one the request named. */
   readonly current_id?: string;
@@ -38,10 +45,21 @@ function isErrorCode(code: string): code is ErrorCodeName {
   return Object.hasOwn(ERRORS, code);
 }
 
-/** A command's refusal as the contract's answer; a code that isn't the contract's is a bug, which is a 500. */
+/**
+ * A command's refusal as the contract's answer, each fact it names in the contract's shape, an explicit field
+ * list (T55); a code that isn't the contract's is a bug, which is a 500.
+ */
 export function refusal(reply: FastifyReply, refused: Refused): FastifyReply {
   if (!isErrorCode(refused.code)) throw refused;
-  return problem(reply, refused.code, refused.facts);
+  const { field, target, next_target: next, allowance, current_version: version, current_id: current } = refused.facts;
+  return problem(reply, refused.code, {
+    ...(field === undefined ? {} : { field }),
+    ...(target === undefined ? {} : { target: occurrenceBody(target) }),
+    ...(next === undefined ? {} : { next_target: occurrenceBody(next) }),
+    ...(allowance === undefined ? {} : { allowance: allowanceBody(allowance) }),
+    ...(version === undefined ? {} : { current_version: version }),
+    ...(current === undefined ? {} : { current_id: current }),
+  });
 }
 
 /** A success: `body` as JSON, which only the caller may keep. */

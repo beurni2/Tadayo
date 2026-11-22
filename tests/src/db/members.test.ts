@@ -69,16 +69,20 @@ describe("the roster in a club's first days (the contract's first_days scene; FQ
         timezone: "America/New_York",
         membershipId: w.members[0],
       });
-      // Maya's next day, whole: the contract's Occurrence, its instants resolved in the club's zone.
+      // Maya's next day, whole: the contract's Occurrence, its instants resolved in the club's zone. The
+      // instants are compared as their strings: `toMatchObject` sees no fields in a Temporal.Instant, so any
+      // two instants would match there.
       const maya = found?.members[1]?.nextDay;
       expect(maya).toMatchObject({
         clubId: w.club,
         star: { membershipId: w.members[1], displayName: "Maya", avatarVersion: null },
         localDate: "2026-11-10",
-        revealAt: at("2026-11-10T12:00:00Z"),
-        closeAt: at("2026-11-11T06:00:00Z"),
         phase: "collecting",
       });
+      expect([maya?.revealAt.toString(), maya?.closeAt.toString()]).toEqual([
+        "2026-11-10T12:00:00Z",
+        "2026-11-11T06:00:00Z",
+      ]);
       // The route's body of this scene is the contract's `Members` too.
       if (found === null) throw new Error("refused");
       expect(Members.safeParse(membersBody(at(THURSDAY), found)).success).toBe(true);

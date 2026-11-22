@@ -14,7 +14,7 @@ import { contractInstant, listMembers, type Json, type Roster } from "@tadayo/do
 import { ok, problem } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
-import { occurrenceBody } from "./list.ts";
+import { occurrenceBody } from "../bodies.ts";
 import { rosterRevisionBody } from "./roster.ts";
 
 /** The contract's `Members`: `now` is the clock's sample, whole seconds, rounded down. */
