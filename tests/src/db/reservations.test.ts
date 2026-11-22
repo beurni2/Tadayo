@@ -254,7 +254,11 @@ const counterOf = async (tx: WorldTx, day: string, interval: string) =>
        WHERE occurrence_id = ${day} AND interval_id = ${interval}`
   )[0];
 
-/** Another connection holding `interval`'s counter row in `day` `FOR UPDATE`, writing nothing, until released. */
+/**
+ * Another connection holding `interval`'s counter row in `day` `FOR NO KEY UPDATE`, the command's own lock on it,
+ * writing nothing, until released. A key check (`FOR KEY SHARE`) never waits on that mode, so only a command that
+ * locks or writes the row waits for it.
+ */
 async function holdingCounter(day: string, interval: string): Promise<{ pid: number; release: () => Promise<void> }> {
   let release = (): void => undefined;
   const released = new Promise<void>((resolve) => (release = resolve));
@@ -263,7 +267,7 @@ async function holdingCounter(day: string, interval: string): Promise<{ pid: num
   const done = db.begin(async (tx) => {
     const [row] = await tx<{ pid: number }[]>`
       SELECT pg_catalog.pg_backend_pid() AS pid FROM app.contribution_counters
-       WHERE occurrence_id = ${day} AND interval_id = ${interval} FOR UPDATE`;
+       WHERE occurrence_id = ${day} AND interval_id = ${interval} FOR NO KEY UPDATE`;
     if (row === undefined) throw new Error("holdingCounter: no such counter");
     held(row.pid);
     await released;
@@ -681,8 +685,9 @@ describe("the cutoff is the reveal, read after the locks (T3, T4, T18)", () => {
           { userId: d.w.ben.user, key: randomUUID(), occurrenceId: d.w.day, mediaClass: "photo" },
           reservationBody,
         );
-      // Ben's first slot makes his counter's row; then another connection holds that row alone, with no write,
-      // so only the command's own lock on it can make it wait (a key check never waits on a row only locked).
+      // Ben's first slot makes his counter's row; then another connection holds that row `FOR NO KEY UPDATE`,
+      // with no write, so only the command's own lock on it (or a write to it) can make it wait: a key check
+      // (`FOR KEY SHARE`) never waits on that mode.
       clock.set(REVEAL.subtract({ seconds: 2 }));
       await db.begin((tx) => run(tx as unknown as WorldTx));
       clock.set(REVEAL.subtract({ seconds: 1 }));

@@ -4,8 +4,9 @@
 // T9, T14, T15, T17, T18, T19, T20; FQ50, FQ63; docs/plans/api-b2-reservations.md): what each role must get,
 // judged from the world's rows and the time alone, apart from the statements the routes run.
 //
-// - Who may add to a day: an account that is active, with an active interval in the day's club, a club that
-//   isn't suspended, and a day that is scheduled (`adderOf`). Everyone else the gate lets through gets the
+// - Who may add to a day: an account that is active, with an active interval in the day's club that began
+//   before the day closed (Q06: a day that closed before it is another membership's, never this one's), a club
+//   that isn't suspended, and a day that is scheduled (`adderOf`). Everyone else the gate lets through gets the
 //   neutral not-found, byte for byte.
 // - A day whose star's interval ended, or whose star asked to delete their account, before its reveal never
 //   opens: MEMBERSHIP_CHANGED, with no fact (the plan's section 0.5).
@@ -17,10 +18,12 @@
 //   used, then EXTERNAL_LIMIT for a link or PHOTO_LIMIT for a photo, each with the day, the allowance and the
 //   next day; otherwise 201 with a new slot of the caller's, lapsing 30 minutes on or at the reveal if that
 //   comes first, in whole seconds, and the allowance with it counted (`heldProblems` holds the row it made).
-// - A release: the neutral not-found unless the slot is of the caller's active interval in a club that isn't
-//   suspended, on a day that is scheduled (held and closed days included); then its state (released when still
-//   live, expired once lapsed, or as it ended), the caller's own drop that used it when consumed (T20), and the
-//   caller's allowance with it off the counts.
+// - A release: the neutral not-found unless the slot is of the caller's active interval, by the same rule as
+//   adding (`adderOf`, Q06 included), in a club that isn't suspended, on a day that is scheduled (held and
+//   closed days included); then its state (released when still live, expired once lapsed, or as it ended), the
+//   caller's own drop that used it when consumed (T20), and the caller's allowance with it off the counts.
+// - A slot held, or a release, may settle the caller's own lapsed slots in that day and nothing else; a refusal
+//   rolls back whatever it settled (T18).
 //
 // The leak scanner reads the same answers (scanner.ts: an allowance counts no more than the viewer's own, with
 // their own role's limits; a Reservation's day of a club they are in); it can't judge a refusal's order, an
