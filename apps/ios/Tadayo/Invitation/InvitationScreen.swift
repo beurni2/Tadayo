@@ -284,7 +284,9 @@ struct InvitationRosterScreen: View {
     var body: some View {
         ScrollViewReader { scroll in
             column
-                .onChange(of: line, initial: true) { _, shown in
+                // A screen first laid out with the line (a snapshot) opens at the column's foot.
+                .defaultScrollAnchor(line == nil ? nil : .bottom, for: .initialOffset)
+                .onChange(of: line) { _, shown in
                     guard shown != nil else { return }
                     scroll.scrollTo(Self.failureID, anchor: .bottom)
                     // Again in the main queue's next turn, once the line has its place.

@@ -187,6 +187,25 @@ final class InvitationSnapshotTests: XCTestCase {
             "\(elements)")
     }
 
+    /// A failed Accept's line, which six people's rows with the tag put below the screen's edge,
+    /// is scrolled into view above Accept as it comes, as frame 9 of handoff 8 draws it.
+    func testAFailedAcceptsLineIsScrolledIntoViewAboveAccept() {
+        let layout = AccessibilityElements.layout(
+            of: FailsOnceShown(failure: .network) { failure in
+                self.invitation(.open(Rosters.sunday), failure: failure)
+            })
+        let elements = layout.elements
+        let line =
+            elements.first {
+                $0.label == "Couldn’t accept this roster. Check your connection and try again."
+            }?.frame ?? .zero
+        let accept = elements.first { $0.label == "Accept this roster" }?.frame ?? .zero
+        XCTAssertGreaterThan(line.height, 0, "\(elements)")
+        XCTAssertGreaterThan(accept.height, 0, "\(elements)")
+        XCTAssertLessThanOrEqual(line.maxY, accept.minY, "\(elements)")
+        XCTAssertGreaterThanOrEqual(line.minY, layout.safeArea.top, "\(elements)")
+    }
+
     func testAcceptAndNotNowAreButtons() {
         let elements = AccessibilityElements.of(
             invitation(.open(Rosters.sunday), failure: .network))
@@ -281,6 +300,22 @@ final class InvitationSnapshotTests: XCTestCase {
     // MARK: Helpers
 
     /// `screen` pushed onto a stack, as the tab pushes it.
+    /// `content` with no failure, then, a moment after it shows, with `failure`, as an answer
+    /// comes to a screen already on show.
+    private struct FailsOnceShown<Content: View>: View {
+        let failure: InvitationModel.Failure
+        @ViewBuilder let content: (InvitationModel.Failure?) -> Content
+        @State private var shown: InvitationModel.Failure?
+
+        var body: some View {
+            content(shown)
+                .task {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    shown = failure
+                }
+        }
+    }
+
     private func pushed(_ screen: some View) -> some View {
         NavigationStack(path: .constant([ClubRoute.invitation])) {
             Color.clear
