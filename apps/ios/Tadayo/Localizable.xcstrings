@@ -601,6 +601,114 @@
         }
       }
     },
+    "create.continue" : {
+      "comment" : "handoff 8 handoff8.create.continue",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue to invitations"
+          }
+        }
+      }
+    },
+    "create.drafts" : {
+      "comment" : "2.1's G01-create render: the note beside the shield (see create.title)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Before activation, anything you prepare stays in your private Drafts."
+          }
+        }
+      }
+    },
+    "create.failed.network" : {
+      "comment" : "handoff 8 copy-contracts handoff8.create.failed.network (frame 7)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t create the club. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "create.failed.refused" : {
+      "comment" : "handoff 8 copy-contracts handoff8.create.failed.refused",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t create the club. Try again."
+          }
+        }
+      }
+    },
+    "create.nameLabel" : {
+      "comment" : "handoff 8 handoff8.create.field, and 2.1's G01-create render: the field's visible label and its VoiceOver label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Club name"
+          }
+        }
+      }
+    },
+    "create.navTitle" : {
+      "comment" : "handoff 4 invite.nav: G01-create's, G01-invite-people's and their states' bar title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a club"
+          }
+        }
+      }
+    },
+    "create.roster" : {
+      "comment" : "2.1's G01-create render (see create.title)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite the people you want here. Everyone agrees to the same roster before the club starts."
+          }
+        }
+      }
+    },
+    "create.subtitle" : {
+      "comment" : "2.1's G01-create render (see create.title)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a private club with two to six people."
+          }
+        }
+      }
+    },
+    "create.title" : {
+      "comment" : "2.1's G01-create render: kept where handoff 8's frame 7 draws handoff8.create.title, until the next brief says which (docs/plans/ios-b1-create.md section 3; ios-lane-needs item 66)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your people, together."
+          }
+        }
+      }
+    },
     "details.footer" : {
       "comment" : "handoff 6 details.footer ({memberCountText} · {clubZoneName}), never the zone-omitted form; the members list's first footer line too (handoff 4 members.footer.one and .other); %1$@ is details.memberCount, %2$@ the club's zone; the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
       "extractionState" : "manual",
@@ -1021,6 +1129,426 @@
         }
       }
     },
+    "invite.accepted" : {
+      "comment" : "handoff 4 invite.accepted",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accepted"
+          }
+        }
+      }
+    },
+    "invite.body" : {
+      "comment" : "handoff 4 invite.body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each person gets a separate link."
+          }
+        }
+      }
+    },
+    "invite.createInvitation" : {
+      "comment" : "handoff 2 screen-copy, G01-invite-people-add's secondary button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create an invitation"
+          }
+        }
+      }
+    },
+    "invite.createNew" : {
+      "comment" : "handoff 4 invite.createNew",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create new link"
+          }
+        }
+      }
+    },
+    "invite.createNew.failed.network" : {
+      "comment" : "Built from spec: invite.createNew failure's first sentence with handoff 8's network line; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t create a new invitation link for %@. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "invite.createNew.failed.refused" : {
+      "comment" : "handoff 4 invite.createNew.Alex.failure: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t create a new invitation link for %@. Try again."
+          }
+        }
+      }
+    },
+    "invite.createNew.label" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.new.vo: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create new link for %@"
+          }
+        }
+      }
+    },
+    "invite.createNew.success" : {
+      "comment" : "handoff 4 invite.createNew.Alex.success: said once; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New invitation link created for %@."
+          }
+        }
+      }
+    },
+    "invite.done" : {
+      "comment" : "handoff 4 common.done: the visible words, and Voice Control's",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done for now"
+          }
+        }
+      }
+    },
+    "invite.done.label" : {
+      "comment" : "handoff 4 invite.done.vo: Done for now's VoiceOver label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish managing invitations for now."
+          }
+        }
+      }
+    },
+    "invite.expired" : {
+      "comment" : "Built from spec, made as handoff 4's Link revoked is (docs/plans/ios-b1-create.md section 2; ios-lane-needs item 65)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link expired"
+          }
+        }
+      }
+    },
+    "invite.more.label" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.more.vo: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More options for %@’s invitation"
+          }
+        }
+      }
+    },
+    "invite.notShared" : {
+      "comment" : "handoff 4 invite.notShared",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not shared"
+          }
+        }
+      }
+    },
+    "invite.private" : {
+      "comment" : "handoff 4 invite.private (handoff8.links.private)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only you can see this list."
+          }
+        }
+      }
+    },
+    "invite.revoke.label" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.revoke.vo: the More menu's Revoke link; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoke link for %@"
+          }
+        }
+      }
+    },
+    "invite.revoked" : {
+      "comment" : "handoff 4 invite.revoked",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link revoked"
+          }
+        }
+      }
+    },
+    "invite.row.label" : {
+      "comment" : "handoff 4 invite.row.{name}.vo and handoff8.links.used.row.vo: {name}. {status}.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@."
+          }
+        }
+      }
+    },
+    "invite.row.label.ongoing" : {
+      "comment" : "invite.row.label for a status that ends in its own ellipsis (handoff 8 revokeLink.pending, \"Revoking link…\"): {name}. {status}, with no full stop after the ellipsis",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@"
+          }
+        }
+      }
+    },
+    "invite.share.label" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.share.vo: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share link for %@"
+          }
+        }
+      }
+    },
+    "invite.shareAgain" : {
+      "comment" : "handoff 4 invite.shareAgain (handoff8.links.shareAgain)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share again"
+          }
+        }
+      }
+    },
+    "invite.shareAgain.label" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.shareAgain.vo: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share again for %@"
+          }
+        }
+      }
+    },
+    "invite.shareLink" : {
+      "comment" : "handoff 4 invite.shareLink",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share link"
+          }
+        }
+      }
+    },
+    "invite.shared" : {
+      "comment" : "handoff 4 invite.shared: a share completed, never delivered (FQ67)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared"
+          }
+        }
+      }
+    },
+    "invite.title" : {
+      "comment" : "handoff 4 invite.title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite your people"
+          }
+        }
+      }
+    },
+    "invite.used" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.used.status",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs to accept again"
+          }
+        }
+      }
+    },
+    "invite.used.missing" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.used.missing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation link isn’t saved on this device."
+          }
+        }
+      }
+    },
+    "invite.used.reopen" : {
+      "comment" : "handoff 8 copy-contracts handoff8.links.used.reopen: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ can reopen the invitation already received."
+          }
+        }
+      }
+    },
+    "inviteName.body" : {
+      "comment" : "handoff 2 screen-copy, G01-invite-name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make a separate link for each person."
+          }
+        }
+      }
+    },
+    "inviteName.create" : {
+      "comment" : "handoff 8 createInvitation.button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create link and share"
+          }
+        }
+      }
+    },
+    "inviteName.failed.network" : {
+      "comment" : "Built from spec: createInvitation.createFailure's first sentence with handoff 8's network line (\"Every network failure adds Check your connection and try again.\"); %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t create the invitation link for %@. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "inviteName.failed.refused" : {
+      "comment" : "handoff 8 createInvitation.createFailure: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t create the invitation link for %@. Try again."
+          }
+        }
+      }
+    },
+    "inviteName.nameLabel" : {
+      "comment" : "handoff 8 createInvitation.nameLabel (handoff 2's frame draws a straight apostrophe)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Person’s name"
+          }
+        }
+      }
+    },
+    "inviteName.navTitle" : {
+      "comment" : "handoff 2 screen-copy, G01-invite-name's bar title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create an invitation"
+          }
+        }
+      }
+    },
+    "inviteName.noContacts" : {
+      "comment" : "handoff 2 screen-copy, G01-invite-name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No contacts access needed."
+          }
+        }
+      }
+    },
+    "inviteName.title" : {
+      "comment" : "handoff 2 screen-copy, G01-invite-name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who is it for?"
+          }
+        }
+      }
+    },
     "load.details.loading" : {
       "comment" : "handoff 8 load.details.loading",
       "extractionState" : "manual",
@@ -1053,6 +1581,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn’t load club details."
+          }
+        }
+      }
+    },
+    "load.invitations.loading" : {
+      "comment" : "handoff 8 copy-contracts handoff8.load.invitations.loading",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading invitations…"
+          }
+        }
+      }
+    },
+    "load.invitations.retryHint" : {
+      "comment" : "handoff 8 copy-contracts handoff8.load.invitations.retryHint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try loading invitations again."
+          }
+        }
+      }
+    },
+    "load.invitations.title" : {
+      "comment" : "handoff 8 copy-contracts handoff8.load.invitations.title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t load invitations."
           }
         }
       }
@@ -1305,6 +1869,102 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start your club."
+          }
+        }
+      }
+    },
+    "revoke.body" : {
+      "comment" : "handoff 8 revokeLink.confirmationBody: both are the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ won’t be able to use this link. You can create a new link for %2$@ later."
+          }
+        }
+      }
+    },
+    "revoke.cancel" : {
+      "comment" : "handoff 8 revokeLink.cancel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep link"
+          }
+        }
+      }
+    },
+    "revoke.confirm" : {
+      "comment" : "handoff 8 revokeLink.confirm, and the More menu's item",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoke link"
+          }
+        }
+      }
+    },
+    "revoke.failed" : {
+      "comment" : "handoff 8 revokeLink.knownFailure: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t revoke %@’s invitation link. Try again."
+          }
+        }
+      }
+    },
+    "revoke.pending" : {
+      "comment" : "handoff 8 revokeLink.pending: the row's status while its revoke is on its way",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoking link…"
+          }
+        }
+      }
+    },
+    "revoke.success" : {
+      "comment" : "handoff 8 revokeLink.success: said once; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@’s invitation link was revoked."
+          }
+        }
+      }
+    },
+    "revoke.title" : {
+      "comment" : "handoff 8 revokeLink.confirmationTitle: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoke %@’s invitation link?"
+          }
+        }
+      }
+    },
+    "revoke.uncertain" : {
+      "comment" : "handoff 8 revokeLink.uncertainNetworkFailure: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t confirm that %@’s invitation link was revoked. Check your connection and try again."
           }
         }
       }

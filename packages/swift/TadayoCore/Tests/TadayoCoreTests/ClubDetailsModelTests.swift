@@ -404,6 +404,97 @@ import Testing
         #expect(Set(clubs.calls) == ["members club_sunday", "schedule club_sunday"])
     }
 
+    // MARK: The kept invitation links (ADR-037)
+
+    /// A book holding Sam's link in `club_sunday`, kept before any read.
+    func keptSam() -> InvitationLinkBook {
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: Sunday.account)
+        return book
+    }
+
+    func samsLink(_ book: InvitationLinkBook) -> KeptInvitationLink? {
+        book.link(for: "cand_sam", club: "club_sunday", account: Sunday.account)
+    }
+
+    @Test func aMembersAnswerSettlesTheKeptLinks() async {
+        // Sam joined, so the open revision no longer lists Sam: the link goes, though the setup
+        // list was never opened again.
+        let joined = Sunday.members(nil)
+        let book = keptSam()
+        let model = ClubDetailsModel(
+            club: sunday,
+            service: FakeClubs(members: [.success(joined)], schedule: [.success(sixDays)]),
+            links: (book, Sunday.account))
+        await model.loadMembers()
+        #expect(samsLink(book) == nil)
+        // Still waiting on Sam's acceptance: the link stays.
+        let waiting = Sunday.members([Sunday.candidate("cand_sam", "Sam", .live)])
+        let kept = keptSam()
+        let still = ClubDetailsModel(
+            club: sunday,
+            service: FakeClubs(members: [.success(waiting)], schedule: [.success(sixDays)]),
+            links: (kept, Sunday.account))
+        await still.loadMembers()
+        #expect(samsLink(kept) != nil)
+    }
+
+    @Test func aMembersNotFoundPurgesTheClubsLinksAndAFailureKeepsThem() async {
+        let book = keptSam()
+        let gone = ClubDetailsModel(
+            club: sunday,
+            service: FakeClubs(members: [.failure(.notFound)], schedule: [.success(sixDays)]),
+            links: (book, Sunday.account))
+        await gone.loadMembers()
+        #expect(samsLink(book) == nil)
+        for failure in [APIFailure.network, .refused, .unavailable] {
+            let kept = keptSam()
+            let failed = ClubDetailsModel(
+                club: sunday,
+                service: FakeClubs(members: [.failure(failure)], schedule: [.success(sixDays)]),
+                links: (kept, Sunday.account))
+            await failed.loadMembers()
+            #expect(samsLink(kept) != nil)
+        }
+    }
+
+    @Test func aLinkKeptWhileTheMembersAreReadIsLeftByTheirAnswer() async {
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let clubs = FakeClubs(
+            members: [.success(Sunday.members(nil))], schedule: [.success(sixDays)])
+        let gate = Gate()
+        clubs.duringMembers = { _ in await gate.wait() }
+        let model = ClubDetailsModel(club: sunday, service: clubs, links: (book, Sunday.account))
+        let loading = Task { await model.loadMembers() }
+        await gate.reached()
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: Sunday.account)
+        gate.open()
+        await loading.value
+        #expect(samsLink(book) != nil)
+    }
+
+    @Test func theRootsClubDetailsSettleTheAccountsLinks() async {
+        let book = keptSam()
+        let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(listed(sunday))])
+        let clubs = FakeClubs(
+            club: [.success(detail(sunday))], members: [.success(Sunday.members(nil))],
+            schedule: [.success(sixDays)])
+        let clock = ManualContinuousClock()
+        let root = RootModel(
+            session: SessionManager(
+                auth: FakeAuth(), store: InMemorySessionStore(stored), now: { [start] in start }),
+            auth: FakeAuth(), accounts: accounts, clubs: clubs, selection: InMemoryClubSelection(),
+            links: book, now: { clock.now }, sleep: { clock.sleep(until: $0) })
+        await root.start()
+        #expect(samsLink(book) != nil)
+        await root.clubDetails()?.loadMembers()
+        #expect(samsLink(book) == nil)
+    }
+
     @Test func eitherReadFailingFailsTheList() async {
         for (list, week, shown) in [
             (

@@ -100,6 +100,18 @@ public struct InvitationList: Sendable, Equatable {
     /// The caller's own decision on the open revision is pending, so Done for now leads to
     /// `G01-pending-approve`, not `G01-pending` (handoff 8's `creatorReviewRequired`, FQ84).
     public let awaitingMyApproval: Bool
+
+    /// The model makes it from the server's answers; a snapshot makes its own.
+    public init(
+        club: ClubRef, state: ClubState, rows: [InvitationRow], canInvite: Bool,
+        awaitingMyApproval: Bool
+    ) {
+        self.club = club
+        self.state = state
+        self.rows = rows
+        self.canInvite = canInvite
+        self.awaitingMyApproval = awaitingMyApproval
+    }
 }
 
 /// The setup list (`G01-invite-people`; spec 04; book p33), for one club and the account: who
@@ -134,8 +146,12 @@ public struct InvitationList: Sendable, Equatable {
     /// An action that failed, with the row kept as it was.
     public enum ActionFailure: Sendable, Equatable {
         /// "Couldn’t create the invitation link for {name}." with the network's or a refusal's
-        /// line (`createInvitation.createFailure`).
+        /// line (`createInvitation.createFailure`): the candidate's first link.
         case createLink(name: String, network: Bool)
+        /// "Couldn’t create a new invitation link for {name}." with the network's or a refusal's
+        /// line (handoff 4's `invite.createNew.failure`): a link in place of the one the row
+        /// shows.
+        case createNewLink(name: String, network: Bool)
         /// "Couldn’t revoke {name}’s invitation link. Try again.", or, with no answer, "Couldn’t
         /// confirm that {name}’s invitation link was revoked. Check your connection and try
         /// again." (handoff 4's `revokeLink`).
@@ -201,9 +217,16 @@ public struct InvitationList: Sendable, Equatable {
     /// `actionFailure` saying why when a link couldn't be made.
     public func linkToShare(for candidateID: String) async -> URL? {
         guard let candidate = mine(candidateID), !busy.contains(candidateID),
-            let row = row(for: candidate),
-            row.action == .shareLink || row.action == .shareAgain
+            let row = row(for: candidate)
         else { return nil }
+        // The row on screen offered a link the book no longer holds (another read purged it
+        // since, from a newer answer): show the row as it is now, which offers Create new link
+        // or nothing, and read the list again for what changed on the server.
+        guard row.action == .shareLink || row.action == .shareAgain else {
+            relist()
+            await refresh()
+            return nil
+        }
         if let kept = book.link(for: candidateID, club: club.id, account: accountID),
             candidate.invitation == nil || candidate.invitation?.id == kept.invitationID
         {
@@ -413,7 +436,7 @@ public struct InvitationList: Sendable, Equatable {
             }
             linkKeys[candidate.id] = nil
             guard let kept = book.keep(answer, club: club.id, account: accountID) else {
-                actionFailure = .createLink(name: candidate.name, network: false)
+                actionFailure = linkFailure(candidate, replacing: replacing, network: false)
                 return nil
             }
             learn(
@@ -423,10 +446,10 @@ public struct InvitationList: Sendable, Equatable {
             return kept
         } catch .network {
             guard current() else { return nil }
-            actionFailure = .createLink(name: candidate.name, network: true)
+            actionFailure = linkFailure(candidate, replacing: replacing, network: true)
         } catch .unavailable {
             guard current() else { return nil }
-            actionFailure = .createLink(name: candidate.name, network: false)
+            actionFailure = linkFailure(candidate, replacing: replacing, network: false)
         } catch .signedOut {
             linkKeys[candidate.id] = nil
             guard current() else { return nil }
@@ -434,10 +457,20 @@ public struct InvitationList: Sendable, Equatable {
         } catch {
             linkKeys[candidate.id] = nil
             guard current() else { return nil }
-            actionFailure = .createLink(name: candidate.name, network: false)
+            actionFailure = linkFailure(candidate, replacing: replacing, network: false)
             await refresh()
         }
         return nil
+    }
+
+    /// The words for a link that couldn't be made: the first link's, or a new link's in place of
+    /// the one the row shows.
+    private func linkFailure(_ candidate: Candidate, replacing: String?, network: Bool)
+        -> ActionFailure
+    {
+        replacing == nil
+            ? .createLink(name: candidate.name, network: network)
+            : .createNewLink(name: candidate.name, network: network)
     }
 
     private static func decisive(_ first: APIFailure?, _ second: APIFailure?) -> APIFailure? {

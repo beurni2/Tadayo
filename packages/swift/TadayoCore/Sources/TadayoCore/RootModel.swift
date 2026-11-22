@@ -123,14 +123,19 @@ import Observation
     let now: @Sendable () -> ContinuousClock.Instant
     let sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
     let left: @MainActor () -> Void
+    /// The invitation links the account keeps (ADR-037): each club list read settles them, the
+    /// setup lists and Club details made here share them, and Leave sign-in forgets them.
+    let links: InvitationLinkBook
 
     /// `left` runs each time Leave sign-in has ended the session, on the server and here, whether
     /// or not the device could forget it, and before sign-in shows: the app purges there what the
-    /// account left behind, its connections first (T11). `selection` keeps the selected club
-    /// across relaunches, and is forgotten before `left` runs.
+    /// account left behind, its connections. `selection` keeps the selected club across
+    /// relaunches, and is forgotten before `left` runs. `links` is the app's one book of kept
+    /// links, also forgotten before `left` runs (ADR-037, T11).
     public init(
         session: SessionManager, auth: any AuthService, accounts: any AccountService,
         clubs: any ClubService, selection: any ClubSelectionStore,
+        links: InvitationLinkBook = InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
         sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
@@ -143,6 +148,7 @@ import Observation
         self.accounts = accounts
         self.clubService = clubs
         self.selection = selection
+        self.links = links
         self.makeKey = makeKey
         self.now = now
         self.sleep = sleep
@@ -204,6 +210,7 @@ import Observation
         account = nil
         forgetClubs()
         selection.forget()
+        links.forget()
         route = .leaving
         let forgotten = await session.signOut()
         left()
@@ -221,12 +228,15 @@ import Observation
     }
 
     /// The list, read again with `relisting` when Home found the selected club no longer as the
-    /// list had it (`loadHome(relisting:)`), which the selected club's Home is told.
+    /// list had it (`loadHome(relisting:)`), which the selected club's Home is told. A successful
+    /// answer settles the kept links: a club it no longer holds has its links purged (ADR-037). A
+    /// failed read changes none of them.
     private func loadClubs(relisting: Bool) async {
         let asked = epoch
         clubs = .loading
         selectedClubID = nil
         home = .loading
+        let stamp = links.beginRead()
         let answer: Result<ClubList, APIFailure>
         do {
             answer = .success(try await accounts.clubs())
@@ -234,6 +244,9 @@ import Observation
             answer = .failure(error)
         }
         guard epoch == asked else { return }
+        if case .success(let list) = answer, let account {
+            links.settle(list, stamp: stamp, account: account.id)
+        }
         switch answer {
         case .success(let list) where !list.clubs.isEmpty:
             clubs = .listed(list)
@@ -288,16 +301,48 @@ import Observation
     /// while none is selected. Its answers count only while the session it was made in lasts and
     /// the club is still the selected one; a club no longer the caller's to read has the list
     /// read again, which decides, as Home's does (`loadHome`); a `signedOut` answer ends the
-    /// session.
+    /// session. Its members answers settle the account's kept links (ADR-037).
     public func clubDetails() -> ClubDetailsModel? {
         guard let club = selectedClub else { return nil }
         let made = epoch
         return ClubDetailsModel(
-            club: club, service: clubService,
+            club: club, service: clubService, links: account.map { (links, $0.id) },
             current: { [weak self] in
                 guard let self else { return false }
                 return epoch == made && selectedClubID == club.id
             },
+            gone: { [weak self] in await self?.loadClubs() },
+            signedOut: { [weak self] in await self?.endedByServer() })
+    }
+
+    /// Naming a new club (`G01-create`), while the tabs show an account. Its answers count only in
+    /// the session it was made in. Once the club is made it becomes this account's selected club
+    /// and the list is read again, so the tabs show it; a `signedOut` answer ends the session.
+    public func createClub() -> CreateClubModel? {
+        guard route == .tabs, let account else { return nil }
+        let made = epoch
+        return CreateClubModel(
+            service: clubService, makeKey: makeKey,
+            current: { [weak self] in self?.epoch == made },
+            created: { [weak self] detail in
+                guard let self, self.epoch == made else { return }
+                self.selection.keep(detail.club.id, for: account.id)
+                await self.loadClubs()
+            },
+            signedOut: { [weak self] in await self?.endedByServer() })
+    }
+
+    /// The setup list for `club`, which the account made or proposes people in
+    /// (`G01-invite-people`), with the account's kept links. Its answers count only in the session
+    /// it was made in, whichever club is selected; a club no longer the caller's to read has the
+    /// list read again, which decides, as Club details does; a `signedOut` answer ends the session.
+    public func invitations(for club: ClubRef) -> InvitationListModel? {
+        guard route == .tabs, let account else { return nil }
+        let made = epoch
+        return InvitationListModel(
+            club: club, accountID: account.id, service: clubService, book: links,
+            makeKey: makeKey,
+            current: { [weak self] in self?.epoch == made },
             gone: { [weak self] in await self?.loadClubs() },
             signedOut: { [weak self] in await self?.endedByServer() })
     }

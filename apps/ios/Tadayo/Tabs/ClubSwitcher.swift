@@ -28,13 +28,14 @@ import TadayoDesign
 ///
 /// Choosing a row selects that club and closes the sheet; Cancel closes it. Club details closes
 /// it and opens the selected club's details (`TabsView`; for a suspended club, the same "Club
-/// unavailable" as Home, FQ80). Create a club shows and does nothing until plan PR 4 (FQ85). The
-/// content scrolls when it is taller than the sheet can be, at the largest text sizes.
+/// unavailable" as Home, FQ80). Create a club closes it and pushes G01-create onto the selected
+/// tab. The content scrolls when it is taller than the sheet can be, at the largest text sizes.
 struct ClubSwitcher: View {
     let clubs: [ClubSummary]
     let selectedID: String?
     let select: (String) -> Void
     var openDetails: () -> Void = {}
+    var createClub: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -58,7 +59,10 @@ struct ClubSwitcher: View {
                         openDetails()
                         dismiss()
                     }
-                    Button("switcher.createClub") {}
+                    Button("switcher.createClub") {
+                        createClub()
+                        dismiss()
+                    }
                     Button("common.cancel") { dismiss() }
                 }
                 .buttonStyle(.tadayoText)
