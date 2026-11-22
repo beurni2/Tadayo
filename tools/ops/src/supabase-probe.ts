@@ -22,7 +22,9 @@
 // token of three plain base64url parts whose `url` names the object signed for, whose `upsert` is `false`,
 // and whose `iat` to `exp` is a minute to a day. Then a second `PUT` through the same URL, with other bytes
 // and `x-upsert: true`, must get Storage's own 409 and leave the first bytes as they were: overwriting is off
-// where Storage decides it, the token, whatever the request says (T12). And it asks for an object's details
+// where Storage decides it, the token, whatever the request says (T12). Signing again for that object must be
+// refused with Storage's own 409, which the API reads as the bytes in, so a retry of createUpload once they
+// are is answered without a URL and not 503 (storage.ts, `signUpload`). And it asks for an object's details
 // as the API's completeUpload does, which must find the object put and Storage's own not-found for one never
 // put. If any of that fails, the run stops there and says so; no refusal is run. Then every refusal asks for those same objects, and Storage's own refusal is the
 // only one that counts: a body naming status 403 (a policy refuses) or 404 (what the caller can't
@@ -452,6 +454,19 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
           `control: the signed URL puts nothing over the object in ${bucket}, even asked to`,
           settle(again, (reply) => storageStatus(reply) === 409) ??
             settle(kept, (reply) => reply.status === 200 && sameBytes(reply.bytes, PNG)),
+        )
+      ) {
+        return undefined;
+      }
+
+      // As the API signs a retry's URL once the bytes are in (storage.ts, `signUpload`): signing again for the
+      // object that is there, upsert off, is refused with Storage's own 409, which the API reads as the bytes in
+      // and answers without a URL, never as Storage out of reach.
+      const resigned = await ask(`/storage/v1/object/upload/sign/${at}`, { method: "POST", caller: service, json: {} });
+      if (
+        !record(
+          `control: the service key signs no second upload URL for the object in ${bucket}`,
+          settle(resigned, (reply) => reply.status !== 200 && storageStatus(reply) === 409),
         )
       ) {
         return undefined;

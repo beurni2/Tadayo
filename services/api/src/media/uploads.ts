@@ -7,8 +7,9 @@
 //
 // The signed upload URL is signed here, after the transaction commits, and is never stored (T12; the plan's
 // section 0.3): the receipt keeps the answer without it, and a replay signs a new one for the same object while
-// the upload is pending. A signing that fails is a 503 with no body, and the upload stays pending, so a retry
-// under the same key signs again.
+// the upload is pending and its bytes aren't in. Once they are, Storage signs nothing for them, and the replay
+// answers as the receipt does, with no URL, so the app goes on to completeUpload. A signing that fails is a 503
+// with no body, and the upload stays pending, so a retry under the same key signs again.
 //
 // Only the drop's photo purpose is built (the plan's section 0.2). The other three answer as the skeleton
 // answers an unbuilt route, the neutral not-found, until their stage: a replacement with B4's edits, an avatar
@@ -112,7 +113,7 @@ export function createUploadHandler(deps: Deps): Handler {
       throw error;
     }
     if (made.toSign === null) return created(reply, made.body);
-    let signed: SignedPut;
+    let signed: SignedPut | null;
     try {
       signed = await deps.storage.signUpload(made.toSign.objectKey);
     } catch (error) {
@@ -122,6 +123,7 @@ export function createUploadHandler(deps: Deps): Handler {
       }
       throw error;
     }
+    if (signed === null) return created(reply, made.body);
     return created(reply, {
       ...(made.body as Record<string, Json>),
       signed_upload: signedUploadBody(signed, made.toSign),

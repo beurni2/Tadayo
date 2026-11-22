@@ -137,6 +137,8 @@ export function fakeStorage(): FakeStorage {
     },
     signUpload(objectKey) {
       if (down) return Promise.reject(new StorageUnavailable("signing an upload URL got no answer"));
+      // As Storage, upsert off: nothing is signed for an object whose bytes are in (./media/storage.ts).
+      if (objects.has(objectKey)) return Promise.resolve(null);
       signed.push(objectKey);
       const token = `test.${Buffer.from(`${objectKey}:${String(signed.length)}`).toString("base64url")}.unsigned`;
       return Promise.resolve({

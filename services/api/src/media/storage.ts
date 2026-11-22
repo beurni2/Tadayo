@@ -10,7 +10,10 @@
 //   sign call's `x-upsert` header alone, `'true'` to turn it on, and is carried in the token: the `PUT` reads it
 //   from the verified token, never from its own header. This client never sends it, so upsert is off, and once
 //   bytes are put nobody can put over them (T12). The answer is `{ url, token }`, `url` relative; the full URL is
-//   built here in the form the probe's `PUT` uses.
+//   built here in the form the probe's `PUT` uses. With upsert off, Storage signs nothing for an object that is
+//   already there: it refuses with its Duplicate, status 409 in the body. That is the one refusal this client
+//   reads as an answer, the bytes in, so a retry of createUpload after the `PUT` gets no URL, and the app goes on
+//   to completeUpload, instead of a 503 that no retry would end.
 // - The token says what Storage will do with the `PUT`: its `url` claim names the one object, `<bucket>/<key>`,
 //   and its `upsert` claim is the one the `PUT` obeys. So the client believes a token only when its `url` is the
 //   object it asked for and its `upsert` is `false`, read where Storage decides it, never assumed from the call it
@@ -48,8 +51,11 @@ export interface SignedPut {
 
 /** What the upload routes ask of Storage. */
 export interface UploadStorage {
-  /** A write-only URL for the one object `objectKey` in `uploads`, with upsert off in its token. */
-  signUpload(objectKey: string): Promise<SignedPut>;
+  /**
+   * A write-only URL for the one object `objectKey` in `uploads`, with upsert off in its token; or null when that
+   * object's bytes are already in, as Storage then signs nothing for it.
+   */
+  signUpload(objectKey: string): Promise<SignedPut | null>;
   /** Whether the object `objectKey` is in `uploads`. */
   objectThere(objectKey: string): Promise<boolean>;
 }
@@ -164,8 +170,11 @@ export function supabaseStorage(options: SupabaseStorageOptions): UploadStorage 
         { method: "POST", headers: { ...auth, "content-type": "application/json" }, body: "{}" },
         "signing an upload URL",
       );
-      if (status !== 200 || logicalStatus(status, json) !== 200) {
-        throw new StorageUnavailable(`signing an upload URL answered ${String(logicalStatus(status, json))}`);
+      const logical = logicalStatus(status, json);
+      // Storage's Duplicate: the object is there, so no URL may be given for it (T12).
+      if (status !== 200 && logical === 409) return null;
+      if (status !== 200 || logical !== 200) {
+        throw new StorageUnavailable(`signing an upload URL answered ${String(logical)}`);
       }
       const token = tokenOf(json);
       const lifetime = token === undefined ? undefined : signedLifetime(token, object);

@@ -18,8 +18,8 @@
 //   (`madeProblems` holds the row it made).
 // - A replay under the key that made one, to whoever still has the reservation as createUpload's first step
 //   reads it (`replayOutcome`; the neutral not-found to anyone else): the same upload, with a new URL for the
-//   same object while it is pending and lives, and the stored answer alone, with no URL, once it isn't
-//   (TECH-DESIGN section 6).
+//   same object while it is pending, lives and its bytes aren't in Storage, and the stored answer alone, with no
+//   URL, once any of that isn't so: Storage signs nothing for bytes that are in (TECH-DESIGN section 6).
 // - getUpload: the caller's own upload until its `expires_at`, its UploadStatus; the neutral not-found for
 //   anyone else's, a lapsed one, or an id nobody has (T12, T14).
 // - completeUpload: the same rule; a pending upload whose object isn't in Storage is MEDIA_NOT_READY and stays
@@ -239,8 +239,9 @@ export function uploadExpected(outcome: UploadOutcome, after: () => WorldFacts):
 /**
  * What is wrong with `answer`, createUpload's request again under the key that made the upload `first` answered
  * (T19; TECH-DESIGN section 6): the same upload in the same fields, and, while it is pending and lives at `now`
- * in `after`, a new signed upload for the same object, good from `now`; once it isn't, the stored answer alone,
- * with no URL. Nothing is made or changed.
+ * in `after` and its object isn't among `stored` (the objects whose bytes are in Storage), a new signed upload
+ * for the same object, good from `now`; otherwise the stored answer alone, with no URL, as Storage signs nothing
+ * for bytes that are in. Nothing is made or changed.
  */
 export function replayProblems(
   first: Answer,
@@ -248,26 +249,27 @@ export function replayProblems(
   previous: WorldFacts,
   after: WorldFacts,
   now: Temporal.Instant,
+  stored: ReadonlySet<string>,
 ): string[] {
   const made = parsed(first);
   if (!isObject(made) || typeof made.id !== "string") return ["the first answer made no upload"];
   const body = bodyOf(answer, 201, "the upload made, again");
   if (Array.isArray(body)) return body;
   const { signed_upload: signed, ...rest } = body;
-  const stored = without(made, "signed_upload");
+  const receipt = without(made, "signed_upload");
   const upload = after.uploads.get(made.id);
   if (upload === undefined) return ["the upload made is gone"];
-  const live = upload.state === "pending" && before(now, upload.expiresAt);
+  const signs = upload.state === "pending" && before(now, upload.expiresAt) && !stored.has(upload.objectKey);
   const problems = [
-    ...fieldProblems("the upload made, again", rest, stored),
-    ...(Object.keys(body).join() === Object.keys(live ? made : stored).join()
+    ...fieldProblems("the upload made, again", rest, receipt),
+    ...(Object.keys(body).join() === Object.keys(signs ? made : receipt).join()
       ? []
       : [`the upload made, again, has the fields ${Object.keys(body).join()}`]),
-    ...(live
+    ...(signs
       ? signedProblems(signed, upload, now)
       : signed === undefined
         ? []
-        : ["a signed upload once it isn't pending"]),
+        : ["a signed upload once it isn't pending, has lapsed or its bytes are in"]),
   ];
   if (rowsSeen(after.uploads) !== rowsSeen(previous.uploads))
     problems.push("a retry under its key made or changed an upload (T19)");

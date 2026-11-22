@@ -448,29 +448,41 @@ describe("createUpload again under its key (replayProblems; T12, T19; TECH-DESIG
   const resigned = (more: Record<string, unknown> = {}) =>
     madeBody({ signed_upload: signed(BENS_OBJECT, { expires_at: "2026-11-06T16:46:00Z", ...more }) });
   const stored = without(madeBody(), "signed_upload");
+  const none = new Set<string>();
 
   it("signs a new URL for the same object while the upload is pending and lives, good from the retry", () => {
-    expect(replayProblems(first, answer(resigned(), 201), pending, pending, later)).toEqual([]);
-    expect(replayProblems(first, answer(stored, 201), pending, pending, later)).not.toEqual([]);
-    expect(replayProblems(first, answer(madeBody(), 201), pending, pending, later)).not.toEqual([]);
+    expect(replayProblems(first, answer(resigned(), 201), pending, pending, later, none)).toEqual([]);
+    expect(replayProblems(first, answer(stored, 201), pending, pending, later, none)).not.toEqual([]);
+    expect(replayProblems(first, answer(madeBody(), 201), pending, pending, later, none)).not.toEqual([]);
     expect(
-      replayProblems(first, answer(resigned({ url: signed(CLEOS_OBJECT).url }), 201), pending, pending, later),
+      replayProblems(first, answer(resigned({ url: signed(CLEOS_OBJECT).url }), 201), pending, pending, later, none),
     ).not.toEqual([]);
-    expect(replayProblems(first, answer({ ...resigned(), id: "upl_other" }, 201), pending, pending, later)).not.toEqual(
-      [],
-    );
-    expect(replayProblems(first, answer(resigned(), 200), pending, pending, later)).not.toEqual([]);
+    expect(
+      replayProblems(first, answer({ ...resigned(), id: "upl_other" }, 201), pending, pending, later, none),
+    ).not.toEqual([]);
+    expect(replayProblems(first, answer(resigned(), 200), pending, pending, later, none)).not.toEqual([]);
   });
 
   it("answers the stored answer alone, with no URL, once the upload is past pending or lapsed", () => {
-    expect(replayProblems(first, answer(stored, 201), preparing, preparing, later)).toEqual([]);
-    expect(replayProblems(first, answer(resigned(), 201), preparing, preparing, later)).not.toEqual([]);
+    expect(replayProblems(first, answer(stored, 201), preparing, preparing, later, none)).toEqual([]);
+    expect(replayProblems(first, answer(resigned(), 201), preparing, preparing, later, none)).not.toEqual([]);
     const lapsed = NOW.add({ hours: 24 });
-    expect(replayProblems(first, answer(stored, 201), pending, pending, lapsed)).toEqual([]);
-    expect(replayProblems(first, answer(madeBody(), 201), pending, pending, lapsed)).not.toEqual([]);
+    expect(replayProblems(first, answer(stored, 201), pending, pending, lapsed, none)).toEqual([]);
+    expect(replayProblems(first, answer(madeBody(), 201), pending, pending, lapsed, none)).not.toEqual([]);
     expect(
-      replayProblems(first, answer({ ...stored, state: "preparing" }, 201), preparing, preparing, later),
+      replayProblems(first, answer({ ...stored, state: "preparing" }, 201), preparing, preparing, later, none),
     ).not.toEqual([]);
+  });
+
+  it("answers the stored answer alone, with no URL, once the upload's bytes are in, pending though it is", () => {
+    // Storage signs nothing for an object that is there, so the app goes on to completeUpload (T12).
+    const bytesIn = new Set([BENS_OBJECT]);
+    expect(replayProblems(first, answer(stored, 201), pending, pending, later, bytesIn)).toEqual([]);
+    expect(replayProblems(first, answer(resigned(), 201), pending, pending, later, bytesIn)).not.toEqual([]);
+    // Another object's bytes being in changes nothing for this one.
+    expect(replayProblems(first, answer(resigned(), 201), pending, pending, later, new Set([CLEOS_OBJECT]))).toEqual(
+      [],
+    );
   });
 
   it("refuses a retry that made or changed an upload or a reservation", () => {
@@ -480,14 +492,14 @@ describe("createUpload again under its key (replayProblems; T12, T19; TECH-DESIG
         upl_two: upload("usr_ben", "TwoObjectKey0123456789abcdefghij"),
       },
     });
-    expect(replayProblems(first, answer(resigned(), 201), pending, two, later)).not.toEqual([]);
+    expect(replayProblems(first, answer(resigned(), 201), pending, two, later, none)).not.toEqual([]);
     const settled = world({
       uploads: { upl_ben: upload("usr_ben", BENS_OBJECT) },
       reservations: { rsv_ben: slot("itv_ben", { state: "expired" }), rsv_cleo: slot("itv_cleo") },
     });
-    expect(replayProblems(first, answer(resigned(), 201), pending, settled, later)).not.toEqual([]);
+    expect(replayProblems(first, answer(resigned(), 201), pending, settled, later, none)).not.toEqual([]);
     expect(
-      replayProblems(answer({ code: "NOT_FOUND" }, 404), answer(resigned(), 201), pending, pending, later),
+      replayProblems(answer({ code: "NOT_FOUND" }, 404), answer(resigned(), 201), pending, pending, later, none),
     ).not.toEqual([]);
   });
 });

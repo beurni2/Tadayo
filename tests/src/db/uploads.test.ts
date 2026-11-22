@@ -823,6 +823,49 @@ describe("the caller's own upload, read and handed to preparation while it lives
       ).toHaveLength(0);
     });
   });
+
+  it(
+    "keeps no row that names the upload waiting while it is handed to preparation: its lock is FOR NO KEY UPDATE",
+    { timeout: 30_000 },
+    async () => {
+      const d = await db.begin((tx) => days(tx as unknown as WorldTx));
+      committedDays.push(d.w.day, d.next, d.after);
+      const bens = await db.begin((tx) => slot(tx as unknown as WorldTx, d, d.w.ben));
+      const one = made(await db.begin((tx) => upload(tx as unknown as WorldTx, d.w.ben, bens)));
+      let go = (): void => undefined;
+      const gate = new Promise<void>((resolve) => (go = resolve));
+      let held = (): void => undefined;
+      const holding = new Promise<void>((resolve) => (held = resolve));
+      const preparing = db.begin(async (tx) => {
+        try {
+          return await markPreparing(tx, clock, { userId: d.w.ben.user, uploadId: one.body.id });
+        } finally {
+          held();
+          await gate;
+        }
+      });
+      await holding;
+      try {
+        // A row naming the upload, as the worker's rendition will: its foreign key's check locks the upload
+        // FOR KEY SHARE, which FOR NO KEY UPDATE lets by and FOR UPDATE would keep waiting, until the timeout.
+        const rendition = await db
+          .begin(async (tx) => {
+            await tx`SET LOCAL lock_timeout = '5s'`;
+            return tx`INSERT INTO app.upload_renditions (upload_id, kind, object_key, width, height, byte_size, created_at)
+                      VALUES (${one.body.id}, 'display', ${`renditions/${randomUUID()}`}, 1, 1, 1, ${EVENING})
+                      RETURNING upload_id`;
+          })
+          .then(
+            (rows) => rows.length,
+            (error: unknown) => (error as { code?: string }).code ?? String(error),
+          );
+        expect(rendition).toBe(1);
+      } finally {
+        go();
+      }
+      expect(await preparing).toMatchObject({ state: "preparing" });
+    },
+  );
 });
 
 describe("the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18)", () => {

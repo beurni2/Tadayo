@@ -197,10 +197,21 @@ const REVISIONS_LOST = new Map<string, number>();
 const SLOTS = new Map<string, { held: number; released: number; expired: number }>();
 /** By role: the answers in which Cleo's lapsed slot came back as the viewer's own (the role's test fills it). */
 const CLEOS_SLOT = new Map<string, number>();
-/** By role: what the uploads' table made, moved to preparing, refused as closed and found again (the role's test fills it). */
+/**
+ * By role: what the uploads' table made, retried without a URL once the bytes were in, moved to preparing,
+ * refused as closed and found again (the role's test fills it).
+ */
 const UPLOADS = new Map<
   string,
-  { made: number; preparing: number; closed: number; later: number; replayed: number; signedLater: number }
+  {
+    made: number;
+    unsigned: number;
+    preparing: number;
+    closed: number;
+    later: number;
+    replayed: number;
+    signedLater: number;
+  }
 >();
 /**
  * The answers the invitation's table gives someone other than the cell's viewer, for each revision: the
@@ -836,7 +847,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // the refusals that the day had revealed (OCCURRENCE_CLOSED), the reads in a later phase that found an
       // upload made in an earlier one, the retries in a later phase that got the first answer, and those of them
       // that came with a new signed upload. Asserted in the test after the roles.
-      const uploads = { made: 0, preparing: 0, closed: 0, later: 0, replayed: 0, signedLater: 0 };
+      const uploads = { made: 0, unsigned: 0, preparing: 0, closed: 0, later: 0, replayed: 0, signedLater: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -2079,7 +2090,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 ? pinnedProblems(replay, createUploadGate)
                 : refused !== undefined
                   ? pinnedProblems(replay, refused)
-                  : replayProblems(earlier.answer, replay, previous.world, facts.world, now);
+                  : replayProblems(earlier.answer, replay, previous.world, facts.world, now, storage.objects);
             if (
               (createUploadGate !== undefined || refused !== undefined) &&
               (rowsSeen(facts.world.uploads) !== rowsSeen(previous.world.uploads) ||
@@ -2111,7 +2122,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             const id = made.made;
             if (id !== undefined) {
               madeUploads.push({ id, key: uploadKey, slot: photoSlot, answer: made.answer });
-              const again = async (note: string) => {
+              const again = async (note: string): Promise<Answer> => {
                 const previous = facts;
                 const { sent, answer } = await uploadAsk(photoSlot, uploadKey);
                 facts = await load();
@@ -2119,9 +2130,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                   "createUpload",
                   sent,
                   answer,
-                  replayProblems(made.answer, answer, previous.world, facts.world, now),
+                  replayProblems(made.answer, answer, previous.world, facts.world, now, storage.objects),
                   note,
                 );
+                return answer;
               };
               await again("the upload again under its key, pending");
               {
@@ -2143,6 +2155,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               const object = facts.world.uploads.get(id)?.objectKey;
               if (object === undefined) wrong.push(`${state.name}, ${phase}: the upload made has no object`);
               else storage.put(object);
+              // Its bytes in, not yet completed: Storage signs nothing for them, so the retry gets no URL.
+              const bytesIn = await again("the upload again under its key, its bytes in Storage, not completed");
+              if (bytesIn.status === 201 && !("signed_upload" in (JSON.parse(bytesIn.body) as object)))
+                uploads.unsigned += 1;
               await completeUpload(id, "the upload completed with its bytes in Storage");
               await completeUpload(id, "the upload completed again");
               await again("the upload again under its key, preparing");
@@ -2423,8 +2439,9 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
     // two photos and more in all four states, the member in the audience (whose link in the day leaves the
     // photos free, and whose lapsed slot the reservations' table settled first) in all four, and the author,
     // whose photo is in the drop, only in the state that withdrew it. A second upload under a slot that holds
-    // one, with a new key, finds nothing (T17, T18). The first upload is completed into preparing once; the one
-    // left pending never is, as its bytes are never put. Each upload is found again in the two phases after (open,
+    // one, with a new key, finds nothing (T17, T18). The first upload's retry once its bytes are in, before it is
+    // completed, gets the first answer with no URL, as Storage signs nothing for them (T12); then it is completed
+    // into preparing once. The one left pending never is, as its bytes are never put. Each upload is found again in the two phases after (open,
     // and past at the close), as it lives 24 hours from a microsecond before the reveal, and is nobody's a year
     // on; and its retry under its key gets the first answer in all three later phases, as its slot's interval may
     // still add to the day (a revealed day refuses only something new), with a new signed upload only for the one
@@ -2436,8 +2453,22 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
     // table, above). Another member's live slot is never the viewer's (othersLiveSlot). Nobody else is refused
     // for it, and nobody else makes one (T9, T14).
     expect(UPLOADS.size).toBe(ROLES.length);
-    const one = { made: 4 + 1, preparing: 4, later: 2 * (4 + 1), replayed: 3 * (4 + 1), signedLater: 2 * 1 };
-    const two = { made: 4 + 4, preparing: 4, later: 2 * (4 + 4), replayed: 3 * (4 + 4), signedLater: 2 * 4 };
+    const one = {
+      made: 4 + 1,
+      unsigned: 4,
+      preparing: 4,
+      later: 2 * (4 + 1),
+      replayed: 3 * (4 + 1),
+      signedLater: 2 * 1,
+    };
+    const two = {
+      made: 4 + 4,
+      unsigned: 4,
+      preparing: 4,
+      later: 2 * (4 + 4),
+      replayed: 3 * (4 + 4),
+      signedLater: 2 * 4,
+    };
     expect([...UPLOADS].filter(([, table]) => Object.values(table).some((n) => n > 0))).toEqual([
       ["author", { ...one, closed: 4 + 12 }],
       ["star", { ...two, closed: 4 }],
@@ -2446,7 +2477,7 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
       ["rejoined member, a new interval (T8)", { ...two, closed: 4 }],
       [
         "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
-        { made: 0, preparing: 0, closed: 12, later: 0, replayed: 0, signedLater: 0 },
+        { made: 0, unsigned: 0, preparing: 0, closed: 12, later: 0, replayed: 0, signedLater: 0 },
       ],
     ]);
   });

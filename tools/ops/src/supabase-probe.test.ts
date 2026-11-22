@@ -64,7 +64,8 @@ describe("apiChecks on a closed project", () => {
     expect(failed(checks)).toEqual([]);
     // Every door is asked for each caller: nothing is dropped without this saying so.
     const count = (prefix: string) => checks.filter((check) => check.name.startsWith(prefix)).length;
-    expect(count("control: ")).toBe(16);
+    // Two for the user, and eight for each bucket.
+    expect(count("control: ")).toBe(2 + 8 * 2);
     // And the one question about every bucket the project has, which is no control.
     expect(count("storage: ")).toBe(1);
     // Per caller: 3 tables and the root of REST, GraphQL, the buckets' list and create, and 8 for each bucket.
@@ -79,7 +80,7 @@ describe("apiChecks on a closed project", () => {
     expect([...fake.buckets.keys()].sort()).toEqual(["renditions", "uploads"]);
   });
 
-  it("proves it could have seen what it was refused: the service key signs, uploads, reads, can't overwrite, finds, lists and signs first", async () => {
+  it("proves it could have seen what it was refused: the service key signs, uploads, reads, can't overwrite or sign again, finds, lists and signs first", async () => {
     const fake = project();
     const checks = await probe(fake);
     const controls = checks.filter((check) => check.name.startsWith("control: ")).map((check) => check.name);
@@ -91,6 +92,7 @@ describe("apiChecks on a closed project", () => {
         `control: the signed URL puts the object in ${bucket}`,
         `control: the service key reads the object back from ${bucket}`,
         `control: the signed URL puts nothing over the object in ${bucket}, even asked to`,
+        `control: the service key signs no second upload URL for the object in ${bucket}`,
         `control: the service key finds the object's details in ${bucket}, and none for an object never put`,
         `control: the service key lists the object in ${bucket}`,
         `control: the service key signs a read URL for ${bucket} in a batch`,
@@ -592,7 +594,7 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
     }
   });
 
-  it("signs the upload URL as the API does, with a body of {} and no x-upsert", async () => {
+  it("signs the upload URL as the API does, with a body of {} and no x-upsert, and again once the object is there", async () => {
     const fake = project();
     const seen: { body: string; upsert: string | null }[] = [];
     const spy = (async (input: string | URL | Request, init?: RequestInit) => {
@@ -603,7 +605,10 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
     }) as typeof fetch;
     const checks = await probe(fake, spy);
     expect(failed(checks)).toEqual([]);
+    // For each bucket: the URL the object is put at, and the second signing Storage refuses.
     expect(seen).toEqual([
+      { body: "{}", upsert: null },
+      { body: "{}", upsert: null },
       { body: "{}", upsert: null },
       { body: "{}", upsert: null },
     ]);
@@ -772,6 +777,37 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
       }),
     );
     expect(failed(seen)).toEqual([control]);
+  });
+
+  it("names the second signing's control when Storage signs again for the object that is there, or refuses it otherwise than its 409", async () => {
+    const control = "control: the service key signs no second upload URL for the object in uploads";
+    for (const answer of [
+      // Signed again: the API would hand out a second URL for bytes that are in.
+      () => new Response(JSON.stringify({ url: "/object/upload/sign/uploads/x?token=t", token: "t" }), { status: 200 }),
+      // Refused, but not by Storage's duplicate: the API would answer a retry 503.
+      () => new Response(JSON.stringify({ statusCode: "403", error: "Unauthorized" }), { status: 400 }),
+      () => new Response("{}", { status: 500 }),
+      // A 409 on a 200 is no refusal.
+      () => new Response(JSON.stringify({ statusCode: "409", error: "Duplicate" }), { status: 200 }),
+    ]) {
+      const fake = project();
+      let signs = 0;
+      const checks = await probe(
+        fake,
+        answering(fake, (request) => {
+          const { pathname } = new URL(request.url);
+          if (request.method !== "POST" || !pathname.startsWith("/storage/v1/object/upload/sign/uploads/"))
+            return undefined;
+          if (request.headers.get("apikey") !== FAKE_SECRET) return undefined;
+          signs += 1;
+          return signs === 2 ? answer() : undefined;
+        }),
+      );
+      expect(failed(checks)).toEqual([control]);
+      expect(checks.some((check) => check.name.startsWith("anon: "))).toBe(false);
+      expect(fake.objects.size).toBe(0);
+      expect(fake.users.size).toBe(0);
+    }
   });
 
   it("asks REST for the schema app by name, since it would otherwise be asked for the public one", async () => {
@@ -1001,9 +1037,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up", async () => {
     const fake = project();
     const budget = new AbortController();
-    // The 24th call is the first refusal's; the 28th is anon's GraphQL.
+    // The 26th call is the first refusal's; the 30th is anon's GraphQL.
     const fetcher = counting(fake, (n) => {
-      if (n === 28) budget.abort();
+      if (n === 30) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     const cut = checks.findIndex((check) => check.name === "anon: GraphQL");
@@ -1012,8 +1048,8 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     // Every check of anon and user that wasn't asked, and the service key's root, which comes last.
     expect(later).toHaveLength(count(checks, "anon: ") + count(checks, "user: ") + count(checks, "service: ") - 5);
     expect(later.every((check) => !check.ok && check.note === OUT_OF_TIME)).toBe(true);
-    // 28 calls, then only the clean-up's: the two probe objects and the user.
-    expect(fake.calls.map((call) => call.method).slice(28)).toEqual(["DELETE", "DELETE", "DELETE"]);
+    // 30 calls, then only the clean-up's: the two probe objects and the user.
+    expect(fake.calls.map((call) => call.method).slice(30)).toEqual(["DELETE", "DELETE", "DELETE"]);
     expect(checks.filter((check) => check.name.startsWith("cleanup: ")).every((check) => check.ok)).toBe(true);
     expect(fake.objects.size).toBe(0);
     expect(fake.users.size).toBe(0);
@@ -1056,9 +1092,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("leaves no bucket to remove for a refusal it never asked", async () => {
     const fake = project();
     const budget = new AbortController();
-    // Spent after the controls (22 calls) and the bucket list (23): anon's REST is the next.
+    // Spent after the controls (24 calls) and the bucket list (25): anon's REST is the next.
     const fetcher = counting(fake, (n) => {
-      if (n === 24) budget.abort();
+      if (n === 26) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     expect(checks.some((check) => check.name === "anon: create a bucket" && check.note === OUT_OF_TIME)).toBe(true);
@@ -1071,11 +1107,11 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     const fake = project();
     const deadline = new AbortController();
     const fetcher = counting(fake, (n) => {
-      if (n === 24) deadline.abort();
+      if (n === 26) deadline.abort();
     });
     const checks = await probe(fake, fetcher, { deadline: deadline.signal });
-    // 24 calls were made, the 24th the first refusal's, and none after it: not even the clean-up's.
-    expect(fake.calls).toHaveLength(24);
+    // 26 calls were made, the 26th the first refusal's, and none after it: not even the clean-up's.
+    expect(fake.calls).toHaveLength(26);
     expect(checks.filter((check) => check.name.startsWith("cleanup: "))).toEqual([
       { name: "cleanup: delete the probe object in uploads", ok: false, note: OUT_OF_TIME },
       { name: "cleanup: delete the probe object in renditions", ok: false, note: OUT_OF_TIME },

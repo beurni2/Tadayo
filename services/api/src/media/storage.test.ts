@@ -1,8 +1,8 @@
 // The API's Storage client against a fake fetch (docs/plans/api-b2-spike-uploads.md, section 3; T12, T52, T56):
 // the sign call's path, method and headers, with the service key and upsert never turned on; the full URL;
-// the token believed only for its own object with upsert off in it, and its lifetime read from it; the object
-// check, read from Storage's own status and a body that is an object's; and nothing it holds in any error it
-// throws. The probe reads tokens by the same rule, tested on the same tokens (tools/ops/src/supabase-probe.test.ts).
+// the token believed only for its own object with upsert off in it, and its lifetime read from it; Storage's
+// Duplicate, for an object already there, read as no URL to give; the object check, read from Storage's own
+// status and a body that is an object's; and nothing it holds in any error it throws. The probe reads tokens by the same rule, tested on the same tokens (tools/ops/src/supabase-probe.test.ts).
 
 import { describe, expect, it } from "vitest";
 import { signedLifetime, StorageUnavailable, supabaseStorage, type UploadStorage } from "./storage.ts";
@@ -85,12 +85,12 @@ describe("signing an upload URL (T12)", () => {
       url: `${PROJECT}/storage/v1/object/upload/sign/uploads/${OBJECT}?token=${encodeURIComponent(TOKEN)}`,
       lifetimeSeconds: 7200,
     });
-    expect(Object.keys(signed).sort()).toEqual(["lifetimeSeconds", "url"]);
+    expect(Object.keys(signed ?? {}).sort()).toEqual(["lifetimeSeconds", "url"]);
   });
 
   it("takes the token from the relative url when the answer has no token field", async () => {
     const { s } = storage(() => json(200, { url: `/object/upload/sign/uploads/${OBJECT}?token=${TOKEN}` }));
-    expect((await s.signUpload(OBJECT)).url).toBe(
+    expect((await s.signUpload(OBJECT))?.url).toBe(
       `${PROJECT}/storage/v1/object/upload/sign/uploads/${OBJECT}?token=${encodeURIComponent(TOKEN)}`,
     );
   });
@@ -149,6 +149,22 @@ describe("signing an upload URL (T12)", () => {
       const text = await failure(s.signUpload(OBJECT));
       for (const secret of [KEY, OBJECT, token, "tadayotestprojectref"]) expect(text).not.toContain(secret);
     }
+  });
+
+  it("reads Storage's Duplicate, the object already there, as no URL to give, and no other 409 or refusal as it", async () => {
+    // Storage refuses to sign for an object that is there, upsert off, with HTTP 400 and its own 409 in the body.
+    for (const answer of [
+      () => json(400, { statusCode: "409", error: "Duplicate", message: "The resource already exists" }),
+      () => json(409, { statusCode: "409" }),
+    ]) {
+      const { s, seen } = storage(answer);
+      expect(await s.signUpload(OBJECT)).toBeNull();
+      expect(seen).toHaveLength(1);
+    }
+    // A 200 is no refusal, whatever its body says.
+    const { s } = storage(() => json(200, { statusCode: "409", token: TOKEN }));
+    const text = await failure(s.signUpload(OBJECT));
+    for (const secret of [KEY, OBJECT, TOKEN, "tadayotestprojectref"]) expect(text).not.toContain(secret);
   });
 
   it("fails, saying nothing it holds, on a refusal, a token it can't read, or no answer", async () => {

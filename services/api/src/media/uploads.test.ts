@@ -434,6 +434,18 @@ describe("what createUpload answers", () => {
     expect(storage.signed).toHaveLength(2);
   });
 
+  it("answers a replay once the bytes are in as the receipt does, with no URL, since Storage signs nothing for them (T12)", async () => {
+    const storage = fakeStorage();
+    // The upload is still pending (the command signs for it), but the app's PUT got its bytes in.
+    const db = answering(madeOf(TO_SIGN), madeOf(TO_SIGN));
+    const answer = await appFor(db.begin, { storage });
+    expect(JSON.parse((await answer(post(JSON.stringify(PHOTO)))).body)).toHaveProperty("signed_upload");
+    storage.put(OBJECT);
+    const again = await answer(post(JSON.stringify(PHOTO)));
+    expect(again).toMatchObject({ status: 201, body: JSON.stringify(PENDING), headers });
+    expect(storage.signed).toEqual([OBJECT]);
+  });
+
   it("answers 503 with no body when Storage can't sign, and a retry under the same key signs", async () => {
     const storage = fakeStorage();
     const db = answering(madeOf(TO_SIGN), madeOf(TO_SIGN));

@@ -171,7 +171,9 @@ function uploadOf(row: Readonly<Record<string, unknown>> | undefined): UploadRow
 
 /**
  * The upload `id`, with no lock or `FOR NO KEY UPDATE`: `markPreparing` changes only its state, never a key, so
- * a row naming it (an outbox event, a drop later) isn't kept waiting.
+ * the foreign keys that name an upload (`app.drops.upload_id` and `pending_upload_id`,
+ * `app.upload_renditions.upload_id`), whose checks lock it `FOR KEY SHARE`, aren't kept waiting, as they would be
+ * under `FOR UPDATE` (tests/src/db/uploads.test.ts).
  */
 async function uploadById(tx: QuerySql, id: string, lock: "" | "FOR NO KEY UPDATE"): Promise<UploadRow | null> {
   const rows =
