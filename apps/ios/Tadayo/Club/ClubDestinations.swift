@@ -98,7 +98,7 @@ struct InvitationsDestination: View {
             share: share,
             createNewLink: { row in Task { await createNewLink(row) } },
             revoke: { row in Task { await revoke(row) } },
-            invite: invite,
+            invite: { invite() },
             done: {
                 guard case .loaded(let list) = model.state else { return }
                 done(list.awaitingMyApproval)

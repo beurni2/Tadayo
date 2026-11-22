@@ -27,8 +27,8 @@ struct InvitationActions {
 /// - 20 under that, a row for each person the caller proposed, in the server's order
 ///   (`InvitationRowView`); none before anyone is invited (`G01-invite-people-empty`, built from
 ///   spec);
-/// - 32 under the rows, or under the line when there are none, Create an invitation, the secondary button, while the server allows a
-///   proposal and a place is free (`canInvite`: frame 1's club of six draws none);
+/// - 32 under the rows, or under the line when there are none, Create an invitation, the
+///   secondary button, while the server allows a proposal and a place is free (`canInvite`: frame 1's club of six draws none);
 /// - 32 under that, "Only you can see this list." in `metadata` `secondaryText`;
 /// - Done for now pinned 44 above the safe area's bottom, as a form's primary action, with an
 ///   action's failure line 24 above it, said once as it shows.
@@ -129,7 +129,7 @@ struct InvitationsScreen: View {
     }
 
     /// A catalog entry's words with the names in it.
-    static func words(_ key: String.LocalizationValue, _ names: String...) -> String {
+    nonisolated static func words(_ key: String.LocalizationValue, _ names: String...) -> String {
         String(format: String(localized: key), arguments: names)
     }
 }
