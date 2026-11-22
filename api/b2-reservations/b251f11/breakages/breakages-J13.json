@@ -1,0 +1,16 @@
+[
+ {
+  "id": "J13",
+  "what": "judge: a refusal may settle any lapsed slot, the caller's or another's",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what the rows after createReservation must hold (heldProblems) > refuses another's slot settled, a slot gone, and anything a refusal changed (T19)"
+    ]
+   }
+  ]
+ }
+]

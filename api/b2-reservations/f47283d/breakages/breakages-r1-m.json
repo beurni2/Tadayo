@@ -1,0 +1,75 @@
+[
+ {
+  "id": "M1",
+  "what": "the matrix: a lapse at < instead of <=",
+  "caught": true,
+  "by": [
+   {
+    "suite": "M",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find",
+     "FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "M2",
+  "what": "the matrix: a refusal without its allowance",
+  "caught": true,
+  "by": [
+   {
+    "suite": "M",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find",
+     "FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "M3",
+  "what": "the matrix: the table skipped after its first step",
+  "caught": true,
+  "by": [
+   {
+    "suite": "M",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > held, gave back and saw lapse the slots each role's allowance gives, and none for any other role"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "M4",
+  "what": "the matrix: anyone may give back a slot",
+  "caught": true,
+  "by": [
+   {
+    "suite": "M",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find",
+     "FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "M5",
+  "what": "the matrix: Cleo's slot never given back",
+  "caught": true,
+  "by": [
+   {
+    "suite": "M",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it"
+    ]
+   }
+  ]
+ }
+]

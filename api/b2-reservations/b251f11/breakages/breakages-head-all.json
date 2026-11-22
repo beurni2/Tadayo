@@ -1,0 +1,583 @@
+[
+ {
+  "id": "C01",
+  "what": "the clock sampled before the locks",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > the cutoff is the reveal, read after the locks (T3, T4, T18) > refuses a reservation that waited for the club's row while the clock passed the reveal"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C02",
+  "what": "the counter read without FOR UPDATE",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > two phones racing for the last slot are put in order by the counter (Q10, T17) > holds never more than each role allows when ten requests arrive at once, refusing every other"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C03",
+  "what": "everyone gets the star's role",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/authorization/add-target.test.ts > before the reveal, the caller's interval and role, from the intervals alone (T17) > gives a friend's interval and no star, and the star's own interval as the star"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > a friend's allowance: two photos and one link (ND02, T17; addendum 2) > holds two photos for Ben, refuses a third with PHOTO_LIMIT while the link is free, holds the link, then QUOTA_FULL",
+     "FAIL  src/db/reservations.test.ts > a friend's allowance: two photos and one link (ND02, T17; addendum 2) > refuses a second link with EXTERNAL_LIMIT, with committed drops and live slots counted together"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C04",
+  "what": "nobody gets the star's role",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/authorization/add-target.test.ts > before the reveal, the caller's interval and role, from the intervals alone (T17) > gives a friend's interval and no star, and the star's own interval as the star"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > holds six photos for Ana, and refuses a seventh with QUOTA_FULL, Ana's own counts and the next Saturday",
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > refuses Ana's third link with EXTERNAL_LIMIT while the total is free, then holds four photos, then QUOTA_FULL"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C05",
+  "what": "lapsed reservations counted (never settled)",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > a slot lapses at its expires_at, with nothing to run (T18) > frees a lapsed slot for the next request, marks it expired at its own expires_at, and keeps the counter true",
+     "FAIL  src/db/reservations.test.ts > giving a slot back (T15, T18, T20) > answers expired for a slot that has lapsed, and consumed with the caller's own drop for one a commit used"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C06",
+  "what": "a lapse at < instead of <=",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > a slot lapses at its expires_at, with nothing to run (T18) > frees a lapsed slot for the next request, marks it expired at its own expires_at, and keeps the counter true",
+     "FAIL  src/db/reservations.test.ts > giving a slot back (T15, T18, T20) > answers expired for a slot that has lapsed, and consumed with the caller's own drop for one a commit used"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C07",
+  "what": "the cutoff at > instead of >=",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/authorization/add-target.test.ts > a day whose star has gone is held, whatever the time (FQ63, T27) > holds the day when the star left, or asked to delete their account, before its reveal, and not at or after it",
+     "FAIL  src/authorization/add-target.test.ts > the reveal is the cutoff, by the server's time alone (T3, D02) > takes additions until a microsecond before reveal_at, and closes at reveal_at"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > a friend's allowance: two photos and one link (ND02, T17; addendum 2) > takes the star's own reservations for a paused club's announced day until it opens (FQ50)",
+     "FAIL  src/db/reservations.test.ts > the cutoff is the reveal, read after the locks (T3, T4, T18) > holds a slot a microsecond before the reveal until exactly the reveal, and refuses one at the reveal"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C08",
+  "what": "QUOTA_FULL after the others",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/drops/allowance.test.ts > the star's own day: six drops, at most two of them video links (addendum 2, spec 11, ND01) > takes six photos and refuses a seventh",
+     "FAIL  src/drops/allowance.test.ts > the star's own day: six drops, at most two of them video links (addendum 2, spec 11, ND01) > takes four photos and two links, refuses a third link while the total is free, and a seventh of anything"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > holds six photos for Ana, and refuses a seventh with QUOTA_FULL, Ana's own counts and the next Saturday",
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > refuses Ana's third link with EXTERNAL_LIMIT while the total is free, then holds four photos, then QUOTA_FULL"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C09",
+  "what": "a friend's photo limit at three",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/drops/allowance.test.ts > anyone else: three drops, at most two photos and one video link (addendum 2, ND02) > refuses a third photo as PHOTO_LIMIT while the link is free, and a second link as EXTERNAL_LIMIT while the total is",
+     "FAIL  src/drops/allowance.test.ts > anyone else: three drops, at most two photos and one video link (addendum 2, ND02) > counts committed drops and reservations alike"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > a friend's allowance: two photos and one link (ND02, T17; addendum 2) > holds two photos for Ben, refuses a third with PHOTO_LIMIT while the link is free, holds the link, then QUOTA_FULL",
+     "FAIL  src/db/reservations.test.ts > a friend's allowance: two photos and one link (ND02, T17; addendum 2) > refuses a second link with EXTERNAL_LIMIT, with committed drops and live slots counted together"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C10",
+  "what": "the star's link limit at three",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/drops/allowance.test.ts > the star's own day: six drops, at most two of them video links (addendum 2, spec 11, ND01) > takes four photos and two links, refuses a third link while the total is free, and a seventh of anything",
+     "FAIL  src/drops/allowance.test.ts > the allowance the caller reads (the contract's Allowance; T15, T17) > gives the counts, committed and reserved, photos as the drops less the links, and the role's limits"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > holds six photos for Ana, and refuses a seventh with QUOTA_FULL, Ana's own counts and the next Saturday",
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > refuses Ana's third link with EXTERNAL_LIMIT while the total is free, then holds four photos, then QUOTA_FULL"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C11",
+  "what": "expires_at not capped at the reveal",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/drops/reserve.test.ts > a slot lapses 30 minutes on, never past the day's reveal (T18) > ends at the reveal when 30 minutes would pass it, and exactly at it when they would reach it"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > the cutoff is the reveal, read after the locks (T3, T4, T18) > holds a slot a microsecond before the reveal until exactly the reveal, and refuses one at the reveal",
+     "FAIL  src/db/reservations.test.ts > the cutoff is the reveal, read after the locks (T3, T4, T18) > holds a slot 30 minutes, and one taken within 30 minutes of the reveal only until the reveal"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C12",
+  "what": "a slot held 31 minutes",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/drops/reserve.test.ts > a slot lapses 30 minutes on, never past the day's reveal (T18) > holds for 30 minutes when the reveal is further off"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > the cutoff is the reveal, read after the locks (T3, T4, T18) > holds a slot 30 minutes, and one taken within 30 minutes of the reveal only until the reveal",
+     "FAIL  src/db/reservations.test.ts > a slot lapses at its expires_at, with nothing to run (T18) > frees a lapsed slot for the next request, marks it expired at its own expires_at, and keeps the counter true"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C13",
+  "what": "a release that frees a link as a photo",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > one slot per Idempotency-Key, and its first answer on every retry (T19, Q12) > returns the first answer byte for byte after a release, after midnight and after the cutoff",
+     "FAIL  src/db/reservations.test.ts > one slot per Idempotency-Key, and its first answer on every retry (T19, Q12) > leaves no receipt for a refusal, so the same key can be tried again once a slot is free"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C14",
+  "what": "a release of another member's reservation",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > giving a slot back (T15, T18, T20) > gives the neutral not-found for another member's slot, an earlier interval's, a former member's and a guessed id"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C15",
+  "what": "the receipt read without the interval that made it (FQ112)",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > one slot per Idempotency-Key, and its first answer on every retry (T19, Q12) > names nothing to a rejoined account under a key its earlier interval used (FQ112)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C16",
+  "what": "next_target the target itself",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/authorization/add-target.test.ts > the same person's next day, for a refusal to offer (T4) > offers the star's earliest day after the target, never the target itself, and none when there is none",
+     "FAIL  src/authorization/add-target.test.ts > the same person's next day, for a refusal to offer (T4) > skips a cancelled, suspended or held day, another star's, and another club's"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > holds six photos for Ana, and refuses a seventh with QUOTA_FULL, Ana's own counts and the next Saturday",
+     "FAIL  src/db/reservations.test.ts > the star's allowance: six drops, two of them links at most (ND01, T17) > refuses Ana's third link with EXTERNAL_LIMIT while the total is free, then holds four photos, then QUOTA_FULL"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C17",
+  "what": "an ended interval taken as the caller's",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > one person's counter in one day, and nothing else's (ND04) > starts a rejoined account's new interval with an empty allowance, the old interval's slots staying its own",
+     "FAIL  src/db/reservations.test.ts > nothing for anyone the day isn't theirs to add to (T9, T14; FQ63) > gives the neutral not-found to Dan, a guessed day, an id that can't be one, and a former member"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C18",
+  "what": "a held day answers NOT_FOUND, not MEMBERSHIP_CHANGED",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > nothing for anyone the day isn't theirs to add to (T9, T14; FQ63) > answers MEMBERSHIP_CHANGED, with no facts, for a day whose star left or asked to delete before its reveal (FQ63)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C19",
+  "what": "a star who left before the reveal not holding the day",
+  "caught": true,
+  "by": [
+   {
+    "suite": "U",
+    "exit": 1,
+    "first": [
+     "FAIL  src/authorization/add-target.test.ts > a day whose star has gone is held, whatever the time (FQ63, T27) > holds the day when the star left, or asked to delete their account, before its reveal, and not at or after it"
+    ]
+   },
+   {
+    "suite": "D",
+    "exit": 0,
+    "first": []
+   }
+  ]
+ },
+ {
+  "id": "C20",
+  "what": "a refusal without its allowance",
+  "caught": true,
+  "by": [
+   {
+    "suite": "R",
+    "exit": 1,
+    "first": [
+     "FAIL  src/drops/reservations.test.ts > a refusal's facts against the contract's scenes: the day, the caller's allowance, the next day (T4, T15) > makes QUOTA_FULL field for field, in the contract's order",
+     "FAIL  src/drops/reservations.test.ts > a refusal's facts against the contract's scenes: the day, the caller's allowance, the next day (T4, T15) > makes EXTERNAL_LIMIT field for field, in the contract's order"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C21",
+  "what": "a release that settles no lapse",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > giving a slot back (T15, T18, T20) > answers expired for a slot that has lapsed, and consumed with the caller's own drop for one a commit used",
+     "FAIL  src/db/reservations.test.ts > giving a slot back (T15, T18, T20) > gives back a slot in a day whose star has gone, and after the reveal answers the slot as lapsed"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "C22",
+  "what": "the limits checked before the lapses are settled",
+  "caught": true,
+  "by": [
+   {
+    "suite": "D",
+    "exit": 1,
+    "first": [
+     "FAIL  src/db/reservations.test.ts > a slot lapses at its expires_at, with nothing to run (T18) > frees a lapsed slot for the next request, marks it expired at its own expires_at, and keeps the counter true"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J01",
+  "what": "judge: a drop withdrawn before the reveal still counted",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > the allowance in a day, by role (allowanceIn; T15, T17, T18; addendum 2) > counts the interval's own drops and live slots, with the limits of its role there",
+     "FAIL  src/privacy/reservation.test.ts > what createReservation must answer (reserveOutcome, reserveExpected) > refuses QUOTA_FULL first, then EXTERNAL_LIMIT or PHOTO_LIMIT, each with the day, the allowance and the next day (T17)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J02",
+  "what": "judge: a refusal may settle the caller's lapses",
+  "caught": false,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 0,
+    "first": []
+   }
+  ]
+ },
+ {
+  "id": "J03",
+  "what": "judge: QUOTA_FULL after the others",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what createReservation must answer (reserveOutcome, reserveExpected) > refuses QUOTA_FULL first, then EXTERNAL_LIMIT or PHOTO_LIMIT, each with the day, the allowance and the next day (T17)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J04",
+  "what": "judge: a friend's photo limit at three",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > the allowance in a day, by role (allowanceIn; T15, T17, T18; addendum 2) > counts the interval's own drops and live slots, with the limits of its role there",
+     "FAIL  src/privacy/reservation.test.ts > what createReservation must answer (reserveOutcome, reserveExpected) > refuses QUOTA_FULL first, then EXTERNAL_LIMIT or PHOTO_LIMIT, each with the day, the allowance and the next day (T17)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J05",
+  "what": "judge: a star's deletion request not holding the day",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what createReservation must answer (reserveOutcome, reserveExpected) > answers MEMBERSHIP_CHANGED, with no fact, for a day whose star left or asked to delete before its reveal (FQ63)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J06",
+  "what": "judge: expires_at not capped",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what createReservation must answer (reserveOutcome, reserveExpected) > holds a slot of the caller's for 30 minutes, or until the reveal if it comes first, in whole seconds (T18)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J07",
+  "what": "judge: anyone may give back a slot",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what releaseReservation must answer, and the rows after it (releaseOutcome, releaseExpected, releasedProblems) > gives the neutral not-found for a slot nobody has, someone else's, or one in a club or day that answers nobody (T14)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J08",
+  "what": "judge: a release's own state unchecked",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what releaseReservation must answer, and the rows after it (releaseOutcome, releaseExpected, releasedProblems) > takes the slot ended as the answer says and the caller's own lapsed slots settled, and refuses anything else"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J09",
+  "what": "judge: a suspended club still lets members add",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > who may add to a day (adderOf) > is an active account's active interval in the day's club, while the club and the day allow it",
+     "FAIL  src/privacy/reservation.test.ts > what releaseReservation must answer, and the rows after it (releaseOutcome, releaseExpected, releasedProblems) > gives the neutral not-found for a slot nobody has, someone else's, or one in a club or day that answers nobody (T14)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J10",
+  "what": "judge: a slot live at its own expires_at",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > the allowance in a day, by role (allowanceIn; T15, T17, T18; addendum 2) > counts the interval's own drops and live slots, with the limits of its role there",
+     "FAIL  src/privacy/reservation.test.ts > what releaseReservation must answer, and the rows after it (releaseOutcome, releaseExpected, releasedProblems) > answers a live slot released, a lapsed one expired, a used one with its drop (T20), and an ended one as it ended"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J11",
+  "what": "judge: the slot held's rows unchecked",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what the rows after createReservation must hold (heldProblems) > refuses a slot not the answer's, of someone else, of another media or lapsing at another time, and two slots"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J12",
+  "what": "judge: no next day offered",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what createReservation must answer (reserveOutcome, reserveExpected) > refuses from the reveal on with the day as it is then and the star's next day (T3, T4)",
+     "FAIL  src/privacy/reservation.test.ts > what createReservation must answer (reserveOutcome, reserveExpected) > refuses QUOTA_FULL first, then EXTERNAL_LIMIT or PHOTO_LIMIT, each with the day, the allowance and the next day (T17)"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "J13",
+  "what": "judge: a refusal may settle any lapsed slot, the caller's or another's",
+  "caught": true,
+  "by": [
+   {
+    "suite": "J",
+    "exit": 1,
+    "first": [
+     "FAIL  src/privacy/reservation.test.ts > what the rows after createReservation must hold (heldProblems) > refuses another's slot settled, a slot gone, and anything a refusal changed (T19)"
+    ]
+   }
+  ]
+ }
+]
