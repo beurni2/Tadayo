@@ -5,8 +5,12 @@ import Foundation
 // once and keeps only its token's hash, so Share again shares the app's own copy. The copy is
 // kept while its candidate's proposal is open, through `live`, `accepted` and `used`, in the
 // account's own store on the device, and purged when the candidate joins, when the invitation
-// ends, when the server says the link no longer works, and at Leave sign-in (T11). Nothing here
-// prints, reflects or dumps a link (T7, T52).
+// ends, when the server says the link no longer works, and at Leave sign-in (T11). The same file
+// keeps the token of each invitation the account accepted, so it can be accepted again once its
+// roster changes (the contract's `MyInvitationState`; `docs/plans/ios-b1-invitation.md` section
+// 1): kept while the invitation waits on its members, and dropped when it joins or ends, when the
+// server says the link no longer works, and at Leave sign-in. Nothing here prints, reflects or
+// dumps a link or a token (T7, T52).
 
 /// One link the app made, for one candidate of one club.
 public struct KeptInvitationLink: Sendable, Equatable, Codable, CustomStringConvertible,
@@ -41,22 +45,87 @@ public struct KeptInvitationLink: Sendable, Equatable, Codable, CustomStringConv
     }
 }
 
-/// One account's kept links, as the vault holds them: the account's id and its links, nothing
-/// else.
+/// The token of an invitation the account accepted, kept so the account can accept it again after
+/// its roster changes (the contract's `MyInvitationState`), with whether the server last made a
+/// revision for the account's name (FQ66), which `G02-changed-name` says after a relaunch
+/// (`handoff8.nameChanged.explanationAfterRelaunch`).
+public struct KeptReceivedInvitation: Sendable, Equatable, Codable, CustomStringConvertible,
+    CustomDebugStringConvertible, CustomReflectable
+{
+    public let invitationID: String
+    /// The token itself, for the invitation's calls alone.
+    let secret: String
+    /// The server answered an acceptance with `changed`, and the account hasn't accepted since.
+    public internal(set) var nameChanged: Bool
+
+    init(invitationID: String, secret: String, nameChanged: Bool) {
+        self.invitationID = invitationID
+        self.secret = secret
+        self.nameChanged = nameChanged
+    }
+
+    /// The token, or nil if what was kept is no token (a damaged item).
+    public var token: InvitationToken? { InvitationToken(secret: secret) }
+
+    public var description: String { "KeptReceivedInvitation(\(invitationID))" }
+    public var debugDescription: String { description }
+    public var customMirror: Mirror {
+        Mirror(self, children: ["invitationID": invitationID, "nameChanged": nameChanged])
+    }
+}
+
+/// One account's kept links and accepted invitations, as the vault holds them: the account's id,
+/// its links and its tokens, nothing else.
 public struct InvitationLinkFile: Sendable, Equatable, Codable, CustomStringConvertible,
     CustomDebugStringConvertible, CustomReflectable
 {
     public let accountID: String
     public var links: [KeptInvitationLink]
+    public var received: [KeptReceivedInvitation]
 
-    public init(accountID: String, links: [KeptInvitationLink]) {
+    public init(
+        accountID: String, links: [KeptInvitationLink], received: [KeptReceivedInvitation] = []
+    ) {
         self.accountID = accountID
         self.links = links
+        self.received = received
     }
 
-    public var description: String { "InvitationLinkFile(\(links.count))" }
+    private enum CodingKeys: String, CodingKey {
+        case accountID, links, received
+    }
+
+    /// A file an earlier build wrote has no `received`: it holds none.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        accountID = try container.decode(String.self, forKey: .accountID)
+        links = try container.decode([KeptInvitationLink].self, forKey: .links)
+        received =
+            try container.decodeIfPresent([KeptReceivedInvitation].self, forKey: .received) ?? []
+    }
+
+    /// Nothing kept: the vault holds no file for it.
+    var isEmpty: Bool { links.isEmpty && received.isEmpty }
+
+    public var description: String { "InvitationLinkFile(\(links.count), \(received.count))" }
     public var debugDescription: String { description }
-    public var customMirror: Mirror { Mirror(self, children: ["links": links]) }
+    public var customMirror: Mirror {
+        Mirror(self, children: ["links": links, "received": received])
+    }
+}
+
+/// One thing the book keeps, for the rules that apply to both.
+enum KeptEntry {
+    case link(KeptInvitationLink)
+    case received(KeptReceivedInvitation)
+
+    /// When it was kept is recorded under this.
+    var key: String {
+        switch self {
+        case .link(let link): "link \(link.invitationID)"
+        case .received(let received): "received \(received.invitationID)"
+        }
+    }
 }
 
 /// Where the kept links live between launches: the app's keychain item, or memory in the tests.
@@ -94,13 +163,13 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     }
 }
 
-/// The rules for the kept links, over a vault. The app makes one at launch and the setup list's
-/// models share it.
+/// The rules for the kept links and tokens, over a vault. The app makes one at launch and the
+/// setup list's and the invitation's models share it.
 ///
-/// Only a successful answer to a read requested after a link was kept decides on it: a read takes
-/// a stamp first (`beginRead()`), and a link kept after that stamp is left alone by its answer,
-/// which can't list it yet. Links found in the vault at launch count as kept before any read of
-/// that launch. A failed or offline read is never settled, so it changes nothing.
+/// Only a successful answer to a read requested after a link or a token was kept decides on it: a
+/// read takes a stamp first (`beginRead()`), and what's kept after that stamp is left alone by its
+/// answer, which can't list it yet. What's found in the vault at launch counts as kept before any
+/// read of that launch. A failed or offline read is never settled, so it changes nothing.
 ///
 /// What's kept is in memory first and then in the vault: a vault that can't save leaves the link
 /// for this launch only. One that can't load (a locked iPhone, since the item is readable only
@@ -122,10 +191,10 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     /// A forget that could neither delete the vault's file nor leave an empty one in its place:
     /// the next access tries again before anything else.
     private var forgetPending = false
-    /// What keeps, reads and revokes decided while the vault couldn't be read, for its links once
-    /// it is: the account, the stamp, and the links it drops.
-    private var unread: [(account: String, stamp: UInt64, drop: (KeptInvitationLink) -> Bool)] = []
-    /// When each link was kept in this launch, by invitation id.
+    /// What keeps, reads and revokes decided while the vault couldn't be read, for what it holds
+    /// once it is: the account, the stamp, and what it drops.
+    private var unread: [(account: String, stamp: UInt64, drop: (KeptEntry) -> Bool)] = []
+    /// When each link and token was kept in this launch, by its entry's key.
     private var keptAt: [String: UInt64] = [:]
     private var clock: UInt64 = 0
 
@@ -156,7 +225,7 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
             url: url, shared: false)
         kept.links.append(made)
         clock += 1
-        keptAt[link.invitationID] = clock
+        keptAt[KeptEntry.link(made).key] = clock
         if !loaded {
             // The vault's link for this candidate, or of this invitation, is replaced too, even if
             // this one has gone by the time the vault is read.
@@ -165,8 +234,9 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
                 (
                     accountID, clock,
                     {
-                        ($0.clubID == clubID && $0.candidateID == candidateID)
-                            || $0.invitationID == invitationID
+                        guard case .link(let old) = $0 else { return false }
+                        return (old.clubID == clubID && old.candidateID == candidateID)
+                            || old.invitationID == invitationID
                     }
                 ))
         }
@@ -196,7 +266,69 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     /// The server answered a revoke of the link: it no longer works, so it goes at once
     /// (ADR-037), whatever a read says later.
     public func drop(_ invitationID: String, account accountID: String) {
-        purge(accountID, stamp: Stamp(value: .max)) { $0.invitationID == invitationID }
+        purgeLinks(accountID, stamp: Stamp(value: .max)) { $0.invitationID == invitationID }
+    }
+
+    /// Keeps the token of an invitation this account has accepted, once the server has shown the
+    /// token is the account's: a preview's `waiting` or `changed`, or an acceptance's (the
+    /// contract's `MyInvitationState`). It replaces a token kept for the same invitation, and the
+    /// same token kept under another invitation. `nameChanged` is set by an acceptance's
+    /// `changed`, cleared by its `waiting`, and left as it was when nil (a preview). Keeping for
+    /// another account than the one whose file is kept starts that account's file in its place
+    /// (T11); an empty account or invitation id keeps nothing.
+    @discardableResult
+    public func keepReceived(
+        _ token: InvitationToken, invitation invitationID: String, account accountID: String,
+        nameChanged: Bool? = nil
+    ) -> KeptReceivedInvitation? {
+        guard !accountID.isEmpty, !invitationID.isEmpty else { return nil }
+        var kept = linksFile(for: accountID) ?? InvitationLinkFile(accountID: accountID, links: [])
+        let secret = token.secret
+        let same: (KeptReceivedInvitation) -> Bool = {
+            $0.invitationID == invitationID || $0.secret == secret
+        }
+        let earlier = kept.received.last(where: same)
+        kept.received.removeAll(where: same)
+        let made = KeptReceivedInvitation(
+            invitationID: invitationID, secret: secret,
+            nameChanged: nameChanged ?? earlier?.nameChanged ?? false)
+        kept.received.append(made)
+        clock += 1
+        keptAt[KeptEntry.received(made).key] = clock
+        if !loaded {
+            // The vault's token of this invitation, or this token under another, is replaced too.
+            unread.append(
+                (
+                    accountID, clock,
+                    {
+                        guard case .received(let old) = $0 else { return false }
+                        return same(old)
+                    }
+                ))
+        }
+        write(kept)
+        return made
+    }
+
+    /// The kept invitation whose token this is, if this account's file holds it.
+    public func received(_ token: InvitationToken, account accountID: String)
+        -> KeptReceivedInvitation?
+    {
+        linksFile(for: accountID)?.received.first { $0.secret == token.secret }
+    }
+
+    /// The kept invitation with this id, if this account's file holds it.
+    public func received(invitation invitationID: String, account accountID: String)
+        -> KeptReceivedInvitation?
+    {
+        linksFile(for: accountID)?.received.first { $0.invitationID == invitationID }
+    }
+
+    /// The server said the invitation joined or ended, or that its link no longer works
+    /// (`joined`, `did_not_go_ahead`, `expired`, `NOT_FOUND`): its token goes at once.
+    public func dropReceived(_ token: InvitationToken, account accountID: String) {
+        let secret = token.secret
+        purgeReceived(accountID, stamp: Stamp(value: .max)) { $0.secret == secret }
     }
 
     /// The stamp to take just before requesting a read that will settle the links.
@@ -222,7 +354,7 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
                 break
             }
         }
-        purge(accountID, stamp: stamp) {
+        purgeLinks(accountID, stamp: stamp) {
             $0.clubID == clubID && !held.contains("\($0.candidateID) \($0.invitationID)")
         }
     }
@@ -230,14 +362,23 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     /// A not found from `listMembers`, requested at `stamp`: the club is no longer the caller's,
     /// so its links go.
     public func settleGone(club clubID: String, stamp: Stamp, account accountID: String) {
-        purge(accountID, stamp: stamp) { $0.clubID == clubID }
+        purgeLinks(accountID, stamp: stamp) { $0.clubID == clubID }
     }
 
     /// A successful `listClubs` answer, requested at `stamp`: the links of a club it no longer
-    /// holds go.
+    /// holds go, and so does the token of each accepted invitation it no longer holds as waiting
+    /// on its members or changed (`waiting`, `roster_changed`): it joined, or it ended.
     public func settle(_ list: ClubList, stamp: Stamp, account accountID: String) {
         let clubs = Set(list.clubs.map(\.id))
-        purge(accountID, stamp: stamp) { !clubs.contains($0.clubID) }
+        let open = Set(
+            list.invitations.filter { $0.state == .waiting || $0.state == .rosterChanged }
+                .map(\.invitationID))
+        purge(accountID, stamp: stamp) {
+            switch $0 {
+            case .link(let link): !clubs.contains(link.clubID)
+            case .received(let received): !open.contains(received.invitationID)
+            }
+        }
     }
 
     /// Forgets every link, in memory and in the vault: at Leave sign-in, which is both logout and
@@ -272,11 +413,12 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         }
         loaded = true
         var merged = Self.merge(stored, file)
-        // What a read or a revoke decided meanwhile holds for the vault's links too.
+        // What a read or a revoke decided meanwhile holds for the vault's links and tokens too.
         if var applied = merged {
             for decision in unread where decision.account == applied.accountID {
-                applied.links.removeAll {
-                    (keptAt[$0.invitationID] ?? 0) < decision.stamp && decision.drop($0)
+                applied.links.removeAll { decides(decision.stamp, decision.drop, .link($0)) }
+                applied.received.removeAll {
+                    decides(decision.stamp, decision.drop, .received($0))
                 }
             }
             merged = applied
@@ -286,9 +428,10 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         if let merged, merged != stored { persist(merged) }
     }
 
-    /// The vault's file with what this launch kept before it was read: one account's links at a
-    /// time, this launch's account's, and this launch's link in place of the vault's for the same
-    /// candidate or invitation.
+    /// The vault's file with what this launch kept before it was read: one account's file at a
+    /// time, this launch's account's, this launch's link in place of the vault's for the same
+    /// candidate or invitation, and this launch's token in place of the vault's for the same
+    /// invitation or token.
     private static func merge(_ stored: InvitationLinkFile?, _ kept: InvitationLinkFile?)
         -> InvitationLinkFile?
     {
@@ -301,6 +444,12 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
             }
         }
         merged.links += kept.links
+        merged.received.removeAll { old in
+            kept.received.contains {
+                $0.invitationID == old.invitationID || $0.secret == old.secret
+            }
+        }
+        merged.received += kept.received
         return merged
     }
 
@@ -311,19 +460,47 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         forgetPending = !blanked
     }
 
-    /// Drops this account's links that `drop` picks and that were kept before `stamp`; while the
-    /// vault is unread, the decision is kept for its links too.
-    private func purge(
+    /// Whether `drop`, decided at `stamp`, takes `entry`: only what was kept before it.
+    private func decides(
+        _ stamp: UInt64, _ drop: (KeptEntry) -> Bool, _ entry: KeptEntry
+    ) -> Bool {
+        (keptAt[entry.key] ?? 0) < stamp && drop(entry)
+    }
+
+    private func purgeLinks(
         _ accountID: String, stamp: Stamp, where drop: @escaping (KeptInvitationLink) -> Bool
+    ) {
+        purge(accountID, stamp: stamp) {
+            guard case .link(let link) = $0 else { return false }
+            return drop(link)
+        }
+    }
+
+    private func purgeReceived(
+        _ accountID: String, stamp: Stamp, where drop: @escaping (KeptReceivedInvitation) -> Bool
+    ) {
+        purge(accountID, stamp: stamp) {
+            guard case .received(let received) = $0 else { return false }
+            return drop(received)
+        }
+    }
+
+    /// Drops this account's links and tokens that `drop` picks and that were kept before `stamp`;
+    /// while the vault is unread, the decision is kept for what it holds too.
+    private func purge(
+        _ accountID: String, stamp: Stamp, where drop: @escaping (KeptEntry) -> Bool
     ) {
         let found = linksFile(for: accountID)
         if !loaded, !accountID.isEmpty { unread.append((accountID, stamp.value, drop)) }
         guard var kept = found else { return }
-        let before = kept.links.count
-        kept.links.removeAll { (keptAt[$0.invitationID] ?? 0) < stamp.value && drop($0) }
-        guard kept.links.count != before else { return }
-        for invitationID in Set(keptAt.keys).subtracting(kept.links.map(\.invitationID)) {
-            keptAt[invitationID] = nil
+        let before = (kept.links.count, kept.received.count)
+        kept.links.removeAll { decides(stamp.value, drop, .link($0)) }
+        kept.received.removeAll { decides(stamp.value, drop, .received($0)) }
+        guard (kept.links.count, kept.received.count) != before else { return }
+        let left = Set(kept.links.map { KeptEntry.link($0).key })
+            .union(kept.received.map { KeptEntry.received($0).key })
+        for key in Set(keptAt.keys).subtracting(left) {
+            keptAt[key] = nil
         }
         write(kept)
     }
@@ -339,7 +516,7 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
     /// delete.
     private func persist(_ kept: InvitationLinkFile) {
         let written: Bool
-        if kept.links.isEmpty {
+        if kept.isEmpty {
             written = (try? vault.delete()) != nil || (try? vault.save(kept)) != nil
         } else {
             written = (try? vault.save(kept)) != nil

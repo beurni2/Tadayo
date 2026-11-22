@@ -466,6 +466,211 @@ import Testing
         }
     }
 
+    // MARK: An accepted invitation's token (the contract's `MyInvitationState`)
+
+    func accepted(_ id: String, _ state: MyInvitationState) -> MyInvitation {
+        MyInvitation(invitationID: id, clubName: "Kitchen table", inviterName: "Ben", state: state)
+    }
+
+    func clubList(_ invitations: [MyInvitation], clubs: [ClubSummary] = []) -> ClubList {
+        ClubList(serverClock: Sunday.clock, clubs: clubs, invitations: invitations)
+    }
+
+    @Test func anAcceptedTokenIsKeptAndReadByTokenAndByInvitation() throws {
+        let vault = InMemoryInvitationLinkVault()
+        let links = book(vault)
+        let token = Kitchen.token(1)
+        let kept = try #require(
+            links.keepReceived(token, invitation: "inv_leila", account: account))
+        #expect(kept.token == token)
+        #expect(!kept.nameChanged)
+        #expect(links.received(token, account: account) == kept)
+        #expect(links.received(invitation: "inv_leila", account: account) == kept)
+        #expect(links.received(Kitchen.token(2), account: account) == nil)
+        #expect(links.received(invitation: "inv_other", account: account) == nil)
+        // Another account's file is never read for it (T11).
+        #expect(links.received(token, account: "acct_maya") == nil)
+        // In the vault, for the next launch, beside no link.
+        #expect(try vault.load()?.received == [kept])
+        #expect(book(vault).received(token, account: account) == kept)
+    }
+
+    @Test func anEmptyAccountOrInvitationKeepsNothing() {
+        let links = book()
+        #expect(links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: "") == nil)
+        #expect(links.keepReceived(Kitchen.token(1), invitation: "", account: account) == nil)
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+    }
+
+    @Test func theSameInvitationOrTheSameTokenIsReplacedAndTheMarkCarried() {
+        let links = book()
+        links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: account)
+        #expect(links.received(Kitchen.token(1), account: account)?.nameChanged == false)
+        links.keepReceived(
+            Kitchen.token(1), invitation: "inv_leila", account: account, nameChanged: true)
+        // A preview leaves the mark as it was.
+        links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: account)
+        #expect(links.received(Kitchen.token(1), account: account)?.nameChanged == true)
+        // A new token for the same invitation replaces the old one.
+        links.keepReceived(Kitchen.token(2), invitation: "inv_leila", account: account)
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+        #expect(
+            links.received(invitation: "inv_leila", account: account)?.token == Kitchen.token(2))
+        // The same token under another invitation id replaces it too.
+        links.keepReceived(Kitchen.token(2), invitation: "inv_other", account: account)
+        #expect(links.received(invitation: "inv_leila", account: account) == nil)
+        #expect(links.received(Kitchen.token(2), account: account)?.invitationID == "inv_other")
+    }
+
+    @Test func aDroppedTokenGoesAtOnceAndTheLastOneDeletesTheFile() {
+        let vault = FailingVault()
+        let links = book(vault)
+        links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: account)
+        let stamp = links.beginRead()
+        links.dropReceived(Kitchen.token(1), account: account)
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+        #expect(vault.kept == nil)
+        // A read requested before then, answering with the invitation still waiting, brings
+        // nothing back.
+        links.settle(
+            clubList([accepted("inv_leila", .waiting)]), stamp: stamp, account: account)
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+    }
+
+    @Test func aClubListKeepsWaitingAndChangedTokensAndDropsTheRest() {
+        let links = book()
+        for (n, id) in ["inv_waiting", "inv_changed", "inv_ended", "inv_gone"].enumerated() {
+            links.keepReceived(Kitchen.token(n + 1), invitation: id, account: account)
+        }
+        links.settle(
+            clubList([
+                accepted("inv_waiting", .waiting), accepted("inv_changed", .rosterChanged),
+                accepted("inv_ended", .didNotGoAhead),
+            ]), stamp: links.beginRead(), account: account)
+        #expect(links.received(invitation: "inv_waiting", account: account) != nil)
+        #expect(links.received(invitation: "inv_changed", account: account) != nil)
+        // It didn't go ahead, or it joined (no longer listed): its token goes.
+        #expect(links.received(invitation: "inv_ended", account: account) == nil)
+        #expect(links.received(invitation: "inv_gone", account: account) == nil)
+    }
+
+    @Test func aTokenKeptWhileTheListWasReadIsLeftByItsAnswer() {
+        let links = book()
+        let stamp = links.beginRead()
+        // Accepted while the list was on its way: its answer can't list it yet.
+        links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: account)
+        links.settle(clubList([]), stamp: stamp, account: account)
+        #expect(links.received(Kitchen.token(1), account: account) != nil)
+        links.settle(clubList([]), stamp: links.beginRead(), account: account)
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+    }
+
+    @Test func aClubListSettlesLinksAndTokensApart() {
+        let links = book()
+        links.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(9)), club: club,
+            account: account)
+        links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: account)
+        // Sunday people listed, the invitation not: the link stays and the token goes.
+        links.settle(
+            clubList([], clubs: [Sunday.summary]), stamp: links.beginRead(), account: account)
+        #expect(links.link(for: "cand_sam", club: club, account: account) != nil)
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+        // The invitation listed, the club not: the token stays and the link goes.
+        links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: account)
+        links.settle(
+            clubList([accepted("inv_leila", .waiting)]), stamp: links.beginRead(),
+            account: account)
+        #expect(links.link(for: "cand_sam", club: club, account: account) == nil)
+        #expect(links.received(Kitchen.token(1), account: account) != nil)
+    }
+
+    @Test func forgettingDropsTheTokensWithTheLinks() throws {
+        let vault = InMemoryInvitationLinkVault()
+        let links = book(vault)
+        links.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: account)
+        links.forget()
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+        #expect(try vault.load() == nil)
+    }
+
+    @Test func aDecisionWhileTheVaultWasLockedHoldsForItsTokensOnceItsRead() throws {
+        let stored = [
+            KeptReceivedInvitation(
+                invitationID: "inv_waiting", secret: Kitchen.token(1).secret, nameChanged: true),
+            KeptReceivedInvitation(
+                invitationID: "inv_ended", secret: Kitchen.token(2).secret, nameChanged: false),
+            KeptReceivedInvitation(
+                invitationID: "inv_joined", secret: Kitchen.token(3).secret, nameChanged: false),
+        ]
+        let vault = FailingVault(
+            InvitationLinkFile(accountID: account, links: [], received: stored))
+        vault.failLoads = true
+        let links = book(vault)
+        links.settle(
+            clubList([accepted("inv_waiting", .waiting), accepted("inv_joined", .waiting)]),
+            stamp: links.beginRead(), account: account)
+        links.dropReceived(Kitchen.token(3), account: account)
+        #expect(vault.kept?.received == stored)
+        vault.failLoads = false
+        #expect(links.received(Kitchen.token(1), account: account) == stored[0])
+        #expect(links.received(Kitchen.token(2), account: account) == nil)
+        #expect(links.received(Kitchen.token(3), account: account) == nil)
+        #expect(vault.kept?.received == [stored[0]])
+    }
+
+    @Test func aTokenKeptWhileTheVaultWasLockedReplacesTheVaultsForTheSameInvitation() throws {
+        let older = KeptReceivedInvitation(
+            invitationID: "inv_leila", secret: Kitchen.token(1).secret, nameChanged: true)
+        let vault = FailingVault(
+            InvitationLinkFile(accountID: account, links: [], received: [older]))
+        vault.failLoads = true
+        let links = book(vault)
+        links.keepReceived(
+            Kitchen.token(2), invitation: "inv_leila", account: account, nameChanged: false)
+        vault.failLoads = false
+        #expect(links.received(Kitchen.token(1), account: account) == nil)
+        #expect(
+            links.received(invitation: "inv_leila", account: account)?.token == Kitchen.token(2))
+        #expect(vault.kept?.received.count == 1)
+    }
+
+    @Test func aFileWithoutTokensDecodesWithNone() throws {
+        // As an earlier build wrote it: the account and its links, nothing else.
+        let json = Data(
+            #"{"accountID":"acct_ben","links":[{"clubID":"club_sunday","candidateID":"cand_sam","invitationID":"inv_sam","url":"https://tadayo.app/i#tok0000000000000000000000000000000000000001","shared":true}]}"#
+                .utf8)
+        let file = try JSONDecoder().decode(InvitationLinkFile.self, from: json)
+        #expect(file.accountID == "acct_ben")
+        #expect(file.links.map(\.invitationID) == ["inv_sam"])
+        #expect(file.received.isEmpty)
+        // And a file with tokens comes back whole.
+        let kept = InvitationLinkFile(
+            accountID: account, links: [],
+            received: [
+                KeptReceivedInvitation(
+                    invitationID: "inv_leila", secret: Kitchen.token(1).secret, nameChanged: true)
+            ])
+        #expect(
+            try JSONDecoder().decode(InvitationLinkFile.self, from: JSONEncoder().encode(kept))
+                == kept)
+    }
+
+    @Test func nothingTheTypesPrintHoldsTheToken() throws {
+        let links = book()
+        let token = Kitchen.token(7)
+        let kept = try #require(
+            links.keepReceived(token, invitation: "inv_leila", account: account, nameChanged: true))
+        let file = InvitationLinkFile(accountID: account, links: [], received: [kept])
+        for text in [
+            String(describing: kept), String(reflecting: kept), String(describing: file),
+            String(reflecting: file), dumped(kept), dumped(file), "\(kept)", "\(file)",
+        ] {
+            #expect(!text.contains(token.secret), "\(text)")
+            #expect(!text.contains("tok0000"), "\(text)")
+        }
+    }
+
     private func dumped(_ value: Any) -> String {
         var text = ""
         dump(value, to: &text)
