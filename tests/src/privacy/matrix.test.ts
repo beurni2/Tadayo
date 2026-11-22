@@ -134,6 +134,7 @@ import {
   genericBody,
   outcomeOf,
   proposalFor,
+  rowsSeen,
   sameBody,
   scheduleCases,
   scheduleWorldOf,
@@ -1746,7 +1747,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                   ? []
                   : ["a retry under its key got another answer than the first (T19)"]
                 : pinnedProblems(answer, want);
-            if (canonical([...facts.world.reservations]) !== canonical([...previous.world.reservations]))
+            if (rowsSeen(facts.world.reservations) !== rowsSeen(previous.world.reservations))
               problems.push("a request under a key that kept a slot changed a reservation (T19)");
             tellSlot("createReservation", sent, answer, problems, note);
           };
@@ -1856,7 +1857,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               tell(first, pinnedProblems(first, outcome), "a leave by someone the club answers nothing");
               if (canonical(after.clubs.get(cell.w.club)) !== canonical(before.clubs.get(cell.w.club)))
                 wrong.push(`${state.name}, ${phase}: a refused leave changed the club's rows`);
-              if (canonical([...after.schedule.members]) !== canonical([...before.schedule.members]))
+              if (rowsSeen(after.schedule.members) !== rowsSeen(before.schedule.members))
                 wrong.push(`${state.name}, ${phase}: a refused leave changed a membership`);
             } else {
               left.left += 1;

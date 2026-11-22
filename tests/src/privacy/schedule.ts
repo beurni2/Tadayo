@@ -505,6 +505,24 @@ export function canonical(value: unknown): string {
   return value === undefined ? "undefined" : JSON.stringify(value);
 }
 
+/**
+ * A table of the world's rows, keyed by id, as one text to compare before and after a request: the rows by id
+ * byte by byte, and each instant written out in full. The world's queries have no ORDER BY, so two reads of the
+ * same rows can come back in another order, as when the planner picks another join between them; and
+ * `canonical` writes a Temporal.Instant, which has no fields of its own, as `{}`, so a moved instant would
+ * compare equal.
+ */
+export function rowsSeen(rows: ReadonlyMap<string, object>): string {
+  const instantsInFull = (row: object) =>
+    Object.fromEntries(
+      Object.entries(row).map(([field, value]) => [
+        field,
+        value instanceof Temporal.Instant ? value.toString() : (value as unknown),
+      ]),
+    );
+  return canonical([...rows].sort(([a], [b]) => byBytes(a, b)).map(([id, row]) => [id, instantsInFull(row)]));
+}
+
 function parsed(answer: Answer): unknown {
   try {
     return JSON.parse(answer.body);

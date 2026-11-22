@@ -14,6 +14,7 @@ import {
   daysOfViewer,
   outcomeOf,
   proposalFor,
+  rowsSeen,
   sameBody,
   viewerIn,
   weekChangeProblems,
@@ -475,6 +476,35 @@ describe("the judges' own helpers", () => {
     expect(canonical({ b: [1, { d: 2, c: 3 }], a: "x" })).toBe('{"a":"x","b":[1,{"c":3,"d":2}]}');
     expect(canonical({ a: null })).not.toBe(canonical({}));
     expect(canonical(undefined)).toBe("undefined");
+  });
+
+  it("compares a table of rows whatever order its query gave them in, and tells a moved instant from none", () => {
+    const at = Temporal.Instant.from("2026-11-02T08:30:00Z");
+    const one = { state: "live", expiresAt: at, drop: null };
+    const two = { state: "released", expiresAt: at, drop: null };
+    const rows = new Map<string, object>([
+      ["res_b", two],
+      ["res_a", one],
+    ]);
+    const reread = new Map<string, object>([
+      ["res_a", { ...one }],
+      ["res_b", { ...two }],
+    ]);
+    // The same rows read again in another order: `canonical` of the entries tells them apart, `rowsSeen` doesn't.
+    expect(canonical([...rows])).not.toBe(canonical([...reread]));
+    expect(rowsSeen(rows)).toBe(rowsSeen(reread));
+    // An instant that moved: `canonical` writes both as `{}`, `rowsSeen` tells them apart.
+    const moved = new Map<string, object>([...rows, ["res_a", { ...one, expiresAt: at.add({ minutes: 30 }) }]]);
+    expect(canonical([...moved].sort())).toBe(canonical([...rows].sort()));
+    expect(rowsSeen(moved)).not.toBe(rowsSeen(rows));
+    // A row's state, a row gone and a row more each count.
+    expect(rowsSeen(new Map([...rows, ["res_a", { ...one, state: "expired" }]]))).not.toBe(rowsSeen(rows));
+    expect(rowsSeen(new Map([["res_a", one]]))).not.toBe(rowsSeen(rows));
+    expect(rowsSeen(new Map([...rows, ["res_c", one]]))).not.toBe(rowsSeen(rows));
+    expect(rowsSeen(rows)).toBe(
+      '[["res_a",{"drop":null,"expiresAt":"2026-11-02T08:30:00Z","state":"live"}],' +
+        '["res_b",{"drop":null,"expiresAt":"2026-11-02T08:30:00Z","state":"released"}]]',
+    );
   });
 });
 
