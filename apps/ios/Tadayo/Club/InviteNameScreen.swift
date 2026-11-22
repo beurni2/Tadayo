@@ -44,7 +44,7 @@ struct InviteNameScreen: View {
                     TextField(String(), text: text)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
-                        .submitLabel(.continue)
+                        .submitLabel(.next)
                         .onSubmit { Task { await createAndShare() } }
                         .focused($focused)
                 }

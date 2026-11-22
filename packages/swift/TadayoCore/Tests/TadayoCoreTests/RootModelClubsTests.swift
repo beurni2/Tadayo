@@ -695,6 +695,44 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
     }
 
+    @Test func leaveSignInForgetsTheKeptLinks() async throws {
+        // ADR-037, T11: Leave sign-in is both logout and the way to another account; the root
+        // forgets the book itself, whatever its `left` does.
+        let vault = InMemoryInvitationLinkVault()
+        let book = InvitationLinkBook(vault: vault)
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: "acct_ben")
+        let root = root(
+            FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen, sunday))]),
+            clubs: FakeClubs(club: [.success(detail(sunday, openRevision: nil))]), links: book)
+        await root.start()
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
+        await root.leave()
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") == nil)
+        #expect(try vault.load() == nil)
+    }
+
+    @Test func aListAnswerAfterLeaveSignInSettlesNothing() async {
+        // The list was asked for in the session Leave sign-in ended; a link kept afterwards, as
+        // the next sign-in would, isn't purged by its answer, which doesn't hold that club.
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))])
+        let gate = Gate()
+        accounts.duringClubs = { await gate.wait() }
+        let root = root(accounts, links: book)
+        let started = Task { await root.start() }
+        await gate.reached()
+        await root.leave()
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: "acct_ben")
+        gate.open()
+        await started.value
+        #expect(root.route == .signIn)
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
+    }
+
     // MARK: Creating a club
 
     @Test func aClubMadeIsSelectedAndKeptAndTheListIsReadAgain() async {

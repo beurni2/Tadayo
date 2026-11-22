@@ -228,6 +228,27 @@ import Testing
         #expect(!clubs.calls.contains { $0.hasPrefix("createInvitation") })
     }
 
+    @Test func aLinkGoneSinceTheRowWasShownShowsTheRowAsItIsNow() async {
+        // Another read (the name step's, Club details') purged Sam's link after the list showed
+        // Share link: the tap shares nothing and the row says what can be done now.
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.memberAnswers = [
+            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .live)]))
+        ]
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: club,
+            account: account)
+        let list = model(clubs, book: book)
+        await list.load()
+        #expect(row(list, "cand_sam")?.action == .shareLink)
+        book.drop("inv_sam", account: account)
+        #expect(await list.linkToShare(for: "cand_sam") == nil)
+        #expect(row(list, "cand_sam")?.action == .createNewLink)
+        #expect(!clubs.calls.contains { $0.hasPrefix("createInvitation") })
+    }
+
     @Test func aCandidateWithNoLinkGetsOneMadeAndKeptBeforeItsShared() async {
         let clubs = ScriptedClubs()
         clubs.clubAnswers = [.success(Sunday.detail())]

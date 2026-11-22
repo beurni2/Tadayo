@@ -28,7 +28,8 @@ struct InvitationActions {
 ///   (`InvitationRowView`); none before anyone is invited (`G01-invite-people-empty`, built from
 ///   spec);
 /// - 32 under the rows, or under the line when there are none, Create an invitation, the
-///   secondary button, while the server allows a proposal and a place is free (`canInvite`: frame 1's club of six draws none);
+///   secondary button, while the server allows a proposal and a place is free (`canInvite`:
+///   frame 1's club of six draws none);
 /// - 32 under that, "Only you can see this list." in `metadata` `secondaryText`;
 /// - Done for now pinned 44 above the safe area's bottom, as a form's primary action, with an
 ///   action's failure line 24 above it, said once as it shows.
@@ -168,9 +169,11 @@ struct ClubSetupHeading: View {
 ///   (`link`, `square.and.arrow.up`, `checkmark`, `arrow.clockwise`, `xmark.circle`), the glyph
 ///   and the words saying the same, never colour alone;
 /// - the action, if the row has one, in `rowAction` 15/20 `action` (`RowActionStyle`), a target at
-///   least 44 square, ending at 328, and More where the row has a menu: `ellipsis` in a 44-point
-///   target from 333 to 377 (handoff 4's `invitationRowActions`), the system's menu (T45), with
-///   Revoke link (destructive) or Create new link;
+///   least 44 square, its words ending at 328 and its target at 333, and More where the row has a
+///   menu: `ellipsis` in `secondaryText`, as every frame draws it, in a 44-point target from 333
+///   to 377 (handoff 4's `invitationRowActions`), the system's menu (T45), with Revoke link
+///   (destructive) or Create new link; while the row's action is on its way both are disabled,
+///   the action's words turn `secondaryText` and the status says so;
 /// - a used link the app doesn't hold adds handoff 8's two lines under the status, and offers
 ///   nothing (`links.used.missing`);
 /// - at least 74 high, centred, growing with the text; a used row at least 84, its content where a
@@ -179,8 +182,8 @@ struct ClubSetupHeading: View {
 ///
 /// At the accessibility sizes the status and the action go under the name, from the leading edge,
 /// with More kept beside the name, and the separator runs the full width (handoff 2's AX5 rule,
-/// frame `G01-invite-people-xl`); a used row's Share again takes the full width
-/// (`usedInvitationRow.largestText`). VoiceOver reads the name and the status as one element,
+/// frame `G01-invite-people-xl`); the action's target takes the full width, as a used row's Share
+/// again must (`usedInvitationRow.largestText`). VoiceOver reads the name and the status as one element,
 /// "Maya. Shared.", then each control by its own label ("Share again for Maya", "More options for
 /// Maya’s invitation"); the glyphs and the avatar are decorative (handoff 4: "Invitee glyphs … are
 /// decorative beside their words").
@@ -220,7 +223,7 @@ struct InvitationRowView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let action = row.action {
-                actionButton(action)
+                actionButton(action, trailing: row.menu.isEmpty ? 0 : Self.actionToMore)
                     .padding(.leading, Spacing.s)
             }
             if !row.menu.isEmpty {
@@ -248,8 +251,7 @@ struct InvitationRowView: View {
             status
             missing
             if let action = row.action {
-                actionButton(action)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                actionButton(action, fullWidth: true)
             }
         }
         .padding(.vertical, Spacing.m)
@@ -270,8 +272,9 @@ struct InvitationRowView: View {
     /// target ends past the margin (`Size.clubHeaderTrailingInset`).
     static let moreOverhang: CGFloat = 4
 
-    /// From the action's trailing edge to More's target (`invitationRowActions.shareRightEdge` 328
-    /// to `moreTarget`'s 333).
+    /// From the action's words to More's target (`invitationRowActions.shareRightEdge` 328 to
+    /// `moreTarget`'s 333), inside the action's target, which ends where More's starts, as handoff
+    /// 4's frames draw Maya's Share link target, [237, 261, 96, 44].
     static let actionToMore: CGFloat = 5
 
     /// The name, which VoiceOver reads with the status as one element.
@@ -301,7 +304,11 @@ struct InvitationRowView: View {
         }
     }
 
-    private func actionButton(_ action: InvitationRow.Action) -> some View {
+    /// The row's action; `trailing` is space inside its target after the words, `fullWidth` a
+    /// target across the row.
+    private func actionButton(
+        _ action: InvitationRow.Action, trailing: CGFloat = 0, fullWidth: Bool = false
+    ) -> some View {
         Button {
             switch action {
             case .shareLink, .shareAgain: actions.share(row)
@@ -310,7 +317,7 @@ struct InvitationRowView: View {
         } label: {
             Text(Self.actionWords(action))
         }
-        .buttonStyle(RowActionStyle())
+        .buttonStyle(RowActionStyle(trailing: trailing, fullWidth: fullWidth))
         .disabled(busy)
         .accessibilityLabel(Text(verbatim: actionLabel(action)))
     }
@@ -345,13 +352,12 @@ struct InvitationRowView: View {
         } label: {
             Image(systemName: "ellipsis")
                 .textRole(.rowAction)
-                .foregroundStyle(busy ? Palette.secondaryText : Palette.primaryText)
+                .foregroundStyle(Palette.secondaryText)
                 .frame(width: Size.touchTarget, height: Size.touchTarget)
                 .contentShape(Rectangle())
         }
         .disabled(busy)
         .accessibilityLabel(Text(verbatim: InvitationsScreen.words("invite.more.label", row.name)))
-        .padding(.leading, Self.actionToMore)
         .padding(.trailing, -Self.moreOverhang)
     }
 
@@ -425,15 +431,21 @@ private struct StatusLine: View {
 
 /// A row's link action (handoff 2: "Row link actions use rowAction 15/20 regular"): `action` ink,
 /// `actionPressed` while pressed and `secondaryText` while unavailable, as a text action's, in a
-/// target at least 44 square.
+/// target at least 44 square, with `trailing` points of it after the words, and across the row
+/// when `fullWidth`.
 private struct RowActionStyle: ButtonStyle {
+    var trailing: CGFloat = 0
+    var fullWidth = false
+
     func makeBody(configuration: Configuration) -> some View {
-        RowActionFace(configuration: configuration)
+        RowActionFace(configuration: configuration, trailing: trailing, fullWidth: fullWidth)
     }
 }
 
 private struct RowActionFace: View {
     let configuration: ButtonStyleConfiguration
+    let trailing: CGFloat
+    let fullWidth: Bool
     @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
@@ -442,7 +454,11 @@ private struct RowActionFace: View {
             .multilineTextAlignment(.leading)
             .foregroundStyle(ink)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(minWidth: Size.touchTarget, minHeight: Size.touchTarget)
+            .padding(.trailing, trailing)
+            .frame(
+                minWidth: Size.touchTarget, maxWidth: fullWidth ? .infinity : nil,
+                minHeight: Size.touchTarget, alignment: .leading
+            )
             .contentShape(Rectangle())
     }
 

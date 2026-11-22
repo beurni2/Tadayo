@@ -217,16 +217,24 @@ public struct InvitationList: Sendable, Equatable {
     /// `actionFailure` saying why when a link couldn't be made.
     public func linkToShare(for candidateID: String) async -> URL? {
         guard let candidate = mine(candidateID), !busy.contains(candidateID),
-            let row = row(for: candidate),
-            row.action == .shareLink || row.action == .shareAgain
+            let row = row(for: candidate)
         else { return nil }
+        // The row on screen offered a link the book no longer holds (another read purged it
+        // since): show the row as it is now, which offers Create new link or nothing.
+        guard row.action == .shareLink || row.action == .shareAgain else {
+            relist()
+            return nil
+        }
         if let kept = book.link(for: candidateID, club: club.id, account: accountID),
             candidate.invitation == nil || candidate.invitation?.id == kept.invitationID
         {
             actionFailure = nil
             return kept.url
         }
-        guard candidate.invitation == nil else { return nil }
+        guard candidate.invitation == nil else {
+            relist()
+            return nil
+        }
         busy.insert(candidateID)
         defer { busy.remove(candidateID) }
         return await make(for: candidate)?.url

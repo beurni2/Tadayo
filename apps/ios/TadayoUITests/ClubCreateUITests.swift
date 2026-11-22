@@ -45,7 +45,8 @@ final class ClubCreateUITests: XCTestCase {
 
         closeShareSheet(app)
 
-        // Back on the list: Sam's link kept, not shared, and Share link shares the same one.
+        // Back on the list: Sam's link kept and not shared, offered again by Share link
+        // (`InvitationListModelTests` checks it's the same link).
         let sam = element("Sam. Not shared.", in: app)
         XCTAssertTrue(sam.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Share link for Sam"].exists)
@@ -101,27 +102,36 @@ final class ClubCreateUITests: XCTestCase {
     /// draws differs by version: iOS 26.5's list (`ActivityListView`) takes a swipe down; iOS
     /// 27.2 keeps that element with no frame (`ios` 44976966171), so the sheet is dragged down
     /// from its upper half, and, if it's still up, the dimmed screen above it is tapped, which
-    /// closes a sheet below its full height. The tree is printed to the test's log first, for
-    /// whoever reads a failure.
+    /// closes a sheet below its full height. The log says which way closed it; only when the
+    /// first way didn't does it also hold the tree, any link's fragment hidden (T7).
     @MainActor private func closeShareSheet(_ app: XCUIApplication) {
         let sheet = app.otherElements["ActivityListView"]
         let close = app.buttons["Close"]
         XCTAssertTrue(
             eventually(10) { sheet.exists || close.exists }, "the system's share sheet")
-        print("ClubCreateUITests: the share sheet's tree:\n\(app.debugDescription)")
         let up = { sheet.exists || close.exists }
+        let way: String
         if close.waitForExistence(timeout: 2), close.isHittable {
             close.tap()
+            way = "its Close button"
         } else if sheet.isHittable {
             sheet.swipeDown(velocity: .fast)
+            way = "a swipe down"
         } else {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
                 .press(
                     forDuration: 0.05,
                     thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1)))
+            way = "a drag down"
         }
-        if !eventually(5, { !up() }) {
-            print("ClubCreateUITests: the share sheet is still up; tapping above it")
+        if eventually(5, { !up() }) {
+            print("ClubCreateUITests: the share sheet closed by \(way)")
+        } else {
+            let tree = app.debugDescription.replacingOccurrences(
+                of: "#[A-Za-z0-9_-]+", with: "#…", options: .regularExpression)
+            print(
+                "ClubCreateUITests: the share sheet is still up after \(way); tapping above it:\n\(tree)"
+            )
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.06)).tap()
         }
         XCTAssertTrue(eventually(10) { !up() }, "the share sheet closed")

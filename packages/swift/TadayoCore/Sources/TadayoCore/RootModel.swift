@@ -123,15 +123,15 @@ import Observation
     let now: @Sendable () -> ContinuousClock.Instant
     let sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
     let left: @MainActor () -> Void
-    /// The invitation links the account keeps (ADR-037): each club list read settles them, and
-    /// the setup lists made here share them.
+    /// The invitation links the account keeps (ADR-037): each club list read settles them, the
+    /// setup lists and Club details made here share them, and Leave sign-in forgets them.
     let links: InvitationLinkBook
 
     /// `left` runs each time Leave sign-in has ended the session, on the server and here, whether
     /// or not the device could forget it, and before sign-in shows: the app purges there what the
     /// account left behind, its connections first, and its kept links (T11). `selection` keeps the
     /// selected club across relaunches, and is forgotten before `left` runs. `links` is the
-    /// app's one book of kept links, which `left` forgets.
+    /// app's one book of kept links, also forgotten before `left` runs (ADR-037, T11).
     public init(
         session: SessionManager, auth: any AuthService, accounts: any AccountService,
         clubs: any ClubService, selection: any ClubSelectionStore,
@@ -210,6 +210,7 @@ import Observation
         account = nil
         forgetClubs()
         selection.forget()
+        links.forget()
         route = .leaving
         let forgotten = await session.signOut()
         left()
@@ -300,12 +301,12 @@ import Observation
     /// while none is selected. Its answers count only while the session it was made in lasts and
     /// the club is still the selected one; a club no longer the caller's to read has the list
     /// read again, which decides, as Home's does (`loadHome`); a `signedOut` answer ends the
-    /// session.
+    /// session. Its members answers settle the account's kept links (ADR-037).
     public func clubDetails() -> ClubDetailsModel? {
         guard let club = selectedClub else { return nil }
         let made = epoch
         return ClubDetailsModel(
-            club: club, service: clubService,
+            club: club, service: clubService, links: account.map { (links, $0.id) },
             current: { [weak self] in
                 guard let self else { return false }
                 return epoch == made && selectedClubID == club.id

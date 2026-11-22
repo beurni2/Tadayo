@@ -21,7 +21,10 @@ import Observation
 /// or gone: T9, T14): the model is `closed`, which closes the screens showing it, and `gone` has
 /// the list read again, which decides. A `signedOut` answer ends the session (`signedOut`), as
 /// everywhere else. Nothing is written anywhere: the answers live in this model, in memory, until
-/// the tabs let it go (the next Club details opened, or the session's end).
+/// the tabs let it go (the next Club details opened, or the session's end). The one exception is
+/// the account's kept invitation links (`links`): each members answer settles them, as the setup
+/// list's does, so a candidate who joined has their link purged even when the setup list isn't
+/// opened again (ADR-037).
 @MainActor @Observable public final class ClubDetailsModel {
     /// Why a read failed, which picks the line under the failure's title: the network's ("Check
     /// your connection and try again.") or a refusal's ("Try again."; handoff 8's
@@ -54,6 +57,8 @@ import Observation
     public private(set) var closed = false
 
     let service: any ClubService
+    /// The account's kept invitation links, which each members answer settles (ADR-037).
+    let links: (book: InvitationLinkBook, accountID: String)?
     let current: @MainActor () -> Bool
     let gone: @MainActor () async -> Void
     let signedOut: @MainActor () async -> Void
@@ -62,12 +67,14 @@ import Observation
 
     public init(
         club: ClubSummary, service: any ClubService,
+        links: (book: InvitationLinkBook, accountID: String)? = nil,
         current: @escaping @MainActor () -> Bool = { true },
         gone: @escaping @MainActor () async -> Void = {},
         signedOut: @escaping @MainActor () async -> Void = {}
     ) {
         self.club = club
         self.service = service
+        self.links = links
         self.current = current
         self.gone = gone
         self.signedOut = signedOut
@@ -102,6 +109,7 @@ import Observation
         memberReads += 1
         let asked = memberReads
         members = .loading
+        let stamp = links?.book.beginRead()
         let id = club.id
         async let list = Self.result { [service] () async throws(APIFailure) in
             try await service.members(of: id)
@@ -110,7 +118,20 @@ import Observation
             try await service.schedule(of: id)
         }
         let answers = await (list, week)
-        guard !Task.isCancelled, current(), asked == memberReads else { return }
+        guard !Task.isCancelled, current() else { return }
+        // The members answer settles the kept links whichever read is latest: it's the server's
+        // word on them as of its request (ADR-037), whatever the week's read answered.
+        if let links, let stamp {
+            switch answers.0 {
+            case .success(let roster):
+                links.book.settle(roster, stamp: stamp, account: links.accountID)
+            case .failure(.notFound):
+                links.book.settleGone(club: id, stamp: stamp, account: links.accountID)
+            case .failure:
+                break
+            }
+        }
+        guard asked == memberReads else { return }
         switch answers {
         case (.success(let list), .success(let week)):
             members = .loaded(Roster(list, week: week))
