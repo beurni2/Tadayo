@@ -29,6 +29,15 @@ import TadayoDesign
 /// (`ClubDetailsModel.closed`), whenever the list's own read answers. The model stays after they
 /// close, so a screen sliding away keeps drawing what it showed, until the next Club details
 /// replaces it or the tabs go with the session.
+///
+/// Create a club, on a tab with no club or in the switcher (which closes first), pushes
+/// G01-create onto that tab, with the model `createClub` makes. Once the club is made its setup
+/// list takes G01-create's place, with the model `invitations` makes, so Back returns to the tab,
+/// where Home now shows the new club; Create an invitation pushes the name step over the list,
+/// which returns to it once its share sheet closes; Done for now puts the waiting screen in the
+/// list's place (`docs/plans/ios-b1-create.md` section 7). These screens are the new club's, not
+/// the selected club's: they stay while the list is read again and another club is selected, and
+/// close when the list's model says the club is no longer the caller's, or with the tabs.
 struct TabsView: View {
     enum Selection: Hashable {
         case home, friends, memories, lab
@@ -71,6 +80,8 @@ struct TabsView: View {
     let select: @MainActor (String) async -> Void
     let logOut: @MainActor () async -> Void
     let details: @MainActor () -> ClubDetailsModel?
+    let createClub: @MainActor () -> CreateClubModel?
+    let invitations: @MainActor (ClubRef) -> InvitationListModel?
     @State private var selection: Selection
     @State private var switching = false
     /// Each club tab's pushed screens.
@@ -79,6 +90,14 @@ struct TabsView: View {
     @State private var shownDetails: ClubDetailsModel?
     /// The switcher's Club details was chosen: pushed once the sheet has closed.
     @State private var detailsChosen = false
+    /// The switcher's Create a club was chosen: pushed once the sheet has closed.
+    @State private var createChosen = false
+    /// Naming the club being made, its setup list, and the name step's latest model.
+    @State private var creating: CreateClubModel?
+    @State private var inviting: InvitationListModel?
+    @State private var naming: InviteNameModel?
+    /// The waiting screen asks for the creator's review (`G01-pending-approve`).
+    @State private var pendingReview = false
 
     init(
         clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
@@ -87,6 +106,8 @@ struct TabsView: View {
         retryHome: @escaping @MainActor () async -> Void = {},
         select: @escaping @MainActor (String) async -> Void = { _ in },
         details: @escaping @MainActor () -> ClubDetailsModel? = { nil },
+        createClub: @escaping @MainActor () -> CreateClubModel? = { nil },
+        invitations: @escaping @MainActor (ClubRef) -> InvitationListModel? = { _ in nil },
         logOut: @escaping @MainActor () async -> Void
     ) {
         self.state = Values(clubs: clubs, selected: selected, home: home)
@@ -96,6 +117,8 @@ struct TabsView: View {
         self.retryHome = retryHome
         self.select = select
         self.details = details
+        self.createClub = createClub
+        self.invitations = invitations
         self.logOut = logOut
         _selection = State(initialValue: selection)
     }
@@ -142,30 +165,78 @@ struct TabsView: View {
         .onChange(of: shownDetails?.closed ?? false) { _, closed in
             if closed { closeClubScreens() }
         }
-        .sheet(isPresented: $switching, onDismiss: openChosenDetails) {
+        .onChange(of: inviting?.closed ?? false) { _, closed in
+            if closed { closeCreateScreens() }
+        }
+        .sheet(isPresented: $switching, onDismiss: openChosen) {
             if case .listed(let list) = state.clubs {
                 ClubSwitcher(
                     clubs: list.clubs, selectedID: state.selected?.id,
                     select: { club in Task { await select(club) } },
-                    openDetails: { detailsChosen = true }
+                    openDetails: { detailsChosen = true },
+                    createClub: { createChosen = true }
                 )
                 .fittedSheet()
             }
         }
     }
 
-    /// Club details for the selected club, on the selected tab, once the switcher has closed.
-    private func openChosenDetails() {
-        guard detailsChosen else { return }
-        detailsChosen = false
-        guard let tab = selection.tab, let model = details() else { return }
-        shownDetails = model
-        paths[tab] = [.details]
+    /// Club details for the selected club, or G01-create, on the selected tab, once the switcher
+    /// has closed.
+    private func openChosen() {
+        defer { (detailsChosen, createChosen) = (false, false) }
+        guard let tab = selection.tab else { return }
+        if createChosen {
+            startCreating(on: tab)
+        } else if detailsChosen, let model = details() {
+            shownDetails = model
+            paths[tab] = [.details]
+        }
     }
 
+    /// The selected club's pushed screens close; the club being made keeps its own.
     private func closeClubScreens() {
-        paths = [:]
+        paths = paths.filter { $0.value.first?.isCreateFlow ?? false }
         detailsChosen = false
+    }
+
+    private func closeCreateScreens() {
+        paths = paths.filter { !($0.value.first?.isCreateFlow ?? false) }
+    }
+
+    /// Create a club: G01-create on `tab`, in place of any club being made on another tab.
+    private func startCreating(on tab: ClubTab) {
+        guard let model = createClub() else { return }
+        closeCreateScreens()
+        (creating, inviting, naming) = (model, nil, nil)
+        paths[tab] = [.create]
+    }
+
+    /// The club is made: its setup list in G01-create's place.
+    private func showInvitations(for club: ClubRef, on tab: ClubTab) {
+        guard paths[tab] == [.create], let model = invitations(club) else { return }
+        inviting = model
+        paths[tab] = [.invitations]
+    }
+
+    /// Create an invitation: the name step over the list, once however fast it's tapped.
+    private func openNameStep(on tab: ClubTab) {
+        guard paths[tab]?.last == .invitations, let model = inviting?.makeInvite() else { return }
+        naming = model
+        paths[tab, default: []].append(.inviteName)
+    }
+
+    /// The name step's share sheet closed: back to the list.
+    private func closeNameStep(on tab: ClubTab) {
+        guard paths[tab]?.last == .inviteName else { return }
+        paths[tab]?.removeLast()
+    }
+
+    /// Done for now: the waiting screen in the list's place.
+    private func showPending(review: Bool, on tab: ClubTab) {
+        guard paths[tab]?.last == .invitations else { return }
+        pendingReview = review
+        paths[tab] = [.pending]
     }
 
     private func path(for tab: ClubTab) -> Binding<[ClubRoute]> {
@@ -175,16 +246,38 @@ struct TabsView: View {
     }
 
     @ViewBuilder private func destination(_ route: ClubRoute, on tab: ClubTab) -> some View {
-        if let shownDetails {
-            switch route {
-            case .details:
+        switch route {
+        case .details:
+            if let shownDetails {
                 ClubDetailsDestination(model: shownDetails) {
                     // A second tap while Members slides in pushes nothing more.
                     guard paths[tab]?.last == .details else { return }
                     paths[tab, default: []].append(.members)
                 }
-            case .members:
+            }
+        case .members:
+            if let shownDetails {
                 MembersDestination(model: shownDetails)
+            }
+        case .create:
+            if let creating {
+                CreateClubDestination(model: creating) { club in
+                    showInvitations(for: club, on: tab)
+                }
+            }
+        case .invitations:
+            if let inviting {
+                InvitationsDestination(
+                    model: inviting, invite: { openNameStep(on: tab) },
+                    done: { review in showPending(review: review, on: tab) })
+            }
+        case .inviteName:
+            if let naming {
+                InviteNameScreen(model: naming) { closeNameStep(on: tab) }
+            }
+        case .pending:
+            if let inviting {
+                PendingScreen(club: inviting.club.name, review: pendingReview)
             }
         }
     }
@@ -194,7 +287,7 @@ struct TabsView: View {
             TabContent(
                 tab: tab, clubs: state.clubs, selected: state.selected, home: state.home,
                 name: name, retry: retry, retryHome: retryHome, switchClub: { switching = true },
-                goHome: { selection = .home }
+                createClub: { startCreating(on: tab) }, goHome: { selection = .home }
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: ClubRoute.self) { route in

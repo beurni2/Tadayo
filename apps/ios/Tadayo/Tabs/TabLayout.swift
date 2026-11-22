@@ -246,6 +246,7 @@ struct TabContent: View {
     let retry: @MainActor () async -> Void
     let retryHome: @MainActor () async -> Void
     let switchClub: () -> Void
+    let createClub: () -> Void
     let goHome: () -> Void
     @AccessibilityFocusState private var focus: TabFocus?
     @State private var labelHadFocus = false
@@ -255,7 +256,8 @@ struct TabContent: View {
         home: RootModel.Home = .loading, name: String,
         retry: @escaping @MainActor () async -> Void,
         retryHome: @escaping @MainActor () async -> Void = {},
-        switchClub: @escaping () -> Void = {}, goHome: @escaping () -> Void
+        switchClub: @escaping () -> Void = {}, createClub: @escaping () -> Void = {},
+        goHome: @escaping () -> Void
     ) {
         self.tab = tab
         self.clubs = clubs
@@ -265,6 +267,7 @@ struct TabContent: View {
         self.retry = retry
         self.retryHome = retryHome
         self.switchClub = switchClub
+        self.createClub = createClub
         self.goHome = goHome
     }
 
@@ -347,8 +350,8 @@ struct TabContent: View {
         switch shown {
         case .noClub:
             switch tab {
-            case .home: HomeNoClub(heading: $focus)
-            case .friends: FriendsNoClub(heading: $focus)
+            case .home: HomeNoClub(heading: $focus, createClub: createClub)
+            case .friends: FriendsNoClub(heading: $focus, createClub: createClub)
             case .memories: MemoriesNoClub(heading: $focus, goHome: goHome)
             }
         case .loading:

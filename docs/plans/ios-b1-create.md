@@ -90,3 +90,46 @@ The api lane's #92 wrote the contract's words for `InvitationLink` and `Candidat
 ## 6. Questions
 
 No new FQ: the rows and words section 2 and section 3 build from spec are design's to draw, asked in the needs list for handoff 9. FQ17 (no cover in the trial), FQ19 (the club's zone), FQ67 (a copy counts as Shared), FQ70 (40 characters) and FQ71 (seven days) keep their defaults.
+
+## 7. 4b's plan (`ios/b1-create-screens`, from `main` at `d91c2aa`, 22 November 2026)
+
+The screens on 4a's models, the routes to them, the share sheet, and the club list's read wired to the link store. Every state section 3 lists, each light, dark and at the largest text, plus the states built from spec that have no render: the list before anyone is invited (`G01-invite-people-empty`), the first thing a creator sees; the list loading and failing (`-loading`, `-failed`); a row action's failure (`-action-failed`); and the name step's failure (`G01-invite-name-failed`).
+
+### The root (`RootModel`, tests first on Linux)
+
+- It takes the app's `InvitationLinkBook` (`AppGraph` passes the one Leave sign-in forgets). Each club list it reads takes a stamp first, and a successful answer settles the book (`settle(_ list: ClubList, …)`): a club the list no longer holds has its links purged. A failed read changes nothing (section 5).
+- `createClub()` makes `G01-create`'s model while the tabs show an account. Its answers count only in the session it was made in; `created` keeps the new club as this account's selected club and reads the list again, so Home under the pushed screens shows the new club (`H01-awaiting-activation`); `signedOut` ends the session.
+- `invitations(for:)` makes the setup list's model for a club the account just made or proposes in: the session's `current`, the book, the list read again for a not found (`gone`), and `signedOut`.
+
+### Routes (`TabsView`)
+
+- Create a club on `G06-no-club`, `F01-no-club` and the switcher pushes `G01-create` onto that tab's stack (the switcher closes first, as its Club details does). The frames draw the system's Back on every create screen.
+- Continue to invitations, once the club is made, puts `G01-invite-people` in `G01-create`'s place, so Back returns to the tab, where Home now shows the club: a made club has no naming to go back to (a second Continue makes no other club).
+- Create an invitation pushes `G01-invite-name`. Once its share sheet closes, shared or not, it returns to the list, where the person's row now is: a cancelled share leaves Not shared with Share link, which shares the same kept link, never a second one (`createInvitation.retention`).
+- Done for now puts `G01-pending` (or `G01-pending-approve`, from the list's `awaitingMyApproval`) in the list's place, with the club's name in the bar (handoff 4's `pendingScreen`); Back returns to the tab. Its Review members does nothing until plan PR 7, as Home's doesn't; handoff 4 routes the way back to the list through it (Manage invitations).
+- The create screens belong to the club being made, not to the selected club: they stay while the list is read again and another club becomes the selected one (the new club, by `created`), and close when the list's model says the club is no longer the caller's (`closed`) or the session ends with the tabs. Club details and its members list close as they do now.
+
+### Screens (`apps/ios/Tadayo/Club/`)
+
+- **`G01-create`:** 2.1's words (section 3: "Your people, together.", "Start a private club with two to six people.", Club name, the roster line, the Drafts note with its shield on `surface`), Continue to invitations pinned 44 above the safe area, or 12 above the keyboard, as A03's Continue is. While the club is made the field is read-only and Continue busy ("In progress"); a failure is frame 7's line under the field with the failure glyph, the border unchanged, said once, the name kept and editable. A name over 40 characters keeps Continue waiting with no line (item 67). No focus on arrival: neither frame draws a keyboard.
+- **`G01-invite-name`:** "Who is it for?", the club's name, "Make a separate link for each person.", Person’s name, Create link and share in the column, "No contacts access needed." under it. The field takes the focus on arrival, as the frame draws it, unless VoiceOver runs (A03's rule). A failure is "Couldn’t create the invitation link for {name}." with the network's or a refusal's line, under the field.
+- **`G01-invite-people`:** "Invite your people", the club's name, "Each person gets a separate link.", the rows, Create an invitation (secondary) while a place is free, "Only you can see this list.", and Done for now pinned. Each row (`InvitationRowView`): the 36-point initial, the name over the status with its 12-point glyph (`link`, `square.and.arrow.up`, `checkmark`, `arrow.clockwise`, `xmark.circle`), the action in `rowAction` 15/20 `action` ink, and More (`ellipsis`, 44 by 44, the system's menu: Revoke link, destructive, or Create new link) where section 2 gives one; at least 74 high, the separator from 49. At the accessibility sizes the status and the action go under the name, More staying beside the name (handoff 2's AX5 rule); a used row stacks a full-width Share again (`usedInvitationRow.largestText`). VoiceOver reads the row as "{name}. {status}." and each control by its own label (handoff 8's `links.*.vo`). The used row with no link adds handoff 8's two lines and no control.
+- **Revoke link** asks the system's alert: "Revoke {name}’s invitation link?", its line, Revoke link (destructive) and Keep link. While it goes the row's status reads "Revoking link…"; the server's yes says "{name}’s invitation link was revoked." and the row reads Link revoked; a failure is handoff 4's line in the footer above Done for now, said once, the row kept. Create new link says "New invitation link created for {name}." or "Couldn’t create a new invitation link for {name}. Try again." (handoff 4's `invite.createNew.*`); a first link that couldn't be made says the name step's words. Network failures take "Check your connection and try again." in place of "Try again.", handoff 8's rule.
+- **The share sheet** is the system's `UIActivityViewController` with the link alone, presented over the screen; its completion says whether a share completed (the model's `shareFinished`; Copy counts, FQ67). No channel is preselected, nothing is excluded, and the link appears in no label, log or snapshot (T7, T52).
+- **Loading and failure:** the list loads in the shell Club details uses (`ClubLoading`, "Loading invitations…") and fails in frame 11's form ("Couldn’t load invitations.", the network's or a refusal's line, Retry with "Try loading invitations again."), Back always there.
+- **`G01-pending` and `G01-pending-approve`:** Home's awaiting content (`HomeAwaiting`) under the pushed bar, Review members pinned 44 above the safe area (handoff 4: "its primary button sits at y724 because it has no tab bar").
+
+### Words
+
+New keys for 2.1's create words, handoff 2's name step, handoff 4's list, statuses, row labels and revoke words, handoff 8's used row, and two built from spec: "Link expired" (section 2) and the network line of the two link failures that give only "Try again.". The copy lint runs on them.
+
+### Tests
+
+- Linux (`TadayoCore`): the root's settle on each list it reads (not on a failure, nor for an answer after Leave sign-in), `createClub()` keeping the new club selected and reading the list again, `invitations(for:)` dropping answers after the session; `ActionFailure` telling Create new link from a first link.
+- Snapshots (`ClubCreateSnapshotTests`): each state light, dark and at the largest text, pushed onto a stack as the tab pushes it, on `ClubFixtures`' Sunday people (Maya, Alex, Sam, Debby, Nina as the frames).
+- Readings (`AccessibilityElements`): each row's label and its controls' labels; the used row with no link offering no control; an accepted row offering none; More's label; the failure lines.
+- UI test (`ClubCreateUITests`, the stand-in services with no club): Create a club, a name, Continue to invitations, the empty list, Create an invitation, a name, Create link and share, the system's share sheet, closed, back on the list with the person Not shared, Done for now, the waiting screen, Back to Home showing the club.
+
+### Records
+
+INVENTORY's eight new rows, built from spec (`G01-invite-name-failed`, `G01-invite-people-empty`, `-used-missing`, `-live-not-held`, `-expired`, `-loading`, `-failed` and `-action-failed`), the known differences found when the snapshots are read, and the handoff 9 items for what has no render: items 64 to 67 already name the live link not held, the expired link, `G01-create`'s words and the 40-character names; items 68 (the empty list) and 69 (where an action's failure shows) are added in `docs/design/handoff-7/ios-lane-needs.md`.

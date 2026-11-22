@@ -306,8 +306,35 @@ import Testing
         let list = model(clubs)
         await list.load()
         await list.createNewLink(for: "cand_sam")
-        #expect(list.actionFailure == .createLink(name: "Sam", network: false))
+        // A new link in place of the expired one: handoff 4's words for Create new link, not the
+        // first link's.
+        #expect(list.actionFailure == .createNewLink(name: "Sam", network: false))
         #expect(row(list, "cand_sam")?.status == .needsToAcceptAgain)
+    }
+
+    @Test func aNewLinkWithNoAnswerSaysSoInItsOwnWordsAndKeepsTheRow() async {
+        for (state, invitation) in [
+            (CandidateLinkState.revoked, "inv_alex"), (.expired, "inv_alex"),
+            (.live, "inv_alex"),
+        ] {
+            let clubs = ScriptedClubs()
+            clubs.clubAnswers = [.success(Sunday.detail())]
+            clubs.memberAnswers = [
+                .success(
+                    Sunday.members([
+                        Sunday.candidate("cand_alex", "Alex", state, invitation: invitation)
+                    ]))
+            ]
+            clubs.linkAnswers = [.failure(.network)]
+            // A live link the app doesn't hold offers Create new link too (section 2).
+            let list = model(clubs)
+            await list.load()
+            let before = row(list, "cand_alex")
+            await list.createNewLink(for: "cand_alex")
+            #expect(
+                list.actionFailure == .createNewLink(name: "Alex", network: true), "\(state)")
+            #expect(row(list, "cand_alex") == before, "\(state)")
+        }
     }
 
     @Test func revokeLinkRevokesALiveLinkAndReadsTheListAgain() async {
