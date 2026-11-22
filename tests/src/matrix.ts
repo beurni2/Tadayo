@@ -60,9 +60,25 @@ export async function removeByModeration(tx: WorldTx, drop: string, at: Date) {
   `;
 }
 
-/** The author withdraws the drop (spec 22), and its highlight goes with it. */
+/**
+ * Gives back the slot of a drop withdrawn at `at` when its day hadn't revealed by then, as a withdrawal does
+ * (spec 11, T18: one before the reveal releases the drop's slot, one after it doesn't): its author's counter
+ * counts one committed drop less, a link one link less.
+ */
+async function releaseSlotOf(tx: WorldTx, drop: string, at: Date) {
+  await tx`
+    UPDATE app.contribution_counters c
+       SET committed_total = c.committed_total - 1,
+           committed_external = c.committed_external - CASE WHEN d.media_class = 'external_video' THEN 1 ELSE 0 END
+      FROM app.drops d JOIN app.occurrences o ON o.id = d.occurrence_id
+     WHERE d.id = ${drop} AND c.occurrence_id = d.occurrence_id AND c.interval_id = d.author_interval_id
+       AND o.reveal_at > ${at}`;
+}
+
+/** The author withdraws the drop (spec 22), its slot given back before the reveal, and its highlight goes with it. */
 export async function withdraw(tx: WorldTx, w: World, drop: string, at: Date) {
   await tx`UPDATE app.drops SET state = 'withdrawn', ended_at = ${at}, updated_at = ${at} WHERE id = ${drop}`;
+  await releaseSlotOf(tx, drop, at);
   await clearHighlight(tx, drop, at);
   await tx`
     INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
@@ -93,7 +109,8 @@ export async function block(
 /**
  * Withdraws `member`'s drops whose day hadn't opened at `at`, as a block or a leaving that takes
  * them away does (D11, spec 22: the contract's BlockRequest withdraws the blocker's drops still
- * to be revealed). Each gets its removal row, with `member`'s interval as the actor, and loses its highlight.
+ * to be revealed). Each gets its removal row, with `member`'s interval as the actor, gives back its slot and loses
+ * its highlight.
  */
 export async function withdrawUnrevealed(tx: WorldTx, member: Member, reason: "block" | "leave", at: Date) {
   const drops = await tx<{ id: string }[]>`
@@ -101,6 +118,7 @@ export async function withdrawUnrevealed(tx: WorldTx, member: Member, reason: "b
      WHERE d.author_interval_id = ${member.interval} AND d.state = 'active' AND o.reveal_at > ${at}`;
   for (const { id } of drops) {
     await tx`UPDATE app.drops SET state = 'withdrawn', ended_at = ${at}, updated_at = ${at} WHERE id = ${id}`;
+    await releaseSlotOf(tx, id, at);
     await clearHighlight(tx, id, at);
     await tx`
       INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)

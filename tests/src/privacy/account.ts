@@ -124,6 +124,36 @@ function sameIds(what: string, got: readonly string[], want: ReadonlySet<string>
 const second = (instant: Temporal.Instant) => instant.toString({ smallestUnit: "second", roundingMode: "floor" });
 
 /**
+ * The world's day `id` as the contract's Occurrence in `phase`: the star by the name members see, with their
+ * avatar's version only while their interval and their account are both active, and the instants in whole
+ * seconds. Undefined for a day the world doesn't have.
+ */
+export function occurrenceOf(
+  world: WorldFacts,
+  id: string,
+  phase: "collecting" | "open" | "past",
+): Record<string, unknown> | undefined {
+  const day = world.days.get(id);
+  if (day === undefined) return undefined;
+  const star = world.members.get(day.star);
+  const account = star === undefined ? undefined : world.accounts.get(star.account);
+  const avatar = star?.leftAt === null && account?.state === "active" ? account.avatar : null;
+  return {
+    id,
+    club_id: day.club,
+    star: {
+      membership_id: day.star,
+      display_name: star?.name,
+      ...(avatar === null ? {} : { avatar_version: avatar }),
+    },
+    local_date: day.localDate,
+    reveal_at: second(day.revealAt),
+    close_at: second(day.closeAt),
+    phase,
+  };
+}
+
+/**
  * A club's open day and next day at `now`, as a member must get them (spec 06, 08; T1, T5, T9; FQ50, FQ63, FQ75),
  * each the whole Occurrence expected or undefined, read from the world's rows and the time alone, apart from
  * the authorization module: none in a suspended club; a day only while it is scheduled and its star neither
@@ -153,25 +183,8 @@ export function daysOf(
       return !left && !deleting;
     })
     .sort((a, b) => Temporal.Instant.compare(a.day.revealAt, b.day.revealAt));
-  const occurrence = (found: (typeof days)[number] | undefined, phase: "open" | "collecting") => {
-    if (found === undefined) return undefined;
-    const { id, day, star } = found;
-    const account = star === undefined ? undefined : world.accounts.get(star.account);
-    const avatar = star?.leftAt === null && account?.state === "active" ? account.avatar : null;
-    return {
-      id,
-      club_id: day.club,
-      star: {
-        membership_id: day.star,
-        display_name: star?.name,
-        ...(avatar === null ? {} : { avatar_version: avatar }),
-      },
-      local_date: day.localDate,
-      reveal_at: second(day.revealAt),
-      close_at: second(day.closeAt),
-      phase,
-    };
-  };
+  const occurrence = (found: (typeof days)[number] | undefined, phase: "open" | "collecting") =>
+    found === undefined ? undefined : occurrenceOf(world, found.id, phase);
   return {
     open: occurrence(
       days.find(({ day }) => !before(now, day.revealAt) && before(now, day.closeAt)),

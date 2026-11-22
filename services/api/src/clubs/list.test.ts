@@ -11,7 +11,8 @@ import type { FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
-import { clubListBody, occurrenceBody } from "./list.ts";
+import { occurrenceBody } from "../bodies.ts";
+import { clubListBody } from "./list.ts";
 
 const now = Temporal.Instant.from("2026-11-07T07:00:00.987654Z");
 

@@ -18,6 +18,36 @@ export {
   type RecentDay,
 } from "./authorization/days.ts";
 export { activeMember, activeMemberships, listedMemberships } from "./authorization/member.ts";
+export {
+  addTargetOutcome,
+  loadAddTarget,
+  loadLaterDays,
+  nextTargetOf,
+  ownsReservation,
+  type AddTarget,
+  type AddTargetFacts,
+} from "./authorization/add-target.ts";
+export {
+  allowanceOf,
+  FRIEND_LIMITS,
+  limitRefusal,
+  MEDIA_CLASSES,
+  STAR_LIMITS,
+  type Allowance,
+  type CounterRow,
+  type LimitCode,
+  type Limits,
+  type MediaClass,
+} from "./drops/allowance.ts";
+export { freeSlot, holdSlot, lockCounter, settleLapsed, type CounterKey, type HeldSlot } from "./drops/counter.ts";
+export {
+  createReservation,
+  RESERVATION_MINUTES,
+  reservationExpiry,
+  type CreateReservationInput,
+  type ReservationAnswer,
+} from "./drops/reserve.ts";
+export { releaseReservation, type ReleasedAnswer, type ReleaseReservationInput } from "./drops/release.ts";
 export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./authorization/read-sql.ts";
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
 export { CLUB_SIZE, readClub, type ClubDetail } from "./clubs/club.ts";

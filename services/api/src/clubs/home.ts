@@ -25,7 +25,7 @@ import { ok, problem } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 import { personBody } from "../schedule/routes.ts";
-import { occurrenceBody } from "./list.ts";
+import { occurrenceBody } from "../bodies.ts";
 
 /** The contract's ClubRef. */
 function clubRef(base: HomeBase): Json {

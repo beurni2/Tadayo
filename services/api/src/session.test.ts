@@ -107,6 +107,8 @@ const BUILT = new Set([
   "getSchedule",
   "chooseScheduleDays",
   "confirmScheduleDays",
+  "createReservation",
+  "releaseReservation",
 ]);
 const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
 const unbuiltPublic = unbuilt.filter((operation) => operation.public === true);
