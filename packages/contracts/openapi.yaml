@@ -12308,7 +12308,7 @@ components:
       required:
         - state
         - inviter_name
-      description: "For someone who accepted, the invitation didn't go ahead (G03-declined): a member declined, or the revision ended without them. It never says which, or who; it names only the inviter, who can start a new invitation later, by the name `listClubs` shows for the same invitation (FQ75). An inviter with no name to show leaves nothing to say: NOT_FOUND, as `listClubs` lists no such invitation."
+      description: "For someone who accepted, the invitation didn't go ahead (G03-declined): a member declined, or the revision ended without them. It never says which, or who; it names only the inviter, by the name `listClubs` shows for the same invitation (FQ75), and says nothing of whether they are still a member: one who left is named as the club last knew them (FQ137). An inviter with no name to show leaves nothing to say: NOT_FOUND, as `listClubs` lists no such invitation."
     InvitationExpired:
       type: object
       properties:
