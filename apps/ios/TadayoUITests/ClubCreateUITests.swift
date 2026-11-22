@@ -98,25 +98,28 @@ final class ClubCreateUITests: XCTestCase {
         return app
     }
 
-    /// The system's share sheet, shown with the link and closed without sharing. What the system
-    /// draws differs by version: iOS 26.5's list (`ActivityListView`) takes a swipe down; iOS
-    /// 27.2 keeps that element with no frame (`ios` 44976966171), so the sheet is dragged down
-    /// from its upper half, and, if it's still up, the dimmed screen above it is tapped, which
-    /// closes a sheet below its full height. The log says which way closed it; only when the
-    /// first way didn't does it also hold the tree, any link's fragment hidden (T7).
+    /// The system's share sheet, shown with the link and closed without sharing. On iOS 26.5 and
+    /// 27.2 it's a popover (`ActivityListView`) over a region that dismisses it, which is tapped;
+    /// iOS 27.2 gives the list no visible frame, so a swipe on it fails (`ios` 44976966171 and
+    /// 44981551334). Its Close button is tapped instead where a system shows one, and a drag
+    /// down from the screen's middle, then a tap above, is the last resort. The log says which
+    /// way closed it; only when the first way didn't does it also hold the tree, any link's
+    /// fragment hidden (T7).
     @MainActor private func closeShareSheet(_ app: XCUIApplication) {
         let sheet = app.otherElements["ActivityListView"]
         let close = app.buttons["Close"]
         XCTAssertTrue(
             eventually(10) { sheet.exists || close.exists }, "the system's share sheet")
         let up = { sheet.exists || close.exists }
+        // The region ("dismiss popup") is tapped by coordinate, above the sheet.
+        let region = app.otherElements["PopoverDismissRegion"]
         let way: String
         if close.waitForExistence(timeout: 2), close.isHittable {
             close.tap()
             way = "its Close button"
-        } else if sheet.isHittable {
-            sheet.swipeDown(velocity: .fast)
-            way = "a swipe down"
+        } else if region.exists {
+            region.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+            way = "a tap on the region around it"
         } else {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
                 .press(
@@ -132,7 +135,7 @@ final class ClubCreateUITests: XCTestCase {
             print(
                 "ClubCreateUITests: the share sheet is still up after \(way); tapping above it:\n\(tree)"
             )
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.06)).tap()
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
         }
         XCTAssertTrue(eventually(10) { !up() }, "the share sheet closed")
     }
