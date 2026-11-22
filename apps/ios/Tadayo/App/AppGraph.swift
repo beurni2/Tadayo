@@ -38,17 +38,20 @@ enum AppLaunch {
                 forSecurityApplicationGroupIdentifier: KeychainSessionStore.accessGroup))
     }
 
-    /// The app as the build's settings make it, with its session in the keychain: a session an
-    /// earlier install left is forgotten first (FQ87), before anything reads the store. The
-    /// tests pass a folder of their own and a service of their own.
+    /// The app as the build's settings make it, with its session and its invitation links in
+    /// the keychain: what an earlier install left is forgotten first (FQ87, ADR-037), before
+    /// anything reads them. The tests pass a folder of their own and services of their own.
     @MainActor static func configured(
-        info: [String: Any], container: URL?, service: String = KeychainSessionStore.appService
+        info: [String: Any], container: URL?, service: String = KeychainSessionStore.appService,
+        invitationsService: String = KeychainSessionStore.invitationsService
     ) -> AppLaunch {
-        guard let store = KeychainSessionStore(info: info, service: service) else {
-            return .unconfigured
-        }
-        KeychainSessionStore.forgetEarlierInstall(markedIn: container, service: service)
-        return AppGraph.make(info: info, store: store).map(AppLaunch.live) ?? .unconfigured
+        guard let store = KeychainSessionStore(info: info, service: service),
+            let links = KeychainInvitationLinkVault(info: info, service: invitationsService)
+        else { return .unconfigured }
+        KeychainSessionStore.forgetEarlierInstall(
+            markedIn: container, service: service, invitationsService: invitationsService)
+        return AppGraph.make(info: info, store: store, links: links).map(AppLaunch.live)
+            ?? .unconfigured
     }
 
     /// A hosted test bundle: XCTest is loaded into the app's own process.
@@ -60,14 +63,18 @@ enum AppLaunch {
 }
 
 /// The app's services, built once at launch: Supabase Auth and the API over one set of
-/// connections, the session in the keychain, and the root model that routes by them.
+/// connections, the session in the keychain, the invitation links the account keeps (ADR-037),
+/// and the root model that routes by them.
 @MainActor struct AppGraph {
     let root: RootModel
     let connections: Connections
+    var links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
 
     /// Nil when the settings are missing or aren't what they must be: the app then makes no call.
+    /// Leave sign-in remakes the connections and forgets the invitation links (T11).
     static func make(
-        info: [String: Any], store: any SessionStore, connections: Connections = Connections()
+        info: [String: Any], store: any SessionStore, connections: Connections = Connections(),
+        links vault: any InvitationLinkVault = InMemoryInvitationLinkVault()
     ) -> AppGraph? {
         guard let supabase = SupabaseConfiguration(info: info),
             let api = (info["TadayoAPIBaseURL"] as? String).flatMap(URL.init(string:)),
@@ -76,10 +83,15 @@ enum AppLaunch {
         let auth = SupabaseAuth(configuration: supabase, transport: connections)
         let session = SessionManager(auth: auth, store: store)
         let accounts = Accounts(serverURL: api, session: session, connections: connections)
+        let links = InvitationLinkBook(vault: vault)
         let root = RootModel(
             session: session, auth: auth, accounts: accounts, clubs: accounts,
-            selection: DefaultsClubSelection(), left: { connections.reset() })
-        return AppGraph(root: root, connections: connections)
+            selection: DefaultsClubSelection(),
+            left: {
+                connections.reset()
+                links.forget()
+            })
+        return AppGraph(root: root, connections: connections, links: links)
     }
 }
 
