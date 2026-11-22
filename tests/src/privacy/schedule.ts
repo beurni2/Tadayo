@@ -505,6 +505,28 @@ export function canonical(value: unknown): string {
   return value === undefined ? "undefined" : JSON.stringify(value);
 }
 
+/**
+ * A table of the world's flat rows (strings, numbers, booleans, nulls and instants), keyed by id, as one text to
+ * compare before and after a request: the rows by id byte by byte, and each instant written out in full. The
+ * world's queries have no ORDER BY, so two reads of the same rows can come back in another order, as when the
+ * planner picks another join between them; and `canonical` writes a Temporal.Instant, which has no fields of its
+ * own, as `{}`, so a moved instant would compare equal.
+ */
+export function rowsSeen(rows: ReadonlyMap<string, object>): string {
+  // A field holding any other object (a Map, a Set, a Date, a nested row) would be written `{}` too, so it is
+  // refused rather than compared blind.
+  const instantsInFull = (row: object) =>
+    Object.fromEntries(
+      Object.entries(row).map(([field, value]: [string, unknown]) => {
+        if (value instanceof Temporal.Instant) return [field, value.toString()];
+        if (typeof value === "object" && value !== null)
+          throw new TypeError(`rowsSeen compares flat rows only: ${field} holds an object`);
+        return [field, value];
+      }),
+    );
+  return canonical([...rows].sort(([a], [b]) => byBytes(a, b)).map(([id, row]) => [id, instantsInFull(row)]));
+}
+
 function parsed(answer: Answer): unknown {
   try {
     return JSON.parse(answer.body);
@@ -975,8 +997,11 @@ export function weekChangeProblems(
   club: string,
   at: { today: string },
 ): string[] {
+  // A club's picks by id, since the world's query gives them in no set order.
   const picks = (world: ScheduleWorld) =>
-    [...world.proposals].filter(([, each]) => each.club === club && each.reason === "membership_change");
+    [...world.proposals]
+      .filter(([, each]) => each.club === club && each.reason === "membership_change")
+      .sort(([a], [b]) => byBytes(a, b));
   const openIn = (world: ScheduleWorld) => picks(world).find(([, each]) => each.state === "open");
   const text = (rows: ScheduleProposalRows | undefined) =>
     rows === undefined
@@ -986,6 +1011,12 @@ export function weekChangeProblems(
           members: rows.members.map((member) => `${member.interval} ${String(member.confirmed)}`).sort(),
           days: rows.days
             .map((day) => `${day.interval} ${day.weekday} ${String(day.suggested)} ${String(day.held)}`)
+            .sort(),
+          earlier: rows.earlier
+            .map(
+              (day) =>
+                `${String(day.weekRevision)} ${day.interval} ${day.weekday} ${String(day.suggested)} ${String(day.held)}`,
+            )
             .sort(),
         });
   const weeksText = (world: ScheduleWorld) =>
