@@ -358,15 +358,18 @@ export const InvitationExpired = named(
 
 export const InvitationFull = named(
   "InvitationFull",
-  "The club already has six members (G02-full), with no club name, roster or waitlist.",
-  z.object({ state: tag("full") }),
+  "The club already has six members (G02-full): only who to ask should a place open, with no club name, " +
+    "roster or waitlist. The inviter's name is the one the open roster would show (FQ75).",
+  z.object({ state: tag("full"), inviter_name: DisplayName }),
 );
 
 export const InvitationEnded = named(
   "InvitationEnded",
   "For someone who accepted, the invitation didn't go ahead (G03-declined): a member declined, or the " +
-    "revision ended without them. It never says which, or who.",
-  z.object({ state: tag("did_not_go_ahead") }),
+    "revision ended without them. It never says which, or who; it names only the inviter, who can start a " +
+    "new invitation later, by the name `listClubs` shows for the same invitation (FQ75). An inviter with no " +
+    "name to show leaves nothing to say: NOT_FOUND, as `listClubs` lists no such invitation.",
+  z.object({ state: tag("did_not_go_ahead"), inviter_name: DisplayName }),
 );
 
 export const InvitationJoined = named(

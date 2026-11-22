@@ -587,8 +587,9 @@ describe("declining: the revision ends for every candidate, and nobody is told w
         state: "did_not_go_ahead",
         my_decision: "approved",
       });
-      // Sam, who accepted, learns only that it didn't go ahead; Debby, who never did, gets nothing at all.
-      expect(await preview(tx, sam, s.sam.token, NOW)).toEqual({ state: "did_not_go_ahead" });
+      // Sam, who accepted, learns only that it didn't go ahead, and who can invite again; Debby, who never
+      // did, gets nothing at all.
+      expect(await preview(tx, sam, s.sam.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
       expect((await listClubs(tx, sam, NOW)).invitations.map((one) => one.state)).toEqual(["did_not_go_ahead"]);
       expect(await preview(tx, debby, debbyLink.token, NOW)).toBeNull();
       expect(await webPreview(tx, debbyLink.token, NOW)).toBeNull();
@@ -681,6 +682,22 @@ describe("who may approve or decline (T9, T14, FQ119)", () => {
       expect(await refusal(approve(tx, clock, user(s.w, 0), s.open.id, 1))).toEqual(NONE);
       expect(await revisionRow(tx, s.open.id)).toMatchObject({ state: "open", version: 1 });
       expect(await approvalsOf(tx, s.open.id)).toHaveLength(1);
+    });
+  });
+
+  it("tells an accepted candidate nothing once the revision ended, when the inviter has no name to show, and lists no such invitation (FQ75)", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const sam = await newUser(plain(tx), "Sam");
+      await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1);
+      await decline(tx, clock, user(s.w, 1), s.open.id, 1);
+      expect(await preview(tx, sam, s.sam.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
+      await tx`
+        UPDATE app.memberships
+           SET state = 'account_deleted', left_at = ${LATER}, contributions = 'withdraw', ended_display_name = NULL
+         WHERE interval_id = ${member(s.w, 0)}`;
+      expect(await preview(tx, sam, s.sam.token, NOW)).toBeNull();
+      expect((await listClubs(tx, sam, NOW)).invitations).toEqual([]);
     });
   });
 
@@ -921,7 +938,7 @@ describe("what a token names, and to whom (T7, T14, FQ59, FQ71)", () => {
         VALUES (${made.id}, ${seventh}, ${createHash("sha256").update(made.token).digest()}, ${LATER},
                 ${new Date(LATER.getTime() + 7 * 864e5)})`;
       const nina = await newUser(plain(tx), "Nina");
-      expect(await preview(tx, nina, made.token, NOW)).toEqual({ state: "full" });
+      expect(await preview(tx, nina, made.token, NOW)).toEqual({ state: "full", inviter_name: "Ben" });
       expect(await refusal(acceptWith(tx, clock, nina, made.token, open.id, 1))).toEqual({
         code: "CLUB_FULL",
         facts: {},

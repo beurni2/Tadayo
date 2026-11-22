@@ -30,8 +30,9 @@ const clubOf = (club: Body) => ({
 /** A contract example's InvitationPreview as the domain's read would hold it: the serializer's input. */
 function sight(value: Body): InvitationSight {
   const state = value["state"] as InvitationSight["state"];
-  if (state === "expired") return { state, inviterName: value["inviter_name"] as string };
-  if (state === "full" || state === "did_not_go_ahead") return { state };
+  if (state === "expired" || state === "full" || state === "did_not_go_ahead") {
+    return { state, inviterName: value["inviter_name"] as string };
+  }
   if (state === "joined") return { state, club: clubOf(value["club"] as Body) };
   const shown = {
     invitationId: value["invitation_id"] as string,

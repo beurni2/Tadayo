@@ -1,0 +1,36 @@
+# api lane: the inviter's name on a full club and an invitation that didn't go ahead (`api/b1-inviter-name`)
+
+The ios lane's ask of 22 November 2026 (08:26 UTC, from B1 PR 6, opening an invitation): handoff 1's `G02-full` says "It already has six members. Ask Ben for a new invitation if a place opens." and `G03-declined` says "You can close this invitation. Ben can start a new invitation later." (`design/reference/claude-design/handoff-1/screen-copy.json`), but the contract's `InvitationFull` and `InvitationEnded` carry no `inviter_name`, so a fresh preview can't name the inviter. Until this merges, the app names the inviter only when it showed that invitation's roster earlier in the same session.
+
+## 0. What changes
+
+- **The contract** (`packages/contracts/src/schemas/clubs.ts`): `InvitationFull` and `InvitationEnded` each gain `inviter_name: DisplayName`, required, with their descriptions; the `previewInvitation` examples `full` and `did_not_go_ahead` name Ben (`fixtures/examples-clubs.ts`); `openapi.yaml` regenerated. The mock answers the examples.
+- **The domain** (`packages/domain/src/clubs/invitation-preview.ts`, `invitationStanding`): `full` and `did_not_go_ahead` carry `inviterName`. Step 8 (`full`) comes after step 7, which already answers nothing without the inviter's name, so it always has one. Step 4 (`did_not_go_ahead`) now answers nothing when the inviter has no name to show.
+- **The route** (`services/api/src/clubs/invitation.ts`, `invitationPreviewBody`): both states send `inviter_name`.
+- No migration, no new route, no workflow file.
+
+## 1. Which name, and to whom (FQ75, T7, T14, T33)
+
+- **The name** is the one every other invitation answer uses, by FQ75's default: the inviter's profile name while their membership is active, else the name they had when it ended (`invitation-facts.ts`' `inviter_name`, the same `CASE` as `previewInvitationWeb` and `listClubs`). An inviter who left or was blocked out is named as the club last knew them.
+- **`full`** is reached only by someone the open roster would be shown to (a link that's live, or the account's own), so it names no one that `open` wouldn't. No command leads there (the six count every open candidate).
+- **`did_not_go_ahead`** reaches only the account that accepted with the link. That account already reads the same name for the same invitation in `listClubs` (`MyInvitation.inviter_name`, `packages/domain/src/clubs/club-list.ts`), and read it in the roster it accepted. Nothing new is disclosed: still never who declined, or whether anyone did (book p30, T33).
+- **No name to show** (an inviter whose account was deleted, whose ended name may be empty: T27, FQ75): `did_not_go_ahead` becomes the neutral not-found. `listClubs` already lists no such invitation, and `expired` and the roster states already answer nothing without the name (the preview's steps 5 and 7). A reading of FQ75, recorded in `docs/QUESTIONS.md`; not a new question, since it follows the rule both routes already apply.
+
+## 2. Tests
+
+- **Route** (`services/api/src/clubs/invitation.test.ts`): the serializer against the contract's examples, field for field, now with `inviter_name` in both.
+- **Postgres** (`tests/src/db/accept-roster.test.ts`, `leave-club.test.ts`): a declined roster names Ben to Sam, who accepted; an inviter who left is named by the name Ben had on leaving; `full` names Ben; new: once the revision ended, an inviter with no name to show leaves Sam nothing, and `listClubs` lists no such invitation.
+- **The privacy matrix's judge** (`tests/src/privacy/invitation.ts`, `previewFor`) expects the name in both states, and nothing for an ended invitation with no inviter's name; its own tests (`invitation.test.ts`) cover a named, a left and a nameless inviter. The leak scanner's rules need no change: an invitation bound to the viewer's account already gives that account its inviter's name (`scanner.ts`, `Reader.texts`); only its comment is corrected. Its tests (`scanner.test.ts`, "what a link's holder reads through it") take the new shapes: both states pass with the name, fail the shape check without it, and the name is caught through a link revoked, replaced or used by another account.
+- Seen failing first, each for the missing name or the old shape, run against `main`'s code (`7deec1f`) before this branch's: the two Postgres files 4 of 88 (the three changed expectations and the new test, on its first expectation, the name); the scanner's and the judge's tests 5 of 118 (three in `scanner.test.ts`, two in `invitation.test.ts`).
+
+## 3. The ios lane's copied examples, before the merge
+
+`packages/swift/TadayoAPI/Tests/TadayoAPITests/ContractExample.swift` (the ios lane's file) copies the contract's examples whole, and `ClubCallsTests.swift` decodes `previewInvitation.full` and `previewInvitation.did_not_go_ahead` from those copies. With `inviter_name` required, the client generated from this branch's contract should refuse the old copies, which lack it, so `ci`'s `swift` step would fail here. The api lane doesn't edit the ios lane's files (`docs/MILESTONES.md`, "Lanes"). So the ios lane copies the two new examples first, in its own PR: neither schema sets `additionalProperties: false`, so the client generated from `main`'s contract should ignore the extra key. Then `main` is merged into this branch, `ci` goes green, and this PR merges. Asked of the ios lane at 11:28 UTC on 2026-11-22; done in its PR #106's eighth commit (`26df37f`, 11:34 UTC), which it checked both ways: with the new copies TadayoAPI's 52 tests pass against `main`'s contract, and against a scratch copy of the contract requiring the name the old copies fail with `.refused`.
+
+## 4. Review
+
+A plain contract addition, with one narrowing of who gets an answer: at most two rounds (the founder's rule of 11 November 2026). Round 1: one fresh reviewer, privacy and the contract (T7, T14, T33, FQ75). Then one of the fix commit if round 1 finds anything to fix.
+
+## 5. After the merge
+
+Tell the ios lane: the app's `TadayoAPI` decodes `inviter_name` in both states and drops the same-session fallback (the ios lane's files).
