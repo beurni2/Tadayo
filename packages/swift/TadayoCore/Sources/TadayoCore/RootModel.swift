@@ -454,14 +454,17 @@ import Observation
 
     /// The shown invitation and the paste steps', closed and let go; gives the link of the one shown
     /// (the root's first, then the paste steps' from the last made), held for the account it was
-    /// shown to. One that has joined (`opening`) is held by none: its token has been dropped.
+    /// shown to. One that has joined or ended (`opening`, `expired`, `didNotGoAhead`,
+    /// `unavailable`) is held by none: its token has been dropped.
     private func setAsideInvitations() -> HeldInvitation? {
         let pastedModels = pasted.compactMap(\.model)
         let shown = ([invitation].compactMap { $0 } + pastedModels.reversed())
             .first { model in
                 guard model.token != nil else { return false }
-                if case .opening = model.state { return false }
-                return true
+                switch model.state {
+                case .opening, .expired, .didNotGoAhead, .unavailable: return false
+                default: return true
+                }
             }
         let held = shown.flatMap { model in
             model.token.map { HeldInvitation(token: $0, accountID: model.accountID) }

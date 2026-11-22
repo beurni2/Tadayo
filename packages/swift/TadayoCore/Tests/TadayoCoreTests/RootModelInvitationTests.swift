@@ -1086,6 +1086,33 @@ import Testing
         #expect(clubs.calls.last?.hasPrefix("accept 01 rev_1 v1 ") == true)
     }
 
+    @Test func anInvitationThatEndedIsntHeldAtTheServersEnding() async throws {
+        let ended: [Result<InvitationPreview, APIFailure>] = [
+            .success(.expired(inviterName: "Ben")), .success(.didNotGoAhead),
+            .failure(.notFound),
+        ]
+        for answer in ended {
+            let auth = FakeAuth(verify: [.success(stored)])
+            let accounts = FakeAccounts(
+                me: [.success(leila), .success(leila)],
+                clubs: [.success(list()), .failure(.signedOut), .success(list())])
+            let clubs = ScriptedClubs()
+            clubs.previewAnswers = [answer]
+            let root = root(accounts, clubs: clubs, auth: auth)
+            await root.start()
+            await root.open(token)
+            #expect(root.invitation != nil)
+            // The server ends the session: the invitation ended and its token went, so nothing
+            // is held for the next sign-in.
+            await root.retry()
+            #expect(root.route == .signIn)
+            try await signIn(root, as: "leila@example.com")
+            #expect(root.route == .tabs)
+            #expect(root.invitation == nil, "\(answer)")
+            #expect(clubs.calls == ["preview 01"], "\(answer)")
+        }
+    }
+
     /// Signs in on A02-email and A02-code, as the address given.
     func signIn(_ root: RootModel, as email: String) async throws {
         let signIn = try #require(root.signIn)
