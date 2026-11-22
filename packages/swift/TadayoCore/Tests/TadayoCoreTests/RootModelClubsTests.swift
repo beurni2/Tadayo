@@ -713,9 +713,10 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         #expect(try vault.load() == nil)
     }
 
-    @Test func aListAnswerAfterLeaveSignInSettlesNothing() async {
-        // The list was asked for in the session Leave sign-in ended; a link kept afterwards, as
-        // the next sign-in would, isn't purged by its answer, which doesn't hold that club.
+    @Test func aListAnswerAfterLeaveSignInChangesNothing() async {
+        // The list was asked for in the session Leave sign-in ended. Its answer, coming after,
+        // neither lists nor selects that account's clubs, and a link kept afterwards, as the next
+        // sign-in would, isn't purged by it, though it doesn't hold that club.
         let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
         let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))])
         let gate = Gate()
@@ -730,6 +731,8 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         gate.open()
         await started.value
         #expect(root.route == .signIn)
+        #expect(root.clubs == .loading)
+        #expect(root.selectedClubID == nil)
         #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
     }
 

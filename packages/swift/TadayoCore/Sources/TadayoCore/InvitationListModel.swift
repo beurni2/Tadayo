@@ -220,9 +220,11 @@ public struct InvitationList: Sendable, Equatable {
             let row = row(for: candidate)
         else { return nil }
         // The row on screen offered a link the book no longer holds (another read purged it
-        // since): show the row as it is now, which offers Create new link or nothing.
+        // since, from a newer answer): show the row as it is now, which offers Create new link
+        // or nothing, and read the list again for what changed on the server.
         guard row.action == .shareLink || row.action == .shareAgain else {
             relist()
+            await refresh()
             return nil
         }
         if let kept = book.link(for: candidateID, club: club.id, account: accountID),
@@ -231,10 +233,7 @@ public struct InvitationList: Sendable, Equatable {
             actionFailure = nil
             return kept.url
         }
-        guard candidate.invitation == nil else {
-            relist()
-            return nil
-        }
+        guard candidate.invitation == nil else { return nil }
         busy.insert(candidateID)
         defer { busy.remove(candidateID) }
         return await make(for: candidate)?.url

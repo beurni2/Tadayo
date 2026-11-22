@@ -129,9 +129,9 @@ import Observation
 
     /// `left` runs each time Leave sign-in has ended the session, on the server and here, whether
     /// or not the device could forget it, and before sign-in shows: the app purges there what the
-    /// account left behind, its connections first, and its kept links (T11). `selection` keeps the
-    /// selected club across relaunches, and is forgotten before `left` runs. `links` is the
-    /// app's one book of kept links, also forgotten before `left` runs (ADR-037, T11).
+    /// account left behind, its connections. `selection` keeps the selected club across
+    /// relaunches, and is forgotten before `left` runs. `links` is the app's one book of kept
+    /// links, also forgotten before `left` runs (ADR-037, T11).
     public init(
         session: SessionManager, auth: any AuthService, accounts: any AccountService,
         clubs: any ClubService, selection: any ClubSelectionStore,

@@ -230,11 +230,13 @@ import Testing
 
     @Test func aLinkGoneSinceTheRowWasShownShowsTheRowAsItIsNow() async {
         // Another read (the name step's, Club details') purged Sam's link after the list showed
-        // Share link: the tap shares nothing and the row says what can be done now.
+        // Share link: the tap shares nothing, the row says what can be done now, and the list is
+        // read again.
         let clubs = ScriptedClubs()
-        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.clubAnswers = [.success(Sunday.detail()), .success(Sunday.detail())]
         clubs.memberAnswers = [
-            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .live)]))
+            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .live)])),
+            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .live)])),
         ]
         let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
         book.keep(
@@ -246,6 +248,7 @@ import Testing
         book.drop("inv_sam", account: account)
         #expect(await list.linkToShare(for: "cand_sam") == nil)
         #expect(row(list, "cand_sam")?.action == .createNewLink)
+        #expect(clubs.calls.filter { $0.hasPrefix("members") }.count == 2)
         #expect(!clubs.calls.contains { $0.hasPrefix("createInvitation") })
     }
 

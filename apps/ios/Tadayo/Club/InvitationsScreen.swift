@@ -183,10 +183,10 @@ struct ClubSetupHeading: View {
 /// At the accessibility sizes the status and the action go under the name, from the leading edge,
 /// with More kept beside the name, and the separator runs the full width (handoff 2's AX5 rule,
 /// frame `G01-invite-people-xl`); the action's target takes the full width, as a used row's Share
-/// again must (`usedInvitationRow.largestText`). VoiceOver reads the name and the status as one element,
-/// "Maya. Shared.", then each control by its own label ("Share again for Maya", "More options for
-/// Maya’s invitation"); the glyphs and the avatar are decorative (handoff 4: "Invitee glyphs … are
-/// decorative beside their words").
+/// again must (`usedInvitationRow.largestText`). VoiceOver reads the name and the status as one
+/// element, "Maya. Shared.", then each control by its own label ("Share again for Maya", "More
+/// options for Maya’s invitation"); the glyphs and the avatar are decorative (handoff 4: "Invitee
+/// glyphs … are decorative beside their words").
 struct InvitationRowView: View {
     let row: InvitationRow
     let busy: Bool
@@ -262,19 +262,21 @@ struct InvitationRowView: View {
     /// and 44 high, so 74 holds it centred.
     static let minimumHeight: CGFloat = 74
 
-    /// `usedInvitationRow.defaultSamHeight`: frame `G01-invite-people-accept-again` draws a used row
-    /// 84 high at the default size, its name, status and Share again where a 74 row puts them and
-    /// the 10 more under them. A row whose text needs more grows past it.
+    /// `usedInvitationRow.defaultSamHeight`: frame `G01-invite-people-accept-again` draws a used
+    /// row 84 high at the default size, its name, status and Share again where a 74 row puts them
+    /// and the 10 more under them. A row whose text needs more grows past it.
     static let usedMinimumHeight: CGFloat = 84
 
-    /// More's target past the screen's 20-point margin: handoff 4's `invitationRowActions.moreTarget`
-    /// is [333, 15, 44, 44] on a 393-point screen, so it ends at 377, as the club header's Account
-    /// target ends past the margin (`Size.clubHeaderTrailingInset`).
+    /// More's target past the screen's 20-point margin: handoff 4's
+    /// `invitationRowActions.moreTarget` is [333, 15, 44, 44] on a 393-point screen, so it ends at
+    /// 377, as the club header's Account target ends past the margin
+    /// (`Size.clubHeaderTrailingInset`).
     static let moreOverhang: CGFloat = 4
 
-    /// From the action's words to More's target (`invitationRowActions.shareRightEdge` 328 to
-    /// `moreTarget`'s 333), inside the action's target, which ends where More's starts, as handoff
-    /// 4's frames draw Maya's Share link target, [237, 261, 96, 44].
+    /// From the action's words to More's target: handoff 4's `invitationRowActions.shareRightEdge`
+    /// is 328 and `moreTarget` starts at 333. The 5 is inside the action's target, so that target
+    /// ends at 333, where More's starts, as the frames' Share link target ends there (Maya's,
+    /// [237, 261, 96, 44]); where it starts is the words' own.
     static let actionToMore: CGFloat = 5
 
     /// The name, which VoiceOver reads with the status as one element.
