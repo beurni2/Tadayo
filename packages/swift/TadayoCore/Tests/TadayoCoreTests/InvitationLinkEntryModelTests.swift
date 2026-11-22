@@ -109,6 +109,40 @@ import Testing
         }
     }
 
+    @Test func theInvitationIsReleasedWhenItsClubOpensOrBackLeavesIt() async throws {
+        let service = ScriptedClubs()
+        service.previewAnswers = [
+            .success(.joined(Kitchen.ref)), .success(.open(Kitchen.roster())),
+        ]
+        var made: [InvitationModel] = []
+        var released: [InvitationModel] = []
+        let entry = InvitationLinkEntryModel(
+            make: { token in
+                let model = InvitationModel(
+                    token: token, service: service,
+                    book: InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
+                    account: Kitchen.account, current: { true }, joined: { _ in },
+                    signedOut: {})
+                made.append(model)
+                return model
+            },
+            released: { released.append($0) })
+        entry.text = link
+        // A club the account is in: nothing to hand over, and the model is let go.
+        await entry.proceed()
+        #expect(entry.opened == Kitchen.ref)
+        #expect(made.count == 1)
+        #expect(released.count == 1)
+        #expect(released.first === made.first)
+        // An invitation shown, then Back: the model is let go.
+        await entry.proceed()
+        let shown = try #require(entry.invitation)
+        #expect(released.count == 1)
+        entry.returned()
+        #expect(released.count == 2)
+        #expect(released.last === shown)
+    }
+
     @Test func nothingIsCheckedOnceTheSessionHasEnded() async {
         var asked = 0
         let entry = InvitationLinkEntryModel { _ in

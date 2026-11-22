@@ -319,6 +319,62 @@ import Testing
         #expect(accounts.calls == ["me", "clubs", "me", "clubs"])
     }
 
+    @Test func aLinkHeldForAnAccountIsLetGoOnceAnotherAccountShowsIncomplete() async throws {
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let incompleteMaya = Account(
+            id: "acct_maya", displayName: nil, avatarVersion: nil, ageConfirmed: true, version: 1)
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(incompleteMaya), .success(leila)],
+            update: [.failure(.signedOut)],
+            clubs: [.success(list()), .failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        await root.open(token)
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        // The server ends Leila's session: the link is held for Leila.
+        await root.retry()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "maya@example.com")
+        // Maya's account shows, incomplete: Leila's link is let go.
+        #expect(root.route == .profile)
+        let profile = try #require(root.profile)
+        profile.name = "Maya"
+        await profile.saveName()
+        // The server ends Maya's session before the tabs show, and Leila signs in again.
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.account?.id == leila.id)
+        #expect(root.invitation == nil)
+        #expect(clubs.calls == ["preview 01"])
+    }
+
+    @Test func aLinkOpenedOnAnAccountsProfileStepNeverReachesAnotherAccount() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(account(age: true, version: 1)), .success(maya)],
+            update: [.failure(.signedOut)],
+            clubs: [.success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        #expect(root.route == .profile)
+        await root.open(token)
+        let profile = try #require(root.profile)
+        profile.name = "Leila"
+        await profile.saveName()
+        // The server ends Leila's session on A03-profile, and Maya signs in.
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "maya@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.account?.id == "acct_maya")
+        #expect(root.invitation == nil)
+        #expect(clubs.calls.isEmpty)
+    }
+
     @Test func aLinkOpenedWhileTheListIsReadIsntReplacedByAnOlderHeldOne() async {
         let auth = FakeAuth(verify: [.success(stored)])
         let accounts = FakeAccounts(me: [.success(leila)], clubs: [.success(list())])
@@ -728,7 +784,6 @@ import Testing
         await signIn.verify()
         #expect(root.route == .tabs)
         #expect(root.invitation?.state == .open(Kitchen.roster()))
-        #expect(root.invitation !== pasted)
         #expect(clubs.calls.count == 3)
         #expect(clubs.calls.first == "preview 01")
         #expect(clubs.calls.dropFirst().first?.hasPrefix("accept 01 rev_1 v1 ") == true)
@@ -748,5 +803,153 @@ import Testing
         await entry.proceed()
         #expect(entry.invitation == nil)
         #expect(clubs.calls.isEmpty)
+    }
+
+    @Test func aSecondPasteStepLeavesTheFirstOnesInvitation() async throws {
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [
+            .success(.open(Kitchen.roster())), .success(.open(Kitchen.roster())),
+        ]
+        clubs.acceptAnswers = [.success(.waiting)]
+        let root = root(
+            FakeAccounts(me: [.success(leila)], clubs: [.success(list())]), clubs: clubs)
+        await root.start()
+        let first = try #require(root.linkEntry())
+        let second = try #require(root.linkEntry())
+        first.text = link
+        let gate = Gate()
+        clubs.duringPreview = { await gate.wait() }
+        async let proceeded: Void = first.proceed()
+        await gate.reached()
+        clubs.duringPreview = {}
+        second.text = "https://tadayo.app/i#" + Kitchen.token(2).secret
+        await second.proceed()
+        #expect(second.invitation?.state == .open(Kitchen.roster()))
+        gate.open()
+        await proceeded
+        // The first step's invitation shows and accepts as if it were the only one.
+        let invitation = try #require(first.invitation)
+        #expect(invitation.state == .open(Kitchen.roster()))
+        await invitation.accept()
+        #expect(invitation.state == .waiting(clubName: "Kitchen table"))
+        #expect(clubs.calls.count == 3)
+        #expect(Array(clubs.calls.prefix(2)) == ["preview 02", "preview 01"])
+        #expect(clubs.calls.last?.hasPrefix("accept 01 rev_1 v1 ") == true)
+    }
+
+    @Test func aPastedInvitationLeftWithBackIsClosedAndNeverHeld() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [.success(list()), .failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        clubs.acceptAnswers = [.success(.waiting)]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        let left = try #require(entry.invitation)
+        entry.returned()
+        // Back closes it: no Accept from it.
+        await left.accept()
+        #expect(clubs.calls == ["preview 01"])
+        // The server ends the session: nothing left with Back is held, though the model lives on.
+        await root.retry()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.invitation == nil)
+        #expect(clubs.calls == ["preview 01"])
+        withExtendedLifetime(left) {}
+    }
+
+    @Test func theRootsInvitationIsHeldBeforeAPastedOne() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [.success(list()), .failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = Array(repeating: .success(.open(Kitchen.roster())), count: 3)
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        #expect(entry.invitation?.state == .open(Kitchen.roster()))
+        // A link opened over the paste step.
+        await root.open(Kitchen.token(2))
+        await root.retry()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(clubs.calls == ["preview 01", "preview 02", "preview 02"])
+        withExtendedLifetime(entry) {}
+    }
+
+    @Test func theLatestPasteStepsInvitationIsHeld() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [.success(list()), .failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = Array(repeating: .success(.open(Kitchen.roster())), count: 3)
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        let first = try #require(root.linkEntry())
+        first.text = link
+        await first.proceed()
+        let second = try #require(root.linkEntry())
+        second.text = "https://tadayo.app/i#" + Kitchen.token(2).secret
+        await second.proceed()
+        #expect(first.invitation?.state == .open(Kitchen.roster()))
+        #expect(second.invitation?.state == .open(Kitchen.roster()))
+        await root.retry()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(clubs.calls == ["preview 01", "preview 02", "preview 02"])
+        withExtendedLifetime((first, second)) {}
+    }
+
+    @Test func aPastedInvitationIsHeldOnceAndNotAgainOnceClosed() async throws {
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila), .success(leila)],
+            clubs: [
+                .success(list()), .failure(.signedOut), .success(list()), .failure(.signedOut),
+                .success(list()),
+            ])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = Array(repeating: .success(.open(Kitchen.roster())), count: 3)
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        #expect(entry.invitation?.state == .open(Kitchen.roster()))
+        // The server ends the session: the pasted invitation is held and shown by the root.
+        await root.retry()
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        // Not now; then the server ends the session again, with nothing shown.
+        root.closeInvitation()
+        await root.retry()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.invitation == nil)
+        #expect(clubs.calls == ["preview 01", "preview 01"])
+        withExtendedLifetime(entry) {}
+    }
+
+    /// Signs in on A02-email and A02-code, as the address given.
+    func signIn(_ root: RootModel, as email: String) async throws {
+        let signIn = try #require(root.signIn)
+        signIn.email = email
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
     }
 }

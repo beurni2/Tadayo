@@ -36,11 +36,16 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     public private(set) var opened: ClubRef?
 
     let make: @MainActor (InvitationToken) -> InvitationModel?
+    let released: @MainActor (InvitationModel) -> Void
 
     /// `make` gives the invitation's model for a token, or nil once the session it was made in has
-    /// ended.
-    public init(make: @escaping @MainActor (InvitationToken) -> InvitationModel?) {
+    /// ended; `released` is told when a model is done with: left (Back), or its club opened.
+    public init(
+        make: @escaping @MainActor (InvitationToken) -> InvitationModel?,
+        released: @escaping @MainActor (InvitationModel) -> Void = { _ in }
+    ) {
         self.make = make
+        self.released = released
     }
 
     /// What's in the field. A write while the link is checked is ignored; any other clears the
@@ -95,6 +100,7 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         case .opening(let club):
             // The club opened while the link was checked: nothing is left to show.
             opened = club
+            released(model)
         default:
             invitation = model
         }
@@ -102,6 +108,7 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
 
     /// The invitation shown has been left (Back): the field is as it was.
     public func returned() {
+        if let invitation { released(invitation) }
         invitation = nil
     }
 
