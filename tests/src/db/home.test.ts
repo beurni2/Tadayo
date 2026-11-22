@@ -396,7 +396,7 @@ describe("the open day's page: the star's own drops, then friends' (spec 15; T9,
     });
   });
 
-  it("leaves out what the viewer may not see, so a day with nothing they may see is a quiet day (T9, T15, T24, T29)", async () => {
+  it("leaves out what the viewer may not see, so a day with nothing they may see is a quiet day (T9, T15, T24, T27, T29)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       await commitDrop(plain(tx), w, w.ben, { at: AT.added });
@@ -404,15 +404,23 @@ describe("the open day's page: the star's own drops, then friends' (spec 15; T9,
       await joinByRoster(plain(tx), w.club, w.ana, [{ user: mo, label: "Mo" }], AT.edited);
       expect(await page(tx, mo, w.club)).toMatchObject({ joinedLater: true, drops: [], highlights: [] });
     });
-    for (const end of ["withdrawn", "removed", "held"] as const) {
+    // Ben's deletion begins while the day is open: his drop leaves at once, before any job has run (T27).
+    for (const end of ["withdrawn", "removed", "held", "author's deletion"] as const) {
       await rolledBack(db, async (tx) => {
         const w = await newWorld(plain(tx));
         const drop = await commitDrop(plain(tx), w, w.ben, { at: AT.added });
         const video = await commitDrop(plain(tx), w, w.cleo, { media: "external_video", at: AT.added });
         if (end === "withdrawn") await withdraw(tx, w, drop, STATE_AT);
         else if (end === "removed") await removeByModeration(tx, drop, STATE_AT);
-        else await tx`UPDATE app.drops SET state = 'held', updated_at = ${STATE_AT} WHERE id = ${drop}`;
-        expect((await page(tx, w.ana.user, w.club)).drops.map((card) => card.id)).toEqual([video]);
+        else if (end === "held")
+          await tx`UPDATE app.drops SET state = 'held', updated_at = ${STATE_AT} WHERE id = ${drop}`;
+        else
+          await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.opened} WHERE id = ${w.ben.user}`;
+        const read = await page(tx, w.ana.user, w.club, at("2026-11-07T09:30:00Z"));
+        expect(
+          read.drops.map((card) => card.id),
+          end,
+        ).toEqual([video]);
       });
     }
   });
@@ -434,6 +442,7 @@ describe("the open day's highlight rail (T22; FQ26)", () => {
   /**
    * Pat, then Mo, join while Ana's Saturday is collecting, with no day in its schedule; then Mo, Pat, Ben, Cleo
    * and Ana each add a photo, in that order, and point their highlight at it. Ben adds a second photo too.
+   * Mo's interval id sorts before Pat's, byte by byte, so an order by id instead of by joining would show.
    */
   async function fiveHighlights(tx: WorldTx) {
     const w = await newWorld(plain(tx));
@@ -444,6 +453,7 @@ describe("the open day's highlight rail (T22; FQ26)", () => {
       w.ana,
       [{ user: pat, label: "Pat" }],
       new Date("2026-11-03T10:00:00Z"),
+      [newId("mem").replace("mem_", "mem_z")],
     );
     const [moInterval] = await joinByRoster(
       plain(tx),
@@ -451,6 +461,7 @@ describe("the open day's highlight rail (T22; FQ26)", () => {
       w.ana,
       [{ user: mo, label: "Mo" }],
       new Date("2026-11-04T10:00:00Z"),
+      [newId("mem").replace("mem_", "mem_A")],
     );
     if (patInterval === undefined || moInterval === undefined) throw new Error("the roster added nobody");
     const members = { mo: { user: mo, interval: moInterval }, pat: { user: pat, interval: patInterval } };
@@ -502,19 +513,77 @@ describe("the open day's highlight rail (T22; FQ26)", () => {
   it("places a member with two days by the earlier, in the day's own schedule and no later one", async () => {
     await rolledBack(db, async (tx) => {
       const s = await fiveHighlights(tx);
-      // Ben's Monday in the day's own week puts Ben before Cleo; Cleo's Monday in a later week changes nothing.
+      // Ben's Monday in the day's own week puts Ben before Cleo.
       await tx`
         INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
         VALUES (${s.w.version}, ${s.w.club}, 'monday', ${s.w.ben.interval}, '2026-11-02', ${AT.generated})`;
+      // A week written later, from Tuesday 3 November, in force on the day's date and now, and the club's
+      // latest (as a new member's week can start before days already made, migration 0015): its Tuesday for
+      // Pat and Monday for Cleo change nothing, since Ana's Saturday was made under the first.
       const later = newId("sched");
       await tx`
         INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
-        VALUES (${later}, ${s.w.club}, '2026-11-16', ${AT.edited})`;
-      await tx`
-        INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
-        VALUES (${later}, ${s.w.club}, 'monday', ${s.w.cleo.interval}, '2026-11-16', ${AT.edited})`;
+        VALUES (${later}, ${s.w.club}, '2026-11-03', ${AT.edited})`;
+      for (const [weekday, member, first] of [
+        ["tuesday", s.pat, "2026-11-03"],
+        ["monday", s.w.cleo, "2026-11-09"],
+      ] as const)
+        await tx`
+          INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+          VALUES (${later}, ${s.w.club}, ${weekday}, ${member.interval}, ${first}, ${AT.edited})`;
       const day = await page(tx, s.w.ana.user, s.w.club);
       expect(day.highlights.map((one) => one.author.displayName)).toEqual(["Ana", "Ben", "Cleo", "Pat", "Mo"]);
+    });
+  });
+
+  it("gives a member whose days start after the day none yet, and keeps the order while the day is open (FQ26, FQ55)", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await fiveHighlights(tx);
+      // Mo's Monday in the day's own version starts on 9 November, after Ana's Saturday: no day yet, so Mo
+      // stays after Pat, as they joined, though Monday comes first.
+      await tx`
+        INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+        VALUES (${s.w.version}, ${s.w.club}, 'monday', ${s.mo.interval}, '2026-11-09', ${AT.generated})`;
+      const order = async (instant: Temporal.Instant) =>
+        (await page(tx, s.w.ana.user, s.w.club, instant)).highlights.map((one) => one.author.displayName);
+      expect(await order(OPENED)).toEqual(["Ana", "Cleo", "Ben", "Pat", "Mo"]);
+      // Pat confirms Tuesday while the day is open, as the first days let a member do (FQ55): the row joins
+      // the version the day was made under, its first date a day on at least. The rail doesn't move.
+      await tx`
+        INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+        VALUES (${s.w.version}, ${s.w.club}, 'tuesday', ${s.pat.interval}, '2026-11-10', ${date(OPENED)})`;
+      expect(await order(OPENED.add({ hours: 1 }))).toEqual(["Ana", "Cleo", "Ben", "Pat", "Mo"]);
+    });
+  });
+
+  it("orders contributors who joined at one instant by their interval ids, byte by byte (FQ114)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const [lu, kai] = [await newUser(plain(tx), "Lu"), await newUser(plain(tx), "Kai")];
+      // One roster, one instant. Kai's "mem_B…" sorts before Lu's "mem_a…" byte by byte, though not in a
+      // locale's order; their drops' ids, and the order they were added, sort the other way.
+      const [luInterval, kaiInterval] = await joinByRoster(
+        plain(tx),
+        w.club,
+        w.ana,
+        [
+          { user: lu, label: "Lu" },
+          { user: kai, label: "Kai" },
+        ],
+        new Date("2026-11-03T10:00:00Z"),
+        [newId("mem").replace("mem_", "mem_a"), newId("mem").replace("mem_", "mem_B")],
+      );
+      if (luInterval === undefined || kaiInterval === undefined) throw new Error("the roster added nobody");
+      for (const [interval, minute, prefix] of [
+        [luInterval, 0, "drp_A"],
+        [kaiInterval, 1, "drp_z"],
+      ] as const) {
+        const member = { user: interval === luInterval ? lu : kai, interval };
+        const id = newId("drp").replace("drp_", prefix);
+        await highlight(tx, w.day, member, await commitDrop(plain(tx), w, member, { at: minutes(minute), id }));
+      }
+      const day = await page(tx, w.ana.user, w.club);
+      expect(day.highlights.map((one) => one.author.displayName)).toEqual(["Kai", "Lu"]);
     });
   });
 
@@ -545,15 +614,27 @@ describe("what B6 builds on the page: reactions, favourites and replies (section
             INSERT INTO app.reactions (drop_id, interval_id, reaction, updated_at)
             VALUES (${drop}, ${w.cleo.interval}, 'heart', ${AT.opened})`;
         else if (write === "favourite")
-          await tx`INSERT INTO app.favourites (interval_id, drop_id, created_at) VALUES (${w.cleo.interval}, ${drop}, ${AT.opened})`;
+          await tx`INSERT INTO app.favourites (interval_id, drop_id, created_at) VALUES (${w.ana.interval}, ${drop}, ${AT.opened})`;
         else
           await tx`
             INSERT INTO app.comments (id, drop_id, author_interval_id, body, created_at, updated_at)
             VALUES (${newId("cmt")}, ${drop}, ${w.cleo.interval}, 'Lovely', ${AT.opened}, ${AT.opened})`;
-        // Ana is neither the one who reacted, saved nor commented: the page is still not B2's to answer.
+        // Cleo's reaction or comment is shown to everyone who sees the drop, and Ana's favourite to Ana: the
+        // page is not B2's to answer.
         await expect(home(tx, w.ana.user, w.club, OPENED)).rejects.toThrow(/B6/);
       });
     }
+  });
+
+  it("never asks about someone else's favourite, which is private to them (spec 18)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const drop = await commitDrop(plain(tx), w, w.ben, { at: AT.added });
+      await tx`INSERT INTO app.favourites (interval_id, drop_id, created_at) VALUES (${w.cleo.interval}, ${drop}, ${AT.opened})`;
+      // Ana's page is as before Cleo saved it; Cleo's own page is B6's.
+      expect(await page(tx, w.ana.user, w.club, OPENED)).toMatchObject({ drops: [{ id: drop }] });
+      await expect(home(tx, w.cleo.user, w.club, OPENED)).rejects.toThrow(/B6/);
+    });
   });
 });
 
@@ -622,6 +703,34 @@ describe("the recent days, with their covers (spec 08, 18; D08; T9, T15)", () =>
         displayName: "Ana",
         avatarVersion: null,
       });
+    });
+  });
+
+  it("covers a day with the star's own highlighted photo only: a friend's highlight, or the star's highlighted video, gives way to the star's earliest photo (D08)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const t = (minutes: number) => new Date(AT.added.getTime() + minutes * 60_000);
+      // Ana's Saturday 14: Ben's photo first, his highlight; then Ana's photo, her video, her highlight, and a
+      // second photo of hers.
+      const saturday14 = await addDay(tx, w, w.ana, "2026-11-14");
+      const ben14 = await commitTo(tx, w, saturday14, w.ben, { at: t(0) });
+      await highlight(tx, saturday14, w.ben, ben14);
+      const ana14 = await commitTo(tx, w, saturday14, w.ana, { at: t(1) });
+      const video14 = await commitTo(tx, w, saturday14, w.ana, { media: "external_video", at: t(2) });
+      await highlight(tx, saturday14, w.ana, video14);
+      await commitTo(tx, w, saturday14, w.ana, { at: t(3) });
+      // Ben's Friday 20: Ana's photo first, her highlight; then Ben's photo, and Ben's second, his highlight.
+      const friday20 = await addDay(tx, w, w.ben, "2026-11-20");
+      const ana20 = await commitTo(tx, w, friday20, w.ana, { at: t(4) });
+      await highlight(tx, friday20, w.ana, ana20);
+      await commitTo(tx, w, friday20, w.ben, { at: t(5) });
+      const ben20 = await commitTo(tx, w, friday20, w.ben, { at: t(6) });
+      await highlight(tx, friday20, w.ben, ben20);
+      await addDay(tx, w, w.ben, "2026-11-27");
+      expect(ids(await home(tx, w.ana.user, w.club, SUNDAY_22))).toEqual([
+        ["2026-11-20", ben20],
+        ["2026-11-14", ana14],
+      ]);
     });
   });
 

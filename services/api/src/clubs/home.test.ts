@@ -19,6 +19,7 @@ import type {
   RailEntry,
   RecentDay,
   SchedulePerson,
+  ServerNow,
 } from "@tadayo/domain";
 import type { FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
@@ -273,7 +274,7 @@ async function appFor(begin: (...args: unknown[]) => Promise<unknown>) {
   };
 }
 
-describe("the handler (T14, T34)", () => {
+describe("the handler (T1, T14, T34)", () => {
   it("reads in one read-only transaction and answers the neutral not-found when the read gives nothing", async () => {
     const modes: unknown[] = [];
     const answer = await appFor((mode) => {
@@ -291,6 +292,41 @@ describe("the handler (T14, T34)", () => {
         "content-length": "20",
       },
     });
+  });
+
+  it("samples the server's clock first in that transaction, and reads Home at that instant and no other (T1)", async () => {
+    const sample = Temporal.Instant.from("2026-11-14T07:00:00.123456Z") as ServerNow;
+    const events: unknown[] = [];
+    const bound: unknown[] = [];
+    // Each statement and fragment the read writes reaches `tx`; none gives a row, so the read names no club.
+    const tx = (_template: TemplateStringsArray, ...values: unknown[]) => {
+      events.push("statement");
+      bound.push(...values);
+      return Promise.resolve([]);
+    };
+    const sql = {
+      end: () => Promise.resolve(),
+      begin: async (mode: unknown, body: (t: typeof tx) => Promise<unknown>) => {
+        events.push(mode);
+        return body(tx);
+      },
+    } as unknown as ApiSql;
+    const clock = {
+      sample: (t: unknown) => {
+        events.push(t === tx ? "clock in the transaction" : "clock elsewhere");
+        return Promise.resolve(sample);
+      },
+    } as unknown as Clock;
+    const app = buildApp({ sql, clock, authenticate: () => Promise.resolve(account), log: { level: "silent" } });
+    await app.ready();
+    open.push(app);
+    const response = await app.inject({ method: "GET", url: "/v1/clubs/club_x/home" });
+    expect(response.statusCode).toBe(404);
+    expect(events.slice(0, 3)).toEqual(["read only", "clock in the transaction", "statement"]);
+    expect(events.filter((event) => event !== "statement")).toEqual(["read only", "clock in the transaction"]);
+    const instants = bound.filter((value) => value instanceof Temporal.Instant);
+    expect(instants.length).toBeGreaterThan(0);
+    for (const instant of instants) expect(instant.equals(sample)).toBe(true);
   });
 
   it("sends what the read made, private and never stored", async () => {

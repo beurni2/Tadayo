@@ -141,6 +141,7 @@ Each question has a default. Claude Code builds on the default until the founder
 - **FQ26. The order of the highlight rail.** Spec 15 says the star's pick, then stable roster order. `H01-open` shows Debby's pick, then Maya, Sam and Ben, which isn't the Friends order (Ben, Maya, Alex, Sam, Debby, Nina).
     - Default: the star's pick, then the club's schedule order from Monday, so Ben, Maya, Sam. The render is a known difference in the inventory.
     - Also, raised by handoff 0's notes: in a club of two or three, each member has two days, and a contributor can have no day that week (a member whose days start later, or a former member whose drops stay). Default: by each contributor's earliest weekday in that occurrence's schedule; anyone without a day follows, in the order they joined; the order is fixed for each occurrence.
+    - Claude Code's reading, built on `api/b2-home` (PR #103, `pageRail` in `packages/domain/src/clubs/home.ts`): "a member whose days start later" is one whose weekdays in that occurrence's schedule all have a first date after the occurrence's date, so they follow with anyone without a day. A day confirmed while the occurrence is open starts a day on at the earliest (FQ55), so the order stays fixed for it. A former member whose drops stay keeps the place their weekday in that schedule gives them, since their day that week may already have happened and the order is fixed for the occurrence. Members who joined at one instant follow by interval id, byte by byte (FQ114).
     - Needed by: B5.
 
 ## Operations and the trial

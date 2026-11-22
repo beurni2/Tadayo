@@ -303,10 +303,12 @@ export const RECENT_DAYS = 6;
  * DayLink; spec 08, 18; T5, T9, T15). A recent day is a day of the club that has closed (`close_at <= now`),
  * that `placeable`'s three conditions keep, and that holds a drop the viewer may see the media of
  * (`readableDrops`, the read predicate itself), the newest by `reveal_at`, then id byte by byte, at most
- * `RECENT_DAYS`. So
- * a withdrawn, removed or held drop, a cancelled or suspended day, a drop whose audience the viewer's active
- * interval isn't in (a late joiner's, a rejoined member's old ones), an author's deletion and a block each
- * keep a day out when nothing else of it is readable, and nothing says why (T14, T15).
+ * `RECENT_DAYS`. The statement orders them by `close_at` instead, newest first: the same order, since a
+ * club's scheduled days never overlap, and the one the index `occurrences_upcoming` holds, which Postgres may
+ * read backward rather than sort (docs/plans/api-b2-home.md section 6 has the plan it chose). So a withdrawn,
+ * removed or held drop, a cancelled or suspended day, a drop whose audience the viewer's active interval
+ * isn't in (a late joiner's, a rejoined member's old ones), an author's deletion and a block each keep a day
+ * out when nothing else of it is readable, and nothing says why (T14, T15).
  *
  * Each day's cover is D08's choice among its photos the viewer may see the media of: the star's photo that is
  * the star's highlight, then the star's earliest photo, then the earliest photo, earliest by `submitted_at`,
@@ -343,7 +345,7 @@ export function recentDays<F>(sql: FragmentSql<F>, viewer: string, now: ServerNo
                        AND EXISTS (SELECT FROM app.drops x
                                     WHERE x.occurrence_id = o.id
                                       AND x.id IN (${readableDrops(sql, viewer, now, "media")}))
-                     ORDER BY o.reveal_at DESC, o.id COLLATE "C"
+                     ORDER BY o.close_at DESC, o.id COLLATE "C"
                      LIMIT ${String(RECENT_DAYS)}::pg_catalog.int4) r) AS recent_days
       FROM app.clubs c
      WHERE c.suspended_at IS NULL

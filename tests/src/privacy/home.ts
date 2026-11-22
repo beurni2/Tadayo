@@ -15,9 +15,10 @@
 //   the contract's RevealedDayDrop: its author as the club sees them (FQ75), its caption, whether it's its
 //   author's highlight, a photo's display frame and content version or a video's provider, and no reaction or
 //   favourite; and the highlight rail of those drops, the star's pick first, then the day's own schedule from
-//   Monday by each author's earliest weekday, then anyone with no day in it as they joined (FQ26). A page whose
-//   drops have a reaction, a favourite or a comment (B6's), or more than 36 drops (B5's cursor), must be the
-//   server's empty 500 (the plan's section 0.1): no world of the matrix has either.
+//   Monday by each author's earliest weekday from its first date on or before the day's, then anyone with no day
+//   in it as they joined (FQ26). A page whose drops have a reaction or a comment, or the viewer's own favourite
+//   (B6's), or more than 36 drops (B5's cursor), must be the server's empty 500 (the plan's section 0.1): no
+//   world of the matrix has either.
 // - `recent_days`: the club's closed days that `daysOf`'s rule keeps and that hold a drop the viewer may see
 //   the media of, newest first, at most six, each with D08's cover among the photos the viewer may see: the
 //   star's highlighted photo, then the star's earliest, then the earliest, by commit time and id.
@@ -57,8 +58,10 @@ export interface HomeRows {
   frames: ReadonlyMap<string, { width: number; height: number; version: string }>;
   /** Each video drop's provider, by drop id. */
   providers: ReadonlyMap<string, string>;
-  /** The drops with a reaction, a favourite or a comment: B6's rows. */
-  later: ReadonlySet<string>;
+  /** The drops with a reaction or a comment, which B6's fields show to everyone who can see the drop. */
+  shared: ReadonlySet<string>;
+  /** Each drop's favourites, as the intervals that saved it: each one private to its interval (spec 18). */
+  favoured: ReadonlyMap<string, ReadonlySet<string>>;
   /** Each day's schedule version, by day id. */
   weeks: ReadonlyMap<string, string>;
 }
@@ -74,14 +77,15 @@ export async function homeRowsOf(db: WorldTx, clubs: readonly string[]): Promise
       height: number | null;
       version: string | null;
       provider: string | null;
-      later: boolean;
+      shared: boolean;
+      favoured: string[];
     }[]
   >`
     SELECT d.id, d.submitted_at, EXISTS (SELECT FROM app.highlights h WHERE h.drop_id = d.id) AS highlighted,
            r.width, r.height, u.content_version AS version, s.provider,
            EXISTS (SELECT FROM app.reactions x WHERE x.drop_id = d.id)
-             OR EXISTS (SELECT FROM app.favourites x WHERE x.drop_id = d.id)
-             OR EXISTS (SELECT FROM app.comments x WHERE x.drop_id = d.id) AS later
+             OR EXISTS (SELECT FROM app.comments x WHERE x.drop_id = d.id) AS shared,
+           ARRAY(SELECT x.interval_id FROM app.favourites x WHERE x.drop_id = d.id) AS favoured
       FROM app.drops d
       LEFT JOIN app.uploads u ON u.id = d.upload_id
       LEFT JOIN app.upload_renditions r ON r.upload_id = d.upload_id AND r.kind = 'display'
@@ -104,7 +108,8 @@ export async function homeRowsOf(db: WorldTx, clubs: readonly string[]): Promise
     blocks: blocks.map((row) => [row.blocker, row.blocked] as const),
     frames,
     providers,
-    later: new Set(drops.filter((row) => row.later).map((row) => row.id)),
+    shared: new Set(drops.filter((row) => row.shared).map((row) => row.id)),
+    favoured: new Map(drops.map((row) => [row.id, new Set(row.favoured)])),
     weeks: new Map(days.map((row) => [row.id, row.week])),
   };
 }
@@ -174,6 +179,7 @@ function personOf(world: WorldFacts, interval: string): Record<string, unknown> 
 export function pageFor(
   seen: HomeSeen,
   day: string,
+  viewer: string,
 ): { drops: Record<string, unknown>[]; highlights: Record<string, unknown>[] } | "refused" {
   const { world, home, schedule } = seen;
   const found = world.days.get(day);
@@ -191,7 +197,9 @@ export function pageFor(
         Temporal.Instant.compare(at(a), at(b)) ||
         byBytes(a, b),
     );
-  if (visible.length > PAGE || visible.some(([id]) => home.later.has(id))) return "refused";
+  // B6's rows the page would show this viewer: anyone's reaction or comment, and the viewer's own favourite.
+  const later = (id: string) => home.shared.has(id) || (home.favoured.get(id)?.has(viewer) ?? false);
+  if (visible.length > PAGE || visible.some(([id]) => later(id))) return "refused";
   const drops = visible.map(([id, drop]) => {
     const frame = home.frames.get(id);
     const provider = home.providers.get(id);
@@ -214,12 +222,15 @@ export function pageFor(
       section: drop.author === found.star ? "star" : "friends",
     };
   });
-  // The rail: the day's own week from Monday, by each author's earliest weekday in it; no day, after, as they joined.
+  // The rail: the day's own week from Monday, by each author's earliest weekday in it from its first date on or
+  // before the day's own date (a member whose days start later has none yet); no day, after, as they joined.
   const week = schedule.versions.find((version) => version.id === home.weeks.get(day));
   if (week === undefined) throw new Error("the open day's week isn't the world's");
   const earliest = (interval: string) =>
     Math.min(
-      ...week.assignments.filter((one) => one.star === interval).map((one) => WEEK.indexOf(one.weekday)),
+      ...week.assignments
+        .filter((one) => one.star === interval && one.firstDate <= found.localDate)
+        .map((one) => WEEK.indexOf(one.weekday)),
       WEEK.length,
     );
   const joined = (interval: string) => {
@@ -314,7 +325,7 @@ export function homeFor(seen: HomeSeen, club: string): Record<string, unknown> |
   const days = daysOf(world, club, now);
   const open = days.open as { id: string; star: { membership_id: string } } | undefined;
   if (open !== undefined) {
-    const page = pageFor(seen, open.id);
+    const page = pageFor(seen, open.id, interval);
     if (page === "refused") return "refused";
     const day = world.days.get(open.id);
     if (day === undefined) throw new Error("the open day isn't the world's");

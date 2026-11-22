@@ -82,6 +82,8 @@ export async function joinByRoster(
   proposer: Member,
   newcomers: { user: string; label: string }[],
   at: Date,
+  /** The newcomers' interval ids, in their order, for a test that orders by id; each one random otherwise. */
+  intervalIds: readonly string[] = [],
 ): Promise<string[]> {
   const revision = newId("rev");
   const members = await tx<{ interval_id: string }[]>`
@@ -130,8 +132,8 @@ export async function joinByRoster(
   }
   await tx`UPDATE app.roster_revisions SET state = 'applied', version = 2, ended_at = ${at} WHERE id = ${revision}`;
   const intervals: string[] = [];
-  for (const candidate of candidates) {
-    const interval = newId("mem");
+  for (const [index, candidate] of candidates.entries()) {
+    const interval = intervalIds[index] ?? newId("mem");
     await tx`
       INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_via_revision_id, joined_via_candidate_id, joined_at)
       VALUES (${interval}, ${club}, ${candidate.user}, 'roster', ${revision}, ${candidate.id}, ${at})
@@ -212,6 +214,8 @@ export interface DropOptions {
   at?: Date;
   /** Leave the audience unwritten and the drop unsealed, for a test to finish the commit. */
   unsealed?: boolean;
+  /** The drop's id, for a test that orders by id; random otherwise. */
+  id?: string;
 }
 
 /**
@@ -232,7 +236,7 @@ export const PHOTO_FRAMES = {
 export async function commitDrop(tx: Tx, w: World, author: Member, options: DropOptions = {}): Promise<string> {
   const media = options.media ?? "photo";
   const at = options.at ?? AT.added;
-  const drop = newId("drp");
+  const drop = options.id ?? newId("drp");
   const dedupe = randomBytes(32);
   await tx`
     INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id)

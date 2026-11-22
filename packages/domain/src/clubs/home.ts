@@ -26,8 +26,11 @@
 // previews are B6's, and no route writes their rows until B6, so the read throws rather than answer a page
 // whose drops have any (the B6 PR builds them, T49); a day's drops past the first 36 page through
 // getOccurrence's cursor, which B5 builds, so the read throws rather than cut a page short. Neither can happen
-// on `dev` or `prod` before those stages: no route writes those rows, and a club's allowances (T17) keep a
-// day's drops far below 36 (six for the star, three for each friend, six members at once).
+// on `dev` or `prod` before B6 writes those rows. The second can't before B3 commits drops, and then only far
+// from the trial's clubs: six members at once give a day at most 21 drops (six for the star, three for each
+// friend, T17), but the allowances are each interval's, so a day passes 36 only when members who leave keep
+// their drops and others join or rejoin while it collects, again and again. Until B5's cursor, such a day's
+// readers get the server's error rather than a page that leaves drops out (docs/LIMITATIONS.md, 2026-11-22).
 
 import { daysByClub, nextDaysByStar, recentDays, chosenDay, recentDay } from "../authorization/days.ts";
 import type { ChosenDay, RecentDay } from "../authorization/days.ts";
@@ -166,7 +169,8 @@ function instant(value: unknown): Temporal.Instant {
 }
 
 // The open day's page, as three columns of readHome's statement: each names readHome's alias `h`, whose
-// `open_day` is the day `daysByClub` chose, and is null (or false) when there is none.
+// `open_day` is the day `daysByClub` chose, and is null (or false) when there is none; `laterRows` also names
+// its alias `lm`, the viewer's membership in the club.
 
 /**
  * The open day's drops `viewer` may see the media of at `now`, as a jsonb array for `openPage`, the star's own
@@ -197,7 +201,10 @@ function pageDrops<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
  * The open day's highlight rail for `viewer` at `now`, as a jsonb array for `openPage`: each highlight that
  * points to a drop the viewer may see the media of, the star's pick first, then by each contributor's earliest
  * weekday from Monday in the day's own schedule version, then anyone without a day in it in the order they
- * joined, by interval id byte by byte on a tie (FQ26, FQ114).
+ * joined, by interval id byte by byte on a tie (FQ26, FQ114). A weekday counts only from its first date on or
+ * before the day's own date: a member whose days start later has no day yet (FQ26), and the order stays fixed
+ * for the day, since a member who confirms while it is open is given a first date at least a day on (FQ55),
+ * though their row joins the first days' version the day was made under.
  */
 function pageRail<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
   return bound(sql)`(
@@ -210,7 +217,8 @@ function pageRail<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
                                 sa.weekday::pg_catalog.text))
                          FROM app.schedule_assignments sa
                         WHERE sa.schedule_version_id = o.schedule_version_id
-                          AND sa.star_interval_id = hl.interval_id) NULLS LAST,
+                          AND sa.star_interval_id = hl.interval_id
+                          AND sa.first_date <= o.local_date) NULLS LAST,
                       s.joined_at, s.interval_id COLLATE "C")
       FROM app.highlights hl
       JOIN app.occurrences o ON o.id = hl.occurrence_id
@@ -220,14 +228,19 @@ function pageRail<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
        AND hl.drop_id IN (${readableDrops(sql, viewer, now, "media")}))`;
 }
 
-/** Whether a drop of the open day that `viewer` may see has a reaction, a favourite or a comment: B6's rows. */
+/**
+ * Whether a drop of the open day that `viewer` may see has a row B6's fields would show them: a reaction or a
+ * comment by anyone (the reaction summary and the reply preview are everyone's who can see the drop), or the
+ * viewer's own favourite, under their interval in the club (readHome's alias `lm`). Someone else's favourite
+ * is private to them (spec 18) and is never asked about, so this can't tell the viewer one exists.
+ */
 function laterRows<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
   return bound(sql)`EXISTS (
     SELECT FROM app.drops x
      WHERE x.occurrence_id = (h.open_day OPERATOR(pg_catalog.->>) 'id')
        AND x.id IN (${readableDrops(sql, viewer, now, "media")})
        AND (EXISTS (SELECT FROM app.reactions re WHERE re.drop_id = x.id)
-            OR EXISTS (SELECT FROM app.favourites fa WHERE fa.drop_id = x.id)
+            OR EXISTS (SELECT FROM app.favourites fa WHERE fa.drop_id = x.id AND fa.interval_id = lm.interval_id)
             OR EXISTS (SELECT FROM app.comments co WHERE co.drop_id = x.id)))`;
 }
 
