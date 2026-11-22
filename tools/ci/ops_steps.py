@@ -13,7 +13,8 @@ The workflow passes its inputs as environment variables, OPS_SCRIPT, OPS_ORG, OP
 OPS_BRANCH, and never writes them into a command line, so an input is only ever an argument, and
 always as `--option=value`, so that a value starting with a dash is never read as an option.
 SCRIPTS is the interface of docs/plans/api-b0-deploy.md, section 4's table, with spike S5's
-spike-time from docs/plans/api-b0-spike-time.md, section 7: what each script reads on the runner
+spike-time from docs/plans/api-b0-spike-time.md, section 7, and spike S6's spike-links from
+docs/plans/api-b0-spike-links.md, section 4: what each script reads on the runner
 and the one option it takes, if any. ops.yml has one job per script, run only for
 that script and naming only its secrets (a job's `if:` is decided before a runner gets the job, so
 a skipped job's secrets reach no runner; a step's `if:` would not do), and ops_steps_test.py reads
@@ -91,6 +92,7 @@ SCRIPTS = {
     "supabase-probe": Script(("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF",
                               "SUPABASE_ACCESS_TOKEN"), flyctl=True),
     "spike-time": Script(("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"), flyctl=True),
+    "spike-links": Script(("FLY_API_TOKEN",), flyctl=True),
 }
 # The repository secret each variable is given from (docs/plans/B0.md's secrets row). GITHUB_TOKEN
 # is the job's own token, not a secret.
