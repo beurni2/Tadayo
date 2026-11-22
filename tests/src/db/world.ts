@@ -82,6 +82,8 @@ export async function joinByRoster(
   proposer: Member,
   newcomers: { user: string; label: string }[],
   at: Date,
+  /** The newcomers' interval ids, in their order, for a test that orders by id; each one random otherwise. */
+  intervalIds: readonly string[] = [],
 ): Promise<string[]> {
   const revision = newId("rev");
   const members = await tx<{ interval_id: string }[]>`
@@ -130,8 +132,8 @@ export async function joinByRoster(
   }
   await tx`UPDATE app.roster_revisions SET state = 'applied', version = 2, ended_at = ${at} WHERE id = ${revision}`;
   const intervals: string[] = [];
-  for (const candidate of candidates) {
-    const interval = newId("mem");
+  for (const [index, candidate] of candidates.entries()) {
+    const interval = intervalIds[index] ?? newId("mem");
     await tx`
       INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_via_revision_id, joined_via_candidate_id, joined_at)
       VALUES (${interval}, ${club}, ${candidate.user}, 'roster', ${revision}, ${candidate.id}, ${at})
@@ -212,17 +214,29 @@ export interface DropOptions {
   at?: Date;
   /** Leave the audience unwritten and the drop unsealed, for a test to finish the commit. */
   unsealed?: boolean;
+  /** The drop's id, for a test that orders by id; random otherwise. */
+  id?: string;
 }
 
 /**
+ * The frames preparation gives a committed photo's two renditions (spec 33): the display one the feed lays out
+ * (Home's page, the contract's RevealedPhoto) and the full one, each a different size and neither square, so a
+ * read that took the wrong one, or swapped width and height, shows.
+ */
+export const PHOTO_FRAMES = {
+  display: { width: 1200, height: 1600 },
+  full: { width: 3024, height: 4032 },
+} as const;
+
+/**
  * Commits a drop to the world's day as createDrop will (TECH-DESIGN section 5): the author's
- * counter, a reservation and a prepared upload for a photo (or a resolved link), the drop, its
- * audience of every active member, and the seal (T8, T17).
+ * counter, a reservation and a prepared upload for a photo, with its two renditions (or a resolved
+ * link), the drop, its audience of every active member, and the seal (T8, T17).
  */
 export async function commitDrop(tx: Tx, w: World, author: Member, options: DropOptions = {}): Promise<string> {
   const media = options.media ?? "photo";
   const at = options.at ?? AT.added;
-  const drop = newId("drp");
+  const drop = options.id ?? newId("drp");
   const dedupe = randomBytes(32);
   await tx`
     INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id)
@@ -248,6 +262,13 @@ export async function commitDrop(tx: Tx, w: World, author: Member, options: Drop
     await tx`
       UPDATE app.uploads SET state = 'ready', content_hash = ${dedupe}, content_version = ${newId("v")} WHERE id = ${upload}
     `;
+    for (const kind of ["display", "full"] as const) {
+      const { width, height } = PHOTO_FRAMES[kind];
+      await tx`
+        INSERT INTO app.upload_renditions (upload_id, kind, object_key, width, height, byte_size, created_at)
+        VALUES (${upload}, ${kind}, ${newId("uploads/rendition")}, ${width}, ${height}, 2000, ${at})
+      `;
+    }
     await tx`
       INSERT INTO app.drops (id, occurrence_id, club_id, author_interval_id, media_class, upload_id, dedupe_key, caption,
                              submitted_at, updated_at)

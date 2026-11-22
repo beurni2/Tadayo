@@ -11,6 +11,11 @@
 // day among those whose star is that member, by the SQL (`nextDaysByStar`) or by the policy
 // (`chooseNextDayOf`), the pair run on the same rows by the same test.
 //
+// Home's recent days (`recentDays`, getHome's `recent_days`) are the days of the same rule that have closed
+// and hold a drop the viewer may see the media of, which the read predicate's own SQL decides
+// (`readableDrops`); it has no policy twin, since no command asks it of one day, and the privacy matrix
+// judges it from the world's rows apart from this statement (tests/src/privacy/home.ts).
+//
 // The rule:
 // - Only the viewer's clubs: their account is active and they have an active interval there. A
 //   stranger, a former member or a guessed id gets nothing (T14); a rejoined member gets the club's
@@ -42,13 +47,16 @@
 import type { ServerNow } from "../time/clock.ts";
 import { wholeMicroseconds } from "../time/instant.ts";
 import { checkNow, notBeforeReveal, type AccountState, type DayStatus, type MembershipState } from "./read.ts";
-import { checkViewer, starKeepsDay, type FragmentSql } from "./read-sql.ts";
+import { checkViewer, readableDrops, starKeepsDay, type FragmentSql } from "./read-sql.ts";
 
 /** Where a chosen day is at `now`: the open day is open, the next one is collecting (OccurrencePhase). */
 export type ChosenPhase = "open" | "collecting";
 
-/** A day as Home places it: the contract's Occurrence, with its instants whole. */
-export interface ChosenDay {
+/** Where a day Home names is at `now`: a chosen day's phase, or past for a recent day (OccurrencePhase). */
+export type PlacedPhase = ChosenPhase | "past";
+
+/** A day as Home names it: the contract's Occurrence, with its instants whole. */
+export interface PlacedDay {
   readonly id: string;
   readonly clubId: string;
   readonly star: {
@@ -62,7 +70,21 @@ export interface ChosenDay {
   readonly localDate: string;
   readonly revealAt: Temporal.Instant;
   readonly closeAt: Temporal.Instant;
+  readonly phase: PlacedPhase;
+}
+
+/** A day as Home places it: open now, or the next to open. */
+export interface ChosenDay extends PlacedDay {
   readonly phase: ChosenPhase;
+}
+
+/**
+ * One of Home's recent days (the contract's DayLink): a day that has closed, which the viewer can read
+ * something in, with the photo that covers it for them, or null when they can read no photo of it.
+ */
+export interface RecentDay {
+  readonly day: PlacedDay & { readonly phase: "past" };
+  readonly coverDropId: string | null;
 }
 
 /** A club's two days at `now`, each null when there is none. */
@@ -189,7 +211,25 @@ function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, ofMe
       ? bound(sql)`o.reveal_at <= ${now}::pg_catalog.timestamptz AND ${now}::pg_catalog.timestamptz < o.close_at`
       : bound(sql)`o.reveal_at > ${now}::pg_catalog.timestamptz`;
   return bound(sql)`
-    SELECT pg_catalog.jsonb_build_object(
+    SELECT ${dayObject(sql)}
+      FROM app.occurrences o
+      JOIN app.memberships s ON s.interval_id = o.star_interval_id
+      JOIN app.users su ON su.id = s.user_id
+     WHERE o.club_id = c.id
+       AND ${placeableDay(sql)}
+       AND ${when}
+       AND ${whose}
+     ORDER BY o.reveal_at, o.id
+     LIMIT 1`;
+}
+
+/**
+ * A day as a jsonb object for `chosenDay` and `recentDay` to read: the day `o`, its star by FQ75's rule from
+ * the star's interval `s` and account `su` (the name while the interval is active, the name it ended with
+ * after; the avatar's version only while both are active).
+ */
+function dayObject<F>(sql: FragmentSql<F>): F {
+  return bound(sql)`pg_catalog.jsonb_build_object(
              'id', o.id, 'club_id', o.club_id, 'local_date', o.local_date,
              'reveal_at', o.reveal_at, 'close_at', o.close_at,
              'star_membership_id', s.interval_id,
@@ -197,18 +237,17 @@ function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, ofMe
              'star_avatar_version',
              CASE WHEN s.state = 'active' AND su.state = 'active'
                   THEN (SELECT up.content_version FROM app.uploads up
-                         WHERE up.id = su.avatar_upload_id AND up.state = 'ready') END)
-      FROM app.occurrences o
-      JOIN app.memberships s ON s.interval_id = o.star_interval_id
-      JOIN app.users su ON su.id = s.user_id
-     WHERE o.club_id = c.id
-       AND o.status = 'scheduled'
+                         WHERE up.id = su.avatar_upload_id AND up.state = 'ready') END)`;
+}
+
+/**
+ * `placeable`'s three conditions on the day `o`, whatever the time: scheduled, not held (its star `s`, `su`
+ * hadn't left or asked to delete their account before its reveal: `starKeepsDay`), with a star to name.
+ */
+function placeableDay<F>(sql: FragmentSql<F>): F {
+  return bound(sql)`o.status = 'scheduled'
        AND ${starKeepsDay(sql)}
-       AND (CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END) IS NOT NULL
-       AND ${when}
-       AND ${whose}
-     ORDER BY o.reveal_at, o.id
-     LIMIT 1`;
+       AND (CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END) IS NOT NULL`;
 }
 
 /**
@@ -255,6 +294,67 @@ export function daysByClub<F>(sql: FragmentSql<F>, viewer: string, now: ServerNo
                       AND m.state = 'active' AND u.state = 'active')`;
 }
 
+/** The most recent days Home links to (the contract's `recent_days`). */
+export const RECENT_DAYS = 6;
+
+/**
+ * Each club of `viewer`'s with its recent days at `now`, as a subquery of rows `(club_id, recent_days)`,
+ * `recent_days` a jsonb array for `recentDay` to read, newest first: Home's secondary links (the contract's
+ * DayLink; spec 08, 18; T5, T9, T15). A recent day is a day of the club that has closed (`close_at <= now`),
+ * that `placeable`'s three conditions keep, and that holds a drop the viewer may see the media of
+ * (`readableDrops`, the read predicate itself), the newest by `reveal_at`, then id byte by byte, at most
+ * `RECENT_DAYS`. The statement picks them by `close_at` instead, newest first: the same order, since a
+ * club's scheduled days never overlap, and the one the index `occurrences_upcoming` holds; on a club with two
+ * years of days, measured, Postgres sorted the club's readable days rather than read the index
+ * (docs/plans/api-b2-home.md section 6). So a withdrawn,
+ * removed or held drop, a cancelled or suspended day, a drop whose audience the viewer's active interval
+ * isn't in (a late joiner's, a rejoined member's old ones), an author's deletion and a block each keep a day
+ * out when nothing else of it is readable, and nothing says why (T14, T15).
+ *
+ * Each day's cover is D08's choice among its photos the viewer may see the media of: the star's photo that is
+ * the star's highlight, then the star's earliest photo, then the earliest photo, earliest by `submitted_at`,
+ * then id byte by byte (the feed's order, T35); never a video, so a day with only videos has none. Its bytes come from the
+ * media route (T12).
+ *
+ * It lists the clubs `daysByClub` lists, by the same three conditions, so a caller joins it on its own club
+ * id with no check of its own. The connection needs INSTANT_TYPE, since `now` is bound as a timestamptz.
+ */
+export function recentDays<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
+  checkViewer(viewer);
+  checkNow(now);
+  return bound(sql)`
+    SELECT c.id AS club_id,
+           (SELECT COALESCE(pg_catalog.jsonb_agg(r.day ORDER BY r.reveal_at DESC, r.id COLLATE "C"), '[]'::pg_catalog.jsonb)
+              FROM (SELECT o.id, o.reveal_at,
+                           ${dayObject(sql)} || pg_catalog.jsonb_build_object('cover_drop_id', (
+                             SELECT x.id
+                               FROM app.drops x
+                               LEFT JOIN app.highlights hl ON hl.drop_id = x.id
+                              WHERE x.occurrence_id = o.id
+                                AND x.media_class = 'photo'
+                                AND x.id IN (${readableDrops(sql, viewer, now, "media")})
+                              ORDER BY (x.author_interval_id = o.star_interval_id AND hl.drop_id IS NOT NULL) DESC,
+                                       x.author_interval_id = o.star_interval_id DESC,
+                                       x.submitted_at, x.id COLLATE "C"
+                              LIMIT 1)) AS day
+                      FROM app.occurrences o
+                      JOIN app.memberships s ON s.interval_id = o.star_interval_id
+                      JOIN app.users su ON su.id = s.user_id
+                     WHERE o.club_id = c.id
+                       AND ${placeableDay(sql)}
+                       AND o.close_at <= ${now}::pg_catalog.timestamptz
+                       AND EXISTS (SELECT FROM app.drops x
+                                    WHERE x.occurrence_id = o.id
+                                      AND x.id IN (${readableDrops(sql, viewer, now, "media")}))
+                     ORDER BY o.close_at DESC, o.id COLLATE "C"
+                     LIMIT ${String(RECENT_DAYS)}::pg_catalog.int4) r) AS recent_days
+      FROM app.clubs c
+     WHERE c.suspended_at IS NULL
+       AND EXISTS (SELECT FROM app.memberships m JOIN app.users u ON u.id = m.user_id
+                    WHERE m.club_id = c.id AND m.user_id = ${viewer}::pg_catalog.text
+                      AND m.state = 'active' AND u.state = 'active')`;
+}
+
 function shape(): Error {
   return new Error("authorization: a day came back in a shape the schema doesn't allow");
 }
@@ -285,7 +385,23 @@ const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
  */
 export function chosenDay(value: unknown, phase: ChosenPhase): ChosenDay | null {
   if (value === null) return null;
-  if (typeof value !== "object" || Array.isArray(value)) throw shape();
+  return { ...placedDay(value), phase };
+}
+
+/**
+ * One day of the array `recentDays` gave in its `recent_days` column, as a past day with its cover. Anything
+ * outside the shape throws, so a surprise refuses rather than shows.
+ */
+export function recentDay(value: unknown): RecentDay {
+  const day = placedDay(value);
+  const row = value as Record<string, unknown>;
+  const cover = row["cover_drop_id"];
+  return { day: { ...day, phase: "past" }, coverDropId: cover === null ? null : text(cover) };
+}
+
+/** A day's object, as `dayObject` builds it, without its phase. */
+function placedDay(value: unknown): Omit<PlacedDay, "phase"> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) throw shape();
   const row = value as Record<string, unknown>;
   const localDate = text(row["local_date"]);
   if (!DATE.test(localDate)) throw shape();
@@ -300,6 +416,5 @@ export function chosenDay(value: unknown, phase: ChosenPhase): ChosenDay | null 
     localDate,
     revealAt,
     closeAt,
-    phase,
   };
 }

@@ -26,7 +26,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
 import { TEST_EMAIL } from "@tadayo/api/testing";
-import { makeDays } from "@tadayo/domain";
+import { dayInstants, makeDays } from "@tadayo/domain";
 import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -92,6 +92,7 @@ import {
   type Choice,
   type MembershipRow,
 } from "./leave.ts";
+import { homeExpected, homeRowsOf, type HomeSeen } from "./home.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
 import {
   IDEMPOTENCY_CONFLICT,
@@ -222,17 +223,36 @@ let elsewhere: Elsewhere;
 /**
  * Ben's photo "From Ben" and Cleo's video link "Cleo's pick" to Ana's Saturday, each caption ending
  * in the world's suffix, so no other world has it; committed at 20:00 on Friday 6 November, each with
- * its audience of Ana, Ben and Cleo, sealed. Returns Ben's drop.
+ * its audience of Ana, Ben and Cleo, sealed. Ben's photo is Ben's highlight, pointed as it is committed,
+ * so the open day's rail has an entry for whoever may see it (getHome's row, home.ts), and a state that
+ * ends the drop clears it (../matrix.ts). Returns Ben's drop.
  */
 async function twoContributors(tx: WorldTx, w: World): Promise<string> {
   const drop = await commitDrop(plain(tx), w, w.ben, { caption: named(w, "From Ben"), at: AT.added });
   await commitDrop(plain(tx), w, w.cleo, { media: "external_video", caption: named(w, "Cleo's pick"), at: AT.added });
+  await tx`
+    INSERT INTO app.highlights (occurrence_id, interval_id, drop_id, version, updated_at)
+    VALUES (${w.day}, ${w.ben.interval}, ${drop}, 1, ${AT.added})`;
   await checkAsAtCommit(plain(tx));
   const [row] = await tx<{ authors: number }[]>`
     SELECT count(DISTINCT author_interval_id)::int AS authors FROM app.drops WHERE occurrence_id = ${w.day} AND state = 'active'`;
   if (row?.authors !== 2)
     throw new Error(`the matrix's day holds drops from ${String(row?.authors)} contributors, not two`);
   return drop;
+}
+
+/**
+ * Ana's next Saturday, 14 November, in the cell's world, collecting since the world's generation as hers on the
+ * 7th is: so after the 7th closes Home waits for it, with the 7th among its recent days (getHome's row,
+ * home.ts), rather than having no day to open.
+ */
+async function anaNextSaturday(tx: WorldTx, w: World): Promise<void> {
+  const { revealAt, closeAt } = dayInstants(Temporal.PlainDate.from("2026-11-14"), "Europe/London");
+  await tx`
+    INSERT INTO app.occurrences (id, club_id, star_interval_id, schedule_version_id, local_date, reveal_at, close_at,
+                                 collecting_from)
+    VALUES (${`occ_${randomBytes(16).toString("base64url")}`}, ${w.club}, ${w.ana.interval}, ${w.version}, '2026-11-14',
+            ${revealAt}, ${closeAt}, ${AT.generated})`;
 }
 
 /**
@@ -659,6 +679,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       for (const state of STATES) {
         const cell = await db.begin(async (tx) => {
           const w = await newWorld(plain(tx), suffix());
+          await anaNextSaturday(tx, w);
           const drop = await twoContributors(tx, w);
           // The club's first days, before the role changes the club, as a leave or a join would meet them.
           const proposal = await addFirstDays(tx, w);
@@ -727,6 +748,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         // The clubs' own rows (club.ts), read again with the schedule's.
         const loadClubRows = () => clubRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
         let clubRows = await loadClubRows();
+        // What getHome's judge reads beyond the facts (home.ts): no route of the matrix changes them.
+        const homeRows = await homeRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club]);
         // The roster's rows (roster.ts), read again after each request that may change them.
         const loadRoster = () => rosterWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
         let rosterWorld = await loadRoster();
@@ -780,6 +803,14 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             daysOf: (club) => daysOf(facts.world, club, now),
           });
           const rosterSeen = (): RosterSeen => ({ ...scheduleSeen(), roster: rosterWorld, rows: clubRows });
+          const homeSeen = (): HomeSeen => ({
+            world: facts.world,
+            schedule,
+            rows: clubRows,
+            home: homeRows,
+            account: cell.viewer,
+            now,
+          });
           // The browser's preflight before the signed-out page's request, as the role, signed out, and as the
           // page's browser sends it (T59): one answer for everyone, which reads nothing
           // (services/api/src/web-origin.ts).
@@ -817,22 +848,24 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                           ? NEUTRAL
                           : gate === undefined && id === "listMembers"
                             ? membersExpected(membersSeen, cell.w.club)
-                            : gate === undefined && id === "getClub"
-                              ? clubExpected(clubSeen, cell.w.club)
-                              : gate === undefined && id === "createClub"
-                                ? CREATE_CLUB_NO_BODY
-                                : gate === undefined && id === "leaveClub"
-                                  ? LEAVE_NO_BODY
-                                  : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                                    ? cellExpected(session, spec.operation, seen)
-                                    : id === "getSchedule"
-                                      ? weekExpected(scheduleSeen, cell.w.club)
-                                      : commandExpected(
-                                          scheduleSeen,
-                                          id as ScheduleCommand,
-                                          cell.targets.proposal,
-                                          startVersion,
-                                        );
+                            : gate === undefined && id === "getHome"
+                              ? homeExpected(homeSeen, cell.w.club)
+                              : gate === undefined && id === "getClub"
+                                ? clubExpected(clubSeen, cell.w.club)
+                                : gate === undefined && id === "createClub"
+                                  ? CREATE_CLUB_NO_BODY
+                                  : gate === undefined && id === "leaveClub"
+                                    ? LEAVE_NO_BODY
+                                    : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                      ? cellExpected(session, spec.operation, seen)
+                                      : id === "getSchedule"
+                                        ? weekExpected(scheduleSeen, cell.w.club)
+                                        : commandExpected(
+                                            scheduleSeen,
+                                            id as ScheduleCommand,
+                                            cell.targets.proposal,
+                                            startVersion,
+                                          );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -1659,6 +1692,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             );
             for (const [id, expected] of [
               ["getClub", () => clubExpected(clubSeen, cell.w.club)],
+              ["getHome", () => homeExpected(homeSeen, cell.w.club)],
               ["listMembers", () => membersExpected(membersSeen, cell.w.club)],
               ["getSchedule", () => weekExpected(scheduleSeen, cell.w.club)],
               ["getRosterRevision", () => revisionExpected(rosterSeen, cell.targets.revision)],
