@@ -86,14 +86,25 @@ final class KeychainInvitationLinkVaultTests: XCTestCase {
         XCTAssertEqual(try vault.load(), file())
     }
 
-    func testTheItemHoldsTheAccountsIdAndItsLinksOnly() throws {
+    /// The item's whole shape: the account's id, its links and, since B1's PR 6a, the tokens of the
+    /// invitations it accepted (the contract's `MyInvitationState`), each with its invitation's id
+    /// and the name-change mark, and nothing else.
+    @MainActor func testTheItemHoldsTheAccountsIdItsLinksAndItsAcceptedInvitationsOnly() throws {
         try vault.save(file())
+        let book = InvitationLinkBook(vault: vault)
+        let token = try XCTUnwrap(InvitationToken(secret: String(repeating: "B", count: 43)))
+        XCTAssertNotNil(
+            book.keepReceived(
+                token, invitation: "inv_leila", account: "acct_ben", nameChanged: true))
         let data = try XCTUnwrap(try storedData())
         let fields = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        XCTAssertEqual(Set(fields.keys), ["accountID", "links"])
+        XCTAssertEqual(Set(fields.keys), ["accountID", "links", "received"])
         let link = try XCTUnwrap((fields["links"] as? [[String: Any]])?.first)
         XCTAssertEqual(
             Set(link.keys), ["clubID", "candidateID", "invitationID", "url", "shared"])
+        let received = try XCTUnwrap(fields["received"] as? [[String: Any]])
+        XCTAssertEqual(received.count, 1)
+        XCTAssertEqual(Set(received[0].keys), ["invitationID", "secret", "nameChanged"])
     }
 
     @MainActor func testTheBookForgetsTheItem() throws {
