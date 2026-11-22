@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/uploads.test.ts (26 tests | 1 failed) 244ms
+   ❯ the upload's serializers against the contract's examples (T12, T55) (9)
+     × gives the signed upload as good for Storage's lifetime, and never past the upload's own expires_at 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  20:54:02
+   Duration  807ms (import 41%, tests 37%, transform 22%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/uploads.test.ts > the upload's serializers against the contract's examples (T12, T55) > gives the signed upload as good for Storage's lifetime, and never past the upload's own expires_at
+AssertionError: expected '2026-11-07T22:00:00Z' to be '2026-11-07T21:00:00Z' // Object.is equality
+
+Expected: "2026-11-07T21:00:00Z"
+Received: "2026-11-07T22:00:00Z"
+
+ ❯ src/media/uploads.test.ts:121:59
+    119|       )["expires_at"];
+    120|     // Two hours of Storage's from an hour before the upload lapses: t…
+    121|     expect(until(expiresAt.subtract({ hours: 1 }), 7200)).toBe("2026-1…
+       |                                                           ^
+    122|     // Storage's lifetime ending a microsecond before the upload's, an…
+    123|     expect(until(expiresAt.subtract({ seconds: 7200, microseconds: 1 }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

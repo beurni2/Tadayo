@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/privacy/upload.test.ts (25 tests | 1 failed) 51ms
+   ❯ what createUpload must answer (uploadOutcome) (7)
+     × gives the neutral not-found for a slot that holds an upload but rejected ones: one slot, one photo 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 passed (25)
+   Start at  20:54:09
+   Duration  1.05s (import 57%, transform 26%, tests 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/upload.test.ts > what createUpload must answer (uploadOutcome) > gives the neutral not-found for a slot that holds an upload but rejected ones: one slot, one photo
+AssertionError: pending: expected { kind: 'made', …(3) } to deeply equal { kind: 'pinned', answer: { …(4) } }
+
+- Expected
++ Received
+
+  {
+-   "answer": {
+-     "body": "{\"code\":\"NOT_FOUND\"}",
+-     "headers": {
+-       "cache-control": "private, no-store",
+-       "connection": "keep-alive",
+-       "content-length": "20",
+-       "content-type": "application/json; charset=utf-8",
+-     },
+-     "reason": "Not Found",
+-     "status": 404,
+-   },
+-   "kind": "pinned",
++   "account": "usr_ben",
++   "kind": "made",
++   "now": "2026-11-06T14:41:00.5Z",
++   "reservation": "rsv_ben",
+  }
+
+ ❯ src/privacy/upload.test.ts:305:61
+    303|     for (const state of ["pending", "preparing", "ready", "held"] as c…
+    304|       const holding = world({ uploads: { upl_ben: upload("usr_ben", BE…
+    305|       expect(outcome(holding, "usr_ben", "rsv_ben"), state).toEqual(ne…
+       |                                                             ^
+    306|     }
+    307|     // A lapsed upload still holds its slot: the slot lapses long befo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

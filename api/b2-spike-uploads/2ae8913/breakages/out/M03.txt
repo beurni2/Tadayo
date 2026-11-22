@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/uploads.test.ts (27 tests | 2 failed) 1472ms
+   ❯ one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) (3)
+     × makes one more upload, for a new object, under a slot whose upload was rejected, and then no other 43ms
+   ❯ the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18) (4)
+     × refuses a second upload under a slot past the domain while the first isn't rejected, and takes one after 44ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+   Start at  20:53:47
+   Duration  2.56s (tests 80%, import 13%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/uploads.test.ts > one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) > makes one more upload, for a new object, under a slot whose upload was rejected, and then no other
+PostgresError: duplicate key value violates unique constraint "uploads_one_per_reservation"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createDropPhotoUpload ../packages/domain/src/media/upload.ts:303:18
+    301|   const objectKey = newObjectKey();
+    302|   const expiresAt = uploadExpiry(at);
+    303|   await bound(tx)`
+       |                  ^
+    304|     INSERT INTO app.uploads (id, owner_user_id, purpose, reservation_i…
+    305|                              created_at, expires_at)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/uploads.test.ts > the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18) > refuses a second upload under a slot past the domain while the first isn't rejected, and takes one after
+PostgresError: duplicate key value violates unique constraint "uploads_one_per_reservation"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ insert src/db/uploads.test.ts:830:7
+    828| describe("the database's last guards: a drop's photo only under a live…
+    829|   const insert = (sp: WorldTx, d: Days, reservationId: string, created…
+    830|     sp`INSERT INTO app.uploads (id, owner_user_id, purpose, reservatio…
+       |       ^
+    831|                                 created_at, expires_at)
+    832|        VALUES (${`upl_${randomUUID().replaceAll("-", "")}`}, ${d.w.ben…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

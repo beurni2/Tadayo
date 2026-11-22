@@ -1,0 +1,11 @@
+--- a/services/api/src/media/uploads.ts
++++ b/services/api/src/media/uploads.ts
+@@ -57,7 +57,7 @@
+   return {
+     url: signed.url,
+     method: "PUT",
+-    headers: { "Content-Type": toSign.contentType, "x-upsert": "false" },
++    headers: { "Content-Type": toSign.contentType },
+     expires_at: contractInstant(until),
+   };
+ }

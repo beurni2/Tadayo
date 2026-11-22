@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/uploads.test.ts (27 tests | 3 failed) 1267ms
+   ❯ one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) (3)
+     × gives the neutral not-found for a second upload under the same slot with a new key, pending or preparing, and keeps the first key's replay 37ms
+     × makes one more upload, for a new object, under a slot whose upload was rejected, and then no other 32ms
+     × puts two uploads with new keys under one slot in order by the counter: the one that waited makes nothing 73ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 24 passed (27)
+   Start at  20:52:51
+   Duration  2.29s (tests 79%, import 14%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/uploads.test.ts > one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) > gives the neutral not-found for a second upload under the same slot with a new key, pending or preparing, and keeps the first key's replay
+ FAIL  src/db/uploads.test.ts > one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) > makes one more upload, for a new object, under a slot whose upload was rejected, and then no other
+ FAIL  src/db/uploads.test.ts > one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) > puts two uploads with new keys under one slot in order by the counter: the one that waited makes nothing
+PostgresError: duplicate key value violates unique constraint "uploads_one_per_reservation"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createDropPhotoUpload ../packages/domain/src/media/upload.ts:302:18
+    300|   const objectKey = newObjectKey();
+    301|   const expiresAt = uploadExpiry(at);
+    302|   await bound(tx)`
+       |                  ^
+    303|     INSERT INTO app.uploads (id, owner_user_id, purpose, reservation_i…
+    304|                              created_at, expires_at)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+

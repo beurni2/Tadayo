@@ -1,0 +1,11 @@
+--- a/services/api/src/media/storage.ts
++++ b/services/api/src/media/storage.ts
+@@ -106,7 +106,7 @@
+   const payload = payloadOf(token);
+   if (typeof payload !== "object" || payload === null) return undefined;
+   const { url, upsert, iat, exp } = payload as Record<string, unknown>;
+-  if (url !== `${UPLOADS_BUCKET}/${objectKey}` || upsert !== false) return undefined;
++  if (url !== `${UPLOADS_BUCKET}/${objectKey}`) return undefined;
+   if (typeof iat !== "number" || typeof exp !== "number" || !Number.isInteger(iat) || !Number.isInteger(exp)) {
+     return undefined;
+   }

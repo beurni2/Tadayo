@@ -1,0 +1,11 @@
+--- a/tools/ops/src/supabase-probe.ts
++++ b/tools/ops/src/supabase-probe.ts
+@@ -149,7 +149,7 @@
+   }
+   if (typeof payload !== "object" || payload === null) return false;
+   const { url, upsert, iat, exp } = payload as Record<string, unknown>;
+-  if (url !== object || upsert !== false) return false;
++  if (url !== object) return false;
+   if (typeof iat !== "number" || typeof exp !== "number" || !Number.isInteger(iat) || !Number.isInteger(exp))
+     return false;
+   return exp - iat >= UPLOAD_LIFETIME.least && exp - iat <= UPLOAD_LIFETIME.most;

@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/upload.ts
++++ b/tests/src/privacy/upload.ts
+@@ -134,7 +134,7 @@
+ export function replayOutcome(world: WorldFacts, account: string | null, reservation: string): Answer | undefined {
+   if (!finished(world, account)) return PROFILE_INCOMPLETE;
+   const slot = world.reservations.get(reservation);
+-  if (slot === undefined || account === null || adderOf(world, account, slot.day) !== slot.interval) return NEUTRAL;
++  if (slot === undefined || account === null) return NEUTRAL;
+   return undefined;
+ }
+ 

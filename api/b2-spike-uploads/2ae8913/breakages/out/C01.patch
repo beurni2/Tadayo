@@ -1,0 +1,12 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1327,8 +1327,7 @@
+         else if (
+           expires === undefined ||
+           lifetime === undefined ||
+-          lifetime > UPLOAD_LIFETIME.most ||
+-          Temporal.Instant.compare(expires, upload.expiresAt) > 0
++          lifetime > UPLOAD_LIFETIME.most
+         )
+           find("world", where, "a signed upload good for more than a day, or past its upload's own expiry");
+         else if (lifetime < UPLOAD_LIFETIME.least - 1 && !endsWith(expires, upload.expiresAt))

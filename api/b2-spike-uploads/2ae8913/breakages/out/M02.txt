@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/uploads.test.ts (27 tests | 1 failed) 1310ms
+   ❯ the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18) (4)
+     × refuses a second upload under a slot past the domain while the first isn't rejected, and takes one after 27ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  20:53:36
+   Duration  2.44s (tests 78%, import 15%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/uploads.test.ts > the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18) > refuses a second upload under a slot past the domain while the first isn't rejected, and takes one after
+AssertionError: expected Postgres to refuse with 23505: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/uploads.test.ts:895:9
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/tools/ops/src/supabase-probe.ts
++++ b/tools/ops/src/supabase-probe.ts
+@@ -451,7 +451,7 @@
+         !record(
+           `control: the signed URL puts nothing over the object in ${bucket}, even asked to`,
+           settle(again, (reply) => storageStatus(reply) === 409) ??
+-            settle(kept, (reply) => reply.status === 200 && sameBytes(reply.bytes, PNG)),
++            settle(kept, (reply) => reply.status === 200),
+         )
+       ) {
+         return undefined;

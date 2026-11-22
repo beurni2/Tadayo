@@ -1,0 +1,11 @@
+--- a/services/api/src/media/storage.ts
++++ b/services/api/src/media/storage.ts
+@@ -186,7 +186,7 @@
+         "asking for an object",
+       );
+       const logical = logicalStatus(status, json);
+-      if (status === 200 && logical === 200 && typeof json === "object" && json !== null && !Array.isArray(json)) {
++      if (status === 200 && logical === 200) {
+         return true;
+       }
+       if (logical === 404) return false;

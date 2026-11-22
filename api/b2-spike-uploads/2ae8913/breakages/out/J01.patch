@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/upload.ts
++++ b/tests/src/privacy/upload.ts
+@@ -120,7 +120,7 @@
+   if (slot.media !== "photo" || slot.state !== "live" || !before(now, slot.expiresAt))
+     return { kind: "pinned", answer: NEUTRAL };
+   for (const upload of world.uploads.values()) {
+-    if (upload.reservation === reservation && upload.state !== "rejected") return { kind: "pinned", answer: NEUTRAL };
++    
+   }
+   return { kind: "made", account, reservation, now };
+ }

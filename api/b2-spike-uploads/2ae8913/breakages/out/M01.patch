@@ -1,0 +1,12 @@
+--- a/db/migrations/0016_upload_reservation.sql
++++ b/db/migrations/0016_upload_reservation.sql
+@@ -26,8 +26,7 @@
+   LANGUAGE plpgsql SET search_path = '' AS $$
+ BEGIN
+   PERFORM FROM app.reservations
+-    WHERE id = NEW.reservation_id AND state = 'live' AND media_class = 'photo' AND expires_at > NEW.created_at
+-    FOR SHARE;
++    WHERE id = NEW.reservation_id AND state = 'live' AND media_class = 'photo' AND expires_at > NEW.created_at;
+   IF NOT FOUND THEN
+     RAISE EXCEPTION 'app.uploads: a drop''s photo is uploaded only under a live photo reservation (T17, T18)'
+       USING ERRCODE = 'integrity_constraint_violation';

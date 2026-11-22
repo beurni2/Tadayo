@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/supabase-probe.test.ts (66 tests | 1 failed) 495ms
+   ❯ apiChecks's controls: each must hold, in its own words, before a refusal means anything (10)
+     × names the overwrite's control when the signed URL puts over the object, or Storage answers it otherwise than its 409 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 65 passed (66)
+   Start at  20:54:06
+   Duration  820ms (tests 69%, transform 18%, import 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the overwrite's control when the signed URL puts over the object, or Storage answers it otherwise than its 409
+AssertionError: 400: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "control: the signed URL puts nothing over the object in uploads, even asked to",
+- ]
++ []
+
+ ❯ src/supabase-probe.test.ts:757:52
+    755|         }),
+    756|       );
+    757|       expect(failed(got), String(answer().status)).toEqual([control]);
+       |                                                    ^
+    758|     }
+    759|     const changed = project();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

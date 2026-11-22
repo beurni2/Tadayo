@@ -1,0 +1,11 @@
+--- a/services/api/src/media/uploads.ts
++++ b/services/api/src/media/uploads.ts
+@@ -53,7 +53,7 @@
+  */
+ export function signedUploadBody(signed: SignedPut, toSign: ToSign): Json {
+   const lifetime = toSign.at.add({ seconds: signed.lifetimeSeconds });
+-  const until = Temporal.Instant.compare(lifetime, toSign.expiresAt) < 0 ? lifetime : toSign.expiresAt;
++  const until = lifetime;
+   return {
+     url: signed.url,
+     method: "PUT",

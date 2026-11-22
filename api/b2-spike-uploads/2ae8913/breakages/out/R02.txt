@@ -1,0 +1,96 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/uploads.test.ts (26 tests | 3 failed) 321ms
+   ❯ the upload's serializers against the contract's examples (T12, T55) (9)
+     × makes createUpload's pending drop photo field for field, its signed upload from Storage's lifetime and the clock's sample 11ms
+     × names its headers itself, the upload's own type and upsert off, and passes on nothing else Storage's answer holds 2ms
+   ❯ what createUpload answers (5)
+     × answers a new upload with 201, the command's answer and a signed upload for its object, signed after the transaction 7ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 23 passed (26)
+   Start at  20:54:03
+   Duration  838ms (tests 44%, import 34%, transform 21%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/uploads.test.ts > the upload's serializers against the contract's examples (T12, T55) > makes createUpload's pending drop photo field for field, its signed upload from Storage's lifetime and the clock's sample
+AssertionError: expected { …(4) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+  {
+    "expires_at": "2026-11-10T16:41:00Z",
+    "headers": {
+      "Content-Type": "image/jpeg",
+-     "x-upsert": "false",
+    },
+    "method": "PUT",
+    "url": "https://dev-project.supabase.co/storage/v1/object/upload/sign/uploads/f3a9c1d2e8b7?token=example",
+  }
+
+ ❯ src/media/uploads.test.ts:83:18
+     81|       { objectKey: "f3a9c1d2e8b7", contentType: "image/jpeg", at: samp…
+     82|     );
+     83|     expect(made).toEqual(signed);
+       |                  ^
+     84|     expect(Object.keys(made as Body)).toEqual(Object.keys(signed));
+     85|     expect(Upload.strict().safeParse({ ...status, signed_upload: made …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/media/uploads.test.ts > the upload's serializers against the contract's examples (T12, T55) > names its headers itself, the upload's own type and upsert off, and passes on nothing else Storage's answer holds
+AssertionError: expected { Object (url, method, ...) } to deeply equal { Object (url, method, ...) }
+
+- Expected
++ Received
+
+  {
+    "expires_at": "2026-11-06T21:01:00Z",
+    "headers": {
+      "Content-Type": "image/webp",
+-     "x-upsert": "false",
+    },
+    "method": "PUT",
+    "url": "https://x.supabase.co/u",
+  }
+
+ ❯ src/media/uploads.test.ts:142:18
+    140|       expiresAt: sample.add({ hours: 24 }),
+    141|     });
+    142|     expect(made).toEqual({
+       |                  ^
+    143|       url: "https://x.supabase.co/u",
+    144|       method: "PUT",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/media/uploads.test.ts > what createUpload answers > answers a new upload with 201, the command's answer and a signed upload for its object, signed after the transaction
+AssertionError: expected { …(4) } to deeply equal { url: StringMatching{…}, …(3) }
+
+- Expected
++ Received
+
+  {
+    "expires_at": "2026-11-06T23:00:00Z",
+    "headers": {
+      "Content-Type": "image/webp",
+-     "x-upsert": "false",
+    },
+    "method": "PUT",
+    "url": "https://tadayotestprojectref.supabase.co/storage/v1/object/upload/sign/uploads/AbCdEfGhIjKlMnOpQrStUvWxYz012345?token=test.QWJDZEVmR2hJaktsTW5PcFFyU3RVdld4WXowMTIzNDU6MQ.unsigned",
+  }
+
+ ❯ src/media/uploads.test.ts:409:32
+    407|     expect(Object.keys(body).sort()).toEqual(["expires_at", "id", "pur…
+    408|     expect(body).toMatchObject(PENDING);
+    409|     expect(body.signed_upload).toEqual({
+       |                                ^
+    410|       url: expect.stringMatching(
+    411|         new RegExp(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

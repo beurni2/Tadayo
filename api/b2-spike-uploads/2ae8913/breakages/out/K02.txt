@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/uploads.test.ts (27 tests | 1 failed) 1271ms
+   ❯ one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) (3)
+     × makes one more upload, for a new object, under a slot whose upload was rejected, and then no other 37ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  20:52:54
+   Duration  1.89s (tests 78%, import 14%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/uploads.test.ts > one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17) > makes one more upload, for a new object, under a slot whose upload was rejected, and then no other
+Error: expected an upload made, not NOT_FOUND
+ ❯ made src/db/uploads.test.ts:172:37
+    170|
+    171| function made(outcome: Outcome): Made {
+    172|   if (!("status" in outcome)) throw new Error(`expected an upload made…
+       |                                     ^
+    173|   return outcome;
+    174| }
+ ❯ src/db/uploads.test.ts:308:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/uploads.test.ts:302:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

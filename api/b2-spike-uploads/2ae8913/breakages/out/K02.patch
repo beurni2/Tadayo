@@ -1,0 +1,11 @@
+--- a/packages/domain/src/media/upload.ts
++++ b/packages/domain/src/media/upload.ts
+@@ -293,7 +293,7 @@
+     throw new Refused("NOT_FOUND");
+   }
+   const holding = await bound(tx)`
+-    SELECT id FROM app.uploads WHERE reservation_id = ${reservationId} AND state <> 'rejected' LIMIT 1`;
++    SELECT id FROM app.uploads WHERE reservation_id = ${reservationId} LIMIT 1`;
+   if (holding.length > 0) throw new Refused("NOT_FOUND");
+ 
+   // 6. The upload.

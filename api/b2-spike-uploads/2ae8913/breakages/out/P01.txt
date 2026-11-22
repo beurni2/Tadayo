@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/supabase-probe.test.ts (66 tests | 1 failed) 538ms
+   ❯ apiChecks's controls: each must hold, in its own words, before a refusal means anything (10)
+     × names the control of the upload URL when its token isn't one the API believes: its object, upsert false, a minute to a day 16ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 65 passed (66)
+   Start at  20:54:05
+   Duration  891ms (tests 72%, transform 17%, import 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the upload URL when its token isn't one the API believes: its object, upsert false, a minute to a day
+AssertionError: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6IiIsInVybCI6InVwbG9hZHMvcHJvYmUvaWQxL3NlZW4ucG5nIiwidXBzZXJ0Ijp0cnVlLCJzY29wZSI6InVwbG9hZCIsImlhdCI6MTc5MzAwMDAwMCwiZXhwIjoxNzkzMDA3MjAwfQ.ImQi: expected [ Array(1) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+-   "control: the service key signs an upload URL for uploads",
++   "control: the signed URL puts the object in uploads",
+  ]
+
+ ❯ src/supabase-probe.test.ts:701:37
+    699|         ),
+    700|       );
+    701|       expect(failed(checks), token).toEqual([control]);
+       |                                     ^
+    702|       expect(checks.find((check) => check.name === control)?.note, tok…
+    703|         "its token isn't one the API believes: this object, upsert fal…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

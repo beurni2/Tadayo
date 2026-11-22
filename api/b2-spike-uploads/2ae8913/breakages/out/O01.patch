@@ -1,0 +1,9 @@
+--- a/packages/domain/src/authorization/upload.ts
++++ b/packages/domain/src/authorization/upload.ts
+@@ -19,5 +19,5 @@
+ 
+ /** Whether `upload` is the account `userId`'s own and still lives at `now`, the caller's sample. */
+ export function ownsUpload<U extends UploadOwnership>(upload: U | null, userId: string, now: ServerNow): upload is U {
+-  return upload !== null && upload.owner === userId && Temporal.Instant.compare(now, upload.expiresAt) < 0;
++  return upload !== null && upload.owner === userId && Temporal.Instant.compare(now, upload.expiresAt) <= 0;
+ }

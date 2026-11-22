@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/privacy/scanner.test.ts (96 tests | 1 failed) 401ms
+   ❯ the signed upload URL and an upload's id (T12, T14; TECH-DESIGN section 8; api/b2-spike-uploads) (8)
+     × catches a signed upload good past its upload's own expiry, and takes one shorter than a minute that ends with it 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 95 passed (96)
+   Start at  20:54:12
+   Duration  1.31s (import 46%, tests 40%, transform 14%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the signed upload URL and an upload's id (T12, T14; TECH-DESIGN section 8; api/b2-spike-uploads) > catches a signed upload good past its upload's own expiry, and takes one shorter than a minute that ends with it
+AssertionError: expected [] to deeply equal [ '$.signed_upload' ]
+
+- Expected
++ Received
+
+- [
+-   "$.signed_upload",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2132:66
+    2130|         "world",
+    2131|       );
+    2132|     expect(near("2026-11-08T06:00:00Z", "2026-11-08T08:00:00Z")).toEqu…
+       |                                                                  ^
+    2133|     expect(near("2026-11-08T06:00:00Z", "2026-11-08T06:59:59Z")).toEqu…
+    2134|     expect(near("2026-11-08T06:59:30Z", "2026-11-08T06:59:59Z")).toEqu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

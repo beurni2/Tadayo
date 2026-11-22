@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/storage.test.ts (11 tests | 2 failed) 67ms
+   ❯ signing an upload URL (T12) (7)
+     × believes a token only for the object it asked for, with upsert off in the token, where Storage reads it (T12) 6ms
+     × fails, saying nothing it holds, when Storage signs a token with upsert on or for another object 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  20:54:00
+   Duration  246ms (tests 59%, transform 25%, import 13%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/storage.test.ts > signing an upload URL (T12) > believes a token only for the object it asked for, with upsert off in the token, where Storage reads it (T12)
+AssertionError: {"url":"uploads/ZyXwVuTsRqPoNmLkJiHgFeDcBa543210","upsert":false}: expected 7200 to be undefined
+
+- Expected:
+undefined
+
++ Received:
+7200
+
+ ❯ src/media/storage.test.ts:138:97
+    136|       { upsert: false },
+    137|     ]) {
+    138|       expect(signedLifetime(jwt({ ...payload, ...lifetime }), OBJECT),…
+       |                                                                                                 ^
+    139|     }
+    140|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/media/storage.test.ts > signing an upload URL (T12) > fails, saying nothing it holds, when Storage signs a token with upsert on or for another object
+Error: expected a failure
+ ❯ failure src/media/storage.test.ts:65:9
+     63|     return `${e.name} ${e.message} ${e.stack ?? ""} ${JSON.stringify(e…
+     64|   }
+     65|   throw new Error("expected a failure");
+       |         ^
+     66| }
+     67|
+ ❯ src/media/storage.test.ts:149:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

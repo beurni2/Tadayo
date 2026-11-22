@@ -1,0 +1,45 @@
+== K01 the domain lets a slot that holds an upload take another [db]: CAUGHT; exit 1 ['Tests  3 failed | 24 passed (27)']
+    × gives the neutral not-found for a second upload under the same slot with a new key, pending or preparing, and keeps the first key's replay 37ms
+    × makes one more upload, for a new object, under a slot whose upload was rejected, and then no other 32ms
+    × puts two uploads with new keys under one slot in order by the counter: the one that waited makes nothing 73ms
+== K02 the domain counts a rejected upload as holding the slot [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × makes one more upload, for a new object, under a slot whose upload was rejected, and then no other 37ms
+== M01 the guard reads the reservation without FOR SHARE [mig]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)'] (database made again: 0 0)
+    × makes a release wait for an upload written past the domain while the slot was live, then give the slot back 10389ms
+    × makes an upload written past the domain wait for a release in flight, then refuses it under the released slot 10419ms
+== M02 no index keeps one upload per slot [mig]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)'] (database made again: 0 0)
+    × refuses a second upload under a slot past the domain while the first isn't rejected, and takes one after 27ms
+== M03 the index counts a rejected upload [mig]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)'] (database made again: 0 0)
+    × makes one more upload, for a new object, under a slot whose upload was rejected, and then no other 43ms
+    × refuses a second upload under a slot past the domain while the first isn't rejected, and takes one after 44ms
+== O01 an upload is its owner's at its expires_at [owns]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed (2)']
+    × is its owner's until its expires_at, and nobody's from it on 7ms
+== O02 an upload is anyone's [owns]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed (2)']
+    × is never another account's, and an upload nobody has is nobody's 5ms
+== S01 a token with upsert on is believed [storage]: CAUGHT; exit 1 ['Tests  2 failed | 9 passed (11)']
+    × believes a token only for the object it asked for, with upsert off in the token, where Storage reads it (T12) 5ms
+    × fails, saying nothing it holds, when Storage signs a token with upsert on or for another object 1ms
+== S02 a token for another object is believed [storage]: CAUGHT; exit 1 ['Tests  2 failed | 9 passed (11)']
+    × believes a token only for the object it asked for, with upsert off in the token, where Storage reads it (T12) 6ms
+    × fails, saying nothing it holds, when Storage signs a token with upsert on or for another object 3ms
+== S03 any 200 is an object there [storage]: CAUGHT; exit 1 ['Tests  1 failed | 10 passed (11)']
+    × fails on any other answer, never reading it as missing, nor a 200 whose body isn't an object's as there 3ms
+== R01 the signed upload outlives its upload [route]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × gives the signed upload as good for Storage's lifetime, and never past the upload's own expires_at 6ms
+== R02 the signed upload drops x-upsert [route]: CAUGHT; exit 1 ['Tests  3 failed | 23 passed (26)']
+    × answers a new upload with 201, the command's answer and a signed upload for its object, signed after the transaction 7ms
+    × makes createUpload's pending drop photo field for field, its signed upload from Storage's lifetime and the clock's sample 11ms
+    × names its headers itself, the upload's own type and upsert off, and passes on nothing else Storage's answer holds 2ms
+== P01 the probe believes a token with upsert on [probe]: CAUGHT; exit 1 ['Tests  1 failed | 65 passed (66)']
+    × names the control of the upload URL when its token isn't one the API believes: its object, upsert false, a minute to a day 16ms
+== P02 the probe takes any refusal of the second PUT [probe]: CAUGHT; exit 1 ['Tests  1 failed | 65 passed (66)']
+    × names the overwrite's control when the signed URL puts over the object, or Storage answers it otherwise than its 409 20ms
+== P03 the probe doesn't read the bytes back after the second PUT [probe]: CAUGHT; exit 1 ['Tests  1 failed | 65 passed (66)']
+    × names the overwrite's control when the signed URL puts over the object, or Storage answers it otherwise than its 409 14ms
+== J01 the judge lets a slot that holds an upload take another [judge]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × gives the neutral not-found for a slot that holds an upload but rejected ones: one slot, one photo 12ms
+== J02 the judge answers a replay from the receipt whoever asks [judge]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × answers PROFILE_INCOMPLETE to an unfinished account, and the neutral not-found to anyone the slot isn't still the caller's 7ms
+== C01 the scanner lets a signed upload outlive its upload [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 95 passed (96)']
+    × catches a signed upload good past its upload's own expiry, and takes one shorter than a minute that ends with it 13ms
+restored: ' M db/migrations/0016_upload_reservation.sql\n M docs/JOURNAL.md\n M docs/LIMITATIONS.md\n M docs/PROGRESS.md\n M docs/plans/api-b2-spike-uploads.md\n M packages/domain/src/drops/release.ts\n M packages/domain/src/index.ts\n M packages/domain/src/media/upload.ts\n M services/api/src/media/storage.test.ts\n M services/api/src/media/storage.ts\n M services/api/src/media/uploads.test.ts\n M services/api/src/media/uploads.ts\n M services/api/src/testing.ts\n M tests/src/db/uploads.test.ts\n M tests/src/privacy/matrix.test.ts\n M tests/src/privacy/scanner.test.ts\n M tests/src/privacy/scanner.ts\n M tests/src/privacy/upload.test.ts\n M tests/src/privacy/upload.ts\n M tools/ops/src/supabase-probe.test.ts\n M tools/ops/src/supabase-probe.ts\n M tools/ops/test/fake-supabase.ts\n?? packages/domain/src/authorization/upload.test.ts\n?? packages/domain/src/authorization/upload.ts\n'

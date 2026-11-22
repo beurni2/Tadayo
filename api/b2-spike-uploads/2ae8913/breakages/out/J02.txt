@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/privacy/upload.test.ts (25 tests | 1 failed) 31ms
+   ❯ who a replay answers from its receipt (replayOutcome; T14, T19; FQ112) (2)
+     × answers PROFILE_INCOMPLETE to an unfinished account, and the neutral not-found to anyone the slot isn't still the caller's 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 passed (25)
+   Start at  20:54:11
+   Duration  612ms (import 65%, transform 24%, tests 10%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/upload.test.ts > who a replay answers from its receipt (replayOutcome; T14, T19; FQ112) > answers PROFILE_INCOMPLETE to an unfinished account, and the neutral not-found to anyone the slot isn't still the caller's
+AssertionError: expected undefined to be { status: 404, …(3) } // Object.is equality
+
+- Expected:
+{
+  "body": "{\"code\":\"NOT_FOUND\"}",
+  "headers": {
+    "cache-control": "private, no-store",
+    "connection": "keep-alive",
+    "content-length": "20",
+    "content-type": "application/json; charset=utf-8",
+  },
+  "reason": "Not Found",
+  "status": 404,
+}
+
++ Received:
+undefined
+
+ ❯ src/privacy/upload.test.ts:510:59
+    508|       PROFILE_INCOMPLETE,
+    509|     );
+    510|     expect(replayOutcome(world(), "usr_cleo", "rsv_ben")).toBe(NEUTRAL…
+       |                                                           ^
+    511|     expect(replayOutcome(world(), "usr_zed", "rsv_ben")).toBe(NEUTRAL);
+    512|     expect(replayOutcome(world(), "usr_ben", "rsv_nobody")).toBe(NEUTR…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

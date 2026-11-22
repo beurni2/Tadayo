@@ -1,0 +1,8 @@
+--- a/db/migrations/0016_upload_reservation.sql
++++ b/db/migrations/0016_upload_reservation.sql
+@@ -40,4 +40,4 @@
+   EXECUTE FUNCTION app.uploads_reservation_guard();
+ 
+ CREATE UNIQUE INDEX uploads_one_per_reservation ON app.uploads (reservation_id)
+-  WHERE reservation_id IS NOT NULL AND state <> 'rejected';
++  WHERE reservation_id IS NOT NULL;

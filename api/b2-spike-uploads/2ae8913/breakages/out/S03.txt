@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/storage.test.ts (11 tests | 1 failed) 50ms
+   ❯ whether an upload's bytes are in (3)
+     × fails on any other answer, never reading it as missing, nor a 200 whose body isn't an object's as there 3ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  20:54:01
+   Duration  226ms (tests 52%, transform 32%, import 12%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/storage.test.ts > whether an upload's bytes are in > fails on any other answer, never reading it as missing, nor a 200 whose body isn't an object's as there
+Error: expected a failure
+ ❯ failure src/media/storage.test.ts:65:9
+     63|     return `${e.name} ${e.message} ${e.stack ?? ""} ${JSON.stringify(e…
+     64|   }
+     65|   throw new Error("expected a failure");
+       |         ^
+     66| }
+     67|
+ ❯ src/media/storage.test.ts:211:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

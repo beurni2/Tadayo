@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/uploads.test.ts (27 tests | 2 failed) 22058ms
+   ❯ the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18) (4)
+     × makes an upload written past the domain wait for a release in flight, then refuses it under the released slot 10419ms
+     × makes a release wait for an upload written past the domain while the slot was live, then give the slot back 10389ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+   Start at  20:53:05
+   Duration  23.15s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/uploads.test.ts > the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18) > makes an upload written past the domain wait for a release in flight, then refuses it under the released slot
+Error: waitingOn: nothing came to wait for the club's row
+ ❯ waitingOn src/db/week-world.ts:177:9
+    175|     await new Promise((resolve) => setTimeout(resolve, 25));
+    176|   }
+    177|   throw new Error("waitingOn: nothing came to wait for the club's row"…
+       |         ^
+    178| }
+    179|
+ ❯ racing src/db/uploads.test.ts:544:5
+ ❯ src/db/uploads.test.ts:924:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/uploads.test.ts > the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18) > makes a release wait for an upload written past the domain while the slot was live, then give the slot back
+Error: waitingOn: nothing came to wait for the club's row
+ ❯ waitingOn src/db/week-world.ts:177:9
+    175|     await new Promise((resolve) => setTimeout(resolve, 25));
+    176|   }
+    177|   throw new Error("waitingOn: nothing came to wait for the club's row"…
+       |         ^
+    178| }
+    179|
+ ❯ racing src/db/uploads.test.ts:544:5
+ ❯ src/db/uploads.test.ts:947:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
