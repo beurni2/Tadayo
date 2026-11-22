@@ -19,6 +19,8 @@ const SERVICES = join(import.meta.dirname, "..", "..", "..", "services");
 const url = process.env.DATABASE_URL ?? "";
 /** A Supabase project's URL as theirs are, which no request here makes the API fetch from. */
 const PROJECT = "https://abcdefghijklmnopqrst.supabase.co";
+/** A stand-in for Storage's key, which the API needs to start (T56) and no request here makes it send. */
+const SERVICE_KEY = "sb_secret_notarealkeyforthestartuptests";
 const running: ChildProcess[] = [];
 /** Makes the process signal itself as it writes its ready line (./signal-at-ready.ts). */
 const AT_READY = pathToFileURL(join(import.meta.dirname, "signal-at-ready.ts")).href;
@@ -43,7 +45,7 @@ function start(
     env: {
       PATH: process.env.PATH ?? "",
       DATABASE_URL: url,
-      ...(service === "api" ? { SUPABASE_URL: PROJECT } : {}),
+      ...(service === "api" ? { SUPABASE_URL: PROJECT, SUPABASE_SERVICE_KEY: SERVICE_KEY } : {}),
       TADAYO_ENVIRONMENT: environment,
       PORT: "0",
       HOST: "127.0.0.1",
@@ -126,6 +128,8 @@ describe("the API's entry against the test database", () => {
       [undefined, 404],
     ]);
     expect(api.output.stdout).not.toMatch(/Bearer|very-secret|ana@|example\.invalid/);
+    // Storage's key never reaches the output (T56).
+    expect(api.output.stdout + api.output.stderr).not.toContain(SERVICE_KEY);
   }, 30_000);
 
   it("writes at the level LOG_LEVEL names: the request line, which is info's, is there by default and gone at warn and at silent (T52)", async () => {

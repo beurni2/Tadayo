@@ -23,6 +23,7 @@ import {
   type WorldDrop,
   type WorldFacts,
   type WorldInvitation,
+  type WorldUpload,
   type WorldReservation,
 } from "./scanner.ts";
 
@@ -130,6 +131,24 @@ function invitationOf(
   };
 }
 
+/** The objects of Ben's and Cleo's pending uploads: 32 base64url characters, as the server makes them. */
+const BENS_OBJECT = "BenObjectKey0123456789abcdefghij";
+const CLEOS_OBJECT = "CleoObjectKey123456789abcdefghij";
+
+function uploadOf(owner: string, state: WorldUpload["state"], objectKey: string): WorldUpload {
+  return {
+    owner,
+    purpose: "drop_photo",
+    reservation: `rsv_${objectKey.slice(0, 8)}`,
+    state,
+    rejection: null,
+    expiresAt: instant("2026-11-08T06:59:59Z"),
+    objectKey,
+    contentType: "image/jpeg",
+    byteSize: 2_500_000,
+  };
+}
+
 const world: WorldFacts = {
   drops: new Map([
     ["drp_ben", drop(ben, "occ_sat", "photo", "From Ben", [ana, ben, cleo])],
@@ -201,7 +220,16 @@ const world: WorldFacts = {
     ["rsv_cleo_lapsed", reservation(cleo, "live", instant("2026-11-07T06:00:00Z"))],
     ["rsv_ana", reservation(ana, "live", REVEAL)],
   ]),
+  // Ben's photo waiting for its bytes, Ben's earlier one being prepared, and Cleo's waiting too.
+  uploads: new Map([
+    ["upl_ben", uploadOf(acct(ben), "pending", BENS_OBJECT)],
+    ["upl_ben_prep", uploadOf(acct(ben), "preparing", "BenPreparingObject0123456789abcd")],
+    ["upl_cleo", uploadOf(acct(cleo), "pending", CLEOS_OBJECT)],
+  ]),
   canaries: new Map([
+    [BENS_OBJECT, []],
+    ["BenPreparingObject0123456789abcd", []],
+    [CLEOS_OBJECT, []],
     ["https://www.tiktok.com/@cleo/video/7312345678901234567", ["drp_cleo"]],
     ["7312345678901234567", ["drp_cleo"]],
     ["v_q1w2e3", ["drp_ben"]],
@@ -1979,5 +2007,144 @@ describe("what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/
       body.roster[0] = { ...body.roster[0], ...more } as (typeof body.roster)[number];
       expect(checks(previewed(body, held()))).toContain("shape");
     }
+  });
+});
+
+describe("the signed upload URL and an upload's id (T12, T14; TECH-DESIGN section 8; api/b2-spike-uploads)", () => {
+  const project = "https://tadayotestprojectref.supabase.co";
+  const signedFor = (object: string, over: Record<string, unknown> = {}) => ({
+    url: `${project}/storage/v1/object/upload/sign/uploads/${object}?token=eyJhbGciOiJIUzI1NiJ9.e30.c2ln`,
+    method: "PUT",
+    headers: { "Content-Type": "image/jpeg", "x-upsert": "false" },
+    // Two hours from the answer's instant, a microsecond before the reveal, in whole seconds.
+    expires_at: "2026-11-07T08:59:59Z",
+    ...over,
+  });
+  /** An Upload, with `signed` as its signed upload, or with none when it is null. */
+  const upload = (id = "upl_ben", signed: unknown = signedFor(BENS_OBJECT)) => ({
+    id,
+    purpose: "drop_photo",
+    state: "pending",
+    expires_at: "2026-11-08T06:59:59Z",
+    ...(signed === null ? {} : { signed_upload: signed }),
+  });
+  const made = (viewer: string, body: unknown, overrides: Partial<ScanContext> = {}) =>
+    scan(answer(body, 201), context("createUpload", viewer, overrides));
+
+  it("passes the viewer's own pending upload with a URL for its own object, and its status without one", () => {
+    expect(made(ben, upload())).toEqual([]);
+    expect(
+      made(
+        ben,
+        upload("upl_ben", signedFor(BENS_OBJECT, { headers: { "x-upsert": "false", "Content-Type": "image/jpeg" } })),
+      ),
+    ).toEqual([]);
+    expect(made(ben, upload("upl_ben", null))).toEqual([]);
+    expect(scan(answer(upload("upl_ben", null)), context("getUpload", ben))).toEqual([]);
+    expect(
+      scan(answer({ ...upload("upl_ben_prep", null), state: "preparing" }, 202), context("completeUpload", ben)),
+    ).toEqual([]);
+  });
+
+  it("catches another account's upload by its id, wherever it is", () => {
+    expect(at(made(cleo, upload()), "world")).toEqual(["$.id"]);
+    expect(at(scan(answer(upload("upl_cleo", null)), context("getUpload", ben)), "world")).toEqual(["$.id"]);
+    expect(at(scan(answer(upload("upl_nobody", null)), context("getUpload", ben)), "world")).toEqual(["$.id"]);
+    // Anywhere else, Cleo's upload's id is an id Ben may not see.
+    expect(
+      at(scan(answer({ code: "INVALID_REQUEST", field: "upl_cleo" }, 400), context("createUpload", ben)), "values"),
+    ).toEqual(["$.field"]);
+  });
+
+  it("catches a signed upload URL for an upload that isn't pending and alive: after complete, or once it has lapsed", () => {
+    expect(at(made(ben, upload("upl_ben_prep", signedFor("BenPreparingObject0123456789abcd"))), "world")).toEqual([
+      "$.signed_upload",
+    ]);
+    const lapsed = context("createUpload", ben, { now: Temporal.Instant.from("2026-11-08T06:59:59Z") });
+    const late = signedFor(BENS_OBJECT, { expires_at: "2026-11-08T08:59:59Z" });
+    expect(at(scan(answer(upload("upl_ben", late), 201), lapsed), "world")).toEqual(["$.signed_upload"]);
+  });
+
+  it("catches a signed upload URL outside createUpload's 201", () => {
+    expect(at(scan(answer(upload()), context("getUpload", ben)), "world")).toContain("$.signed_upload");
+    expect(at(scan(answer(upload(), 202), context("completeUpload", ben)), "world")).toContain("$.signed_upload");
+    // createUpload declares no 200, so nothing in it is read as an Upload: the URL fails as any URL does.
+    const undeclared = scan(answer(upload(), 200), context("createUpload", ben));
+    expect(at(undeclared, "shape")).toContain("status");
+    expect(at(undeclared, "keys")).toEqual(["$.signed_upload.url"]);
+    expect(at(undeclared, "values")).toContain("$.signed_upload.url");
+  });
+
+  it("catches a URL for another object, another bucket, another route or another host, and each fails its keys and values too", () => {
+    const wrong = [
+      signedFor(CLEOS_OBJECT),
+      { ...signedFor(BENS_OBJECT), url: `${project}/storage/v1/object/upload/sign/renditions/${BENS_OBJECT}?token=x` },
+      { ...signedFor(BENS_OBJECT), url: `${project}/storage/v1/object/sign/uploads/${BENS_OBJECT}?token=x` },
+      { ...signedFor(BENS_OBJECT), url: `${project}/storage/v1/object/uploads/${BENS_OBJECT}` },
+      {
+        ...signedFor(BENS_OBJECT),
+        url: `https://example.org/storage/v1/object/upload/sign/uploads/${BENS_OBJECT}?token=x`,
+      },
+      {
+        ...signedFor(BENS_OBJECT),
+        url: `http://tadayotestprojectref.supabase.co/storage/v1/object/upload/sign/uploads/${BENS_OBJECT}?token=x`,
+      },
+      {
+        ...signedFor(BENS_OBJECT),
+        url: `${project}/storage/v1/object/upload/sign/uploads/${BENS_OBJECT}?token=x&upsert=true`,
+      },
+    ];
+    for (const signed of wrong) {
+      const found = made(ben, upload("upl_ben", signed));
+      expect(at(found, "world"), signed.url).toEqual(["$.signed_upload"]);
+      expect(at(found, "keys"), signed.url).toEqual(["$.signed_upload.url"]);
+      expect(at(found, "values"), signed.url).toContain("$.signed_upload.url");
+    }
+  });
+
+  it("catches a signed upload that isn't a PUT with exactly the declared type and upsert off, or isn't good for a minute to a day", () => {
+    for (const over of [
+      { method: "POST" },
+      { headers: { "Content-Type": "image/png", "x-upsert": "false" } },
+      { headers: { "Content-Type": "image/jpeg", "x-upsert": "true" } },
+      { headers: { "Content-Type": "image/jpeg" } },
+      { headers: { "Content-Type": "image/jpeg", "x-upsert": "false", authorization: "Bearer x" } },
+      { expires_at: "2026-11-07T07:00:30Z" },
+      { expires_at: "2026-11-08T07:00:01Z" },
+      { expires_at: "2026-11-07T06:00:00Z" },
+    ]) {
+      expect(at(made(ben, upload("upl_ben", signedFor(BENS_OBJECT, over))), "world"), JSON.stringify(over)).toEqual([
+        "$.signed_upload",
+      ]);
+    }
+  });
+
+  it("catches a signed upload good past its upload's own expiry, and takes one shorter than a minute that ends with it", () => {
+    // Ben's upload lapses at 06:59:59 on Sunday.
+    const near = (now: string, expires: string) =>
+      at(
+        scan(
+          answer(upload("upl_ben", signedFor(BENS_OBJECT, { expires_at: expires })), 201),
+          context("createUpload", ben, { now: Temporal.Instant.from(now) }),
+        ),
+        "world",
+      );
+    expect(near("2026-11-08T06:00:00Z", "2026-11-08T08:00:00Z")).toEqual(["$.signed_upload"]);
+    expect(near("2026-11-08T06:00:00Z", "2026-11-08T06:59:59Z")).toEqual([]);
+    expect(near("2026-11-08T06:59:30Z", "2026-11-08T06:59:59Z")).toEqual([]);
+    expect(near("2026-11-08T06:59:30Z", "2026-11-08T06:59:58Z")).toEqual(["$.signed_upload"]);
+    expect(near("2026-11-08T06:59:30Z", "2026-11-08T07:00:00Z")).toEqual(["$.signed_upload"]);
+  });
+
+  it("lets the URL name only its own object of what the world keeps back", () => {
+    const smuggled = signedFor(BENS_OBJECT, {
+      url: `${project}/storage/v1/object/upload/sign/uploads/${BENS_OBJECT}?token=${CLEOS_OBJECT}`,
+    });
+    expect(at(made(ben, upload("upl_ben", smuggled)), "values")).toEqual(["$.signed_upload.url"]);
+    // The object's key anywhere else is kept back, the owner's own included.
+    expect(at(made(ben, { ...upload(), id: "upl_ben", purpose: "drop_photo" }), "values")).toEqual([]);
+    expect(
+      at(scan(answer({ code: "INVALID_REQUEST", field: BENS_OBJECT }, 400), context("createUpload", ben)), "values"),
+    ).toEqual(["$.field"]);
   });
 });

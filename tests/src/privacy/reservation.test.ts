@@ -129,6 +129,7 @@ function world(
     members,
     clubs: new Map([[CLUB, { name: "The Saturdays", suspendedAt: null, labels: new Map(), ...over.club }]]),
     reservations: new Map(Object.entries(over.reservations ?? {})),
+    uploads: new Map(),
     canaries: new Map(),
     accounts: new Map(
       ["ana", "ben", "cleo", "zed"].map((who) => [`usr_${who}`, account(over.accounts?.[`usr_${who}`])] as const),

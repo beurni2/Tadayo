@@ -39,6 +39,7 @@ import {
 import { leaveClubHandler } from "./clubs/leave.ts";
 import type { Deps, Handler } from "./deps.ts";
 import { createReservationHandler, releaseReservationHandler } from "./drops/reservations.ts";
+import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./media/uploads.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
 import { fastifyLogging, logEachRequest } from "./logging.ts";
@@ -79,7 +80,9 @@ export const BODY_LIMIT = 128 * 1024;
  * escape, so a preview's body is under 850 bytes and its limit 2 KiB; accepting adds an id of 64 characters
  * and a version, under 1,450 bytes in all, so 3 KiB (`clubs/invitation.test.ts`). A leave's is one choice,
  * under 250 bytes, so 1 KiB (`clubs/leave.test.ts`). A reservation's is one media class, under 200 bytes
- * written the same way, so 1 KiB (`drops/reservations.test.ts`).
+ * written the same way, so 1 KiB (`drops/reservations.test.ts`). An upload's intent is a purpose, an id of 64
+ * characters, a type and a size, under 850 bytes with every key and character written as an escape, so 2 KiB
+ * (`media/uploads.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
@@ -93,6 +96,7 @@ const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   acceptInvitation: 3 * 1024,
   leaveClub: 1024,
   createReservation: 1024,
+  createUpload: 2 * 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
 };
@@ -172,6 +176,9 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     confirmScheduleDays: confirmScheduleDaysHandler(deps),
     createReservation: createReservationHandler(deps),
     releaseReservation: releaseReservationHandler(deps),
+    createUpload: createUploadHandler(deps),
+    getUpload: getUploadHandler(deps),
+    completeUpload: completeUploadHandler(deps),
   };
 }
 

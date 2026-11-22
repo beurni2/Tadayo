@@ -154,6 +154,7 @@ describe("the viewer's clubs and invitations (clubsJudge)", () => {
     ]),
     clubs: new Map(),
     reservations: new Map(),
+    uploads: new Map(),
     canaries: new Map(),
     accounts: new Map(),
     invitations: new Map([
@@ -306,6 +307,7 @@ describe("each club's open day and next day, from the rows and the time alone (d
       ],
     ]),
     reservations: new Map(),
+    uploads: new Map(),
     canaries: new Map(),
     accounts: new Map([["acct_ana", { ...anaAccount, ...over.account }]]),
     invitations: new Map(),

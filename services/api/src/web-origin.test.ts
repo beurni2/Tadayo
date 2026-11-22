@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { WEB_OPERATION } from "./web-origin.ts";
+import { noStorage } from "./testing.ts";
 
 const TOKEN = "q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM";
 const HELD = `{"token":"${TOKEN}"}`;
@@ -73,6 +74,7 @@ async function appFor(begin: () => Promise<unknown>, lines?: string[]) {
       asked += 1;
       return Promise.resolve(account);
     },
+    storage: noStorage,
     log:
       lines === undefined
         ? { level: "silent" }

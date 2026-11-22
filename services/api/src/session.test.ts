@@ -12,6 +12,7 @@ import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { KeysUnavailable } from "./identity/token.ts";
 import { bearerToken, sessions, type Authenticate } from "./session.ts";
+import { noStorage } from "./testing.ts";
 
 const account = (over: Partial<Account> = {}): Account => ({
   id: "acct_a",
@@ -71,6 +72,7 @@ async function appWith(authenticate: Authenticate) {
       asked.headers.push(header);
       return authenticate(header);
     },
+    storage: noStorage,
     log: { level: "silent" },
   };
   const app = buildApp(deps);
@@ -109,6 +111,9 @@ const BUILT = new Set([
   "confirmScheduleDays",
   "createReservation",
   "releaseReservation",
+  "createUpload",
+  "getUpload",
+  "completeUpload",
 ]);
 const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
 const unbuiltPublic = unbuilt.filter((operation) => operation.public === true);

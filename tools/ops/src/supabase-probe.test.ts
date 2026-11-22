@@ -14,6 +14,7 @@ import {
   type Fake,
   type FakeOptions,
   type Leak,
+  uploadToken,
 } from "../test/fake-supabase.ts";
 import { COMMAND_SECONDS } from "./on-machine.ts";
 import { ALLOWED_TYPES, FILE_SIZE_LIMIT } from "./storage-setup.ts";
@@ -63,7 +64,8 @@ describe("apiChecks on a closed project", () => {
     expect(failed(checks)).toEqual([]);
     // Every door is asked for each caller: nothing is dropped without this saying so.
     const count = (prefix: string) => checks.filter((check) => check.name.startsWith(prefix)).length;
-    expect(count("control: ")).toBe(12);
+    // Two for the user, and eight for each bucket.
+    expect(count("control: ")).toBe(2 + 8 * 2);
     // And the one question about every bucket the project has, which is no control.
     expect(count("storage: ")).toBe(1);
     // Per caller: 3 tables and the root of REST, GraphQL, the buckets' list and create, and 8 for each bucket.
@@ -78,7 +80,7 @@ describe("apiChecks on a closed project", () => {
     expect([...fake.buckets.keys()].sort()).toEqual(["renditions", "uploads"]);
   });
 
-  it("proves it could have seen what it was refused: the service key signs, uploads, reads, lists and signs first", async () => {
+  it("proves it could have seen what it was refused: the service key signs, uploads, reads, can't overwrite or sign again, finds, lists and signs first", async () => {
     const fake = project();
     const checks = await probe(fake);
     const controls = checks.filter((check) => check.name.startsWith("control: ")).map((check) => check.name);
@@ -89,6 +91,9 @@ describe("apiChecks on a closed project", () => {
         `control: the service key signs an upload URL for ${bucket}`,
         `control: the signed URL puts the object in ${bucket}`,
         `control: the service key reads the object back from ${bucket}`,
+        `control: the signed URL puts nothing over the object in ${bucket}, even asked to`,
+        `control: the service key signs no second upload URL for the object in ${bucket}`,
+        `control: the service key finds the object's details in ${bucket}, and none for an object never put`,
         `control: the service key lists the object in ${bucket}`,
         `control: the service key signs a read URL for ${bucket} in a batch`,
       ]),
@@ -180,9 +185,12 @@ describe("apiChecks on a closed project", () => {
     const fake = project();
     await probe(fake);
     expect(fake.calls.map((call) => call.who).filter((who) => who === "bad")).toEqual([]);
-    // The signed upload's PUT carries no key, by design (the token is in its query).
+    // The signed upload's PUT carries no key, by design (the token is in its query): two to each bucket, the
+    // object and the overwrite Storage refuses.
     const keyless = fake.calls.filter((call) => call.who === "none");
     expect(keyless.map((call) => `${call.method} ${call.path.split("/").slice(0, 6).join("/")}`)).toEqual([
+      "PUT /storage/v1/object/upload/sign",
+      "PUT /storage/v1/object/upload/sign",
       "PUT /storage/v1/object/upload/sign",
       "PUT /storage/v1/object/upload/sign",
     ]);
@@ -198,6 +206,8 @@ describe("apiChecks on a closed project", () => {
     expect(text).not.toContain(FAKE_SECRET);
     expect(text).not.toContain(FAKE_PUBLISHABLE);
     expect(text).not.toMatch(/user-token-|hashed|upload-token-|someone-else/);
+    // A signed upload's token is a JWT, whose first part starts so.
+    expect(text).not.toContain("eyJ");
   });
 });
 
@@ -584,6 +594,222 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
     }
   });
 
+  it("signs the upload URL as the API does, with a body of {} and no x-upsert, and again once the object is there", async () => {
+    const fake = project();
+    const seen: { body: string; upsert: string | null }[] = [];
+    const spy = (async (input: string | URL | Request, init?: RequestInit) => {
+      const request = new Request(input, init);
+      if (request.method === "POST" && request.url.includes("/object/upload/sign/") && asService(request))
+        seen.push({ body: await request.clone().text(), upsert: request.headers.get("x-upsert") });
+      return fake.fetch(input, init);
+    }) as typeof fetch;
+    const checks = await probe(fake, spy);
+    expect(failed(checks)).toEqual([]);
+    // For each bucket: the URL the object is put at, and the second signing Storage refuses.
+    expect(seen).toEqual([
+      { body: "{}", upsert: null },
+      { body: "{}", upsert: null },
+      { body: "{}", upsert: null },
+      { body: "{}", upsert: null },
+    ]);
+  });
+
+  it("asks for the object's details as the API does, and names that control when Storage doesn't answer as the API reads them", async () => {
+    const control = "control: the service key finds the object's details in uploads, and none for an object never put";
+    const info = (request: Request, which: "put" | "never") =>
+      request.method === "GET" &&
+      request.url.includes("/object/info/uploads/") &&
+      asService(request) &&
+      request.url.endsWith("/seen.png") === (which === "put");
+    const error = (statusCode: string) => new Response(JSON.stringify({ statusCode, error: "e" }), { status: 400 });
+    // Each answer the API's objectThere (services/api/src/media/storage.ts) would read wrongly, or not at all.
+    for (const [which, answer] of [
+      ["put", () => error("404")],
+      ["put", () => new Response("{}", { status: 404 })],
+      ["put", () => new Response(JSON.stringify({ statusCode: "404" }), { status: 200 })],
+      ["put", () => new Response("{}", { status: 500 })],
+      ["never", () => ok({ name: "x" })],
+      ["never", () => error("400")],
+      ["never", () => error("403")],
+      ["never", () => new Response("{}", { status: 500 })],
+    ] as const) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        answering(fake, (request) => (info(request, which) ? answer() : undefined)),
+      );
+      expect(failed(checks), `${which} ${String(answer().status)}`).toEqual([control]);
+    }
+    // Storage's not-found as a plain 404 is read as the API reads it too.
+    const plain = project();
+    const checks = await probe(
+      plain,
+      answering(plain, (request) => (info(request, "never") ? new Response("{}", { status: 404 }) : undefined)),
+    );
+    expect(failed(checks)).toEqual([]);
+    expect(
+      plain.calls.filter((call) => call.path.startsWith("/storage/v1/object/info/")).map((call) => call.who),
+    ).toEqual(["service", "service", "service"]);
+  });
+
+  it("names the control of the upload URL when its token isn't one the API believes: its object, upsert false, a minute to a day", async () => {
+    const part = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const jwt = (payload: unknown) => `${part({ alg: "HS256" })}.${part(payload)}.c2ln`;
+    const control = "control: the service key signs an upload URL for uploads";
+    // The object the probe signs for in its first run, `probe/<run>/seen.png`.
+    const object = "uploads/probe/id1/seen.png";
+    const claims = { url: object, upsert: false };
+    const lifetime = { iat: 1_793_000_000, exp: 1_793_007_200 };
+    const fake0 = project();
+    const signing = (token: string) =>
+      answering(fake0, (request) =>
+        request.method === "POST" && request.url.includes("/object/upload/sign/uploads/") && asService(request)
+          ? ok({ url: `/object/upload/sign/uploads/x?token=${token}`, token })
+          : undefined,
+      );
+    // A token for the object signed for, upsert false, two hours, is believed: the run goes on to the PUT, which
+    // this fake refuses, having never signed that token. Each vector below breaks one thing of it.
+    const believable = jwt({ ...claims, ...lifetime });
+    expect(failed(await probe(fake0, signing(believable)))).toEqual([
+      "control: the signed URL puts the object in uploads",
+    ]);
+    // The same vectors as the API's (services/api/src/media/storage.test.ts).
+    for (const token of [
+      uploadToken("a", object, false, 59),
+      uploadToken("b", object, false, 86_401),
+      uploadToken("c", object, false, -7200),
+      uploadToken("d", object, true),
+      uploadToken("e", "uploads/probe/id1/other.png", false),
+      uploadToken("f", "renditions/probe/id1/seen.png", false),
+      jwt({ ...lifetime, url: object }),
+      jwt({ ...lifetime, url: object, upsert: "false" }),
+      jwt({ ...lifetime, upsert: false }),
+      jwt({ ...claims, iat: 1_793_000_000 }),
+      jwt({ ...claims, iat: "1793000000", exp: 1_793_007_200 }),
+      jwt({ ...claims, iat: 1_793_000_000.5, exp: 1_793_007_200.5 }),
+      jwt([1_793_000_000, 1_793_007_200]),
+      `${part({ alg: "HS256" })}.not-json.c2ln`,
+      `${believable}.more`,
+      believable.replace(/\.([^.]+)\./, (_, payload: string) => `.${payload}==.`),
+      believable.replace(/\.([^.]+)\./, (_, payload: string) => `.${payload}+/.`),
+      "upload-token-without-a-payload",
+    ]) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        answering(fake, (request) =>
+          request.method === "POST" && request.url.includes("/object/upload/sign/uploads/") && asService(request)
+            ? ok({ url: `/object/upload/sign/uploads/x?token=${token}`, token })
+            : undefined,
+        ),
+      );
+      expect(failed(checks), token).toEqual([control]);
+      expect(checks.find((check) => check.name === control)?.note, token).toBe(
+        "its token isn't one the API believes: this object, upsert false, a minute to a day",
+      );
+      // The run stops at the control, as every control's failure stops it, and leaves nothing behind.
+      expect(
+        checks.some((check) => check.name.startsWith("anon: ")),
+        token,
+      ).toBe(false);
+      expect(fake.objects.size).toBe(0);
+      expect(fake.users.size).toBe(0);
+    }
+    // A minute and a day are both believed, and the run goes on to every refusal.
+    for (const uploadLifetime of [60, 86_400]) {
+      const checks = await probe(project({ uploadLifetime }));
+      expect(failed(checks), String(uploadLifetime)).toEqual([]);
+    }
+    // A sign answer that names another status in its body, as Storage names its errors, is no signing.
+    const fake = project();
+    const checks = await probe(
+      fake,
+      answering(fake, (request) =>
+        request.method === "POST" && request.url.includes("/object/upload/sign/uploads/") && asService(request)
+          ? ok({ statusCode: "500", url: `/object/upload/sign/uploads/x?token=${believable}`, token: believable })
+          : undefined,
+      ),
+    );
+    expect(failed(checks)).toEqual([control]);
+  });
+
+  it("names the overwrite's control when the signed URL puts over the object, or Storage answers it otherwise than its 409", async () => {
+    const control = "control: the signed URL puts nothing over the object in uploads, even asked to";
+    // A Storage whose PUT obeys the request, not the token: the second PUT goes through.
+    const loose = project({ overwrites: true });
+    const checks = await probe(loose);
+    expect(failed(checks)).toEqual([control]);
+    expect(checks.some((check) => check.name.startsWith("anon: "))).toBe(false);
+    expect(loose.objects.size).toBe(0);
+    expect(loose.users.size).toBe(0);
+    // Refused, but not by Storage's duplicate, or refused while the bytes changed all the same.
+    let puts = 0;
+    for (const answer of [
+      () => new Response(JSON.stringify({ statusCode: "400", error: "InvalidJWT" }), { status: 400 }),
+      () => new Response(JSON.stringify({ statusCode: "403", error: "Unauthorized" }), { status: 400 }),
+      () => new Response("{}", { status: 500 }),
+    ]) {
+      const fake = project();
+      puts = 0;
+      const got = await probe(
+        fake,
+        answering(fake, (request) => {
+          if (request.method !== "PUT" || !request.url.includes("/object/upload/sign/uploads/")) return undefined;
+          puts += 1;
+          return puts === 2 ? answer() : undefined;
+        }),
+      );
+      expect(failed(got), String(answer().status)).toEqual([control]);
+    }
+    const changed = project();
+    const seen = await probe(
+      changed,
+      answering(changed, (request) => {
+        const { pathname } = new URL(request.url);
+        if (request.method === "PUT" && pathname.startsWith("/storage/v1/object/upload/sign/uploads/")) {
+          // Storage refuses the second PUT, yet the object's bytes are other than the first.
+          if (changed.objects.size > 0) {
+            for (const key of changed.objects.keys()) changed.objects.set(key, Uint8Array.from([1, 2, 3]));
+            return new Response(JSON.stringify({ statusCode: "409", error: "Duplicate" }), { status: 400 });
+          }
+        }
+        return undefined;
+      }),
+    );
+    expect(failed(seen)).toEqual([control]);
+  });
+
+  it("names the second signing's control when Storage signs again for the object that is there, or refuses it otherwise than its 409", async () => {
+    const control = "control: the service key signs no second upload URL for the object in uploads";
+    for (const answer of [
+      // Signed again: the API would hand out a second URL for bytes that are in.
+      () => new Response(JSON.stringify({ url: "/object/upload/sign/uploads/x?token=t", token: "t" }), { status: 200 }),
+      // Refused, but not by Storage's duplicate: the API would answer a retry 503.
+      () => new Response(JSON.stringify({ statusCode: "403", error: "Unauthorized" }), { status: 400 }),
+      () => new Response("{}", { status: 500 }),
+      // A 409 on a 200 is no refusal.
+      () => new Response(JSON.stringify({ statusCode: "409", error: "Duplicate" }), { status: 200 }),
+    ]) {
+      const fake = project();
+      let signs = 0;
+      const checks = await probe(
+        fake,
+        answering(fake, (request) => {
+          const { pathname } = new URL(request.url);
+          if (request.method !== "POST" || !pathname.startsWith("/storage/v1/object/upload/sign/uploads/"))
+            return undefined;
+          if (request.headers.get("apikey") !== FAKE_SECRET) return undefined;
+          signs += 1;
+          return signs === 2 ? answer() : undefined;
+        }),
+      );
+      expect(failed(checks)).toEqual([control]);
+      expect(checks.some((check) => check.name.startsWith("anon: "))).toBe(false);
+      expect(fake.objects.size).toBe(0);
+      expect(fake.users.size).toBe(0);
+    }
+  });
+
   it("asks REST for the schema app by name, since it would otherwise be asked for the public one", async () => {
     const fake = project();
     const profiles: [string, string | null][] = [];
@@ -811,9 +1037,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up", async () => {
     const fake = project();
     const budget = new AbortController();
-    // The 16th call is the first refusal's; the 20th is anon's GraphQL.
+    // The 26th call is the first refusal's; the 30th is anon's GraphQL.
     const fetcher = counting(fake, (n) => {
-      if (n === 20) budget.abort();
+      if (n === 30) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     const cut = checks.findIndex((check) => check.name === "anon: GraphQL");
@@ -822,8 +1048,8 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     // Every check of anon and user that wasn't asked, and the service key's root, which comes last.
     expect(later).toHaveLength(count(checks, "anon: ") + count(checks, "user: ") + count(checks, "service: ") - 5);
     expect(later.every((check) => !check.ok && check.note === OUT_OF_TIME)).toBe(true);
-    // 20 calls, then only the clean-up's: the two probe objects and the user.
-    expect(fake.calls.map((call) => call.method).slice(20)).toEqual(["DELETE", "DELETE", "DELETE"]);
+    // 30 calls, then only the clean-up's: the two probe objects and the user.
+    expect(fake.calls.map((call) => call.method).slice(30)).toEqual(["DELETE", "DELETE", "DELETE"]);
     expect(checks.filter((check) => check.name.startsWith("cleanup: ")).every((check) => check.ok)).toBe(true);
     expect(fake.objects.size).toBe(0);
     expect(fake.users.size).toBe(0);
@@ -866,9 +1092,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("leaves no bucket to remove for a refusal it never asked", async () => {
     const fake = project();
     const budget = new AbortController();
-    // Spent after the controls (14 calls) and the bucket list (15): anon's REST is the next.
+    // Spent after the controls (24 calls) and the bucket list (25): anon's REST is the next.
     const fetcher = counting(fake, (n) => {
-      if (n === 16) budget.abort();
+      if (n === 26) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     expect(checks.some((check) => check.name === "anon: create a bucket" && check.note === OUT_OF_TIME)).toBe(true);
@@ -881,11 +1107,11 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     const fake = project();
     const deadline = new AbortController();
     const fetcher = counting(fake, (n) => {
-      if (n === 16) deadline.abort();
+      if (n === 26) deadline.abort();
     });
     const checks = await probe(fake, fetcher, { deadline: deadline.signal });
-    // 16 calls were made, the 16th the first refusal's, and none after it: not even the clean-up's.
-    expect(fake.calls).toHaveLength(16);
+    // 26 calls were made, the 26th the first refusal's, and none after it: not even the clean-up's.
+    expect(fake.calls).toHaveLength(26);
     expect(checks.filter((check) => check.name.startsWith("cleanup: "))).toEqual([
       { name: "cleanup: delete the probe object in uploads", ok: false, note: OUT_OF_TIME },
       { name: "cleanup: delete the probe object in renditions", ok: false, note: OUT_OF_TIME },
