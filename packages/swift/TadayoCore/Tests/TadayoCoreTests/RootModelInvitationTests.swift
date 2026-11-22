@@ -224,6 +224,65 @@ import Testing
         #expect(links.received(Kitchen.token(1), account: leila.id) == nil)
     }
 
+    @Test func aLinkSetAsideForAnAccountNeverReachesAnotherAccount() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(maya)],
+            clubs: [
+                .success(list(invitations: [accepted(.waiting)])), .failure(.signedOut),
+                .success(list()),
+            ])
+        let clubs = ScriptedClubs()
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        links.keepReceived(token, invitation: "inv_leila", account: leila.id)
+        let root = root(accounts, clubs: clubs, auth: auth, links: links)
+        await root.start()
+        // Leila's kept token, shown from the list's words with no call.
+        await root.openAccepted(accepted(.waiting))
+        #expect(root.invitation?.state == .waiting(clubName: "Kitchen table"))
+        // The server ends the session: the token is purged from the book and held for Leila.
+        await root.retry()
+        #expect(root.route == .signIn)
+        #expect(links.received(token, account: leila.id) == nil)
+        let signIn = try #require(root.signIn)
+        signIn.email = "maya@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        // Maya's session sends nothing of it and shows nothing.
+        #expect(root.account?.id == "acct_maya")
+        #expect(root.invitation == nil)
+        #expect(clubs.calls.isEmpty)
+    }
+
+    @Test func aLinkHeldWhileTheAccountIsReadWaitsThroughTheServersEnding() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.failure(.signedOut), .success(leila)], clubs: [.success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        let gate = Gate()
+        accounts.duringMe = { await gate.wait() }
+        async let started: Void = root.start()
+        await gate.reached()
+        await root.open(token)
+        accounts.duringMe = {}
+        gate.open()
+        await started
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == true)
+        #expect(clubs.calls.isEmpty)
+        let signIn = try #require(root.signIn)
+        signIn.email = "leila@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        #expect(root.route == .tabs)
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(clubs.calls == ["preview 01"])
+    }
+
     @Test func aLinkHeldInALaterSessionWaitsForThatSessionsTabs() async throws {
         let auth = FakeAuth(verify: [.success(stored)])
         let accounts = FakeAccounts(
@@ -605,6 +664,75 @@ import Testing
                 #expect(!text.contains("tadayo.app/i"), "\(type(of: value))")
             }
         }
+    }
+
+    @Test func aPasteStepsCheckIsSetAsideWithAnAccountFoundIncomplete() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(account(age: true, version: 3))],
+            update: [.success(account(name: "Leila", age: true, version: 4))],
+            clubs: [.success(list()), .failure(.profileIncomplete), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [
+            .success(.waiting(Kitchen.roster())), .success(.waiting(Kitchen.roster())),
+        ]
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let root = root(accounts, clubs: clubs, links: links)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        let gate = Gate()
+        clubs.duringPreview = { await gate.wait() }
+        async let proceeded: Void = entry.proceed()
+        await gate.reached()
+        clubs.duringPreview = {}
+        await root.retry()
+        #expect(root.route == .profile)
+        gate.open()
+        await proceeded
+        // Its answer keeps nothing and hands nothing over while the account is incomplete.
+        #expect(entry.invitation == nil)
+        #expect(links.received(token, account: leila.id) == nil)
+        let profile = try #require(root.profile)
+        profile.name = "Leila"
+        await profile.saveName()
+        // The tabs show again, and the root presents the link the paste step was checking.
+        #expect(root.route == .tabs)
+        #expect(root.invitation?.state == .waiting(clubName: "Kitchen table"))
+        #expect(links.received(token, account: leila.id) != nil)
+        #expect(clubs.calls == ["preview 01", "preview 01"])
+    }
+
+    @Test func aPastedInvitationShownWhenTheServerEndsTheSessionWaitsForTheNextSignIn()
+        async throws
+    {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)], clubs: [.success(list()), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [
+            .success(.open(Kitchen.roster())), .success(.open(Kitchen.roster())),
+        ]
+        clubs.acceptAnswers = [.failure(.signedOut)]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        let pasted = try #require(entry.invitation)
+        await pasted.accept()
+        #expect(root.route == .signIn)
+        let signIn = try #require(root.signIn)
+        signIn.email = "leila@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        #expect(root.route == .tabs)
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(root.invitation !== pasted)
+        #expect(clubs.calls.count == 3)
+        #expect(clubs.calls.first == "preview 01")
+        #expect(clubs.calls.dropFirst().first?.hasPrefix("accept 01 rev_1 v1 ") == true)
+        #expect(clubs.calls.last == "preview 01")
     }
 
     @Test func aPasteStepMadeBeforeLeaveSignInChecksNothingAfterIt() async throws {

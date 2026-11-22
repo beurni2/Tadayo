@@ -77,9 +77,9 @@ extension InvitationRoster {
     /// this model is set aside before the account can see it.
     let token: InvitationToken?
     private var isChecking = false
-    /// The root no longer shows this model: it starts nothing, and an answer still on its way can
-    /// drop the token, never keep it.
-    private var closed = false
+    /// The root no longer shows this model: it starts nothing and opens no club, and an answer still
+    /// on its way can drop the token, never keep it.
+    private(set) var isClosed = false
     /// The viewer's name on the roster whose acceptance the server answered `changed`.
     private var earlierName: String?
     /// The inviter this model has shown.
@@ -121,7 +121,7 @@ extension InvitationRoster {
     /// Checks the token: when the model is made with one, on Retry, and after an Accept the server
     /// answered with a newer roster. One check at a time, and none while Accept is on its way.
     public func check() async {
-        guard let token, !closed, !isChecking, !isAccepting else { return }
+        guard let token, !isClosed, !isChecking, !isAccepting else { return }
         isChecking = true
         state = .checking
         acceptFailure = nil
@@ -157,7 +157,8 @@ extension InvitationRoster {
         case .success(.joined(let club)):
             book.dropReceived(token, account: accountID)
             state = .opening(club)
-            await joined(club)
+            // A closed model opens nothing: the root no longer shows it.
+            if !isClosed { await joined(club) }
         case .failure(.notFound):
             book.dropReceived(token, account: accountID)
             state = .unavailable
@@ -180,7 +181,7 @@ extension InvitationRoster {
 
     /// Accept this roster: the exact revision shown, open or changed.
     public func accept() async {
-        guard let token, !closed, !isAccepting, !isChecking else { return }
+        guard let token, !isClosed, !isAccepting, !isChecking else { return }
         let roster: InvitationRoster
         switch state {
         case .open(let shown), .changed(let shown, _): roster = shown
@@ -272,16 +273,18 @@ extension InvitationRoster {
         switch then {
         case .nothing: break
         case .check: await check()
-        case .open(let club): await joined(club)
+        case .open(let club): if !isClosed { await joined(club) }
         case .endSession: await signedOut()
         }
     }
 
     /// The root no longer shows this model (it was replaced, closed or set aside): it checks and
-    /// accepts nothing more, and an answer still on its way can drop the token but never keeps it,
-    /// so a late answer can't keep a token a newer one dropped.
+    /// accepts nothing more and opens no club, and an answer still on its way can drop the token but
+    /// never keeps it, so a late answer can't keep a token a newer one dropped. An acceptance the
+    /// server commits after the close is kept by the next check of the link, or else the club
+    /// list's `roster_changed` asks for the link again (FQ136).
     func close() {
-        closed = true
+        isClosed = true
     }
 
     /// Keeps the token for the account, once the server has bound it to the account, unless the
@@ -289,7 +292,7 @@ extension InvitationRoster {
     @discardableResult private func keep(
         _ token: InvitationToken, invitation invitationID: String, nameChanged: Bool? = nil
     ) -> KeptReceivedInvitation? {
-        guard !closed else { return book.received(token, account: accountID) }
+        guard !isClosed else { return book.received(token, account: accountID) }
         return book.keepReceived(
             token, invitation: invitationID, account: accountID, nameChanged: nameChanged)
     }

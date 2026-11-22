@@ -83,6 +83,9 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         isChecking = true
         await model.check()
         isChecking = false
+        // Set aside by the root while it was checked (the account found incomplete): nothing to
+        // show.
+        guard !model.isClosed else { return }
         switch model.state {
         case .checkFailed(let failure):
             problem = .cannotCheck(failure)

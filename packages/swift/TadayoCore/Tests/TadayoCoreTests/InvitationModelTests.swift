@@ -495,6 +495,32 @@ import Testing
         #expect(shownService.calls == ["preview 01"])
     }
 
+    @Test func aClosedModelOpensNoClub() async {
+        for viaAccept in [false, true] {
+            let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+            book.keepReceived(token, invitation: "inv_leila", account: account)
+            let service = ScriptedClubs()
+            service.previewAnswers =
+                viaAccept
+                ? [.success(.open(Kitchen.roster()))] : [.success(.joined(Kitchen.ref))]
+            service.acceptAnswers = [.success(.joined(Kitchen.ref))]
+            let opened = Opened()
+            let invitation = model(service, book: book, opened: opened)
+            if viaAccept { await invitation.check() }
+            let gate = Gate()
+            service.duringPreview = { await gate.wait() }
+            service.duringAccept = { await gate.wait() }
+            async let answered: Void = viaAccept ? invitation.accept() : invitation.check()
+            await gate.reached()
+            invitation.close()
+            gate.open()
+            await answered
+            // The token still goes; the club isn't opened from a model the root no longer shows.
+            #expect(book.received(token, account: account) == nil, "\(viaAccept)")
+            #expect(opened.clubs.isEmpty, "\(viaAccept)")
+        }
+    }
+
     @Test func anOpenRosterKeepsNothing() async {
         let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
         let service = ScriptedClubs()
