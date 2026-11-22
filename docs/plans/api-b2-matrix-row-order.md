@@ -38,3 +38,10 @@ One fresh reviewer of the diff (the matrix is privacy's proof, so it gets one ev
 - N6: this plan's verification line named plans that weren't the ones run. **Fixed** (section 2).
 - N7: the test reused one instant object. **Fixed:** the rows read again are new objects with new instants; a microsecond's move and a membership's row are added.
 - The four failures after the first: "four summary tests", as the reviewer put it, now in block 1.2.
+
+**Round 2** at `cc9e985`, one fresh reviewer of the round 1 commit alone (the last round): every round 1 finding verified fixed; `rowsSeen` can't throw on the matrix's two tables, which hold strings, booleans, nulls and instants; sorting the picks leaves `openIn` as it was, since a club has one open pick at most; and each new expectation failed for its own fault on the judge as it was. No blocker; one should-fix and four nits, all fixed in the third commit:
+- block 1.2 still called the PR not opened, and the PRs lines "the next PR";
+- the new test's ended pick was at its first week, though only another week's rows are `earlier`: now at its second;
+- `rowsSeen`'s comment rewrapped;
+- the T6, T33, spec 05 and T19 audit rows;
+- one line in block 1.1 (and two more like it) now says "most likely" of the cause.

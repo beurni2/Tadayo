@@ -979,7 +979,8 @@ describe("what a join or a leave must leave of the club's week and pick, row by 
     // An ended pick whose earlier weeks come back in another order is as it was; one that lost a row moved.
     const ended = (earlier: ScheduleProposalRows["earlier"]) => {
       const w = three();
-      w.proposals.set("spr_old", pickRows({ state: "superseded", replacedBy: PICK, earlier }));
+      // On its second week, so the rows of its first are `earlier`, as `scheduleWorldOf` reads them.
+      w.proposals.set("spr_old", pickRows({ state: "superseded", replacedBy: PICK, weekRevision: 2, earlier }));
       return w;
     };
     const rows = [

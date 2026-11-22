@@ -507,10 +507,10 @@ export function canonical(value: unknown): string {
 
 /**
  * A table of the world's flat rows (strings, numbers, booleans, nulls and instants), keyed by id, as one text to
- * compare before and after a request: the rows by id byte by byte, and each instant written out in full. The world's queries have no ORDER BY, so two reads of the
- * same rows can come back in another order, as when the planner picks another join between them; and
- * `canonical` writes a Temporal.Instant, which has no fields of its own, as `{}`, so a moved instant would
- * compare equal.
+ * compare before and after a request: the rows by id byte by byte, and each instant written out in full. The
+ * world's queries have no ORDER BY, so two reads of the same rows can come back in another order, as when the
+ * planner picks another join between them; and `canonical` writes a Temporal.Instant, which has no fields of its
+ * own, as `{}`, so a moved instant would compare equal.
  */
 export function rowsSeen(rows: ReadonlyMap<string, object>): string {
   // A field holding any other object (a Map, a Set, a Date, a nested row) would be written `{}` too, so it is
