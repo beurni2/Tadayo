@@ -168,4 +168,6 @@ The founder attached the export at 18:41 UTC on 22 November 2026; the check is `
 - **Continue waits after text that isn't a link** until the text is edited (`InvitationLinkEntryModel.canContinue`; frame 4). Linux test: `continueWaitsForAnEditAfterTextThatIsntALink`.
 - **The Proposed tag on every candidate**, as "How they're drawn" says (`RosterRow`'s `spoken`).
 - **`G03-declined`'s last line,** "You can close this invitation." (`invitation.declined.body`), the founder's answer to FQ137.
-- **Kept, not adopted** (`INVENTORY.md`'s Known differences, handoff 9): the proposer on another candidate's row (the contract names none), and the failure line's `secondaryText` ink.
+- **The paste step's field where the frames draw it,** 72 under the subtitle (`SetupGap.linkField`), not A02-email's 44: reading `7b9792b`'s snapshots beside frames 3 to 5 and handoff 4's frame found it about 28 points too high.
+- **Kept, not adopted** (`INVENTORY.md`'s Known differences, handoff 9): the proposer on another candidate's row (the contract names none), the failure line's `secondaryText` ink, and the failure glyph, `exclamationmark.circle`, where frames 4 and 5 draw a triangle.
+- **The paste control** draws nothing in a snapshot; `InvitationUITests.testALinkTheServerDoesntKnowIsNotAvailable` finds it, with its label.

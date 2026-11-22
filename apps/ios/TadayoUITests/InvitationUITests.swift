@@ -5,7 +5,8 @@ import XCTest
 /// tab bar hidden and Continue waiting for a link; a link Debby shared shows Sunday people's
 /// roster with Ben first, proposed by Debby; Back returns to the field as it was; Accept this roster ends at
 /// `G03-waiting`, whose Done returns to Home, which still shows no club; and a link the server
-/// doesn't know shows `G02-revoked`, whose Close invitation returns to Home too.
+/// doesn't know shows `G02-revoked`, whose Close invitation returns to Home too. The paste
+/// control, which the snapshots can't draw, is checked here.
 final class InvitationUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -62,6 +63,8 @@ final class InvitationUITests: XCTestCase {
         app.buttons["I have an invite"].tap()
         let field = app.textFields["Invitation link"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
+        // The system's paste control, which no snapshot can draw, is on the step with its label.
+        XCTAssertTrue(app.buttons["Paste an invitation link."].exists, "the paste control")
         field.tap()
         field.typeText("https://tadayo.app/i#" + String(repeating: "R", count: 43))
         app.buttons["Check the invitation link."].tap()

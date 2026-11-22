@@ -48,6 +48,10 @@ enum SetupGap {
     /// From a subtitle to the field below it (A02-email, A02-code): the frames' glyphs are 47
     /// apart, and 32 + 12 puts them 47 apart here.
     static let field = Spacing.xxxl + Spacing.m
+    /// From the paste step's subtitle to its field (handoff 4's `G02-link-entry-signed-in` and
+    /// handoff 9's frames 3 to 5): the frames' glyphs are 75 to 76.5 apart, and 32 + 32 + 8 puts
+    /// them 75.5 apart here.
+    static let linkField = Spacing.xxxl + Spacing.xxxl + Spacing.s
     /// From a form's pinned primary action to the bottom of the safe area: 44 in handoff 7's
     /// A02-age, A03-profile and root failure frames (`handoff7.spacing.formFooterToSafeAreaBottom`).
     /// A03-profile's Continue, while no keyboard shows, and the root failures' Retry take it.

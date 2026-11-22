@@ -114,6 +114,11 @@ Frame 16 draws a More button on Alex's expired row, where the written answer and
     - Showing a proposer there would need the contract to carry one, which the api lane would weigh against T7. `docs/PROGRESS.md` asks it, with no rush.
 - **The check's failure line's ink.** `checkFailure.bodyInk` is `primaryText`, as handoff 7's and 8's failure frames draw it. The app keeps `secondaryText` for every explanatory line (Known differences, "The body ink"), so this screen matches the other failures. Whether `primaryText` should hold everywhere goes in the next brief.
 - **Frame 6's count** ("5 current members"): the snapshot's fixture holds the frame's three people, so its line says 2. This is the same difference as frame 15's.
+- **The failure glyph on the paste step.** Frames 4 and 5 draw a triangle beside the line under the field. Handoff 9's own answer keeps the "existing icon/message below field" (`handoff9.linkEntry`), which is `exclamationmark.circle`, as handoff 2's A02-code-error draws it. The app keeps it, as it does for handoff 8's `G01-create-failed`.
+
+Two things the snapshots showed beside frames 3 to 5, which are not differences in the design:
+- **The paste step's field** sat about 28 points higher than handoff 4's frame and frames 3 to 5 draw it: the app used A02-email's gap under the subtitle. It now sits where the frames draw it (`SetupGap.linkField`).
+- **The paste control** draws nothing in a snapshot, which can't render the system's secure control. The UI test finds it on the paste step, with its label (Known differences, handoffs 1 to 4, native controls).
 
 ## 5. FQ137: the founder's answer
 

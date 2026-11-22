@@ -5,9 +5,9 @@ import TadayoDesign
 /// `G02-link-entry-signed-in` (handoff 4's frame): I have an invite's paste step, pushed onto the
 /// tab with the inline title "Invitation", the system's Back and no tab bar:
 /// - "Have an invitation?" and "Paste the link, or open it where it was shared." (`SetupHeading`);
-/// - 44 under them, as A02-email's field sits (`SetupGap.field`), the Invitation link field
-///   (`LabelledField`), with "Paste invitation link" drawn over it while it's empty, as A02-email's
-///   placeholder is, hidden from VoiceOver;
+/// - 72 under them, where handoff 4's frame and handoff 9's frames 3 to 5 draw it
+///   (`SetupGap.linkField`), the Invitation link field (`LabelledField`), with "Paste invitation
+///   link" drawn over it while it's empty, as A02-email's placeholder is, hidden from VoiceOver;
 /// - the line for what went wrong 12 under the field (`InlineError`), said once as it shows:
 ///   handoff 4's `linkEntry.invalid`, `.clipboardEmpty` and `.cannotCheck`, and, built from spec,
 ///   "Couldn’t check the invitation link. Try again." for a check answered with a refusal or a
@@ -15,7 +15,8 @@ import TadayoDesign
 ///   the field invalid;
 /// - 16 under the field, or the line, the system's paste control (`PasteButton`, T45), which reads
 ///   the clipboard only when it's tapped (handoff 2), labelled "Paste an invitation link." for
-///   VoiceOver (`link.paste.vo`);
+///   VoiceOver (`link.paste.vo`). It draws nothing in a snapshot, which can't render the system's
+///   secure control; the UI test finds it on the paste step;
 /// - 32 under it, "We’ll check the link before showing the club or its people." in `metadata`
 ///   `secondaryText`;
 /// - Continue pinned 44 above the safe area's bottom, or above the keyboard, disabled until the
@@ -65,7 +66,7 @@ struct LinkEntryScreen: View {
                         }
                 }
             }
-            .padding(.top, SetupGap.field)
+            .padding(.top, SetupGap.linkField)
             if let line {
                 InlineError(Text(verbatim: line))
                     .padding(.top, Spacing.m)
