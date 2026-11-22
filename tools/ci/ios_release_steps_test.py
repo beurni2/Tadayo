@@ -49,12 +49,21 @@ def listing(names):
                       + [{"AssetType": "Image", "Name": name} for name in names])
 
 
-def entitlements(team=None, groups=(release.APP_GROUP,), bundle_id=release.APP_ID, debug=False):
+def entitlements(team=None, groups=(release.APP_GROUP,), bundle_id=release.APP_ID, debug=False,
+                 domains=None):
     value = {"com.apple.security.application-groups": list(groups)}
     if team:
         value.update({"com.apple.developer.team-identifier": team,
                       "application-identifier": f"{team}.{bundle_id}", "get-task-allow": debug})
+    if domains is not None:
+        value[release.ASSOCIATED_DOMAINS_KEY] = list(domains)
     return plistlib.dumps(value).decode("utf-8")
+
+
+def app_entitlements(team=None):
+    """The app's own, as apps/ios/project.yml declares them: the app group and its one
+    associated domain, with what signing adds for a team."""
+    return entitlements(team, domains=release.ASSOCIATED_DOMAINS)
 
 
 class FakeShell:
@@ -100,7 +109,7 @@ class FakeShell:
 def signed_as(team=None, app=None, share=None):
     """codesign's answer for each bundle: the app's entitlements for Tadayo.app and the share
     extension's for TadayoShare.appex, each its own unless `app` or `share` gives another."""
-    texts = {"Tadayo.app": app or entitlements(team),
+    texts = {"Tadayo.app": app or app_entitlements(team),
              "TadayoShare.appex": share or entitlements(team, bundle_id=release.SHARE_ID)}
     return lambda cmd: (0, texts[os.path.basename(cmd[-1])], "")
 
@@ -117,10 +126,19 @@ class StepsTest(unittest.TestCase):
         for name in FIXTURE_NAMES:
             os.makedirs(os.path.join(self.root, *release.FIXTURES.split("/"), name + ".imageset"))
         os.makedirs(os.path.join(self.root, "apps", "ios", "Tadayo.xcodeproj"))
+        self.site([f"{TEAM}.{release.APP_ID}"])
         self.environ = {"RUNNER_TEMP": self.temp, "RELEASE_ENVIRONMENT": "dev",
                         "RELEASE_UPLOAD": "true", "GITHUB_RUN_NUMBER": "7",
                         "GITHUB_RUN_ATTEMPT": "2", "APPLE_TEAM_ID": TEAM, "ASC_KEY_ID": KEY_ID,
                         "ASC_ISSUER_ID": ISSUER, "ASC_KEY_P8": KEY_TEXT}
+
+    def site(self, ids, text=None):
+        """The site's apple-app-site-association naming `ids`, or holding `text` as it is."""
+        path = os.path.join(self.root, *release.SITE_ASSOCIATION.split("/"))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(text if text is not None else json.dumps(
+                {"applinks": {"details": [{"appIDs": ids, "components": [{"/": "/i"}]}]}}))
 
     def steps(self, shell=None, **environ):
         env = dict(self.environ)
@@ -247,10 +265,10 @@ class HelpersTest(unittest.TestCase):
                           "NSExtensionActivationSupportsText": True})
 
     def test_the_associated_domain_is_the_project_s_and_the_site_names_the_app(self):
-        # The check's one domain is the one the app's target declares, when it declares one, and
-        # no other target declares any (apps/ios/project.yml, read whole by a YAML library, as
-        # XcodeGen reads it, so its layout, quoting and comments don't matter); the site's
-        # apple-app-site-association names this app and no other.
+        # The check's one domain is the one the app's target must declare, and no other target
+        # declares any (apps/ios/project.yml, read whole by a YAML library, as XcodeGen reads it,
+        # so its layout, quoting and comments don't matter): ci refuses a project that lost it,
+        # before a release's check would.
         try:
             import yaml
         except ImportError:
@@ -267,8 +285,8 @@ class HelpersTest(unittest.TestCase):
 
         for name, target in targets.items():
             properties = declared(target)
-            if name == "Tadayo" and release.ASSOCIATED_DOMAINS_KEY in properties:
-                self.assertEqual(properties[release.ASSOCIATED_DOMAINS_KEY],
+            if name == "Tadayo":
+                self.assertEqual(properties.get(release.ASSOCIATED_DOMAINS_KEY),
                                  release.ASSOCIATED_DOMAINS)
             else:
                 self.assertNotIn(release.ASSOCIATED_DOMAINS_KEY, properties, name)
@@ -403,6 +421,66 @@ class PlanTest(StepsTest):
         code, out = self.step("plan", ASC_KEY_ID="", ASC_ISSUER_ID="", ASC_KEY_P8="")
         self.assertEqual(code, 0, out)
         self.assertIn("uploaded", out)
+
+    def test_an_upload_needs_the_site_to_name_the_app_under_its_team(self):
+        # The site's file is apps/web's, served at tadayo.app; the team is the repository's
+        # variable. A mismatch would ship invitation links that open Safari.
+        other = "ABCDE12345"
+        for ids, text in (([f"{other}.{release.APP_ID}"], None),
+                          ([f"{TEAM}.{release.SHARE_ID}"], None),
+                          ([], None),
+                          (None, "not json"),
+                          (None, json.dumps({"applinks": None})),
+                          (None, json.dumps([])),
+                          (None, json.dumps({"applinks": {"details": "none"}})),
+                          (None, json.dumps({"applinks": {"details": [
+                              {"appIDs": f"{TEAM}.{release.APP_ID}"}]}})),
+                          (None, json.dumps({"applinks": {"details": [
+                              {"appID": f"{other}.{release.APP_ID}"}]}})),
+                          # The singular appID, which apps/web's build refuses, even naming the
+                          # app.
+                          (None, json.dumps({"applinks": {"details": [
+                              {"appID": f"{TEAM}.{release.APP_ID}"}]}})),
+                          (None, json.dumps({"applinks": {"details": [
+                              {"appIDs": [f"{TEAM}.{release.APP_ID}"]},
+                              {"appID": f"{TEAM}.{release.APP_ID}"}]}})),
+                          (None, json.dumps({"webcredentials": {}}))):
+            self.site(ids, text)
+            code, out = self.step("plan")
+            self.assertEqual(code, 1, (ids, text, out))
+            self.assertIn(release.SITE_ASSOCIATION, out)
+            self.assertNotIn(TEAM, out)
+        os.remove(os.path.join(self.root, *release.SITE_ASSOCIATION.split("/")))
+        code, out = self.step("plan")
+        self.assertEqual(code, 1, out)
+        self.assertIn("can't be read", out)
+        # A dry run signs for no team, so it doesn't read the site, even with a team and no file.
+        code, out = self.step("plan", RELEASE_UPLOAD="false")
+        self.assertEqual(code, 0, out)
+        self.assertIn("dry run", out)
+        # Other apps beside it, as apps/web's own checker allows, and the app named twice.
+        for ids in ([f"{TEAM}.{release.APP_ID}", f"{other}.{release.APP_ID}"],
+                    [f"{TEAM}.{release.SHARE_ID}", f"{TEAM}.{release.APP_ID}"],
+                    [f"{TEAM}.{release.APP_ID}", f"{TEAM}.{release.APP_ID}"]):
+            self.site(ids)
+            code, out = self.step("plan")
+            self.assertEqual(code, 0, (ids, out))
+            self.assertIn("the site naming the app under the run's team", out)
+
+    def test_the_repository_s_site_names_the_app(self):
+        # The file the release reads is the one apps/web serves, naming the app under a team in
+        # the form an upload's plan checks against the run's team, and under no other.
+        steps = release.Steps(ROOT, FakeShell(), environ={})
+        with open(os.path.join(ROOT, *release.SITE_ASSOCIATION.split("/")),
+                  encoding="utf-8") as f:
+            details = json.load(f)["applinks"]["details"]
+        teams = [app.split(".")[0] for entry in details for app in entry["appIDs"]
+                 if app.split(".", 1)[1:] == [release.APP_ID]]
+        self.assertEqual(len(set(teams)), 1, teams)
+        self.assertTrue(release.TEAM_ID.fullmatch(teams[0]), teams)
+        steps.site_names(teams[0])
+        with self.assertRaises(ValueError):
+            steps.site_names("ABCDE12345" if teams[0] != "ABCDE12345" else "ZZZZZ99999")
 
     def test_a_dry_run_needs_no_key_and_no_team(self):
         code, out = self.step("plan", RELEASE_UPLOAD="false", APPLE_TEAM_ID="", ASC_KEY_ID="",
@@ -633,13 +711,22 @@ class CheckTest(StepsTest):
         self.assertIn("the app: its associated domains are ['applinks:example.com'], not "
                       "['applinks:tadayo.app']", out)
 
-    def test_the_app_alone_may_hold_its_own_associated_domain(self):
+    def test_the_app_must_hold_its_own_associated_domain_and_alone_may(self):
         self.archive()
         own = plistlib.loads(entitlements().encode())
         own["com.apple.developer.associated-domains"] = ["applinks:tadayo.app"]
         text = plistlib.dumps(own).decode()
         code, out = self.check(self.shell(signed=signed_as(app=text)))
         self.assertEqual(code, 0, out)
+        # A build that lost it fails, rather than shipping links that open Safari.
+        code, out = self.check(self.shell(signed=signed_as(app=entitlements())))
+        self.assertEqual(code, 1, out)
+        self.assertIn("the app: it doesn't hold its associated domain, ['applinks:tadayo.app']",
+                      out)
+        empty = dict(own, **{"com.apple.developer.associated-domains": []})
+        code, out = self.check(self.shell(signed=signed_as(app=plistlib.dumps(empty).decode())))
+        self.assertEqual(code, 1, out)
+        self.assertIn("the app: its associated domains are [], not ['applinks:tadayo.app']", out)
         code, out = self.check(self.shell(signed=signed_as(share=text)))
         self.assertEqual(code, 1, out)
         self.assertIn("the share extension: it holds entitlements the project doesn't declare: "
@@ -1037,7 +1124,7 @@ class ExportTest(StepsTest):
         code, out = self.step("export", shell)
         self.assertEqual(code, 1)
         self.assertIn("the app carries", out)
-        more = plistlib.loads(entitlements(TEAM).encode())
+        more = plistlib.loads(app_entitlements(TEAM).encode())
         more.update({"beta-reports-active": True, "keychain-access-groups": [TEAM + ".*"]})
         fine = plistlib.dumps(more).decode()
         code, out = self.step("export", self.export_shell(signed=signed_as(TEAM, app=fine)))
@@ -1070,6 +1157,12 @@ class ExportTest(StepsTest):
         self.assertEqual(code, 1)
         self.assertIn("the app: its associated domains are ['applinks:example.com'], not "
                       "['applinks:tadayo.app']", out)
+        # Signed without it, the export fails too: what is uploaded is what was read.
+        code, out = self.step("export", self.export_shell(
+            signed=signed_as(TEAM, app=entitlements(TEAM))))
+        self.assertEqual(code, 1)
+        self.assertIn("the app: it doesn't hold its associated domain, ['applinks:tadayo.app']",
+                      out)
 
     def test_the_key_is_removed_when_the_command_fails(self):
         self.archive()
