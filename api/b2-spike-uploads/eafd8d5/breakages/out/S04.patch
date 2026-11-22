@@ -1,0 +1,10 @@
+--- a/services/api/src/media/storage.ts
++++ b/services/api/src/media/storage.ts
+@@ -172,7 +172,6 @@
+       );
+       const logical = logicalStatus(status, json);
+       // Storage's Duplicate: the object is there, so no URL may be given for it (T12).
+-      if (status !== 200 && logical === 409) return null;
+       if (status !== 200 || logical !== 200) {
+         throw new StorageUnavailable(`signing an upload URL answered ${String(logical)}`);
+       }

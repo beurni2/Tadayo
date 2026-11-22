@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/storage.test.ts (12 tests | 1 failed) 50ms
+   ❯ signing an upload URL (T12) (8)
+     × reads Storage's Duplicate, the object already there, as no URL to give, and no other 409 or refusal as it 2ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  21:32:44
+   Duration  186ms (tests 55%, transform 29%, import 12%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/storage.test.ts > signing an upload URL (T12) > reads Storage's Duplicate, the object already there, as no URL to give, and no other 409 or refusal as it
+StorageUnavailable: storage: signing an upload URL answered 409
+ ❯ Object.signUpload src/media/storage.ts:176:15
+    174|       // Storage's Duplicate: the object is there, so no URL may be gi…
+    175|       if (status !== 200 || logical !== 200) {
+    176|         throw new StorageUnavailable(`signing an upload URL answered $…
+       |               ^
+    177|       }
+    178|       const token = tokenOf(json);
+ ❯ src/media/storage.test.ts:161:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

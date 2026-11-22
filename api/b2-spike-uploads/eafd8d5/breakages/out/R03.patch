@@ -1,0 +1,11 @@
+--- a/services/api/src/media/uploads.ts
++++ b/services/api/src/media/uploads.ts
+@@ -123,7 +123,7 @@
+       }
+       throw error;
+     }
+-    if (signed === null) return created(reply, made.body);
++    if (signed === null) return unavailable(reply);
+     return created(reply, {
+       ...(made.body as Record<string, Json>),
+       signed_upload: signedUploadBody(signed, made.toSign),

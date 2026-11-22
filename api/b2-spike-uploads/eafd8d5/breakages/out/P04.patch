@@ -1,0 +1,11 @@
+--- a/tools/ops/src/supabase-probe.ts
++++ b/tools/ops/src/supabase-probe.ts
+@@ -466,7 +466,7 @@
+       if (
+         !record(
+           `control: the service key signs no second upload URL for the object in ${bucket}`,
+-          settle(resigned, (reply) => reply.status !== 200 && storageStatus(reply) === 409),
++          settle(resigned, (reply) => reply.status !== 200),
+         )
+       ) {
+         return undefined;

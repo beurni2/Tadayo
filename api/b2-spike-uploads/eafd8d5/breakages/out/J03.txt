@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/privacy/upload.test.ts (26 tests | 1 failed) 36ms
+   ❯ createUpload again under its key (replayProblems; T12, T19; TECH-DESIGN sections 6 and 8) (4)
+     × answers the stored answer alone, with no URL, once the upload's bytes are in, pending though it is 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  21:32:48
+   Duration  526ms (import 54%, transform 30%, tests 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/upload.test.ts > createUpload again under its key (replayProblems; T12, T19; TECH-DESIGN sections 6 and 8) > answers the stored answer alone, with no URL, once the upload's bytes are in, pending though it is
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the upload made, again, has the fields id,purpose,state,expires_at",
++   "no signed upload",
++ ]
+
+ ❯ src/privacy/upload.test.ts:480:90
+    478|     // Storage signs nothing for an object that is there, so the app g…
+    479|     const bytesIn = new Set([BENS_OBJECT]);
+    480|     expect(replayProblems(first, answer(stored, 201), pending, pending…
+       |                                                                                          ^
+    481|     expect(replayProblems(first, answer(resigned(), 201), pending, pen…
+    482|     // Another object's bytes being in changes nothing for this one.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/supabase-probe.test.ts (67 tests | 1 failed) 480ms
+   ❯ apiChecks's controls: each must hold, in its own words, before a refusal means anything (11)
+     × names the second signing's control when Storage signs again for the object that is there, or refuses it otherwise than its 409 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 66 passed (67)
+   Start at  21:32:58
+   Duration  864ms (tests 67%, transform 21%, import 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the second signing's control when Storage signs again for the object that is there, or refuses it otherwise than its 409
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "control: the service key signs no second upload URL for the object in uploads",
+- ]
++ []
+
+ ❯ src/supabase-probe.test.ts:806:30
+    804|         }),
+    805|       );
+    806|       expect(failed(checks)).toEqual([control]);
+       |                              ^
+    807|       expect(checks.some((check) => check.name.startsWith("anon: "))).…
+    808|       expect(fake.objects.size).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

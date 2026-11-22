@@ -1,0 +1,11 @@
+--- a/packages/domain/src/media/upload.ts
++++ b/packages/domain/src/media/upload.ts
+@@ -181,7 +181,7 @@
+       ? await bound(tx)`SELECT id, owner_user_id, purpose, state, rejection, expires_at, object_key, content_type
+                           FROM app.uploads WHERE id = ${id}`
+       : await bound(tx)`SELECT id, owner_user_id, purpose, state, rejection, expires_at, object_key, content_type
+-                          FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
++                          FROM app.uploads WHERE id = ${id} FOR UPDATE`;
+   return uploadOf(rows[0]);
+ }
+ 

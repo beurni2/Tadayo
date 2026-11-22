@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/storage.test.ts (12 tests | 1 failed) 47ms
+   ❯ signing an upload URL (T12) (8)
+     × reads Storage's Duplicate, the object already there, as no URL to give, and no other 409 or refusal as it 3ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  21:32:44
+   Duration  191ms (tests 53%, transform 29%, import 14%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/storage.test.ts > signing an upload URL (T12) > reads Storage's Duplicate, the object already there, as no URL to give, and no other 409 or refusal as it
+Error: expected a failure
+ ❯ failure src/media/storage.test.ts:65:9
+     63|     return `${e.name} ${e.message} ${e.stack ?? ""} ${JSON.stringify(e…
+     64|   }
+     65|   throw new Error("expected a failure");
+       |         ^
+     66| }
+     67|
+ ❯ src/media/storage.test.ts:166:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

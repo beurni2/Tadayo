@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/upload.ts
++++ b/tests/src/privacy/upload.ts
+@@ -259,7 +259,7 @@
+   const receipt = without(made, "signed_upload");
+   const upload = after.uploads.get(made.id);
+   if (upload === undefined) return ["the upload made is gone"];
+-  const signs = upload.state === "pending" && before(now, upload.expiresAt) && !stored.has(upload.objectKey);
++  const signs = upload.state === "pending" && before(now, upload.expiresAt);
+   const problems = [
+     ...fieldProblems("the upload made, again", rest, receipt),
+     ...(Object.keys(body).join() === Object.keys(signs ? made : receipt).join()

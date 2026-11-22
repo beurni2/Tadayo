@@ -1,0 +1,17 @@
+== S04 Storage's Duplicate on signing is read as Storage unavailable [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × reads Storage's Duplicate, the object already there, as no URL to give, and no other 409 or refusal as it 2ms
+== S05 a 409 in a 200's body is read as the bytes in [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × reads Storage's Duplicate, the object already there, as no URL to give, and no other 409 or refusal as it 3ms
+== F01 the fake Storage signs for an object that is there [route]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × answers a replay once the bytes are in as the receipt does, with no URL, since Storage signs nothing for them (T12) 13ms
+== R03 the route answers a replay with the bytes in 503 [route]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × answers a replay once the bytes are in as the receipt does, with no URL, since Storage signs nothing for them (T12) 13ms
+== J03 the judge wants a URL while the upload is pending, whatever its bytes [judge]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × answers the stored answer alone, with no URL, once the upload's bytes are in, pending though it is 8ms
+== L01 the preparation locks the upload FOR UPDATE [db]: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × keeps no row that names the upload waiting while it is handed to preparation: its lock is FOR NO KEY UPDATE 5038ms
+== P04 the probe takes any refusal of the second signing [probe]: CAUGHT; exit 1 ['Tests  1 failed | 66 passed (67)']
+    × names the second signing's control when Storage signs again for the object that is there, or refuses it otherwise than its 409 12ms
+== P05 the probe takes a 409 in a 200's body as the second signing refused [probe]: CAUGHT; exit 1 ['Tests  1 failed | 66 passed (67)']
+    × names the second signing's control when Storage signs again for the object that is there, or refuses it otherwise than its 409 18ms
+restored: ' M docs/LIMITATIONS.md\n M docs/PROGRESS.md\n M docs/plans/api-b2-spike-uploads.md\n M packages/domain/src/media/upload.ts\n M services/api/src/media/storage.test.ts\n M services/api/src/media/storage.ts\n M services/api/src/media/uploads.test.ts\n M services/api/src/media/uploads.ts\n M services/api/src/testing.ts\n M tests/src/db/uploads.test.ts\n M tests/src/privacy/matrix.test.ts\n M tests/src/privacy/upload.test.ts\n M tests/src/privacy/upload.ts\n M tools/ops/src/supabase-probe.test.ts\n M tools/ops/src/supabase-probe.ts\n'

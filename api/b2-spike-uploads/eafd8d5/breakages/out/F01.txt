@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/uploads.test.ts (27 tests | 1 failed) 263ms
+   ❯ what createUpload answers (6)
+     × answers a replay once the bytes are in as the receipt does, with no URL, since Storage signs nothing for them (T12) 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  21:32:45
+   Duration  780ms (tests 40%, import 35%, transform 24%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/uploads.test.ts > what createUpload answers > answers a replay once the bytes are in as the receipt does, with no URL, since Storage signs nothing for them (T12)
+AssertionError: expected { status: 201, …(2) } to match object { status: 201, …(2) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "body": "{\"id\":\"upl_ben_1\",\"purpose\":\"drop_photo\",\"state\":\"pending\",\"expires_at\":\"2026-11-07T21:00:00Z\"}",
++   "body": "{\"id\":\"upl_ben_1\",\"purpose\":\"drop_photo\",\"state\":\"pending\",\"expires_at\":\"2026-11-07T21:00:00Z\",\"signed_upload\":{\"url\":\"https://tadayotestprojectref.supabase.co/storage/v1/object/upload/sign/uploads/AbCdEfGhIjKlMnOpQrStUvWxYz012345?token=test.QWJDZEVmR2hJaktsTW5PcFFyU3RVdld4WXowMTIzNDU6Mg.unsigned\",\"method\":\"PUT\",\"headers\":{\"Content-Type\":\"image/jpeg\",\"x-upsert\":\"false\"},\"expires_at\":\"2026-11-06T23:00:00Z\"}}",
+    "headers": {
+      "cache-control": "private, no-store",
+      "content-type": "application/json; charset=utf-8",
+    },
+    "status": 201,
+
+ ❯ src/media/uploads.test.ts:445:19
+    443|     storage.put(OBJECT);
+    444|     const again = await answer(post(JSON.stringify(PHOTO)));
+    445|     expect(again).toMatchObject({ status: 201, body: JSON.stringify(PE…
+       |                   ^
+    446|     expect(storage.signed).toEqual([OBJECT]);
+    447|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

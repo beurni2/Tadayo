@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/api
+
+ ❯ src/media/uploads.test.ts (27 tests | 1 failed) 260ms
+   ❯ what createUpload answers (6)
+     × answers a replay once the bytes are in as the receipt does, with no URL, since Storage signs nothing for them (T12) 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  21:32:46
+   Duration  751ms (tests 40%, import 38%, transform 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/media/uploads.test.ts > what createUpload answers > answers a replay once the bytes are in as the receipt does, with no URL, since Storage signs nothing for them (T12)
+AssertionError: expected { status: 503, body: '', …(1) } to match object { status: 201, …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"id\":\"upl_ben_1\",\"purpose\":\"drop_photo\",\"state\":\"pending\",\"expires_at\":\"2026-11-07T21:00:00Z\"}",
++   "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-type": "application/json; charset=utf-8",
+    },
+-   "status": 201,
++   "status": 503,
+  }
+
+ ❯ src/media/uploads.test.ts:445:19
+    443|     storage.put(OBJECT);
+    444|     const again = await answer(post(JSON.stringify(PHOTO)));
+    445|     expect(again).toMatchObject({ status: 201, body: JSON.stringify(PE…
+       |                   ^
+    446|     expect(storage.signed).toEqual([OBJECT]);
+    447|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
