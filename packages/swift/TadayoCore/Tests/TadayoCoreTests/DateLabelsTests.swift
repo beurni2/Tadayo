@@ -129,6 +129,24 @@ import Testing
         #expect(uk.uses24HourClock)
     }
 
+    /// The club's hours, as the phone writes times (`ClubHours`, Club details' Schedule row and
+    /// the members list's footer): no date and no zone of their own.
+    @Test func clockHourIsAWholeHourAsThePhoneWritesTimes() {
+        #expect(us.clockHour(ClubHours.opening) == "7\(space)AM")
+        #expect(us.clockHour(ClubHours.closing) == "1\(space)AM")
+        #expect(uk.clockHour(ClubHours.opening) == "07:00")
+        #expect(uk.clockHour(ClubHours.closing) == "01:00")
+    }
+
+    /// A member's weekday in the members list: the day's own name, in the phone's language.
+    @Test func weekdayIsTheDaysStandaloneName() {
+        #expect(
+            Weekday.allCases.map(us.weekday) == [
+                "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+            ])
+        #expect(DateLabels(locale: Locale(identifier: "fr_FR")).weekday(.monday) == "lundi")
+    }
+
     @Test func fullDateTimeIsTheRegionsOwnForm() {
         let seven = Date(timeIntervalSince1970: 1_794_571_200)
         #expect(us.fullDateTime(seven, in: newYork) == "Friday, November 13, 2026 at 7\(space)AM")
