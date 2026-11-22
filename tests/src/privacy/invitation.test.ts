@@ -225,15 +225,21 @@ describe("the invitation for the account holding its link (previewInvitation)", 
     expect(preview("usr_mo", roster([bound()], undefined, [["cand_mo", { state: "joined" }]]))).toBeUndefined();
   });
 
-  it("says did_not_go_ahead to the account that accepted with the link, and nothing to anyone else", () => {
+  it("says did_not_go_ahead with the inviter's name to the account that accepted with the link, and nothing to anyone else", () => {
     const ended = (one: LinkRows) =>
       roster(
         [one],
         [["rev_1", revision({ state: "did_not_go_ahead", version: 2 })]],
         [["cand_mo", { state: "ended" }]],
       );
-    expect(preview("usr_mo", ended(bound()))).toEqual({ state: "did_not_go_ahead" });
+    expect(preview("usr_mo", ended(bound()))).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
     expect(preview("usr_mo", ended(link()))).toBeUndefined();
+    // An inviter who has left is named as the club last knew them (FQ75); one with no name to show leaves
+    // nothing to say, as listClubs lists no such invitation.
+    const gone = world([["itv_ben", member("usr_ben", "Benjamin", "2026-10-02T00:00:00Z", { active: false })]]);
+    expect(preview("usr_mo", ended(bound()), gone)).toEqual({ state: "did_not_go_ahead", inviter_name: "Benjamin" });
+    const nameless = world([["itv_ben", member("usr_ben", null, "2026-10-02T00:00:00Z", { active: false })]]);
+    expect(preview("usr_mo", ended(bound()), nameless)).toBeUndefined();
   });
 
   it("says expired, with the inviter's name, from the link's expiry while nobody has used it (FQ71)", () => {
@@ -276,7 +282,7 @@ describe("the invitation for the account holding its link (previewInvitation)", 
         member(`usr_${id}`, id.toUpperCase(), "2026-10-05T00:00:00Z"),
       ]),
     );
-    expect(preview("usr_mo", roster(), six)).toEqual({ state: "full" });
+    expect(preview("usr_mo", roster(), six)).toEqual({ state: "full", inviter_name: "Ben" });
   });
 
   it("says waiting, with no expiry, once the candidate accepted this roster with the link; changed for an earlier one", () => {

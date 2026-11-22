@@ -1838,8 +1838,12 @@ describe("what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/
   it("passes the exact roster, by names, to an account that presented the link's own token", () => {
     expect(previewed(roster("open"), held())).toEqual([]);
     expect(previewed({ state: "expired", inviter_name: "Ben" }, held(), BENS_TOKEN, { now: OPEN })).toEqual([]);
-    expect(previewed({ state: "full" }, held())).toEqual([]);
-    expect(previewed({ state: "did_not_go_ahead" }, held({ boundTo: acct(stan), roster: null }))).toEqual([]);
+    expect(previewed({ state: "full", inviter_name: "Ben" }, held())).toEqual([]);
+    const ended = held({ boundTo: acct(stan), roster: null });
+    expect(previewed({ state: "did_not_go_ahead", inviter_name: "Ben" }, ended)).toEqual([]);
+    // Both name the inviter now (FQ75), so neither passes without the name.
+    expect(at(previewed({ state: "full" }, held()), "shape")).toEqual(["$"]);
+    expect(at(previewed({ state: "did_not_go_ahead" }, ended), "shape")).toEqual(["$"]);
   });
 
   it("passes a waiting and a changed roster, and an acceptance, only as the account's own link", () => {
@@ -1905,6 +1909,9 @@ describe("what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/
     expect(at(found, "world")).toEqual(["$.invitation_id"]);
     expect(at(found, "values")).toEqual(expect.arrayContaining(["$.inviter_name", "$.roster[0].name"]));
     expect(at(previewed({ state: "expired", inviter_name: "Ben" }, held(over)), "values")).toEqual(["$.inviter_name"]);
+    expect(at(previewed({ state: "full", inviter_name: "Ben" }, held(over)), "values")).toEqual(["$.inviter_name"]);
+    const ended = { state: "did_not_go_ahead", inviter_name: "Ben" };
+    expect(at(previewed(ended, held({ roster: null, ...over })), "values")).toEqual(["$.inviter_name"]);
     expect(at(web({ inviter_name: "Ben" }, held(over)), "values")).toEqual(["$.inviter_name"]);
   });
 

@@ -282,9 +282,14 @@ describe("what a leave does to the club's open proposal (FQ121)", () => {
         code: "ROSTER_CHANGED",
         facts: { current_id: next?.id },
       });
-      // Sam's link shows only that it didn't go ahead, and accepting with it is told nothing of the roster
-      // that went on without Sam: not its id, not a version.
-      expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead" });
+      // Sam's link shows only that it didn't go ahead, with the inviter by the name Ben had on leaving (FQ75),
+      // and accepting with it is told nothing of the roster that went on without Sam: not its id, not a version.
+      expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
+      // A name Ben takes after leaving reaches nobody he left: the link names him as the club last knew him, as
+      // the list of invitations does.
+      await tx`UPDATE app.users SET display_name = 'Benjamin' WHERE id = ${user(s.w, 0)}`;
+      expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
+      expect((await listClubs(tx, sam, NOW)).invitations.map((one) => one.inviterName)).toEqual(["Ben"]);
       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 1))).toEqual(NONE);
       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 7))).toEqual(NONE);
       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, next?.id ?? "", 1))).toEqual(NONE);

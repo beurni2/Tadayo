@@ -455,10 +455,13 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
         summary: "The link expired: ask Ben for a new one (G02-expired)",
         value: { state: "expired", inviter_name: "Ben" },
       },
-      full: { summary: "The club already has six (G02-full)", value: { state: "full" } },
+      full: {
+        summary: "The club already has six: ask Ben if a place opens (G02-full)",
+        value: { state: "full", inviter_name: "Ben" },
+      },
       did_not_go_ahead: {
-        summary: "The invitation didn't go ahead (G03-declined)",
-        value: { state: "did_not_go_ahead" },
+        summary: "The invitation didn't go ahead: Ben can start a new one later (G03-declined)",
+        value: { state: "did_not_go_ahead", inviter_name: "Ben" },
       },
       joined: {
         summary: "Already a member: open the club",

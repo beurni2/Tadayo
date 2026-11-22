@@ -12,7 +12,9 @@
 //    for. The app opens the club.
 // 3. Nothing: a link whose candidate joined, held by an account that is no longer a member (it left).
 // 4. A candidate whose proposal ended: `did_not_go_ahead` to the account that accepted with the link, which
-//    never says who declined; nothing to anyone else, who never accepted anything.
+//    never says who declined and names only the inviter, by the name `listClubs` shows that account for
+//    the same invitation (FQ75); nothing when the inviter has no name to show, as `listClubs` lists no
+//    such invitation, and nothing to anyone else, who never accepted anything.
 // 5. `expired`: a link nobody used, past its expiry, with the inviter's name (FQ71). A link its account has
 //    used doesn't expire for that account: it can't be replaced (handoff 4), so an expiry would leave the
 //    candidate no way to accept a changed roster.
@@ -20,8 +22,8 @@
 //    with. One account takes one place.
 // 7. Nothing when the inviter has no name to show, or no member of the roster has one: the contract's
 //    answer must name them (FQ75).
-// 8. `full`: the club has six members already (A01). The six count every open candidate, so no command
-//    leads here; it is the answer should the rows ever say so.
+// 8. `full`, with the inviter's name (step 7 has it): the club has six members already (A01). The six count
+//    every open candidate, so no command leads here; it is the answer should the rows ever say so.
 // 9. The exact roster of the club's open revision: `waiting` when the candidate accepted it with this link
 //    and the account's profile name is still the label it shows, while a member's approval is still to
 //    come; `changed` when the account accepted an earlier roster with it, has changed its name since it
@@ -62,8 +64,7 @@ export type InvitationSight =
   | ({ readonly state: "open" | "changed"; readonly expiresAt: Temporal.Instant } & InvitationRoster)
   | ({ readonly state: "waiting" } & InvitationRoster)
   | { readonly state: "expired"; readonly inviterName: string }
-  | { readonly state: "full" }
-  | { readonly state: "did_not_go_ahead" }
+  | { readonly state: "full" | "did_not_go_ahead"; readonly inviterName: string }
   | {
       readonly state: "joined";
       readonly club: {
@@ -92,7 +93,9 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
   if (facts.candidateState === "joined") return null;
   const mine = facts.boundUserId === userId;
   // 4. The proposal ended.
-  if (facts.candidateState === "ended") return mine ? { state: "did_not_go_ahead" } : null;
+  if (facts.candidateState === "ended") {
+    return mine && facts.inviterName !== null ? { state: "did_not_go_ahead", inviterName: facts.inviterName } : null;
+  }
   // 5. Expired while nobody had used it.
   if (!mine && facts.pastExpiry) {
     return facts.inviterName === null ? null : { state: "expired", inviterName: facts.inviterName };
@@ -104,7 +107,7 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
   if (roster === null) throw new Error("clubs: an open candidate is on no open revision");
   if (facts.inviterName === null || roster.members.length === 0) return null;
   // 8. Six already.
-  if (facts.members >= CLUB_SIZE) return { state: "full" };
+  if (facts.members >= CLUB_SIZE) return { state: "full", inviterName: facts.inviterName };
   // 9. The exact roster.
   const shown: InvitationRoster = {
     invitationId: facts.invitationId,

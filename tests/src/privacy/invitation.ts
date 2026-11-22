@@ -11,9 +11,10 @@
 // - Signed out (`previewInvitationWeb`): the inviter's name, and only that, for a link nobody has used,
 //   before its expiry, whose candidate is still open. Anything else is the neutral not-found.
 // - Signed in (`previewInvitation`), in order: `joined` with the club to one of the club's members; nothing
-//   once the link's candidate has joined; `did_not_go_ahead` to the account that accepted with the link
-//   when its candidate ended, nothing to anyone else; `expired` with the inviter's name for a link nobody
-//   used, past its expiry; nothing to an account that holds another place in the club's roster; `full` at
+//   once the link's candidate has joined; `did_not_go_ahead` with the inviter's name to the account that
+//   accepted with the link when its candidate ended (nothing when the inviter has no name to show, FQ75),
+//   nothing to anyone else; `expired` with the inviter's name for a link nobody used, past its expiry;
+//   nothing to an account that holds another place in the club's roster; `full` with the inviter's name at
 //   six members; then the exact roster of the club's open revision, names only: `waiting` when the
 //   candidate accepted it with this link, the account's profile name is still the label it shows and a
 //   member's approval is still to come; `changed` when the account accepted an earlier roster with it,
@@ -143,8 +144,9 @@ export function previewFor(
   const state = roster.candidates.get(link.candidate)?.state;
   if (state === "joined" || state === undefined) return undefined;
   const mine = link.boundTo === account;
-  if (state === "ended") return mine ? { state: "did_not_go_ahead" } : undefined;
   const inviter = inviterOf(world, link);
+  if (state === "ended")
+    return mine && inviter !== undefined ? { state: "did_not_go_ahead", inviter_name: inviter } : undefined;
   if (!mine && Temporal.Instant.compare(link.expiresAt, now) <= 0) {
     return inviter === undefined ? undefined : { state: "expired", inviter_name: inviter };
   }
@@ -161,7 +163,7 @@ export function previewFor(
           : Temporal.Instant.compare(a.member.joinedAt, b.member.joinedAt)) || byBytes(a.interval, b.interval),
     );
   if (inviter === undefined || members.length === 0) return undefined;
-  if (activeMembers(world, link.club) >= SIX) return { state: "full" };
+  if (activeMembers(world, link.club) >= SIX) return { state: "full", inviter_name: inviter };
   // An acceptance stands while the account's profile name is the label the members read (FQ66).
   const listed = open.rows.candidates.find((candidate) => candidate.id === link.candidate);
   // And there is something to wait for only while the roster isn't ready but for the acceptance: every

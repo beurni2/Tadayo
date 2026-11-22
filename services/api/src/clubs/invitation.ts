@@ -30,10 +30,9 @@ import { signedIn } from "../deps.ts";
 export function invitationPreviewBody(sight: InvitationSight): { readonly [key: string]: Json } {
   switch (sight.state) {
     case "expired":
-      return { state: sight.state, inviter_name: sight.inviterName };
     case "full":
     case "did_not_go_ahead":
-      return { state: sight.state };
+      return { state: sight.state, inviter_name: sight.inviterName };
     case "joined":
       return {
         state: sight.state,

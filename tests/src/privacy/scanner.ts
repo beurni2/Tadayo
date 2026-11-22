@@ -641,8 +641,9 @@ function heldLink(
   const theirs = invitation.boundTo === viewer.account;
   // The link shows something to this account: its id in an acceptance, as when the account has joined by it.
   const shown = names && (invitation.boundTo === null || theirs);
-  // Signed in too, a name is read only while the candidate is on an open revision: once the proposal has
-  // ended the answer is nothing, or `did_not_go_ahead`, which names nobody.
+  // Signed in too, a name is read through the link only while the candidate is on an open revision: once
+  // the proposal has ended the answer is nothing, or `did_not_go_ahead` to the account that accepted with
+  // it, whose inviter's name that account already reads as its own invitation's (Reader.texts, listClubs').
   const readable = shown && invitation.roster !== null;
   return { id, invitation, shown, inviter: readable, roster: readable && (theirs || unexpired) };
 }
