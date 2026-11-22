@@ -284,8 +284,10 @@ struct InvitationRosterScreen: View {
     var body: some View {
         ScrollViewReader { scroll in
             column
-                // A screen first laid out with the line (a snapshot) opens at the column's foot.
+                // A screen first laid out with the line (a snapshot) opens at the column's foot,
+                // and stays there if its window is then resized, as a snapshot's host is.
                 .defaultScrollAnchor(line == nil ? nil : .bottom, for: .initialOffset)
+                .defaultScrollAnchor(line == nil ? nil : .bottom, for: .sizeChanges)
                 .onChange(of: line) { _, shown in
                     guard shown != nil else { return }
                     scroll.scrollTo(Self.failureID, anchor: .bottom)
