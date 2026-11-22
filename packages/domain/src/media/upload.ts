@@ -15,21 +15,28 @@
 // 3. The locks, in TECH-DESIGN's order: the club's row, the day's and the caller's and the star's membership
 //    rows `FOR SHARE` (../drops/reserve.ts `lockDay`), the counter `FOR NO KEY UPDATE` (../drops/counter.ts),
 //    then the reservation `FOR SHARE`. Every change of a reservation's state happens under its counter's lock,
-//    so its state read after it is final for this command.
+//    so its state read after it is final for this command. The rule for anything that writes a drop's photo
+//    upload: the counter's lock before the insert, whose guard reads the reservation `FOR SHARE` (migration
+//    0016). A release takes the same two in the same order (../drops/release.ts), so neither waits on the other
+//    while holding what the other needs.
 // 4. The clock, sampled after the locks (T1, T3).
-// 5. The rule again, on the facts read under the locks: NOT_FOUND (a leave, a suspension or a rejoin came in
-//    between); MEMBERSHIP_CHANGED for a held day (FQ63); from the reveal on, OCCURRENCE_CLOSED with the day and
-//    the same person's next day (T3, T4); then the reservation live at the sample, for a photo, else NOT_FOUND:
-//    released, used, or lapsed at its `expires_at`, settled or not. Nothing is settled here: the counts are
-//    the reservation's and the commit's business.
+// 5. The rule again, on the facts read under the locks: `ownsReservation`, else NOT_FOUND (a leave, a
+//    suspension or a rejoin came in between); MEMBERSHIP_CHANGED for a held day (FQ63); from the reveal on,
+//    OCCURRENCE_CLOSED with the day and the same person's next day (T3, T4); then the reservation live at the
+//    sample, for a photo, else NOT_FOUND: released, used, or lapsed at its `expires_at`, settled or not; and
+//    holding no upload but rejected ones, else NOT_FOUND: one slot, one photo, so one live slot can't make any
+//    number of objects (migration 0016's index is the last guard). After a rejection the same slot takes
+//    another photo. Nothing is settled here: the counts are the reservation's and the commit's business.
 // 6. The upload, pending, for one random object (./object.ts), living 24 hours.
 // 7. The answer, with no URL, stored in the receipt. The URL is the route's, signed after the commit and never
 //    stored (T12; the plan's section 0.3).
 //
-// `readOwnUpload` and `markPreparing`: the caller's own upload while it lives, and nobody else's (T12, T14).
+// `readOwnUpload` and `markPreparing`: the caller's own upload while it lives, and nobody else's
+// (../authorization/upload.ts `ownsUpload`; T9, T12, T14). A replay signs only for an upload `ownsUpload` gives.
 
 import { addTargetOutcome, loadAddTarget, ownsReservation } from "../authorization/add-target.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
+import { ownsUpload } from "../authorization/upload.ts";
 import { lockCounter, type CounterKey } from "../drops/counter.ts";
 import { lockDay, nextTarget } from "../drops/reserve.ts";
 import { completeReceipt, reserveAsMember, type ReceiptKey } from "../idempotency/receipt.ts";
@@ -71,14 +78,23 @@ export interface UploadAnswer {
   readonly expiresAt: Temporal.Instant;
 }
 
+/** What the route signs for a pending upload: its object, its type, the clock's sample and its own lapse. */
+export interface ToSign {
+  readonly objectKey: string;
+  readonly contentType: UploadContentType;
+  readonly at: ServerNow;
+  /** The upload's `expires_at`: its signed URL is given as good until then at the latest. */
+  readonly expiresAt: Temporal.Instant;
+}
+
 /** What `createDropPhotoUpload` leaves the route: the answer as the receipt keeps it, and what to sign. */
 export interface MadeUpload {
   readonly body: Json;
   /**
-   * The upload's object and the clock's sample, when the upload is still pending and live at that sample, so
-   * the route signs a URL for it; null when it isn't, and the answer carries no URL (TECH-DESIGN section 6).
+   * What to sign, when the upload is still pending and live at the clock's sample, so the route signs a URL for
+   * it; null when it isn't, and the answer carries no URL (TECH-DESIGN section 6).
    */
-  readonly toSign: { readonly objectKey: string; readonly at: ServerNow } | null;
+  readonly toSign: ToSign | null;
 }
 
 /** The caller's own live upload, with its object, which only the route's Storage calls use. */
@@ -127,6 +143,8 @@ function oneOf<T extends string>(values: readonly T[], value: unknown, what: str
 
 interface UploadRow extends OwnUpload {
   readonly owner: string;
+  readonly expiresAt: Temporal.Instant;
+  readonly contentType: UploadContentType;
 }
 
 function uploadOf(row: Readonly<Record<string, unknown>> | undefined): UploadRow | null {
@@ -135,32 +153,38 @@ function uploadOf(row: Readonly<Record<string, unknown>> | undefined): UploadRow
   if (typeof id !== "string" || typeof owner !== "string" || typeof objectKey !== "string") {
     throw new Error("media: an upload came back in a shape the command doesn't know");
   }
+  const expiresAt = instantOf(row["expires_at"], "an upload's expiry");
   return {
     owner,
     objectKey,
+    expiresAt,
+    contentType: oneOf(UPLOAD_CONTENT_TYPES, row["content_type"], "an upload's type"),
     answer: {
       id,
       purpose: oneOf(UPLOAD_PURPOSES, row["purpose"], "an upload's purpose"),
       state: oneOf(UPLOAD_STATES, row["state"], "an upload's state"),
       rejection: rejection === null ? null : oneOf(UPLOAD_REJECTIONS, rejection, "an upload's rejection"),
-      expiresAt: instantOf(row["expires_at"], "an upload's expiry"),
+      expiresAt,
     },
   };
 }
 
-async function uploadById(tx: QuerySql, id: string, lock: "" | "FOR UPDATE"): Promise<UploadRow | null> {
+/**
+ * The upload `id`, with no lock or `FOR NO KEY UPDATE`: `markPreparing` changes only its state, never a key, so
+ * a row naming it (an outbox event, a drop later) isn't kept waiting.
+ */
+async function uploadById(tx: QuerySql, id: string, lock: "" | "FOR NO KEY UPDATE"): Promise<UploadRow | null> {
   const rows =
     lock === ""
-      ? await bound(tx)`SELECT id, owner_user_id, purpose, state, rejection, expires_at, object_key
+      ? await bound(tx)`SELECT id, owner_user_id, purpose, state, rejection, expires_at, object_key, content_type
                           FROM app.uploads WHERE id = ${id}`
-      : await bound(tx)`SELECT id, owner_user_id, purpose, state, rejection, expires_at, object_key
-                          FROM app.uploads WHERE id = ${id} FOR UPDATE`;
+      : await bound(tx)`SELECT id, owner_user_id, purpose, state, rejection, expires_at, object_key, content_type
+                          FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
   return uploadOf(rows[0]);
 }
 
-/** Whether `row` is the caller's own upload and still lives at `at` (the plan's section 0.6). */
-function ownLive(row: UploadRow | null, userId: string, at: ServerNow): row is UploadRow {
-  return row !== null && row.owner === userId && Temporal.Instant.compare(at, row.answer.expiresAt) < 0;
+function toSignOf(row: UploadRow, at: ServerNow): ToSign {
+  return { objectKey: row.objectKey, contentType: row.contentType, at, expiresAt: row.expiresAt };
 }
 
 interface SlotRow {
@@ -239,8 +263,8 @@ export async function createDropPhotoUpload(
     const id = (stored.replay as { readonly id?: unknown } | null)?.id;
     if (typeof id !== "string") throw new Error("media: a stored upload answer names no upload");
     const upload = await uploadById(tx, id, "");
-    const pending = ownLive(upload, userId, first) && upload.answer.state === "pending";
-    return { body: stored.replay, toSign: pending ? { objectKey: upload.objectKey, at: first } : null };
+    const pending = ownsUpload(upload, userId, first) && upload.answer.state === "pending";
+    return { body: stored.replay, toSign: pending ? toSignOf(upload, first) : null };
   }
 
   // 3. The locks.
@@ -255,10 +279,8 @@ export async function createDropPhotoUpload(
 
   // 5. The rule again, under the locks.
   const again = await loadAddTarget(tx, userId, seen.day);
+  if (!ownsReservation(again, interval, at)) throw new Refused("NOT_FOUND");
   const outcome = addTargetOutcome(again, at);
-  if (again === null || outcome.kind === "not_found" || again.viewerInterval !== interval) {
-    throw new Refused("NOT_FOUND");
-  }
   if (outcome.kind === "held") throw new Refused("MEMBERSHIP_CHANGED");
   if (outcome.kind === "closed") {
     const next = await nextTarget(tx, again, at);
@@ -270,6 +292,9 @@ export async function createDropPhotoUpload(
   if (slot.state !== "live" || slot.mediaClass !== "photo" || Temporal.Instant.compare(at, slot.expiresAt) >= 0) {
     throw new Refused("NOT_FOUND");
   }
+  const holding = await bound(tx)`
+    SELECT id FROM app.uploads WHERE reservation_id = ${reservationId} AND state <> 'rejected' LIMIT 1`;
+  if (holding.length > 0) throw new Refused("NOT_FOUND");
 
   // 6. The upload.
   const id = newId("upl");
@@ -283,7 +308,10 @@ export async function createDropPhotoUpload(
 
   // 7. The answer.
   const body = render({ id, purpose: "drop_photo", state: "pending", rejection: null, expiresAt });
-  return { body: await completeReceipt(tx, receipt, body, 201), toSign: { objectKey, at } };
+  return {
+    body: await completeReceipt(tx, receipt, body, 201),
+    toSign: { objectKey, contentType: input.contentType, at, expiresAt },
+  };
 }
 
 export interface OwnUploadInput {
@@ -299,12 +327,12 @@ export async function readOwnUpload(tx: QuerySql, input: OwnUploadInput, now: Se
   if (typeof input.uploadId !== "string") throw new TypeError("media: the upload is an id");
   if (!ID.test(input.uploadId)) throw new Refused("NOT_FOUND");
   const row = await uploadById(tx, input.uploadId, "");
-  if (!ownLive(row, input.userId, now)) throw new Refused("NOT_FOUND");
+  if (!ownsUpload(row, input.userId, now)) throw new Refused("NOT_FOUND");
   return { answer: row.answer, objectKey: row.objectKey };
 }
 
 /**
- * Hands the caller's own pending upload to preparation, in `tx`: its row `FOR UPDATE`, the clock after the
+ * Hands the caller's own pending upload to preparation, in `tx`: its row `FOR NO KEY UPDATE`, the clock after the
  * lock, and, still pending, `preparing` with an `upload.prepare` event, once (T54). An upload past pending is
  * answered as it is. The route has asked Storage that its bytes are there first. Throws `Refused` NOT_FOUND.
  */
@@ -316,9 +344,9 @@ export async function markPreparing(
   checkCaller(input.userId);
   if (typeof input.uploadId !== "string") throw new TypeError("media: the upload is an id");
   if (!ID.test(input.uploadId)) throw new Refused("NOT_FOUND");
-  const row = await uploadById(tx, input.uploadId, "FOR UPDATE");
+  const row = await uploadById(tx, input.uploadId, "FOR NO KEY UPDATE");
   const at = await clock.sample(tx);
-  if (!ownLive(row, input.userId, at)) throw new Refused("NOT_FOUND");
+  if (!ownsUpload(row, input.userId, at)) throw new Refused("NOT_FOUND");
   if (row.answer.state !== "pending") return row.answer;
   await bound(tx)`UPDATE app.uploads SET state = 'preparing' WHERE id = ${row.answer.id}`;
   await bound(tx)`

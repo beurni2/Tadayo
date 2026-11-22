@@ -135,13 +135,12 @@ export function fakeStorage(): FakeStorage {
     failing(on) {
       down = on;
     },
-    signUpload(objectKey, contentType) {
+    signUpload(objectKey) {
       if (down) return Promise.reject(new StorageUnavailable("signing an upload URL got no answer"));
       signed.push(objectKey);
       const token = `test.${Buffer.from(`${objectKey}:${String(signed.length)}`).toString("base64url")}.unsigned`;
       return Promise.resolve({
         url: `${TEST_PROJECT_URL}/storage/v1/object/upload/sign/uploads/${objectKey}?token=${token}`,
-        headers: { "Content-Type": contentType, "x-upsert": "false" },
         lifetimeSeconds: FAKE_SIGNED_SECONDS,
       });
     },

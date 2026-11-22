@@ -2,16 +2,18 @@
 // Starting a drop's photo upload, reading it and handing it to preparation, against Postgres as `tadayo_app`
 // (spec 11, 32, 33; T1, T3, T4, T9, T12, T14, T17, T18, T19, T54; FQ63, FQ112; Q12;
 // docs/plans/api-b2-spike-uploads.md, section 3; packages/domain/src/media/upload.ts): only the holder of a live
-// photo slot in a day still collecting starts one, the refusals and the facts they carry, the cutoff read after
-// the locks, a release racing an upload, the receipt, the owner's reads, the one outbox event, and the
-// database's last guard (db/migrations/0016_upload_reservation.sql).
+// photo slot in a day still collecting starts one, one upload to a slot until a rejection, the refusals and the
+// facts they carry, the cutoff read after the locks, a release racing an upload, the receipt, the owner's reads,
+// the one outbox event, and the database's last guards (db/migrations/0016_upload_reservation.sql), each raced
+// with a release in both orders.
 //
 // The world is world.ts's: Ana's Saturday 7 November 2026 in a London club, which is on UTC then, revealed at
 // 07:00Z; Ben and Cleo are its other members, and Dan has no club. Ana's next two Saturdays are added here, so
 // a refusal has a next day to offer (T4).
 //
 // These tests were written beside the command, from the plan's section 3, so none was seen to fail before its
-// rule existed. The deliberate breakages, run at the PR's last head, are what shows they can fail.
+// rule existed, except the review's: one upload to a slot and the guard's two races, each seen failing before
+// its fix or with its lock removed. The deliberate breakages, run at the PR's last head, show the rest can fail.
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { reservationBody, uploadBody } from "@tadayo/api";
@@ -27,6 +29,7 @@ import {
   type Json,
   type MediaClass,
   type RefusalFacts,
+  type ToSign,
   type UploadAnswer,
   type UploadContentType,
 } from "@tadayo/domain";
@@ -120,7 +123,7 @@ interface Made {
   readonly body: { id: string; purpose: string; state: string; expires_at: string } & Record<string, unknown>;
   /** The answer as the receipt keeps it, byte for byte. */
   readonly text: string;
-  readonly toSign: { readonly objectKey: string; readonly at: Temporal.Instant } | null;
+  readonly toSign: ToSign | null;
 }
 interface Refusal {
   readonly code: string;
@@ -269,6 +272,67 @@ describe("a drop's photo starts under the caller's own live photo slot (T12, T17
       expect(first.body.id).not.toBe(second.body.id);
     });
   });
+});
+
+describe("one slot, one photo: a slot takes another upload only once its upload was rejected (spec 11, T17)", () => {
+  it("gives the neutral not-found for a second upload under the same slot with a new key, pending or preparing, and keeps the first key's replay", async () => {
+    await rolledBack(db, async (tx) => {
+      const d = await days(tx);
+      const bens = await slot(tx, d, d.w.ben);
+      const key = randomUUID();
+      const first = made(await upload(tx, d.w.ben, bens, { key }));
+      const second = randomUUID();
+      expect(await upload(tx, d.w.ben, bens, { key: second })).toEqual(bare("NOT_FOUND"));
+      expect(await tx`SELECT FROM app.idempotency_receipts WHERE idempotency_key = ${second}`).toHaveLength(0);
+      const replay = made(await upload(tx, d.w.ben, bens, { key }));
+      expect(replay.text).toBe(first.text);
+      expect(replay.toSign?.objectKey).toBe(first.toSign?.objectKey);
+      expect(await completing(tx, d.w.ben, first.body.id)).toMatchObject({ state: "preparing" });
+      expect(await upload(tx, d.w.ben, bens)).toEqual(bare("NOT_FOUND"));
+      await tx`UPDATE app.uploads SET state = 'ready', content_hash = ${randomBytes(32)},
+                                      content_version = ${`v_${randomUUID().replaceAll("-", "")}`}
+                WHERE id = ${first.body.id}`;
+      expect(await upload(tx, d.w.ben, bens)).toEqual(bare("NOT_FOUND"));
+      expect(await uploadsOf(tx, bens)).toHaveLength(1);
+      expect(await uploadReceipts(tx, d.w.ben.user)).toHaveLength(1);
+    });
+  });
+
+  it("makes one more upload, for a new object, under a slot whose upload was rejected, and then no other", async () => {
+    await rolledBack(db, async (tx) => {
+      const d = await days(tx);
+      const bens = await slot(tx, d, d.w.ben);
+      const first = made(await upload(tx, d.w.ben, bens));
+      await tx`UPDATE app.uploads SET state = 'preparing' WHERE id = ${first.body.id}`;
+      await tx`UPDATE app.uploads SET state = 'rejected', rejection = 'unreadable' WHERE id = ${first.body.id}`;
+      const again = made(await upload(tx, d.w.ben, bens));
+      expect(again.body.id).not.toBe(first.body.id);
+      expect(again.toSign?.objectKey).not.toBe(first.toSign?.objectKey);
+      expect(await upload(tx, d.w.ben, bens)).toEqual(bare("NOT_FOUND"));
+      expect(await uploadsOf(tx, bens)).toHaveLength(2);
+    });
+  });
+
+  it(
+    "puts two uploads with new keys under one slot in order by the counter: the one that waited makes nothing",
+    { timeout: 30_000 },
+    async () => {
+      const d = await db.begin((tx) => days(tx as unknown as WorldTx));
+      committedDays.push(d.w.day, d.next, d.after);
+      const bens = await db.begin((tx) => slot(tx as unknown as WorldTx, d, d.w.ben));
+      const start = (tx: WorldTx) =>
+        createDropPhotoUpload(
+          tx,
+          clock,
+          { userId: d.w.ben.user, key: randomUUID(), reservationId: bens, contentType: "image/jpeg", byteSize: 1000 },
+          uploadBody,
+        );
+      const { first, second } = await racing(start, () => outcomeOf(db.begin((tx) => start(tx as unknown as WorldTx))));
+      expect(first.toSign).not.toBeNull();
+      expect(second).toEqual(bare("NOT_FOUND"));
+      expect(await db`SELECT FROM app.uploads WHERE reservation_id = ${bens}`).toHaveLength(1);
+    },
+  );
 });
 
 describe("nothing for a slot that isn't the caller's own and live (T9, T14, T18)", () => {
@@ -586,6 +650,33 @@ describe("one upload per Idempotency-Key, and its first answer on every retry (T
     });
   });
 
+  it("returns the first answer after the slot lapsed unreleased, unsettled and settled, signing while the upload is pending", async () => {
+    await rolledBack(db, async (tx) => {
+      const d = await days(tx);
+      const key = randomUUID();
+      const bens = await slot(tx, d, d.w.ben);
+      const first = made(await upload(tx, d.w.ben, bens, { key }));
+      // At the slot's expires_at it has lapsed, though nothing has settled it.
+      clock.set(EVENING.add({ minutes: 30 }));
+      expect(await tx<{ state: string }[]>`SELECT state FROM app.reservations WHERE id = ${bens}`).toEqual([
+        { state: "live" },
+      ]);
+      const unsettled = made(await upload(tx, d.w.ben, bens, { key }));
+      expect(unsettled.text).toBe(first.text);
+      expect(unsettled.toSign?.objectKey).toBe(first.toSign?.objectKey);
+      // A new slot settles it.
+      await slot(tx, d, d.w.ben);
+      expect(await tx<{ state: string }[]>`SELECT state FROM app.reservations WHERE id = ${bens}`).toEqual([
+        { state: "expired" },
+      ]);
+      const settled = made(await upload(tx, d.w.ben, bens, { key }));
+      expect(settled.text).toBe(first.text);
+      expect(settled.toSign?.objectKey).toBe(first.toSign?.objectKey);
+      expect(settled.toSign?.expiresAt.toString()).toBe(EVENING.add({ hours: 24 }).toString());
+      expect(await uploadsOf(tx, bens)).toHaveLength(1);
+    });
+  });
+
   it("refuses another body under the same key with IDEMPOTENCY_CONFLICT", async () => {
     await rolledBack(db, async (tx) => {
       const d = await days(tx);
@@ -734,7 +825,7 @@ describe("the caller's own upload, read and handed to preparation while it lives
   });
 });
 
-describe("the database's last guard: a drop's photo only under a live photo slot (0016, T17, T18)", () => {
+describe("the database's last guards: a drop's photo only under a live photo slot, one at a time (0016, T17, T18)", () => {
   const insert = (sp: WorldTx, d: Days, reservationId: string, createdAt: Temporal.Instant) =>
     sp`INSERT INTO app.uploads (id, owner_user_id, purpose, reservation_id, content_type, byte_size, object_key,
                                 created_at, expires_at)
@@ -785,4 +876,83 @@ describe("the database's last guard: a drop's photo only under a live photo slot
       );
     });
   });
+
+  it("refuses a second upload under a slot past the domain while the first isn't rejected, and takes one after", async () => {
+    await rolledBack(db, async (tx) => {
+      const d = await days(tx);
+      const evening = at("2026-11-06T21:01:00Z");
+      const live = await slot(tx, d, d.w.ben);
+      await tx.savepoint((sp) => insert(sp, d, live, evening));
+      const [first] = await tx<{ id: string }[]>`SELECT id FROM app.uploads WHERE reservation_id = ${live}`;
+      const id = first?.id ?? "";
+      for (const state of ["pending", "preparing", "ready"]) {
+        if (state === "preparing") await tx`UPDATE app.uploads SET state = 'preparing' WHERE id = ${id}`;
+        if (state === "ready") {
+          await tx`UPDATE app.uploads SET state = 'ready', content_hash = ${randomBytes(32)},
+                                          content_version = ${`v_${randomUUID().replaceAll("-", "")}`}
+                    WHERE id = ${id}`;
+        }
+        await expectRefused(
+          plain(tx),
+          REFUSED.unique,
+          (sp) => insert(sp as unknown as WorldTx, d, live, evening),
+          /uploads_one_per_reservation/,
+        );
+      }
+      const other = await slot(tx, d, d.w.ben);
+      await tx.savepoint((sp) => insert(sp, d, other, evening));
+      await tx`UPDATE app.uploads SET state = 'preparing' WHERE reservation_id = ${other}`;
+      await tx`UPDATE app.uploads SET state = 'rejected', rejection = 'too_large' WHERE reservation_id = ${other}`;
+      await tx.savepoint((sp) => insert(sp, d, other, evening));
+      expect(await uploadsOf(tx, other)).toHaveLength(2);
+      await expectRefused(
+        plain(tx),
+        REFUSED.unique,
+        (sp) => insert(sp as unknown as WorldTx, d, other, evening),
+        /uploads_one_per_reservation/,
+      );
+    });
+  });
+
+  it(
+    "makes an upload written past the domain wait for a release in flight, then refuses it under the released slot",
+    { timeout: 30_000 },
+    async () => {
+      const d = await db.begin((tx) => days(tx as unknown as WorldTx));
+      committedDays.push(d.w.day, d.next, d.after);
+      const bens = await db.begin((tx) => slot(tx as unknown as WorldTx, d, d.w.ben));
+      const { first, second } = await racing(
+        (tx) => releaseReservation(tx, clock, { userId: d.w.ben.user, reservationId: bens }),
+        () =>
+          db
+            .begin((tx) => insert(tx as unknown as WorldTx, d, bens, EVENING.add({ minutes: 1 })))
+            .then(
+              () => "inserted",
+              (error: unknown) => error,
+            ),
+      );
+      expect(first.state).toBe("released");
+      expect(second).toMatchObject({ code: REFUSED.integrity, message: expect.stringMatching(message) as string });
+      expect(await db`SELECT FROM app.uploads WHERE reservation_id = ${bens}`).toHaveLength(0);
+    },
+  );
+
+  it(
+    "makes a release wait for an upload written past the domain while the slot was live, then give the slot back",
+    { timeout: 30_000 },
+    async () => {
+      const d = await db.begin((tx) => days(tx as unknown as WorldTx));
+      committedDays.push(d.w.day, d.next, d.after);
+      const bens = await db.begin((tx) => slot(tx as unknown as WorldTx, d, d.w.ben));
+      const { second } = await racing(
+        (tx) => insert(tx, d, bens, EVENING.add({ minutes: 1 })),
+        () =>
+          db.begin((tx) =>
+            releaseReservation(tx as unknown as WorldTx, clock, { userId: d.w.ben.user, reservationId: bens }),
+          ),
+      );
+      expect(second.state).toBe("released");
+      expect(await db`SELECT FROM app.uploads WHERE reservation_id = ${bens}`).toHaveLength(1);
+    },
+  );
 });

@@ -24,7 +24,7 @@ import {
   type Json,
   type MadeUpload,
   type OwnUpload,
-  type ServerNow,
+  type ToSign,
   type UploadAnswer,
 } from "@tadayo/domain";
 import type { FastifyRequest } from "fastify";
@@ -46,15 +46,19 @@ export function uploadBody(upload: UploadAnswer): Json {
 }
 
 /**
- * The contract's SignedUpload: the one storage URL a client ever gets, for its own pending upload (T12). It is
- * good for Storage's own lifetime from the clock's sample, in the server's time (./storage.ts), and never later.
+ * The contract's SignedUpload: the one storage URL a client ever gets, for its own pending upload (T12), with its
+ * headers by name (T55): the upload's own type, and upsert off, which Storage takes from the token, not from
+ * this header (./storage.ts). It is given as good for Storage's own lifetime from the clock's sample, in the
+ * server's time, and never past the upload's own `expires_at`, after which the upload is nobody's.
  */
-export function signedUploadBody(signed: SignedPut, at: ServerNow): Json {
+export function signedUploadBody(signed: SignedPut, toSign: ToSign): Json {
+  const lifetime = toSign.at.add({ seconds: signed.lifetimeSeconds });
+  const until = Temporal.Instant.compare(lifetime, toSign.expiresAt) < 0 ? lifetime : toSign.expiresAt;
   return {
     url: signed.url,
     method: "PUT",
-    headers: { ...signed.headers },
-    expires_at: contractInstant(at.add({ seconds: signed.lifetimeSeconds })),
+    headers: { "Content-Type": toSign.contentType, "x-upsert": "false" },
+    expires_at: contractInstant(until),
   };
 }
 
@@ -110,7 +114,7 @@ export function createUploadHandler(deps: Deps): Handler {
     if (made.toSign === null) return created(reply, made.body);
     let signed: SignedPut;
     try {
-      signed = await deps.storage.signUpload(made.toSign.objectKey, body.content_type);
+      signed = await deps.storage.signUpload(made.toSign.objectKey);
     } catch (error) {
       if (error instanceof StorageUnavailable) {
         request.log.warn({ err: error }, "storage unavailable");
@@ -120,7 +124,7 @@ export function createUploadHandler(deps: Deps): Handler {
     }
     return created(reply, {
       ...(made.body as Record<string, Json>),
-      signed_upload: signedUploadBody(signed, made.toSign.at),
+      signed_upload: signedUploadBody(signed, made.toSign),
     });
   };
 }
@@ -152,7 +156,7 @@ export function completeUploadHandler(deps: Deps): Handler {
       throw error;
     }
     if (own.answer.state === "pending") {
-      // The bytes first, before any lock: a missing object changes nothing.
+      // The bytes first, before any lock or write: a missing object changes nothing.
       let there: boolean;
       try {
         there = await deps.storage.objectThere(own.objectKey);

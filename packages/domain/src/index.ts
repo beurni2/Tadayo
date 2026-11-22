@@ -27,6 +27,7 @@ export {
   type AddTarget,
   type AddTargetFacts,
 } from "./authorization/add-target.ts";
+export { ownsUpload, type UploadOwnership } from "./authorization/upload.ts";
 export {
   allowanceOf,
   FRIEND_LIMITS,
@@ -60,6 +61,7 @@ export {
   UPLOAD_STATES,
   type CreateDropPhotoUploadInput,
   type MadeUpload,
+  type ToSign,
   type OwnUpload,
   type OwnUploadInput,
   type UploadAnswer,

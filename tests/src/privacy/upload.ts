@@ -10,12 +10,16 @@
 //   active interval, by reservation.ts's `adderOf` (Q06 included), in a club that isn't suspended, on a day
 //   that is scheduled. A day whose star has gone before its reveal: MEMBERSHIP_CHANGED. From the reveal on:
 //   OCCURRENCE_CLOSED with the day and the star's next day, as createReservation answers it (T3, T4). Then the
-//   neutral not-found unless the reservation is a photo's, live, and not lapsed (T18). Otherwise 201 with a
-//   new pending upload of the caller's, living 24 hours from the instant, and its signed upload: the URL for
-//   that upload's own object, a PUT with the declared type and upsert off, good for Storage's two hours (the
-//   fake Storage's, services/api/src/testing.ts) from the instant (`madeProblems` holds the row it made).
-// - A replay under the key that made one: the same upload, with a new URL for the same object while it is
-//   pending and lives, and the stored answer alone, with no URL, once it isn't (TECH-DESIGN section 6).
+//   neutral not-found unless the reservation is a photo's, live, and not lapsed (T18), and holds no upload but
+//   rejected ones (one slot, one photo). Otherwise 201 with a new pending upload of the caller's, under that
+//   reservation, of the declared type and size, living 24 hours from the instant, and its signed upload: the URL
+//   for that upload's own object, a PUT with the declared type and upsert off, good for Storage's two hours
+//   (the fake Storage's, services/api/src/testing.ts) from the instant and never past the upload's own expiry
+//   (`madeProblems` holds the row it made).
+// - A replay under the key that made one, to whoever still has the reservation as createUpload's first step
+//   reads it (`replayOutcome`; the neutral not-found to anyone else): the same upload, with a new URL for the
+//   same object while it is pending and lives, and the stored answer alone, with no URL, once it isn't
+//   (TECH-DESIGN section 6).
 // - getUpload: the caller's own upload until its `expires_at`, its UploadStatus; the neutral not-found for
 //   anyone else's, a lapsed one, or an id nobody has (T12, T14).
 // - completeUpload: the same rule; a pending upload whose object isn't in Storage is MEDIA_NOT_READY and stays
@@ -115,7 +119,23 @@ export function uploadOutcome(
   }
   if (slot.media !== "photo" || slot.state !== "live" || !before(now, slot.expiresAt))
     return { kind: "pinned", answer: NEUTRAL };
+  for (const upload of world.uploads.values()) {
+    if (upload.reservation === reservation && upload.state !== "rejected") return { kind: "pinned", answer: NEUTRAL };
+  }
   return { kind: "made", account, reservation, now };
+}
+
+/**
+ * What a replay of createUpload under `reservation` gets before its receipt is read: PROFILE_INCOMPLETE to an
+ * account that hasn't finished its profile, the neutral not-found to anyone the reservation isn't still the
+ * caller's (its interval no longer the one that may add to its day: a leave, a suspension, a cancelled day, a
+ * rejoin), and undefined when the receipt answers, judged by `replayProblems`.
+ */
+export function replayOutcome(world: WorldFacts, account: string | null, reservation: string): Answer | undefined {
+  if (!finished(world, account)) return PROFILE_INCOMPLETE;
+  const slot = world.reservations.get(reservation);
+  if (slot === undefined || account === null || adderOf(world, account, slot.day) !== slot.interval) return NEUTRAL;
+  return undefined;
 }
 
 function parsed(answer: Answer): unknown {
@@ -162,8 +182,12 @@ function urlFor(objectKey: string): RegExp {
   );
 }
 
-/** What is wrong with `signed`, a signed upload for `upload` given at `now`. */
+/**
+ * What is wrong with `signed`, a signed upload for `upload` given at `now`: good for Storage's two hours, and
+ * never past the upload's own expiry, after which the upload is nobody's.
+ */
 export function signedProblems(signed: unknown, upload: WorldUpload, now: Temporal.Instant): string[] {
+  const lifetime = now.add({ seconds: SIGNED_SECONDS });
   if (!isObject(signed)) return ["no signed upload"];
   const problems: string[] = [];
   if (typeof signed.url !== "string" || !urlFor(upload.objectKey).test(signed.url))
@@ -176,7 +200,7 @@ export function signedProblems(signed: unknown, upload: WorldUpload, now: Tempor
       {
         method: "PUT",
         headers: { "Content-Type": upload.contentType, "x-upsert": "false" },
-        expires_at: second(now.add({ seconds: SIGNED_SECONDS })),
+        expires_at: second(before(lifetime, upload.expiresAt) ? lifetime : upload.expiresAt),
       },
     ),
   ];
@@ -257,9 +281,9 @@ const uploadIds = (world: WorldFacts) => new Set(world.uploads.keys());
 
 /**
  * What is wrong with the world after createUpload's `answer`, given the world before it and the outcome it was
- * judged by: an upload made is one new upload of the caller's, pending, for a drop's photo, of the declared type,
- * living 24 hours from the instant; a refusal made none (T19: it leaves nothing); and no other upload and no
- * reservation changed (the command settles nothing).
+ * judged by: an upload made is one new upload of the caller's, pending, for a drop's photo, under the reservation
+ * asked for, of the declared type and size, living 24 hours from the instant; a refusal made none (T19: it leaves
+ * nothing); and no other upload and no reservation changed (the command settles nothing).
  */
 export function madeProblems(
   previous: WorldFacts,
@@ -280,11 +304,15 @@ export function madeProblems(
       upload !== undefined &&
       (upload.owner !== outcome.account ||
         upload.purpose !== "drop_photo" ||
+        upload.reservation !== outcome.reservation ||
         upload.state !== "pending" ||
         upload.contentType !== PHOTO_BODY.content_type ||
+        upload.byteSize !== PHOTO_BODY.byte_size ||
         upload.expiresAt.toString() !== outcome.now.add({ hours: UPLOAD_HOURS }).toString())
     )
-      problems.push("the upload made isn't the caller's pending photo, living 24 hours from the instant");
+      problems.push(
+        "the upload made isn't the caller's pending photo under the slot asked for, as declared, living 24 hours",
+      );
   } else if (made.length > 0) problems.push(`a refusal made ${JSON.stringify(made)} (T19)`);
   for (const [other, row] of previous.uploads) {
     if (rowText(after.uploads.get(other)) !== rowText(row)) problems.push(`the upload ${other} changed`);

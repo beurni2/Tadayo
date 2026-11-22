@@ -11,13 +11,18 @@
 //   from the verified token, never from its own header. This client never sends it, so upsert is off, and once
 //   bytes are put nobody can put over them (T12). The answer is `{ url, token }`, `url` relative; the full URL is
 //   built here in the form the probe's `PUT` uses.
+// - The token says what Storage will do with the `PUT`: its `url` claim names the one object, `<bucket>/<key>`,
+//   and its `upsert` claim is the one the `PUT` obeys. So the client believes a token only when its `url` is the
+//   object it asked for and its `upsert` is `false`, read where Storage decides it, never assumed from the call it
+//   made (T12). The probe reads every token it signs by the same rule (tools/ops/src/supabase-probe.ts).
 // - The token's lifetime is Storage's setting, which the caller can't choose. It is read from the token's own
 //   `iat` and `exp`, never assumed, and a token whose lifetime can't be read, or isn't a minute to a day, is an
-//   error. Only the lifetime is used: the answer's `expires_at` is the server clock's sample plus it, in the
-//   server's time like every instant the API gives (T1), since `dev`'s clock leads the wall clock Storage reads.
+//   error. Only the lifetime is used: the route gives the server clock's sample plus it, in the server's time
+//   like every instant the API gives (T1), since `dev`'s clock leads the wall clock Storage reads.
 // - `GET /storage/v1/object/info/<bucket>/<key>` answers an object's details, or Storage's not-found. Storage
 //   answers every error with HTTP 400 and the real status in the body's `statusCode` (tools/ops/src/supabase.ts),
-//   so the client reads that, never the HTTP status alone.
+//   so the client reads that, never the HTTP status alone. An object is there only on a 200 whose body is a JSON
+//   object; its not-found is a 404 in the body or in the HTTP status; anything else is an error, never either.
 // - A secret key goes in `apikey` and again as the bearer, as `supabase-js` does; no call sets a `User-Agent`.
 //
 // Nothing it is given or answers is logged: not the key, a token, a URL or an object's key (T52, T56). A failure
@@ -31,18 +36,20 @@ export const SIGNED_LIFETIME = { least: 60, most: 86_400 } as const;
 
 const TIMEOUT_MS = 10_000;
 
-/** A signed `PUT` for one object: the full URL, the headers to send, and how long Storage keeps it good. */
+/**
+ * A signed `PUT` for one object: the full URL, and how long Storage keeps it good. The headers to send are the
+ * route's, by name (T55).
+ */
 export interface SignedPut {
   readonly url: string;
-  readonly headers: Readonly<Record<string, string>>;
   /** Whole seconds from the token's `iat` to its `exp`. */
   readonly lifetimeSeconds: number;
 }
 
 /** What the upload routes ask of Storage. */
 export interface UploadStorage {
-  /** A write-only URL for the one object `objectKey` in `uploads`, with upsert off, for bytes of `contentType`. */
-  signUpload(objectKey: string, contentType: string): Promise<SignedPut>;
+  /** A write-only URL for the one object `objectKey` in `uploads`, with upsert off in its token. */
+  signUpload(objectKey: string): Promise<SignedPut>;
   /** Whether the object `objectKey` is in `uploads`. */
   objectThere(objectKey: string): Promise<boolean>;
 }
@@ -78,7 +85,7 @@ function logicalStatus(status: number, json: unknown): number {
   return status;
 }
 
-/** A JWT's payload as JSON, or undefined: the token isn't verified here, only read for its lifetime. */
+/** A JWT's payload as JSON, or undefined: the token isn't verified here, only read for what Storage put in it. */
 function payloadOf(token: string): unknown {
   const parts = token.split(".");
   if (parts.length !== 3 || !parts.every((part) => /^[A-Za-z0-9_-]+$/.test(part))) return undefined;
@@ -89,11 +96,17 @@ function payloadOf(token: string): unknown {
   }
 }
 
-/** The token's lifetime in whole seconds, from its own `iat` and `exp`, or undefined when it can't be believed. */
-export function signedLifetime(token: string): number | undefined {
+/**
+ * The lifetime in whole seconds of a token Storage signed for the object `objectKey` in `uploads`, from its own
+ * `iat` and `exp`, or undefined when the token can't be believed: each of its three parts plain base64url, its
+ * `url` that one object, its `upsert` `false`, so a second `PUT` can't put over the first (T12), and its lifetime
+ * a minute to a day.
+ */
+export function signedLifetime(token: string, objectKey: string): number | undefined {
   const payload = payloadOf(token);
   if (typeof payload !== "object" || payload === null) return undefined;
-  const { iat, exp } = payload as Record<string, unknown>;
+  const { url, upsert, iat, exp } = payload as Record<string, unknown>;
+  if (url !== `${UPLOADS_BUCKET}/${objectKey}` || upsert !== false) return undefined;
   if (typeof iat !== "number" || typeof exp !== "number" || !Number.isInteger(iat) || !Number.isInteger(exp)) {
     return undefined;
   }
@@ -144,7 +157,7 @@ export function supabaseStorage(options: SupabaseStorageOptions): UploadStorage 
   }
 
   return {
-    async signUpload(objectKey, contentType) {
+    async signUpload(objectKey) {
       const object = checkedKey(objectKey);
       const { status, json } = await call(
         `/storage/v1/object/upload/sign/${UPLOADS_BUCKET}/${object}`,
@@ -155,13 +168,12 @@ export function supabaseStorage(options: SupabaseStorageOptions): UploadStorage 
         throw new StorageUnavailable(`signing an upload URL answered ${String(logicalStatus(status, json))}`);
       }
       const token = tokenOf(json);
-      const lifetime = token === undefined ? undefined : signedLifetime(token);
+      const lifetime = token === undefined ? undefined : signedLifetime(token, object);
       if (token === undefined || lifetime === undefined) {
-        throw new StorageUnavailable("signing an upload URL gave no token whose lifetime can be read");
+        throw new StorageUnavailable("signing an upload URL gave no token this client believes");
       }
       return {
         url: `${base}/storage/v1/object/upload/sign/${UPLOADS_BUCKET}/${object}?token=${encodeURIComponent(token)}`,
-        headers: { "Content-Type": contentType, "x-upsert": "false" },
         lifetimeSeconds: lifetime,
       };
     },
@@ -174,7 +186,9 @@ export function supabaseStorage(options: SupabaseStorageOptions): UploadStorage 
         "asking for an object",
       );
       const logical = logicalStatus(status, json);
-      if (status === 200 && logical === 200) return true;
+      if (status === 200 && logical === 200 && typeof json === "object" && json !== null && !Array.isArray(json)) {
+        return true;
+      }
       if (logical === 404) return false;
       throw new StorageUnavailable(`asking for an object answered ${String(logical)}`);
     },

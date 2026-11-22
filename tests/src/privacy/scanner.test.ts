@@ -139,11 +139,13 @@ function uploadOf(owner: string, state: WorldUpload["state"], objectKey: string)
   return {
     owner,
     purpose: "drop_photo",
+    reservation: `rsv_${objectKey.slice(0, 8)}`,
     state,
     rejection: null,
     expiresAt: instant("2026-11-08T06:59:59Z"),
     objectKey,
     contentType: "image/jpeg",
+    byteSize: 2_500_000,
   };
 }
 
@@ -2115,6 +2117,23 @@ describe("the signed upload URL and an upload's id (T12, T14; TECH-DESIGN sectio
         "$.signed_upload",
       ]);
     }
+  });
+
+  it("catches a signed upload good past its upload's own expiry, and takes one shorter than a minute that ends with it", () => {
+    // Ben's upload lapses at 06:59:59 on Sunday.
+    const near = (now: string, expires: string) =>
+      at(
+        scan(
+          answer(upload("upl_ben", signedFor(BENS_OBJECT, { expires_at: expires })), 201),
+          context("createUpload", ben, { now: Temporal.Instant.from(now) }),
+        ),
+        "world",
+      );
+    expect(near("2026-11-08T06:00:00Z", "2026-11-08T08:00:00Z")).toEqual(["$.signed_upload"]);
+    expect(near("2026-11-08T06:00:00Z", "2026-11-08T06:59:59Z")).toEqual([]);
+    expect(near("2026-11-08T06:59:30Z", "2026-11-08T06:59:59Z")).toEqual([]);
+    expect(near("2026-11-08T06:59:30Z", "2026-11-08T06:59:58Z")).toEqual(["$.signed_upload"]);
+    expect(near("2026-11-08T06:59:30Z", "2026-11-08T07:00:00Z")).toEqual(["$.signed_upload"]);
   });
 
   it("lets the URL name only its own object of what the world keeps back", () => {

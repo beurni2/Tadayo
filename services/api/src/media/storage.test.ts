@@ -1,7 +1,8 @@
 // The API's Storage client against a fake fetch (docs/plans/api-b2-spike-uploads.md, section 3; T12, T52, T56):
 // the sign call's path, method and headers, with the service key and upsert never turned on; the full URL;
-// the lifetime read from the token; the object check, read from Storage's own status; and nothing it holds in
-// any error it throws.
+// the token believed only for its own object with upsert off in it, and its lifetime read from it; the object
+// check, read from Storage's own status and a body that is an object's; and nothing it holds in any error it
+// throws. The probe reads tokens by the same rule, tested on the same tokens (tools/ops/src/supabase-probe.test.ts).
 
 import { describe, expect, it } from "vitest";
 import { signedLifetime, StorageUnavailable, supabaseStorage, type UploadStorage } from "./storage.ts";
@@ -69,7 +70,7 @@ describe("signing an upload URL (T12)", () => {
     const { s, seen } = storage(() =>
       json(200, { url: `/object/upload/sign/uploads/${OBJECT}?token=${TOKEN}`, token: TOKEN }),
     );
-    const signed = await s.signUpload(OBJECT, "image/jpeg");
+    const signed = await s.signUpload(OBJECT);
     expect(seen).toHaveLength(1);
     const call = seen[0];
     expect(call?.url).toBe(`${PROJECT}/storage/v1/object/upload/sign/uploads/${OBJECT}`);
@@ -82,35 +83,71 @@ describe("signing an upload URL (T12)", () => {
     expect(call?.redirect).toBe("error");
     expect(signed).toEqual({
       url: `${PROJECT}/storage/v1/object/upload/sign/uploads/${OBJECT}?token=${encodeURIComponent(TOKEN)}`,
-      headers: { "Content-Type": "image/jpeg", "x-upsert": "false" },
       lifetimeSeconds: 7200,
     });
+    expect(Object.keys(signed).sort()).toEqual(["lifetimeSeconds", "url"]);
   });
 
   it("takes the token from the relative url when the answer has no token field", async () => {
     const { s } = storage(() => json(200, { url: `/object/upload/sign/uploads/${OBJECT}?token=${TOKEN}` }));
-    expect((await s.signUpload(OBJECT, "image/png")).url).toBe(
+    expect((await s.signUpload(OBJECT)).url).toBe(
       `${PROJECT}/storage/v1/object/upload/sign/uploads/${OBJECT}?token=${encodeURIComponent(TOKEN)}`,
     );
   });
 
   it("reads the lifetime from the token's own iat and exp, a minute to a day, and believes nothing else", () => {
-    expect(signedLifetime(TOKEN)).toBe(7200);
-    expect(signedLifetime(jwt({ iat: 100, exp: 160 }))).toBe(60);
-    expect(signedLifetime(jwt({ iat: 100, exp: 86_500 }))).toBe(86_400);
+    const claims = { url: `uploads/${OBJECT}`, upsert: false };
+    expect(signedLifetime(TOKEN, OBJECT)).toBe(7200);
+    expect(signedLifetime(jwt({ ...claims, iat: 100, exp: 160 }), OBJECT)).toBe(60);
+    expect(signedLifetime(jwt({ ...claims, iat: 100, exp: 86_500 }), OBJECT)).toBe(86_400);
     for (const token of [
-      jwt({ iat: 100, exp: 159 }),
-      jwt({ iat: 100, exp: 86_501 }),
-      jwt({ iat: 100 }),
-      jwt({ exp: 7300 }),
-      jwt({ iat: "100", exp: 7300 }),
-      jwt({ iat: 100.5, exp: 7300 }),
+      jwt({ ...claims, iat: 100, exp: 159 }),
+      jwt({ ...claims, iat: 100, exp: 86_501 }),
+      jwt({ ...claims, iat: 100 }),
+      jwt({ ...claims, exp: 7300 }),
+      jwt({ ...claims, iat: "100", exp: 7300 }),
+      jwt({ ...claims, iat: 100.5, exp: 7300 }),
       "not-a-jwt",
       "a.b",
       "a.!!.c",
       `${TOKEN}.extra`,
+      // Padding and the other alphabet's characters aren't plain base64url.
+      TOKEN.replace(/\.([^.]+)\./, (_, payload: string) => `.${payload}==.`),
+      TOKEN.replace(/\.([^.]+)\./, (_, payload: string) => `.${payload.replaceAll("-", "+").replaceAll("_", "/")}+/.`),
     ]) {
-      expect(signedLifetime(token), token).toBeUndefined();
+      expect(signedLifetime(token, OBJECT), token).toBeUndefined();
+    }
+  });
+
+  it("believes a token only for the object it asked for, with upsert off in the token, where Storage reads it (T12)", () => {
+    const lifetime = { iat: 1_794_000_000, exp: 1_794_007_200 };
+    const other = "ZyXwVuTsRqPoNmLkJiHgFeDcBa543210";
+    expect(signedLifetime(jwt({ url: `uploads/${OBJECT}`, upsert: false, ...lifetime }), OBJECT)).toBe(7200);
+    for (const payload of [
+      { url: `uploads/${OBJECT}`, upsert: true },
+      { url: `uploads/${OBJECT}`, upsert: "false" },
+      { url: `uploads/${OBJECT}`, upsert: 0 },
+      { url: `uploads/${OBJECT}` },
+      { url: `uploads/${other}`, upsert: false },
+      { url: `renditions/${OBJECT}`, upsert: false },
+      { url: `/uploads/${OBJECT}`, upsert: false },
+      { url: `uploads/${OBJECT}/x`, upsert: false },
+      { url: OBJECT, upsert: false },
+      { upsert: false },
+    ]) {
+      expect(signedLifetime(jwt({ ...payload, ...lifetime }), OBJECT), JSON.stringify(payload)).toBeUndefined();
+    }
+  });
+
+  it("fails, saying nothing it holds, when Storage signs a token with upsert on or for another object", async () => {
+    const lifetime = { iat: 1_794_000_000, exp: 1_794_007_200 };
+    for (const token of [
+      jwt({ url: `uploads/${OBJECT}`, upsert: true, ...lifetime }),
+      jwt({ url: "uploads/ZyXwVuTsRqPoNmLkJiHgFeDcBa543210", upsert: false, ...lifetime }),
+    ]) {
+      const { s } = storage(() => json(200, { url: `/object/upload/sign/uploads/${OBJECT}?token=${token}`, token }));
+      const text = await failure(s.signUpload(OBJECT));
+      for (const secret of [KEY, OBJECT, token, "tadayotestprojectref"]) expect(text).not.toContain(secret);
     }
   });
 
@@ -119,20 +156,20 @@ describe("signing an upload URL (T12)", () => {
       () => json(400, { statusCode: "403", code: "AccessDenied", message: "denied" }),
       () => json(200, { statusCode: "500" }),
       () => json(200, { url: "/object/upload/sign/uploads/x" }),
-      () => json(200, { token: jwt({ iat: 1, exp: 2 }) }),
+      () => json(200, { token: jwt({ url: `uploads/${OBJECT}`, upsert: false, iat: 1, exp: 2 }) }),
       () => new Response("not json", { status: 200 }),
       () => Promise.reject(new Error(`connect failed ${PROJECT}`)),
     ];
     for (const answer of answers) {
       const { s } = storage(answer);
-      const text = await failure(s.signUpload(OBJECT, "image/jpeg"));
+      const text = await failure(s.signUpload(OBJECT));
       for (const secret of [KEY, OBJECT, TOKEN, "tadayotestprojectref"]) expect(text).not.toContain(secret);
     }
   });
 
   it("refuses an object key the server didn't make, before any call", async () => {
     const { s, seen } = storage(() => json(200, { token: TOKEN }));
-    await expect(s.signUpload("../renditions/x", "image/jpeg")).rejects.toThrow(TypeError);
+    await expect(s.signUpload("../renditions/x")).rejects.toThrow(TypeError);
     expect(seen).toHaveLength(0);
   });
 });
@@ -156,13 +193,19 @@ describe("whether an upload's bytes are in", () => {
     }
   });
 
-  it("fails on any other answer, never reading it as missing", async () => {
+  it("fails on any other answer, never reading it as missing, nor a 200 whose body isn't an object's as there", async () => {
     for (const answer of [
       () => json(400, { statusCode: "403", code: "AccessDenied" }),
       () => json(400, {}),
       () => json(500, {}),
       () => new Response(null, { status: 400 }),
       () => Promise.reject(new Error("timeout")),
+      () => new Response("not json", { status: 200 }),
+      () => new Response(null, { status: 200 }),
+      () => json(200, null),
+      () => json(200, []),
+      () => json(200, "uploads"),
+      () => json(200, { statusCode: "500" }),
     ]) {
       const { s } = storage(answer);
       const text = await failure(s.objectThere(OBJECT));

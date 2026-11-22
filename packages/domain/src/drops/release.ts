@@ -11,9 +11,10 @@
 //    slot is the caller's own.
 // 2. The locks, in TECH-DESIGN's order: the club's row, the day's and the caller's membership `FOR SHARE`,
 //    the counter `FOR NO KEY UPDATE` (./counter.ts), then the reservation's row, `FOR NO KEY UPDATE` too: its
-//    key never changes (`reservations_keep`), and an upload naming it (B3) takes `FOR KEY SHARE` on it, which
-//    this lock leaves alone. Every change of a reservation's
-//    state is made under its counter's lock, so what the command reads after it stays true until it commits.
+//    key never changes (`reservations_keep`). A drop's photo upload naming it takes the same counter's lock
+//    first and then reads it `FOR SHARE` in its guard (migration 0016), so the two wait on each other only
+//    at the counter, in one order. Every change of a reservation's state is made under its counter's lock,
+//    so what the command reads after it stays true until it commits.
 // 3. The clock, sampled after the locks (T1), and step 1 again.
 // 4. The counter's lapsed reservations settled, this one among them if its time has come (T18). A slot still
 //    live is then given back: `released`, ended at the sample, and off the counts.

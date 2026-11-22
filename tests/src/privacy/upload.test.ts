@@ -26,6 +26,7 @@ import {
   PHOTO_BODY,
   PROFILE_INCOMPLETE,
   readExpected,
+  replayOutcome,
   replayProblems,
   SIGNED_SECONDS,
   signedProblems,
@@ -92,14 +93,17 @@ const slot = (interval: string, more: Partial<WorldReservation> = {}): WorldRese
   ...more,
 });
 
+/** `owner`'s upload made at NOW, under the slot of theirs world() holds, as the matrix's body declares it. */
 const upload = (owner: string, objectKey: string, more: Partial<WorldUpload> = {}): WorldUpload => ({
   owner,
   purpose: "drop_photo",
+  reservation: `rsv_${owner.slice(4)}`,
   state: "pending",
   rejection: null,
   expiresAt: NOW.add({ hours: 24 }),
   objectKey,
   contentType: "image/jpeg",
+  byteSize: 2_500_000,
   ...more,
 });
 
@@ -295,6 +299,30 @@ describe("what createUpload must answer (uploadOutcome)", () => {
     expect(outcome(lastMicrosecond, "usr_ben", "rsv_ben").kind).toBe("made");
   });
 
+  it("gives the neutral not-found for a slot that holds an upload but rejected ones: one slot, one photo", () => {
+    for (const state of ["pending", "preparing", "ready", "held"] as const) {
+      const holding = world({ uploads: { upl_ben: upload("usr_ben", BENS_OBJECT, { state }) } });
+      expect(outcome(holding, "usr_ben", "rsv_ben"), state).toEqual(neutral);
+    }
+    // A lapsed upload still holds its slot: the slot lapses long before it.
+    const lapsed = world({ uploads: { upl_ben: upload("usr_ben", BENS_OBJECT, { expiresAt: NOW }) } });
+    expect(outcome(lapsed, "usr_ben", "rsv_ben")).toEqual(neutral);
+    const rejected = world({
+      uploads: { upl_ben: upload("usr_ben", BENS_OBJECT, { state: "rejected", rejection: "unreadable" }) },
+    });
+    expect(outcome(rejected, "usr_ben", "rsv_ben").kind).toBe("made");
+    // Another slot's upload, or another purpose's, holds nothing of this one.
+    const elsewhere = world({
+      reservations: { rsv_ben: slot("itv_ben"), rsv_ben2: slot("itv_ben") },
+      uploads: {
+        upl_two: upload("usr_ben", BENS_OBJECT, { reservation: "rsv_ben2" }),
+        upl_avatar: upload("usr_ben", CLEOS_OBJECT, { purpose: "avatar", reservation: null }),
+      },
+    });
+    expect(outcome(elsewhere, "usr_ben", "rsv_ben").kind).toBe("made");
+    expect(outcome(elsewhere, "usr_ben", "rsv_ben2")).toEqual(neutral);
+  });
+
   it("makes one for the owner of a live photo slot, the star's included", () => {
     expect(outcome(world(), "usr_ben", "rsv_ben")).toEqual({
       kind: "made",
@@ -331,6 +359,15 @@ describe("the upload made, and its signed upload (uploadExpected, signedProblems
     expect(
       takes(judge, answer({ id, state, purpose, expires_at: expires, signed_upload: signed(BENS_OBJECT) }, 201)),
     ).toEqual([]);
+  });
+
+  it("gives the signed upload as good until the upload's own expiry at the latest", () => {
+    // An upload an hour from its expiry: Storage's two hours end past it, so the upload's expiry it is.
+    const ending = upload("usr_ben", BENS_OBJECT, { expiresAt: NOW.add({ hours: 1 }) });
+    expect(signedProblems(signed(BENS_OBJECT, { expires_at: "2026-11-06T15:41:00Z" }), ending, NOW)).toEqual([]);
+    for (const expires of ["2026-11-06T16:41:00Z", "2026-11-06T15:41:01Z", "2026-11-06T15:40:59Z"]) {
+      expect(signedProblems(signed(BENS_OBJECT, { expires_at: expires }), ending, NOW), expires).not.toEqual([]);
+    }
   });
 
   it("refuses a URL for another object or host, another method, other headers and another lifetime", () => {
@@ -377,11 +414,14 @@ describe("the rows after createUpload (madeProblems; T19)", () => {
     for (const more of [
       { owner: "usr_cleo" },
       { purpose: "avatar" },
+      { reservation: "rsv_cleo" },
+      { reservation: null },
       { state: "preparing" as const },
       { contentType: "image/png" },
+      { byteSize: 2_500_001 },
       { expiresAt: NOW.add({ hours: 24, microseconds: 1 }) },
     ])
-      expect(madeProblems(before, withBen(more), good, made)).not.toEqual([]);
+      expect(madeProblems(before, withBen(more), good, made), JSON.stringify(more)).not.toEqual([]);
   });
 
   it("holds that a refusal made nothing, and that no other upload and no reservation changed", () => {
@@ -449,6 +489,36 @@ describe("createUpload again under its key (replayProblems; T12, T19; TECH-DESIG
     expect(
       replayProblems(answer({ code: "NOT_FOUND" }, 404), answer(resigned(), 201), pending, pending, later),
     ).not.toEqual([]);
+  });
+});
+
+describe("who a replay answers from its receipt (replayOutcome; T14, T19; FQ112)", () => {
+  it("answers the slot's owner from the receipt, whatever became of the slot or the day since", () => {
+    for (const more of [{}, { state: "released" as const }, { state: "expired" as const }, { expiresAt: NOW }]) {
+      const w = world({ reservations: { rsv_ben: slot("itv_ben", more) } });
+      expect(replayOutcome(w, "usr_ben", "rsv_ben"), JSON.stringify(more)).toBeUndefined();
+    }
+    // Held, revealed and closed days alike: the receipt answers, and the stored answer says nothing new.
+    const held = world({ members: { itv_ana: { leftAt: NOW.subtract({ hours: 1 }) } } });
+    expect(replayOutcome(held, "usr_ben", "rsv_ben")).toBeUndefined();
+  });
+
+  it("answers PROFILE_INCOMPLETE to an unfinished account, and the neutral not-found to anyone the slot isn't still the caller's", () => {
+    expect(replayOutcome(world({ accounts: { usr_ben: { name: null } } }), "usr_ben", "rsv_ben")).toBe(
+      PROFILE_INCOMPLETE,
+    );
+    expect(replayOutcome(world(), "usr_cleo", "rsv_ben")).toBe(NEUTRAL);
+    expect(replayOutcome(world(), "usr_zed", "rsv_ben")).toBe(NEUTRAL);
+    expect(replayOutcome(world(), "usr_ben", "rsv_nobody")).toBe(NEUTRAL);
+    for (const w of [
+      world({ members: { itv_ben: { leftAt: NOW } } }),
+      world({ members: { itv_ben: { leftAt: NOW.subtract({ hours: 1 }) }, itv_ben2: { account: "usr_ben" } } }),
+      world({ suspended: NOW }),
+      world({ sat: { status: "cancelled" } }),
+      world({ accounts: { usr_ben: { state: "deleting" } } }),
+    ]) {
+      expect(replayOutcome(w, "usr_ben", "rsv_ben")).toBe(NEUTRAL);
+    }
   });
 });
 

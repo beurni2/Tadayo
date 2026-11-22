@@ -17,6 +17,7 @@ import {
   type MadeUpload,
   type OwnUpload,
   type ServerNow,
+  type ToSign,
   type UploadAnswer,
 } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
@@ -24,7 +25,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { FAKE_SIGNED_SECONDS, fakeStorage, noStorage, type FakeStorage } from "../testing.ts";
-import type { UploadStorage } from "./storage.ts";
+import type { SignedPut, UploadStorage } from "./storage.ts";
 import { signedUploadBody, uploadBody } from "./uploads.ts";
 
 type Body = Record<string, unknown>;
@@ -73,14 +74,11 @@ describe("the upload's serializers against the contract's examples (T12, T55)", 
     const { signed_upload: signed, ...status } = value;
     expect(uploadBody(answerOf(status))).toEqual(status);
     // The upload lives 24 hours from its intent, and Storage's URL two hours from the same sample.
-    const sample = at(String(status["expires_at"])).subtract({ hours: 24 }) as ServerNow;
+    const expiresAt = at(String(status["expires_at"]));
+    const sample = expiresAt.subtract({ hours: 24 }) as ServerNow;
     const made = signedUploadBody(
-      {
-        url: String(signed["url"]),
-        headers: signed["headers"] as Record<string, string>,
-        lifetimeSeconds: FAKE_SIGNED_SECONDS,
-      },
-      sample,
+      { url: String(signed["url"]), lifetimeSeconds: FAKE_SIGNED_SECONDS },
+      { objectKey: "f3a9c1d2e8b7", contentType: "image/jpeg", at: sample, expiresAt },
     );
     expect(made).toEqual(signed);
     expect(Object.keys(made as Body)).toEqual(Object.keys(signed));
@@ -102,11 +100,52 @@ describe("the upload's serializers against the contract's examples (T12, T55)", 
       expires_at: "2026-11-07T21:00:00Z",
     });
     expect(uploadBody({ ...answer, state: "rejected" })).toMatchObject({ rejection: "unreadable" });
+    const sample = at("2026-11-06T21:00:00.999999Z") as ServerNow;
     const signed = signedUploadBody(
-      { url: "https://x.supabase.co/u", headers: {}, lifetimeSeconds: 60 },
-      at("2026-11-06T21:00:00.999999Z") as ServerNow,
+      { url: "https://x.supabase.co/u", lifetimeSeconds: 60 },
+      { objectKey: "o", contentType: "image/png", at: sample, expiresAt: sample.add({ hours: 24 }) },
     ) as Body;
     expect(signed["expires_at"]).toBe("2026-11-06T21:01:00Z");
+  });
+
+  it("gives the signed upload as good for Storage's lifetime, and never past the upload's own expires_at", () => {
+    const expiresAt = at("2026-11-07T21:00:00Z");
+    const until = (sample: Temporal.Instant, lifetimeSeconds: number) =>
+      (
+        signedUploadBody(
+          { url: "https://x.supabase.co/u", lifetimeSeconds },
+          { objectKey: "o", contentType: "image/jpeg", at: sample as ServerNow, expiresAt },
+        ) as Body
+      )["expires_at"];
+    // Two hours of Storage's from an hour before the upload lapses: the upload's own expiry, not 22:00.
+    expect(until(expiresAt.subtract({ hours: 1 }), 7200)).toBe("2026-11-07T21:00:00Z");
+    // Storage's lifetime ending a microsecond before the upload's, and at it: the earlier, rounded down.
+    expect(until(expiresAt.subtract({ seconds: 7200, microseconds: 1 }), 7200)).toBe("2026-11-07T20:59:59Z");
+    expect(until(expiresAt.subtract({ seconds: 7200 }), 7200)).toBe("2026-11-07T21:00:00Z");
+    expect(until(expiresAt.subtract({ hours: 24 }), 86_400)).toBe("2026-11-07T21:00:00Z");
+  });
+
+  it("names its headers itself, the upload's own type and upsert off, and passes on nothing else Storage's answer holds", () => {
+    const loud = {
+      url: "https://x.supabase.co/u",
+      lifetimeSeconds: 60,
+      headers: { authorization: "Bearer not-for-the-app", "x-upsert": "true" },
+      token: "not-for-the-app",
+    } as SignedPut;
+    const sample = at("2026-11-06T21:00:00Z") as ServerNow;
+    const made = signedUploadBody(loud, {
+      objectKey: "o",
+      contentType: "image/webp",
+      at: sample,
+      expiresAt: sample.add({ hours: 24 }),
+    });
+    expect(made).toEqual({
+      url: "https://x.supabase.co/u",
+      method: "PUT",
+      headers: { "Content-Type": "image/webp", "x-upsert": "false" },
+      expires_at: "2026-11-06T21:01:00Z",
+    });
+    expect(JSON.stringify(made)).not.toContain("not-for-the-app");
   });
 });
 
@@ -310,6 +349,12 @@ describe("what createUpload refuses before any transaction", () => {
 const OBJECT = "AbCdEfGhIjKlMnOpQrStUvWxYz012345";
 const SAMPLE = at("2026-11-06T21:00:00.123456Z") as ServerNow;
 const PENDING: Body = { id: "upl_ben_1", purpose: "drop_photo", state: "pending", expires_at: "2026-11-07T21:00:00Z" };
+const TO_SIGN: ToSign = {
+  objectKey: OBJECT,
+  contentType: "image/jpeg",
+  at: SAMPLE,
+  expiresAt: SAMPLE.add({ hours: 24 }),
+};
 const madeOf = (toSign: MadeUpload["toSign"]): MadeUpload => ({ body: PENDING as MadeUpload["body"], toSign });
 const ownOf = (state: UploadAnswer["state"]): OwnUpload => ({
   answer: { ...answerOf(PENDING), state },
@@ -340,16 +385,16 @@ describe("what createUpload answers", () => {
     let committed = false;
     const signing = storage.signUpload.bind(storage);
     const seenCommitted: boolean[] = [];
-    storage.signUpload = (objectKey, contentType) => {
+    storage.signUpload = (objectKey) => {
       seenCommitted.push(committed);
-      return signing(objectKey, contentType);
+      return signing(objectKey);
     };
     const answer = await appFor(
       () =>
         new Promise((resolve) =>
           setImmediate(() => {
             committed = true;
-            resolve(madeOf({ objectKey: OBJECT, at: SAMPLE }));
+            resolve(madeOf({ ...TO_SIGN, contentType: "image/webp" }));
           }),
         ),
       { storage },
@@ -357,7 +402,9 @@ describe("what createUpload answers", () => {
     const got = await answer(post(JSON.stringify({ ...PHOTO, content_type: "image/webp" })));
     expect(got).toMatchObject({ status: 201, headers });
     const body = JSON.parse(got.body) as Body & { signed_upload: Body };
-    expect(Object.keys(body)).toEqual(["id", "purpose", "state", "expires_at", "signed_upload"]);
+    // The command's answer comes from its receipt, whose keys Postgres orders (docs/LIMITATIONS.md, 2026-11-22),
+    // so only which keys there are is pinned here.
+    expect(Object.keys(body).sort()).toEqual(["expires_at", "id", "purpose", "signed_upload", "state"]);
     expect(body).toMatchObject(PENDING);
     expect(body.signed_upload).toEqual({
       url: expect.stringMatching(
@@ -376,11 +423,7 @@ describe("what createUpload answers", () => {
 
   it("signs a new URL for the same object on a replay while the upload is pending, and none once it isn't", async () => {
     const storage = fakeStorage();
-    const db = answering(
-      madeOf({ objectKey: OBJECT, at: SAMPLE }),
-      madeOf({ objectKey: OBJECT, at: SAMPLE }),
-      madeOf(null),
-    );
+    const db = answering(madeOf(TO_SIGN), madeOf(TO_SIGN), madeOf(null));
     const answer = await appFor(db.begin, { storage });
     const first = JSON.parse((await answer(post(JSON.stringify(PHOTO)))).body) as Body & { signed_upload: Body };
     const again = JSON.parse((await answer(post(JSON.stringify(PHOTO)))).body) as Body & { signed_upload: Body };
@@ -393,7 +436,7 @@ describe("what createUpload answers", () => {
 
   it("answers 503 with no body when Storage can't sign, and a retry under the same key signs", async () => {
     const storage = fakeStorage();
-    const db = answering(madeOf({ objectKey: OBJECT, at: SAMPLE }), madeOf({ objectKey: OBJECT, at: SAMPLE }));
+    const db = answering(madeOf(TO_SIGN), madeOf(TO_SIGN));
     const answer = await appFor(db.begin, { storage });
     storage.failing(true);
     expect(await answer(post(JSON.stringify(PHOTO)))).toEqual({
@@ -442,7 +485,7 @@ describe("what getUpload and completeUpload answer", () => {
     expect(JSON.parse((await answer(read())).body)).toEqual({ ...PENDING, state: "rejected", rejection: "too_large" });
   });
 
-  it("answers anyone else's upload, one that has lapsed, and an id that can't be one with the neutral not-found", async () => {
+  it("answers an upload the command finds no row for with the neutral not-found, and an id that can't be one before binding it", async () => {
     const db = recording();
     const answer = await appFor(db.begin, { clock: db.clock });
     expect(await answer(read("upl_nobody"))).toMatchObject(neutral);
@@ -498,8 +541,8 @@ describe("the log keeps no URL, token or object (T12, T52)", () => {
     const lines: string[] = [];
     const storage: FakeStorage = fakeStorage();
     const db = answering(
-      madeOf({ objectKey: OBJECT, at: SAMPLE }),
-      madeOf({ objectKey: OBJECT, at: SAMPLE }),
+      madeOf(TO_SIGN),
+      madeOf(TO_SIGN),
       ownOf("pending"),
       ownOf("pending"),
       ownOf("preparing").answer,

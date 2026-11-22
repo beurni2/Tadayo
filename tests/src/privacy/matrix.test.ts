@@ -132,6 +132,7 @@ import {
   madeProblems,
   PHOTO_BODY,
   readExpected,
+  replayOutcome,
   replayProblems,
   UPLOAD_NO_BODY,
   uploadExpected,
@@ -197,7 +198,10 @@ const SLOTS = new Map<string, { held: number; released: number; expired: number 
 /** By role: the answers in which Cleo's lapsed slot came back as the viewer's own (the role's test fills it). */
 const CLEOS_SLOT = new Map<string, number>();
 /** By role: what the uploads' table made, moved to preparing, refused as closed and found again (the role's test fills it). */
-const UPLOADS = new Map<string, { made: number; preparing: number; closed: number; later: number }>();
+const UPLOADS = new Map<
+  string,
+  { made: number; preparing: number; closed: number; later: number; replayed: number; signedLater: number }
+>();
 /**
  * The answers the invitation's table gives someone other than the cell's viewer, for each revision: the
  * signed-out page twice, the link's holder ten times, another member three times.
@@ -331,6 +335,28 @@ async function cleosLapsedSlot(tx: WorldTx, w: World): Promise<string> {
     UPDATE app.contribution_counters SET reserved_total = reserved_total + 1
      WHERE occurrence_id = ${w.day} AND interval_id = ${w.cleo.interval}`;
   if (counted.count !== 1) throw new Error("Cleo has no counter in the matrix's day");
+  return id;
+}
+
+/**
+ * A photo slot another member holds in Ana's Saturday, made after the role and before the state: Cleo's when
+ * the viewer is Ben, and Ben's for anyone else. It is held from ten minutes before the reveal to the reveal, so
+ * it is live while the day collects, counted on its holder's counter, and lapsed from the reveal on. Each role
+ * asks to upload under it in every phase (the uploads' table): it is never the viewer's, so every answer is the
+ * neutral not-found and nothing is made (T9, T12, T14).
+ */
+async function othersLiveSlot(tx: WorldTx, w: World, viewer: string): Promise<string> {
+  const holder = viewer === w.ben.user ? w.cleo : w.ben;
+  const id = `rsv_${randomBytes(16).toString("base64url")}`;
+  const reveal = AT.reveal.getTime();
+  await tx`
+    INSERT INTO app.reservations (id, occurrence_id, interval_id, media_class, request_key, created_at, expires_at)
+    VALUES (${id}, ${w.day}, ${holder.interval}, 'photo', ${randomUUID()}, ${new Date(reveal - 10 * 60_000)},
+            ${AT.reveal})`;
+  const counted = await tx`
+    UPDATE app.contribution_counters SET reserved_total = reserved_total + 1
+     WHERE occurrence_id = ${w.day} AND interval_id = ${holder.interval}`;
+  if (counted.count !== 1) throw new Error("the slot's holder has no counter in the matrix's day");
   return id;
 }
 
@@ -487,14 +513,17 @@ async function factsOf(
       id: string;
       owner: string;
       purpose: string;
+      reservation_id: string | null;
       state: WorldUpload["state"];
       rejection: string | null;
       expires_at: Temporal.Instant;
       object_key: string;
       content_type: string;
+      byte_size: number;
     }[]
   >`
-    SELECT id, owner_user_id AS owner, purpose, state, rejection, expires_at, object_key, content_type
+    SELECT id, owner_user_id AS owner, purpose, reservation_id, state, rejection, expires_at, object_key,
+           content_type, byte_size
       FROM app.uploads
      WHERE owner_user_id IN (SELECT user_id FROM app.memberships WHERE club_id IN ${db(clubs)})
         OR owner_user_id IN ${db([viewer ?? "", ...(options.accounts ?? [])])}`;
@@ -663,11 +692,13 @@ async function factsOf(
           {
             owner: row.owner,
             purpose: row.purpose,
+            reservation: row.reservation_id,
             state: row.state,
             rejection: row.rejection,
             expiresAt: row.expires_at,
             objectKey: row.object_key,
             contentType: row.content_type,
+            byteSize: row.byte_size,
           },
         ]),
       ),
@@ -802,9 +833,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // The answers in which Cleo's lapsed slot came back as the viewer's own. Asserted in the test after the roles.
       let cleosSlot = 0;
       // What the uploads' table did for this role: the uploads it made, those its completion moved to preparing,
-      // the refusals that the day had revealed (OCCURRENCE_CLOSED), and the reads in a later phase that found an
-      // upload made in an earlier one. Asserted in the test after the roles.
-      const uploads = { made: 0, preparing: 0, closed: 0, later: 0 };
+      // the refusals that the day had revealed (OCCURRENCE_CLOSED), the reads in a later phase that found an
+      // upload made in an earlier one, the retries in a later phase that got the first answer, and those of them
+      // that came with a new signed upload. Asserted in the test after the roles.
+      const uploads = { made: 0, preparing: 0, closed: 0, later: 0, replayed: 0, signedLater: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -817,6 +849,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           // The club's first days, before the role changes the club, as a leave or a join would meet them.
           const proposal = await addFirstDays(tx, w);
           const viewer = await role.make(tx, w);
+          const othersLive = await othersLiveSlot(tx, w, viewer);
           await state.make(tx, w, drop);
           // The viewer's own avatars, one not ready and one ready, and the drop's photo, which is no avatar.
           const pending = await newAvatar(plain(tx), viewer, "pending");
@@ -834,7 +867,16 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             upload,
             ...(await rosterTargets(tx, w)),
           };
-          return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "", cleos };
+          return {
+            w,
+            targets,
+            viewer,
+            pending: pending.id,
+            ready,
+            photo: photo?.upload_id ?? "",
+            cleos,
+            othersLive,
+          };
         });
         const [account] = await db<
           { state: string; age_confirmed: boolean; name: string | null; subject: string | null; version: number }[]
@@ -895,9 +937,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         // The first slot the viewer held in a phase, kept to the next phase, where it is given back after it
         // lapsed at the reveal (the reservations' table, below).
         let carried: string | undefined;
-        // The uploads the viewer made in this cell, read and completed again in each later phase (the uploads'
+        // The uploads the viewer made in this cell, with the key and slot each was made under and its first
+        // answer: each is read, completed and asked for again under its key in every later phase (the uploads'
         // table, below).
-        const madeUploads: string[] = [];
+        const madeUploads: { id: string; key: string; slot: string; answer: Answer }[] = [];
         const specs = operations
           .flatMap((operation) => specsFor(operation, cell.targets, authorization))
           .map((spec): Spec =>
@@ -1891,16 +1934,22 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             }
           }
           // The uploads' table (upload.ts), in every phase, after the reservations' table and before its slots are
-          // given back. First, every upload the viewer made in an earlier phase, read and completed: preparing while
-          // it lives, and nobody's once it lapsed (T12, T14). Then createUpload under slots that aren't the viewer's
-          // to upload under: Cleo's lapsed slot, Ben's slot given back, the slot the viewer held in the phase before
-          // (lapsed at the reveal), a link's slot the table holds, live, another club's slot and an id nobody has;
-          // each judged from the rows before it (T3, T4, T9, T14, T18) and making nothing (T19). Then, under the
-          // first slot the table held, live: an upload made, with its signed upload (T12); its retry under its key,
-          // a new URL for the same object (T19); another body under that key, which conflicts; the upload read;
-          // completed before its bytes are in Storage, which changes nothing; its bytes put; completed, now
-          // preparing; completed again; the retry again, with no URL now; read again; and another member's read and
-          // completion of it, which find nothing and change nothing (T9, T14).
+          // given back. First, every upload the viewer made in an earlier phase, read, completed and asked for again
+          // under its key: found while it lives and nobody's once it lapsed (T12, T14); preparing once its bytes were
+          // in; the retry the first answer while the slot's interval may still add to its day, with a new signed
+          // upload only while the upload is pending and lives, and the neutral not-found once it may not (T19).
+          // Then createUpload under slots that aren't the viewer's to upload under: Cleo's lapsed slot, Ben's slot
+          // given back, the slot the viewer held in the phase before (lapsed at the reveal), a link's slot the table
+          // holds, live, another member's photo slot, live while the day collects, another club's slot and an id
+          // nobody has; each judged from the rows before it (T3, T4, T9, T14, T18) and making nothing (T19). Then,
+          // under the first slot the table held, live: an upload made, with its signed upload (T12); its retry under
+          // its key, a new URL for the same object (T19); another body under that key, which conflicts; another
+          // upload under the same slot with a new key, which finds nothing, as the slot holds one photo (T17, T18);
+          // the upload read; completed before its bytes are in Storage, which changes nothing; its bytes put;
+          // completed, now preparing; completed again; the retry again, with no URL now; a new key again, which
+          // still finds nothing; read again; and another member's read and completion of it, which find nothing and
+          // change nothing (T9, T14). Last, under the table's other photo slot when it holds one, an upload made and
+          // left pending, its bytes never put, for the later phases to find, retry and fail to complete.
           const uploadSpec = (operationId: string): Spec => {
             const found = specs.find((spec) => spec.operation.id === operationId);
             if (found === undefined) throw new Error(`the contract has no ${operationId}`);
@@ -2018,9 +2067,30 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             });
           };
           for (const earlier of madeUploads) {
-            const answer = await readUpload(earlier, "an upload made in an earlier phase");
+            const answer = await readUpload(earlier.id, "an upload made in an earlier phase");
             if (getUploadGate === undefined && answer.status === 200) uploads.later += 1;
-            await completeUpload(earlier, "an upload made in an earlier phase, completed again");
+            await completeUpload(earlier.id, "an upload made in an earlier phase, completed again");
+            const previous = facts;
+            const { sent, answer: replay } = await uploadAsk(earlier.slot, earlier.key);
+            facts = await load();
+            const refused = replayOutcome(previous.world, cell.viewer, earlier.slot);
+            const problems =
+              createUploadGate !== undefined
+                ? pinnedProblems(replay, createUploadGate)
+                : refused !== undefined
+                  ? pinnedProblems(replay, refused)
+                  : replayProblems(earlier.answer, replay, previous.world, facts.world, now);
+            if (
+              (createUploadGate !== undefined || refused !== undefined) &&
+              (rowsSeen(facts.world.uploads) !== rowsSeen(previous.world.uploads) ||
+                rowsSeen(facts.world.reservations) !== rowsSeen(previous.world.reservations))
+            )
+              problems.push("a refused retry under its key made or changed an upload or a reservation (T19)");
+            tellSlot("createUpload", sent, replay, problems, "an upload made in an earlier phase, again under its key");
+            if (createUploadGate === undefined && refused === undefined && replay.status === 201) {
+              uploads.replayed += 1;
+              if ("signed_upload" in (JSON.parse(replay.body) as object)) uploads.signedLater += 1;
+            }
           }
           const linkSlot = heldNow.find((one) => facts.world.reservations.get(one)?.media === "external_video");
           for (const [slot, note] of [
@@ -2028,6 +2098,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             [cell.targets.reservation, "Ben's slot, given back"],
             [carried, "the slot held in the phase before, lapsed at the reveal"],
             [linkSlot, "a link's slot the table holds, live"],
+            [cell.othersLive, "another member's photo slot, live while the day collects"],
             [elsewhere.reservation, "another club's slot"],
             [freshId(), "a slot nobody has"],
           ] as const) {
@@ -2039,7 +2110,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             const made = await uploadStep(photoSlot, uploadKey, "an upload under the first slot the table held, live");
             const id = made.made;
             if (id !== undefined) {
-              madeUploads.push(id);
+              madeUploads.push({ id, key: uploadKey, slot: photoSlot, answer: made.answer });
               const again = async (note: string) => {
                 const previous = facts;
                 const { sent, answer } = await uploadAsk(photoSlot, uploadKey);
@@ -2062,6 +2133,11 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                   problems.push("another body under the upload's key changed an upload (T19)");
                 tellSlot("createUpload", sent, answer, problems, "another body under the upload's key");
               }
+              await uploadStep(
+                photoSlot,
+                randomUUID(),
+                "another upload under the same slot, a new key, while it's pending",
+              );
               await readUpload(id, "the upload made, read");
               await completeUpload(id, "the upload completed before its bytes are in Storage");
               const object = facts.world.uploads.get(id)?.objectKey;
@@ -2070,6 +2146,11 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               await completeUpload(id, "the upload completed with its bytes in Storage");
               await completeUpload(id, "the upload completed again");
               await again("the upload again under its key, preparing");
+              await uploadStep(
+                photoSlot,
+                randomUUID(),
+                "another upload under the same slot, a new key, while it's preparing",
+              );
               await readUpload(id, "the upload read, preparing");
               await byAnother(
                 { ...getUploadSpec, path: { upload_id: id } },
@@ -2080,6 +2161,19 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 "another member completes the viewer's upload",
               );
             }
+          }
+          const otherPhoto = heldNow.find(
+            (one) => one !== photoSlot && facts.world.reservations.get(one)?.media === "photo",
+          );
+          if (otherPhoto !== undefined) {
+            const otherKey = randomUUID();
+            const left = await uploadStep(
+              otherPhoto,
+              otherKey,
+              "an upload under the table's other photo slot, left pending",
+            );
+            if (left.made !== undefined)
+              madeUploads.push({ id: left.made, key: otherKey, slot: otherPhoto, answer: left.answer });
           }
           for (const slot of heldNow.filter((one) => one !== first.slot)) {
             const given = await giveBack(slot, "a slot held in the table, given back while it is live");
@@ -2319,31 +2413,40 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
 });
 
 describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
-  it("made, completed and found again the uploads each role's slots allow, and refused them once the day revealed", () => {
+  it("made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
-    // Counted by hand from the world (../matrix.ts), apart from the judge. An upload is made only under the first
+    // Counted by hand from the world (../matrix.ts), apart from the judge. An upload is made only under a photo
     // slot the reservations' table held, live, while the day is collecting: in the four states whose day takes
-    // slots, for the five roles that hold one (the reservations' table ran, above). Each is completed into
-    // preparing once, and found again in the two phases after (open, and past at the close), as it lives 24 hours
-    // from a microsecond before the reveal, and is nobody's a year on. From the reveal on, the day refuses an
-    // upload with OCCURRENCE_CLOSED to whoever owns the slot asked for: each of those five roles in the open phase,
-    // under the slot it held while collecting; the author in the three phases from the reveal under Ben's slot given
-    // back; and Cleo under Cleo's lapsed slot in the same three phases, as the member in the audience and once the
-    // author has blocked Cleo and left by the block (the slot is Cleo's first interval's: the reservations' table,
-    // above). Nobody else is refused for it, and nobody else makes one (T9, T14).
+    // slots, for the five roles that hold one (the reservations' table ran, above). Under the first slot the
+    // table held, in each of those four states; and under the table's other photo slot, left pending, wherever
+    // the role holds a second photo: the star, a member who joined after the commit and the rejoined member hold
+    // two photos and more in all four states, the member in the audience (whose link in the day leaves the
+    // photos free, and whose lapsed slot the reservations' table settled first) in all four, and the author,
+    // whose photo is in the drop, only in the state that withdrew it. A second upload under a slot that holds
+    // one, with a new key, finds nothing (T17, T18). The first upload is completed into preparing once; the one
+    // left pending never is, as its bytes are never put. Each upload is found again in the two phases after (open,
+    // and past at the close), as it lives 24 hours from a microsecond before the reveal, and is nobody's a year
+    // on; and its retry under its key gets the first answer in all three later phases, as its slot's interval may
+    // still add to the day (a revealed day refuses only something new), with a new signed upload only for the one
+    // left pending, while it lives: open and past (T12, T19). From the reveal on, the day refuses an upload with
+    // OCCURRENCE_CLOSED to whoever owns the slot asked for: each of those five roles in the open phase, under the
+    // slot it held while collecting; the author in the three phases from the reveal under Ben's slot given back;
+    // and Cleo under Cleo's lapsed slot in the same three phases, as the member in the audience and once the
+    // author has blocked Cleo and left by the block (the slot is Cleo's first interval's: the reservations'
+    // table, above). Another member's live slot is never the viewer's (othersLiveSlot). Nobody else is refused
+    // for it, and nobody else makes one (T9, T14).
     expect(UPLOADS.size).toBe(ROLES.length);
-    const each = { made: 4, preparing: 4, later: 8 };
-    expect(
-      [...UPLOADS].filter(([, table]) => table.made > 0 || table.preparing > 0 || table.closed > 0 || table.later > 0),
-    ).toEqual([
-      ["author", { ...each, closed: 4 + 12 }],
-      ["star", { ...each, closed: 4 }],
-      ["member in the audience", { ...each, closed: 4 + 12 }],
-      ["member who joined after the commit (T8)", { ...each, closed: 4 }],
-      ["rejoined member, a new interval (T8)", { ...each, closed: 4 }],
+    const one = { made: 4 + 1, preparing: 4, later: 2 * (4 + 1), replayed: 3 * (4 + 1), signedLater: 2 * 1 };
+    const two = { made: 4 + 4, preparing: 4, later: 2 * (4 + 4), replayed: 3 * (4 + 4), signedLater: 2 * 4 };
+    expect([...UPLOADS].filter(([, table]) => Object.values(table).some((n) => n > 0))).toEqual([
+      ["author", { ...one, closed: 4 + 12 }],
+      ["star", { ...two, closed: 4 }],
+      ["member in the audience", { ...two, closed: 4 + 12 }],
+      ["member who joined after the commit (T8)", { ...two, closed: 4 }],
+      ["rejoined member, a new interval (T8)", { ...two, closed: 4 }],
       [
         "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
-        { made: 0, preparing: 0, closed: 12, later: 0 },
+        { made: 0, preparing: 0, closed: 12, later: 0, replayed: 0, signedLater: 0 },
       ],
     ]);
   });

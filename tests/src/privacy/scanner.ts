@@ -244,6 +244,8 @@ export interface WorldUpload {
   owner: string;
   /** What it is for: a drop's photo, a replacement or an avatar (the contract's UploadPurpose). */
   purpose: string;
+  /** The reservation a drop's photo is made under; null for any other purpose. */
+  reservation: string | null;
   state: "pending" | "preparing" | "ready" | "held" | "rejected";
   /** Why it was rejected, once it was; null otherwise. */
   rejection: string | null;
@@ -253,6 +255,8 @@ export interface WorldUpload {
   objectKey: string;
   /** The type its owner declared, which the signed upload URL's Content-Type must be. */
   contentType: string;
+  /** The size its owner declared, in bytes. */
+  byteSize: number;
 }
 
 export interface WorldClub {
@@ -438,6 +442,11 @@ const UPLOAD_URL =
   /^https:\/\/[a-z]{20}\.supabase\.co\/storage\/v1\/object\/upload\/sign\/uploads\/([A-Za-z0-9_-]{32})\?token=([A-Za-z0-9._~%-]{1,2048})$/;
 /** How long a signed upload URL may be good for: a minute to a day (storage.ts's SIGNED_LIFETIME). */
 const UPLOAD_LIFETIME = { least: 60, most: 86_400 } as const;
+
+/** Whether `expires`, an instant the API gave in whole seconds, is `end` given so: `end` rounded down. */
+function endsWith(expires: Temporal.Instant, end: Temporal.Instant): boolean {
+  return expires.equals(end.round({ smallestUnit: "second", roundingMode: "floor" }));
+}
 
 /** `text` as an instant, or undefined when it isn't one. */
 function instantOf(text: string): Temporal.Instant | undefined {
@@ -1315,8 +1324,15 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
           canonicalHeaders(headers) !== canonicalHeaders({ "Content-Type": upload.contentType, "x-upsert": "false" })
         )
           find("world", where, "headers other than the declared Content-Type and x-upsert: false (T12)");
-        else if (lifetime === undefined || lifetime < UPLOAD_LIFETIME.least - 1 || lifetime > UPLOAD_LIFETIME.most)
-          find("world", where, "a signed upload good for less than a minute or more than a day");
+        else if (
+          expires === undefined ||
+          lifetime === undefined ||
+          lifetime > UPLOAD_LIFETIME.most ||
+          Temporal.Instant.compare(expires, upload.expiresAt) > 0
+        )
+          find("world", where, "a signed upload good for more than a day, or past its upload's own expiry");
+        else if (lifetime < UPLOAD_LIFETIME.least - 1 && !endsWith(expires, upload.expiresAt))
+          find("world", where, "a signed upload good for less than a minute, though its upload lives on");
         else ownUploadUrls.set(`${where}.url`, upload.objectKey);
       }
     }
