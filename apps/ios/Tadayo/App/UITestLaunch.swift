@@ -27,23 +27,33 @@
         /// makes one in memory (`NewClub`): a test can walk naming the club, its setup list, the
         /// name step and the waiting screen. A test seam, not product.
         static let create = "-TadayoUITestCreate"
+        /// The stand-in services with an account already named and in no club, where I have an
+        /// invite checks a pasted link (`Invited`): Debby's link to Sunday people shows its
+        /// roster, which Accept this roster leaves waiting on the members, and any other link is
+        /// one the server doesn't know. A test seam, not product.
+        static let invite = "-TadayoUITestInvite"
+        /// The link `Invited` knows: made up, no server made it.
+        static let invitedLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
         static let rightCode = "123456"
 
         @MainActor static func fakeGraph(
             hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false,
-            creating: Bool = false
+            creating: Bool = false, invited: Bool = false
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let made = creating ? NewClub() : nil
             let accounts = FakeAccounts(
                 nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [],
-                thenClubs: inClubs ? TwoClubs.relisted : nil, named: creating, made: made)
+                thenClubs: inClubs ? TwoClubs.relisted : nil, named: creating || invited,
+                made: made)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let clubs: any ClubService
             if inClubs {
                 clubs = TwoClubs()
             } else if let made {
                 clubs = made
+            } else if invited {
+                clubs = Invited()
             } else {
                 clubs = NoClubs()
             }
@@ -427,6 +437,86 @@
                 try await none.accept(
                     token, revisionID: revisionID, expectedVersion: expectedVersion, key: key)
             }
+        }
+
+        /// The club calls for Ben, in no club, holding Debby's invitation to Sunday people: its link
+        /// (`invitedLink`) shows the frames' roster, Ben first, and Accept this roster leaves it
+        /// waiting on the members; any other link is one the server doesn't know (`NOT_FOUND`).
+        /// Every other call is `NoClubs`'.
+        struct Invited: ClubService {
+            private let none = NoClubs()
+            private static let roster = InvitationRoster(
+                invitationID: "inv_debby", inviterName: "Debby", clubName: "Sunday people",
+                revisionID: "rev_sunday", revisionVersion: 1,
+                roster: [
+                    InvitationRosterEntry(name: "Maya", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Alex", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Sam", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Debby", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Nina", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Ben", kind: .candidate, isYou: true),
+                ], expiresAt: nil)
+
+            private static func knows(_ token: InvitationToken) -> Bool {
+                InvitationToken(link: UITestLaunch.invitedLink) == token
+            }
+
+            func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
+                guard Self.knows(token) else { throw .notFound }
+                return .open(Self.roster)
+            }
+
+            func accept(
+                _ token: InvitationToken, revisionID: String, expectedVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> InvitationAcceptance {
+                guard Self.knows(token) else { throw .notFound }
+                return .waiting
+            }
+
+            func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
+                async throws(APIFailure) -> ClubDetail
+            { try await none.createClub(name: name, timezone: timezone, key: key) }
+
+            func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
+                try await none.club(clubID)
+            }
+
+            func members(of clubID: String) async throws(APIFailure) -> MemberList {
+                try await none.members(of: clubID)
+            }
+
+            func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+                try await none.schedule(of: clubID)
+            }
+
+            func propose(
+                _ names: [String], in clubID: String, expectedRosterVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> RosterRevision {
+                try await none.propose(
+                    names, in: clubID, expectedRosterVersion: expectedRosterVersion, key: key)
+            }
+
+            func createInvitation(for candidateID: String, in clubID: String, key: IdempotencyKey)
+                async throws(APIFailure) -> InvitationLink
+            { try await none.createInvitation(for: candidateID, in: clubID, key: key) }
+
+            func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+                try await none.revokeInvitation(invitationID)
+            }
+
+            func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
+                try await none.rosterRevision(revisionID)
+            }
+
+            func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            { try await none.approve(revisionID, expectedVersion: expectedVersion, key: key) }
+
+            func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            { try await none.decline(revisionID, expectedVersion: expectedVersion, key: key) }
         }
 
         /// The club calls for an account with no club, which makes none: each fails as if no

@@ -3,8 +3,9 @@
 Branch `ios/b1-invitation`, from `main` at `c650a78` (#104). Written on 22 November 2026. The sixth PR of `docs/plans/ios-b1-clubs.md` section 4, split in two, as PRs 3 and 4 were:
 
 - **6a, this branch:** what the screens stand on, with no screen and no link handler. `TadayoCore`'s model of one invitation (checking it, accepting its exact roster, and every answer), the root's pending invitation kept through sign-in, the token of an accepted invitation kept for the account so it can be accepted again after a change (the contract's `MyInvitationState`), and the paste step's model.
-- **6b, `ios/b1-invitation-screens`, next:** the screens and their states (section 2), and the routes from I have an invite and from the club list (section 5).
+- **6b, `ios/b1-invitation-screens`, next:** the screens and their states (section 2), and the route from I have an invite (section 5).
 - **6c, `ios/b1-invitation-links`, after it:** the app's one link handler, which follows spike S6's run on build 6.1 (`docs/plans/ios-b0-spike-links.md`, section 1, point 3). It waits for the founder's device results, which say which way SwiftUI hands a universal link over. Split from 6b on 22 November 2026, after 6a merged, so the screens don't wait on the phone check; until 6c, an invitation reaches the screens only through I have an invite and the club list.
+- **6d, `ios/b1-invitation-list`, after handoff 9:** where the club list's accepted invitations show (`G03-waiting`, `G03-declined` and a changed roster from `listClubs`' `invitations`, with FQ136's way back to I have an invite), which no frame places yet. Split from 6b on 22 November 2026, so it's built from handoff 9's frames rather than built twice; until it merges, an account with no club and an accepted invitation sees the existing "This version of Tadayo can't show clubs yet." (`RootModel.Clubs.notInThisBuild`, FQ90), and an account with clubs doesn't see its accepted invitations.
 
 The split changes no product decision and no state the plan lists. It keeps the review of what's kept and when it's purged, where a mistake keeps a token too long or shows a club before sign-in, apart from the screens. Until 6b merges, nothing calls the new models. 6a's one change a person could notice is none: the keychain item gains an optional field that nothing writes until 6b.
 
@@ -85,12 +86,12 @@ The contract's `MyInvitationState` says what the app keeps: "Accepting a changed
 ## 2. What 6b builds
 
 - **The screens:** `G02-checking`, `G02-invitation`, `G02-invitation-failed`, `G02-changed`, `G02-changed-name` (and its relaunch line), `G02-expired`, `G02-full`, `G02-revoked`, `G03-waiting`, `G03-declined`, `G02-link-entry-signed-in` with its three lines, each in light, dark and the largest text, with VoiceOver readings. Built from spec, as new inventory rows asked for in design handoff 9: the check's failure (`G02-checking-failed`), the opening wait ("Opening {clubName}…"), and the link entry's lines.
-- **The link handler:** one, as S6's run says (Apple's documentation of `onOpenURL(perform:)` says SwiftUI hands a universal link over as a URL). The Lab's `labLinkReceipts()` goes, or the Lab's `OpenedLinks` is fed from the app's handler, so no build holds two.
-- **Where the club list's accepted invitations show:** no frame places `G03-waiting` or `G03-declined` on a root with no club, or beside a club. 6b builds it from spec and asks handoff 9.
+- **The link handler (6c since 22 November 2026):** one, as S6's run says (Apple's documentation of `onOpenURL(perform:)` says SwiftUI hands a universal link over as a URL). The Lab's `labLinkReceipts()` goes, or the Lab's `OpenedLinks` is fed from the app's handler, so no build holds two.
+- **Where the club list's accepted invitations show (6d since 22 November 2026):** no frame places `G03-waiting` or `G03-declined` on a root with no club, or beside a club. Handoff 9 asks for it (section 5), and 6d builds it from the frames that come back, or from spec if none have come by then.
 - **The inviter on `G02-full` and `G03-declined`:** handoff 1's frames say "Ask Ben for a new invitation if a place opens." and "Ben can start a new invitation later.", but the contract's `InvitationFull` and `InvitationEnded` carry no name. The api lane adds `inviter_name` to both, as required, on `api/b1-inviter-name` (its note of 11:28 UTC on 2026-11-22). This PR copies that branch's two examples into `ContractExample.swift` first, since the generated client would refuse the old ones once the field is required, and `main`'s client, whose schemas don't forbid other keys, ignores it until then (`ClubCallsTests.eachPreviewBecomesItsState` passes against both contracts, checked in the session). That PR merged as `6a6f0b0` (#107), and 6b's first commit reads the name: `InvitationPreview.full` and `.didNotGoAhead` carry it, and the model's `full` and `didNotGoAhead` states take it as given, so both screens always name the inviter, as handoff 1's frames do. FQ137 (the api lane's, from #107's review) asks whether `G03-declined`'s "{inviterName} can start a new invitation later." stays when the inviter has left the club; its default keeps handoff 1's words.
 - **The paste field** (from 6a's review): autocorrection and capitalization off and the URL content type, so a token doesn't reach the keyboard's learned words; `.privacySensitive()` for the app switcher's snapshot; the paste step torn down with the tabs at every session's end, Leave sign-in or the server's, since its model keeps the text and the invitation it last showed; and the paste step left once `opened` is set.
 - **Words to ask in handoff 9** (from 6a's review): a check that got an answer other than the invitation (a refusal, `429`, a server error), on `G02-checking-failed` and under the paste field; today only "no answer" has words (`link.checkFailure`, `linkEntry.cannotCheck`).
-- **A UI test** of the whole flow with stand-in services, and B1's device checks for the founder (a link from Messages opens the invitation; a link opened while signed out reaches it after sign-in).
+- **A UI test** of the whole flow with stand-in services, and B1's device checks for the founder (a link from Messages opens the invitation, 6c's; a link opened while signed out reaches it after sign-in, 6c's).
 
 ## 3. Questions and readings
 
@@ -101,3 +102,59 @@ The contract's `MyInvitationState` says what the app keeps: "Accepting a changed
 ## 4. Privacy checks for the review
 
 From `docs/plans/ios-b1-clubs.md` section 4, as they apply to 6a: before an acceptance has made a membership, the models carry the club's name, the inviter and the exact roster only; a token appears in no description, mirror, log or URL the app builds; a kept token is purged when its invitation joins or ends, when the server says it no longer works, and at Leave sign-in; a `NOT_FOUND` is one state; a decline names nobody; nothing of a club reaches the root before the account is complete.
+
+## 5. What 6b builds (`ios/b1-invitation-screens`)
+
+Branch `ios/b1-invitation-screens`, from `main` at `6a6f0b0` (#107), written on 22 November 2026. Its first commit reads the inviter's name on `G02-full` and `G03-declined` (section 2). The rest is the screens, in `apps/ios/Tadayo/Invitation/`, and the one route that reaches them before 6c and 6d: I have an invite.
+
+### The route
+
+- **I have an invite** on `G06-no-club` (Home) and `F01-no-club` (Friends) pushes `G02-link-entry-signed-in` onto that tab, with the model `RootModel.linkEntry()` makes (none, and nothing pushed, once the tabs no longer show a session). Its label and hint stay handoff 5's (`a11y.haveInvite`, `a11y.haveInvite.hint`).
+- **Continue** checks the link on the paste step itself: Continue busy and the field read-only while it's checked (`InvitationLinkEntryModel.isChecking`). An answer pushes the invitation's screen over it (`invitation`); Back returns to the field as it was (`returned()`). A club the account is already in closes the paste step once the root has read the list again (`opened`), so the tab shows the club through Home's own loading, with no line first (`handoff8.joinedLink`).
+- **On the invitation:** Not now, Done and Close invitation close the invitation and the paste step together, back to the tab, granting nothing (handoff 1's `IMPLEMENTATION.md`). Accept this roster that joins shows "Opening {clubName}…" while the root reads the list again (`handoff8.joined.loading`), then closes them, and Home shows the club. Retry checks again.
+- **These screens are the paste step's,** not the selected club's: like the create flow's, they stay while the list is read again and another club is selected (`TabsView`), and they go with the tabs at every session's end, so the text and the invitation the paste step keeps don't outlive it (section 2). Every one has the inline title "Invitation", the system's Back and no tab bar, as every frame draws them.
+
+### The screens and their states
+
+| State (snapshot name) | What shows it | Frame | Built |
+|---|---|---|---|
+| `G02-link-entry-signed-in` | the paste step, empty: Continue disabled | handoff 4 | received |
+| `G02-link-entry-signed-in-typed` | a link in the field | handoff 4's, with a link | received |
+| `G02-link-entry-signed-in-checking` | Continue busy, the field read-only | none | from spec: the primary action's busy form (`busyPrimary`) |
+| `G02-link-entry-signed-in-invalid`, `-clipboard-empty`, `-cannot-check` | the line under the field (`InvitationLinkEntryModel.Problem`) | none | from spec: handoff 4's `linkEntry.invalid`, `.clipboardEmpty` and `.cannotCheck`, in the failure line (`InlineError`), said once as it shows |
+| `G02-link-entry-signed-in-cannot-check-refused` | a check answered with a refusal, `429` or a server error | none | from spec: "Couldn’t check the invitation link. Try again.", handoff 8's rule that "Check your connection and try again." is said only when no answer came (`failureStates`), which handoff 9 confirms |
+| `G02-checking` | `.checking` | handoff 8, frame 8 | received |
+| `G02-checking-failed`, `-refused` | `.checkFailed` | none | from spec: the loading failure's form (`ClubLoadFailure`, handoff 8's frame 11), "Couldn’t check the invitation link." over handoff 8's `load` lines, with Retry |
+| `G02-invitation` | `.open` | 2.1's #02, a stand-in; handoff 8's frame 9 without its line | received |
+| `G02-invitation-accepting` | Accept on its way | none | from spec: `busyPrimary`, Not now kept |
+| `G02-invitation-failed`, `-refused` | `acceptFailure` | handoff 8, frame 9 | received |
+| `G02-changed` | `.changed` with no name change | handoff 2 | received |
+| `G02-changed-name` | `.changed(_, .from(name))` | handoff 8, frame 15 | received |
+| `G02-changed-name-relaunch` | `.changed(_, .notHeld)` | none | from spec: frame 15 with `nameChanged.explanationAfterRelaunch` |
+| `G02-expired` | `.expired` | handoff 1 | received |
+| `G02-full` | `.full` | handoff 1 | received |
+| `G02-revoked` | `.unavailable` | handoff 4 | received |
+| `G03-waiting` | `.waiting` | handoff 2 | received |
+| `G03-declined` | `.didNotGoAhead` | handoff 1 | received |
+| `G02-opening` | `.opening` | none | from spec: `G02-checking`'s form, "Opening {clubName}…" alone |
+
+Each in light, dark and the largest text (`ScreenSnapshot`), pushed onto a stack as the tab pushes it. `.reopenLink` is the club list's (6d), which sends the person to I have an invite (FQ136); nothing in 6b makes it.
+
+### How they're drawn
+
+- **The roster** (`invitationRoster`, `invitationRosterRow`): every entry the server sends, once each, the viewer first (`InvitationRoster.viewerFirst`), each a 36-point avatar with the initial and the name, "· You" on the viewer's (`RosterRow`). On `G02-changed-name` the viewer's row adds "Proposed by {inviterName}" and the Proposed tag (`proposedMemberTag`), from `inviter_name` (FQ84), and the roster has "{clubName} · {count} current members" over it, the count of its members (`later.invitation.count`), as frame 15 draws them. Another candidate's row shows the Proposed tag alone, since `InvitationRosterEntry` names no proposer; no frame draws one, so it's built from the contract (`proposedLabel`). The other rosters show no tag on the viewer's row, as frames 9 and handoff 2's `G02-changed` draw it.
+- **Accept this roster and Not now** are pinned under the scrolling roster, the primary action over a text action. A failed Accept keeps the roster and both actions, says its line once, politely, and keeps the focus on Accept (`failureStates.accept`).
+- **The ended states** (`G02-expired`, `-full`, `-revoked`, `G03-declined`): a setup screen's title and line (`SetupHeading`), and Close invitation pinned, with handoff 5's hint "Return to {destinationName}." naming the tab it returns to (`a11y.closeInvitation.hint`). `G03-waiting`: the club's name as an eyebrow, the title and line, "Waiting for club approval" after the `clock` symbol, the boundary line, and Done pinned. No approval count, list or name (T33, book p30).
+- **The paste field:** autocorrection and capitalization off, the URL keyboard and content type, `.privacySensitive()` (section 2); the system's paste control (`PasteButton`, T45), which reads the clipboard only when tapped (handoff 2). The field doesn't take the focus on arrival, as the frame draws no keyboard.
+- **What VoiceOver says:** `G02-checking` and `G02-opening` say their words once, politely, as they show; a failure says its title and line once (`ClubLoadFailure`'s rule); the roster's rows read their name, "you" for the viewer, and on a proposed row "Proposed by {name}. Proposed." (`proposed.row.vo`), as hosted tests read them (`AccessibilityElements`).
+
+### The tests
+
+- **Snapshots** (`InvitationSnapshotTests`): every state in the table.
+- **Hosted readings:** each roster row's one element and words, the paste step's controls, Close invitation's hint, the failure lines said once.
+- **A UI test** (`InvitationUITests`) with stand-in services (`UITestLaunch`): I have an invite, paste a link, Continue, the roster, Accept this roster, `G03-waiting`, Done, back on Home; and a link the server doesn't know, `G02-revoked`, Close invitation.
+- **Linux:** none new for the models (6a's), unless the routes need one.
+
+### Design handoff 9
+
+`docs/design/handoff-9/handoff-9-brief.md` holds it, with the text to paste beside it: frames for the states above that have none (`G02-checking-failed`, `G02-opening`, the paste step's lines and its checking form), the club list's accepted invitations (6d), the signed-out invitation page's checking and failure states (`G02-web-checking`, `G02-web-failed`, built from spec by the api lane's #94), and the words for a check that got an answer other than the invitation. It also gathers what the ios lane's needs list keeps for handoff 9 (`docs/design/handoff-7/ios-lane-needs.md` sections 12 to 14): the setup list's four states that #104 built from spec (frames 14 to 17), Welcome with 2.1's "Already here? Sign in" (frames 18 to 20) and three answers in words (`G01-create`'s words, a name over 40 characters, Leave club's place). 20 frames in all.

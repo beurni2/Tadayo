@@ -481,6 +481,54 @@
         }
       }
     },
+    "roster.proposed" : {
+      "comment" : "handoff 8 proposed.tag: the Proposed tag (proposedMemberTag) on an invitation roster's proposed person",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proposed"
+          }
+        }
+      }
+    },
+    "roster.proposed.vo" : {
+      "comment" : "built from spec: handoff 8 proposed.row.vo with no proposer, for a proposed person the roster names no proposer for (InvitationRosterEntry); asked in design handoff 9",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@. Proposed."
+          }
+        }
+      }
+    },
+    "roster.proposedBy" : {
+      "comment" : "handoff 8 proposed.by ({name}): under the viewer's name on G02-changed-name (FQ84)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proposed by %@"
+          }
+        }
+      }
+    },
+    "roster.proposedBy.vo" : {
+      "comment" : "handoff 8 proposed.row.vo ({name}, {proposerName}); the name is person.self.vo's for the viewer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. Proposed by %2$@. Proposed."
+          }
+        }
+      }
+    },
     "roster.row.vo" : {
       "comment" : "The members list's row as VoiceOver reads it (G05-members): the person as handoff 5's calendar.person.self.vo speaks them, then their weekdays, as sentences, as handoff 5's friends.row.vo reads a Friends row",
       "extractionState" : "manual",

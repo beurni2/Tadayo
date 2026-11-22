@@ -1129,6 +1129,438 @@
         }
       }
     },
+    "invitation.accept" : {
+      "comment" : "handoff 8 invitation.accept",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept this roster"
+          }
+        }
+      }
+    },
+    "invitation.accept.failed.network" : {
+      "comment" : "handoff 8 accept.failed.network: G02-invitation-failed, said once, politely, focus kept on Accept",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t accept this roster. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "invitation.accept.failed.refused" : {
+      "comment" : "handoff 8 accept.failed.refused",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t accept this roster. Try again."
+          }
+        }
+      }
+    },
+    "invitation.boundary" : {
+      "comment" : "handoff 8 invitation.boundary (G02-invitation) and handoff 2's G03-waiting line, the same words",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You’ll see only drops shared after joining."
+          }
+        }
+      }
+    },
+    "invitation.changed.body" : {
+      "comment" : "handoff 1 and 2 screen-copy, G02-changed ({clubName})",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The people in %@ have changed."
+          }
+        }
+      }
+    },
+    "invitation.changed.footer" : {
+      "comment" : "handoff 2 screen-copy, G02-changed, and handoff 8 nameChanged.footer, the same words",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept this exact roster to continue. You’ll see only drops shared after joining."
+          }
+        }
+      }
+    },
+    "invitation.changed.title" : {
+      "comment" : "handoff 1 and 2 screen-copy, G02-changed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the new roster"
+          }
+        }
+      }
+    },
+    "invitation.checkFailed.title" : {
+      "comment" : "built from spec: G02-checking-failed's title, the first sentence of handoff 4 link.checkFailure, over load.network or load.refused (handoff 8's rule: 'Check your connection' only when no answer came); asked in design handoff 9",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t check the invitation link."
+          }
+        }
+      }
+    },
+    "invitation.checkFirst" : {
+      "comment" : "handoff 8 invitation.checking.explanation (G02-checking) and handoff 4 link.signedIn.helper (G02-link-entry-signed-in), the same words",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We’ll check the link before showing the club or its people."
+          }
+        }
+      }
+    },
+    "invitation.checking" : {
+      "comment" : "handoff 8 invitation.checking: G02-checking, said once, politely, as it shows",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking invitation…"
+          }
+        }
+      }
+    },
+    "invitation.close" : {
+      "comment" : "handoff 4 unavailable.primary and handoff 5 a11y.closeInvitation: G02-expired, -full, -revoked, G03-declined",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close invitation"
+          }
+        }
+      }
+    },
+    "invitation.close.hint" : {
+      "comment" : "handoff 5 a11y.closeInvitation.hint ({destinationName}: the tab it returns to, Home or Friends)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to %@."
+          }
+        }
+      }
+    },
+    "invitation.declined.body" : {
+      "comment" : "handoff 1 screen-copy, G03-declined ({inviterName}, as the club last knew them; FQ137's default)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can close this invitation. %@ can start a new invitation later."
+          }
+        }
+      }
+    },
+    "invitation.declined.title" : {
+      "comment" : "handoff 1 screen-copy, G03-declined: never who declined (book p30)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation didn’t go ahead."
+          }
+        }
+      }
+    },
+    "invitation.done" : {
+      "comment" : "handoff 2 screen-copy, G03-waiting: returns to the tab (handoff 1)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "invitation.expired.body" : {
+      "comment" : "handoff 1 screen-copy, G02-expired ({inviterName})",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask %@ for a new invitation link."
+          }
+        }
+      }
+    },
+    "invitation.expired.title" : {
+      "comment" : "handoff 1 screen-copy, G02-expired",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That invitation has expired."
+          }
+        }
+      }
+    },
+    "invitation.full.body" : {
+      "comment" : "handoff 1 screen-copy, G02-full ({inviterName}); no waitlist",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It already has six members. Ask %@ for a new invitation if a place opens."
+          }
+        }
+      }
+    },
+    "invitation.full.title" : {
+      "comment" : "handoff 1 screen-copy, G02-full",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This club is full."
+          }
+        }
+      }
+    },
+    "invitation.inviter" : {
+      "comment" : "handoff 8 invitation.inviter ({inviterName})",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ invited you."
+          }
+        }
+      }
+    },
+    "invitation.inviterTo" : {
+      "comment" : "handoff 8 nameChanged.inviter ({inviterName}, {clubName}) and handoff 2's G02-changed ('Debby invited you to Sunday people.'), the same words",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ invited you to %2$@."
+          }
+        }
+      }
+    },
+    "invitation.nameChanged.afterRelaunch" : {
+      "comment" : "handoff 8 nameChanged.explanationAfterRelaunch: G02-changed-name-relaunch",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The updated roster now shows your profile name. Review it before accepting again."
+          }
+        }
+      }
+    },
+    "invitation.nameChanged.explanation" : {
+      "comment" : "handoff 8 nameChanged.explanation ({previousName}): only the name this app showed (invitationRoster.changedName)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The invitation was made for %@. The updated roster now shows your name."
+          }
+        }
+      }
+    },
+    "invitation.nameChanged.title" : {
+      "comment" : "handoff 8 nameChanged.title: G02-changed-name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the updated roster"
+          }
+        }
+      }
+    },
+    "invitation.nav" : {
+      "comment" : "handoff 4 link.nav and unavailable.nav: every invitation screen's inline title (G02, G03)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitation"
+          }
+        }
+      }
+    },
+    "invitation.notNow" : {
+      "comment" : "handoff 8 invitation.notNow: grants nothing (handoff 1)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        }
+      }
+    },
+    "invitation.opening" : {
+      "comment" : "handoff 8 joined.loading ({clubName}): G02-opening, built from spec in G02-checking's form, said once, politely",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opening %@…"
+          }
+        }
+      }
+    },
+    "invitation.roster.club" : {
+      "comment" : "handoff 8 screen-copy, G02-changed-name: '{clubName} · {count}' over the roster",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "invitation.roster.count.one" : {
+      "comment" : "handoff 8 later.invitation.count.one",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 current member"
+          }
+        }
+      }
+    },
+    "invitation.roster.count.other" : {
+      "comment" : "handoff 8 later.invitation.count.other",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld current members"
+          }
+        }
+      }
+    },
+    "invitation.title" : {
+      "comment" : "handoff 8 invitation.title ({clubName}): G02-invitation, G02-invitation-failed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join %@"
+          }
+        }
+      }
+    },
+    "invitation.unavailable.body" : {
+      "comment" : "handoff 4 unavailable.body: no name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask for a new invitation link."
+          }
+        }
+      }
+    },
+    "invitation.unavailable.title" : {
+      "comment" : "handoff 4 unavailable.title: G02-revoked, for an unknown, revoked, replaced or used link (T14, FQ59)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation isn’t available."
+          }
+        }
+      }
+    },
+    "invitation.waiting.body" : {
+      "comment" : "handoff 2 screen-copy, G03-waiting",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The existing members need to approve before you can join."
+          }
+        }
+      }
+    },
+    "invitation.waiting.status" : {
+      "comment" : "handoff 2 screen-copy, G03-waiting: no count, list or name (T33)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for club approval"
+          }
+        }
+      }
+    },
+    "invitation.waiting.title" : {
+      "comment" : "handoff 2 screen-copy, G03-waiting",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your acceptance is saved."
+          }
+        }
+      }
+    },
     "invite.accepted" : {
       "comment" : "handoff 4 invite.accepted",
       "extractionState" : "manual",
@@ -1545,6 +1977,138 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Who is it for?"
+          }
+        }
+      }
+    },
+    "linkEntry.body" : {
+      "comment" : "handoff 4 link.body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste the link, or open it where it was shared."
+          }
+        }
+      }
+    },
+    "linkEntry.cannotCheck" : {
+      "comment" : "handoff 4 linkEntry.cannotCheck and link.checkFailure: no answer came",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t check the invitation link. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "linkEntry.cannotCheck.refused" : {
+      "comment" : "built from spec: an answer other than the invitation (a refusal, 429, a server error), handoff 8's rule applied to linkEntry.cannotCheck; asked in design handoff 9",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t check the invitation link. Try again."
+          }
+        }
+      }
+    },
+    "linkEntry.clipboardEmpty" : {
+      "comment" : "handoff 4 linkEntry.clipboardEmpty",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There isn’t an invitation link to paste. Copy the link and try again."
+          }
+        }
+      }
+    },
+    "linkEntry.continue" : {
+      "comment" : "handoff 4 link.continue",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "linkEntry.continue.vo" : {
+      "comment" : "handoff 4 link.continue.vo: Continue's label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the invitation link."
+          }
+        }
+      }
+    },
+    "linkEntry.invalid" : {
+      "comment" : "handoff 4 linkEntry.invalid: built from spec under the field, said once",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That doesn’t look like a Tadayo invitation link. Check the link and try again."
+          }
+        }
+      }
+    },
+    "linkEntry.label" : {
+      "comment" : "handoff 4 link.label and link.field.vo",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitation link"
+          }
+        }
+      }
+    },
+    "linkEntry.paste.vo" : {
+      "comment" : "handoff 4 link.paste.vo: the system's paste control's label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste an invitation link."
+          }
+        }
+      }
+    },
+    "linkEntry.placeholder" : {
+      "comment" : "handoff 4 link.placeholder",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste invitation link"
+          }
+        }
+      }
+    },
+    "linkEntry.title" : {
+      "comment" : "handoff 4 link.title: G02-link-entry-signed-in",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have an invitation?"
           }
         }
       }

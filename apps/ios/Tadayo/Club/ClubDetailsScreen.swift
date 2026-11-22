@@ -5,7 +5,8 @@ import TadayoDesign
 /// Where a club tab's stack goes from the tab: Club details, then its members list
 /// (`docs/plans/ios-b1-club-details.md` section 1); or, from Create a club, naming the club, its
 /// setup list, the name step over it, and the waiting screen (`docs/plans/ios-b1-create.md`
-/// section 7).
+/// section 7); or, from I have an invite, the paste step and the invitation it found
+/// (`docs/plans/ios-b1-invitation.md` section 5).
 enum ClubRoute: Hashable {
     case details
     case members
@@ -13,13 +14,24 @@ enum ClubRoute: Hashable {
     case invitations
     case inviteName
     case pending
+    case linkEntry
+    case invitation
 
     /// A screen of the club being made, which isn't the selected club's: it stays while another
     /// club is selected or the list is read again.
     var isCreateFlow: Bool {
         switch self {
-        case .details, .members: false
+        case .details, .members, .linkEntry, .invitation: false
         case .create, .invitations, .inviteName, .pending: true
+        }
+    }
+
+    /// A screen of I have an invite, which isn't the selected club's either: it stays while the
+    /// list is read again, as an acceptance that joins reads it.
+    var isInvitationFlow: Bool {
+        switch self {
+        case .linkEntry, .invitation: true
+        default: false
         }
     }
 }
@@ -277,7 +289,9 @@ struct ClubLoading: View {
 struct ClubLoadFailure: View {
     let title: LocalizedStringResource
     let failure: ClubDetailsModel.Failure
-    let retryHint: LocalizedStringResource
+    /// Retry's hint, or nil where no words are given for one (`G02-checking-failed`, asked in
+    /// design handoff 9).
+    let retryHint: LocalizedStringResource?
     let retry: @MainActor () async -> Void
 
     var body: some View {
@@ -292,7 +306,7 @@ struct ClubLoadFailure: View {
                     Text("common.retry")
                 }
                 .buttonStyle(.tadayoPrimary)
-                .accessibilityHint(Text(retryHint))
+                .accessibilityHint(retryHint.map { Text($0) } ?? Text(verbatim: ""))
             }
         }
         .announcing(spoken, initial: true)

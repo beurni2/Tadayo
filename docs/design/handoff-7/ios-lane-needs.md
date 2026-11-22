@@ -126,14 +126,14 @@ From the PR that makes iOS 26 the app's minimum and draws the snapshots on iOS 2
 
 ## 12. Left over from handoff 8's check (ios/b1-design-handoff-8, 20 November 2026)
 
-What the check of handoff 8's export (`docs/design/handoff-8/check/handoff-8-check.md`, section 4) leaves for the next brief. Until Claude Design answers, the build keeps what `design/reference/INVENTORY.md`'s Known differences ("Handoff 8") record. Nothing here needs a founder answer.
+What the check of handoff 8's export (`docs/design/handoff-8/check/handoff-8-check.md`, section 4) leaves for the next brief. Until Claude Design answers, the build keeps what `design/reference/INVENTORY.md`'s Known differences ("Handoff 8") record. Nothing here needs a founder answer. Asked in design handoff 9 (`docs/design/handoff-9/handoff-9-brief.txt`, section E: frames 18 to 20 for item 61, words for item 62).
 
 61. **Welcome's sign-in link.** 2.1's `A01-welcome` has "Already here? Sign in" under I have an invite, the way a person with an account who is signed out, on a new phone or after a reinstall, reaches sign-in. Handoff 8's frames 1 to 3 leave it out, and `handoff8.replaces.welcome` says the redraw changes the headline and the explanation only. Built (`ios/b1-welcome`): the link below the two routes, as 2.1 draws it, and in the one scrolling column at the largest text. Draw Welcome with it, light, dark and at accessibility 5, or say how such a person reaches sign-in.
 62. **Leave club's place on Club details.** Frame 16 (`G05-club-details-active`) centres Leave club near the foot. 2.1's `G05-club-details` and handoff 6's `G05-club-details-paused` put it at the leading edge under the list, as handoff 7 put text actions (`handoff-7-check.md`, the leading text actions). Built: at the leading edge. Say which holds, and why.
 
 ## 13. For handoff 9, from the api lane's invitation page (ios/b0-spike-links, 21 November 2026)
 
-The api lane built the signed-out invitation page's two states with no render, `G02-web-checking` and `G02-web-failed`, from the spec and the copy (`apps/web`, #94), and asked for them in the next handoff (`docs/PROGRESS.md`, its "Needs from the other lane"). They are built from spec in `design/reference/INVENTORY.md` until a frame arrives. The design handoffs are the ios lane's (`docs/MILESTONES.md`, "Lanes"), so the api lane's needs come here through `docs/PROGRESS.md`. Handoff 9's brief gathers this item with section 12's items 61 and 62.
+The api lane built the signed-out invitation page's two states with no render, `G02-web-checking` and `G02-web-failed`, from the spec and the copy (`apps/web`, #94), and asked for them in the next handoff (`docs/PROGRESS.md`, its "Needs from the other lane"). They are built from spec in `design/reference/INVENTORY.md` until a frame arrives. The design handoffs are the ios lane's (`docs/MILESTONES.md`, "Lanes"), so the api lane's needs come here through `docs/PROGRESS.md`. Handoff 9's brief gathers this item with section 12's items 61 and 62. Asked in design handoff 9 (`docs/design/handoff-9/handoff-9-brief.txt`, section C, frames 12 and 13, with the block below as it stands).
 
 63. **The invitation page while it checks, and when the check fails.** The api lane's block, from `docs/plans/api-b0-spike-links-web.md` section 5, goes into the brief as it stands:
 
@@ -152,7 +152,7 @@ Say for each: the type role of each line, the gaps, whether Retry is a text link
 
 ## 14. From creating a club and its invitations (ios/b1-create, 21 November 2026)
 
-`docs/plans/ios-b1-create.md` sections 2 and 3. The screens are built by `ios/b1-create-screens` from the contract and the nearest drawn variants meanwhile, each `built from spec` in `design/reference/INVENTORY.md` until a frame arrives.
+`docs/plans/ios-b1-create.md` sections 2 and 3. The screens are built by `ios/b1-create-screens` from the contract and the nearest drawn variants meanwhile, each `built from spec` in `design/reference/INVENTORY.md` until a frame arrives. Asked in design handoff 9 (`docs/design/handoff-9/handoff-9-brief.txt`, section D: frames 14 to 17 for items 68, 64, 65 and 69, words for items 66 and 67).
 
 64. **A live link the app doesn't hold, in the setup list.** After a reinstall or on another phone, the app no longer holds a candidate's live link, and the contract's `InvitationLink` has it offer Create new link, which replaces the link the candidate may already have. Built: handoff 4's Not shared status with Create new link in the action's place and Revoke link under More. Draw the row, and say whether it reads Not shared, or something that says the link isn't on this phone (handoff 8's `links.used.missing` says it for a used link).
 65. **An expired link in the setup list** (`CandidateLinkState` `expired`, FQ71's seven days). No frame or copy has it. Built: "Link expired" with handoff 4's `xmark.circle` and Create new link, as the revoked row is. Draw it, and give its words.
