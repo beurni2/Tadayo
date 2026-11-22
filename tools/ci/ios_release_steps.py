@@ -24,7 +24,9 @@ takes only the archive, as data, and runs only on a dev upload.
 
   build job  what it does
   plan       Reads the inputs and the team, says what the run will do, and fails before any
-             build when something is missing or misshapen.
+             build when something is missing or misshapen; for an upload, also unless the
+             site's apple-app-site-association (SITE_ASSOCIATION) names the app under the run's
+             team, and only it, so the build's invitation links open it.
   toolchain  ios_steps.py's: the pinned Xcode and its Swift (tools/ci/toolchain.py).
   xcodegen   ios_steps.py's: the pinned XcodeGen makes the project from apps/ios/project.yml.
   archive    `xcodebuild archive` for a generic iPhone, in the environment's configuration, with
@@ -39,9 +41,9 @@ takes only the archive, as data, and runs only on a dev upload.
              activation rule is the dictionary apps/ios/project.yml declares, never a predicate
              string; both carry the app group in their entitlements, and no entitlement the
              project doesn't declare, but for the app's one associated domain, which the app
-             alone may hold, as exactly applinks:tadayo.app (ASSOCIATED_DOMAINS); the archive
-             names this app as its own and carries no other app, extension or service bundle
-             (.app, .appex, .xpc) than the share extension, though its frameworks and
+             must hold and alone may, as exactly applinks:tadayo.app (ASSOCIATED_DOMAINS); the
+             archive names this app as its own and carries no other app, extension or service
+             bundle (.app, .appex, .xpc) than the share extension, though its frameworks and
              executables are not read; and the fixture photographs are all there in a dev
              archive and none of them in a prod one (T46; TECH-DESIGN section 4, "The Lab").
   pack       Puts the archive in one tar file for the workflow to hand to the sign job. Only
@@ -61,7 +63,7 @@ takes only the archive, as data, and runs only on a dev upload.
              Xcode-managed profiles). Then reads the exported app's entitlements: the team's
              application identifier, the app group, no get-task-allow, and no entitlement the
              project doesn't declare beyond what signing adds, the app's associated domain
-             allowed as in check. What is uploaded next is signed the same way from the same
+             required as in check. What is uploaded next is signed the same way from the same
              archive.
   upload     `xcodebuild -exportArchive` with `destination: upload`.
 
@@ -139,10 +141,14 @@ ARCHIVED_ENTITLEMENTS = {"com.apple.security.application-groups", "application-i
                          "com.apple.developer.team-identifier", "get-task-allow"}
 EXPORTED_ENTITLEMENTS = ARCHIVED_ENTITLEMENTS | {"beta-reports-active", "keychain-access-groups"}
 # The app's one associated domain, for invitation links (spike S6; B1's invitations), as the site's
-# apple-app-site-association names the app (apps/web/public/.well-known/). The app alone may hold
-# it, and only with exactly this value: the share extension opens no links.
+# apple-app-site-association names the app (SITE_ASSOCIATION). The app must hold it, with exactly
+# this value, so a build that lost it fails rather than shipping links that open Safari; the share
+# extension opens no links and holds none.
 ASSOCIATED_DOMAINS_KEY = "com.apple.developer.associated-domains"
 ASSOCIATED_DOMAINS = ["applinks:tadayo.app"]
+# The site's file that lets iOS open tadayo.app's links in the app, which names the app by its
+# team and bundle id: an upload's team must be the one it names.
+SITE_ASSOCIATION = "apps/web/public/.well-known/apple-app-site-association"
 # Folders and suffixes of code an app can carry besides itself. The share extension is the one.
 NESTED_SUFFIXES = (".app", ".appex", ".xpc")
 ARCHIVED_APP = "Applications/" + ios_steps.APP_PRODUCT
@@ -247,7 +253,7 @@ def icon_files(info):
 def entitlement_problems(entitlements, team=None, bundle_id=None, app=False):
     """What's wrong with a bundle's entitlements. With a team, the bundle is signed for App Store
     Connect, and its team, its application identifier (`<team>.<bundle id>`) and get-task-allow
-    are checked too. The app (`app`) may also hold its associated domain, and only that one."""
+    are checked too. The app (`app`) must hold its associated domain, and only that one."""
     problems = []
     allowed = ARCHIVED_ENTITLEMENTS if team is None else EXPORTED_ENTITLEMENTS
     if app:
@@ -255,11 +261,12 @@ def entitlement_problems(entitlements, team=None, bundle_id=None, app=False):
     extra = sorted(str(key) for key in entitlements if key not in allowed)
     if extra:
         problems.append("it holds entitlements the project doesn't declare: " + ", ".join(extra))
-    if app and ASSOCIATED_DOMAINS_KEY in entitlements:
-        if entitlements.get(ASSOCIATED_DOMAINS_KEY) != ASSOCIATED_DOMAINS:
-            problems.append(f"its associated domains are "
-                            f"{entitlements.get(ASSOCIATED_DOMAINS_KEY)!r}, not "
-                            f"{ASSOCIATED_DOMAINS!r}")
+    if app and ASSOCIATED_DOMAINS_KEY not in entitlements:
+        problems.append(f"it doesn't hold its associated domain, {ASSOCIATED_DOMAINS!r}")
+    elif app and entitlements.get(ASSOCIATED_DOMAINS_KEY) != ASSOCIATED_DOMAINS:
+        problems.append(f"its associated domains are "
+                        f"{entitlements.get(ASSOCIATED_DOMAINS_KEY)!r}, not "
+                        f"{ASSOCIATED_DOMAINS!r}")
     if entitlements.get("com.apple.security.application-groups") != [APP_GROUP]:
         problems.append("its app groups are "
                         f"{entitlements.get('com.apple.security.application-groups')!r}, "
@@ -414,6 +421,24 @@ class Steps:
                              "letters and digits")
         return team
 
+    def site_names(self, team):
+        """Raises ValueError unless the site's apple-app-site-association names the app under
+        `team`, and only it: else the upload's links would open Safari, iOS finding no app of the
+        team the build is signed for. The team isn't printed."""
+        try:
+            with open(os.path.join(self.root, *SITE_ASSOCIATION.split("/"))) as f:
+                site = json.load(f)
+            ids = []
+            for details in site["applinks"]["details"]:
+                ids += details.get("appIDs", [])
+                if "appID" in details:
+                    ids.append(details["appID"])
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            raise ValueError(f"{SITE_ASSOCIATION} can't be read as the site's app links")
+        if ids != [f"{team}.{APP_ID}"]:
+            raise ValueError(f"{SITE_ASSOCIATION} doesn't name the app under the run's team "
+                             "(APPLE_TEAM_ID) alone, so its links wouldn't open this build")
+
     def key(self):
         """(key id, issuer id, the key's text), or raises ValueError. Never printed."""
         key_id = self.environ.get("ASC_KEY_ID", "")
@@ -500,7 +525,7 @@ class Steps:
             environment, upload = self.inputs()
             build = self.build_number()
             if upload:
-                self.team()
+                self.site_names(self.team())
         except ValueError as error:
             self.say("plan", str(error))
             return 1

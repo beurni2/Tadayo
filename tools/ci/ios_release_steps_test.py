@@ -49,12 +49,21 @@ def listing(names):
                       + [{"AssetType": "Image", "Name": name} for name in names])
 
 
-def entitlements(team=None, groups=(release.APP_GROUP,), bundle_id=release.APP_ID, debug=False):
+def entitlements(team=None, groups=(release.APP_GROUP,), bundle_id=release.APP_ID, debug=False,
+                 domains=None):
     value = {"com.apple.security.application-groups": list(groups)}
     if team:
         value.update({"com.apple.developer.team-identifier": team,
                       "application-identifier": f"{team}.{bundle_id}", "get-task-allow": debug})
+    if domains is not None:
+        value[release.ASSOCIATED_DOMAINS_KEY] = list(domains)
     return plistlib.dumps(value).decode("utf-8")
+
+
+def app_entitlements(team=None):
+    """The app's own, as apps/ios/project.yml declares them: the app group and its one
+    associated domain, with what signing adds for a team."""
+    return entitlements(team, domains=release.ASSOCIATED_DOMAINS)
 
 
 class FakeShell:
@@ -100,7 +109,7 @@ class FakeShell:
 def signed_as(team=None, app=None, share=None):
     """codesign's answer for each bundle: the app's entitlements for Tadayo.app and the share
     extension's for TadayoShare.appex, each its own unless `app` or `share` gives another."""
-    texts = {"Tadayo.app": app or entitlements(team),
+    texts = {"Tadayo.app": app or app_entitlements(team),
              "TadayoShare.appex": share or entitlements(team, bundle_id=release.SHARE_ID)}
     return lambda cmd: (0, texts[os.path.basename(cmd[-1])], "")
 
@@ -117,10 +126,19 @@ class StepsTest(unittest.TestCase):
         for name in FIXTURE_NAMES:
             os.makedirs(os.path.join(self.root, *release.FIXTURES.split("/"), name + ".imageset"))
         os.makedirs(os.path.join(self.root, "apps", "ios", "Tadayo.xcodeproj"))
+        self.site([f"{TEAM}.{release.APP_ID}"])
         self.environ = {"RUNNER_TEMP": self.temp, "RELEASE_ENVIRONMENT": "dev",
                         "RELEASE_UPLOAD": "true", "GITHUB_RUN_NUMBER": "7",
                         "GITHUB_RUN_ATTEMPT": "2", "APPLE_TEAM_ID": TEAM, "ASC_KEY_ID": KEY_ID,
                         "ASC_ISSUER_ID": ISSUER, "ASC_KEY_P8": KEY_TEXT}
+
+    def site(self, ids, text=None):
+        """The site's apple-app-site-association naming `ids`, or holding `text` as it is."""
+        path = os.path.join(self.root, *release.SITE_ASSOCIATION.split("/"))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(text if text is not None else json.dumps(
+                {"applinks": {"details": [{"appIDs": ids, "components": [{"/": "/i"}]}]}}))
 
     def steps(self, shell=None, **environ):
         env = dict(self.environ)
@@ -404,6 +422,47 @@ class PlanTest(StepsTest):
         self.assertEqual(code, 0, out)
         self.assertIn("uploaded", out)
 
+    def test_an_upload_needs_the_site_to_name_the_app_under_its_team_alone(self):
+        # The site's file is apps/web's, served at tadayo.app; the team is the repository's
+        # variable. A mismatch would ship invitation links that open Safari.
+        other = "ABCDE12345"
+        for ids, text in (([f"{other}.{release.APP_ID}"], None),
+                          ([f"{TEAM}.{release.APP_ID}", f"{other}.{release.APP_ID}"], None),
+                          ([f"{TEAM}.{release.SHARE_ID}"], None),
+                          ([], None),
+                          (None, "not json"),
+                          (None, json.dumps({"applinks": {"details": "none"}})),
+                          (None, json.dumps({"applinks": {"details": [
+                              {"appID": f"{other}.{release.APP_ID}"}]}})),
+                          (None, json.dumps({"webcredentials": {}}))):
+            self.site(ids, text)
+            code, out = self.step("plan")
+            self.assertEqual(code, 1, (ids, text, out))
+            self.assertIn(release.SITE_ASSOCIATION, out)
+            self.assertNotIn(TEAM, out)
+        os.remove(os.path.join(self.root, *release.SITE_ASSOCIATION.split("/")))
+        code, out = self.step("plan")
+        self.assertEqual(code, 1, out)
+        self.assertIn("can't be read", out)
+        # The older singular appID, which iOS still reads, counts as the app's.
+        self.site(None, json.dumps({"applinks": {"details": [
+            {"appID": f"{TEAM}.{release.APP_ID}"}]}}))
+        self.assertEqual(self.step("plan")[0], 0)
+        # A dry run signs for no team, so it doesn't read the site.
+        self.assertEqual(self.step("plan", RELEASE_UPLOAD="false", APPLE_TEAM_ID="")[0], 0)
+
+    def test_the_repository_s_site_names_one_app(self):
+        # The file the release reads is the one apps/web serves, with one app id in the form
+        # an upload's plan checks against the run's team.
+        steps = release.Steps(ROOT, FakeShell(), environ={})
+        with open(os.path.join(ROOT, *release.SITE_ASSOCIATION.split("/"))) as f:
+            ids = json.load(f)["applinks"]["details"][0]["appIDs"]
+        self.assertEqual(len(ids), 1)
+        team = ids[0].split(".")[0]
+        steps.site_names(team)
+        with self.assertRaises(ValueError):
+            steps.site_names("ABCDE12345" if team != "ABCDE12345" else "ZZZZZ99999")
+
     def test_a_dry_run_needs_no_key_and_no_team(self):
         code, out = self.step("plan", RELEASE_UPLOAD="false", APPLE_TEAM_ID="", ASC_KEY_ID="",
                               ASC_ISSUER_ID="", ASC_KEY_P8="")
@@ -633,13 +692,22 @@ class CheckTest(StepsTest):
         self.assertIn("the app: its associated domains are ['applinks:example.com'], not "
                       "['applinks:tadayo.app']", out)
 
-    def test_the_app_alone_may_hold_its_own_associated_domain(self):
+    def test_the_app_must_hold_its_own_associated_domain_and_alone_may(self):
         self.archive()
         own = plistlib.loads(entitlements().encode())
         own["com.apple.developer.associated-domains"] = ["applinks:tadayo.app"]
         text = plistlib.dumps(own).decode()
         code, out = self.check(self.shell(signed=signed_as(app=text)))
         self.assertEqual(code, 0, out)
+        # A build that lost it fails, rather than shipping links that open Safari.
+        code, out = self.check(self.shell(signed=signed_as(app=entitlements())))
+        self.assertEqual(code, 1, out)
+        self.assertIn("the app: it doesn't hold its associated domain, ['applinks:tadayo.app']",
+                      out)
+        empty = dict(own, **{"com.apple.developer.associated-domains": []})
+        code, out = self.check(self.shell(signed=signed_as(app=plistlib.dumps(empty).decode())))
+        self.assertEqual(code, 1, out)
+        self.assertIn("the app: its associated domains are [], not ['applinks:tadayo.app']", out)
         code, out = self.check(self.shell(signed=signed_as(share=text)))
         self.assertEqual(code, 1, out)
         self.assertIn("the share extension: it holds entitlements the project doesn't declare: "
@@ -1037,7 +1105,7 @@ class ExportTest(StepsTest):
         code, out = self.step("export", shell)
         self.assertEqual(code, 1)
         self.assertIn("the app carries", out)
-        more = plistlib.loads(entitlements(TEAM).encode())
+        more = plistlib.loads(app_entitlements(TEAM).encode())
         more.update({"beta-reports-active": True, "keychain-access-groups": [TEAM + ".*"]})
         fine = plistlib.dumps(more).decode()
         code, out = self.step("export", self.export_shell(signed=signed_as(TEAM, app=fine)))
@@ -1070,6 +1138,12 @@ class ExportTest(StepsTest):
         self.assertEqual(code, 1)
         self.assertIn("the app: its associated domains are ['applinks:example.com'], not "
                       "['applinks:tadayo.app']", out)
+        # Signed without it, the export fails too: what is uploaded is what was read.
+        code, out = self.step("export", self.export_shell(
+            signed=signed_as(TEAM, app=entitlements(TEAM))))
+        self.assertEqual(code, 1)
+        self.assertIn("the app: it doesn't hold its associated domain, ['applinks:tadayo.app']",
+                      out)
 
     def test_the_key_is_removed_when_the_command_fails(self):
         self.archive()
