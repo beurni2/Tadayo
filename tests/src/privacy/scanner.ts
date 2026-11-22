@@ -226,6 +226,8 @@ export interface WorldReservation {
   state: "live" | "released" | "expired" | "consumed";
   /** When it lapses, if it is still live (T18). */
   expiresAt: Temporal.Instant;
+  /** The holder's own drop that used it, once consumed (T20); null otherwise. */
+  drop: string | null;
 }
 
 export interface WorldClub {

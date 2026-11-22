@@ -21,6 +21,8 @@ export interface Targets {
   revision: string;
   /** The link Ben accepted that revision with, which Ana, who proposed Ben, made. */
   invitation: string;
+  /** A slot Ben held in the day and gave back (reservation.ts). */
+  reservation: string;
 }
 
 /** A fresh id that names nothing, in the contract's `Id` shape (T14: a guessed id). */
@@ -43,7 +45,7 @@ export const BINDINGS: Readonly<Record<string, ((targets: Targets) => string) | 
   revision_id: (targets) => targets.revision,
   star: (targets) => targets.star,
   comment_id: "missing",
-  reservation_id: "missing",
+  reservation_id: (targets) => targets.reservation,
   upload_id: "missing",
 };
 

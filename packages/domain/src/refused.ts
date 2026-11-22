@@ -5,7 +5,14 @@
 // The code is a string the route checks against the contract's own list, so a code that isn't one is
 // a bug and answers 500, never something a caller can read.
 
-/** The facts an error's body may carry, in the contract's names (packages/contracts/src/errors.ts). */
+import type { PlacedDay } from "./authorization/days.ts";
+import type { Allowance } from "./drops/allowance.ts";
+
+/**
+ * The facts an error's body may carry, in the contract's names (packages/contracts/src/errors.ts). The days and
+ * the allowance are the domain's values, which the route renders as the contract's Occurrence and Allowance:
+ * each the caller's own to see (T4, T15).
+ */
 export interface RefusalFacts {
   /** The first bad field of the request, by name: never its value. */
   readonly field?: string;
@@ -13,6 +20,12 @@ export interface RefusalFacts {
   readonly current_version?: number;
   /** The newer revision or proposal that replaced the one the request named. */
   readonly current_id?: string;
+  /** The day the request asked for, at the server's time (T4). */
+  readonly target?: PlacedDay;
+  /** The same person's next day, for the person to confirm; nothing was moved (T4). */
+  readonly next_target?: PlacedDay;
+  /** The caller's own allowance in `target` (T15, T17). */
+  readonly allowance?: Allowance;
 }
 
 export class Refused extends Error {

@@ -95,6 +95,17 @@ import {
 import { homeExpected, homeRowsOf, type HomeSeen } from "./home.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
 import {
+  heldProblems,
+  releasedProblems,
+  releaseExpected,
+  releaseOutcome,
+  RESERVE_NO_BODY,
+  RESERVE_TABLE,
+  reserveExpected,
+  reserveOutcome,
+  takes,
+} from "./reservation.ts";
+import {
   IDEMPOTENCY_CONFLICT,
   NO_SUCH_VERSION,
   decisionOutcome,
@@ -167,6 +178,8 @@ const ROSTER_TABLES = new Map<
 const LEAVES = new Map<string, number>();
 /** By role: the leaves after which the leaver lost a revision that listed them, read until then. */
 const REVISIONS_LOST = new Map<string, number>();
+/** By role: the slots the reservations' table held, and those given back (the role's test fills it; a later test reads it). */
+const SLOTS = new Map<string, { held: number; released: number; expired: number }>();
 /**
  * The answers the invitation's table gives someone other than the cell's viewer, for each revision: the
  * signed-out page twice, the link's holder ten times, another member three times.
@@ -256,6 +269,22 @@ async function anaNextSaturday(tx: WorldTx, w: World): Promise<void> {
 }
 
 /**
+ * A slot Ben held in Ana's Saturday at 20:00 on Friday 6 November and gave back five minutes later: the
+ * reservation every cell's releaseReservation names (bindings.ts), which only Ben may give back, and which the
+ * counter no longer counts.
+ */
+async function releasedSlot(tx: WorldTx, w: World): Promise<string> {
+  const id = `rsv_${randomBytes(16).toString("base64url")}`;
+  await tx`
+    INSERT INTO app.reservations (id, occurrence_id, interval_id, media_class, request_key, created_at, expires_at)
+    VALUES (${id}, ${w.day}, ${w.ben.interval}, 'photo', ${randomUUID()}, ${AT.added},
+            ${new Date(AT.added.getTime() + 30 * 60_000)})`;
+  await tx`UPDATE app.reservations SET state = 'released', ended_at = ${new Date(AT.added.getTime() + 5 * 60_000)}
+            WHERE id = ${id}`;
+  return id;
+}
+
+/**
  * The world's own roster revision and one of its links: the applied revision that brought Ben and Cleo in,
  * which lists Ana alone, and the link Ben accepted it with (world.ts's `joinByRoster`).
  */
@@ -300,6 +329,7 @@ beforeAll(async () => {
       star: w.ana.interval,
       proposal,
       ...(await rosterTargets(tx, w)),
+      reservation: await releasedSlot(tx, w),
       avatar: avatar.id,
       subject: subject.auth_subject,
       account: w.ben.user,
@@ -390,9 +420,11 @@ async function factsOf(
       media: MediaClass;
       state: WorldReservation["state"];
       expires_at: Temporal.Instant;
+      drop_id: string | null;
     }[]
   >`
-    SELECT r.id, r.interval_id AS interval, r.occurrence_id AS day, r.media_class AS media, r.state, r.expires_at
+    SELECT r.id, r.interval_id AS interval, r.occurrence_id AS day, r.media_class AS media, r.state, r.expires_at,
+           r.drop_id
       FROM app.reservations r JOIN app.occurrences o ON o.id = r.occurrence_id
      WHERE o.club_id IN ${db(clubs)}`;
   const clubRows = await db<{ id: string; name: string; suspended_at: Temporal.Instant | null }[]>`
@@ -546,7 +578,14 @@ async function factsOf(
       reservations: new Map(
         reservations.map((row): [string, WorldReservation] => [
           row.id,
-          { interval: row.interval, day: row.day, media: row.media, state: row.state, expiresAt: row.expires_at },
+          {
+            interval: row.interval,
+            day: row.day,
+            media: row.media,
+            state: row.state,
+            expiresAt: row.expires_at,
+            drop: row.drop_id,
+          },
         ]),
       ),
       canaries,
@@ -674,6 +713,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       const memberStates = new Set<string>();
       // What the leave's step did for this role: the states it asked in, and those the judge said it left in.
       const left = { asked: 0, left: 0, revisions: 0 };
+      // What the reservations' table did for this role: the slots it held, and those it gave back that came
+      // back released (still live) and expired (lapsed at the reveal). Asserted in the test after the roles.
+      const slots = { held: 0, released: 0, expired: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -681,6 +723,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const w = await newWorld(plain(tx), suffix());
           await anaNextSaturday(tx, w);
           const drop = await twoContributors(tx, w);
+          const reservation = await releasedSlot(tx, w);
           // The club's first days, before the role changes the club, as a leave or a join would meet them.
           const proposal = await addFirstDays(tx, w);
           const viewer = await role.make(tx, w);
@@ -697,6 +740,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             author: w.ben.interval,
             star: w.ana.interval,
             proposal,
+            reservation,
             ...(await rosterTargets(tx, w)),
           };
           return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "" };
@@ -757,6 +801,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         // A schedule command's generic request carries a body the contract accepts and every rule refuses
         // (schedule.ts's genericBody), so the guessed and malformed ids beside it are judged past the body's check.
         const genericToken = freshToken();
+        // The first slot the viewer held in a phase, kept to the next phase, where it is given back after it
+        // lapsed at the reveal (the reservations' table, below).
+        let carried: string | undefined;
         const specs = operations
           .flatMap((operation) => specsFor(operation, cell.targets, authorization))
           .map((spec): Spec =>
@@ -856,16 +903,22 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                                   ? CREATE_CLUB_NO_BODY
                                   : gate === undefined && id === "leaveClub"
                                     ? LEAVE_NO_BODY
-                                    : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                                      ? cellExpected(session, spec.operation, seen)
-                                      : id === "getSchedule"
-                                        ? weekExpected(scheduleSeen, cell.w.club)
-                                        : commandExpected(
-                                            scheduleSeen,
-                                            id as ScheduleCommand,
-                                            cell.targets.proposal,
-                                            startVersion,
-                                          );
+                                    : gate === undefined && id === "createReservation"
+                                      ? RESERVE_NO_BODY
+                                      : gate === undefined && id === "releaseReservation"
+                                        ? releaseExpected(
+                                            releaseOutcome(facts.world, cell.viewer, cell.targets.reservation, now),
+                                          )
+                                        : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                          ? cellExpected(session, spec.operation, seen)
+                                          : id === "getSchedule"
+                                            ? weekExpected(scheduleSeen, cell.w.club)
+                                            : commandExpected(
+                                                scheduleSeen,
+                                                id as ScheduleCommand,
+                                                cell.targets.proposal,
+                                                startVersion,
+                                              );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -887,12 +940,14 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             }
             // A leave has no body that changes nothing, so the cell's own club is asked with none (the
             // contract refuses it, above) and the guessed and malformed clubs with a choice, past the body's check.
+            // A reservation's the same: the cell's own day is asked with none, and the guessed and malformed days
+            // for a photo, which would hold a slot in a day the viewer may add to (and none is guessed).
             const guessing: Spec =
-              id === "leaveClub"
+              id === "leaveClub" || id === "createReservation"
                 ? {
                     ...spec,
                     headers: { ...spec.headers, "content-type": "application/json" },
-                    body: JSON.stringify({ contributions: "keep" }),
+                    body: JSON.stringify(id === "leaveClub" ? { contributions: "keep" } : { media_class: "photo" }),
                   }
                 : spec;
             const guessed = await guessStep(app, guessing, elsewhere, gate);
@@ -1599,6 +1654,131 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           record(
             await cellStep(app, week, gateOf(sessionNow, week.operation) ?? weekExpected(scheduleSeen, cell.w.club)),
           );
+          // The reservations' table (reservation.ts), in every phase, before the leave ends the club for the
+          // viewer. First, the slot the viewer held in the phase before is given back after it lapsed at the
+          // reveal, and again (T18: the same state). Then, on the cell's day, two photos, three links and three
+          // photos, each judged from the world's rows before it, the rows after it held to its answer (T3, T17,
+          // T18); the first one's retry under its key, the same bytes when it held a slot (T19); another body
+          // under that key, which conflicts when it held one and is judged afresh when it didn't, since a
+          // refusal keeps nothing; and every slot held but the first given back while it is live.
+          const reserve = specs.find((spec) => spec.operation.id === "createReservation");
+          const release = specs.find((spec) => spec.operation.id === "releaseReservation");
+          if (reserve === undefined || release === undefined)
+            throw new Error("the contract has no createReservation or releaseReservation");
+          const reserveGate = gateOf(sessionNow, reserve.operation);
+          const releaseGate = gateOf(sessionNow, release.operation);
+          facts = await load();
+          const reserveAsk = async (media: MediaClass, key: string): Promise<{ sent: Spec; answer: Answer }> => {
+            const sent: Spec = {
+              ...reserve,
+              headers: { ...reserve.headers, "content-type": "application/json" },
+              body: JSON.stringify({ media_class: media }),
+            };
+            const request = render(sent);
+            request.headers["idempotency-key"] = key;
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, request);
+            counted.bodies += 1;
+            return { sent, answer };
+          };
+          const tellSlot = (operation: string, sent: Spec, answer: Answer, problems: string[], note: string) => {
+            record({
+              problems: problems.map((problem) => `${operation}: ${problem} (${note})`),
+              answers: [{ spec: sent, answer }],
+            });
+          };
+          // One request for a slot: judged from the rows before it, with the rows after it held to its answer.
+          const reserveStep = async (media: MediaClass, key: string, note: string) => {
+            const previous = facts;
+            const outcome = reserveOutcome(previous.world, cell.viewer, cell.w.day, media, now);
+            const { sent, answer } = await reserveAsk(media, key);
+            facts = await load();
+            const problems =
+              reserveGate === undefined
+                ? [
+                    ...takes(reserveExpected(outcome), answer),
+                    ...heldProblems(previous.world, facts.world, answer, outcome, now),
+                  ]
+                : pinnedProblems(answer, reserveGate);
+            tellSlot("createReservation", sent, answer, problems, note);
+            if (reserveGate !== undefined || outcome.kind !== "held") return { answer, slot: undefined };
+            slots.held += 1;
+            const body = JSON.parse(answer.body) as { id?: unknown };
+            return { answer, slot: typeof body.id === "string" ? body.id : undefined };
+          };
+          // The same request again under a key that kept a slot: the first answer, byte for byte, and no
+          // reservation made or changed (T19).
+          const replayStep = async (media: MediaClass, key: string, want: Answer | string, note: string) => {
+            const previous = facts;
+            const { sent, answer } = await reserveAsk(media, key);
+            facts = await load();
+            const problems =
+              typeof want === "string"
+                ? said(answer) === want
+                  ? []
+                  : ["a retry under its key got another answer than the first (T19)"]
+                : pinnedProblems(answer, want);
+            if (canonical([...facts.world.reservations]) !== canonical([...previous.world.reservations]))
+              problems.push("a request under a key that kept a slot changed a reservation (T19)");
+            tellSlot("createReservation", sent, answer, problems, note);
+          };
+          // A slot given back, judged from the rows before it, with the rows after it held to its answer.
+          const giveBack = async (id: string, note: string) => {
+            const previous = facts;
+            const outcome = releaseOutcome(previous.world, cell.viewer, id, now);
+            const sent: Spec = { ...release, path: { reservation_id: id } };
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, render(sent));
+            facts = await load();
+            const problems =
+              releaseGate === undefined
+                ? [
+                    ...takes(releaseExpected(outcome), answer),
+                    ...releasedProblems(previous.world, facts.world, id, outcome, now),
+                  ]
+                : pinnedProblems(answer, releaseGate);
+            tellSlot("releaseReservation", sent, answer, problems, note);
+            const ended = releaseGate === undefined && outcome.kind === "released" ? outcome.body.state : undefined;
+            return { answer, ended };
+          };
+          if (carried !== undefined) {
+            const lapsed = await giveBack(carried, "the slot held in the phase before, lapsed at the reveal");
+            if (lapsed.ended === "expired") slots.expired += 1;
+            const again = await giveBack(carried, "the lapsed slot given back again");
+            if (said(again.answer) !== said(lapsed.answer))
+              wrong.push(
+                `${state.name}, ${phase}: a slot given back again got another answer than the first (spec 11)`,
+              );
+          }
+          const tableKey = randomUUID();
+          const heldNow: string[] = [];
+          let first: { answer: Answer; slot: string | undefined } | undefined;
+          for (const [n, media] of RESERVE_TABLE.entries()) {
+            const step = await reserveStep(media, n === 0 ? tableKey : randomUUID(), `the table's ${String(n + 1)}`);
+            if (n === 0) first = step;
+            if (step.slot !== undefined) heldNow.push(step.slot);
+          }
+          const firstMedia = RESERVE_TABLE[0];
+          if (first === undefined || firstMedia === undefined) throw new Error("the reservations' table is empty");
+          const otherMedia: MediaClass = firstMedia === "photo" ? "external_video" : "photo";
+          if (first.slot !== undefined) {
+            await replayStep(firstMedia, tableKey, said(first.answer), "the first one again under its key");
+            await replayStep(otherMedia, tableKey, IDEMPOTENCY_CONFLICT, "another body under the first one's key");
+          } else {
+            for (const [media, note] of [
+              [firstMedia, "the first one again under its key, which kept nothing"],
+              [otherMedia, "another body under the first one's key, which kept nothing"],
+            ] as const) {
+              const step = await reserveStep(media, tableKey, note);
+              if (step.slot !== undefined) heldNow.push(step.slot);
+            }
+          }
+          for (const slot of heldNow.filter((one) => one !== first.slot)) {
+            const given = await giveBack(slot, "a slot held in the table, given back while it is live");
+            if (given.ended === "released") slots.released += 1;
+          }
+          carried = first.slot;
           // The leave (leave.ts), last of all in the cell's last phase, since it ends what every other row
           // reads: the viewer leaves the cell's club with a choice, judged from the rows before and after; the
           // retry is the first answer; a new key, and each read of the club, then find nothing (T14).
@@ -1742,6 +1922,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       LEAVES.set(role.name, left.left);
       REVISIONS_LOST.set(role.name, left.revisions);
       console.log(`${role.name}, the leave: ${JSON.stringify(left)}`);
+      SLOTS.set(role.name, slots);
+      console.log(`${role.name}, the reservations' table: ${JSON.stringify(slots)}`);
       expect(roster.proposals).toBe(STATES.length * phases.length * proposeCases(0, "x").length);
       expect(roster.revisions).toBe(roster.due);
       expect(roster.memberPhases > 0).toBe(memberStates.size > 0);
@@ -1788,6 +1970,28 @@ describe("the leave ran (tests/src/privacy/leave.ts)", () => {
     ]);
     // The world's revision lists the star alone: the star read it until the leave, and nothing after.
     expect([...REVISIONS_LOST].filter(([, states]) => states > 0)).toEqual([["star", 6]]);
+  });
+});
+
+describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () => {
+  it("held, gave back and saw lapse the slots each role's allowance gives, and none for any other role", () => {
+    // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
+    // Counted by hand from the world (../matrix.ts), apart from the judge. Slots are held only while the day
+    // is collecting, in the four states whose day takes them (not a suspended day or club, or a cancelled
+    // day). The author has a photo in the day (none when it was withdrawn), the member in the audience a
+    // link, and the star and the two who joined afresh nothing; so the table holds the author two (a photo,
+    // then a link; three when the photo was withdrawn), the star six (two photos, two links, then photos to
+    // six), the member in the audience two photos, and each of the two who joined three (two photos and a
+    // link). Every slot but the first is given back live, and the first lapses at the reveal.
+    expect(SLOTS.size).toBe(ROLES.length);
+    expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
+      ["author", { held: 9, released: 5, expired: 4 }],
+      ["star", { held: 24, released: 20, expired: 4 }],
+      ["member in the audience", { held: 8, released: 4, expired: 4 }],
+      ["member who joined after the commit (T8)", { held: 12, released: 8, expired: 4 }],
+      ["rejoined member, a new interval (T8)", { held: 12, released: 8, expired: 4 }],
+    ]);
+    expect([...SLOTS].filter(([, table]) => table.held === 0 && (table.released > 0 || table.expired > 0))).toEqual([]);
   });
 });
 
@@ -2543,6 +2747,7 @@ describe("callers without a session, in each state of the drop and phase of the 
       const cell = await db.begin(async (tx) => {
         const w = await newWorld(plain(tx), suffix());
         const drop = await twoContributors(tx, w);
+        const reservation = await releasedSlot(tx, w);
         const proposal = await addFirstDays(tx, w);
         await state.make(tx, w, drop);
         await checkAsAtCommit(plain(tx));
@@ -2555,6 +2760,7 @@ describe("callers without a session, in each state of the drop and phase of the 
             author: w.ben.interval,
             star: w.ana.interval,
             proposal,
+            reservation,
             ...(await rosterTargets(tx, w)),
           },
         };
