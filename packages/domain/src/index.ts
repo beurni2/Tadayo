@@ -5,16 +5,35 @@ export {
   chosenDay,
   daysByClub,
   nextDaysByStar,
+  RECENT_DAYS,
+  recentDay,
+  recentDays,
   type ChosenDay,
   type ChosenPhase,
   type ClubDayFacts,
   type DayChoice,
   type DayFacts,
+  type PlacedDay,
+  type PlacedPhase,
+  type RecentDay,
 } from "./authorization/days.ts";
-export { activeMember, activeMemberships } from "./authorization/member.ts";
+export { activeMember, activeMemberships, listedMemberships } from "./authorization/member.ts";
 export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./authorization/read-sql.ts";
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
 export { CLUB_SIZE, readClub, type ClubDetail } from "./clubs/club.ts";
+export {
+  homeMode,
+  openPage,
+  PAGE_DROPS,
+  readHome,
+  type HomeBase,
+  type HomeDayFrame,
+  type HomeMode,
+  type HomeModeFacts,
+  type HomeRead,
+  type PageDrop,
+  type RailEntry,
+} from "./clubs/home.ts";
 export { createClub, type CreateClubInput, type CreatedClub } from "./clubs/create-club.ts";
 export {
   createInvitation,

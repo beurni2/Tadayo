@@ -215,9 +215,19 @@ export interface DropOptions {
 }
 
 /**
+ * The frames preparation gives a committed photo's two renditions (spec 33): the display one the feed lays out
+ * (Home's page, the contract's RevealedPhoto) and the full one, each a different size and neither square, so a
+ * read that took the wrong one, or swapped width and height, shows.
+ */
+export const PHOTO_FRAMES = {
+  display: { width: 1200, height: 1600 },
+  full: { width: 3024, height: 4032 },
+} as const;
+
+/**
  * Commits a drop to the world's day as createDrop will (TECH-DESIGN section 5): the author's
- * counter, a reservation and a prepared upload for a photo (or a resolved link), the drop, its
- * audience of every active member, and the seal (T8, T17).
+ * counter, a reservation and a prepared upload for a photo, with its two renditions (or a resolved
+ * link), the drop, its audience of every active member, and the seal (T8, T17).
  */
 export async function commitDrop(tx: Tx, w: World, author: Member, options: DropOptions = {}): Promise<string> {
   const media = options.media ?? "photo";
@@ -248,6 +258,13 @@ export async function commitDrop(tx: Tx, w: World, author: Member, options: Drop
     await tx`
       UPDATE app.uploads SET state = 'ready', content_hash = ${dedupe}, content_version = ${newId("v")} WHERE id = ${upload}
     `;
+    for (const kind of ["display", "full"] as const) {
+      const { width, height } = PHOTO_FRAMES[kind];
+      await tx`
+        INSERT INTO app.upload_renditions (upload_id, kind, object_key, width, height, byte_size, created_at)
+        VALUES (${upload}, ${kind}, ${newId("uploads/rendition")}, ${width}, ${height}, 2000, ${at})
+      `;
+    }
     await tx`
       INSERT INTO app.drops (id, occurrence_id, club_id, author_interval_id, media_class, upload_id, dedupe_key, caption,
                              submitted_at, updated_at)
