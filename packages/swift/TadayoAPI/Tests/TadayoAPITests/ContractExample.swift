@@ -69,9 +69,9 @@ enum ContractExample {
         "previewInvitation.expired":
             ##"{"state":"expired","inviter_name":"Ben"}"##,
         "previewInvitation.full":
-            ##"{"state":"full"}"##,
+            ##"{"state":"full","inviter_name":"Ben"}"##,
         "previewInvitation.did_not_go_ahead":
-            ##"{"state":"did_not_go_ahead"}"##,
+            ##"{"state":"did_not_go_ahead","inviter_name":"Ben"}"##,
         "previewInvitation.joined":
             ##"{"state":"joined","club":{"id":"club_kitchen_table","name":"Kitchen table","timezone":"America/New_York","my_membership_id":"mem_kt_maya"}}"##,
         "acceptInvitation.waiting":
