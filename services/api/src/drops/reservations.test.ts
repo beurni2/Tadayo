@@ -397,6 +397,16 @@ describe("a refusal's facts against the contract's scenes: the day, the caller's
     },
   );
 
+  it("sends MEMBERSHIP_CHANGED bare, where the contract's scene names the day: the reading of FQ63 until B6", async () => {
+    // A held day has no phase to send before B6 (docs/QUESTIONS.md, "A reading of FQ63"), and the app already
+    // holds the day it asked for. The contract lets `target` be left out; this pins that the route adds nothing.
+    expect(errorExample("MEMBERSHIP_CHANGED")).toHaveProperty("target");
+    const answer = await appFor(() => Promise.reject(new Refused("MEMBERSHIP_CHANGED")));
+    const got = await answer(post(PHOTO));
+    expect(got).toMatchObject({ status: 409, body: '{"code":"MEMBERSHIP_CHANGED"}', headers });
+    expect(ApiError.strict().safeParse(JSON.parse(got.body)).success).toBe(true);
+  });
+
   it("sends a refusal's facts and nothing else of the command's: no reservation, no interval, no other member's counts", async () => {
     const scene = errorExample("QUOTA_FULL") as Body;
     const answer = await appFor(() => Promise.reject(new Refused("QUOTA_FULL", factsOf(scene))));

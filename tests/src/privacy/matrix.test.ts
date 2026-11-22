@@ -180,6 +180,8 @@ const LEAVES = new Map<string, number>();
 const REVISIONS_LOST = new Map<string, number>();
 /** By role: the slots the reservations' table held, and those given back (the role's test fills it; a later test reads it). */
 const SLOTS = new Map<string, { held: number; released: number; expired: number }>();
+/** By role: the answers in which Cleo's lapsed slot came back as the viewer's own (the role's test fills it). */
+const CLEOS_SLOT = new Map<string, number>();
 /**
  * The answers the invitation's table gives someone other than the cell's viewer, for each revision: the
  * signed-out page twice, the link's holder ten times, another member three times.
@@ -281,6 +283,27 @@ async function releasedSlot(tx: WorldTx, w: World): Promise<string> {
             ${new Date(AT.added.getTime() + 30 * 60_000)})`;
   await tx`UPDATE app.reservations SET state = 'released', ended_at = ${new Date(AT.added.getTime() + 5 * 60_000)}
             WHERE id = ${id}`;
+  return id;
+}
+
+/**
+ * A photo slot Cleo held in Ana's Saturday at 20:05 on Friday 6 November, as a member, and never gave back:
+ * live in its row, counted on Cleo's counter, and lapsed at 20:35, before any phase of the matrix, so the row
+ * still says live and only a command under the counter's lock settles it (T18). Each role gives it back in
+ * every phase (the reservations' table): only the account whose active interval holds it gets it back,
+ * expired at its own time; Cleo after leaving and rejoining has a new interval, and every other role gets the
+ * neutral not-found, with nothing settled (T9, T14). Cleo's link in the day leaves the photos free.
+ */
+async function cleosLapsedSlot(tx: WorldTx, w: World): Promise<string> {
+  const id = `rsv_${randomBytes(16).toString("base64url")}`;
+  const at = new Date(AT.added.getTime() + 5 * 60_000);
+  await tx`
+    INSERT INTO app.reservations (id, occurrence_id, interval_id, media_class, request_key, created_at, expires_at)
+    VALUES (${id}, ${w.day}, ${w.cleo.interval}, 'photo', ${randomUUID()}, ${at}, ${new Date(at.getTime() + 30 * 60_000)})`;
+  const counted = await tx`
+    UPDATE app.contribution_counters SET reserved_total = reserved_total + 1
+     WHERE occurrence_id = ${w.day} AND interval_id = ${w.cleo.interval}`;
+  if (counted.count !== 1) throw new Error("Cleo has no counter in the matrix's day");
   return id;
 }
 
@@ -716,6 +739,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // What the reservations' table did for this role: the slots it held, and those it gave back that came
       // back released (still live) and expired (lapsed at the reveal). Asserted in the test after the roles.
       const slots = { held: 0, released: 0, expired: 0 };
+      // The answers in which Cleo's lapsed slot came back as the viewer's own. Asserted in the test after the roles.
+      let cleosSlot = 0;
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -724,6 +749,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           await anaNextSaturday(tx, w);
           const drop = await twoContributors(tx, w);
           const reservation = await releasedSlot(tx, w);
+          const cleos = await cleosLapsedSlot(tx, w);
           // The club's first days, before the role changes the club, as a leave or a join would meet them.
           const proposal = await addFirstDays(tx, w);
           const viewer = await role.make(tx, w);
@@ -743,7 +769,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             reservation,
             ...(await rosterTargets(tx, w)),
           };
-          return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "" };
+          return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "", cleos };
         });
         const [account] = await db<
           { state: string; age_confirmed: boolean; name: string | null; subject: string | null; version: number }[]
@@ -1655,8 +1681,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             await cellStep(app, week, gateOf(sessionNow, week.operation) ?? weekExpected(scheduleSeen, cell.w.club)),
           );
           // The reservations' table (reservation.ts), in every phase, before the leave ends the club for the
-          // viewer. First, the slot the viewer held in the phase before is given back after it lapsed at the
-          // reveal, and again (T18: the same state). Then, on the cell's day, two photos, three links and three
+          // viewer. First, Cleo's slot that lapsed before any phase (cleosLapsedSlot), whoever the viewer is;
+          // then the slot the viewer held in the phase before is given back after it lapsed at the reveal, and
+          // again (T18: the same state). Then, on the cell's day, two photos, three links and three
           // photos, each judged from the world's rows before it, the rows after it held to its answer (T3, T17,
           // T18); the first one's retry under its key, the same bytes when it held a slot (T19); another body
           // under that key, which conflicts when it held one and is judged afresh when it didn't, since a
@@ -1742,6 +1769,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             const ended = releaseGate === undefined && outcome.kind === "released" ? outcome.body.state : undefined;
             return { answer, ended };
           };
+          const cleos = await giveBack(cell.cleos, "Cleo's slot, held as a member and lapsed before any phase");
+          if (cleos.ended !== undefined) cleosSlot += 1;
           if (carried !== undefined) {
             const lapsed = await giveBack(carried, "the slot held in the phase before, lapsed at the reveal");
             if (lapsed.ended === "expired") slots.expired += 1;
@@ -1923,6 +1952,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       REVISIONS_LOST.set(role.name, left.revisions);
       console.log(`${role.name}, the leave: ${JSON.stringify(left)}`);
       SLOTS.set(role.name, slots);
+      CLEOS_SLOT.set(role.name, cleosSlot);
       console.log(`${role.name}, the reservations' table: ${JSON.stringify(slots)}`);
       expect(roster.proposals).toBe(STATES.length * phases.length * proposeCases(0, "x").length);
       expect(roster.revisions).toBe(roster.due);
@@ -1992,6 +2022,19 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
       ["rejoined member, a new interval (T8)", { held: 12, released: 8, expired: 4 }],
     ]);
     expect([...SLOTS].filter(([, table]) => table.held === 0 && (table.released > 0 || table.expired > 0))).toEqual([]);
+  });
+
+  it("gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it", () => {
+    // Counted by hand from ../matrix.ts: two roles' viewer is Cleo still in the interval that held it, the
+    // member in the audience, in all four phases, and Cleo once the author has blocked Cleo and left by the
+    // block as the day opened, in its three phases from the reveal on. The day and the club answer a release in
+    // the four states that neither suspend nor cancel them. Cleo after leaving, after rejoining in a new
+    // interval, or after blocking the author and leaving by it has nothing, nor does anyone else (T9, T14).
+    expect(CLEOS_SLOT.size).toBe(ROLES.length);
+    expect([...CLEOS_SLOT].filter(([, answers]) => answers > 0)).toEqual([
+      ["member in the audience", 16],
+      ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 12],
+    ]);
   });
 });
 

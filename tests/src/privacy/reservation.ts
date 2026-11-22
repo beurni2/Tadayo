@@ -61,7 +61,8 @@ const second = (instant: Temporal.Instant) => instant.toString({ smallestUnit: "
 
 /**
  * The interval of `account` that may add to the day `day`, or give back a slot in it: the account is active,
- * its interval in the day's club is, the club isn't suspended and the day is scheduled. Undefined otherwise.
+ * its interval in the day's club is, the club isn't suspended, the day is scheduled, and it hadn't closed when
+ * that interval began (Q06). Undefined otherwise.
  */
 export function adderOf(world: WorldFacts, account: string | null, day: string): string | undefined {
   const theDay = world.days.get(day);
@@ -69,7 +70,9 @@ export function adderOf(world: WorldFacts, account: string | null, day: string):
   if (world.accounts.get(account)?.state !== "active") return undefined;
   if (world.clubs.get(theDay.club)?.suspendedAt !== null) return undefined;
   for (const [interval, member] of world.members) {
-    if (member.club === theDay.club && member.account === account && member.leftAt === null) return interval;
+    if (member.club === theDay.club && member.account === account && member.leftAt === null) {
+      return before(member.joinedAt, theDay.closeAt) ? interval : undefined;
+    }
   }
   return undefined;
 }
@@ -264,7 +267,7 @@ export function reserveExpected(outcome: ReserveOutcome): Expected {
 /**
  * What is wrong with the world after `answer`, given the world before it and the outcome it was judged by: a
  * slot held is a new reservation of the caller's interval, live, of its media, in its day, lapsing when the
- * answer says, and no other reservation was made or changed but the caller's own lapsed ones, settled; a
+ * answer says, and no other reservation was made or changed but the caller's own lapsed ones in that day, settled (one counter's, `settleLapsed`'s scope); a
  * refusal made and changed no reservation (T19: it leaves nothing).
  */
 export function heldProblems(
@@ -302,7 +305,8 @@ export function heldProblems(
         was.state === "live" &&
         now_.state === "expired" &&
         !before(now, was.expiresAt) &&
-        was.interval === outcome.interval;
+        was.interval === outcome.interval &&
+        was.day === outcome.body.occurrence_id;
       if (!settled) problems.push(`${other} went from ${was.state} to ${now_.state}`);
     }
   }
@@ -347,7 +351,10 @@ export function releaseExpected(outcome: ReleaseOutcome): Expected {
   };
 }
 
-/** What is wrong with the reservation `id` after its release: it ended as the answer says, and nothing else changed. */
+/**
+ * What is wrong with the reservation `id` after its release: it ended as the answer says, and nothing else
+ * changed but the caller's own lapsed slots in its day, settled.
+ */
 export function releasedProblems(
   previous: WorldFacts,
   after: WorldFacts,
@@ -356,6 +363,7 @@ export function releasedProblems(
   now: Temporal.Instant,
 ): string[] {
   const problems: string[] = [];
+  const day = previous.reservations.get(id)?.day;
   if (after.reservations.size !== previous.reservations.size) problems.push("a release made or lost a reservation");
   for (const [other, was] of previous.reservations) {
     const now_ = after.reservations.get(other);
@@ -370,6 +378,7 @@ export function releasedProblems(
       was.state === "live" &&
       now_.state === "expired" &&
       was.interval === outcome.interval &&
+      was.day === day &&
       !before(now, was.expiresAt);
     if (!settled) problems.push(`${other} went from ${was.state} to ${now_.state}`);
   }

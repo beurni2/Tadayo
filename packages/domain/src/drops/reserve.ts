@@ -5,15 +5,16 @@
 // refused request leaves nothing, its receipt included.
 //
 // 1. Who may add to the day, with no lock (../authorization/add-target.ts): someone the club gives nothing,
-//    a suspended club or a day that is suspended, cancelled or nobody's never reaches the receipt: NOT_FOUND,
-//    for a first request and a retry alike (T14; FQ112's default).
+//    a suspended club, a day that is suspended, cancelled or nobody's, or one that closed before the caller's
+//    interval began (Q06), never reaches the receipt: NOT_FOUND, for a first request and a retry alike (T14;
+//    FQ112's default).
 // 2. The receipt (T19): the same request under the same key gets its first answer back, as it was, after the
 //    cutoff, midnight or a release; another request under it is IDEMPOTENCY_CONFLICT; a key an earlier
 //    interval of the account used names nothing to this one (`reserveAsMember`, FQ112).
 // 3. The locks, in TECH-DESIGN's order: the club's row and the day's `FOR SHARE`, which hold off a suspension,
 //    a cancellation and the club's own commands until this one commits; the caller's and the star's membership
-//    rows `FOR SHARE`, which hold off a leave; then the counter, made if missing, `FOR UPDATE`, which puts
-//    every slot of the caller's in that day in one order (./counter.ts). Two contributors never wait for each
+//    rows `FOR SHARE`, which hold off a leave; then the counter, made if missing, `FOR NO KEY UPDATE`, which
+//    puts every slot of the caller's in that day in one order (./counter.ts). Two contributors never wait for each
 //    other's counter.
 // 4. The clock, sampled after the locks (T1, T3): a request that waited across 07:00 reads the time after it.
 // 5. The rule again, on the facts read under the locks: NOT_FOUND (a leave, a suspension or a rejoin came in

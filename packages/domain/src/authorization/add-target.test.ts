@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { ServerNow } from "../time/clock.ts";
-import { addTargetOutcome, nextTargetOf, type AddTargetFacts } from "./add-target.ts";
+import { addTargetOutcome, nextTargetOf, ownsReservation, type AddTargetFacts } from "./add-target.ts";
 import type { DayFacts } from "./days.ts";
 
 const serverNow = (instant: Temporal.Instant) => instant as ServerNow;
@@ -34,7 +34,13 @@ const DAY: DayFacts = {
 };
 
 /** Ben, a member, adding to Ana's Saturday. */
-const BEN: AddTargetFacts = { viewerAccount: "active", viewerInterval: "mem_ben", clubSuspendedAt: null, day: DAY };
+const BEN: AddTargetFacts = {
+  viewerAccount: "active",
+  viewerInterval: "mem_ben",
+  viewerJoinedAt: at("2026-10-01T10:00:00Z"),
+  clubSuspendedAt: null,
+  day: DAY,
+};
 /** Ana, adding to Ana's own day: the facts name the account and its interval, never a role. */
 const ANA: AddTargetFacts = { ...BEN, viewerInterval: "mem_ana" };
 
@@ -73,6 +79,48 @@ describe("nothing for anyone but a member of the day's club (T9, T14)", () => {
         expect(outcome({ ...BEN, ...change }, instant)).toEqual({ kind: "not_found" });
       }
     }
+  });
+
+  it("gives the neutral not-found for each denying fact on a held day too, never MEMBERSHIP_CHANGED (T14, FQ63)", () => {
+    const heldDays: DayFacts[] = [
+      { ...DAY, starIntervalState: "left", starLeftAt: at("2026-11-06T10:00:00Z"), starEndedName: "Ana" },
+      { ...DAY, starAccount: "deleting", starDeletionRequestedAt: at("2026-11-06T10:00:00Z") },
+    ];
+    const denying = (day: DayFacts): Partial<AddTargetFacts>[] => [
+      { viewerAccount: null },
+      { viewerAccount: "deleting" },
+      { viewerInterval: null, viewerJoinedAt: null },
+      { clubSuspendedAt: at("2026-11-06T10:00:00Z") },
+      { day: { ...day, status: "suspended" } },
+      { day: { ...day, status: "cancelled" } },
+      { viewerJoinedAt: SAT.close },
+    ];
+    for (const day of heldDays) {
+      expect(outcome({ ...BEN, day }, BEFORE)).toEqual({ kind: "held" });
+      for (const change of denying(day)) {
+        for (const instant of [BEFORE, SAT.reveal, SAT.close]) {
+          expect(outcome({ ...BEN, day, ...change }, instant)).toEqual({ kind: "not_found" });
+        }
+      }
+    }
+  });
+
+  it("gives the neutral not-found for a day that closed before the caller's interval began, whatever became of it (Q06)", () => {
+    const after = SAT.close.add({ hours: 2 });
+    for (const joined of [SAT.close, SAT.close.add({ hours: 1 })]) {
+      expect(outcome({ ...BEN, viewerJoinedAt: joined }, after)).toEqual({ kind: "not_found" });
+    }
+    // No interval's start is no grant, even with an interval.
+    expect(outcome({ ...BEN, viewerJoinedAt: null }, BEFORE)).toEqual({ kind: "not_found" });
+    // Joined while the day was open: the day as it is, past its cutoff.
+    expect(outcome({ ...BEN, viewerJoinedAt: µs(SAT.close, -1) }, µs(SAT.close, -1))).toMatchObject({
+      kind: "closed",
+      target: { id: "occ_sat", phase: "open" },
+    });
+    expect(outcome({ ...BEN, viewerJoinedAt: SAT.reveal }, after)).toMatchObject({
+      kind: "closed",
+      target: { phase: "past" },
+    });
   });
 
   it("refuses a time that isn't a clock's sample", () => {
@@ -187,5 +235,30 @@ describe("the same person's next day, for a refusal to offer (T4)", () => {
     expect(next({ ...BEN, viewerInterval: null }, [SAT14], BEFORE)).toBeNull();
     expect(next({ ...BEN, clubSuspendedAt: BEFORE }, [SAT14], BEFORE)).toBeNull();
     expect(next({ ...BEN, viewerAccount: "deleting" }, [SAT14], BEFORE)).toBeNull();
+  });
+});
+
+describe("whose a reservation is (ownsReservation; T9, T14)", () => {
+  it("is the caller's when its interval is the caller's active one and the day is anything but nobody's", () => {
+    const owns = (facts: AddTargetFacts | null, interval: string, instant: Temporal.Instant) =>
+      ownsReservation(facts, interval, serverNow(instant));
+    for (const instant of [BEFORE, SAT.reveal, SAT.close]) expect(owns(BEN, "mem_ben", instant)).toBe(true);
+    const held = {
+      ...BEN,
+      day: { ...DAY, starIntervalState: "left" as const, starLeftAt: BEFORE, starEndedName: "Ana" },
+    };
+    expect(owns(held, "mem_ben", BEFORE)).toBe(true);
+    // Another member's, an earlier interval's after the account rejoined, and nobody's.
+    expect(owns(BEN, "mem_cleo", BEFORE)).toBe(false);
+    expect(owns({ ...BEN, viewerInterval: "mem_ben2" }, "mem_ben", BEFORE)).toBe(false);
+    expect(owns(null, "mem_ben", BEFORE)).toBe(false);
+    for (const change of [
+      { viewerAccount: "deleting" as const },
+      { viewerInterval: null, viewerJoinedAt: null },
+      { clubSuspendedAt: BEFORE },
+      { day: { ...DAY, status: "cancelled" as const } },
+    ]) {
+      expect(owns({ ...BEN, ...change }, "mem_ben", BEFORE)).toBe(false);
+    }
   });
 });

@@ -198,21 +198,41 @@ function expectLimit(outcome: Outcome, code: string, d: Days, expected: Allowanc
 
 const bare = (code: string) => ({ code, facts: {} });
 
+/**
+ * A reservation's row, its instants as their strings: `toMatchObject` sees no fields in a Temporal.Instant, so
+ * it takes any two instants as equal, and only their strings can be matched.
+ */
 interface SlotRow {
   id: string;
   state: string;
   media_class: string;
-  created_at: Temporal.Instant;
-  expires_at: Temporal.Instant;
-  ended_at: Temporal.Instant | null;
+  created_at: string;
+  expires_at: string;
+  ended_at: string | null;
   drop_id: string | null;
 }
 
-const slotRow = async (tx: WorldTx, id: string): Promise<SlotRow | undefined> =>
-  (
-    await tx<SlotRow[]>`
-      SELECT id, state, media_class, created_at, expires_at, ended_at, drop_id FROM app.reservations WHERE id = ${id}`
-  )[0];
+const slotRow = async (tx: WorldTx, id: string): Promise<SlotRow | undefined> => {
+  const [row] = await tx<
+    {
+      id: string;
+      state: string;
+      media_class: string;
+      created_at: Temporal.Instant;
+      expires_at: Temporal.Instant;
+      ended_at: Temporal.Instant | null;
+      drop_id: string | null;
+    }[]
+  >`SELECT id, state, media_class, created_at, expires_at, ended_at, drop_id FROM app.reservations WHERE id = ${id}`;
+  return row === undefined
+    ? undefined
+    : {
+        ...row,
+        created_at: row.created_at.toString(),
+        expires_at: row.expires_at.toString(),
+        ended_at: row.ended_at?.toString() ?? null,
+      };
+};
 
 /** Expects each counter of `day` to count exactly its live reservations (T17, T18). */
 async function expectBalanced(tx: WorldTx, day: string): Promise<void> {
@@ -233,6 +253,29 @@ const counterOf = async (tx: WorldTx, day: string, interval: string) =>
       SELECT committed_total, reserved_total, reserved_external, total_limit FROM app.contribution_counters
        WHERE occurrence_id = ${day} AND interval_id = ${interval}`
   )[0];
+
+/** Another connection holding `interval`'s counter row in `day` `FOR UPDATE`, writing nothing, until released. */
+async function holdingCounter(day: string, interval: string): Promise<{ pid: number; release: () => Promise<void> }> {
+  let release = (): void => undefined;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let held: (pid: number) => void = () => undefined;
+  const taken = new Promise<number>((resolve) => (held = resolve));
+  const done = db.begin(async (tx) => {
+    const [row] = await tx<{ pid: number }[]>`
+      SELECT pg_catalog.pg_backend_pid() AS pid FROM app.contribution_counters
+       WHERE occurrence_id = ${day} AND interval_id = ${interval} FOR UPDATE`;
+    if (row === undefined) throw new Error("holdingCounter: no such counter");
+    held(row.pid);
+    await released;
+  });
+  return {
+    pid: await taken,
+    release: async () => {
+      release();
+      await done;
+    },
+  };
+}
 
 describe("the star's allowance: six drops, two of them links at most (ND01, T17)", () => {
   it("holds six photos for Ana, and refuses a seventh with QUOTA_FULL, Ana's own counts and the next Saturday", async () => {
@@ -477,6 +520,71 @@ describe("nothing for anyone the day isn't theirs to add to (T9, T14; FQ63)", ()
       });
     }
   });
+
+  it("gives the neutral not-found, never MEMBERSHIP_CHANGED, on a held day to anyone it would deny (T14, FQ63)", async () => {
+    const denials: ((tx: WorldTx, d: Days) => Promise<{ readonly user: string }>)[] = [
+      (_tx, d) => Promise.resolve(d.w.dan),
+      async (tx, d) => {
+        await leave(plain(tx), d.w.cleo, "Cleo", new Date("2026-11-06T20:40:00Z"));
+        return d.w.cleo;
+      },
+      async (tx, d) => {
+        await tx`UPDATE app.clubs SET suspended_at = ${new Date("2026-11-06T20:40:00Z")} WHERE id = ${d.w.club}`;
+        return d.w.ben;
+      },
+      async (tx, d) => {
+        await tx`UPDATE app.occurrences SET status = 'suspended' WHERE id = ${d.w.day}`;
+        return d.w.ben;
+      },
+      async (tx, d) => {
+        await tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${d.w.day}`;
+        return d.w.ben;
+      },
+      async (tx, d) => {
+        await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${new Date("2026-11-06T20:40:00Z")}
+                  WHERE id = ${d.w.ben.user}`;
+        return d.w.ben;
+      },
+    ];
+    for (const deny of denials) {
+      await rolledBack(db, async (tx) => {
+        const d = await days(tx);
+        await leave(plain(tx), d.w.ana, "Ana", new Date("2026-11-06T20:30:00Z"));
+        const who = await deny(tx, d);
+        expect(await reserve(tx, d, who, "photo")).toEqual(bare("NOT_FOUND"));
+      });
+    }
+  });
+
+  it("gives the neutral not-found for a day that closed before the caller's interval began, and the day as it is to one who joined while it was open (Q06, T14)", async () => {
+    const rejoin = async (tx: WorldTx, d: Days, when: string) => {
+      await leave(plain(tx), d.w.cleo, "Cleo", new Date("2026-11-06T21:05:00Z"));
+      await joinByRoster(plain(tx), d.w.club, d.w.ana, [{ user: d.w.cleo.user, label: "Cleo" }], new Date(when));
+    };
+    for (const joined of ["2026-11-08T01:00:00Z", "2026-11-08T02:00:00Z"]) {
+      await rolledBack(db, async (tx) => {
+        const d = await days(tx);
+        await rejoin(tx, d, joined);
+        clock.set(at("2026-11-08T03:00:00Z"));
+        expect(await reserve(tx, d, d.w.cleo, "photo")).toEqual(bare("NOT_FOUND"));
+        // Ben, a member all along, is told the day is past, with Ana's next day; Cleo may add to that one.
+        expect(await reserve(tx, d, d.w.ben, "photo")).toMatchObject({
+          code: "OCCURRENCE_CLOSED",
+          facts: { target: { id: d.w.day, phase: "past" }, next_target: { id: d.next } },
+        });
+        expectHeld(await reserve(tx, d, d.w.cleo, "photo", { day: d.next }), allowance(FRIEND, { heldPhotos: 1 }));
+      });
+    }
+    await rolledBack(db, async (tx) => {
+      const d = await days(tx);
+      await rejoin(tx, d, "2026-11-07T10:00:00Z");
+      clock.set(at("2026-11-07T11:00:00Z"));
+      expect(await reserve(tx, d, d.w.cleo, "photo")).toMatchObject({
+        code: "OCCURRENCE_CLOSED",
+        facts: { target: { id: d.w.day, phase: "open" }, next_target: { id: d.next } },
+      });
+    });
+  });
 });
 
 describe("the cutoff is the reveal, read after the locks (T3, T4, T18)", () => {
@@ -486,8 +594,8 @@ describe("the cutoff is the reveal, read after the locks (T3, T4, T18)", () => {
       clock.set(REVEAL.subtract({ microseconds: 1 }));
       const slot = expectHeld(await reserve(tx, d, d.w.ben, "photo"), allowance(FRIEND, { heldPhotos: 1 }), REVEAL);
       expect(await slotRow(tx, slot.body.id)).toMatchObject({
-        expires_at: REVEAL,
-        created_at: REVEAL.subtract({ microseconds: 1 }),
+        expires_at: REVEAL.toString(),
+        created_at: REVEAL.subtract({ microseconds: 1 }).toString(),
       });
       clock.set(REVEAL);
       const closed = (await reserve(tx, d, d.w.ben, "photo")) as Refusal;
@@ -557,6 +665,40 @@ describe("the cutoff is the reveal, read after the locks (T3, T4, T18)", () => {
       });
       expect(await db`SELECT FROM app.reservations WHERE occurrence_id = ${d.w.day}`).toHaveLength(0);
       expect(await db`SELECT FROM app.idempotency_receipts WHERE actor_user_id = ${d.w.ben.user}`).toHaveLength(0);
+    },
+  );
+
+  it(
+    "waits for the counter's row, and reads the clock after it: a request that waited across the reveal is refused",
+    { timeout: 30_000 },
+    async () => {
+      const d = await db.begin((tx) => days(tx as unknown as WorldTx));
+      committedDays.push(d.w.day, d.next, d.after);
+      const run = (tx: WorldTx) =>
+        createReservation(
+          tx,
+          clock,
+          { userId: d.w.ben.user, key: randomUUID(), occurrenceId: d.w.day, mediaClass: "photo" },
+          reservationBody,
+        );
+      // Ben's first slot makes his counter's row; then another connection holds that row alone, with no write,
+      // so only the command's own lock on it can make it wait (a key check never waits on a row only locked).
+      clock.set(REVEAL.subtract({ seconds: 2 }));
+      await db.begin((tx) => run(tx as unknown as WorldTx));
+      clock.set(REVEAL.subtract({ seconds: 1 }));
+      const hold = await holdingCounter(d.w.day, d.w.ben.interval);
+      const waiting = outcomeOf(db.begin((tx) => run(tx as unknown as WorldTx)));
+      try {
+        await waitingOn(db, hold.pid, 1);
+        clock.set(REVEAL);
+      } finally {
+        await hold.release();
+      }
+      expect(await waiting).toMatchObject({
+        code: "OCCURRENCE_CLOSED",
+        facts: { target: { id: d.w.day, phase: "open" } },
+      });
+      expect(await db`SELECT FROM app.reservations WHERE occurrence_id = ${d.w.day}`).toHaveLength(1);
     },
   );
 });
@@ -680,7 +822,7 @@ describe("a slot lapses at its expires_at, with nothing to run (T18)", () => {
       const d = await days(tx);
       const first = held(await reserve(tx, d, d.w.ben, "photo"));
       clock.advance({ minutes: 1 });
-      await reserve(tx, d, d.w.ben, "photo");
+      const second = held(await reserve(tx, d, d.w.ben, "photo"));
       expectLimit(await reserve(tx, d, d.w.ben, "photo"), "PHOTO_LIMIT", d, allowance(FRIEND, { heldPhotos: 2 }));
       // A microsecond before the first lapses, it still counts.
       clock.set(EVENING.add({ minutes: 30 }).subtract({ microseconds: 1 }));
@@ -690,10 +832,32 @@ describe("a slot lapses at its expires_at, with nothing to run (T18)", () => {
       expectHeld(await reserve(tx, d, d.w.ben, "photo"), allowance(FRIEND, { heldPhotos: 2 }));
       expect(await slotRow(tx, first.body.id)).toMatchObject({
         state: "expired",
-        ended_at: EVENING.add({ minutes: 30 }),
-        expires_at: EVENING.add({ minutes: 30 }),
+        ended_at: EVENING.add({ minutes: 30 }).toString(),
+        expires_at: EVENING.add({ minutes: 30 }).toString(),
+      });
+      // Settled a quarter of an hour after its time, the second is ended at its own expires_at all the same.
+      clock.set(EVENING.add({ minutes: 46 }));
+      expectHeld(await reserve(tx, d, d.w.ben, "photo"), allowance(FRIEND, { heldPhotos: 2 }));
+      expect(await slotRow(tx, second.body.id)).toMatchObject({
+        state: "expired",
+        ended_at: EVENING.add({ minutes: 31 }).toString(),
       });
       await expectBalanced(tx, d.w.day);
+    });
+  });
+
+  it("settles only the day's own counter: the caller's lapsed slot in another day stays as it was", async () => {
+    await rolledBack(db, async (tx) => {
+      const d = await days(tx);
+      const there = held(await reserve(tx, d, d.w.ben, "photo", { day: d.next }));
+      const here = held(await reserve(tx, d, d.w.ben, "photo"));
+      clock.set(EVENING.add({ minutes: 40 }));
+      expectHeld(await reserve(tx, d, d.w.ben, "external_video"), allowance(FRIEND, { heldLinks: 1 }));
+      expect(await slotRow(tx, here.body.id)).toMatchObject({ state: "expired" });
+      expect(await slotRow(tx, there.body.id)).toMatchObject({ state: "live", ended_at: null });
+      expect(await counterOf(tx, d.next, d.w.ben.interval)).toMatchObject({ reserved_total: 1 });
+      await expectBalanced(tx, d.w.day);
+      await expectBalanced(tx, d.next);
     });
   });
 });
@@ -757,6 +921,26 @@ describe("one slot per Idempotency-Key, and its first answer on every retry (T19
       expect(await reserve(tx, d, d.w.ben, "external_video", { key })).toEqual(bare("NOT_FOUND"));
     });
   });
+
+  it("names nothing under a used key once the caller has lost the day, whatever the body (T14, FQ112)", async () => {
+    const losses: ((tx: WorldTx, d: Days) => Promise<unknown>)[] = [
+      (tx, d) => tx`UPDATE app.clubs SET suspended_at = ${new Date("2026-11-06T21:05:00Z")} WHERE id = ${d.w.club}`,
+      (tx, d) => tx`UPDATE app.occurrences SET status = 'suspended' WHERE id = ${d.w.day}`,
+      (tx, d) => tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${d.w.day}`,
+      (tx, d) => leave(plain(tx), d.w.ben, "Ben", new Date("2026-11-06T21:05:00Z")),
+    ];
+    for (const lose of losses) {
+      await rolledBack(db, async (tx) => {
+        const d = await days(tx);
+        const key = randomUUID();
+        held(await reserve(tx, d, d.w.ben, "photo", { key }));
+        await lose(tx, d);
+        clock.set(at("2026-11-06T21:10:00Z"));
+        expect(await reserve(tx, d, d.w.ben, "photo", { key })).toEqual(bare("NOT_FOUND"));
+        expect(await reserve(tx, d, d.w.ben, "external_video", { key })).toEqual(bare("NOT_FOUND"));
+      });
+    }
+  });
 });
 
 describe("giving a slot back (T15, T18, T20)", () => {
@@ -775,7 +959,7 @@ describe("giving a slot back (T15, T18, T20)", () => {
       });
       expect(await slotRow(tx, photo.body.id)).toMatchObject({
         state: "released",
-        ended_at: EVENING.add({ minutes: 5 }),
+        ended_at: EVENING.add({ minutes: 5 }).toString(),
       });
       clock.advance({ minutes: 1 });
       expect(await releasing(tx, d.w.ben, photo.body.id)).toEqual(released);
@@ -820,6 +1004,10 @@ describe("giving a slot back (T15, T18, T20)", () => {
       expect(await releasing(tx, d.w.ben, first.body.id)).toMatchObject({ state: "released" });
       clock.set(REVEAL.add({ minutes: 1 }));
       expect(await releasing(tx, d.w.cleo, second.body.id)).toMatchObject({ state: "expired" });
+      expect(await slotRow(tx, second.body.id)).toMatchObject({
+        state: "expired",
+        ended_at: EVENING.add({ minutes: 30 }).toString(),
+      });
     });
   });
 

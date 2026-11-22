@@ -5,12 +5,14 @@
 // ended never changes again (`app.reservations_guard`).
 //
 // 1. Whose it is, with no lock: the reservation's interval is the caller's active interval, in a club that
-//    isn't suspended, for a day that is scheduled (../authorization/add-target.ts, its first rule, and the
-//    interval). Anyone else's, an earlier interval's after the account rejoined, a former member's, and an id
+//    isn't suspended, for a day that is scheduled (../authorization/add-target.ts `ownsReservation`, the
+//    rule's first conditions and the interval). Anyone else's, an earlier interval's after the account rejoined, a former member's, and an id
 //    nobody has all get the neutral NOT_FOUND (T14). A held day's slot can be given back like any other: the
 //    slot is the caller's own.
 // 2. The locks, in TECH-DESIGN's order: the club's row, the day's and the caller's membership `FOR SHARE`,
-//    the counter `FOR UPDATE` (./counter.ts), then the reservation's row. Every change of a reservation's
+//    the counter `FOR NO KEY UPDATE` (./counter.ts), then the reservation's row, `FOR NO KEY UPDATE` too: its
+//    key never changes (`reservations_keep`), and an upload naming it (B3) takes `FOR KEY SHARE` on it, which
+//    this lock leaves alone. Every change of a reservation's
 //    state is made under its counter's lock, so what the command reads after it stays true until it commits.
 // 3. The clock, sampled after the locks (T1), and step 1 again.
 // 4. The counter's lapsed reservations settled, this one among them if its time has come (T18). A slot still
@@ -18,10 +20,10 @@
 // 5. The answer: its state, the caller's own drop that used it when it was consumed, so a commit whose answer
 //    was lost isn't shown as not added (T20), and the caller's own allowance in the day (T15).
 
-import { addTargetOutcome, loadAddTarget, type AddTargetFacts } from "../authorization/add-target.ts";
+import { loadAddTarget, ownsReservation } from "../authorization/add-target.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { Refused } from "../refused.ts";
-import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
+import type { Clock, ClockSql } from "../time/clock.ts";
 import { allowanceOf, type Allowance } from "./allowance.ts";
 import { freeSlot, lockCounter, settleLapsed, type CounterKey } from "./counter.ts";
 
@@ -74,11 +76,6 @@ function slotOf(row: Readonly<Record<string, unknown>> | undefined): SlotRow | n
   return { day, interval, state: state as SlotRow["state"], dropId };
 }
 
-/** Whether `facts` give the caller the reservation of `interval`: step 1's rule. */
-function owns(facts: AddTargetFacts | null, interval: string, now: ServerNow): facts is AddTargetFacts {
-  return facts !== null && addTargetOutcome(facts, now).kind !== "not_found" && facts.viewerInterval === interval;
-}
-
 /** Gives back the caller's reservation, in `tx`, and says what became of it. Throws `Refused`. */
 export async function releaseReservation(
   tx: QuerySql & ClockSql,
@@ -101,7 +98,7 @@ export async function releaseReservation(
   );
   if (seen === null) throw new Refused("NOT_FOUND");
   const facts = await loadAddTarget(tx, userId, seen.day);
-  if (!owns(facts, seen.interval, first)) throw new Refused("NOT_FOUND");
+  if (!ownsReservation(facts, seen.interval, first)) throw new Refused("NOT_FOUND");
 
   // 2. The locks.
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${facts.day.clubId} FOR SHARE`;
@@ -109,12 +106,12 @@ export async function releaseReservation(
   await bound(tx)`SELECT interval_id FROM app.memberships WHERE interval_id = ${seen.interval} FOR SHARE`;
   const key: CounterKey = { day: seen.day, interval: seen.interval, club: facts.day.clubId };
   await lockCounter(tx, key);
-  await bound(tx)`SELECT id FROM app.reservations WHERE id = ${reservationId} FOR UPDATE`;
+  await bound(tx)`SELECT id FROM app.reservations WHERE id = ${reservationId} FOR NO KEY UPDATE`;
 
   // 3. The clock, and step 1 again.
   const at = await clock.sample(tx);
   const again = await loadAddTarget(tx, userId, seen.day);
-  if (!owns(again, seen.interval, at)) throw new Refused("NOT_FOUND");
+  if (!ownsReservation(again, seen.interval, at)) throw new Refused("NOT_FOUND");
   const isStar = seen.interval === again.day.starInterval;
 
   // 4. Lapses settled, then the slot given back if it is still live.

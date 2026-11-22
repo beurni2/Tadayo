@@ -68,13 +68,18 @@
 //   no body (the contract refuses it) and its guessed and malformed days with a photo, and releaseReservation
 //   of the slot Ben held in the world and gave back (bindings.ts), which only Ben gets back, still released.
 //   Then, in every phase, a table on the cell's day judged by reservation.ts from the world's rows before each
-//   request and held to its answer in the rows after it: the slot held in the phase before given back after
-//   it lapsed at the reveal (expired), twice; two photos, three links and three photos, so each role meets
+//   request and held to its answer in the rows after it: a photo slot Cleo held as a member and never gave
+//   back, whose row still says live though it lapsed before any phase, given back by every role (only Cleo's
+//   first interval gets it back, expired; Cleo rejoined in a new interval and everyone else get the neutral
+//   NOT_FOUND, with nothing settled; T9, T14); the slot held in the phase before given back after it lapsed
+//   at the reveal (expired), twice; two photos, three links and three photos, so each role meets
 //   its own limits (the star's six and two, anyone else's three, two and one; addendum 2, T17), QUOTA_FULL
 //   first; the first one's retry under its key (the same bytes) and another body under it
 //   (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back while live. Each role's test counts
 //   the slots it held, gave back and saw lapse, and one test names the five roles that held any, with the
-//   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"). What passes
+//   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"), as one counts
+//   who got Cleo's slot back. No matrix role joins after the day closes: Q06's not-found for a day that closed
+//   before the caller's interval began is held on Postgres and by the judge's tests. What passes
 //   through no cell, and is held on Postgres (tests/src/db/reservations.test.ts) and by reservation.test.ts's
 //   judge tests: MEMBERSHIP_CHANGED (no cell's star leaves before the reveal), a consumed slot (no drop is
 //   committed through the app before B3), two phones racing for the last slot (Q10) and the cutoff under the

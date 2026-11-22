@@ -1,8 +1,8 @@
 /// <reference lib="esnext.temporal" />
 // One contributor's counter in one day, under its row lock (spec 11, 31; T3, T17, T18; TECH-DESIGN section 5
 // and 6; db/migrations/0006_contributions.sql, 0010_allowance_by_role.sql). The counter's row is what
-// serializes the allowance: every command that takes or gives back a slot holds it `FOR UPDATE`, in the fixed
-// order (club, occurrence, membership intervals, counter, then a reservation or a drop), and samples the clock
+// serializes the allowance: every command that takes or gives back a slot holds it `FOR NO KEY UPDATE`, in the
+// fixed order (club, occurrence, membership intervals, counter, then a reservation or a drop), and samples the clock
 // only after it, so two devices racing for the last slot are put in order and the second sees the first's
 // slot (Q10). The row's CHECKs on each role's limits are only the last guard behind that (T17).
 //
@@ -52,8 +52,12 @@ function rowOf(row: Readonly<Record<string, unknown>> | undefined): CounterRow {
 }
 
 /**
- * Makes the counter's row if it has none, and takes its lock, `FOR UPDATE`, until the transaction ends. Two
- * commands making the same row at once queue on its key, and the second finds the first's.
+ * Makes the counter's row if it has none, and takes its lock, `FOR NO KEY UPDATE`, until the transaction ends.
+ * Two commands making the same row at once queue on its key, and the second finds the first's. The lock is
+ * the weaker of the two exclusive ones: the row's key never changes (`contribution_counters_keep`), and it
+ * conflicts with itself and `FOR SHARE` as `FOR UPDATE` does, but not with the `FOR KEY SHARE` a foreign key
+ * check takes (a drop, a highlight or a reservation naming the counter), so a commit that inserts one of those
+ * and then waits for the lock can't deadlock with a command that holds it.
  */
 export async function lockCounter(tx: QuerySql, key: CounterKey): Promise<void> {
   await bound(tx)`
@@ -63,7 +67,7 @@ export async function lockCounter(tx: QuerySql, key: CounterKey): Promise<void> 
   const rows = await bound(tx)`
     SELECT 1 AS held FROM app.contribution_counters
      WHERE occurrence_id = ${key.day} AND interval_id = ${key.interval} AND club_id = ${key.club}
-       FOR UPDATE`;
+       FOR NO KEY UPDATE`;
   if (rows.length !== 1) throw new Error("counter: no row to hold");
 }
 

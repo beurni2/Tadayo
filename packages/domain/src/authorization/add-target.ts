@@ -9,6 +9,10 @@
 //   (T9). Anything else, an id nobody has included, is `not_found`, the neutral not-found (T14). These are
 //   `activeMemberships`' three conditions (./member.ts) and the day's own status, as Home's day choice
 //   states them (./days.ts). A paused club's days take additions until they open (FQ50).
+// - Nor for a day that closed before the caller's interval began: a rejoined member's old days, and any day
+//   before a member joined, are `not_found` too, as getOccurrence's description says of a past day (Q06), so
+//   the answer tells such a caller nothing of whether the day ran, was held or was cancelled (T14). A day
+//   still open when they joined is theirs to see, as Home shows it, so it is `closed`, below.
 // - A held day, one whose star's interval ended, or whose star asked to delete their account, before its
 //   reveal, never opens (FQ63, T27): `held`, the read predicate's own two conditions (./read.ts'
 //   `notBeforeReveal`), whatever the time. The person the day is for has gone (MEMBERSHIP_CHANGED).
@@ -37,6 +41,8 @@ export interface AddTargetFacts {
   readonly viewerAccount: AccountState | null;
   /** The caller's active interval in the day's club, or null when they have none. */
   readonly viewerInterval: string | null;
+  /** When that interval began, or null when there is none. */
+  readonly viewerJoinedAt: Temporal.Instant | null;
   readonly clubSuspendedAt: Temporal.Instant | null;
   readonly day: DayFacts;
 }
@@ -76,6 +82,8 @@ export function addTargetOutcome(facts: AddTargetFacts | null, now: ServerNow): 
   )) {
     return { kind: "not_found" };
   }
+  // A day that closed before the caller's interval began (Q06): nothing, before the held and closed answers.
+  if (facts.viewerJoinedAt === null || !before(facts.viewerJoinedAt, day.closeAt)) return { kind: "not_found" };
   if (!(notBeforeReveal(day.starLeftAt, day.revealAt) && notBeforeReveal(day.starDeletionRequestedAt, day.revealAt))) {
     return { kind: "held" };
   }
@@ -90,6 +98,21 @@ export function addTargetOutcome(facts: AddTargetFacts | null, now: ServerNow): 
     interval: facts.viewerInterval,
     isStar: facts.viewerInterval === day.starInterval,
   };
+}
+
+/**
+ * Whether `facts`, read for a reservation's day, give the caller that reservation, made by the interval
+ * `slotInterval`: the day is one the caller may act on at all (anything but `not_found`, so a held or closed
+ * day's slot is still theirs to give back), and the interval is the caller's active one in its club, so an
+ * earlier interval's slot, after the account rejoined, is nobody's to them (T14). releaseReservation's rule,
+ * and the commit's later (B3): a command never states it again (T9).
+ */
+export function ownsReservation(
+  facts: AddTargetFacts | null,
+  slotInterval: string,
+  now: ServerNow,
+): facts is AddTargetFacts {
+  return facts !== null && addTargetOutcome(facts, now).kind !== "not_found" && facts.viewerInterval === slotInterval;
 }
 
 /**
@@ -207,7 +230,9 @@ export async function loadAddTarget(
            c.suspended_at AS club_suspended_at,
            (SELECT u.state FROM app.users u WHERE u.id = ${userId}::pg_catalog.text) AS viewer_account,
            (SELECT m.interval_id FROM app.memberships m
-             WHERE m.club_id = o.club_id AND m.user_id = ${userId}::pg_catalog.text AND m.state = 'active') AS viewer_interval
+             WHERE m.club_id = o.club_id AND m.user_id = ${userId}::pg_catalog.text AND m.state = 'active') AS viewer_interval,
+           (SELECT m.joined_at FROM app.memberships m
+             WHERE m.club_id = o.club_id AND m.user_id = ${userId}::pg_catalog.text AND m.state = 'active') AS viewer_joined_at
       FROM app.occurrences o
       JOIN app.clubs c ON c.id = o.club_id
       JOIN app.memberships s ON s.interval_id = o.star_interval_id
@@ -218,6 +243,7 @@ export async function loadAddTarget(
   return {
     viewerAccount: orNull(row["viewer_account"], (v) => oneOf(v, ACCOUNT, "the caller's account")),
     viewerInterval: orNull(row["viewer_interval"], (v) => text(v, "the caller's interval")),
+    viewerJoinedAt: orNull(row["viewer_joined_at"], (v) => instant(v, "the caller's joined_at")),
     clubSuspendedAt: orNull(row["club_suspended_at"], (v) => instant(v, "the club's suspension")),
     day: dayFactsOf(row),
   };

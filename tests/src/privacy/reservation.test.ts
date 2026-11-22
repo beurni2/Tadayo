@@ -213,6 +213,17 @@ describe("who may add to a day (adderOf)", () => {
     });
     expect(adderOf(rejoined, "usr_ben", SAT)).toBe("itv_ben2");
   });
+
+  it("is nobody's for a day that closed before the caller's interval began, and the interval's while it was open (Q06)", () => {
+    const joined = (when: Temporal.Instant) =>
+      world({
+        members: { itv_ben: { leftAt: NOW.subtract({ hours: 1 }) }, itv_ben2: { account: "usr_ben", joinedAt: when } },
+      });
+    expect(adderOf(joined(CLOSE), "usr_ben", SAT)).toBeUndefined();
+    expect(adderOf(joined(CLOSE.add({ hours: 1 })), "usr_ben", SAT)).toBeUndefined();
+    expect(adderOf(joined(CLOSE.subtract({ microseconds: 1 })), "usr_ben", SAT)).toBe("itv_ben2");
+    expect(adderOf(joined(CLOSE.add({ hours: 1 })), "usr_ben", NEXT)).toBe("itv_ben2");
+  });
 });
 
 describe("the allowance in a day, by role (allowanceIn; T15, T17, T18; addendum 2)", () => {
@@ -272,6 +283,38 @@ describe("what createReservation must answer (reserveOutcome, reserveExpected)",
     // The star leaving after the reveal changes nothing before it.
     const later = world({ members: { itv_ana: { leftAt: REVEAL.add({ hours: 1 }) } } });
     expect(outcome(later, "usr_ben", "photo").kind).toBe("held");
+  });
+
+  it("gives the neutral not-found, never MEMBERSHIP_CHANGED, on a held day to anyone who may not add to it (T14)", () => {
+    const gone = { itv_ana: { leftAt: NOW.subtract({ hours: 1 }) } };
+    expect(outcome(world({ members: gone }), "usr_zed", "photo")).toEqual({ kind: "pinned", answer: NEUTRAL });
+    for (const w of [
+      world({ members: gone, club: { suspendedAt: NOW } }),
+      world({ members: gone, sat: { status: "suspended" } }),
+      world({ members: gone, sat: { status: "cancelled" } }),
+      world({ members: gone, accounts: { usr_ben: { state: "deleting" } } }),
+      world({ members: { ...gone, itv_ben: { leftAt: NOW.subtract({ hours: 2 }) } } }),
+    ])
+      expect(outcome(w, "usr_ben", "photo")).toEqual({ kind: "pinned", answer: NEUTRAL });
+  });
+
+  it("gives the neutral not-found for a day that closed before the caller's interval began, held or run (Q06, T14)", () => {
+    const rejoined = (more: Record<string, Partial<WorldMember>> = {}) =>
+      world({
+        members: {
+          itv_ben: { leftAt: NOW.subtract({ hours: 1 }) },
+          itv_ben2: { account: "usr_ben", joinedAt: CLOSE.add({ hours: 1 }) },
+          ...more,
+        },
+      });
+    const after = CLOSE.add({ hours: 2 });
+    expect(outcome(rejoined(), "usr_ben", "photo", after)).toEqual({ kind: "pinned", answer: NEUTRAL });
+    expect(outcome(rejoined({ itv_ana: { leftAt: NOW } }), "usr_ben", "photo", after)).toEqual({
+      kind: "pinned",
+      answer: NEUTRAL,
+    });
+    // Cleo, a member all along, is told the day is past, with the star's next day.
+    expect(outcome(rejoined(), "usr_cleo", "photo", after).kind).toBe("refused");
   });
 
   it("refuses from the reveal on with the day as it is then and the star's next day (T3, T4)", () => {
@@ -424,6 +467,19 @@ describe("what the rows after createReservation must hold (heldProblems)", () =>
     const cleos = { ...before.reservations.get("cleos"), state: "expired" } as WorldReservation;
     const mine = { ...before.reservations.get("mine"), state: "expired" } as WorldReservation;
     expect(heldProblems(before, after({ rsv_new: made, cleos }), said, held, NOW)).not.toEqual([]);
+    // The caller's own lapsed slot in another day is another counter's, which this command never settles.
+    const elsewhere = { ...before, reservations: new Map(before.reservations) };
+    elsewhere.reservations.set(
+      "next",
+      slot("itv_ben", "photo", { day: NEXT, expiresAt: NOW.subtract({ minutes: 1 }) }),
+    );
+    const settledThere = new Map(elsewhere.reservations);
+    settledThere.set("rsv_new", made);
+    settledThere.set("next", {
+      ...slot("itv_ben", "photo", { day: NEXT, expiresAt: NOW.subtract({ minutes: 1 }) }),
+      state: "expired",
+    });
+    expect(heldProblems(elsewhere, { ...elsewhere, reservations: settledThere }, said, held, NOW)).not.toEqual([]);
     expect(heldProblems(before, after({ rsv_new: made, mine: undefined }), said, held, NOW)).not.toEqual([]);
     const refusal: ReserveOutcome = { kind: "pinned", answer: NEUTRAL };
     expect(heldProblems(before, after({}), NEUTRAL, refusal, NOW)).toEqual([]);
@@ -523,6 +579,21 @@ describe("what releaseReservation must answer, and the rows after it (releaseOut
     more.set("extra", slot("itv_ben", "photo"));
     more.set("live", { ...slot("itv_ben", "photo"), state: "released" });
     expect(releasedProblems(w, { ...w, reservations: more }, "live", outcome, NOW)).not.toEqual([]);
+    // The caller's own lapsed slot in another day is another counter's: settling it is no release's doing.
+    const twoDays = { ...w, reservations: new Map(w.reservations) };
+    twoDays.reservations.set("nextLapsed", slot("itv_ben", "photo", { day: NEXT, expiresAt: NOW }));
+    const settledBoth = new Map(twoDays.reservations);
+    settledBoth.set("live", { ...slot("itv_ben", "photo"), state: "released" });
+    settledBoth.set("nextLapsed", { ...slot("itv_ben", "photo", { day: NEXT, expiresAt: NOW }), state: "expired" });
+    expect(
+      releasedProblems(
+        twoDays,
+        { ...twoDays, reservations: settledBoth },
+        "live",
+        releaseOutcome(twoDays, "usr_ben", "live", NOW),
+        NOW,
+      ),
+    ).not.toEqual([]);
     // A refused release changes nothing, not even the caller's lapsed slots.
     const refused = releaseOutcome(w, "usr_zed", "live", NOW);
     expect(releasedProblems(w, after({}), "live", refused, NOW)).toEqual([]);

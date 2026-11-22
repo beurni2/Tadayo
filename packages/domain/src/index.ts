@@ -23,6 +23,7 @@ export {
   loadAddTarget,
   loadLaterDays,
   nextTargetOf,
+  ownsReservation,
   type AddTarget,
   type AddTargetFacts,
 } from "./authorization/add-target.ts";
