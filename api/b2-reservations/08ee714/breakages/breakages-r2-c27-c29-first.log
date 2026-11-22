@@ -1,0 +1,4 @@
+C27 CAUGHT: the caller's joined_at read from their first interval, not the active one (Q06) :: D exit 1 ["FAIL  src/db/reservations.test.ts > nothing for anyone the day isn't theirs to add to (T9, T14; FQ63) > gives the neutral not-found for a day that closed before the caller's interval began, and the day as it is to one who joined while it was open (Q06, T14)"]
+C28 CAUGHT: a settle that takes the interval's lapsed slots from every day :: D exit 1 ["FAIL  src/db/reservations.test.ts > a slot lapses at its expires_at, with nothing to run (T18) > settles only the day's own counter: the caller's lapsed slot in another day stays as it was"]
+C29 CAUGHT: the counter locked FOR SHARE :: D exit 1 ['FAIL  src/db/reservations.test.ts > two phones racing for the last slot are put in order by the counter (Q10, T17) > holds never more than each role allows when ten requests arrive at once, refusing every other']
+3 of 3 caught
