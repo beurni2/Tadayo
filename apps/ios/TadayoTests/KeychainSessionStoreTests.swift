@@ -101,6 +101,22 @@ final class KeychainSessionStoreTests: XCTestCase {
         XCTAssertEqual(try store.load(), session)
     }
 
+    func testAFirstLaunchAfterAnInstallForgetsTheInvitationLinksToo() throws {
+        // ADR-037: a reinstall is a phone that no longer holds the links it made.
+        let links = KeychainInvitationLinkVault(
+            environment: "dev", service: "app.tadayo.invitations.tests")
+        defer { try? links.delete() }
+        try links.save(InvitationLinkFile(accountID: "acct_ben", links: []))
+        let container = try emptyContainer()
+        defer { try? FileManager.default.removeItem(at: container) }
+        forgetEarlierInstall(markedIn: container)
+        XCTAssertNil(try links.load())
+        // Every launch after it keeps them.
+        try links.save(InvitationLinkFile(accountID: "acct_ben", links: []))
+        forgetEarlierInstall(markedIn: container)
+        XCTAssertNotNil(try links.load())
+    }
+
     func testWithNoContainerNoSessionIsKept() throws {
         try store.save(session)
         forgetEarlierInstall(markedIn: nil)
@@ -126,7 +142,8 @@ final class KeychainSessionStoreTests: XCTestCase {
 
     private func forgetEarlierInstall(markedIn container: URL?) {
         KeychainSessionStore.forgetEarlierInstall(
-            markedIn: container, service: "app.tadayo.session.tests")
+            markedIn: container, service: "app.tadayo.session.tests",
+            invitationsService: "app.tadayo.invitations.tests")
     }
 
     private func emptyContainer() throws -> URL {
