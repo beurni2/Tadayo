@@ -26,7 +26,7 @@ takes only the archive, as data, and runs only on a dev upload.
   plan       Reads the inputs and the team, says what the run will do, and fails before any
              build when something is missing or misshapen; for an upload, also unless the
              site's apple-app-site-association (SITE_ASSOCIATION) names the app under the run's
-             team, and only it, so the build's invitation links open it.
+             team among its appIDs, so iOS can open the site's links in this build.
   toolchain  ios_steps.py's: the pinned Xcode and its Swift (tools/ci/toolchain.py).
   xcodegen   ios_steps.py's: the pinned XcodeGen makes the project from apps/ios/project.yml.
   archive    `xcodebuild archive` for a generic iPhone, in the environment's configuration, with
@@ -423,21 +423,26 @@ class Steps:
 
     def site_names(self, team):
         """Raises ValueError unless the site's apple-app-site-association names the app under
-        `team`, and only it: else the upload's links would open Safari, iOS finding no app of the
-        team the build is signed for. The team isn't printed."""
+        `team` among its appIDs: else iOS finds no app of the team the build is signed for, and
+        the site's links open Safari. Only the app ids are read, not which paths they cover. The
+        singular appID, which apps/web's build refuses (apps/web/src/build.ts), fails here too.
+        The team isn't printed."""
         try:
-            with open(os.path.join(self.root, *SITE_ASSOCIATION.split("/"))) as f:
+            path = os.path.join(self.root, *SITE_ASSOCIATION.split("/"))
+            with open(path, encoding="utf-8") as f:
                 site = json.load(f)
-            ids = []
+            ids, singular = [], False
             for details in site["applinks"]["details"]:
                 ids += details.get("appIDs", [])
-                if "appID" in details:
-                    ids.append(details["appID"])
+                singular = singular or "appID" in details
         except (OSError, ValueError, KeyError, TypeError, AttributeError):
             raise ValueError(f"{SITE_ASSOCIATION} can't be read as the site's app links")
-        if ids != [f"{team}.{APP_ID}"]:
+        if singular:
+            raise ValueError(f"{SITE_ASSOCIATION} names an app by the singular appID, which "
+                             "apps/web's build refuses")
+        if f"{team}.{APP_ID}" not in ids:
             raise ValueError(f"{SITE_ASSOCIATION} doesn't name the app under the run's team "
-                             "(APPLE_TEAM_ID) alone, so its links wouldn't open this build")
+                             "(APPLE_TEAM_ID), so its links wouldn't open this build")
 
     def key(self):
         """(key id, issuer id, the key's text), or raises ValueError. Never printed."""
@@ -530,7 +535,8 @@ class Steps:
             self.say("plan", str(error))
             return 1
         self.say("plan", f"the {CONFIGURATIONS[environment]} configuration ({environment}), "
-                         f"build {build}, " + ("signed and uploaded to App Store Connect"
+                         f"build {build}, " + ("signed and uploaded to App Store Connect, the "
+                                               "site naming the app under the run's team"
                                                if upload else "a dry run: archived and checked, "
                                                "nothing signed for Apple and nothing uploaded"))
         return 0
@@ -596,7 +602,8 @@ class Steps:
             self.say("check", problem)
         if problems:
             return 1
-        self.say("check", f"the {environment} archive holds what it must and nothing it mustn't")
+        self.say("check", f"the {environment} archive holds what it must, the app's associated "
+                          "domain among it, and nothing it mustn't")
         return 0
 
     def archive_problems(self, environment, build):
@@ -735,7 +742,8 @@ class Steps:
             self.say("export", problem)
         if problems:
             return 1
-        self.say("export", "signed for App Store Connect, with the app group in both bundles")
+        self.say("export", "signed for App Store Connect, with the app group in both bundles "
+                           f"and the app's associated domain, {ASSOCIATED_DOMAINS[0]}")
         return 0
 
     def exported_problems(self, folder, team):

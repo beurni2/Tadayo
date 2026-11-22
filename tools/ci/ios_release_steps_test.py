@@ -265,10 +265,10 @@ class HelpersTest(unittest.TestCase):
                           "NSExtensionActivationSupportsText": True})
 
     def test_the_associated_domain_is_the_project_s_and_the_site_names_the_app(self):
-        # The check's one domain is the one the app's target declares, when it declares one, and
-        # no other target declares any (apps/ios/project.yml, read whole by a YAML library, as
-        # XcodeGen reads it, so its layout, quoting and comments don't matter); the site's
-        # apple-app-site-association names this app and no other.
+        # The check's one domain is the one the app's target must declare, and no other target
+        # declares any (apps/ios/project.yml, read whole by a YAML library, as XcodeGen reads it,
+        # so its layout, quoting and comments don't matter): ci refuses a project that lost it,
+        # before a release's check would.
         try:
             import yaml
         except ImportError:
@@ -285,8 +285,8 @@ class HelpersTest(unittest.TestCase):
 
         for name, target in targets.items():
             properties = declared(target)
-            if name == "Tadayo" and release.ASSOCIATED_DOMAINS_KEY in properties:
-                self.assertEqual(properties[release.ASSOCIATED_DOMAINS_KEY],
+            if name == "Tadayo":
+                self.assertEqual(properties.get(release.ASSOCIATED_DOMAINS_KEY),
                                  release.ASSOCIATED_DOMAINS)
             else:
                 self.assertNotIn(release.ASSOCIATED_DOMAINS_KEY, properties, name)
@@ -422,18 +422,28 @@ class PlanTest(StepsTest):
         self.assertEqual(code, 0, out)
         self.assertIn("uploaded", out)
 
-    def test_an_upload_needs_the_site_to_name_the_app_under_its_team_alone(self):
+    def test_an_upload_needs_the_site_to_name_the_app_under_its_team(self):
         # The site's file is apps/web's, served at tadayo.app; the team is the repository's
         # variable. A mismatch would ship invitation links that open Safari.
         other = "ABCDE12345"
         for ids, text in (([f"{other}.{release.APP_ID}"], None),
-                          ([f"{TEAM}.{release.APP_ID}", f"{other}.{release.APP_ID}"], None),
                           ([f"{TEAM}.{release.SHARE_ID}"], None),
                           ([], None),
                           (None, "not json"),
+                          (None, json.dumps({"applinks": None})),
+                          (None, json.dumps([])),
                           (None, json.dumps({"applinks": {"details": "none"}})),
                           (None, json.dumps({"applinks": {"details": [
+                              {"appIDs": f"{TEAM}.{release.APP_ID}"}]}})),
+                          (None, json.dumps({"applinks": {"details": [
                               {"appID": f"{other}.{release.APP_ID}"}]}})),
+                          # The singular appID, which apps/web's build refuses, even naming the
+                          # app.
+                          (None, json.dumps({"applinks": {"details": [
+                              {"appID": f"{TEAM}.{release.APP_ID}"}]}})),
+                          (None, json.dumps({"applinks": {"details": [
+                              {"appIDs": [f"{TEAM}.{release.APP_ID}"]},
+                              {"appID": f"{TEAM}.{release.APP_ID}"}]}})),
                           (None, json.dumps({"webcredentials": {}}))):
             self.site(ids, text)
             code, out = self.step("plan")
@@ -444,24 +454,33 @@ class PlanTest(StepsTest):
         code, out = self.step("plan")
         self.assertEqual(code, 1, out)
         self.assertIn("can't be read", out)
-        # The older singular appID, which iOS still reads, counts as the app's.
-        self.site(None, json.dumps({"applinks": {"details": [
-            {"appID": f"{TEAM}.{release.APP_ID}"}]}}))
-        self.assertEqual(self.step("plan")[0], 0)
-        # A dry run signs for no team, so it doesn't read the site.
-        self.assertEqual(self.step("plan", RELEASE_UPLOAD="false", APPLE_TEAM_ID="")[0], 0)
+        # A dry run signs for no team, so it doesn't read the site, even with a team and no file.
+        code, out = self.step("plan", RELEASE_UPLOAD="false")
+        self.assertEqual(code, 0, out)
+        self.assertIn("dry run", out)
+        # Other apps beside it, as apps/web's own checker allows, and the app named twice.
+        for ids in ([f"{TEAM}.{release.APP_ID}", f"{other}.{release.APP_ID}"],
+                    [f"{TEAM}.{release.SHARE_ID}", f"{TEAM}.{release.APP_ID}"],
+                    [f"{TEAM}.{release.APP_ID}", f"{TEAM}.{release.APP_ID}"]):
+            self.site(ids)
+            code, out = self.step("plan")
+            self.assertEqual(code, 0, (ids, out))
+            self.assertIn("the site naming the app under the run's team", out)
 
-    def test_the_repository_s_site_names_one_app(self):
-        # The file the release reads is the one apps/web serves, with one app id in the form
-        # an upload's plan checks against the run's team.
+    def test_the_repository_s_site_names_the_app(self):
+        # The file the release reads is the one apps/web serves, naming the app under a team in
+        # the form an upload's plan checks against the run's team, and under no other.
         steps = release.Steps(ROOT, FakeShell(), environ={})
-        with open(os.path.join(ROOT, *release.SITE_ASSOCIATION.split("/"))) as f:
-            ids = json.load(f)["applinks"]["details"][0]["appIDs"]
-        self.assertEqual(len(ids), 1)
-        team = ids[0].split(".")[0]
-        steps.site_names(team)
+        with open(os.path.join(ROOT, *release.SITE_ASSOCIATION.split("/")),
+                  encoding="utf-8") as f:
+            details = json.load(f)["applinks"]["details"]
+        teams = [app.split(".")[0] for entry in details for app in entry["appIDs"]
+                 if app.split(".", 1)[1:] == [release.APP_ID]]
+        self.assertEqual(len(set(teams)), 1, teams)
+        self.assertTrue(release.TEAM_ID.fullmatch(teams[0]), teams)
+        steps.site_names(teams[0])
         with self.assertRaises(ValueError):
-            steps.site_names("ABCDE12345" if team != "ABCDE12345" else "ZZZZZ99999")
+            steps.site_names("ABCDE12345" if teams[0] != "ABCDE12345" else "ZZZZZ99999")
 
     def test_a_dry_run_needs_no_key_and_no_team(self):
         code, out = self.step("plan", RELEASE_UPLOAD="false", APPLE_TEAM_ID="", ASC_KEY_ID="",
