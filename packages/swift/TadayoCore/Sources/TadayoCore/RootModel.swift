@@ -106,13 +106,13 @@ import Observation
     /// behind, say, is dropped.
     private var homeReads = 0
     /// A link held in memory until the tabs show, never written anywhere (book p9,
-    /// `linkEntry.retention`; FQ135's default): one opened before any account showed, for whoever
-    /// signs in; or one opened while an incomplete account's age or profile step shows, or an
-    /// invitation set aside when the server ended the session or the account was found
-    /// incomplete, for that account alone.
+    /// `linkEntry.retention`; FQ135's default): one opened before any account showed, for the
+    /// first account that shows; or one opened while an incomplete account's age or profile step
+    /// shows, or an invitation set aside when the server ended the session or the account was
+    /// found incomplete, for that account alone.
     private struct HeldInvitation {
         let token: InvitationToken
-        /// The account it's for; nil for a link opened before any account showed.
+        /// The account it's for; nil for a link opened before any account showed, until one does.
         let accountID: String?
     }
     /// The link held until the tabs show. A newer link replaces it.
@@ -439,7 +439,8 @@ import Observation
                 return model
             },
             released: { [weak self] model in
-                // Left (Back) or done (the club opened): closed, and no longer set aside.
+                // Left (Back), replaced by the next Continue's, or done (the club opened): closed,
+                // and no longer set aside.
                 model.close()
                 self?.pasted.removeAll { $0.model == nil || $0.model === model }
             })
@@ -452,11 +453,16 @@ import Observation
     }
 
     /// The shown invitation and the paste steps', closed and let go; gives the link of the one shown
-    /// (the root's first, then the latest paste step's), held for the account it was shown to.
+    /// (the root's first, then the paste steps' from the last made), held for the account it was
+    /// shown to. One that has joined (`opening`) is held by none: its token has been dropped.
     private func setAsideInvitations() -> HeldInvitation? {
         let pastedModels = pasted.compactMap(\.model)
         let shown = ([invitation].compactMap { $0 } + pastedModels.reversed())
-            .first { $0.token != nil }
+            .first { model in
+                guard model.token != nil else { return false }
+                if case .opening = model.state { return false }
+                return true
+            }
         let held = shown.flatMap { model in
             model.token.map { HeldInvitation(token: $0, accountID: model.accountID) }
         }
@@ -647,9 +653,16 @@ import Observation
     }
 
     private func show(_ account: Account) async {
-        // A link held for another account is let go as soon as this one shows (the contract's
-        // `MyInvitationState`: purged at an account switch).
-        if let owner = pendingInvitation?.accountID, owner != account.id { pendingInvitation = nil }
+        // A held link is this account's once it shows, if it was opened before any account showed,
+        // and one held for another account is let go (the contract's `MyInvitationState`: purged
+        // at an account switch).
+        if let held = pendingInvitation {
+            if let owner = held.accountID {
+                if owner != account.id { pendingInvitation = nil }
+            } else {
+                pendingInvitation = HeldInvitation(token: held.token, accountID: account.id)
+            }
+        }
         guard Self.isComplete(account) else {
             self.account = nil
             // Nothing of a club while the account is incomplete: a shown invitation is held again,

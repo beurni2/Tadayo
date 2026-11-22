@@ -10,14 +10,15 @@ import Testing
     func entry(_ service: ScriptedClubs, made: @escaping @MainActor () -> Void = {})
         -> InvitationLinkEntryModel
     {
-        InvitationLinkEntryModel { token in
-            made()
-            return InvitationModel(
-                token: token, service: service,
-                book: InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
-                account: Kitchen.account, current: { true }, joined: { _ in },
-                signedOut: {})
-        }
+        InvitationLinkEntryModel(
+            make: { token in
+                made()
+                return InvitationModel(
+                    token: token, service: service,
+                    book: InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
+                    account: Kitchen.account, current: { true }, joined: { _ in },
+                    signedOut: {})
+            }, released: { _ in })
     }
 
     @Test func continueWaitsForTextInTheField() {
@@ -143,12 +144,49 @@ import Testing
         #expect(released.last === shown)
     }
 
+    @Test func aNewCheckLetsTheShownInvitationGo() async throws {
+        let service = ScriptedClubs()
+        service.previewAnswers = [
+            .success(.open(Kitchen.roster())), .success(.open(Kitchen.roster())),
+            .failure(.network),
+        ]
+        var released: [InvitationModel] = []
+        let entry = InvitationLinkEntryModel(
+            make: { token in
+                InvitationModel(
+                    token: token, service: service,
+                    book: InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
+                    account: Kitchen.account, current: { true }, joined: { _ in },
+                    signedOut: {})
+            },
+            released: { released.append($0) })
+        entry.text = link
+        await entry.proceed()
+        let first = try #require(entry.invitation)
+        #expect(released.isEmpty)
+        entry.text = "https://tadayo.app/i#" + Kitchen.token(2).secret
+        await entry.proceed()
+        #expect(released.count == 1)
+        #expect(released.first === first)
+        let second = try #require(entry.invitation)
+        #expect(second !== first)
+        #expect(second.state == .open(Kitchen.roster()))
+        // A check that fails lets the shown one go too, and shows none.
+        await entry.proceed()
+        #expect(released.count == 2)
+        #expect(released.last === second)
+        #expect(entry.invitation == nil)
+        #expect(entry.problem == .cannotCheck(.network))
+        #expect(service.calls == ["preview 01", "preview 02", "preview 02"])
+    }
+
     @Test func nothingIsCheckedOnceTheSessionHasEnded() async {
         var asked = 0
-        let entry = InvitationLinkEntryModel { _ in
-            asked += 1
-            return nil
-        }
+        let entry = InvitationLinkEntryModel(
+            make: { _ in
+                asked += 1
+                return nil
+            }, released: { _ in })
         entry.text = link
         await entry.proceed()
         #expect(asked == 1)

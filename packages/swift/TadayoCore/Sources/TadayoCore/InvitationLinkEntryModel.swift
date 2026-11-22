@@ -39,10 +39,11 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     let released: @MainActor (InvitationModel) -> Void
 
     /// `make` gives the invitation's model for a token, or nil once the session it was made in has
-    /// ended; `released` is told when a model is done with: left (Back), or its club opened.
+    /// ended; `released` is told when a model is done with: left (Back), replaced by the next
+    /// Continue's, or its club opened while the link was checked.
     public init(
         make: @escaping @MainActor (InvitationToken) -> InvitationModel?,
-        released: @escaping @MainActor (InvitationModel) -> Void = { _ in }
+        released: @escaping @MainActor (InvitationModel) -> Void
     ) {
         self.make = make
         self.released = released
@@ -84,6 +85,11 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
             return
         }
         guard let model = make(token) else { return }
+        // A new check: an invitation still handed over is done with.
+        if let shown = invitation {
+            invitation = nil
+            released(shown)
+        }
         problem = nil
         isChecking = true
         await model.check()

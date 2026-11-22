@@ -375,6 +375,95 @@ import Testing
         #expect(clubs.calls.isEmpty)
     }
 
+    @Test func aLinkOpenedBeforeSignInIsTheFirstAccountsThatShows() async throws {
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(maya)],
+            clubs: [.failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs, auth: auth, signedIn: false)
+        await root.start()
+        await root.open(token)
+        try await signIn(root, as: "leila@example.com")
+        // Leila's tabs showed, and the server ended the session while the list was read.
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "maya@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.account?.id == "acct_maya")
+        #expect(root.invitation == nil)
+        #expect(clubs.calls.isEmpty)
+    }
+
+    @Test func aLinkOpenedBeforeSignInStaysWithAnAccountThatShowsIncomplete() async throws {
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(account()), .success(maya)],
+            update: [.failure(.signedOut)],
+            clubs: [.success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs, auth: auth, signedIn: false)
+        await root.start()
+        await root.open(token)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .confirmAge)
+        // The server ends the session on A02-age, and Maya signs in.
+        let profile = try #require(root.profile)
+        await profile.confirmAge()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "maya@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.account?.id == "acct_maya")
+        #expect(root.invitation == nil)
+        #expect(clubs.calls.isEmpty)
+    }
+
+    @Test func aLinkOpenedWhileAKeptSessionsAccountIsReadIsThatAccounts() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(maya)],
+            clubs: [.failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        let gate = Gate()
+        accounts.duringMe = { await gate.wait() }
+        async let started: Void = root.start()
+        await gate.reached()
+        accounts.duringMe = {}
+        // The link that launched the app, while the kept session's account is read.
+        await root.open(token)
+        gate.open()
+        await started
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "maya@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.account?.id == "acct_maya")
+        #expect(root.invitation == nil)
+        #expect(clubs.calls.isEmpty)
+    }
+
+    @Test func aLinkOpenedBeforeSignInWaitsForTheSameAccountThroughTheServersEnding()
+        async throws
+    {
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [.failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs, auth: auth, signedIn: false)
+        await root.start()
+        await root.open(token)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(clubs.calls == ["preview 01"])
+    }
+
     @Test func aLinkOpenedWhileTheListIsReadIsntReplacedByAnOlderHeldOne() async {
         let auth = FakeAuth(verify: [.success(stored)])
         let accounts = FakeAccounts(me: [.success(leila)], clubs: [.success(list())])
@@ -942,6 +1031,59 @@ import Testing
         #expect(root.invitation == nil)
         #expect(clubs.calls == ["preview 01", "preview 01"])
         withExtendedLifetime(entry) {}
+    }
+
+    @Test func aPastedInvitationThatJoinedIsNeverHeld() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [
+                .success(list()), .success(list([kitchen])), .failure(.signedOut),
+                .success(list([kitchen])),
+            ])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        clubs.acceptAnswers = [.success(.joined(Kitchen.ref))]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        let pasted = try #require(entry.invitation)
+        await pasted.accept()
+        #expect(pasted.state == .opening(Kitchen.ref))
+        #expect(root.selectedClubID == "club_kitchen")
+        // The server ends the session with the paste step still there: its token was dropped at
+        // the join, so nothing is held.
+        await root.retry()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.invitation == nil)
+        #expect(clubs.calls.count == 2)
+        #expect(clubs.calls.last?.hasPrefix("accept 01 rev_1 v1 ") == true)
+        withExtendedLifetime(entry) {}
+    }
+
+    @Test func anInvitationThatJoinedIsntHeldWhenItsListsReadEndsTheSession() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [.success(list()), .failure(.signedOut), .success(list([kitchen]))])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        clubs.acceptAnswers = [.success(.joined(Kitchen.ref))]
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        await root.open(token)
+        let invitation = try #require(root.invitation)
+        await invitation.accept()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.invitation == nil)
+        #expect(clubs.calls.count == 2)
+        #expect(clubs.calls.last?.hasPrefix("accept 01 rev_1 v1 ") == true)
     }
 
     /// Signs in on A02-email and A02-code, as the address given.
