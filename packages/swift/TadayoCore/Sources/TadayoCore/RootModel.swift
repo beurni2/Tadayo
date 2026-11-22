@@ -90,6 +90,9 @@ import Observation
     public private(set) var account: Account?
     public private(set) var signIn: SignInModel?
     public private(set) var profile: ProfileModel?
+    /// The invitation shown over the tabs, from a link opened or an accepted invitation the club
+    /// list holds (`docs/plans/ios-b1-invitation.md` section 1), or nil.
+    public private(set) var invitation: InvitationModel?
 
     /// Moves each time the app leaves an account. An answer to a call made before is dropped, so
     /// nothing that lands after Leave sign-in can route back into the account left (spec 23).
@@ -102,6 +105,24 @@ import Observation
     /// Moves each time Home is read: an answer to an earlier read, for a club since left
     /// behind, say, is dropped.
     private var homeReads = 0
+    /// A link held in memory until the tabs show, never written anywhere (book p9,
+    /// `linkEntry.retention`; FQ135's default): one opened before any account showed, for the
+    /// first account that shows; or one opened while an incomplete account's age or profile step
+    /// shows, or an invitation set aside when the server ended the session or the account was
+    /// found incomplete, for that account alone.
+    private struct HeldInvitation {
+        let token: InvitationToken
+        /// The account it's for; nil for a link opened before any account showed, until one does.
+        let accountID: String?
+    }
+    /// The link held until the tabs show. A newer link replaces it.
+    private var pendingInvitation: HeldInvitation?
+    /// A paste step's invitation, while it's checked or shown there.
+    private struct PastedInvitation {
+        weak var model: InvitationModel?
+    }
+    /// The paste steps' invitations, so that they're set aside with the root's.
+    @ObservationIgnored private var pasted: [PastedInvitation] = []
 
     /// Why a session is being ended. Only the server's ending is said on A02-email ("Your sign-in
     /// ended. Enter your email to sign in again.", handoff 7's `auth.email.signedOut`), which then
@@ -208,6 +229,14 @@ import Observation
         signIn = nil
         profile = nil
         account = nil
+        // A session the server ended keeps the invitation's intent through the next sign-in, in
+        // memory only and for the same account (book p9; FQ135). Leave sign-in forgets it.
+        let shown = setAsideInvitations()
+        if case .byServer = ending {
+            if let shown { pendingInvitation = shown }
+        } else {
+            pendingInvitation = nil
+        }
         forgetClubs()
         selection.forget()
         links.forget()
@@ -345,6 +374,141 @@ import Observation
             current: { [weak self] in self?.epoch == made },
             gone: { [weak self] in await self?.loadClubs() },
             signedOut: { [weak self] in await self?.endedByServer() })
+    }
+
+    /// An invitation link, from the link handler. While the tabs show an account it's presented at
+    /// once, checking, in place of any shown before: a newer link wins. Otherwise it's held in
+    /// memory and presented once the tabs show, after the club list's read, so nothing of the
+    /// club shows before sign-in (book p9; FQ135).
+    public func open(_ token: InvitationToken) async {
+        guard route == .tabs, let account else {
+            pendingInvitation = HeldInvitation(token: token, accountID: profile?.account.id)
+            return
+        }
+        pendingInvitation = nil
+        await present(token, for: account)
+    }
+
+    /// An accepted invitation the club list holds: `G03-waiting` from the list's words, with no
+    /// call; `G03-declined`; or, for a changed roster, the kept token checked (`G02-changed`), or,
+    /// with none kept, the link opened again (FQ136).
+    public func openAccepted(_ accepted: MyInvitation) async {
+        guard route == .tabs, let account else { return }
+        let kept = links.received(invitation: accepted.invitationID, account: account.id)?.token
+        switch accepted.state {
+        case .waiting:
+            setInvitation(
+                makeInvitation(kept, state: .waiting(clubName: accepted.clubName), for: account))
+        case .didNotGoAhead:
+            // The invitation has ended: its token goes (the contract's `MyInvitationState`).
+            if let kept { links.dropReceived(kept, account: account.id) }
+            setInvitation(
+                makeInvitation(
+                    nil, state: .didNotGoAhead(inviterName: accepted.inviterName), for: account))
+        case .rosterChanged:
+            guard let kept else {
+                setInvitation(
+                    makeInvitation(
+                        nil,
+                        state: .reopenLink(
+                            clubName: accepted.clubName, inviterName: accepted.inviterName),
+                        for: account))
+                return
+            }
+            await present(kept, for: account)
+        }
+    }
+
+    /// Not now, Done and Close invitation: nothing is granted or changed (handoff 1).
+    public func closeInvitation() {
+        setInvitation(nil)
+    }
+
+    /// The paste step, `G02-link-entry-signed-in`, while the tabs show an account. It checks a
+    /// link on its own screen and hands over the invitation it found (handoff 4); once the session
+    /// it was made in has ended, or while the tabs don't show, it checks nothing.
+    public func linkEntry() -> InvitationLinkEntryModel? {
+        guard route == .tabs, let account else { return nil }
+        let made = epoch
+        return InvitationLinkEntryModel(
+            make: { [weak self] token in
+                guard let self, self.epoch == made, self.route == .tabs else { return nil }
+                let model = self.makeInvitation(token, state: .checking, for: account)
+                self.pasted.removeAll { $0.model == nil }
+                self.pasted.append(PastedInvitation(model: model))
+                return model
+            },
+            released: { [weak self] model in
+                // Left (Back), replaced by the next Continue's, or done (the club opened): closed,
+                // and no longer set aside.
+                model.close()
+                self?.pasted.removeAll { $0.model == nil || $0.model === model }
+            })
+    }
+
+    private func present(_ token: InvitationToken, for account: Account) async {
+        let model = makeInvitation(token, state: .checking, for: account)
+        setInvitation(model)
+        await model.check()
+    }
+
+    /// The shown invitation and the paste steps', closed and let go; gives the link of the one shown
+    /// (the root's first, then the paste steps' from the last made), held for the account it was
+    /// shown to. One that has joined or ended (`opening`, `expired`, `didNotGoAhead`,
+    /// `unavailable`) is held by none: its token has been dropped.
+    private func setAsideInvitations() -> HeldInvitation? {
+        let pastedModels = pasted.compactMap(\.model)
+        let shown = ([invitation].compactMap { $0 } + pastedModels.reversed())
+            .first { model in
+                guard model.token != nil else { return false }
+                switch model.state {
+                case .opening, .expired, .didNotGoAhead, .unavailable: return false
+                default: return true
+                }
+            }
+        let held = shown.flatMap { model in
+            model.token.map { HeldInvitation(token: $0, accountID: model.accountID) }
+        }
+        for model in pastedModels { model.close() }
+        pasted = []
+        setInvitation(nil)
+        return held
+    }
+
+    /// The invitation shown, in place of the one before, which is closed: an answer still on its
+    /// way for it keeps nothing.
+    private func setInvitation(_ model: InvitationModel?) {
+        invitation?.close()
+        invitation = model
+    }
+
+    /// An invitation's model, for this session. Once the account has joined, the club is kept as
+    /// its selected club and the list read again, so Home opens on it, and the invitation then
+    /// closes; a `signedOut` answer ends the session.
+    private func makeInvitation(
+        _ token: InvitationToken?, state: InvitationModel.State, for account: Account
+    ) -> InvitationModel {
+        let made = epoch
+        weak var created: InvitationModel?
+        let model = InvitationModel(
+            token: token, state: state, service: clubService, book: links, account: account.id,
+            makeKey: makeKey,
+            current: { [weak self] in self?.epoch == made },
+            joined: { [weak self] club in
+                guard let self, self.epoch == made else { return }
+                self.selection.keep(club.id, for: account.id)
+                await self.loadClubs()
+                guard self.epoch == made, let created, self.invitation === created else {
+                    return
+                }
+                self.setInvitation(nil)
+            },
+            signedOut: { [weak self] in
+                guard let self, self.epoch == made else { return }
+                await self.endedByServer()
+            })
+        created = model
+        return model
     }
 
     private func choose(_ clubID: String, relisting: Bool = false) async {
@@ -492,8 +656,21 @@ import Observation
     }
 
     private func show(_ account: Account) async {
+        // A held link is this account's once it shows, if it was opened before any account showed,
+        // and one held for another account is let go (the contract's `MyInvitationState`: purged
+        // at an account switch).
+        if let held = pendingInvitation {
+            if let owner = held.accountID {
+                if owner != account.id { pendingInvitation = nil }
+            } else {
+                pendingInvitation = HeldInvitation(token: held.token, accountID: account.id)
+            }
+        }
         guard Self.isComplete(account) else {
             self.account = nil
+            // Nothing of a club while the account is incomplete: a shown invitation is held again,
+            // in memory, until the tabs show.
+            if let shown = setAsideInvitations() { pendingInvitation = shown }
             if let profile {
                 profile.refresh(account)
             } else {
@@ -516,6 +693,11 @@ import Observation
         profile = nil
         self.account = account
         route = .tabs
+        let asked = epoch
         await loadClubs()
+        // A held link, presented after the list's read: one for another account went above.
+        guard epoch == asked, route == .tabs, let held = pendingInvitation else { return }
+        pendingInvitation = nil
+        await present(held.token, for: account)
     }
 }

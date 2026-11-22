@@ -74,8 +74,9 @@ targets:
     # group (ADR-019; TECH-DESIGN section 4). And the app's one associated domain, so an
     # invitation link, https://tadayo.app/i#<token>, opens the app (spike S6; B1's invitations):
     # tadayo.app's apple-app-site-association names this app for /i (apps/web), and the release
-    # check lets the app alone hold exactly this value (tools/ci/ios_release_steps.py). The share
-    # extension opens no links. XcodeGen writes the file.
+    # check requires the app, and no other target, to hold exactly this value
+    # (tools/ci/ios_release_steps.py). The share extension opens no links. XcodeGen writes the
+    # file.
     entitlements:
       path: Tadayo/Tadayo.entitlements
       properties:

@@ -716,6 +716,19 @@ The coordinator reserved FQ134 at 04:04 UTC on 2026-11-22.
     - The other readings: a mode of its own with its own words (a contract change, and a design handoff for its state), or `paused`'s words, which would be false while two members remain.
     - Needed by: B2, before the trial. The answer changes `homeMode` and its tests, and perhaps the contract and the ios lane's Home.
 
+## Raised by B1's invitation (`ios/b1-invitation`)
+
+The coordinator reserved FQ135 at 08:17 UTC and FQ136 at 08:25 UTC on 2026-11-22 (`docs/plans/ios-b1-invitation.md` section 3).
+
+- **FQ135. Where an invitation link opened or pasted before sign-in waits.** Book p9 says an invitation keeps its intent through sign-in, and handoff 4's `linkEntry.retention` says "Keep the pasted URL and pending invitation through authentication. No club or roster is shown before sign-in." Neither says whether the token may be written to the phone before an account exists.
+    - Default (Claude Code's): in memory only (`RootModel`'s `pendingInvitation`), until the tabs show an account, then checked. Nothing is written anywhere before an account exists, so no token outlives a sign-in that was given up (T7, T11). A relaunch during sign-in loses it: the person taps the link again, which they still have where it was shared. The same memory holds the link of an invitation shown when the server ended the session (the sign-in ended), for that account's next sign-in only, never another account's, and of one shown when the account is found incomplete, or opened on its age or profile step, until its tabs show again; any of these is let go as soon as another account shows. A link opened while no account shows (before sign-in, while a kept session's account is read, on A02-email after a session ended, or while one is being left) becomes the first account's that shows, and is then held the same way, for that account alone. Leave sign-in forgets it, as the person asked.
+    - The other reading: kept on the phone, in the keychain with no account, and purged once checked or at Leave sign-in, so it survives iOS closing the app while the person reads their code in Mail.
+    - Needed by: B1's TestFlight build, before Gate A. The answer changes where `RootModel` holds it, and the device check of a link opened while signed out.
+- **FQ136. An accepted invitation whose roster changed, when this phone no longer holds its link.** The contract's `MyInvitationState` has the app keep an accepted invitation's token so the account can accept again after a change, and leaves "how an account that no longer holds it, after a logout, a reinstall or on another phone, accepts again" to B1. The club list says `roster_changed` with no token: the app can't check the roster or accept it.
+    - Default (Claude Code's): the invitation sends the person to I have an invite (`G02-link-entry-signed-in`), whose existing words say "Paste the link, or open it where it was shared."; nothing is accepted until the link is opened again, which shows `G02-changed` (`InvitationModel.State.reopenLink`).
+    - The other readings: a line of its own on the invitation, with new words and a design handoff; or the server lets the account read its changed roster without the token (a contract change, which T7's token-in-the-body rule weighs against).
+    - Needed by: B1's TestFlight build, before Gate A. The answer changes the screen 6b builds for it (`ios/b1-invitation-screens`).
+
 ## Raised by the inviter's name on an invitation (`api/b1-inviter-name`)
 
 The coordinator reserved FQ137 at 11:56 UTC on 2026-11-22.
