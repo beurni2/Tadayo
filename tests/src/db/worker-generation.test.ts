@@ -199,7 +199,15 @@ describe("the worker's process (T1)", () => {
       );
       expect(await count(mine.club)).toBe(0);
       const child = spawn(process.execPath, [ENTRY], {
-        env: { PATH: process.env.PATH ?? "", DATABASE_URL: url, TADAYO_ENVIRONMENT: "prod" },
+        env: {
+          PATH: process.env.PATH ?? "",
+          DATABASE_URL: url,
+          TADAYO_ENVIRONMENT: "prod",
+          // Storage's settings, in the forms the worker takes. Nothing calls them: its preparation finds no upload
+          // to prepare, as every upload another file left behind was made by a fake clock and lapsed long ago.
+          SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co",
+          SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
+        },
       });
       let stdout = "";
       let stderr = "";
@@ -210,7 +218,9 @@ describe("the worker's process (T1)", () => {
         for (let tries = 0; tries < 400 && !/worker: made \d+ days?\n/.test(stdout); tries += 1) {
           await new Promise((resolve) => setTimeout(resolve, 50));
         }
-        expect(stdout, stderr).toMatch(/^worker: started, making days every minute\nworker: made \d+ days?\n$/);
+        expect(stdout, stderr).toMatch(
+          /^worker: started, making days every minute and preparing uploads\nworker: made \d+ days?\n$/,
+        );
       } finally {
         child.kill("SIGTERM");
       }

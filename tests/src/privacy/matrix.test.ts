@@ -28,6 +28,8 @@ import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api"
 import { fakeStorage, TEST_EMAIL, type FakeStorage } from "@tadayo/api/testing";
 import { dayInstants, makeDays } from "@tadayo/domain";
 import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
+import { noSafetyProvider, prepareUpload, type Prepping } from "@tadayo/worker";
+import { fakeWorkerStorage, testImage, type FakeWorkerStorage } from "@tadayo/worker/testing";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { confirmOwnDays, foundedBy, joinAs } from "../db/club-world.ts";
@@ -207,6 +209,7 @@ const UPLOADS = new Map<
     made: number;
     unsigned: number;
     preparing: number;
+    ready: number;
     closed: number;
     later: number;
     replayed: number;
@@ -267,6 +270,27 @@ let keys: Signing;
 let elsewhere: Elsewhere;
 /** The app's Storage: it signs upload URLs and holds the objects the uploads' table puts (upload.ts). */
 let storage: FakeStorage;
+/** The same Storage as the worker reads it: the photo's bytes at each object the uploads' table puts. */
+let workerStorage: FakeWorkerStorage;
+/** The photo the uploads' table puts, a JPEG `sharp` makes (@tadayo/worker/testing). */
+let photo: Buffer;
+
+/**
+ * The worker's `upload.prepare` on the upload `id`, given its event as a claim gives it, at the clock's time
+ * (services/worker/src/prepare.ts): the photo's renditions stored, the upload ready with its hash and version,
+ * and the event done, in one transaction. This upload's event alone: a whole pass would take every other
+ * file's events of the topic too.
+ */
+async function prepared(id: string): Promise<Prepping> {
+  const [event] = await db<{ id: string; topic: string; payload: unknown; attempts: number }[]>`
+    SELECT id, topic, payload, attempts FROM app.outbox_events
+     WHERE dedupe_key = ${`upload.prepare:${id}`} AND state = 'pending'`;
+  if (event === undefined) throw new Error("the matrix: the upload completed has no event waiting");
+  return prepareUpload(
+    { sql: db, clock, storage: workerStorage, safety: noSafetyProvider, say: () => undefined },
+    { ...event, attempts: event.attempts + 1 },
+  );
+}
 
 /**
  * Ben's photo "From Ben" and Cleo's video link "Cleo's pick" to Ana's Saturday, each caption ending
@@ -393,6 +417,8 @@ beforeAll(async () => {
   api = connect(url);
   clock = fakeClock(REVEAL);
   storage = fakeStorage();
+  workerStorage = fakeWorkerStorage();
+  photo = await testImage(1200, 900);
   app = buildApp({
     sql: api,
     clock,
@@ -847,7 +873,16 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // the refusals that the day had revealed (OCCURRENCE_CLOSED), the reads in a later phase that found an
       // upload made in an earlier one, the retries in a later phase that got the first answer, and those of them
       // that came with a new signed upload. Asserted in the test after the roles.
-      const uploads = { made: 0, unsigned: 0, preparing: 0, closed: 0, later: 0, replayed: 0, signedLater: 0 };
+      const uploads = {
+        made: 0,
+        unsigned: 0,
+        preparing: 0,
+        ready: 0,
+        closed: 0,
+        later: 0,
+        replayed: 0,
+        signedLater: 0,
+      };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -1946,8 +1981,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           }
           // The uploads' table (upload.ts), in every phase, after the reservations' table and before its slots are
           // given back. First, every upload the viewer made in an earlier phase, read, completed and asked for again
-          // under its key: found while it lives and nobody's once it lapsed (T12, T14); preparing once its bytes were
-          // in; the retry the first answer while the slot's interval may still add to its day, with a new signed
+          // under its key: found while it lives and nobody's once it lapsed (T12, T14); ready once its bytes were in
+          // and the worker prepared it; the retry the first answer while the slot's interval may still add to its day, with a new signed
           // upload only while the upload is pending and lives, and the neutral not-found once it may not (T19).
           // Then createUpload under slots that aren't the viewer's to upload under: Cleo's lapsed slot, Ben's slot
           // given back, the slot the viewer held in the phase before (lapsed at the reveal), a link's slot the table
@@ -1959,7 +1994,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           // the upload read; completed before its bytes are in Storage, which changes nothing; its bytes put;
           // completed, now preparing; completed again; the retry again, with no URL now; a new key again, which
           // still finds nothing; read again; and another member's read and completion of it, which find nothing and
-          // change nothing (T9, T14). Last, under the table's other photo slot when it holds one, an upload made and
+          // change nothing (T9, T14). Then the worker prepares it, into ready, changing nothing else (spec 33), and
+          // it is read, completed, retried under its key and under a new one, and read by another member again,
+          // ready. Last, under the table's other photo slot when it holds one, an upload made and
           // left pending, its bytes never put, for the later phases to find, retry and fail to complete.
           const uploadSpec = (operationId: string): Spec => {
             const found = specs.find((spec) => spec.operation.id === operationId);
@@ -2154,7 +2191,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               await completeUpload(id, "the upload completed before its bytes are in Storage");
               const object = facts.world.uploads.get(id)?.objectKey;
               if (object === undefined) wrong.push(`${state.name}, ${phase}: the upload made has no object`);
-              else storage.put(object);
+              else {
+                storage.put(object);
+                workerStorage.originals.set(object, photo);
+              }
               // Its bytes in, not yet completed: Storage signs nothing for them, so the retry gets no URL.
               const bytesIn = await again("the upload again under its key, its bytes in Storage, not completed");
               if (bytesIn.status === 201 && !("signed_upload" in (JSON.parse(bytesIn.body) as object)))
@@ -2176,6 +2216,36 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 { ...completeUploadSpec, path: { upload_id: id } },
                 "another member completes the viewer's upload",
               );
+              // The worker prepares it (`prepared`), changing that upload alone, to ready. From here on the scanner
+              // looks for its renditions' keys and its version in every answer, as for every object and version in
+              // the world (factsOf); and the upload is read, completed and asked for again ready, as it is in every
+              // later phase.
+              if (facts.world.uploads.get(id)?.state === "preparing") {
+                const previous = facts;
+                const outcome = await prepared(id);
+                facts = await load();
+                for (const [other, row] of previous.world.uploads) {
+                  const after = facts.world.uploads.get(other);
+                  const want = other === id ? { ...row, state: "ready" } : row;
+                  if (JSON.stringify(after) !== JSON.stringify(want))
+                    wrong.push(
+                      `${state.name}, ${phase}: the worker's preparation left the upload ${other} as ${JSON.stringify(after)}`,
+                    );
+                }
+                if (outcome.outcome === "ready") uploads.ready += 1;
+                await readUpload(id, "the upload read, ready");
+                await completeUpload(id, "the upload completed once ready");
+                await again("the upload again under its key, ready");
+                await uploadStep(
+                  photoSlot,
+                  randomUUID(),
+                  "another upload under the same slot, a new key, once it's ready",
+                );
+                await byAnother(
+                  { ...getUploadSpec, path: { upload_id: id } },
+                  "another member reads the viewer's ready upload",
+                );
+              }
             }
           }
           const otherPhoto = heldNow.find(
@@ -2441,7 +2511,8 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
     // whose photo is in the drop, only in the state that withdrew it. A second upload under a slot that holds
     // one, with a new key, finds nothing (T17, T18). The first upload's retry once its bytes are in, before it is
     // completed, gets the first answer with no URL, as Storage signs nothing for them (T12); then it is completed
-    // into preparing once. The one left pending never is, as its bytes are never put. Each upload is found again in the two phases after (open,
+    // into preparing once, and the worker prepares it into ready once. The one left pending never is either, as
+    // its bytes are never put. Each upload is found again in the two phases after (open,
     // and past at the close), as it lives 24 hours from a microsecond before the reveal, and is nobody's a year
     // on; and its retry under its key gets the first answer in all three later phases, as its slot's interval may
     // still add to the day (a revealed day refuses only something new), with a new signed upload only for the one
@@ -2457,6 +2528,7 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
       made: 4 + 1,
       unsigned: 4,
       preparing: 4,
+      ready: 4,
       later: 2 * (4 + 1),
       replayed: 3 * (4 + 1),
       signedLater: 2 * 1,
@@ -2465,6 +2537,7 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
       made: 4 + 4,
       unsigned: 4,
       preparing: 4,
+      ready: 4,
       later: 2 * (4 + 4),
       replayed: 3 * (4 + 4),
       signedLater: 2 * 4,
@@ -2477,7 +2550,7 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
       ["rejoined member, a new interval (T8)", { ...two, closed: 4 }],
       [
         "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
-        { made: 0, unsigned: 0, preparing: 0, closed: 12, later: 0, replayed: 0, signedLater: 0 },
+        { made: 0, unsigned: 0, preparing: 0, ready: 0, closed: 12, later: 0, replayed: 0, signedLater: 0 },
       ],
     ]);
   });

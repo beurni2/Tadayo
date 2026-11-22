@@ -45,7 +45,9 @@ function start(
     env: {
       PATH: process.env.PATH ?? "",
       DATABASE_URL: url,
-      ...(service === "api" ? { SUPABASE_URL: PROJECT, SUPABASE_SERVICE_KEY: SERVICE_KEY } : {}),
+      // Both read Storage's settings: the API signs upload URLs, the worker reads originals and puts renditions.
+      SUPABASE_URL: PROJECT,
+      SUPABASE_SERVICE_KEY: SERVICE_KEY,
       TADAYO_ENVIRONMENT: environment,
       PORT: "0",
       HOST: "127.0.0.1",
@@ -213,7 +215,10 @@ describe("the API's entry against the test database", () => {
 describe("the worker's entry against the test database", () => {
   it("starts with prod and stays up, making days, until it is told to stop", async () => {
     const worker = start("worker", "prod");
-    expect(await waitFor(worker, /worker: started, making days every minute\n/), worker.output.stderr).not.toBeNull();
+    expect(
+      await waitFor(worker, /worker: started, making days every minute and preparing uploads\n/),
+      worker.output.stderr,
+    ).not.toBeNull();
     // Nothing ends it: a worker that exited would leave its Machine stopped (a clean exit isn't restarted).
     await new Promise((done) => setTimeout(done, 1_500));
     expect(worker.child.exitCode).toBeNull();
@@ -242,7 +247,7 @@ describe("the worker's entry against the test database", () => {
       // may come between the two, and nothing else may.
       expect(worker.output.stdout).toMatch(
         new RegExp(
-          `^worker: started, making days every minute\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
+          `^worker: started, making days every minute and preparing uploads\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
         ),
       );
       expect(worker.output.stderr).toBe("");
