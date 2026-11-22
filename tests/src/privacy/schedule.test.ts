@@ -479,32 +479,58 @@ describe("the judges' own helpers", () => {
   });
 
   it("compares a table of rows whatever order its query gave them in, and tells a moved instant from none", () => {
-    const at = Temporal.Instant.from("2026-11-02T08:30:00Z");
-    const one = { state: "live", expiresAt: at, drop: null };
-    const two = { state: "released", expiresAt: at, drop: null };
+    const at = (iso = "2026-11-02T08:30:00.123456Z") => Temporal.Instant.from(iso);
+    const one = () => ({ state: "live", expiresAt: at(), drop: null });
+    const two = () => ({ state: "released", expiresAt: at(), drop: null });
     const rows = new Map<string, object>([
-      ["res_b", two],
-      ["res_a", one],
+      ["res_b", two()],
+      ["res_a", one()],
     ]);
+    // The same rows read again, as from the database: new objects, new instants, another order. `canonical` of
+    // the entries tells them apart; `rowsSeen` doesn't.
     const reread = new Map<string, object>([
-      ["res_a", { ...one }],
-      ["res_b", { ...two }],
+      ["res_a", one()],
+      ["res_b", two()],
     ]);
-    // The same rows read again in another order: `canonical` of the entries tells them apart, `rowsSeen` doesn't.
     expect(canonical([...rows])).not.toBe(canonical([...reread]));
     expect(rowsSeen(rows)).toBe(rowsSeen(reread));
-    // An instant that moved: `canonical` writes both as `{}`, `rowsSeen` tells them apart.
-    const moved = new Map<string, object>([...rows, ["res_a", { ...one, expiresAt: at.add({ minutes: 30 }) }]]);
-    expect(canonical([...moved].sort())).toBe(canonical([...rows].sort()));
-    expect(rowsSeen(moved)).not.toBe(rowsSeen(rows));
+    // An instant that moved, by a millisecond or by a microsecond: `canonical` writes both as `{}`, `rowsSeen`
+    // tells them apart.
+    for (const later of ["2026-11-02T08:30:00.124456Z", "2026-11-02T08:30:00.123457Z"]) {
+      const moved = new Map<string, object>([...rows, ["res_a", { ...one(), expiresAt: at(later) }]]);
+      expect(canonical([...moved].sort())).toBe(canonical([...rows].sort()));
+      expect(rowsSeen(moved)).not.toBe(rowsSeen(rows));
+    }
     // A row's state, a row gone and a row more each count.
-    expect(rowsSeen(new Map([...rows, ["res_a", { ...one, state: "expired" }]]))).not.toBe(rowsSeen(rows));
-    expect(rowsSeen(new Map([["res_a", one]]))).not.toBe(rowsSeen(rows));
-    expect(rowsSeen(new Map([...rows, ["res_c", one]]))).not.toBe(rowsSeen(rows));
+    expect(rowsSeen(new Map([...rows, ["res_a", { ...one(), state: "expired" }]]))).not.toBe(rowsSeen(rows));
+    expect(rowsSeen(new Map([["res_a", one()]]))).not.toBe(rowsSeen(rows));
+    expect(rowsSeen(new Map([...rows, ["res_c", one()]]))).not.toBe(rowsSeen(rows));
     expect(rowsSeen(rows)).toBe(
-      '[["res_a",{"drop":null,"expiresAt":"2026-11-02T08:30:00Z","state":"live"}],' +
-        '["res_b",{"drop":null,"expiresAt":"2026-11-02T08:30:00Z","state":"released"}]]',
+      '[["res_a",{"drop":null,"expiresAt":"2026-11-02T08:30:00.123456Z","state":"live"}],' +
+        '["res_b",{"drop":null,"expiresAt":"2026-11-02T08:30:00.123456Z","state":"released"}]]',
     );
+    // The memberships' rows (a `ScheduleMember`), the other table the matrix compares this way.
+    const member = (active: boolean, joinedAt = "2026-10-01T00:00:00Z") => ({
+      club: CLUB,
+      account: "usr_ana",
+      active,
+      joinedAt: at(joinedAt),
+      name: "Ana",
+      avatar: null,
+    });
+    const members = new Map<string, object>([
+      ["itv_ben", { ...member(true), account: "usr_ben", name: "Ben" }],
+      ["itv_ana", member(true)],
+    ]);
+    expect(rowsSeen(new Map([...members].reverse()))).toBe(rowsSeen(members));
+    expect(rowsSeen(new Map([...members, ["itv_ana", member(false)]]))).not.toBe(rowsSeen(members));
+    expect(rowsSeen(new Map([...members, ["itv_ana", member(true, "2026-10-01T00:00:01Z")]]))).not.toBe(
+      rowsSeen(members),
+    );
+    // A row holding any other object is refused, not written `{}` and compared blind.
+    expect(() => rowsSeen(new Map([["res_a", { ...one(), audience: new Set(["itv_ana"]) }]]))).toThrow(TypeError);
+    expect(() => rowsSeen(new Map([["res_a", { ...one(), labels: new Map() }]]))).toThrow(TypeError);
+    expect(() => rowsSeen(new Map([["res_a", { ...one(), at: new Date(0) }]]))).toThrow(TypeError);
   });
 });
 
@@ -947,6 +973,31 @@ describe("what a join or a leave must leave of the club's week and pick, row by 
     expect(judge(three(), left)).toEqual([]);
     const opened = setActive(withWeek(pickWorld(), "sched_three", "2026-11-05", [...THREE]), "itv_cleo", false);
     expect(judge(three(), opened).join(" ")).toMatch(/a pick is open though every member has a day/);
+  });
+
+  it("reads a club's picks, and an ended pick's earlier weeks, whatever order their queries gave them in", () => {
+    // An ended pick whose earlier weeks come back in another order is as it was; one that lost a row moved.
+    const ended = (earlier: ScheduleProposalRows["earlier"]) => {
+      const w = three();
+      w.proposals.set("spr_old", pickRows({ state: "superseded", replacedBy: PICK, earlier }));
+      return w;
+    };
+    const rows = [
+      { ...day("itv_cleo", "monday", true, true), weekRevision: 1 },
+      { ...day("itv_cleo", "friday", false, false), weekRevision: 1 },
+    ];
+    expect(judge(ended(rows), ended([...rows].reverse()))).toEqual([]);
+    expect(judge(ended(rows), ended(rows.slice(0, 1))).join(" ")).toMatch(/the ended pick spr_old moved/);
+    // Before the first days apply, the same two picks read in another order are no pick made or moved.
+    const unapplied = (ids: string[]) => {
+      const w = pickWorld(ids.map((id): [string, ScheduleProposalRows] => [id, pickRows({ state: "superseded" })]));
+      pickOf(w, "spr_first").state = "open";
+      return w;
+    };
+    expect(judge(unapplied(["spr_a", "spr_b"]), unapplied(["spr_b", "spr_a"]))).toEqual([]);
+    expect(judge(unapplied(["spr_a", "spr_b"]), unapplied(["spr_a"])).join(" ")).toMatch(
+      /a pick was made or moved where none is due/,
+    );
   });
 
   it("wants a member who joins an open pick added to it, holding a day nobody it includes holds, and nothing else moved (T33)", () => {
