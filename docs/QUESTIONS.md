@@ -141,6 +141,7 @@ Each question has a default. Claude Code builds on the default until the founder
 - **FQ26. The order of the highlight rail.** Spec 15 says the star's pick, then stable roster order. `H01-open` shows Debby's pick, then Maya, Sam and Ben, which isn't the Friends order (Ben, Maya, Alex, Sam, Debby, Nina).
     - Default: the star's pick, then the club's schedule order from Monday, so Ben, Maya, Sam. The render is a known difference in the inventory.
     - Also, raised by handoff 0's notes: in a club of two or three, each member has two days, and a contributor can have no day that week (a member whose days start later, or a former member whose drops stay). Default: by each contributor's earliest weekday in that occurrence's schedule; anyone without a day follows, in the order they joined; the order is fixed for each occurrence.
+    - Claude Code's reading, built on `api/b2-home` (PR #103, `pageRail` in `packages/domain/src/clubs/home.ts`): a contributor has a day that week when one of their weekdays in that occurrence's schedule first opens in the occurrence's own calendar week, Monday to Saturday, or before it, so a member whose first day comes later that same week (as in a club's first week) is placed by it, and "a member whose days start later" is one whose days start in a later week. Only days confirmed before the occurrence opened count: in a club's first days a member can confirm while a day is open, and the row joins the schedule that day was made under (FQ55), with a first date 24 hours on at least (FQ79) that can fall later that week; leaving it out keeps the order fixed for the occurrence. A former member whose drops stay keeps the place their weekday in that schedule gives them, since their day that week may already have happened. Members who joined at one instant follow by interval id, byte by byte (FQ114).
     - Needed by: B5.
 
 ## Operations and the trial
@@ -703,3 +704,12 @@ The coordinator reserved FQ133 at 01:55 UTC on 2026-11-21.
     - The other readings: Tadayo's TestFlight public link, if the founder makes one (anyone who has it can install the app, so it decides who may try it); no link during the trial; or a page of Tadayo's own that says how to join the trial (new words, and a design handoff).
     - The link's hint stays handoff 8's "Open Tadayo in the App Store.", which the default stretches: it opens TestFlight's page.
     - Needed by: the trial (Gate D). The answer changes one attribute in `i.html` and its test.
+
+## Raised by B2's Home route (`api/b2-home`)
+
+The coordinator reserved FQ134 at 04:04 UTC on 2026-11-22.
+
+- **FQ134. Home in an active club with no day to open or wait for.** `getHome` (`packages/domain/src/clubs/home.ts` `homeMode`) takes the contract's modes in its order: `unavailable`, `awaiting_activation`, `day`, `waiting`, `paused`, then `no_days` for whatever is left. So an active club of two or more members whose day choice (`packages/domain/src/authorization/days.ts` `daysByClub`) has no open day and no next one answers `no_days`. The contract's `HomeNoDays` says "the club is active but has no confirmed day yet", and the app's `H01-confirm-days` says "Choose your day". That's true while the first days are open, but not in two other cases: when the week is confirmed but no day has been made, as on `dev`, whose worker stays stopped, or after a failure of generation on `prod`; and when every remaining day is held (its star left: FQ63) or cancelled (FQ129, FQ131).
+    - Default (Claude Code's): `no_days`, as built. It is the contract's only mode for it, and Home never invents a date (T49). With the worker running, generation keeps four weeks ahead (FQ115), so on `prod` the first case can only follow a failure of generation, and the second needs every day of those weeks held or cancelled.
+    - The other readings: a mode of its own with its own words (a contract change, and a design handoff for its state), or `paused`'s words, which would be false while two members remain.
+    - Needed by: B2, before the trial. The answer changes `homeMode` and its tests, and perhaps the contract and the ios lane's Home.

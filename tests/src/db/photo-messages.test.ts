@@ -235,8 +235,10 @@ describe("T63 and T64: a photo message's upload, made for one revealed drop by i
          WHERE id = ${replacement}
       `;
       const avatar = await newAvatar(tx, w.cleo.user, "ready");
+      // The drop's photo has its display and full renditions from its commit (world.ts' commitDrop); the
+      // replacement and the avatar get their display one here.
+      for (const upload of [replacement, avatar.id]) await rendition(tx, upload, "display");
       for (const upload of [row.upload_id, replacement, avatar.id]) {
-        await rendition(tx, upload, "display");
         await expectRefused(
           tx,
           REFUSED.integrity,

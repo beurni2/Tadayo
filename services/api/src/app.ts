@@ -26,6 +26,7 @@ import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
 import { createClubHandler, getClubHandler } from "./clubs/club.ts";
 import { listMembersHandler } from "./clubs/members.ts";
+import { getHomeHandler } from "./clubs/home.ts";
 import { acceptInvitationHandler, previewInvitationHandler, previewInvitationWebHandler } from "./clubs/invitation.ts";
 import {
   approveRosterHandler,
@@ -152,6 +153,7 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     createClub: createClubHandler(deps),
     getClub: getClubHandler(deps),
     listMembers: listMembersHandler(deps),
+    getHome: getHomeHandler(deps),
     proposeRoster: proposeRosterHandler(deps),
     getRosterRevision: getRosterRevisionHandler(deps),
     createInvitation: createInvitationHandler(deps),

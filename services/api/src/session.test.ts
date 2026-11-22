@@ -103,6 +103,7 @@ const BUILT = new Set([
   "approveRoster",
   "declineRoster",
   "leaveClub",
+  "getHome",
   "getSchedule",
   "chooseScheduleDays",
   "confirmScheduleDays",

@@ -22,7 +22,8 @@
 //   state, the phase and who wrote it, checked by finding drop ids in every answer in every phase.
 //   T9's denials (a withdrawn, held or removed drop, a suspended or cancelled day, a suspended club,
 //   a deleting account, a block) are the row's to judge: the leak scanner knows only the audience,
-//   the author and the reveal;
+//   the author and the reveal. getHome (B2) is the first, for the revealed form (below); the caption and
+//   own forms come with the first routes that answer them (B3, B4);
 // - a body, with its Id fields bound through bindings.ts and replaced in the guessed-id step;
 // - an object in the world for each binding still marked `missing`;
 // - for the first route that pages (getOccurrence, B2; listComments, listFavourites, listMemories and
@@ -53,6 +54,16 @@
 //   delete their account is still to come with B6's leaving; the held day is proved on Postgres meanwhile
 //   (tests/src/db/home-days.test.ts), and the schedule's checks below keep `next_day` for a new member's
 //   pick and the days a fourth member's join frees;
+// - for getHome (B2's Home slice, done): the mode in the contract's order, its base, the open day and the next
+//   by daysOf, the viewer's place in the day, `add_target`, the open day's page drop by drop (each of the
+//   world's drops on it or absent by home.ts's own statement of T9, `mayView`, each in its revealed form with
+//   its section, author, caption, highlight flag and display frame or provider) and its rail in FQ26's order
+//   (the world's Ben's photo is Ben's highlight), and the recent days with D08's covers (home.ts). Still to
+//   come: reactions, favourites and reply previews in the page (B6), which home.ts expects refused, the
+//   server's empty 500, where a drop of the page has a reaction or a comment, or the viewer's own favourite, as
+//   the read does; the page past 36 drops and its
+//   cursor (B5's getOccurrence); and a cell where the star has drops of their own on the open day (the
+//   world's two drops are friends'; tests/src/db/home.test.ts holds the star's section on Postgres);
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header);
 // - for the schedule's routes built by B2's schedule slice (getSchedule, chooseScheduleDays and
@@ -150,6 +161,7 @@
 
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";
+import { HOME_JUDGED } from "./home.ts";
 import { INVITATION_JUDGED } from "./invitation.ts";
 import { LEAVE_JUDGED } from "./leave.ts";
 import { MEMBERS_JUDGED } from "./members.ts";
@@ -166,6 +178,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...SCHEDULE_JUDGED,
   ...MEMBERS_JUDGED,
   ...CLUB_JUDGED,
+  ...HOME_JUDGED,
   ...ROSTER_JUDGED,
   ...INVITATION_JUDGED,
   ...LEAVE_JUDGED,
@@ -322,6 +335,20 @@ export const SCHEDULE_COMMAND = Object.freeze({
     `last confirmation applies it at the next version (T33) (${GATE})`,
 });
 
+/** getHome (B2's Home slice): home.ts's homeExpected. */
+export const HOME = Object.freeze({
+  answer:
+    "200 with Home, whole, judged from the world's rows by home.ts: the mode in the contract's order, its base, " +
+    "`next` and the open day by account.ts's daysOf, the viewer's place in the day, the star's next day as " +
+    "`add_target`, the open day's page (each drop the viewer may see the media of by home.ts's own statement of " +
+    "T9, star first, each in commit order, in its revealed form) and its highlight rail in FQ26's order, and the " +
+    "recent days with D08's covers, to an account with an active interval in the club, suspended or not; the " +
+    "server's empty 500 where a drop of the page has a reaction or a comment, or the viewer's own favourite, " +
+    "which B6's page shows, or the page passes 36 drops, whose cursor is B5's (docs/plans/api-b2-home.md " +
+    "section 0.1); the neutral " +
+    `NOT_FOUND to every other role the gate lets through (${GATE})`,
+});
+
 export const ROWS: Readonly<Record<string, unknown>> = {
   acceptInvitation: INVITATION_ACCEPT,
   approveRoster: ROSTER_DECISION,
@@ -349,7 +376,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getDrop: NONE,
   getDropMedia: NONE,
   getEmbed: NONE,
-  getHome: NONE,
+  getHome: HOME,
   getMe: ME,
   getMemberAvatar: NONE,
   getMyAvatar: NONE,

@@ -37,7 +37,15 @@ export const AFTER = new Date("2026-11-06T20:10:00Z");
 export const LATER = new Date("2026-11-06T20:20:00Z");
 export const STATE_AT = new Date("2026-11-06T20:30:00Z");
 
-/** Removes the drop by moderation, citing the operator's audited action (FQ27). */
+/**
+ * Clears the highlight that points to `drop`, if one does, as every path that ends a drop does in the same
+ * transaction, after the drop's own change (T22, T24; the highlights guard, db/migrations/0006).
+ */
+async function clearHighlight(tx: WorldTx, drop: string, at: Date) {
+  await tx`UPDATE app.highlights SET drop_id = NULL, version = version + 1, updated_at = ${at} WHERE drop_id = ${drop}`;
+}
+
+/** Removes the drop by moderation, citing the operator's audited action (FQ27), and clears its highlight. */
 export async function removeByModeration(tx: WorldTx, drop: string, at: Date) {
   const action = newId("act");
   await tx`
@@ -45,15 +53,17 @@ export async function removeByModeration(tx: WorldTx, drop: string, at: Date) {
     VALUES (${action}, 'founder', 'remove-drop', ${"0".repeat(40)}, 'remove_drop', 'drop', ${drop}, 'trial.safety', ${at})
   `;
   await tx`UPDATE app.drops SET state = 'removed', ended_at = ${at}, updated_at = ${at} WHERE id = ${drop}`;
+  await clearHighlight(tx, drop, at);
   await tx`
     INSERT INTO app.drop_removals (drop_id, reason, operator_action_id, removed_at)
     VALUES (${drop}, 'moderation', ${action}, ${at})
   `;
 }
 
-/** The author withdraws the drop (spec 22). */
+/** The author withdraws the drop (spec 22), and its highlight goes with it. */
 export async function withdraw(tx: WorldTx, w: World, drop: string, at: Date) {
   await tx`UPDATE app.drops SET state = 'withdrawn', ended_at = ${at}, updated_at = ${at} WHERE id = ${drop}`;
+  await clearHighlight(tx, drop, at);
   await tx`
     INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
     VALUES (${drop}, 'withdraw', ${w.ben.interval}, ${at})
@@ -83,7 +93,7 @@ export async function block(
 /**
  * Withdraws `member`'s drops whose day hadn't opened at `at`, as a block or a leaving that takes
  * them away does (D11, spec 22: the contract's BlockRequest withdraws the blocker's drops still
- * to be revealed). Each gets its removal row, with `member`'s interval as the actor.
+ * to be revealed). Each gets its removal row, with `member`'s interval as the actor, and loses its highlight.
  */
 export async function withdrawUnrevealed(tx: WorldTx, member: Member, reason: "block" | "leave", at: Date) {
   const drops = await tx<{ id: string }[]>`
@@ -91,6 +101,7 @@ export async function withdrawUnrevealed(tx: WorldTx, member: Member, reason: "b
      WHERE d.author_interval_id = ${member.interval} AND d.state = 'active' AND o.reveal_at > ${at}`;
   for (const { id } of drops) {
     await tx`UPDATE app.drops SET state = 'withdrawn', ended_at = ${at}, updated_at = ${at} WHERE id = ${id}`;
+    await clearHighlight(tx, id, at);
     await tx`
       INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
       VALUES (${id}, ${reason}, ${member.interval}, ${at})

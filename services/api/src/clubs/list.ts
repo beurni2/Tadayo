@@ -5,13 +5,13 @@
 // there is none, and carry the day's Occurrence and nothing else of it: no drop, no count, nothing about
 // who has added (T15, T33).
 
-import { contractInstant, listClubs, type ChosenDay, type ClubListing, type Json } from "@tadayo/domain";
+import { contractInstant, listClubs, type ClubListing, type Json, type PlacedDay } from "@tadayo/domain";
 import { ok } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 
 /** The contract's `Occurrence`: its instants in whole seconds, the star's avatar version only when there is one. */
-export function occurrenceBody(day: ChosenDay): Json {
+export function occurrenceBody(day: PlacedDay): Json {
   return {
     id: day.id,
     club_id: day.clubId,
