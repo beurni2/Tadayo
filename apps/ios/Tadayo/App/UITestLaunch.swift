@@ -39,7 +39,14 @@
                 nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [],
                 thenClubs: inClubs ? TwoClubs.relisted : nil, named: creating, made: made)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
-            let clubs: any ClubService = inClubs ? TwoClubs() : made ?? NoClubs()
+            let clubs: any ClubService
+            if inClubs {
+                clubs = TwoClubs()
+            } else if let made {
+                clubs = made
+            } else {
+                clubs = NoClubs()
+            }
             let root = RootModel(
                 session: session, auth: auth, accounts: accounts, clubs: clubs,
                 selection: InMemoryClubSelection())
