@@ -1088,7 +1088,7 @@ import Testing
 
     @Test func anInvitationThatEndedIsntHeldAtTheServersEnding() async throws {
         let ended: [Result<InvitationPreview, APIFailure>] = [
-            .success(.expired(inviterName: "Ben")), .success(.didNotGoAhead),
+            .success(.expired(inviterName: "Ben")), .success(.didNotGoAhead(inviterName: "Ben")),
             .failure(.notFound),
         ]
         for answer in ended {

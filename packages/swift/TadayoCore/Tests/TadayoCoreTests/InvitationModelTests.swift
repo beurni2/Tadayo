@@ -49,8 +49,8 @@ import Testing
             (.success(.changed(roster)), .changed(roster, nil)),
             (.success(.waiting(roster)), .waiting(clubName: "Kitchen table")),
             (.success(.expired(inviterName: "Ben")), .expired(inviterName: "Ben")),
-            (.success(.full), .full(inviterName: nil)),
-            (.success(.didNotGoAhead), .didNotGoAhead(inviterName: nil)),
+            (.success(.full(inviterName: "Debby")), .full(inviterName: "Debby")),
+            (.success(.didNotGoAhead(inviterName: "Debby")), .didNotGoAhead(inviterName: "Debby")),
             (.success(.joined(Kitchen.ref)), .opening(Kitchen.ref)),
             (.failure(.network), .checkFailed(.network)),
             (.failure(.unavailable), .checkFailed(.other)),
@@ -294,11 +294,12 @@ import Testing
         #expect(opened.clubs == [Kitchen.ref])
     }
 
-    @Test func aFullClubNamesTheInviterOnlyOnceTheRosterWasShown() async {
+    /// The answer names the inviter (the contract's `InvitationFull`, since the api lane's #107),
+    /// so a full club names them even when this model never showed the roster.
+    @Test func aFullClubNamesTheInviterBeforeAnyRosterWasShown() async {
         let service = ScriptedClubs()
-        service.previewAnswers = [.success(.open(Kitchen.roster())), .success(.full)]
+        service.previewAnswers = [.success(.full(inviterName: "Ben"))]
         let invitation = model(service)
-        await invitation.check()
         await invitation.check()
         #expect(invitation.state == .full(inviterName: "Ben"))
     }
@@ -524,7 +525,9 @@ import Testing
     @Test func anOpenRosterKeepsNothing() async {
         let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
         let service = ScriptedClubs()
-        service.previewAnswers = [.success(.open(Kitchen.roster())), .success(.full)]
+        service.previewAnswers = [
+            .success(.open(Kitchen.roster())), .success(.full(inviterName: "Ben")),
+        ]
         let invitation = model(service, book: book)
         await invitation.check()
         #expect(book.received(token, account: account) == nil)
@@ -547,7 +550,7 @@ import Testing
 
     @Test func theTokenGoesWhenTheInvitationJoinsOrEndsOrNoLongerWorks() async {
         let previews: [Result<InvitationPreview, APIFailure>] = [
-            .success(.joined(Kitchen.ref)), .success(.didNotGoAhead),
+            .success(.joined(Kitchen.ref)), .success(.didNotGoAhead(inviterName: "Ben")),
             .success(.expired(inviterName: "Ben")), .failure(.notFound),
         ]
         for answer in previews {

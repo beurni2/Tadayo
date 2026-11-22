@@ -519,10 +519,11 @@ public enum InvitationPreview: Sendable, Equatable {
     case waiting(InvitationRoster)
     /// It expired while still live (G02-expired): only who to ask.
     case expired(inviterName: String)
-    /// The club already has six (G02-full).
-    case full
-    /// For someone who accepted, it didn't go ahead (G03-declined). Never which, or who.
-    case didNotGoAhead
+    /// The club already has six (G02-full): only who to ask.
+    case full(inviterName: String)
+    /// For someone who accepted, it didn't go ahead (G03-declined): who invited them, as the club
+    /// last knew them, and never which, or who declined.
+    case didNotGoAhead(inviterName: String)
     /// The caller is already a member: the app opens the club.
     case joined(ClubRef)
 }

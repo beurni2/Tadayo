@@ -511,8 +511,10 @@ import Testing
         #expect(waiting.expiresAt == nil)
         #expect(waiting.revisionVersion == 1)
         #expect(try await read("previewInvitation.expired") == .expired(inviterName: "Ben"))
-        #expect(try await read("previewInvitation.full") == .full)
-        #expect(try await read("previewInvitation.did_not_go_ahead") == .didNotGoAhead)
+        #expect(try await read("previewInvitation.full") == .full(inviterName: "Ben"))
+        #expect(
+            try await read("previewInvitation.did_not_go_ahead")
+                == .didNotGoAhead(inviterName: "Ben"))
         #expect(
             try await read("previewInvitation.joined")
                 == .joined(
