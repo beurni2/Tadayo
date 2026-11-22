@@ -37,6 +37,13 @@ Round 1 at `05c2c49` (one fresh reviewer): no blocker; three should-fix and two 
 - S3, `InvitationEnded`'s description promised the inviter "can start a new invitation later", untrue once they have left (FQ121): the clause is gone, the description says the state says nothing of whether the inviter is still a member, and FQ137 asks what G03-declined's copy says then (default: keep it).
 - N1, the full test's title ("with only the inviter's name"); N2, the spec 04 and 32 audit row's missing full stop: fixed.
 
+Round 2 at `f38e050` (one fresh reviewer of the fix commit alone): S1, S3, N1 and N2 verified fixed, S2 soundly answered; no blocker, no should-fix, four nits, all fixed in the third commit, records only:
+- the spec 04 and 32 audit row names the changed `leave-club.test.ts` test and the new `accept-roster.test.ts` one;
+- `docs/PROGRESS.md`'s Next line, which still put the review after the PR;
+- FQ137's reservation line, and section 5's word to the ios lane, whose screen it is (told at 12:25 UTC);
+- the FQ75 reading says B6 also decides whether the viewer's half reaches a fresh invitation to a former member, whose roster shows names as they are now (FQ47).
+The reviewer ran at `f38e050`: `db-tests` 810 and `privacy` 418 passed, every fast step exit 0, and breakage K1′ (the ended name only for a deleted account, the live name for one who left), which `05c2c49`'s tests let through and `f38e050`'s leave-club test catches, in `linkFacts` and in `listClubs`.
+
 ## 5. After the merge
 
-Tell the ios lane: the app's `TadayoAPI` decodes `inviter_name` in both states and drops the same-session fallback (the ios lane's files).
+Tell the ios lane: the app's `TadayoAPI` decodes `inviter_name` in both states and drops the same-session fallback (the ios lane's files). FQ137, on G03-declined's copy when the inviter has left, is the ios lane's screen: it was told at 12:25 UTC on 2026-11-22, when the question was raised, and is told the founder's answer if one comes.
