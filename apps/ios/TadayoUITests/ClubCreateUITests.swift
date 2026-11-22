@@ -97,20 +97,34 @@ final class ClubCreateUITests: XCTestCase {
         return app
     }
 
-    /// The system's share sheet, shown with the link and closed without sharing: its Close
-    /// button, or a swipe down where it has none.
+    /// The system's share sheet, shown with the link and closed without sharing. What the system
+    /// draws differs by version: iOS 26.5's list (`ActivityListView`) takes a swipe down; iOS
+    /// 27.2 keeps that element with no frame (`ios` 44976966171), so the sheet is dragged down
+    /// from its upper half, and, if it's still up, the dimmed screen above it is tapped, which
+    /// closes a sheet below its full height. The tree is printed to the test's log first, for
+    /// whoever reads a failure.
     @MainActor private func closeShareSheet(_ app: XCUIApplication) {
         let sheet = app.otherElements["ActivityListView"]
         let close = app.buttons["Close"]
         XCTAssertTrue(
             eventually(10) { sheet.exists || close.exists }, "the system's share sheet")
-        if close.waitForExistence(timeout: 2) {
+        print("ClubCreateUITests: the share sheet's tree:\n\(app.debugDescription)")
+        let up = { sheet.exists || close.exists }
+        if close.waitForExistence(timeout: 2), close.isHittable {
             close.tap()
-        } else {
+        } else if sheet.isHittable {
             sheet.swipeDown(velocity: .fast)
+        } else {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+                .press(
+                    forDuration: 0.05,
+                    thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1)))
         }
-        XCTAssertTrue(
-            eventually(10) { !sheet.exists && !close.exists }, "the share sheet closed")
+        if !eventually(5, { !up() }) {
+            print("ClubCreateUITests: the share sheet is still up; tapping above it")
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.06)).tap()
+        }
+        XCTAssertTrue(eventually(10) { !up() }, "the share sheet closed")
     }
 
     /// Whether `condition` holds within `timeout` seconds, read every 0.2 s.

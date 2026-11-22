@@ -168,11 +168,14 @@ struct ClubSetupHeading: View {
 ///   (`link`, `square.and.arrow.up`, `checkmark`, `arrow.clockwise`, `xmark.circle`), the glyph
 ///   and the words saying the same, never colour alone;
 /// - the action, if the row has one, in `rowAction` 15/20 `action` (`RowActionStyle`), a target at
-///   least 44 square, and More where the row has a menu: `ellipsis` in a 44-point target, the
-///   system's menu (T45), with Revoke link (destructive) or Create new link;
+///   least 44 square, ending at 328, and More where the row has a menu: `ellipsis` in a 44-point
+///   target from 333 to 377 (handoff 4's `invitationRowActions`), the system's menu (T45), with
+///   Revoke link (destructive) or Create new link;
 /// - a used link the app doesn't hold adds handoff 8's two lines under the status, and offers
 ///   nothing (`links.used.missing`);
-/// - at least 74 high, centred, growing with the text; the separator from 49 to the trailing edge.
+/// - at least 74 high, centred, growing with the text; a used row at least 84, its content where a
+///   74 row puts it (`usedInvitationRow.defaultSamHeight`); the separator from 49 to the trailing
+///   edge.
 ///
 /// At the accessibility sizes the status and the action go under the name, from the leading edge,
 /// with More kept beside the name, and the separator runs the full width (handoff 2's AX5 rule,
@@ -226,6 +229,9 @@ struct InvitationRowView: View {
         }
         .padding(.vertical, Spacing.m)
         .frame(maxWidth: .infinity, minHeight: Self.minimumHeight)
+        .frame(
+            minHeight: row.status == .needsToAcceptAgain ? Self.usedMinimumHeight : nil,
+            alignment: .top)
     }
 
     private var stacked: some View {
@@ -253,6 +259,20 @@ struct InvitationRowView: View {
     /// `usedInvitationRow.rowMinimumHeight`; handoff 4's More target is 15 under the row's top
     /// and 44 high, so 74 holds it centred.
     static let minimumHeight: CGFloat = 74
+
+    /// `usedInvitationRow.defaultSamHeight`: frame `G01-invite-people-accept-again` draws a used row
+    /// 84 high at the default size, its name, status and Share again where a 74 row puts them and
+    /// the 10 more under them. A row whose text needs more grows past it.
+    static let usedMinimumHeight: CGFloat = 84
+
+    /// More's target past the screen's 20-point margin: handoff 4's `invitationRowActions.moreTarget`
+    /// is [333, 15, 44, 44] on a 393-point screen, so it ends at 377, as the club header's Account
+    /// target ends past the margin (`Size.clubHeaderTrailingInset`).
+    static let moreOverhang: CGFloat = 4
+
+    /// From the action's trailing edge to More's target (`invitationRowActions.shareRightEdge` 328
+    /// to `moreTarget`'s 333).
+    static let actionToMore: CGFloat = 5
 
     /// The name, which VoiceOver reads with the status as one element.
     private var name: some View {
@@ -331,6 +351,8 @@ struct InvitationRowView: View {
         }
         .disabled(busy)
         .accessibilityLabel(Text(verbatim: InvitationsScreen.words("invite.more.label", row.name)))
+        .padding(.leading, Self.actionToMore)
+        .padding(.trailing, -Self.moreOverhang)
     }
 
     private var glyph: String {
@@ -357,7 +379,10 @@ struct InvitationRowView: View {
 
     /// "Maya. Shared." (handoff 4's `invite.row.{name}.vo`, handoff 8's `links.used.row.vo`).
     var spoken: String {
-        InvitationsScreen.words("invite.row.label", row.name, statusWords)
+        // A status that ends in its own ellipsis ("Revoking link…") takes no full stop after it.
+        let key: String.LocalizationValue =
+            statusWords.hasSuffix("…") ? "invite.row.label.ongoing" : "invite.row.label"
+        return InvitationsScreen.words(key, row.name, statusWords)
     }
 
     static func actionWords(_ action: InvitationRow.Action) -> LocalizedStringResource {
