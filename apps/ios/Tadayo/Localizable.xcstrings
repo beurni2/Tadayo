@@ -1213,6 +1213,18 @@
         }
       }
     },
+    "invitation.checkFailed.retry.hint" : {
+      "comment" : "handoff 9 copy-contracts, handoff9.check.retry.hint: Retry's hint on G02-checking-failed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try checking this invitation link again."
+          }
+        }
+      }
+    },
     "invitation.checkFailed.title" : {
       "comment" : "built from spec: G02-checking-failed's title, the first sentence of handoff 4 link.checkFailure, over load.network or load.refused (handoff 8's rule: 'Check your connection' only when no answer came); asked in design handoff 9",
       "extractionState" : "manual",
@@ -1274,13 +1286,13 @@
       }
     },
     "invitation.declined.body" : {
-      "comment" : "handoff 1 screen-copy, G03-declined ({inviterName}, as the club last knew them; FQ137's default)",
+      "comment" : "handoff 9 copy-contracts, handoff9.invitation.ended.close: G03-declined's line, which promises nothing of the inviter (the founder's answer to FQ137, 22 November 2026)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You can close this invitation. %@ can start a new invitation later."
+            "value" : "You can close this invitation."
           }
         }
       }
@@ -1460,7 +1472,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ · %2$@"
+            "value" : "%1$@ · %2$@"
           }
         }
       }

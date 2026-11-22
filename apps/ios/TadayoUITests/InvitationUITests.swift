@@ -3,7 +3,7 @@ import XCTest
 /// Opening an invitation from I have an invite, as the tabs push it (`TabsView`), on the stand-in
 /// services' invitation (`UITestLaunch.invite`): I have an invite pushes the paste step with the
 /// tab bar hidden and Continue waiting for a link; a link Debby shared shows Sunday people's
-/// roster with Ben first; Back returns to the field as it was; Accept this roster ends at
+/// roster with Ben first, proposed by Debby; Back returns to the field as it was; Accept this roster ends at
 /// `G03-waiting`, whose Done returns to Home, which still shows no club; and a link the server
 /// doesn't know shows `G02-revoked`, whose Close invitation returns to Home too.
 final class InvitationUITests: XCTestCase {
@@ -29,15 +29,17 @@ final class InvitationUITests: XCTestCase {
         // The roster, pushed over the paste step: Ben first, as "you".
         XCTAssertTrue(app.staticTexts["Join Sunday people"].waitForExistence(timeout: 10))
         XCTAssertTrue(element("Debby invited you.", in: app).exists)
-        let ben = element("Ben, you.", in: app)
+        let ben = element("Ben. You. Proposed by Debby. Proposed.", in: app)
         let maya = element("Maya.", in: app)
         XCTAssertTrue(ben.exists && maya.exists)
         XCTAssertLessThan(ben.frame.minY, maya.frame.minY, "the viewer first")
 
-        // Back: the paste step, its field as it was.
+        // Back: the paste step, its field as it was, and Continue where a tap reaches it, with no
+        // keyboard over it.
         back(in: app)
         XCTAssertTrue(app.staticTexts["Have an invitation?"].waitForExistence(timeout: 5))
         XCTAssertTrue(eventually { check.isEnabled }, "the link still in the field")
+        XCTAssertTrue(eventually { shows(check) }, "Continue reachable after Back")
         check.tap()
         XCTAssertTrue(app.staticTexts["Join Sunday people"].waitForExistence(timeout: 10))
 

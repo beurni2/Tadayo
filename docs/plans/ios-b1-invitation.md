@@ -120,29 +120,30 @@ Branch `ios/b1-invitation-screens`, from `main` at `6a6f0b0` (#107), written on 
 |---|---|---|---|
 | `G02-link-entry-signed-in` | the paste step, empty: Continue disabled | handoff 4 | received |
 | `G02-link-entry-signed-in-typed` | a link in the field | handoff 4's, with a link | received |
-| `G02-link-entry-signed-in-checking` | Continue busy, the field read-only | none | from spec: the primary action's busy form (`busyPrimary`) |
-| `G02-link-entry-signed-in-invalid`, `-clipboard-empty`, `-cannot-check` | the line under the field (`InvitationLinkEntryModel.Problem`) | none | from spec: handoff 4's `linkEntry.invalid`, `.clipboardEmpty` and `.cannotCheck`, in the failure line (`InlineError`), said once as it shows |
+| `G02-link-entry-signed-in-checking` | Continue busy, the field read-only | handoff 9, frame 3 | received (built from spec first: the primary action's busy form, `busyPrimary`) |
+| `G02-link-entry-signed-in-invalid`, `-clipboard-empty`, `-cannot-check` | the line under the field (`InvitationLinkEntryModel.Problem`) | handoff 9, frames 4 and 5 (`-invalid`, `-cannot-check`); none for `-clipboard-empty` | received; `-clipboard-empty` from spec: handoff 4's `linkEntry.clipboardEmpty` in the failure line (`InlineError`), said once as it shows. After text that isn't a link, Continue waits for an edit (frame 4) |
 | `G02-link-entry-signed-in-cannot-check-refused` | a check answered with a refusal, `429` or a server error | none | from spec: "Couldn’t check the invitation link. Try again.", handoff 8's rule that "Check your connection and try again." is said only when no answer came (`failureStates`), which handoff 9 confirms |
 | `G02-checking` | `.checking` | handoff 8, frame 8 | received |
-| `G02-checking-failed`, `-refused` | `.checkFailed` | none | from spec: the loading failure's form (`ClubLoadFailure`, handoff 8's frame 11), "Couldn’t check the invitation link." over handoff 8's `load` lines, with Retry |
+| `G02-checking-failed`, `-refused` | `.checkFailed` | handoff 9, frame 1 | received: "Couldn’t check the invitation link." over "Check your connection and try again." or, answered, "Try again.", with Retry hinted "Try checking this invitation link again." |
+| `G02-checking-failed-retrying` | Retry tapped: `.checking` after `.checkFailed` | none (frame 12's form on the web) | from spec: "Checking invitation…" as the title and Retry busy in place, keeping the focus (`handoff9.webCheck`) |
 | `G02-invitation` | `.open` | 2.1's #02, a stand-in; handoff 8's frame 9 without its line | received |
 | `G02-invitation-accepting` | Accept on its way | none | from spec: `busyPrimary`, Not now kept |
 | `G02-invitation-failed`, `-refused` | `acceptFailure` | handoff 8, frame 9 | received |
 | `G02-changed` | `.changed` with no name change | handoff 2 | received |
 | `G02-changed-name` | `.changed(_, .from(name))` | handoff 8, frame 15 | received |
-| `G02-changed-name-relaunch` | `.changed(_, .notHeld)` | none | from spec: frame 15 with `nameChanged.explanationAfterRelaunch` |
+| `G02-changed-name-relaunch` | `.changed(_, .notHeld)` | handoff 9, frame 6 | received |
 | `G02-expired` | `.expired` | handoff 1 | received |
 | `G02-full` | `.full` | handoff 1 | received |
 | `G02-revoked` | `.unavailable` | handoff 4 | received |
 | `G03-waiting` | `.waiting` | handoff 2 | received |
-| `G03-declined` | `.didNotGoAhead` | handoff 1 | received |
-| `G02-opening` | `.opening` | none | from spec: `G02-checking`'s form, "Opening {clubName}…" alone |
+| `G03-declined` | `.didNotGoAhead` | handoff 1 | received, with handoff 9's last line, "You can close this invitation." (FQ137) |
+| `G02-opening` | `.opening` | handoff 9, frame 2 | received |
 
 Each in light, dark and the largest text (`ScreenSnapshot`), pushed onto a stack as the tab pushes it. `.reopenLink` is the club list's (6d), which sends the person to I have an invite (FQ136); nothing in 6b makes it.
 
 ### How they're drawn
 
-- **The roster** (`invitationRoster`, `invitationRosterRow`): every entry the server sends, once each, the viewer first (`InvitationRoster.viewerFirst`), each a 36-point avatar with the initial and the name, "· You" on the viewer's (`RosterRow`). On `G02-changed-name` the viewer's row adds "Proposed by {inviterName}" and the Proposed tag (`proposedMemberTag`), from `inviter_name` (FQ84), and the roster has "{clubName} · {count} current members" over it, the count of its members (`later.invitation.count`), as frame 15 draws them. Another candidate's row shows the Proposed tag alone, since `InvitationRosterEntry` names no proposer; no frame draws one, so it's built from the contract (`proposedLabel`). The other rosters show no tag on the viewer's row, as frames 9 and handoff 2's `G02-changed` draw it.
+- **The roster** (`invitationRoster`, `invitationRosterRow`): every entry the server sends, once each, the viewer first (`InvitationRoster.viewerFirst`), each a 36-point avatar with the initial and the name, "· You" on the viewer's (`RosterRow`). On `G02-changed-name` the viewer's row adds "Proposed by {inviterName}" and the Proposed tag (`proposedMemberTag`), from `inviter_name` (FQ84), and the roster has "{clubName} · {count} current members" over it, the count of its members (`later.invitation.count`), as frame 15 draws them. Another candidate's row shows the Proposed tag alone, since `InvitationRosterEntry` names no proposer; no frame draws one, so it's built from the contract (`proposedLabel`). The other rosters show no tag on the viewer's row, as frames 9 and handoff 2's `G02-changed` draw it. **Handoff 9 changes this** (`handoff9.invitationRosterTag`): every candidate takes the tag, so the viewer's row on every roster says "Proposed by {inviterName}" with the tag and reads "{name}. You. Proposed by {inviterName}. Proposed." (`roster.proposedBy.own.vo`); another candidate's row keeps the tag alone (`INVENTORY.md`'s Known differences, handoff 9).
 - **Accept this roster and Not now** are pinned under the scrolling roster, the primary action over a text action. A failed Accept keeps the roster and both actions, says its line once, politely, and keeps the focus on Accept (`failureStates.accept`).
 - **The ended states** (`G02-expired`, `-full`, `-revoked`, `G03-declined`): a setup screen's title and line (`SetupHeading`), and Close invitation pinned, with handoff 5's hint "Return to {destinationName}." naming the tab it returns to (`a11y.closeInvitation.hint`). `G03-waiting`: the club's name as an eyebrow, the title and line, "Waiting for club approval" after the `clock` symbol, the boundary line, and Done pinned. No approval count, list or name (T33, book p30).
 - **The paste field:** autocorrection and capitalization off, the URL keyboard and content type, `.privacySensitive()` (section 2); the system's paste control (`PasteButton`, T45), which reads the clipboard only when tapped (handoff 2). The field doesn't take the focus on arrival, as the frame draws no keyboard.
@@ -158,3 +159,13 @@ Each in light, dark and the largest text (`ScreenSnapshot`), pushed onto a stack
 ### Design handoff 9
 
 `docs/design/handoff-9/handoff-9-brief.md` holds it, with the text to paste beside it: frames for the states above that have none (`G02-checking-failed`, `G02-opening`, the paste step's lines and its checking form), the club list's accepted invitations (6d), the signed-out invitation page's checking and failure states (`G02-web-checking`, `G02-web-failed`, built from spec by the api lane's #94), and the words for a check that got an answer other than the invitation. It also gathers what the ios lane's needs list keeps for handoff 9 (`docs/design/handoff-7/ios-lane-needs.md` sections 12 to 14): the setup list's four states that #104 built from spec (frames 14 to 17), Welcome with 2.1's "Already here? Sign in" (frames 18 to 20) and three answers in words (`G01-create`'s words, a name over 40 characters, Leave club's place). 20 frames in all.
+
+### Handoff 9's answer, adopted here
+
+The founder attached the export at 18:41 UTC on 22 November 2026; the check is `docs/design/handoff-9/check/handoff-9-check.md`, and its section 6 says what each PR adopts. 6b adopts:
+- **Frames 1 to 6** as drawn (the table above), with frame 1's Retry hint, "Try checking this invitation link again." (`invitation.checkFailed.retry.hint`).
+- **Retry stays in place while it checks again** (`G02-checking-failed-retrying`): `InvitationScreen` keeps the failure in `retryingAfter` while the model checks again, and `InvitationCheckFailure` shows "Checking invitation…" as the title with Retry busy, so Retry keeps its identity and the focus, and nothing is said until the answer, which is said once (`handoff9.webCheck`'s rule for the page, the only form drawn).
+- **Continue waits after text that isn't a link** until the text is edited (`InvitationLinkEntryModel.canContinue`; frame 4). Linux test: `continueWaitsForAnEditAfterTextThatIsntALink`.
+- **The Proposed tag on every candidate**, as "How they're drawn" says (`RosterRow`'s `spoken`).
+- **`G03-declined`'s last line,** "You can close this invitation." (`invitation.declined.body`), the founder's answer to FQ137.
+- **Kept, not adopted** (`INVENTORY.md`'s Known differences, handoff 9): the proposer on another candidate's row (the contract names none), and the failure line's `secondaryText` ink.

@@ -16,7 +16,7 @@
 
 1. Paste `handoff-9-brief.txt` into the Claude Design project that made handoffs 1 to 8, with the repository linked.
 2. If that project no longer has the earlier work, attach the two PDFs (`Tadayo_UI_UX_Design_Book.pdf`, `Tadayo_v3_Build_and_Design.pdf`), the addendum's PDF (`docs/tadayo-new-direction-addendum-r1.pdf`), `design/reference/brand/brand-tokens.md` and `brand-components.png`.
-3. When the export is ready, attach it as a .zip in the ios thread with the message "Design handoff 9", as handoffs 0 to 8 came (`docs/LIMITATIONS.md`, 2 November 2026). The lane unpacks it into `design/reference/claude-design/handoff-9/` and checks it against this brief in a design PR of its own.
+3. When the export is ready, attach it as a .zip in the ios thread with the message "Design handoff 9", as handoffs 0 to 8 came (`docs/LIMITATIONS.md`, 2 November 2026). The lane unpacks it into `design/reference/claude-design/handoff-9/` and checks it against this brief. The founder attached it at 18:41 UTC on 22 November 2026, and the lane checked it in PR 6b (`ios/b1-invitation-screens`), which holds this brief and the rows it answers, rather than in a design PR of its own: `docs/design/handoff-9/check/handoff-9-check.md`.
 
 ## 2. The readings the lane builds until the answer
 
@@ -24,3 +24,7 @@
 - **`G02-opening`** is `G02-checking`'s form with "Opening {clubName}…" alone (handoff 8's `joined.loading`).
 - **The Proposed tag** shows on another candidate's row with no "Proposed by", since the contract's roster entry names no proposer, and on the viewer's own row only on `G02-changed-name`, as frames 9 and 15 draw them.
 - **Accepted invitations on the root:** until 6d, an account with no club and an accepted invitation sees "This version of Tadayo can't show clubs yet." (FQ90), as it does on `main` today.
+
+## 3. What came back
+
+All 20 frames and every written answer (`docs/design/handoff-9/check/handoff-9-check.md`). Section 2's readings were built until then; the check's section 6 says what changes in which PR.

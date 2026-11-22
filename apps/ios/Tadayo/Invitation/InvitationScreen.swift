@@ -15,8 +15,9 @@ struct InvitationScreenActions {
 /// "Invitation", the system's Back and no tab bar, as every frame draws it:
 /// - `G02-checking` and `G02-opening`: what's going on and nothing of the club, its inviter or its
 ///   roster before the server has answered (`InvitationWait`);
-/// - `G02-checking-failed`: the loading failure's form, with Retry (`ClubLoadFailure`), and never
-///   that the link no longer works (handoff 4);
+/// - `G02-checking-failed` (handoff 9's frame 1): what failed, with Retry, which stays in place,
+///   busy, while it checks again (`InvitationCheckFailure`), and never that the link no longer
+///   works (handoff 4);
 /// - `G02-invitation`, `G02-changed` and `G02-changed-name`: the exact roster, with Accept this
 ///   roster and Not now (`InvitationRosterScreen`);
 /// - `G03-waiting`, with Done (`InvitationWaiting`);
@@ -36,6 +37,24 @@ struct InvitationScreen: View {
     var returnsTo: LocalizedStringResource = "tabs.home"
     var actions = InvitationScreenActions()
     @AccessibilityFocusState private var titleFocused: Bool
+    /// The failure a Retry is checking again after: its screen stays, Retry busy, so the focus
+    /// stays on Retry (handoff 9: "On Retry keep focus on its initiating control").
+    @State private var retryingAfter: InvitationModel.Failure?
+
+    init(
+        state: InvitationModel.State, isAccepting: Bool = false,
+        acceptFailure: InvitationModel.Failure? = nil,
+        returnsTo: LocalizedStringResource = "tabs.home",
+        actions: InvitationScreenActions = InvitationScreenActions(),
+        retryingAfter: InvitationModel.Failure? = nil
+    ) {
+        self.state = state
+        self.isAccepting = isAccepting
+        self.acceptFailure = acceptFailure
+        self.returnsTo = returnsTo
+        self.actions = actions
+        _retryingAfter = State(initialValue: retryingAfter)
+    }
 
     var body: some View {
         content
@@ -45,9 +64,35 @@ struct InvitationScreen: View {
             .onChange(of: Kind(state)) { old, _ in
                 if old == .waiting { titleFocused = true }
             }
+            .onChange(of: state, initial: true) { _, now in
+                switch now {
+                case .checkFailed(let failure): retryingAfter = failure
+                case .checking: break
+                default: retryingAfter = nil
+                }
+            }
     }
 
+    /// The check's failure on screen: the one shown, or the one a Retry is checking again after.
+    private var checkFailure: InvitationModel.Failure? {
+        switch state {
+        case .checkFailed(let failure): failure
+        case .checking: retryingAfter
+        default: nil
+        }
+    }
+
+    /// One branch for the failure and its Retry, so a Retry that checks again keeps its control.
     @ViewBuilder private var content: some View {
+        if let checkFailure {
+            InvitationCheckFailure(
+                failure: checkFailure, isRetrying: state == .checking, retry: actions.retry)
+        } else {
+            screen
+        }
+    }
+
+    @ViewBuilder private var screen: some View {
         switch state {
         case .checking:
             InvitationWait(words: String(localized: "invitation.checking"), checksFirst: true)
@@ -56,10 +101,7 @@ struct InvitationScreen: View {
                 words: String(format: String(localized: "invitation.opening"), club.name),
                 checksFirst: false)
         case .checkFailed(let failure):
-            ClubLoadFailure(
-                title: "invitation.checkFailed.title",
-                failure: failure == .network ? .network : .refused, retryHint: nil,
-                retry: actions.retry)
+            InvitationCheckFailure(failure: failure, isRetrying: false, retry: actions.retry)
         case .open(let roster):
             InvitationRosterScreen(
                 roster: roster, change: nil, isAccepting: isAccepting, failure: acceptFailure,
@@ -78,9 +120,9 @@ struct InvitationScreen: View {
             ended(
                 "invitation.unavailable.title",
                 body: String(localized: "invitation.unavailable.body"))
-        case .didNotGoAhead(let inviter):
-            ended(
-                "invitation.declined.title", body: Self.words("invitation.declined.body", inviter))
+        case .didNotGoAhead:
+            // Handoff 9's line, which promises nothing of the inviter (FQ137).
+            ended("invitation.declined.title", body: String(localized: "invitation.declined.body"))
         case .reopenLink:
             Palette.canvas.ignoresSafeArea()
         }
@@ -146,6 +188,59 @@ struct InvitationWait: View {
     }
 }
 
+/// `G02-checking-failed` (handoff 9's frame 1, `handoff9.checkFailure`): "Couldn’t check the
+/// invitation link." over "Check your connection and try again." when no answer came, or "Try
+/// again." when the server answered with a refusal, a rate limit or a server error, in
+/// `SetupHeading`'s form (the body's ink is the app's `secondaryText`: INVENTORY's Known
+/// differences, "The body ink"), and Retry pinned 44 above the safe area's bottom, hinted "Try
+/// checking this invitation link again.". Each failure is said once, politely. While Retry checks
+/// again it stays in place in its busy form, and the title says "Checking invitation…", as handoff
+/// 9's frame 12 draws the signed-out page (`G02-checking-failed-retrying`, built from spec);
+/// nothing of the club shows until the server has answered.
+struct InvitationCheckFailure: View {
+    let failure: InvitationModel.Failure
+    let isRetrying: Bool
+    let retry: @MainActor () async -> Void
+
+    var body: some View {
+        SetupScroll {
+            if isRetrying {
+                Text("invitation.checking")
+                    .textRole(.utilityTitle)
+                    .foregroundStyle(Palette.primaryText)
+                    .accessibilityAddTraits(.isHeader)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                SetupHeading(title: "invitation.checkFailed.title", subtitle: Text(line))
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom) {
+                Button {
+                    Task { await retry() }
+                } label: {
+                    Text("common.retry")
+                }
+                .buttonStyle(.tadayoPrimary(isBusy: isRetrying))
+                .accessibilityHint(Text("invitation.checkFailed.retry.hint"))
+            }
+        }
+        .announcing(isRetrying ? nil : spoken, politely: true, initial: true)
+    }
+
+    private var line: LocalizedStringResource {
+        switch failure {
+        case .network: "load.network"
+        case .other: "load.refused"
+        }
+    }
+
+    /// The title, then the line.
+    private var spoken: String {
+        "\(String(localized: "invitation.checkFailed.title")) \(String(localized: line))"
+    }
+}
+
 /// The invitation's roster: `G02-invitation` (2.1's frame, a stand-in, and handoff 8's frame 9),
 /// `G02-changed` (handoff 2's frame) and `G02-changed-name` (handoff 8's frame 15):
 /// - the title in `utilityTitle` 32/35, as a heading: "Join {clubName}", "Review the new roster"
@@ -160,9 +255,10 @@ struct InvitationWait: View {
 /// - for a name change, "{clubName} · {count} current members" in `metadata` `secondaryText`
 ///   32 under that, counting the roster's members;
 /// - 24 under the words, the roster (`invitationRoster`): every entry once, the viewer first, each
-///   a `RosterRow`. On a name change the viewer's row says "Proposed by {inviterName}" with the
-///   Proposed tag (FQ84), as frame 15 draws it; another candidate's row has the tag alone, the
-///   roster naming no proposer for it; the viewer's row elsewhere shows no tag, as frame 9 draws it;
+///   a `RosterRow`. Every candidate's row has the Proposed tag (handoff 9's `invitationRosterTag`,
+///   which corrects frame 9): the viewer's says "Proposed by {inviterName}", as frame 15 and
+///   handoff 9's frame 6 draw it; another candidate's has the tag alone, the roster naming no
+///   proposer for it;
 /// - for a changed roster, "Accept this exact roster to continue. …" in `metadata`
 ///   `secondaryText` 20 under the roster;
 /// - a failed Accept's line 20 under that (`InlineError`), said once, politely, VoiceOver's focus
@@ -225,8 +321,6 @@ struct InvitationRosterScreen: View {
         }
         .announcing(line, politely: true)
     }
-
-    private var nameChange: InvitationModel.NameChange? { change ?? nil }
 
     private var title: String {
         switch change {
@@ -295,12 +389,13 @@ struct InvitationRosterScreen: View {
         return InvitationScreen.words("invitation.roster.club", roster.clubName, count)
     }
 
+    /// Every candidate's row has the Proposed tag (handoff 9's `invitationRosterTag`). The
+    /// viewer's says who proposed them: the inviter, since only a candidate's proposer makes
+    /// their link (FQ71). The roster names no proposer for anyone else, so their rows have the
+    /// tag alone.
     private func proposal(for entry: InvitationRosterEntry) -> RosterRow.Proposal? {
         guard entry.kind == .candidate else { return nil }
-        if entry.isYou {
-            return nameChange == nil ? nil : .by(roster.inviterName)
-        }
-        return .unnamed
+        return entry.isYou ? .by(roster.inviterName) : .unnamed
     }
 
     private var line: String? {

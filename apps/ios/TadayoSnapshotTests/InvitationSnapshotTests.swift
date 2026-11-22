@@ -72,6 +72,13 @@ final class InvitationSnapshotTests: XCTestCase {
         snap(invitation(.checkFailed(.other)), named: "G02-checking-failed-refused")
     }
 
+    /// Retry checking again: the failure's screen stays, Retry busy (handoff 9).
+    func testG02CheckingFailedRetrying() {
+        snap(
+            invitation(.checking, retryingAfter: .network), named: "G02-checking-failed-retrying",
+            busy: true)
+    }
+
     func testG02Opening() {
         snap(invitation(.opening(Rosters.sundayRef)), named: "G02-opening", busy: true)
     }
@@ -142,7 +149,11 @@ final class InvitationSnapshotTests: XCTestCase {
         XCTAssertTrue(
             elements.contains { $0.label == "Join Sunday people" && $0.isHeader }, "\(elements)")
         let labels = elements.map(\.label)
-        let rows = ["Ben, you.", "Maya.", "Alex.", "Sam.", "Debby.", "Nina."].map {
+        // The viewer is a candidate, so the row says who proposed them and the tag, as every
+        // candidate's row does (handoff 9's `invitationRosterTag`, which corrects frame 9).
+        let rows = [
+            "Ben. You. Proposed by Debby. Proposed.", "Maya.", "Alex.", "Sam.", "Debby.", "Nina.",
+        ].map {
             labels.firstIndex(of: $0)
         }
         XCTAssertFalse(rows.contains(nil), "\(elements)")
@@ -155,7 +166,7 @@ final class InvitationSnapshotTests: XCTestCase {
         let elements = AccessibilityElements.of(
             invitation(.changed(Rosters.kitchen, .from("Leila"))))
         XCTAssertTrue(
-            elements.contains { $0.label == "Debby, you. Proposed by Ben. Proposed." },
+            elements.contains { $0.label == "Debby. You. Proposed by Ben. Proposed." },
             "\(elements)")
         XCTAssertTrue(
             elements.contains {
@@ -168,9 +179,12 @@ final class InvitationSnapshotTests: XCTestCase {
 
     func testAnotherCandidateIsReadAsProposed() {
         let elements = AccessibilityElements.of(invitation(.open(Rosters.twoProposed)))
+        // The roster names no proposer for another candidate, so the row has the tag alone.
         XCTAssertTrue(elements.contains { $0.label == "Leila. Proposed." }, "\(elements)")
-        // The viewer's own row has no tag outside a name change, as frame 9 draws it.
-        XCTAssertTrue(elements.contains { $0.label == "Debby, you." }, "\(elements)")
+        // The viewer's own row says who proposed them, outside a name change too (handoff 9).
+        XCTAssertTrue(
+            elements.contains { $0.label == "Debby. You. Proposed by Ben. Proposed." },
+            "\(elements)")
     }
 
     func testAcceptAndNotNowAreButtons() {
@@ -184,6 +198,22 @@ final class InvitationSnapshotTests: XCTestCase {
             elements.contains {
                 $0.label == "Couldn’t accept this roster. Check your connection and try again."
             }, "\(elements)")
+    }
+
+    func testRetrySaysWhatItChecksAndStaysWhileItChecks() {
+        let failed = AccessibilityElements.of(invitation(.checkFailed(.other)))
+        XCTAssertTrue(
+            failed.contains { $0.label == "Couldn’t check the invitation link." && $0.isHeader },
+            "\(failed)")
+        XCTAssertTrue(failed.contains { $0.label == "Try again." }, "\(failed)")
+        let retry = failed.first { $0.label == "Retry" }
+        XCTAssertEqual(retry?.hint, "Try checking this invitation link again.", "\(failed)")
+        // Checking again: Retry is still there, busy, and nothing of the club shows.
+        let again = AccessibilityElements.of(invitation(.checking, retryingAfter: .other))
+        XCTAssertTrue(again.contains { $0.label == "Retry" }, "\(again)")
+        XCTAssertTrue(
+            again.contains { $0.label == "Checking invitation…" && $0.isHeader }, "\(again)")
+        XCTAssertFalse(again.contains { $0.label.contains("Sunday") }, "\(again)")
     }
 
     func testCloseInvitationSaysWhereItReturns() {
@@ -260,12 +290,13 @@ final class InvitationSnapshotTests: XCTestCase {
 
     private func invitation(
         _ state: InvitationModel.State, isAccepting: Bool = false,
-        failure: InvitationModel.Failure? = nil, returnsTo: LocalizedStringResource = "tabs.home"
+        failure: InvitationModel.Failure? = nil, returnsTo: LocalizedStringResource = "tabs.home",
+        retryingAfter: InvitationModel.Failure? = nil
     ) -> some View {
         pushed(
             InvitationScreen(
                 state: state, isAccepting: isAccepting, acceptFailure: failure,
-                returnsTo: returnsTo))
+                returnsTo: returnsTo, retryingAfter: retryingAfter))
     }
 
     private func entryScreen(_ model: InvitationLinkEntryModel) -> some View {

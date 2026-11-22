@@ -64,6 +64,23 @@ import Testing
         #expect(entry.problem == nil)
     }
 
+    /// Handoff 9's frame 4: what isn't a link keeps Continue unavailable until it's edited, or a
+    /// paste replaces it.
+    @Test func continueWaitsForAnEditAfterTextThatIsntALink() async {
+        let entry = entry(ScriptedClubs())
+        entry.text = "tadayo.app"
+        #expect(entry.canContinue)
+        await entry.proceed()
+        #expect(entry.problem == .invalid)
+        #expect(!entry.canContinue)
+        entry.text = "tadayo.app/"
+        #expect(entry.canContinue)
+        await entry.proceed()
+        #expect(!entry.canContinue)
+        entry.pasted(link)
+        #expect(entry.canContinue)
+    }
+
     @Test func aLinkWithSpacesAroundItIsRead() async {
         let service = ScriptedClubs()
         service.previewAnswers = [.success(.open(Kitchen.roster()))]

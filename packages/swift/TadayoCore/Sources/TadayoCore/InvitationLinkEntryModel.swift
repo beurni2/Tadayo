@@ -21,8 +21,8 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         /// "There isn’t an invitation link to paste. Copy the link and try again."
         case clipboardEmpty
         /// "Couldn’t check the invitation link. Check your connection and try again." when no
-        /// answer came (`linkEntry.cannotCheck`); another failure's words are asked in design
-        /// handoff 9 (`docs/plans/ios-b1-invitation.md` section 2).
+        /// answer came (`linkEntry.cannotCheck`), or "Couldn’t check the invitation link. Try
+        /// again." when the server answered otherwise (handoff 9's `entry.answeredFailure`).
         case cannotCheck(InvitationModel.Failure)
     }
 
@@ -61,9 +61,12 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     }
     private var typed = ""
 
-    /// Continue: the field has something in it besides spaces, and no check is on its way.
+    /// Continue: the field has something in it besides spaces, no check is on its way, and it
+    /// isn't the text just found not to be a link, which waits for an edit (handoff 9's frame 4:
+    /// "Continue unavailable until locally plausible").
     public var canContinue: Bool {
         !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isChecking
+            && problem != .invalid
     }
 
     /// The system's paste control's text, or nil when it had none to give.

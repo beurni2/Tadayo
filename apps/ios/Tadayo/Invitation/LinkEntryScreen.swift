@@ -26,7 +26,9 @@ import TadayoDesign
 /// What's typed may hold a token: the field takes no autocorrection, capitalization or learned
 /// words, uses the URL keyboard and content type, and is redacted from the app switcher's
 /// snapshot (`privacySensitive`). The field doesn't take the focus on arrival, as the frame draws
-/// no keyboard.
+/// no keyboard, and gives it up when the invitation is pushed over it, so Back returns to the
+/// field with no keyboard over Continue, as on arrival (the check keeps the focus where it is,
+/// `handoff9.linkEntry.keyboard`).
 struct LinkEntryScreen: View {
     let model: InvitationLinkEntryModel
     /// Continue: checks the link and shows what it found.
@@ -99,6 +101,7 @@ struct LinkEntryScreen: View {
         .navigationTitle(Text("invitation.nav"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .onDisappear { focused = false }
         .announcing(line)
     }
 

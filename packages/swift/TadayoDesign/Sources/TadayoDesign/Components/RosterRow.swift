@@ -22,8 +22,9 @@ import SwiftUI
 /// In an invitation's roster (`invitationRoster`, handoff 8's frame 15) a proposed person's row
 /// has no weekdays: under the name, "Proposed by {name}" in the weekdays' place when the proposer
 /// is known, and the Proposed tag (`proposedMemberTag`) 8 under the words, leading aligned, at
-/// every text size. VoiceOver reads "Debby, you. Proposed by Ben. Proposed." (`proposed.row.vo`),
-/// or "Maya. Proposed." with no proposer.
+/// every text size. VoiceOver reads "Debby. You. Proposed by Ben. Proposed." on the viewer's own
+/// row (handoff 9's `handoff9.proposed.ownRow.vo`), "Maya. Proposed by Ben. Proposed."
+/// (`proposed.row.vo`) on another's, or "Maya. Proposed." with no proposer.
 public struct RosterRow: View {
     /// How a person who isn't a member yet is shown.
     public enum Proposal: Sendable, Equatable {
@@ -113,9 +114,14 @@ public struct RosterRow: View {
     }
 
     /// The name, then the weekdays, as sentences; the name alone with none; for a proposed
-    /// person, the name, the proposer if known, and "Proposed."
+    /// person, the name, the proposer if known, and "Proposed.", the viewer's own row as handoff
+    /// 9 words it ("Debby. You. Proposed by Ben. Proposed.", `handoff9.proposed.ownRow.vo`).
     var spoken: String {
         switch proposal {
+        case .by(let proposer) where isViewer:
+            return String(
+                format: String(localized: "roster.proposedBy.own.vo", bundle: .module), name,
+                proposer)
         case .by(let proposer):
             return String(
                 format: String(localized: "roster.proposedBy.vo", bundle: .module), personSpeech,
@@ -140,7 +146,7 @@ public struct RosterRow: View {
 /// radius, as wide as the word, at least 28 high at the default size, growing with the text.
 struct ProposedTag: View {
     var body: some View {
-        Text("roster.proposed", bundle: .module)
+        Text(String(localized: "roster.proposed", bundle: .module))
             .textRole(.proposedTag)
             .foregroundStyle(Palette.primaryText)
             .fixedSize(horizontal: false, vertical: true)
