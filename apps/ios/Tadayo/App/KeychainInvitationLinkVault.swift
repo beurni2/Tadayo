@@ -3,14 +3,16 @@ import Security
 import TadayoCore
 
 /// The invitation links the app keeps for their proposer (ADR-037; `docs/plans/ios-b1-create.md`
-/// section 1), in one keychain item: a generic password whose service is
-/// `app.tadayo.invitations` and whose account is the build's environment, in the access group
-/// `group.app.tadayo` that the session's item already proves on an unsigned simulator build
-/// (`KeychainSessionStore`), readable only while the iPhone is unlocked, on this device only,
-/// never synchronised. Its data is one account's id and its links, as JSON: no address, no name.
-/// The share extension's code never reads it, though the access group, which the extension
-/// shares for the session, would let it. A read while the iPhone is locked fails, and the book
-/// reads it again at its next access, writing nothing over it meanwhile.
+/// section 1), and the tokens of invitations the account accepted (the contract's
+/// `MyInvitationState`; `docs/plans/ios-b1-invitation.md` section 1), in one keychain item: a
+/// generic password whose service is `app.tadayo.invitations` and whose account is the build's
+/// environment, in the access group `group.app.tadayo` that the session's item already proves on
+/// an unsigned simulator build (`KeychainSessionStore`), readable only while the iPhone is
+/// unlocked, on this device only, never synchronised. Its data is one account's id, its links and
+/// its accepted invitations' tokens, as JSON: no address, no name. The share extension's code
+/// never reads it, though the access group, which the extension shares for the session, would let
+/// it. A read while the iPhone is locked fails, and the book reads it again at its next access,
+/// writing nothing over it meanwhile.
 ///
 /// `InvitationLinkBook` forgets it at Leave sign-in (`AppGraph`'s `left`), and
 /// `KeychainSessionStore.forgetEarlierInstall` after a reinstall. A failure carries its status

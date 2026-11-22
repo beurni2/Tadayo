@@ -7,7 +7,8 @@ import Observation
 /// here (handoff 2). Continue reads the field as an invitation link, `https://tadayo.app/i#<token>`
 /// and nothing else, never fetching a pasted URL, then checks it on this screen: no answer keeps
 /// the text with the check's failure, and any answer is the invitation, handed over to be shown
-/// (handoff 4). Back to this screen finds the text as it was. What's typed may hold a token, so
+/// (handoff 4), except a club the account is already in, which opens. Back to this screen finds
+/// the text as it was. What's typed may hold a token, so
 /// nothing the model prints, reflects or dumps holds it (T7, T52).
 @MainActor @Observable
 public final class InvitationLinkEntryModel: CustomStringConvertible,
@@ -20,7 +21,8 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         /// "There isn’t an invitation link to paste. Copy the link and try again."
         case clipboardEmpty
         /// "Couldn’t check the invitation link. Check your connection and try again." when no
-        /// answer came (`linkEntry.cannotCheck`).
+        /// answer came (`linkEntry.cannotCheck`); another failure's words are asked in design
+        /// handoff 9 (`docs/plans/ios-b1-invitation.md` section 2).
         case cannotCheck(InvitationModel.Failure)
     }
 
@@ -29,6 +31,9 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     public private(set) var isChecking = false
     /// The invitation the last Continue found, to show; nil until one is found.
     public private(set) var invitation: InvitationModel?
+    /// The club the link opened, the account already being a member: the root has kept it as the
+    /// selected club and read the list again, and the paste step is done (`handoff8.joinedLink`).
+    public private(set) var opened: ClubRef?
 
     let make: @MainActor (InvitationToken) -> InvitationModel?
 
@@ -84,6 +89,9 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         case .checking:
             // Not checked: the session it was made in has ended.
             break
+        case .opening(let club):
+            // The club opened while the link was checked: nothing is left to show.
+            opened = club
         default:
             invitation = model
         }

@@ -73,8 +73,13 @@ extension InvitationRoster {
     /// Accept this roster failed: the roster stays, with this line (`G02-invitation-failed`).
     public private(set) var acceptFailure: Failure?
 
-    private let token: InvitationToken?
+    /// The invitation's token, or nil when the app doesn't hold it: the root holds it again if
+    /// this model is set aside before the account can see it.
+    let token: InvitationToken?
     private var isChecking = false
+    /// The root no longer shows this model: it starts nothing, and an answer still on its way can
+    /// drop the token, never keep it.
+    private var closed = false
     /// The viewer's name on the roster whose acceptance the server answered `changed`.
     private var earlierName: String?
     /// The inviter this model has shown.
@@ -116,7 +121,7 @@ extension InvitationRoster {
     /// Checks the token: when the model is made with one, on Retry, and after an Accept the server
     /// answered with a newer roster. One check at a time, and none while Accept is on its way.
     public func check() async {
-        guard let token, !isChecking, !isAccepting else { return }
+        guard let token, !closed, !isChecking, !isAccepting else { return }
         isChecking = true
         state = .checking
         acceptFailure = nil
@@ -135,12 +140,11 @@ extension InvitationRoster {
                 earlierName == nil ? .open(roster) : .changed(roster, nameChange(roster, nil))
         case .success(.changed(let roster)):
             inviterName = roster.inviterName
-            let kept = book.keepReceived(
-                token, invitation: roster.invitationID, account: accountID)
+            let kept = keep(token, invitation: roster.invitationID)
             state = .changed(roster, nameChange(roster, kept))
         case .success(.waiting(let roster)):
             inviterName = roster.inviterName
-            book.keepReceived(token, invitation: roster.invitationID, account: accountID)
+            keep(token, invitation: roster.invitationID)
             state = .waiting(clubName: roster.clubName)
         case .success(.expired(let name)):
             book.dropReceived(token, account: accountID)
@@ -176,7 +180,7 @@ extension InvitationRoster {
 
     /// Accept this roster: the exact revision shown, open or changed.
     public func accept() async {
-        guard let token, !isAccepting, !isChecking else { return }
+        guard let token, !closed, !isAccepting, !isChecking else { return }
         let roster: InvitationRoster
         switch state {
         case .open(let shown), .changed(let shown, _): roster = shown
@@ -219,8 +223,7 @@ extension InvitationRoster {
             }
         case .success(.waiting):
             pending = nil
-            book.keepReceived(
-                token, invitation: roster.invitationID, account: accountID, nameChanged: false)
+            keep(token, invitation: roster.invitationID, nameChanged: false)
             earlierName = nil
             state = .waiting(clubName: roster.clubName)
             then = .nothing
@@ -228,8 +231,7 @@ extension InvitationRoster {
             // The server made a revision with the account's name (FQ66): the name on the roster
             // just shown is the earlier one, the only source for it (handoff 8).
             pending = nil
-            book.keepReceived(
-                token, invitation: roster.invitationID, account: accountID, nameChanged: true)
+            keep(token, invitation: roster.invitationID, nameChanged: true)
             earlierName = roster.viewerName
             then = .check
         case .failure(.versionConflict), .failure(.rosterChanged):
@@ -273,6 +275,23 @@ extension InvitationRoster {
         case .open(let club): await joined(club)
         case .endSession: await signedOut()
         }
+    }
+
+    /// The root no longer shows this model (it was replaced, closed or set aside): it checks and
+    /// accepts nothing more, and an answer still on its way can drop the token but never keeps it,
+    /// so a late answer can't keep a token a newer one dropped.
+    func close() {
+        closed = true
+    }
+
+    /// Keeps the token for the account, once the server has bound it to the account, unless the
+    /// model is closed; gives what's kept.
+    @discardableResult private func keep(
+        _ token: InvitationToken, invitation invitationID: String, nameChanged: Bool? = nil
+    ) -> KeptReceivedInvitation? {
+        guard !closed else { return book.received(token, account: accountID) }
+        return book.keepReceived(
+            token, invitation: invitationID, account: accountID, nameChanged: nameChanged)
     }
 
     /// `G02-changed-name`'s explanation, if the roster changed for the account's name.

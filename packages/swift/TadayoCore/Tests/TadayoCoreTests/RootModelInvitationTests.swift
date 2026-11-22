@@ -14,7 +14,10 @@ import Testing
             expiresAt: start.addingTimeInterval(3600))
     }
     let leila = account(name: "Leila", age: true, version: 2)
+    let maya = Account(
+        id: "acct_maya", displayName: "Maya", avatarVersion: nil, ageConfirmed: true, version: 1)
     let token = Kitchen.token(1)
+    var link: String { "https://tadayo.app/i#" + token.secret }
 
     func list(_ clubs: [ClubSummary] = [], invitations: [MyInvitation] = []) -> ClubList {
         ClubList(
@@ -100,14 +103,67 @@ import Testing
         #expect(root.invitation?.state == .open(Kitchen.roster()))
     }
 
-    @Test func aLinkWhileTheProfileIsIncompleteWaitsForTheTabs() async {
+    @Test func aLinkWhileTheProfileIsIncompleteWaitsForTheTabs() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(account())],
+            update: [
+                .success(account(age: true, version: 1)),
+                .success(account(name: "Leila", age: true, version: 2)),
+            ],
+            clubs: [.success(list())])
         let clubs = ScriptedClubs()
-        let root = root(FakeAccounts(me: [.success(account())]), clubs: clubs)
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let root = root(accounts, clubs: clubs)
         await root.start()
         #expect(root.route == .confirmAge)
         await root.open(token)
         #expect(root.invitation == nil)
         #expect(clubs.calls.isEmpty)
+        let profile = try #require(root.profile)
+        await profile.confirmAge()
+        #expect(root.route == .profile)
+        #expect(root.invitation == nil)
+        profile.name = "Leila"
+        await profile.saveName()
+        #expect(root.route == .tabs)
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(clubs.calls == ["preview 01"])
+        #expect(accounts.calls.last == "clubs")
+    }
+
+    @Test func anAccountFoundIncompleteHoldsTheShownInvitationUntilTheTabsShowAgain() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(account(age: true, version: 3))],
+            update: [.success(account(name: "Leila", age: true, version: 4))],
+            clubs: [.success(list()), .failure(.profileIncomplete), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [
+            .success(.open(Kitchen.roster())), .success(.open(Kitchen.roster())),
+        ]
+        let root = root(accounts, clubs: clubs)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        await root.open(token)
+        let shown = try #require(root.invitation)
+        // The list says the profile is incomplete, and the account reads so.
+        await root.retry()
+        #expect(root.route == .profile)
+        // Nothing of the club while the account is incomplete, and no Accept from it.
+        #expect(root.invitation == nil)
+        await shown.accept()
+        // The paste step made on the tabs checks nothing while they don't show.
+        entry.text = link
+        await entry.proceed()
+        #expect(entry.invitation == nil)
+        #expect(!entry.isChecking)
+        #expect(clubs.calls == ["preview 01"])
+        let profile = try #require(root.profile)
+        profile.name = "Leila"
+        await profile.saveName()
+        #expect(root.route == .tabs)
+        #expect(root.invitation !== shown)
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(clubs.calls == ["preview 01", "preview 01"])
     }
 
     @Test func aNewerLinkReplacesAHeldOne() async {
@@ -142,6 +198,30 @@ import Testing
         #expect(root.invitation !== first)
         #expect(root.invitation?.state == .expired(inviterName: "Ben"))
         #expect(clubs.calls == ["preview 01", "preview 02"])
+    }
+
+    @Test func aReplacedInvitationsLateAnswerKeepsNothing() async {
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let clubs = ScriptedClubs()
+        // The second link's preview passes the gate first, so it takes the first answer.
+        clubs.previewAnswers = [
+            .success(.open(Kitchen.roster())), .success(.waiting(Kitchen.roster())),
+        ]
+        let root = root(
+            FakeAccounts(me: [.success(leila)], clubs: [.success(list())]), clubs: clubs,
+            links: links)
+        await root.start()
+        let gate = Gate()
+        clubs.duringPreview = { await gate.wait() }
+        async let first: Void = root.open(Kitchen.token(1))
+        await gate.reached()
+        clubs.duringPreview = {}
+        await root.open(Kitchen.token(2))
+        gate.open()
+        await first
+        #expect(clubs.calls == ["preview 02", "preview 01"])
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(links.received(Kitchen.token(1), account: leila.id) == nil)
     }
 
     @Test func aLinkHeldInALaterSessionWaitsForThatSessionsTabs() async throws {
@@ -206,7 +286,7 @@ import Testing
     @Test func leaveSignInForgetsTheHeldAndThePresentedInvitation() async throws {
         let auth = FakeAuth(verify: [.success(stored), .success(stored)])
         let accounts = FakeAccounts(
-            me: [.success(leila), .success(leila)], clubs: [.success(list()), .success(list())])
+            me: [.success(leila), .success(maya)], clubs: [.success(list()), .success(list())])
         let clubs = ScriptedClubs()
         clubs.previewAnswers = [.success(.waiting(Kitchen.roster()))]
         let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
@@ -228,7 +308,10 @@ import Testing
         signIn.code = "529614"
         await signIn.verify()
         #expect(root.route == .tabs)
+        #expect(root.account?.id == "acct_maya")
         #expect(root.invitation == nil)
+        #expect(links.received(token, account: maya.id) == nil)
+        #expect(links.received(token, account: leila.id) == nil)
         #expect(clubs.calls == ["preview 01"])
     }
 
@@ -306,16 +389,35 @@ import Testing
         #expect(clubs.calls == ["preview 01"])
     }
 
-    @Test func aSignedOutAnswerEndsTheSession() async {
+    @Test func aSignedOutAnswerEndsTheSessionAndTheLinkWaitsForTheNextSignIn() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)], clubs: [.success(list()), .success(list())])
         let clubs = ScriptedClubs()
-        clubs.previewAnswers = [.failure(.signedOut)]
-        let root = root(
-            FakeAccounts(me: [.success(leila)], clubs: [.success(list())]), clubs: clubs)
+        clubs.previewAnswers = [
+            .success(.waiting(Kitchen.roster())), .failure(.signedOut),
+            .success(.open(Kitchen.roster())),
+        ]
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let root = root(accounts, clubs: clubs, auth: auth, links: links)
         await root.start()
         await root.open(token)
+        #expect(links.received(token, account: leila.id) != nil)
+        await root.invitation?.check()
         #expect(root.route == .signIn)
         #expect(root.invitation == nil)
         #expect(root.signIn?.signInEnded == true)
+        // The kept tokens go with the session (T11); the link is held, in memory only, through
+        // the next sign-in (book p9).
+        #expect(links.received(token, account: leila.id) == nil)
+        let signIn = try #require(root.signIn)
+        signIn.email = "leila@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        #expect(root.route == .tabs)
+        #expect(root.invitation?.state == .open(Kitchen.roster()))
+        #expect(clubs.calls == ["preview 01", "preview 01", "preview 01"])
     }
 
     // MARK: The club list's accepted invitations
@@ -332,15 +434,20 @@ import Testing
         #expect(clubs.calls.isEmpty)
     }
 
-    @Test func anInvitationThatDidntGoAheadNamesOnlyTheInviter() async {
+    @Test func anInvitationThatDidntGoAheadNamesOnlyTheInviterAndDropsItsToken() async {
         let clubs = ScriptedClubs()
         let invitations = [accepted(.didNotGoAhead)]
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
         let root = root(
             FakeAccounts(me: [.success(leila)], clubs: [.success(list(invitations: invitations))]),
-            clubs: clubs)
+            clubs: clubs, links: links)
         await root.start()
+        // Kept after the list's read (an Accept answered while it was out), so the list's settling
+        // left it.
+        links.keepReceived(token, invitation: "inv_leila", account: leila.id)
         await root.openAccepted(invitations[0])
         #expect(root.invitation?.state == .didNotGoAhead(inviterName: "Ben"))
+        #expect(links.received(token, account: leila.id) == nil)
         #expect(clubs.calls.isEmpty)
     }
 
@@ -423,6 +530,81 @@ import Testing
         entry.returned()
         #expect(entry.invitation == nil)
         #expect(entry.text == link)
+    }
+
+    @Test func aPastedLinkToAClubTheAccountIsInOpensIt() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(leila)], clubs: [.success(list()), .success(list([kitchen]))])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.joined(Kitchen.ref))]
+        let selection = InMemoryClubSelection()
+        let root = root(accounts, clubs: clubs, selection: selection)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        // The club is kept as selected and the list read again while the link was checked;
+        // nothing is left to show (handoff 8's joinedLink).
+        #expect(entry.opened == Kitchen.ref)
+        #expect(entry.invitation == nil)
+        #expect(!entry.isChecking)
+        #expect(root.invitation == nil)
+        #expect(root.selectedClubID == "club_kitchen")
+        #expect(selection.club(for: leila.id) == "club_kitchen")
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+    }
+
+    @Test func aPasteStepWhoseSessionEndsDuringTheCheckShowsNothing() async throws {
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.waiting(Kitchen.roster()))]
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let root = root(
+            FakeAccounts(me: [.success(leila)], clubs: [.success(list())]), clubs: clubs,
+            links: links)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        let gate = Gate()
+        clubs.duringPreview = { await gate.wait() }
+        async let proceeded: Void = entry.proceed()
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await proceeded
+        #expect(entry.invitation == nil)
+        #expect(entry.problem == nil)
+        #expect(!entry.isChecking)
+        #expect(links.received(token, account: leila.id) == nil)
+    }
+
+    @Test func nothingTheRootOrItsInvitationPrintsHoldsALink() async throws {
+        let secret = token.secret
+        func printed(_ value: Any) -> [String] {
+            var dumped = ""
+            dump(value, to: &dumped)
+            return [String(describing: value), String(reflecting: value), dumped]
+        }
+        // A link held before sign-in.
+        let held = root(FakeAccounts(), signedIn: false)
+        await held.start()
+        await held.open(token)
+        // A link presented, with its token kept.
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.waiting(Kitchen.roster()))]
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let shown = root(
+            FakeAccounts(me: [.success(leila)], clubs: [.success(list())]), clubs: clubs,
+            links: links)
+        await shown.start()
+        await shown.open(token)
+        let invitation = try #require(shown.invitation)
+        #expect(links.received(token, account: leila.id) != nil)
+        for value: Any in [held, shown, invitation, links] {
+            for text in printed(value) {
+                #expect(!text.contains(secret), "\(type(of: value))")
+                #expect(!text.contains("tadayo.app/i"), "\(type(of: value))")
+            }
+        }
     }
 
     @Test func aPasteStepMadeBeforeLeaveSignInChecksNothingAfterIt() async throws {

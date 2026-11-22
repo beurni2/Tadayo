@@ -110,13 +110,18 @@ import Testing
     }
 
     @Test func nothingIsCheckedOnceTheSessionHasEnded() async {
-        let service = ScriptedClubs()
-        let entry = InvitationLinkEntryModel { _ in nil }
+        var asked = 0
+        let entry = InvitationLinkEntryModel { _ in
+            asked += 1
+            return nil
+        }
         entry.text = link
         await entry.proceed()
+        #expect(asked == 1)
         #expect(entry.invitation == nil)
+        #expect(entry.opened == nil)
         #expect(entry.problem == nil)
         #expect(!entry.isChecking)
-        #expect(service.calls.isEmpty)
+        #expect(entry.text == link)
     }
 }

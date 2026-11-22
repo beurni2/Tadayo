@@ -436,6 +436,65 @@ import Testing
         }
     }
 
+    @Test func aClosedModelsLateAnswerDropsButNeverKeeps() async throws {
+        // Every answer that would keep the token, landing once the model is closed: from a check
+        // (waiting, changed) and from an accept (waiting, changed).
+        for (preview, acceptance) in [
+            (InvitationPreview.waiting(Kitchen.roster()), nil),
+            (.changed(Kitchen.roster()), nil),
+            (.open(Kitchen.roster()), InvitationAcceptance.waiting),
+            (.open(Kitchen.roster()), .changed),
+        ] {
+            let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+            let service = ScriptedClubs()
+            service.previewAnswers = [.success(preview)]
+            service.acceptAnswers = acceptance.map { [.success($0)] } ?? []
+            let invitation = model(service, book: book)
+            let gate = Gate()
+            if acceptance == nil {
+                service.duringPreview = { await gate.wait() }
+                async let checked: Void = invitation.check()
+                await gate.reached()
+                invitation.close()
+                gate.open()
+                await checked
+            } else {
+                await invitation.check()
+                service.duringAccept = { await gate.wait() }
+                async let accepted: Void = invitation.accept()
+                await gate.reached()
+                invitation.close()
+                gate.open()
+                await accepted
+            }
+            #expect(book.received(token, account: account) == nil, "\(preview)")
+        }
+        // An answer that drops the token still drops it.
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        book.keepReceived(token, invitation: "inv_leila", account: account)
+        let service = ScriptedClubs()
+        service.previewAnswers = [.failure(.notFound), .success(.open(Kitchen.roster()))]
+        let invitation = model(service, book: book)
+        let gate = Gate()
+        service.duringPreview = { await gate.wait() }
+        async let checked: Void = invitation.check()
+        await gate.reached()
+        invitation.close()
+        gate.open()
+        await checked
+        #expect(book.received(token, account: account) == nil)
+        // And a closed model checks and accepts nothing more, its roster still on it.
+        let shownService = ScriptedClubs()
+        shownService.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let shown = model(shownService)
+        await shown.check()
+        shown.close()
+        await shown.accept()
+        await shown.check()
+        #expect(shown.state == .open(Kitchen.roster()))
+        #expect(shownService.calls == ["preview 01"])
+    }
+
     @Test func anOpenRosterKeepsNothing() async {
         let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
         let service = ScriptedClubs()
