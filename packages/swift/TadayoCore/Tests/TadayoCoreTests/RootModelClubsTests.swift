@@ -12,6 +12,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     private var revisionAnswers: [Result<RosterRevision, APIFailure>]
     private var memberAnswers: [Result<MemberList, APIFailure>]
     private var scheduleAnswers: [Result<ClubWeek, APIFailure>]
+    private var createAnswers: [Result<ClubDetail, APIFailure>]
     private(set) var calls: [String] = []
     private var clubReads = 0
     private var memberReads = 0
@@ -22,17 +23,22 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     var duringRevision: @Sendable () async -> Void = {}
     var duringMembers: @Sendable (Int) async -> Void = { _ in }
     var duringSchedule: @Sendable () async -> Void = {}
+    /// Run inside each club made, before it answers.
+    var duringCreate: @Sendable () async -> Void = {}
 
+    /// `create` answers each club made, in order; with none left, a club made is refused.
     init(
         club: [Result<ClubDetail, APIFailure>] = [],
         revision: [Result<RosterRevision, APIFailure>] = [],
         members: [Result<MemberList, APIFailure>] = [],
-        schedule: [Result<ClubWeek, APIFailure>] = []
+        schedule: [Result<ClubWeek, APIFailure>] = [],
+        create: [Result<ClubDetail, APIFailure>] = []
     ) {
         clubAnswers = club
         revisionAnswers = revision
         memberAnswers = members
         scheduleAnswers = schedule
+        createAnswers = create
     }
 
     private func next<T>(_ answers: inout [Result<T, APIFailure>]) -> Result<T, APIFailure> {
@@ -66,8 +72,11 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
         async throws(APIFailure) -> ClubDetail
     {
-        record("createClub")
-        throw .refused
+        await duringCreate()
+        return try lock.withLock {
+            calls.append("createClub \(name)")
+            return createAnswers.isEmpty ? .failure(.refused) : createAnswers.removeFirst()
+        }.get()
     }
 
     func members(of clubID: String) async throws(APIFailure) -> MemberList {
@@ -185,6 +194,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         _ accounts: FakeAccounts, clubs: FakeClubs = FakeClubs(),
         selection: any ClubSelectionStore = InMemoryClubSelection(),
         auth: FakeAuth = FakeAuth(), store: (any SessionStore)? = nil,
+        links: InvitationLinkBook = InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
         left: @escaping @MainActor () -> Void = {}
     ) -> RootModel {
         let clock = ManualContinuousClock()
@@ -192,7 +202,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         return RootModel(
             session: SessionManager(
                 auth: auth, store: store ?? InMemorySessionStore(stored), now: { [start] in start }),
-            auth: auth, accounts: accounts, clubs: clubs, selection: selection,
+            auth: auth, accounts: accounts, clubs: clubs, selection: selection, links: links,
             now: { clock.now }, sleep: { clock.sleep(until: $0) }, left: left)
     }
 
@@ -619,6 +629,204 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         #expect(root.route == .leaveFailed)
         #expect(selection.club(for: "acct_ben") == nil)
         #expect(root.selectedClubID == nil)
+    }
+
+    // MARK: The kept invitation links (ADR-037)
+
+    /// A book holding one link for Sam in `club_sunday` and one for Leila in `club_left`, kept
+    /// before any read.
+    func keptLinks() -> InvitationLinkBook {
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: "acct_ben")
+        book.keep(
+            Sunday.link("inv_leila", for: "cand_leila", url: Sunday.url(2)), club: "club_left",
+            account: "acct_ben")
+        return book
+    }
+
+    @Test func eachListReadPurgesTheLinksOfAClubItNoLongerHolds() async {
+        let book = keptLinks()
+        let root = root(
+            FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen, sunday))]),
+            clubs: FakeClubs(club: [.success(detail(sunday, openRevision: nil))]), links: book)
+        await root.start()
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
+        #expect(book.link(for: "cand_leila", club: "club_left", account: "acct_ben") == nil)
+    }
+
+    @Test func aListWithNoClubPurgesEveryLink() async {
+        let book = keptLinks()
+        let root = root(
+            FakeAccounts(me: [.success(ben)], clubs: [.success(list())]), links: book)
+        await root.start()
+        #expect(root.clubs == .noClub)
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") == nil)
+        #expect(book.link(for: "cand_leila", club: "club_left", account: "acct_ben") == nil)
+    }
+
+    @Test func aFailedListReadKeepsEveryLink() async {
+        for failure in [APIFailure.network, .refused, .unavailable] {
+            let book = keptLinks()
+            let root = root(
+                FakeAccounts(me: [.success(ben)], clubs: [.failure(failure)]), links: book)
+            await root.start()
+            #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
+            #expect(book.link(for: "cand_leila", club: "club_left", account: "acct_ben") != nil)
+        }
+    }
+
+    @Test func aLinkKeptWhileTheListIsReadIsLeftByItsAnswer() async {
+        // The list was asked for before the club and its link existed: its answer can't hold
+        // them yet, so it purges nothing kept after it was asked.
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))])
+        let gate = Gate()
+        accounts.duringClubs = { await gate.wait() }
+        let root = root(accounts, links: book)
+        let started = Task { await root.start() }
+        await gate.reached()
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: "acct_ben")
+        gate.open()
+        await started.value
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
+    }
+
+    @Test func leaveSignInForgetsTheKeptLinks() async throws {
+        // ADR-037, T11: Leave sign-in is both logout and the way to another account; the root
+        // forgets the book itself, whatever its `left` does.
+        let vault = InMemoryInvitationLinkVault()
+        let book = InvitationLinkBook(vault: vault)
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: "acct_ben")
+        let root = root(
+            FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen, sunday))]),
+            clubs: FakeClubs(club: [.success(detail(sunday, openRevision: nil))]), links: book)
+        await root.start()
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
+        await root.leave()
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") == nil)
+        #expect(try vault.load() == nil)
+    }
+
+    @Test func aListAnswerAfterLeaveSignInChangesNothing() async {
+        // The list was asked for in the session Leave sign-in ended. Its answer, coming after,
+        // neither lists nor selects that account's clubs, and a link kept afterwards, as the next
+        // sign-in would, isn't purged by it, though it doesn't hold that club.
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))])
+        let gate = Gate()
+        accounts.duringClubs = { await gate.wait() }
+        let root = root(accounts, links: book)
+        let started = Task { await root.start() }
+        await gate.reached()
+        await root.leave()
+        book.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: "acct_ben")
+        gate.open()
+        await started.value
+        #expect(root.route == .signIn)
+        #expect(root.clubs == .loading)
+        #expect(root.selectedClubID == nil)
+        #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") != nil)
+    }
+
+    // MARK: Creating a club
+
+    @Test func aClubMadeIsSelectedAndKeptAndTheListIsReadAgain() async {
+        let selection = InMemoryClubSelection()
+        let made = ClubDetail(
+            serverClock: ServerClock(serverNow: start, receivedAt: .now), club: sunday,
+            rosterVersion: 0, canPropose: true, openRevisionID: nil)
+        let clubs = FakeClubs(
+            club: [.success(detail(sunday, openRevision: nil))], create: [.success(made)])
+        let accounts = FakeAccounts(
+            me: [.success(ben)],
+            clubs: [.success(list(kitchen)), .success(list(kitchen, sunday))])
+        let root = root(accounts, clubs: clubs, selection: selection)
+        await root.start()
+        #expect(root.selectedClubID == "club_kitchen")
+        let create = root.createClub()
+        create?.name = "  Sunday people "
+        await create?.create()
+        #expect(create?.club == made)
+        #expect(clubs.calls == ["createClub Sunday people", "club club_sunday"])
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        #expect(root.selectedClubID == "club_sunday")
+        #expect(selection.club(for: "acct_ben") == "club_sunday")
+        #expect(root.home == .awaiting(review: false))
+    }
+
+    @Test func aClubMadeAfterLeaveSignInChangesNothing() async {
+        let selection = InMemoryClubSelection()
+        let made = ClubDetail(
+            serverClock: ServerClock(serverNow: start, receivedAt: .now), club: sunday,
+            rosterVersion: 0, canPropose: true, openRevisionID: nil)
+        let clubs = FakeClubs(create: [.success(made)])
+        let gate = Gate()
+        clubs.duringCreate = { await gate.wait() }
+        let accounts = FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))])
+        let root = root(accounts, clubs: clubs, selection: selection)
+        await root.start()
+        let create = root.createClub()
+        create?.name = "Sunday people"
+        let creating = Task { await create?.create() }
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await creating.value
+        #expect(create?.club == nil)
+        #expect(create?.failure == nil)
+        #expect(accounts.calls == ["me", "clubs"])
+        #expect(selection.club(for: "acct_ben") == nil)
+        #expect(root.route == .signIn)
+    }
+
+    @Test func noClubIsMadeOrListedOutsideTheTabs() async {
+        let root = root(FakeAccounts(me: [.success(account(name: nil, age: true))]))
+        #expect(root.createClub() == nil)
+        #expect(root.invitations(for: sunday.ref) == nil)
+        await root.start()
+        #expect(root.route == .profile)
+        #expect(root.createClub() == nil)
+        #expect(root.invitations(for: sunday.ref) == nil)
+    }
+
+    @Test func aSetupListsClubNoLongerTheCallersReadsTheListAgain() async {
+        let clubs = FakeClubs(
+            club: [.failure(.notFound)], members: [.failure(.notFound)])
+        let accounts = FakeAccounts(
+            me: [.success(ben)], clubs: [.success(list(kitchen)), .success(list(kitchen))])
+        let root = root(accounts, clubs: clubs)
+        await root.start()
+        let invitations = root.invitations(for: sunday.ref)
+        await invitations?.load()
+        #expect(invitations?.closed == true)
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+    }
+
+    @Test func aSetupListsAnswerAfterLeaveSignInIsDropped() async {
+        let clubs = FakeClubs(
+            club: [.success(detail(sunday, openRevision: "rev_1"))],
+            members: [.success(Sunday.members([Sunday.candidate("cand_sam", "Sam", nil)]))])
+        let gate = Gate()
+        clubs.duringMembers = { _ in await gate.wait() }
+        let root = root(
+            FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))]),
+            clubs: clubs)
+        await root.start()
+        let invitations = root.invitations(for: sunday.ref)
+        let loading = Task { await invitations?.load() }
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await loading.value
+        #expect(invitations?.state == .loading)
     }
 
     // MARK: The switcher's lines

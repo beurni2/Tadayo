@@ -23,19 +23,32 @@
         /// signing in goes straight to the tabs, so a test can open Club details and the
         /// members list from the switcher. A test seam, not product.
         static let clubs = "-TadayoUITestClubs"
+        /// The stand-in services with an account already named and in no club, where Create a club
+        /// makes one in memory (`NewClub`): a test can walk naming the club, its setup list, the
+        /// name step and the waiting screen. A test seam, not product.
+        static let create = "-TadayoUITestCreate"
         static let rightCode = "123456"
 
         @MainActor static func fakeGraph(
-            hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false
+            hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false,
+            creating: Bool = false
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
+            let made = creating ? NewClub() : nil
             let accounts = FakeAccounts(
                 nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [],
-                thenClubs: inClubs ? TwoClubs.relisted : nil)
+                thenClubs: inClubs ? TwoClubs.relisted : nil, named: creating, made: made)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
+            let clubs: any ClubService
+            if inClubs {
+                clubs = TwoClubs()
+            } else if let made {
+                clubs = made
+            } else {
+                clubs = NoClubs()
+            }
             let root = RootModel(
-                session: session, auth: auth, accounts: accounts,
-                clubs: inClubs ? TwoClubs() as any ClubService : NoClubs(),
+                session: session, auth: auth, accounts: accounts, clubs: clubs,
                 selection: InMemoryClubSelection())
             return AppGraph(root: root, connections: Connections())
         }
@@ -65,21 +78,24 @@
             private let nameFailsThenHangs: Bool
             private let listed: [ClubSummary]
             private let relisted: [ClubSummary]?
+            private let made: NewClub?
             private var listReads = 0
             private var namesTried = 0
             private var account: Account
 
-            /// A new account with no club, or, given `clubs`, Ben's, named and in them, the list
-            /// read again giving `thenClubs` when there are some.
+            /// A new account with no club, or, given `clubs` or `named`, Ben's, named and in them,
+            /// the list read again giving `thenClubs` when there are some, and listing the club
+            /// `made` holds once it's made.
             init(
                 nameFailsThenHangs: Bool = false, clubs: [ClubSummary] = [],
-                thenClubs: [ClubSummary]? = nil
+                thenClubs: [ClubSummary]? = nil, named: Bool = false, made: NewClub? = nil
             ) {
                 self.nameFailsThenHangs = nameFailsThenHangs
                 listed = clubs
                 relisted = thenClubs
+                self.made = made
                 account =
-                    clubs.isEmpty
+                    clubs.isEmpty && !named
                     ? Account(
                         id: "ui-test", displayName: nil, avatarVersion: nil, ageConfirmed: false,
                         version: 0)
@@ -124,8 +140,180 @@
                     return listReads > 1 ? relisted ?? listed : listed
                 }
                 return ClubList(
-                    serverClock: ServerClock(serverNow: Date(), receivedAt: .now), clubs: clubs,
-                    invitations: [])
+                    serverClock: ServerClock(serverNow: Date(), receivedAt: .now),
+                    clubs: clubs + (made?.listed ?? []), invitations: [])
+            }
+        }
+
+        /// One club Ben makes, held in memory as the club calls answer it: made with the name
+        /// given, then each person proposed joins its open revision, with a link made for them
+        /// on asking, which a revoke revokes. Its links are made up for the tests: no server ever
+        /// made them. Every other call is `NoClubs`'.
+        final class NewClub: ClubService, @unchecked Sendable {
+            private let lock = NSLock()
+            private var club: ClubRef?
+            private var candidates: [Candidate] = []
+            private let none = NoClubs()
+            private static let ben = Person(
+                membershipID: "mem_ben", displayName: "Ben", avatarVersion: nil)
+
+            private var clock: ServerClock { ServerClock(serverNow: Date(), receivedAt: .now) }
+
+            /// The club once it's made, as the club list holds it.
+            var listed: [ClubSummary] {
+                lock.withLock { club.map { [summary($0)] } ?? [] }
+            }
+
+            private func summary(_ club: ClubRef) -> ClubSummary {
+                ClubSummary(ref: club, state: .proposed, memberCount: 1, openDay: nil, nextDay: nil)
+            }
+
+            private func detail(_ club: ClubRef) -> ClubDetail {
+                ClubDetail(
+                    serverClock: clock, club: summary(club), rosterVersion: candidates.count,
+                    canPropose: candidates.count < 5,
+                    openRevisionID: candidates.isEmpty ? nil : "rev_new")
+            }
+
+            private func revision(_ club: ClubRef) -> RosterRevision {
+                RosterRevision(
+                    id: "rev_new", version: candidates.count, club: club, state: .open,
+                    proposedBy: Self.ben, members: [Self.ben], candidates: candidates,
+                    myDecision: .approved, supersededBy: nil)
+            }
+
+            /// The club made, if it's the one asked for. Callers read it under the lock and throw
+            /// outside it, as `NSLock.withLock` keeps no typed error.
+            private func held(_ clubID: String) -> ClubRef? {
+                club?.id == clubID ? club : nil
+            }
+
+            func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
+                async throws(APIFailure) -> ClubDetail
+            {
+                lock.withLock {
+                    let made = ClubRef(
+                        id: "club_new", name: name, timezone: timezone.identifier,
+                        myMembershipID: "mem_ben")
+                    club = made
+                    return detail(made)
+                }
+            }
+
+            func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
+                guard let answer = lock.withLock({ held(clubID).map(detail) }) else {
+                    throw .notFound
+                }
+                return answer
+            }
+
+            func members(of clubID: String) async throws(APIFailure) -> MemberList {
+                let answer: MemberList? = lock.withLock {
+                    held(clubID).map { club in
+                        MemberList(
+                            serverClock: clock, club: club,
+                            members: [
+                                Member(
+                                    person: Self.ben, position: 1, cover: nil, nextDay: nil,
+                                    nextUp: false)
+                            ],
+                            openRevision: candidates.isEmpty ? nil : revision(club))
+                    }
+                }
+                guard let answer else { throw .notFound }
+                return answer
+            }
+
+            func propose(
+                _ names: [String], in clubID: String, expectedRosterVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> RosterRevision {
+                let answer: Result<RosterRevision, APIFailure> = lock.withLock {
+                    guard let club = held(clubID) else { return .failure(.notFound) }
+                    guard expectedRosterVersion == candidates.count else {
+                        return .failure(.versionConflict)
+                    }
+                    for name in names {
+                        candidates.append(
+                            Candidate(
+                                id: "cand_\(candidates.count + 1)", name: name,
+                                proposedBy: Self.ben, invitation: nil))
+                    }
+                    return .success(revision(club))
+                }
+                return try answer.get()
+            }
+
+            func createInvitation(for candidateID: String, in clubID: String, key: IdempotencyKey)
+                async throws(APIFailure) -> InvitationLink
+            {
+                let answer: InvitationLink? = lock.withLock {
+                    guard held(clubID) != nil,
+                        let index = candidates.firstIndex(where: { $0.id == candidateID })
+                    else { return nil }
+                    let invitation = CandidateInvitation(
+                        id: "inv_\(candidateID)", state: .live,
+                        expiresAt: Date().addingTimeInterval(7 * 86_400))
+                    let candidate = candidates[index]
+                    candidates[index] = Candidate(
+                        id: candidate.id, name: candidate.name, proposedBy: candidate.proposedBy,
+                        invitation: invitation)
+                    return InvitationLink(
+                        invitationID: invitation.id, candidateID: candidateID,
+                        url: Self.link(index), expiresAt: invitation.expiresAt)
+                }
+                guard let answer else { throw .notFound }
+                return answer
+            }
+
+            /// A made-up link in the shape the server's take, with no token any server made.
+            private static func link(_ index: Int) -> URL? {
+                URL(string: "https://tadayo.app/i#" + String(format: "uitest%037d", index))
+            }
+
+            func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+                try await none.schedule(of: clubID)
+            }
+
+            func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+                let revoked: Bool = lock.withLock {
+                    guard
+                        let index = candidates.firstIndex(where: {
+                            $0.invitation?.id == invitationID && $0.invitation?.state == .live
+                        }), let live = candidates[index].invitation
+                    else { return false }
+                    let candidate = candidates[index]
+                    candidates[index] = Candidate(
+                        id: candidate.id, name: candidate.name, proposedBy: candidate.proposedBy,
+                        invitation: CandidateInvitation(
+                            id: live.id, state: .revoked, expiresAt: live.expiresAt))
+                    return true
+                }
+                guard revoked else { throw .notFound }
+            }
+
+            func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
+                try await none.rosterRevision(revisionID)
+            }
+
+            func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            { try await none.approve(revisionID, expectedVersion: expectedVersion, key: key) }
+
+            func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            { try await none.decline(revisionID, expectedVersion: expectedVersion, key: key) }
+
+            func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
+                try await none.preview(token)
+            }
+
+            func accept(
+                _ token: InvitationToken, revisionID: String, expectedVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> InvitationAcceptance {
+                try await none.accept(
+                    token, revisionID: revisionID, expectedVersion: expectedVersion, key: key)
             }
         }
 

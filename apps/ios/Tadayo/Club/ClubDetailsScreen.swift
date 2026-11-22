@@ -3,10 +3,25 @@ import TadayoCore
 import TadayoDesign
 
 /// Where a club tab's stack goes from the tab: Club details, then its members list
-/// (`docs/plans/ios-b1-club-details.md` section 1).
+/// (`docs/plans/ios-b1-club-details.md` section 1); or, from Create a club, naming the club, its
+/// setup list, the name step over it, and the waiting screen (`docs/plans/ios-b1-create.md`
+/// section 7).
 enum ClubRoute: Hashable {
     case details
     case members
+    case create
+    case invitations
+    case inviteName
+    case pending
+
+    /// A screen of the club being made, which isn't the selected club's: it stays while another
+    /// club is selected or the list is read again.
+    var isCreateFlow: Bool {
+        switch self {
+        case .details, .members: false
+        case .create, .invitations, .inviteName, .pending: true
+        }
+    }
 }
 
 /// G05-club-details (2.1's frame and handoff 8's frame 16, with handoff 6's words), pushed onto

@@ -33,6 +33,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.clubs) {
                 return .live(UITestLaunch.fakeGraph(inClubs: true))
             }
+            if process.arguments.contains(UITestLaunch.create) {
+                return .live(UITestLaunch.fakeGraph(creating: true))
+            }
         #endif
         if isHostingTests(process) { return .inert }
         return configured(
@@ -74,7 +77,9 @@ enum AppLaunch {
     var links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
 
     /// Nil when the settings are missing or aren't what they must be: the app then makes no call.
-    /// Leave sign-in remakes the connections and forgets the invitation links (T11).
+    /// Leave sign-in remakes the connections (T11), and the root forgets the invitation links it
+    /// was given, the same book as `links` (ADR-037). The root settles the links on each club list
+    /// it reads and gives them to the setup lists and Club details it makes.
     static func make(
         info: [String: Any], store: any SessionStore, connections: Connections = Connections(),
         links vault: any InvitationLinkVault = InMemoryInvitationLinkVault()
@@ -89,11 +94,8 @@ enum AppLaunch {
         let links = InvitationLinkBook(vault: vault)
         let root = RootModel(
             session: session, auth: auth, accounts: accounts, clubs: accounts,
-            selection: DefaultsClubSelection(),
-            left: {
-                connections.reset()
-                links.forget()
-            })
+            selection: DefaultsClubSelection(), links: links,
+            left: { connections.reset() })
         return AppGraph(root: root, connections: connections, links: links)
     }
 }

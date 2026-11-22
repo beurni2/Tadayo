@@ -4,14 +4,15 @@ import TadayoDesign
 /// G06-no-club (handoff 4's frame): Home for an account with no club. "Start your club." in
 /// `utilityTitle` 32/35, its two lines, Create a club and I have an invite 16 points apart
 /// (`noClubButtonGap`), and Private drafts. No example people, club or date (handoff 1). Create a
-/// club, I have an invite and Private drafts show and do nothing yet (FQ85, ADR-029): club
-/// creation and invitations are stage B1's, drafts B3's.
+/// club pushes G01-create (`TabsView`); I have an invite and Private drafts show and do nothing
+/// yet (FQ85, ADR-029): opening an invitation is plan PR 5's, drafts B3's.
 ///
 /// The two lines are one text, each on its own line, so `body`'s 23-point leading spaces them as
 /// the frame does. `heading` is where VoiceOver's focus goes when this replaces the loading label
 /// it was on (`TabContent`).
 struct HomeNoClub: View {
     let heading: AccessibilityFocusState<TabFocus?>.Binding
+    var createClub: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -30,7 +31,7 @@ struct HomeNoClub: View {
             .foregroundStyle(Palette.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, Spacing.xxl)
-            NoClubActions()
+            NoClubActions(createClub: createClub)
                 .padding(.top, TabGap.homeActions)
             PrivateDraftsEntry(
                 title: Text("drafts.title"), subtitle: Text("drafts.subtitle"), action: {}
@@ -46,6 +47,7 @@ struct HomeNoClub: View {
 /// `emptyTitle` 25/30, its line, and the same two actions as Home.
 struct FriendsNoClub: View {
     let heading: AccessibilityFocusState<TabFocus?>.Binding
+    var createClub: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -58,7 +60,7 @@ struct FriendsNoClub: View {
             EmptyTitle(words: "friends.noClub.title")
                 .padding(.top, TabGap.friendsSection)
             EmptyLine(words: "friends.noClub.body")
-            NoClubActions()
+            NoClubActions(createClub: createClub)
                 .padding(.top, TabGap.friendsActions)
         }
     }
@@ -88,12 +90,13 @@ struct MemoriesNoClub: View {
 
 /// Create a club, then I have an invite, 16 points apart (`handoff6.spacing.noClubButtonGap`).
 /// Create a club's VoiceOver label is handoff 4's `noClub.create.vo`; I have an invite's hint is
-/// handoff 5's `a11y.haveInvite.hint`.
+/// handoff 5's `a11y.haveInvite.hint`. Create a club pushes G01-create.
 private struct NoClubActions: View {
+    let createClub: () -> Void
+
     var body: some View {
         VStack(spacing: Spacing.l) {
-            Button {
-            } label: {
+            Button(action: createClub) {
                 Text("noClub.createClub")
             }
             .buttonStyle(.tadayoPrimary)
