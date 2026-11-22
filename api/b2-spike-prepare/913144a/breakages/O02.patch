@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -115,7 +115,7 @@
+       { id: string; topic: string; payload: unknown; attempts: number; last_error: string | null }[]
+     >`
+       SELECT id, topic, payload, attempts, last_error FROM app.outbox_events
+-       WHERE state = 'pending' AND available_at <= ${at} AND topic = ANY(${tx.array([...topics])})
++       WHERE state = 'pending' AND available_at <= ${at}
+        ORDER BY available_at, id
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED`;

@@ -1,0 +1,183 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (10 tests | 6 failed) 280ms
+   ❯ a claim (spec 34, T54) (3)
+     × takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own 39ms
+     × never gives two claimers the same event: one held by another claim is skipped, not waited for 38ms
+     × brings an event back once its lease has passed when its attempt never reported back, as the next attempt 8ms
+   ❯ a pass (spec 34, T52, T54) (7)
+     × marks a handled event done at the clock's sample, and its handler is given the event's payload 29ms
+     × tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code 66ms
+     × writes nothing over an event its handler already ended, when the handler then fails 13ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 4 passed (10)
+   Start at  23:15:12
+   Duration  780ms (tests 57%, transform 22%, import 20%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own
+AssertionError: expected { kind: 'work', event: { …(4) } } to deeply equal { kind: 'work', event: { …(4) } }
+
+- Expected
++ Received
+
+  {
+    "event": {
+      "attempts": 1,
+-     "id": "evt_nd53NxATlhooCzDN4xlkvA",
++     "id": "evt_8378A5T11V5JBLHcSf4-2g",
+      "payload": {},
+-     "topic": "test.outbox_immcnrjxjtmy",
++     "topic": "test.outbox_kerkbdhipmof",
+    },
+    "kind": "work",
+  }
+
+ ❯ src/db/worker-outbox.test.ts:116:52
+    114|     const clock = fakeClock(T);
+    115|
+    116|     expect(await claimNext(worker, clock, [mine])).toEqual({
+       |                                                    ^
+    117|       kind: "work",
+    118|       event: { id: first, topic: mine, payload: {}, attempts: 1 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > never gives two claimers the same event: one held by another claim is skipped, not waited for
+AssertionError: expected { kind: 'work', event: { …(4) } } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "event": {
+    "attempts": 1,
+    "id": "evt_nd53NxATlhooCzDN4xlkvA",
+    "payload": {},
+    "topic": "test.outbox_immcnrjxjtmy",
+  },
+  "kind": "work",
+}
+
+ ❯ src/db/worker-outbox.test.ts:164:56
+    162|         expect(new Set(got).size).toBe(5);
+    163|         expect([...got].sort()).toEqual(ids.slice(1).sort());
+    164|         expect(await claimNext(worker, clock, [mine])).toBeNull();
+       |                                                        ^
+    165|       } finally {
+    166|         go();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > brings an event back once its lease has passed when its attempt never reported back, as the next attempt
+AssertionError: expected { kind: 'work', event: { …(4) } } to match object { event: { …(2) } }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "event": {
+      "attempts": 1,
+-     "id": "evt_GvVmYkxQ59PzgY_wwf72Hw",
++     "id": "evt_tjBRVF9im8WxJgUlSchT9g",
+    },
+  }
+
+ ❯ src/db/worker-outbox.test.ts:178:52
+    176|     const clock = fakeClock(T);
+    177|     // The process that claimed it died before it reported anything.
+    178|     expect(await claimNext(worker, clock, [mine])).toMatchObject({ eve…
+       |                                                    ^
+    179|     clock.set(T.add({ seconds: LEASE_SECONDS }).subtract({ microsecond…
+    180|     expect(await claimNext(worker, clock, [mine])).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > marks a handled event done at the clock's sample, and its handler is given the event's payload
+AssertionError: expected { handled: 1, err: [ …(4) ] } to deeply equal { handled: 1, err: [] }
+
+- Expected
++ Received
+
+  {
+-   "err": [],
++   "err": [
++     "worker: an event is dead: test.outbox_immcnrjxjtmy evt_BP_5K-_cEaSWZOsSVrSEWw after 1 attempts: topic",
++     "worker: an event is dead: test.outbox_xqkmeumqotic evt_GvVmYkxQ59PzgY_wwf72Hw after 1 attempts: topic",
++     "worker: an event is dead: upload.prepare evt_vFEox0zIgBE4aWi5S-D0QQ after 1 attempts: topic",
++     "worker: an event is dead: test.outbox_immcnrjxjtmy evt_xo-cEO2d34SqnE2yr0xTng after 1 attempts: topic",
++   ],
+    "handled": 1,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:192:66
+    190|     const clock = fakeClock(T.add({ seconds: 5 }));
+    191|     const { seen, handler } = recording();
+    192|     expect(await outboxPass(worker, clock, { [mine]: handler })).toEqu…
+       |                                                                  ^
+    193|     expect(seen).toEqual([{ id, topic: mine, payload: { upload_id: "up…
+    194|     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code
+AssertionError: expected { handled: +0, err: [ …(8) ] } to deeply equal { handled: +0, err: [] }
+
+- Expected
++ Received
+
+  {
+-   "err": [],
++   "err": [
++     "worker: an event is dead: test.outbox_zsdhljnlrrzx evt_4E-uPP553Qcd2b3RnJDLVA after 2 attempts: topic",
++     "worker: an event is dead: test.outbox_kerkbdhipmof evt_8378A5T11V5JBLHcSf4-2g after 2 attempts: topic",
++     "worker: an event is dead: test.outbox_zsdhljnlrrzx evt_CDjwDx-P_E6fLXfUmhcR3g after 2 attempts: topic",
++     "worker: an event is dead: test.outbox_zsdhljnlrrzx evt_hiQnS9Qu-_zhmD3PDJh7gQ after 2 attempts: topic",
++     "worker: an event is dead: test.outbox_immcnrjxjtmy evt_nd53NxATlhooCzDN4xlkvA after 2 attempts: topic",
++     "worker: an event is dead: test.outbox_zsdhljnlrrzx evt_qrSyVXV5ecmrxml7jkkx6g after 2 attempts: topic",
++     "worker: an event is dead: test.outbox_zsdhljnlrrzx evt_tjBRVF9im8WxJgUlSchT9g after 2 attempts: topic",
++     "worker: an event is dead: test.outbox_zsdhljnlrrzx evt_tr0Pq9LvZIjtAz40jvlSNg after 2 attempts: topic",
++   ],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:219:68
+    217|       // Not a microsecond before.
+    218|       clock.set(now.add({ seconds: wait }).subtract({ microseconds: 1 …
+    219|       expect(await outboxPass(worker, clock, { [mine]: handler })).toE…
+       |                                                                    ^
+    220|       now = now.add({ seconds: wait });
+    221|       clock.set(now);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes nothing over an event its handler already ended, when the handler then fails
+AssertionError: expected { handled: +0, …(1) } to deeply equal { handled: +0, err: [] }
+
+- Expected
++ Received
+
+  {
+-   "err": [],
++   "err": [
++     "worker: an event is dead: test.outbox_ndjnuzqtoopu evt_DXBdp4SaeeGoffBBTrAf5g after 1 attempts: topic",
++   ],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:340:66
+    338|       throw new StorageUnavailable("got no answer");
+    339|     });
+    340|     expect(await outboxPass(worker, clock, { [mine]: handler })).toEqu…
+       |                                                                  ^
+    341|     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, …
+    342|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

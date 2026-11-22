@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (10 tests | 1 failed) 277ms
+   ❯ a pass (spec 34, T52, T54) (7)
+     × kills at once an event whose failure no retry would end, keeping its code 19ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  23:15:21
+   Duration  770ms (tests 55%, import 23%, transform 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > kills at once an event whose failure no retry would end, keeping its code
+AssertionError: expected { handled: +0, …(1) } to deeply equal { handled: +0, …(1) }
+
+- Expected
++ Received
+
+  {
+    "err": [
+-     "worker: an event is dead: test.outbox_scgyhvgagxxe evt_dq5GUiQ5iP7YnmYmTU6Tyg after 1 attempts: payload",
++     "worker: an event failed: test.outbox_scgyhvgagxxe evt_dq5GUiQ5iP7YnmYmTU6Tyg, attempt 1: payload",
+    ],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:244:66
+    242|     const clock = fakeClock(T);
+    243|     const { handler } = recording(() => Promise.reject(new FailedForGo…
+    244|     expect(await outboxPass(worker, clock, { [mine]: handler })).toEqu…
+       |                                                                  ^
+    245|       handled: 0,
+    246|       err: [`worker: an event is dead: ${mine} ${id} after 1 attempts:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,10 @@
+--- a/services/worker/src/prepare.ts
++++ b/services/worker/src/prepare.ts
+@@ -98,7 +98,6 @@
+   });
+   const ms = { read: 0, image: 0, store: 0, record: 0 };
+   if (upload === null) return { upload: id, outcome: "skipped", ms: { ...ms, total: total() } };
+-  if (!DROP_PHOTO.has(upload.purpose)) throw new FailedForGood(`purpose.${upload.purpose}`);
+ 
+   let step = stopwatch();
+   const original = await deps.storage.readOriginal(upload.objectKey);

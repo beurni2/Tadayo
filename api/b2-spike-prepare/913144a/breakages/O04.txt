@@ -1,0 +1,88 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (10 tests | 3 failed) 228ms
+   ❯ a claim (spec 34, T54) (3)
+     × takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own 45ms
+     × never gives two claimers the same event: one held by another claim is skipped, not waited for 34ms
+     × brings an event back once its lease has passed when its attempt never reported back, as the next attempt 8ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+   Start at  23:15:14
+   Duration  746ms (tests 51%, transform 25%, import 24%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own
+AssertionError: expected { state: 'pending', attempts: 1, …(3) } to deeply equal { state: 'pending', attempts: 1, …(3) }
+
+- Expected
++ Received
+
+  {
+    "attempts": 1,
+-   "available_at": "2026-11-06T21:05:00.123456Z",
++   "available_at": "2026-11-06T21:00:00.123456Z",
+    "last_error": null,
+    "processed_at": null,
+    "state": "pending",
+  }
+
+ ❯ src/db/worker-outbox.test.ts:121:30
+    119|     });
+    120|     // Committed: another connection sees the attempt and the lease.
+    121|     expect(await row(first)).toEqual({
+       |                              ^
+    122|       state: "pending",
+    123|       attempts: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > never gives two claimers the same event: one held by another claim is skipped, not waited for
+AssertionError: expected 4 to be 5 // Object.is equality
+
+- Expected
++ Received
+
+- 5
++ 4
+
+ ❯ src/db/worker-outbox.test.ts:162:35
+    160|         const claimed = await Promise.all(Array.from({ length: 5 }, ()…
+    161|         const got = claimed.map((claim) => claim?.event.id);
+    162|         expect(new Set(got).size).toBe(5);
+       |                                   ^
+    163|         expect([...got].sort()).toEqual(ids.slice(1).sort());
+    164|         expect(await claimNext(worker, clock, [mine])).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > brings an event back once its lease has passed when its attempt never reported back, as the next attempt
+AssertionError: expected { kind: 'work', event: { …(4) } } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "event": {
+    "attempts": 2,
+    "id": "evt_TV6wiEMZrq_U5yOADTkdgA",
+    "payload": {},
+    "topic": "test.outbox_yncakghzonyk",
+  },
+  "kind": "work",
+}
+
+ ❯ src/db/worker-outbox.test.ts:180:52
+    178|     expect(await claimNext(worker, clock, [mine])).toMatchObject({ eve…
+    179|     clock.set(T.add({ seconds: LEASE_SECONDS }).subtract({ microsecond…
+    180|     expect(await claimNext(worker, clock, [mine])).toBeNull();
+       |                                                    ^
+    181|     clock.set(T.add({ seconds: LEASE_SECONDS }));
+    182|     expect(await claimNext(worker, clock, [mine])).toMatchObject({ eve…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

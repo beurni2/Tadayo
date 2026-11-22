@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -135,7 +135,7 @@
+   const renditions: Rendition[] = [];
+   for (const kind of RENDITION_KINDS) {
+     // Each its own pipeline from the bytes, so each streams the decode rather than holding the whole image.
+-    const pipeline = sharp(bytes, { limitInputPixels: MAX_PIXELS, failOn: "warning", autoOrient: true })
++    const pipeline = sharp(bytes, { limitInputPixels: MAX_PIXELS, failOn: "warning" })
+       .resize({ ...BOXES[kind], fit: "inside", withoutEnlargement: true })
+       .jpeg({ quality: 80 })
+       .timeout({ seconds: limit.seconds });

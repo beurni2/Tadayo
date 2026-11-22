@@ -1,0 +1,78 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (21 tests | 2 failed) 12873ms
+   ❯ the renditions (TECH-DESIGN section 1, Images) (8)
+     × never enlarges a small photo 263ms
+     × makes the pixels upright from the EXIF orientation, which it doesn't keep 258ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)
+   Start at  23:17:15
+   Duration  13.16s (tests 99%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the renditions (TECH-DESIGN section 1, Images) > never enlarges a small photo
+AssertionError: expected { full: [ 2560, 1920 ], …(1) } to deeply equal { full: [ 800, 600 ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "display": [
+-     800,
+-     600,
++     1290,
++     968,
+    ],
+    "full": [
+-     800,
+-     600,
++     2560,
++     1920,
+    ],
+  }
+
+ ❯ src/image.test.ts:171:76
+    169|
+    170|   it("never enlarges a small photo", async () => {
+    171|     expect(kinds(await ready(await flat(800, 600, "webp"), "image/webp…
+       |                                                                            ^
+    172|       full: [800, 600],
+    173|       display: [800, 600],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image.test.ts > the renditions (TECH-DESIGN section 1, Images) > makes the pixels upright from the EXIF orientation, which it doesn't keep
+AssertionError: expected { full: [ 1280, 2560 ], …(1) } to deeply equal { full: [ 20, 40 ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "display": [
+-     20,
+-     40,
++     1280,
++     2560,
+    ],
+    "full": [
+-     20,
+-     40,
++     1280,
++     2560,
+    ],
+  }
+
+ ❯ src/image.test.ts:184:31
+    182|     expect((await sharp(turned).metadata()).orientation).toBe(6);
+    183|     const renditions = await ready(turned);
+    184|     expect(kinds(renditions)).toEqual({ full: [20, 40], display: [20, …
+       |                               ^
+    185|     for (const rendition of renditions) expect((await sharp(rendition.…
+    186|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

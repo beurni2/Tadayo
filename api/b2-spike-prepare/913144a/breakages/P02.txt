@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (13 tests | 2 failed) 1733ms
+   ❯ upload.prepare when Storage is away, or another run gets there first (T54) (3)
+     × records nothing when another run of the same event recorded first, and finishes the event 46ms
+     × makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE) 96ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  23:15:29
+   Duration  2.47s (tests 81%, import 12%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare when Storage is away, or another run gets there first (T54) > records nothing when another run of the same event recorded first, and finishes the event
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare when Storage is away, or another run gets there first (T54) > makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE)
+PostgresError: duplicate key value violates unique constraint "upload_renditions_pkey"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ recordPreparation ../packages/domain/src/media/prepare.ts:117:20
+    115|   if (outcome.contentHash.length !== 32) throw new TypeError("media: t…
+    116|   for (const rendition of outcome.renditions) {
+    117|     await bound(tx)`
+       |                    ^
+    118|       INSERT INTO app.upload_renditions (upload_id, kind, object_key, …
+    119|       VALUES (${id}, ${rendition.kind}, ${rendition.objectKey}, ${rend…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

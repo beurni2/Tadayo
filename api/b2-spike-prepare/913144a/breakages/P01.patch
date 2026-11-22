@@ -1,0 +1,11 @@
+--- a/packages/domain/src/media/prepare.ts
++++ b/packages/domain/src/media/prepare.ts
+@@ -77,7 +77,7 @@
+   if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
+   const rows = await bound(tx)`
+     SELECT id, owner_user_id, purpose, object_key, content_type FROM app.uploads
+-     WHERE id = ${id} AND state = 'preparing' AND expires_at > ${at}`;
++     WHERE id = ${id} AND state = 'preparing'`;
+   const row = rows[0];
+   if (row === undefined) return null;
+   const { owner_user_id: owner, object_key: objectKey } = row;

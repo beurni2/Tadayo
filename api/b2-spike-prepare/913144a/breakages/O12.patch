@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -79,7 +79,7 @@
+  */
+ export function failureCode(error: unknown): string {
+   const code = (error as { code?: unknown } | null)?.code;
+-  if (typeof code !== "string") return "unknown";
++  if (typeof code !== "string") return error instanceof Error ? error.message : "unknown";
+   if (error instanceof Error && error.name === "PostgresError" && SQLSTATE.test(code)) return `db.${code}`;
+   if (CODE.test(code) && code.length <= 64) return code;
+   return SYSTEM.test(code) ? `sys.${code.toLowerCase()}` : "unknown";

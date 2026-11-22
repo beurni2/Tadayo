@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (10 tests | 1 failed) 234ms
+   ❯ a pass (spec 34, T52, T54) (7)
+     × kills an event claimed with its attempts spent without running its handler, as lease_lapsed when the last never reported back 23ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  23:15:16
+   Duration  702ms (tests 54%, transform 23%, import 22%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > kills an event claimed with its attempts spent without running its handler, as lease_lapsed when the last never reported back
+AssertionError: expected { handled: 2, err: [] } to deeply equal { handled: +0, err: [ …(2) ] }
+
+- Expected
++ Received
+
+  {
+-   "err": [
+-     "worker: an event is dead: test.outbox_nfscogldelaw evt_V_xfndfsZSTlf9woQWXcfA after 5 attempts: lease_lapsed",
+-     "worker: an event is dead: test.outbox_nfscogldelaw evt_QL0OssLTVFOJD0wbCNzlWg after 5 attempts: image.timeout",
+-   ],
+-   "handled": 0,
++   "err": [],
++   "handled": 2,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:265:66
+    263|     const clock = fakeClock(T);
+    264|     const { seen, handler } = recording();
+    265|     expect(await outboxPass(worker, clock, { [mine]: handler })).toEqu…
+       |                                                                  ^
+    266|       handled: 0,
+    267|       err: [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -118,7 +118,7 @@
+        WHERE state = 'pending' AND available_at <= ${at} AND topic = ANY(${tx.array([...topics])})
+        ORDER BY available_at, id
+        LIMIT 1
+-       FOR UPDATE SKIP LOCKED`;
++       FOR UPDATE`;
+     const row = rows[0];
+     if (row === undefined) return null;
+     if (!ID.test(row.id)) throw new Error("outbox: an event came back with no id");

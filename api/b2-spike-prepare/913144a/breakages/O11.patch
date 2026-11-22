@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -176,7 +176,7 @@
+   const topics = Object.keys(handlers);
+   let handled = 0;
+   const err: string[] = [];
+-  while (!stopping()) {
++  while (stopping() || !stopping()) {
+     const claim = await claimNext(sql, clock, topics);
+     if (claim === null) break;
+     const { event } = claim;

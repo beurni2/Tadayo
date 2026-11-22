@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (13 tests | 1 failed) 1757ms
+   ❯ upload.prepare with nothing to prepare, or nothing it can (T54) (2)
+     × finishes an event whose upload isn't preparing, has lapsed or doesn't exist, calling Storage for nothing 62ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  23:15:26
+   Duration  2.50s (tests 81%, import 13%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare with nothing to prepare, or nothing it can (T54) > finishes an event whose upload isn't preparing, has lapsed or doesn't exist, calling Storage for nothing
+AssertionError: expected [ …(2) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/db/worker-prepare.test.ts:454:31
+    452|       clock.set(EVENING.add({ hours: 24 }));
+    453|       expect(await pass(tx, r.deps(tx))).toEqual({ handled: 4, err: []…
+    454|       expect(r.storage.reads).toHaveLength(reads);
+       |                               ^
+    455|       expect(r.lines).toHaveLength(lines);
+    456|       for (const id of [...events, (await eventOf(tx, lapsed.id)).id])…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

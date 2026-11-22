@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -44,7 +44,7 @@
+ /** Each kind's box: `fit: "inside"`, never enlarged. `display` is 1290 px wide, and never taller than `full`. */
+ const BOXES: Readonly<Record<RenditionKind, { readonly width: number; readonly height: number }>> = {
+   full: { width: 2560, height: 2560 },
+-  display: { width: 1290, height: 2560 },
++  display: { width: 1290 },
+ };
+ 
+ export interface Rendition {

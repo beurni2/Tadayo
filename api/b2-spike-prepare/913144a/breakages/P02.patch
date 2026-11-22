@@ -1,0 +1,11 @@
+--- a/packages/domain/src/media/prepare.ts
++++ b/packages/domain/src/media/prepare.ts
+@@ -107,7 +107,7 @@
+   if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
+   const rows = await bound(tx)`SELECT state FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
+   const at = await clock.sample(tx);
+-  if (rows[0]?.["state"] !== "preparing") return { at, recorded: false };
++  if (rows[0] === undefined) return { at, recorded: false };
+   if (outcome.state === "rejected") {
+     await bound(tx)`UPDATE app.uploads SET state = 'rejected', rejection = ${outcome.rejection} WHERE id = ${id}`;
+     return { at, recorded: true };

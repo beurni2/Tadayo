@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (13 tests | 1 failed) 1779ms
+   ❯ upload.prepare with nothing to prepare, or nothing it can (T54) (2)
+     × kills at once an event whose payload names no upload, and one whose upload's renditions aren't built, with the alert line 34ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  23:15:44
+   Duration  2.47s (tests 82%, import 12%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare with nothing to prepare, or nothing it can (T54) > kills at once an event whose payload names no upload, and one whose upload's renditions aren't built, with the alert line
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/db/worker-prepare.test.ts:479:30
+    477|       clock.set(HANDED);
+    478|       const result = await pass(tx, r.deps(tx));
+    479|       expect(result.handled).toBe(0);
+       |                              ^
+    480|       expect([...result.err].sort()).toEqual(
+    481|         [
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:469:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
