@@ -154,8 +154,9 @@ struct InvitationScreen: View {
     }
 }
 
-/// `G02-checking` (handoff 8's frame 8) and `G02-opening` (built from spec in its form): the
-/// system's spinner, decorative, beside the words in `emptyTitle` 25/30, 32 under the bar, and
+/// `G02-checking` (handoff 8's frame 8) and `G02-opening` (handoff 9's frame 2): the system's
+/// spinner, decorative, centred on the first line of the words in `emptyTitle` 25/30 beside it
+/// (`firstLineCenter`, however far they wrap), as both frames draw it, 32 under the bar, and
 /// for a check, "We’ll check the link before showing the club or its people." in `body`
 /// `secondaryText` 32 under them. The words are said once, politely, as they show (handoff 8:
 /// "Announce Checking invitation once"; `joined.loading`).
@@ -166,7 +167,7 @@ struct InvitationWait: View {
 
     var body: some View {
         SetupScroll {
-            HStack(alignment: .firstTextBaseline, spacing: gap) {
+            HStack(alignment: .firstLineCenter, spacing: gap) {
                 ProgressView()
                     .tint(Palette.secondaryText)
                     .accessibilityHidden(true)
@@ -262,7 +263,9 @@ struct InvitationCheckFailure: View {
 /// - for a changed roster, "Accept this exact roster to continue. …" in `metadata`
 ///   `secondaryText` 20 under the roster;
 /// - a failed Accept's line 20 under that (`InlineError`), said once, politely, VoiceOver's focus
-///   staying where it was (`failureStates.accept`).
+///   staying where it was (`failureStates.accept`), and the column scrolled to it, so it shows
+///   above Accept as frame 9 draws it however long the roster is (handoff 9's tag makes a
+///   candidate's row taller, and six people's rows put the line below the screen's edge).
 ///
 /// Accept this roster, the primary action, and Not now, a text action, are pinned under the
 /// scrolling roster, 8 apart. While Accept is on its way it shows its busy form and Not now waits.
@@ -275,7 +278,23 @@ struct InvitationRosterScreen: View {
     let titleFocused: AccessibilityFocusState<Bool>.Binding
     let actions: InvitationScreenActions
 
+    /// The failed Accept's line, which the column is scrolled to as it shows.
+    private static let failureID = "invitation.acceptFailure"
+
     var body: some View {
+        ScrollViewReader { scroll in
+            column
+                .onChange(of: line, initial: true) { _, shown in
+                    guard shown != nil else { return }
+                    scroll.scrollTo(Self.failureID, anchor: .bottom)
+                    // Again in the main queue's next turn, once the line has its place.
+                    DispatchQueue.main.async { scroll.scrollTo(Self.failureID, anchor: .bottom) }
+                }
+        }
+        .announcing(line, politely: true)
+    }
+
+    private var column: some View {
         SetupScroll {
             Text(verbatim: title)
                 .textRole(.utilityTitle)
@@ -303,6 +322,7 @@ struct InvitationRosterScreen: View {
             if let line {
                 InlineError(Text(verbatim: line))
                     .padding(.top, Spacing.xl)
+                    .id(Self.failureID)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -319,7 +339,6 @@ struct InvitationRosterScreen: View {
                     .disabled(isAccepting)
             }
         }
-        .announcing(line, politely: true)
     }
 
     private var title: String {

@@ -40,7 +40,12 @@ final class InvitationUITests: XCTestCase {
         back(in: app)
         XCTAssertTrue(app.staticTexts["Have an invitation?"].waitForExistence(timeout: 5))
         XCTAssertTrue(eventually { check.isEnabled }, "the link still in the field")
-        XCTAssertTrue(eventually { shows(check) }, "Continue reachable after Back")
+        XCTAssertTrue(
+            eventually { shows(check) },
+            "Continue reachable after Back: Continue at \(check.frame), keyboard "
+                + (app.keyboards.firstMatch.exists
+                    ? "at \(app.keyboards.firstMatch.frame)" : "none")
+                + ", the window \(app.windows.firstMatch.frame)")
         check.tap()
         XCTAssertTrue(app.staticTexts["Join Sunday people"].waitForExistence(timeout: 10))
 

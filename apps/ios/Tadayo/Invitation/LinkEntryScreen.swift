@@ -27,9 +27,10 @@ import TadayoDesign
 /// What's typed may hold a token: the field takes no autocorrection, capitalization or learned
 /// words, uses the URL keyboard and content type, and is redacted from the app switcher's
 /// snapshot (`privacySensitive`). The field doesn't take the focus on arrival, as the frame draws
-/// no keyboard, and gives it up when the invitation is pushed over it, so Back returns to the
-/// field with no keyboard over Continue, as on arrival (the check keeps the focus where it is,
-/// `handoff9.linkEntry.keyboard`).
+/// no keyboard. The check keeps the focus where it is (`handoff9.linkEntry.keyboard`), and a line
+/// under the field keeps it there; an answer that takes the person on gives it up as the
+/// invitation is pushed over the field, so Back returns to the field with no keyboard over
+/// Continue, as on arrival (`check()`).
 struct LinkEntryScreen: View {
     let model: InvitationLinkEntryModel
     /// Continue: checks the link and shows what it found.
@@ -52,7 +53,7 @@ struct LinkEntryScreen: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .submitLabel(.continue)
-                        .onSubmit { Task { await proceed() } }
+                        .onSubmit { Task { await check() } }
                         .focused($focused)
                         .privacySensitive()
                         .overlay(alignment: .leading) {
@@ -90,7 +91,7 @@ struct LinkEntryScreen: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom) {
                 Button {
-                    Task { await proceed() }
+                    Task { await check() }
                 } label: {
                     Text("linkEntry.continue")
                 }
@@ -102,8 +103,17 @@ struct LinkEntryScreen: View {
         .navigationTitle(Text("invitation.nav"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .onDisappear { focused = false }
         .announcing(line)
+    }
+
+    /// Continue, or Return: the link checked, and, once the answer has pushed the invitation over
+    /// the field or opened the club, the field's focus given up while the field is still on
+    /// screen. Given up only as the field left the screen (`onDisappear`), Continue was out of
+    /// reach after Back on both iOS versions (`InvitationUITests`), read as the keyboard back
+    /// over it.
+    private func check() async {
+        await proceed()
+        if model.invitation != nil || model.opened != nil { focused = false }
     }
 
     /// The line under the field.
