@@ -289,9 +289,7 @@ struct ClubLoading: View {
 struct ClubLoadFailure: View {
     let title: LocalizedStringResource
     let failure: ClubDetailsModel.Failure
-    /// Retry's hint, or nil where no words are given for one (`G02-checking-failed`, asked in
-    /// design handoff 9).
-    let retryHint: LocalizedStringResource?
+    let retryHint: LocalizedStringResource
     let retry: @MainActor () async -> Void
 
     var body: some View {
@@ -306,7 +304,7 @@ struct ClubLoadFailure: View {
                     Text("common.retry")
                 }
                 .buttonStyle(.tadayoPrimary)
-                .accessibilityHint(retryHint.map { Text($0) } ?? Text(verbatim: ""))
+                .accessibilityHint(Text(retryHint))
             }
         }
         .announcing(spoken, initial: true)

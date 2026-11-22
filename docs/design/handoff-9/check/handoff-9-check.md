@@ -15,9 +15,11 @@
 
 **One decision for the founder, FQ137, now answered** (section 5): handoff 9 gives `G03-declined` a line that promises nothing of the inviter, "You can close this invitation.". The founder chose it on 22 November 2026.
 
-**Two places where the app keeps something other than the frames** (section 4):
+**Four places where the app keeps something other than the frames** (section 4):
 - Another candidate's row in an invitation's roster has the Proposed tag without "Proposed by", because the roster the server sends names no proposer.
 - The check's failure keeps the app's `secondaryText` for its line, as every other failure screen does.
+- Frame 6's member count follows the snapshot's fixture, as frame 15's does.
+- The paste step's failure glyph is the app's `exclamationmark.circle`, where frames 4 and 5 draw a triangle.
 
 **Nothing blocks the build.** Section 6 lists which PR adopts what. 6b adopts frames 1 to 6, the Proposed tag on every candidate, Retry's hint and the declined line.
 

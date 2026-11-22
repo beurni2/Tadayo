@@ -26,6 +26,8 @@ import Testing
     @MainActor final class Opened {
         var clubs: [ClubRef] = []
         var signedOut = 0
+        /// Joins the server made for an Accept answered after the model was closed.
+        var joinedWhileClosed = 0
     }
 
     func model(
@@ -37,7 +39,9 @@ import Testing
             token: token, state: state, service: service,
             book: book ?? InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
             account: account, makeKey: { keys.next() }, current: { session.current },
-            joined: { opened.clubs.append($0) }, signedOut: { opened.signedOut += 1 })
+            joined: { opened.clubs.append($0) },
+            joinedWhileClosed: { opened.joinedWhileClosed += 1 },
+            signedOut: { opened.signedOut += 1 })
     }
 
     // MARK: Checking
@@ -519,7 +523,29 @@ import Testing
             // The token still goes; the club isn't opened from a model the root no longer shows.
             #expect(book.received(token, account: account) == nil, "\(viaAccept)")
             #expect(opened.clubs.isEmpty, "\(viaAccept)")
+            // An Accept the server joined is told to the root, which reads the list again; a check
+            // that found the account already in the club is let go (`linkEntry.cancellation`).
+            #expect(opened.joinedWhileClosed == (viaAccept ? 1 : 0), "\(viaAccept)")
         }
+    }
+
+    @Test func aClosedModelsAcceptJoinedWithNoClubIsToldAndChecksNothing() async {
+        let service = ScriptedClubs()
+        service.previewAnswers = [.success(.open(Kitchen.roster()))]
+        service.acceptAnswers = [.success(.joined(nil))]
+        let opened = Opened()
+        let invitation = model(service, opened: opened)
+        await invitation.check()
+        let gate = Gate()
+        service.duringAccept = { await gate.wait() }
+        async let accepted: Void = invitation.accept()
+        await gate.reached()
+        invitation.close()
+        gate.open()
+        await accepted
+        #expect(opened.clubs.isEmpty)
+        #expect(opened.joinedWhileClosed == 1)
+        #expect(service.calls.filter { $0.hasPrefix("preview") } == ["preview 01"])
     }
 
     @Test func anOpenRosterKeepsNothing() async {

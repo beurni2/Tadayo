@@ -235,9 +235,15 @@ struct TabsView: View {
     /// or, for a club the account is already in, the paste step closed once the list has been
     /// read again.
     private func proceed(on tab: ClubTab) async {
-        guard let model = entering else { return }
+        // Only from the paste step on top: a Continue that lands once the invitation it found
+        // is pushed (while it slides in) checks nothing and closes nothing.
+        guard let model = entering, paths[tab]?.last == .linkEntry else { return }
         await model.proceed()
-        guard entering === model, paths[tab]?.last == .linkEntry else { return }
+        guard entering === model, paths[tab]?.last == .linkEntry else {
+            // The paste step was left while its link was checked: what it found is let go.
+            model.left()
+            return
+        }
         if model.opened != nil {
             closeInvitationScreens()
         } else if let invitation = model.invitation {
@@ -247,16 +253,30 @@ struct TabsView: View {
     }
 
     /// After Accept or Retry has answered: a club joined (`opening`) closes the invitation and
-    /// the paste step, the list having been read again.
+    /// the paste step, the list having been read again. An invitation left with Back while its
+    /// Accept was on its way opens nothing; when the server joined all the same, the root reads
+    /// the list again (`RootModel`'s `joinedWhileClosed`), so Home shows the club.
     private func answered(_ model: InvitationModel) {
         guard entering?.invitation === model, case .opening = model.state else { return }
         closeInvitationScreens()
     }
 
-    /// I have an invite's screens close, and the invitation shown is done with.
+    /// I have an invite's screens close, and the paste step and the invitation shown are done
+    /// with.
     private func closeInvitationScreens() {
-        entering?.returned()
+        entering?.left()
         paths = paths.filter { !($0.value.first?.isInvitationFlow ?? false) }
+    }
+
+    /// Once no tab shows I have an invite's screens and theirs have slid away, what they held
+    /// goes from memory too: the text typed, which may be a link, and the invitation found.
+    private func forgetInvitationScreensIfGone() {
+        guard !paths.values.contains(where: { $0.first?.isInvitationFlow ?? false }) else {
+            return
+        }
+        entering?.left()
+        entering = nil
+        shownInvitation = nil
     }
 
     /// Create a club: G01-create on `tab`, in place of any club being made on another tab.
@@ -302,6 +322,10 @@ struct TabsView: View {
                 if paths[tab]?.last == .invitation, now.last != .invitation {
                     entering?.returned()
                 }
+                // Back from the paste step, even while its link is checked: it's done with.
+                if paths[tab]?.contains(.linkEntry) == true, !now.contains(.linkEntry) {
+                    entering?.left()
+                }
                 paths[tab] = now
             })
     }
@@ -343,22 +367,15 @@ struct TabsView: View {
         case .linkEntry:
             if let entering {
                 LinkEntryScreen(model: entering) { await proceed(on: tab) }
+                    .onDisappear { forgetInvitationScreensIfGone() }
             }
         case .invitation:
             if let shownInvitation {
-                InvitationScreen(
-                    state: shownInvitation.state, isAccepting: shownInvitation.isAccepting,
-                    acceptFailure: shownInvitation.acceptFailure, returnsTo: tab.title,
-                    actions: InvitationScreenActions(
-                        retry: {
-                            await shownInvitation.check()
-                            answered(shownInvitation)
-                        },
-                        accept: {
-                            await shownInvitation.accept()
-                            answered(shownInvitation)
-                        },
-                        leave: { closeInvitationScreens() }))
+                InvitationDestination(
+                    model: shownInvitation, returnsTo: tab.title,
+                    answered: { answered($0) }, leave: { closeInvitationScreens() }
+                )
+                .onDisappear { forgetInvitationScreensIfGone() }
             }
         }
     }

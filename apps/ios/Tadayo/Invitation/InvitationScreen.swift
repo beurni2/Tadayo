@@ -10,6 +10,32 @@ struct InvitationScreenActions {
     var leave: @MainActor () -> Void = {}
 }
 
+/// The invitation as a club tab's stack shows it: the model is read in this view's own body, so
+/// the screen follows its state, its Accept and its failure as they change. After Retry or
+/// Accept, `answered` is told.
+struct InvitationDestination: View {
+    let model: InvitationModel
+    let returnsTo: LocalizedStringResource
+    let answered: @MainActor (InvitationModel) -> Void
+    let leave: @MainActor () -> Void
+
+    var body: some View {
+        InvitationScreen(
+            state: model.state, isAccepting: model.isAccepting,
+            acceptFailure: model.acceptFailure, returnsTo: returnsTo,
+            actions: InvitationScreenActions(
+                retry: {
+                    await model.check()
+                    answered(model)
+                },
+                accept: {
+                    await model.accept()
+                    answered(model)
+                },
+                leave: leave))
+    }
+}
+
 /// One invitation, in each of its model's states (`InvitationModel.State`;
 /// `docs/plans/ios-b1-invitation.md` section 5), pushed over the paste step with the inline title
 /// "Invitation", the system's Back and no tab bar, as every frame draws it:
@@ -27,8 +53,8 @@ struct InvitationScreenActions {
 /// `.reopenLink` is the club list's (6d), which sends the person to I have an invite (FQ136):
 /// nothing in 6b makes it, so it shows only the canvas.
 ///
-/// When the check answers, VoiceOver's focus moves to the new screen's title, so it isn't left on
-/// words that are gone.
+/// When the check answers, or an Accept turns into another screen, VoiceOver's focus moves to the
+/// new screen's title, so it isn't left on words that are gone (`Kind`).
 struct InvitationScreen: View {
     let state: InvitationModel.State
     var isAccepting = false
@@ -61,8 +87,8 @@ struct InvitationScreen: View {
             .navigationTitle(Text("invitation.nav"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
-            .onChange(of: Kind(state)) { old, _ in
-                if old == .waiting { titleFocused = true }
+            .onChange(of: Kind(state)) { _, now in
+                if now.hasTitle { titleFocused = true }
             }
             .onChange(of: state, initial: true) { _, now in
                 switch now {
@@ -141,16 +167,26 @@ struct InvitationScreen: View {
         String(format: String(localized: key), arguments: values)
     }
 
-    /// The kind of screen a state shows: a change of kind moves VoiceOver's focus.
+    /// The kind of screen a state shows. A change into a roster, the waiting screen or an ended
+    /// invitation moves VoiceOver's focus to its title, whatever showed before: a check's
+    /// answer, or an Accept that turned into another screen. A wait says its words and a
+    /// check's failure its line, and Retry keeps the focus (handoff 9: "On Retry keep focus on
+    /// its initiating control").
     private enum Kind: Equatable {
-        case waiting, screen
+        case wait, failure, roster, waiting, ended, blank
 
         init(_ state: InvitationModel.State) {
             switch state {
-            case .checking, .opening: self = .waiting
-            default: self = .screen
+            case .checking, .opening: self = .wait
+            case .checkFailed: self = .failure
+            case .open, .changed: self = .roster
+            case .waiting: self = .waiting
+            case .expired, .full, .unavailable, .didNotGoAhead: self = .ended
+            case .reopenLink: self = .blank
             }
         }
+
+        var hasTitle: Bool { self == .roster || self == .waiting || self == .ended }
     }
 }
 
@@ -223,6 +259,7 @@ struct InvitationCheckFailure: View {
                     Text("common.retry")
                 }
                 .buttonStyle(.tadayoPrimary(isBusy: isRetrying))
+                .disabled(isRetrying)
                 .accessibilityHint(Text("invitation.checkFailed.retry.hint"))
             }
         }
@@ -263,9 +300,11 @@ struct InvitationCheckFailure: View {
 /// - for a changed roster, "Accept this exact roster to continue. …" in `metadata`
 ///   `secondaryText` 20 under the roster;
 /// - a failed Accept's line 20 under that (`InlineError`), said once, politely, VoiceOver's focus
-///   staying where it was (`failureStates.accept`), and the column scrolled to it, so it shows
-///   above Accept as frame 9 draws it however long the roster is (handoff 9's tag makes a
-///   candidate's row taller, and six people's rows put the line below the screen's edge).
+///   staying where it was, the line reachable (`failureStates.accept`), and the column scrolled
+///   to it as it comes, so it shows above Accept as frame 9 draws it however long the roster is
+///   (handoff 9's tag makes a candidate's row taller, and six people's rows put the line below
+///   the screen's edge). A screen laid out afresh with the line, as a snapshot is, opens at the
+///   top with the line below the fold, still reachable.
 ///
 /// Accept this roster, the primary action, and Not now, a text action, are pinned under the
 /// scrolling roster, 8 apart. While Accept is on its way it shows its busy form and Not now waits.
@@ -284,10 +323,6 @@ struct InvitationRosterScreen: View {
     var body: some View {
         ScrollViewReader { scroll in
             column
-                // A screen first laid out with the line (a snapshot) opens at the column's foot,
-                // and stays there if its window is then resized, as a snapshot's host is.
-                .defaultScrollAnchor(line == nil ? nil : .bottom, for: .initialOffset)
-                .defaultScrollAnchor(line == nil ? nil : .bottom, for: .sizeChanges)
                 .onChange(of: line) { _, shown in
                     guard shown != nil else { return }
                     scroll.scrollTo(Self.failureID, anchor: .bottom)

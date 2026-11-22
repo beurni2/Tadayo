@@ -50,23 +50,33 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     }
 
     /// What's in the field. A write while the link is checked is ignored; any other clears the
-    /// line.
+    /// line, except that text found not to be a link keeps its line, and Continue waits, until the
+    /// field holds a plausible link or is emptied (handoff 9's `localInvalid`: the message and the
+    /// unavailable Continue are one state).
     public var text: String {
         get { typed }
         set {
             guard !isChecking else { return }
             typed = newValue
-            problem = nil
+            settle()
         }
     }
     private var typed = ""
+    /// The paste step has been left (`left()`): nothing more is checked or shown.
+    private var isLeft = false
+    /// Text was found not to be a link: Continue waits, and the line stays, until the field holds
+    /// a plausible link or is emptied.
+    private var awaitsPlausibleLink = false
+    /// The invitation being checked, until its check is done: closed at once if the paste step is
+    /// left meanwhile.
+    private var checked: InvitationModel?
 
-    /// Continue: the field has something in it besides spaces, no check is on its way, and it
-    /// isn't the text just found not to be a link, which waits for an edit (handoff 9's frame 4:
-    /// "Continue unavailable until locally plausible").
+    /// Continue: the field has something in it besides spaces, no check is on its way, the step
+    /// hasn't been left, and it isn't text found not to be a link (handoff 9's frame 4: "makes
+    /// Continue unavailable until the input is locally plausible").
     public var canContinue: Bool {
-        !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isChecking
-            && problem != .invalid
+        !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isChecking && !isLeft
+            && !awaitsPlausibleLink
     }
 
     /// The system's paste control's text, or nil when it had none to give.
@@ -77,14 +87,29 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
             return
         }
         typed = text
+        settle()
+    }
+
+    /// The line after the field has changed: none, unless the text found not to be a link is
+    /// still neither a plausible link nor empty.
+    private func settle() {
+        if awaitsPlausibleLink {
+            let empty = typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            guard empty || InvitationToken(link: typed) != nil else {
+                problem = .invalid
+                return
+            }
+            awaitsPlausibleLink = false
+        }
         problem = nil
     }
 
     /// Continue: reads the field as an invitation link and checks it.
     public func proceed() async {
-        guard canContinue else { return }
+        guard canContinue, !isLeft else { return }
         guard let token = InvitationToken(link: typed) else {
             problem = .invalid
+            awaitsPlausibleLink = true
             return
         }
         guard let model = make(token) else { return }
@@ -95,10 +120,12 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         }
         problem = nil
         isChecking = true
+        checked = model
         await model.check()
+        if checked === model { checked = nil }
         isChecking = false
-        // Set aside by the root while it was checked (the account found incomplete): nothing to
-        // show.
+        // Set aside by the root while it was checked (the account found incomplete), or let go
+        // because the paste step was left: nothing to show.
         guard !model.isClosed else { return }
         switch model.state {
         case .checkFailed(let failure):
@@ -119,6 +146,20 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     public func returned() {
         if let invitation { released(invitation) }
         invitation = nil
+    }
+
+    /// The paste step itself has been left (Back, or its screens closed), with or without a check
+    /// on its way (handoff 9's `linkEntry.cancellation`: "Back may cancel an in-flight read"): the
+    /// invitation shown is let go, a check still on its way is closed at once, so its answer opens
+    /// no club and keeps no link, and nothing more is checked. No invitation from a link the
+    /// person walked away from is kept, shown, joined or held for the next sign-in.
+    public func left() {
+        isLeft = true
+        if let checked {
+            self.checked = nil
+            released(checked)
+        }
+        returned()
     }
 
     public nonisolated var description: String { "InvitationLinkEntryModel" }

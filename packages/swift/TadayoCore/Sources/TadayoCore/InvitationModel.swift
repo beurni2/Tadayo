@@ -91,18 +91,22 @@ extension InvitationRoster {
     let makeKey: @Sendable () -> IdempotencyKey
     let current: @MainActor () -> Bool
     let joined: @MainActor (ClubRef) async -> Void
+    let joinedWhileClosed: @MainActor () async -> Void
     let signedOut: @MainActor () async -> Void
 
     /// `token` is the invitation's, or nil when the app doesn't hold it; `state` is where it starts:
     /// checking, for a token to check, or what the club list already says. `book` keeps the token
     /// for `accountID`; `current` says the session the model was made in goes on; `joined` opens
-    /// the club; `signedOut` ends the session.
+    /// the club; `joinedWhileClosed` is told when an Accept the server joined answers after the
+    /// model was closed (left with Back while it was on its way), which opens nothing; `signedOut`
+    /// ends the session.
     public init(
         token: InvitationToken?, state: State = .checking, service: any ClubService,
         book: InvitationLinkBook, account accountID: String,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         current: @escaping @MainActor () -> Bool,
         joined: @escaping @MainActor (ClubRef) async -> Void,
+        joinedWhileClosed: @escaping @MainActor () async -> Void = {},
         signedOut: @escaping @MainActor () async -> Void
     ) {
         self.token = token
@@ -113,6 +117,7 @@ extension InvitationRoster {
         self.makeKey = makeKey
         self.current = current
         self.joined = joined
+        self.joinedWhileClosed = joinedWhileClosed
         self.signedOut = signedOut
     }
 
@@ -171,6 +176,8 @@ extension InvitationRoster {
         case nothing
         case check
         case open(ClubRef)
+        /// The server joined, and the model was closed while the Accept was on its way.
+        case joinedWhileClosed
         case endSession
     }
 
@@ -213,9 +220,9 @@ extension InvitationRoster {
             book.dropReceived(token, account: accountID)
             if let club {
                 state = .opening(club)
-                then = .open(club)
+                then = isClosed ? .joinedWhileClosed : .open(club)
             } else {
-                then = .check
+                then = isClosed ? .joinedWhileClosed : .check
             }
         case .success(.waiting):
             pending = nil
@@ -269,6 +276,7 @@ extension InvitationRoster {
         case .nothing: break
         case .check: await check()
         case .open(let club): if !isClosed { await joined(club) }
+        case .joinedWhileClosed: await joinedWhileClosed()
         case .endSession: await signedOut()
         }
     }

@@ -20,7 +20,7 @@ One model for one token, made by the root. Its states, and the screen each is in
 | State | When | Screen |
 |---|---|---|
 | `checking` | made, and on Retry | `G02-checking`: nothing of the club, the inviter or the roster (T7) |
-| `checkFailed(network or other)` | `previewInvitation` gave no answer, or failed otherwise | 6b's `G02-checking-failed`, built from spec, with Retry: `link.checkFailure` when no answer came; another failure's words are asked in handoff 9 (section 2); never that the link no longer works (handoff 4) |
+| `checkFailed(network or other)` | `previewInvitation` gave no answer, or failed otherwise | 6b's `G02-checking-failed`, handoff 9's frame 1, with Retry: "Couldn’t check the invitation link." over "Check your connection and try again." when no answer came, or "Try again." otherwise (`handoff9.check`); never that the link no longer works (handoff 4) |
 | `open(roster)` | `open` | `G02-invitation` |
 | `changed(roster, nameChange)` | `changed` | `G02-changed`; `G02-changed-name` when this model saw the earlier roster (`nameChanged.explanation` with the viewer's name on it), or with `nameChanged.explanationAfterRelaunch` when the kept token says the server made the revision for the account's name and the earlier name isn't held |
 | `waiting(clubName)` | `waiting`, or Accept answered `waiting` | `G03-waiting` |
@@ -89,7 +89,7 @@ The contract's `MyInvitationState` says what the app keeps: "Accepting a changed
 - **The link handler (6c since 22 November 2026):** one, as S6's run says (Apple's documentation of `onOpenURL(perform:)` says SwiftUI hands a universal link over as a URL). The Lab's `labLinkReceipts()` goes, or the Lab's `OpenedLinks` is fed from the app's handler, so no build holds two.
 - **Where the club list's accepted invitations show (6d since 22 November 2026):** no frame places `G03-waiting` or `G03-declined` on a root with no club, or beside a club. Handoff 9 asks for it (section 5), and 6d builds it from the frames that come back, or from spec if none have come by then.
 - **The inviter on `G02-full` and `G03-declined`:** handoff 1's frames say "Ask Ben for a new invitation if a place opens." and "Ben can start a new invitation later.", but the contract's `InvitationFull` and `InvitationEnded` carry no name. The api lane adds `inviter_name` to both, as required, on `api/b1-inviter-name` (its note of 11:28 UTC on 2026-11-22). This PR copies that branch's two examples into `ContractExample.swift` first, since the generated client would refuse the old ones once the field is required, and `main`'s client, whose schemas don't forbid other keys, ignores it until then (`ClubCallsTests.eachPreviewBecomesItsState` passes against both contracts, checked in the session). That PR merged as `6a6f0b0` (#107), and 6b's first commit reads the name: `InvitationPreview.full` and `.didNotGoAhead` carry it, and the model's `full` and `didNotGoAhead` states take it as given, so both screens always name the inviter, as handoff 1's frames do. FQ137 (the api lane's, from #107's review) asks whether `G03-declined`'s "{inviterName} can start a new invitation later." stays when the inviter has left the club; its default keeps handoff 1's words.
-- **The paste field** (from 6a's review): autocorrection and capitalization off and the URL content type, so a token doesn't reach the keyboard's learned words; `.privacySensitive()` for the app switcher's snapshot; the paste step torn down with the tabs at every session's end, Leave sign-in or the server's, since its model keeps the text and the invitation it last showed; and the paste step left once `opened` is set.
+- **The paste field** (from 6a's review): autocorrection and capitalization off and the URL content type, so a token doesn't reach the keyboard's learned words; the field's text not drawn while the app isn't active, so the app switcher's snapshot never shows a link (`.privacySensitive()` alone redacts only in widgets and on the Lock Screen: #110's privacy review); the paste step torn down with the tabs at every session's end, Leave sign-in or the server's, since its model keeps the text and the invitation it last showed; and the paste step left once `opened` is set.
 - **Words to ask in handoff 9** (from 6a's review): a check that got an answer other than the invitation (a refusal, `429`, a server error), on `G02-checking-failed` and under the paste field; today only "no answer" has words (`link.checkFailure`, `linkEntry.cannotCheck`).
 - **A UI test** of the whole flow with stand-in services, and B1's device checks for the founder (a link from Messages opens the invitation, 6c's; a link opened while signed out reaches it after sign-in, 6c's).
 
@@ -121,8 +121,8 @@ Branch `ios/b1-invitation-screens`, from `main` at `6a6f0b0` (#107), written on 
 | `G02-link-entry-signed-in` | the paste step, empty: Continue disabled | handoff 4 | received |
 | `G02-link-entry-signed-in-typed` | a link in the field | handoff 4's, with a link | received |
 | `G02-link-entry-signed-in-checking` | Continue busy, the field read-only | handoff 9, frame 3 | received (built from spec first: the primary action's busy form, `busyPrimary`) |
-| `G02-link-entry-signed-in-invalid`, `-clipboard-empty`, `-cannot-check` | the line under the field (`InvitationLinkEntryModel.Problem`) | handoff 9, frames 4 and 5 (`-invalid`, `-cannot-check`); none for `-clipboard-empty` | received; `-clipboard-empty` from spec: handoff 4's `linkEntry.clipboardEmpty` in the failure line (`InlineError`), said once as it shows. After text that isn't a link, Continue waits for an edit (frame 4) |
-| `G02-link-entry-signed-in-cannot-check-refused` | a check answered with a refusal, `429` or a server error | none | from spec: "Couldn’t check the invitation link. Try again.", handoff 8's rule that "Check your connection and try again." is said only when no answer came (`failureStates`), which handoff 9 confirms |
+| `G02-link-entry-signed-in-invalid`, `-clipboard-empty`, `-cannot-check` | the line under the field (`InvitationLinkEntryModel.Problem`) | handoff 9, frames 4 and 5 (`-invalid`, `-cannot-check`); none for `-clipboard-empty` | received; `-clipboard-empty` from spec: handoff 4's `linkEntry.clipboardEmpty` in the failure line (`InlineError`), said once as it shows. After text that isn't a link, Continue waits for a plausible link (frame 4) |
+| `G02-link-entry-signed-in-cannot-check-refused` | a check answered with a refusal, `429` or a server error | handoff 9's `entry.answeredFailure` (frame 5's words) | received: "Couldn’t check the invitation link. Try again." |
 | `G02-checking` | `.checking` | handoff 8, frame 8 | received |
 | `G02-checking-failed`, `-refused` | `.checkFailed` | handoff 9, frame 1 | received: "Couldn’t check the invitation link." over "Check your connection and try again." or, answered, "Try again.", with Retry hinted "Try checking this invitation link again." |
 | `G02-checking-failed-retrying` | Retry tapped: `.checking` after `.checkFailed` | none (frame 12's form on the web) | from spec: "Checking invitation…" as the title and Retry busy in place, keeping the focus (`handoff9.webCheck`) |
@@ -146,14 +146,14 @@ Each in light, dark and the largest text (`ScreenSnapshot`), pushed onto a stack
 - **The roster** (`invitationRoster`, `invitationRosterRow`): every entry the server sends, once each, the viewer first (`InvitationRoster.viewerFirst`), each a 36-point avatar with the initial and the name, "· You" on the viewer's (`RosterRow`). On `G02-changed-name` the viewer's row adds "Proposed by {inviterName}" and the Proposed tag (`proposedMemberTag`), from `inviter_name` (FQ84), and the roster has "{clubName} · {count} current members" over it, the count of its members (`later.invitation.count`), as frame 15 draws them. Another candidate's row shows the Proposed tag alone, since `InvitationRosterEntry` names no proposer; no frame draws one, so it's built from the contract (`proposedLabel`). The other rosters show no tag on the viewer's row, as frames 9 and handoff 2's `G02-changed` draw it. **Handoff 9 changes this** (`handoff9.invitationRosterTag`): every candidate takes the tag, so the viewer's row on every roster says "Proposed by {inviterName}" with the tag and reads "{name}. You. Proposed by {inviterName}. Proposed." (`roster.proposedBy.own.vo`); another candidate's row keeps the tag alone (`INVENTORY.md`'s Known differences, handoff 9).
 - **Accept this roster and Not now** are pinned under the scrolling roster, the primary action over a text action. A failed Accept keeps the roster and both actions, says its line once, politely, and keeps the focus on Accept (`failureStates.accept`).
 - **The ended states** (`G02-expired`, `-full`, `-revoked`, `G03-declined`): a setup screen's title and line (`SetupHeading`), and Close invitation pinned, with handoff 5's hint "Return to {destinationName}." naming the tab it returns to (`a11y.closeInvitation.hint`). `G03-waiting`: the club's name as an eyebrow, the title and line, "Waiting for club approval" after the `clock` symbol, the boundary line, and Done pinned. No approval count, list or name (T33, book p30).
-- **The paste field:** autocorrection and capitalization off, the URL keyboard and content type, `.privacySensitive()` (section 2); the system's paste control (`PasteButton`, T45), which reads the clipboard only when tapped (handoff 2). The field doesn't take the focus on arrival, as the frame draws no keyboard.
+- **The paste field:** autocorrection and capitalization off, the URL keyboard and content type, its text not drawn while the app isn't active (`scenePhase`, section 2; the snapshot `G02-link-entry-signed-in-inactive`); the system's paste control (`PasteButton`, T45), which reads the clipboard only when tapped (handoff 2). The field doesn't take the focus on arrival, as the frame draws no keyboard.
 - **What VoiceOver says:** `G02-checking` and `G02-opening` say their words once, politely, as they show; a failure says its title and line once (`ClubLoadFailure`'s rule); the roster's rows read their name, "you" for the viewer, and on a proposed row "Proposed by {name}. Proposed." (`proposed.row.vo`), as hosted tests read them (`AccessibilityElements`).
 
 ### The tests
 
 - **Snapshots** (`InvitationSnapshotTests`): every state in the table.
-- **Hosted readings:** each roster row's one element and words, the paste step's controls, Close invitation's hint, the failure lines said once.
-- **A UI test** (`InvitationUITests`) with stand-in services (`UITestLaunch`): I have an invite, paste a link, Continue, the roster, Accept this roster, `G03-waiting`, Done, back on Home; and a link the server doesn't know, `G02-revoked`, Close invitation.
+- **Hosted readings:** each roster row's one element and words, the paste step's controls, Close invitation's hint, a failure line's element. No hosted test hears VoiceOver: that each line is said once follows from `.announcing`, which says words only when they change, and is a device check in the TestFlight notes.
+- **A UI test** (`InvitationUITests`) with stand-in services (`UITestLaunch`): I have an invite, paste a link, Continue, the roster, Accept this roster, `G03-waiting`, Done, back on Home; a link whose Accept joins, after which the invitation and the paste step close and Home shows the club (`testBenAcceptsALinkThatJoinsAndHomeShowsTheClub`, from #110's review); and a link the server doesn't know, `G02-revoked`, Close invitation.
 - **Linux:** none new for the models (6a's), unless the routes need one.
 
 ### Design handoff 9
@@ -165,7 +165,7 @@ Each in light, dark and the largest text (`ScreenSnapshot`), pushed onto a stack
 The founder attached the export at 18:41 UTC on 22 November 2026; the check is `docs/design/handoff-9/check/handoff-9-check.md`, and its section 6 says what each PR adopts. 6b adopts:
 - **Frames 1 to 6** as drawn (the table above), with frame 1's Retry hint, "Try checking this invitation link again." (`invitation.checkFailed.retry.hint`).
 - **Retry stays in place while it checks again** (`G02-checking-failed-retrying`): `InvitationScreen` keeps the failure in `retryingAfter` while the model checks again, and `InvitationCheckFailure` shows "Checking invitation…" as the title with Retry busy, so Retry keeps its identity and the focus, and nothing is said until the answer, which is said once (`handoff9.webCheck`'s rule for the page, the only form drawn).
-- **Continue waits after text that isn't a link** until the text is edited (`InvitationLinkEntryModel.canContinue`; frame 4). Linux test: `continueWaitsForAnEditAfterTextThatIsntALink`.
+- **Continue waits after text that isn't a link,** with its line and the invalid border, until the field holds a plausible link, typed or pasted, or is emptied, as frame 4 and `handoff9.localInvalid` say ("Continue unavailable until locally plausible"; `InvitationLinkEntryModel.settle`, `canContinue`). Linux test: `continueWaitsForAPlausibleLinkAfterTextThatIsntOne`. Until #110's reviews, any edit cleared the line and brought Continue back.
 - **The Proposed tag on every candidate**, as "How they're drawn" says (`RosterRow`'s `spoken`).
 - **`G03-declined`'s last line,** "You can close this invitation." (`invitation.declined.body`), the founder's answer to FQ137.
 - **The paste step's field where the frames draw it,** 72 under the subtitle (`SetupGap.linkField`), not A02-email's 44: reading `7b9792b`'s snapshots beside frames 3 to 5 and handoff 4's frame found it about 28 points too high.
@@ -175,3 +175,41 @@ The founder attached the export at 18:41 UTC on 22 November 2026; the check is `
 - **Read at `cbf00dc`** (`ios` 45068037912): Continue reached after Back on both iOS versions and the spinners centred; the failed Accept's line still below the edge in its snapshots, since each snapshot lays the screen out afresh and a scroll made as the line comes doesn't show there. A screen first laid out with the line now opens at the column's foot (`defaultScrollAnchor(_:for: .initialOffset)`, iOS 18), and a hosted test, `InvitationSnapshotTests.testAFailedAcceptsLineIsScrolledIntoViewAboveAccept`, shows the line coming after the roster and checks it ends above Accept and below the top of the safe area.
 - **Read side by side with frames 1 to 6 at `cbf00dc`** (the sheets on `evidence` under `ios/b1-invitation-screens/cbf00dc/check/`): two more fixes in every roster state, from handoff 9's frame 6 and handoff 8's frames 9 and 15. Not now is centred under Accept (`TextActionStyle.Placement.underPrimary`, `.tadayoTextUnderPrimary`), and a proposed person's avatar is level with the top of their words (`RosterRow`), about 21 points higher than the centred avatar.
 - **Read at `7cd8cfd`** (`ios` 45073904121): the five roster states without a failure drawn as frames 6, 9 and 15 do, their 15 images taken; the hosted test passing; `G02-invitation-failed` and `-refused` still opening at the top. Read as the snapshot's host being laid out first in the simulator's own window, taller than the 852 points it's drawn at, where the column fits and has no foot to open at, and then resized: the column's foot is now kept on a size change too (`defaultScrollAnchor(_:for: .sizeChanges)`), only while the line shows.
+- **Read at `ef03400`** (`ios` 45079802931): iOS 26.5 every test passing, iOS 27.2 353 of 355, failing only `G02-invitation-failed` and `-refused`, whose six images had no reference. They still opened at the top, the line below the fold at the default size and in full at the largest. Neither scroll anchor had changed a snapshot, so both are removed and the scroll as the line comes is kept, which the hosted test checks. The six images are taken as a fresh layout draws them, with the line reachable below, which handoff 8's `failureStates.accept` asks ("The inline message remains reachable"); INVENTORY's row says how it differs from frame 9.
+
+### The reviews of #110
+
+A privacy review and a general review, each by a fresh subagent that hadn't seen the work (`docs/GITHUB.md`), read #110 at `ef03400` on 22 November 2026. The twelfth commit fixes what they found:
+- **Back from the paste step lets go of what it held** (`InvitationLinkEntryModel.left()`, called as the step is popped or closed, and when it disappears):
+    - the invitation shown;
+    - a check still on its way, which is closed at once, so its answer opens no club and keeps no link (handoff 9's `linkEntry.cancellation`).
+
+  Two Linux tests cover it, `aPasteStepLeftWhileItsLinkIsCheckedLetsWhatItFindsGoAndHoldsNothing` and `aPasteStepLeftWhileItsLinkIsCheckedOpensNoClub`. Each fails without the fix.
+- **The paste field's text isn't drawn while the app isn't active** (`LinkEntryScreen`, `scenePhase`), so the app switcher's snapshot never shows a link. The snapshot is `G02-link-entry-signed-in-inactive`.
+- **Back while Accept is on its way.**
+    - The invitation is closed and opens nothing, as before.
+    - If the server joined all the same, the model tells the root (`InvitationModel`'s `joinedWhileClosed`), which reads the club list again, only while the tabs show the session the model was made in. Home then shows the club rather than Start your club. Linux tests: `RootModelInvitationTests.anAcceptLeftWithBackThatTheServerJoinedReadsTheListAgain` and `InvitationModelTests.aClosedModelsAcceptJoinedWithNoClubIsToldAndChecksNothing`.
+- **VoiceOver's focus moves to the title** of a roster, the waiting screen or an ended invitation, whatever showed before (`InvitationScreen.Kind`). So "Your acceptance is saved." is read when Accept turns into it.
+- **The paste step's line is announced politely** (handoff 9's "One polite status announcement").
+- **Continue waits for a plausible link** after text that isn't one, and the line stays with it, as frame 4 and `handoff9.localInvalid` say.
+- **Smaller fixes:**
+    - Retry is disabled while it's busy, as Accept and Continue are.
+    - A Continue that lands once the invitation is pushed does nothing (`TabsView.proceed(on:)`).
+    - The invitation's destination reads its model in its own body (`InvitationDestination`).
+- **The join route has a UI test** (`testBenAcceptsALinkThatJoinsAndHomeShowsTheClub`, with the stand-in link `UITestLaunch.joiningLink`).
+- **Records corrected:**
+    - Stale "asked in handoff 9" notes now cite handoff 9's answer.
+    - `ClubLoadFailure.retryHint` is no longer optional; nothing passed nil.
+    - The tests no longer claim to hear a line said once.
+    - Counts are fixed in section 4.2 and in the check's answer.
+
+A second fresh reviewer read those fixes before they were committed. It found two things, and the twelfth commit fixes both:
+- **The tabs' first fix for Back during Accept called `RootModel.retry()`.** Off the tabs, `retry()` starts sign-in again, so a session ending during the join's list read could lose its notice. The reload now lives in the core, as described above, and is guarded by the session and the route.
+- **An edit cleared the invalid line while Continue stayed off with no reason shown.** The two are now one state, as described above.
+
+It also confirmed:
+- the stand-in link stays inside `#if DEBUG`;
+- nothing the step held outlives it.
+
+Still to check on CI: that the snapshot host reports the scene active, so `-typed` shows the link while `-inactive` doesn't.
+

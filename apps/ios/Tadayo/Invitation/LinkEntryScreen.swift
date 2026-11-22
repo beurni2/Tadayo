@@ -8,11 +8,11 @@ import TadayoDesign
 /// - 72 under them, where handoff 4's frame and handoff 9's frames 3 to 5 draw it
 ///   (`SetupGap.linkField`), the Invitation link field (`LabelledField`), with "Paste invitation
 ///   link" drawn over it while it's empty, as A02-email's placeholder is, hidden from VoiceOver;
-/// - the line for what went wrong 12 under the field (`InlineError`), said once as it shows:
-///   handoff 4's `linkEntry.invalid`, `.clipboardEmpty` and `.cannotCheck`, and, built from spec,
-///   "Couldn’t check the invitation link. Try again." for a check answered with a refusal or a
-///   server error (handoff 8's rule; asked in design handoff 9). Only a link that isn't one marks
-///   the field invalid;
+/// - the line for what went wrong 12 under the field (`InlineError`), said once, politely, as it
+///   shows (handoff 9's "One polite status announcement"): handoff 4's `linkEntry.invalid`,
+///   `.clipboardEmpty` and `.cannotCheck`, and handoff 9's `entry.answeredFailure`, "Couldn’t
+///   check the invitation link. Try again.", for a check answered with a refusal or a server
+///   error. Only a link that isn't one marks the field invalid;
 /// - 16 under the field, or the line, the system's paste control (`PasteButton`, T45), which reads
 ///   the clipboard only when it's tapped (handoff 2), labelled "Paste an invitation link." for
 ///   VoiceOver (`link.paste.vo`). It draws nothing in a snapshot, which can't render the system's
@@ -20,17 +20,20 @@ import TadayoDesign
 /// - 32 under it, "We’ll check the link before showing the club or its people." in `metadata`
 ///   `secondaryText`;
 /// - Continue pinned 44 above the safe area's bottom, or above the keyboard, disabled until the
-///   field holds something besides spaces, labelled "Check the invitation link." for VoiceOver
+///   field holds something besides spaces, and, once text was found not to be a link, until it
+///   holds a plausible one (`canContinue`), labelled "Check the invitation link." for VoiceOver
 ///   (`link.continue.vo`). While the link is checked it shows its busy form, the field is
 ///   read-only (the model keeps what it held) and Paste waits.
 ///
 /// What's typed may hold a token: the field takes no autocorrection, capitalization or learned
-/// words, uses the URL keyboard and content type, and is redacted from the app switcher's
-/// snapshot (`privacySensitive`). The field doesn't take the focus on arrival, as the frame draws
-/// no keyboard. The check keeps the focus where it is (`handoff9.linkEntry.keyboard`), and a line
-/// under the field keeps it there; an answer that takes the person on gives it up as the
-/// invitation is pushed over the field, so Back returns to the field with no keyboard over
-/// Continue, as on arrival (`check()`).
+/// words, and uses the URL keyboard and content type. While the app isn't active (`scenePhase`),
+/// the field's text isn't drawn, so the snapshot iOS keeps for the app switcher shows the field
+/// empty: `privacySensitive` alone redacts only where the system asks for privacy redaction
+/// (widgets, the Lock Screen), never in the app's own window. The field doesn't take the focus
+/// on arrival, as the frame draws no keyboard. The check keeps the focus where it is
+/// (`handoff9.linkEntry.keyboard`), and a line under the field keeps it there; an answer that
+/// takes the person on gives it up as the invitation is pushed over the field, so Back returns
+/// to the field with no keyboard over Continue, as on arrival (`check()`).
 struct LinkEntryScreen: View {
     let model: InvitationLinkEntryModel
     /// Continue: checks the link and shows what it found.
@@ -38,6 +41,7 @@ struct LinkEntryScreen: View {
     /// Whether the field shows focused, for a snapshot: nil in the app.
     var focus: Bool?
     @FocusState private var focused: Bool
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         SetupScroll {
@@ -65,6 +69,8 @@ struct LinkEntryScreen: View {
                                     .accessibilityHidden(true)
                             }
                         }
+                        // Not drawn while the app isn't active: the app switcher's snapshot.
+                        .opacity(scenePhase == .active ? 1 : 0)
                 }
             }
             .padding(.top, SetupGap.linkField)
@@ -103,7 +109,7 @@ struct LinkEntryScreen: View {
         .navigationTitle(Text("invitation.nav"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .announcing(line)
+        .announcing(line, politely: true)
     }
 
     /// Continue, or Return: the link checked, and, once the answer has pushed the invitation over

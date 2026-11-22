@@ -27,6 +27,15 @@ final class InvitationSnapshotTests: XCTestCase {
             pushed(entryScreen(entry(typed: Links.debby))), named: "G02-link-entry-signed-in-typed")
     }
 
+    /// The app no longer active, as iOS keeps its snapshot for the app switcher: the field's
+    /// text, which may be a link, isn't drawn.
+    func testG02LinkEntrySignedInInactive() {
+        snap(
+            pushed(
+                entryScreen(entry(typed: Links.debby)).environment(\.scenePhase, .inactive)),
+            named: "G02-link-entry-signed-in-inactive")
+    }
+
     func testG02LinkEntrySignedInChecking() {
         let model = entry(typed: Links.debby, preview: .hangs)
         drive({ await model.proceed() }, until: { model.isChecking })
@@ -299,7 +308,6 @@ final class InvitationSnapshotTests: XCTestCase {
 
     // MARK: Helpers
 
-    /// `screen` pushed onto a stack, as the tab pushes it.
     /// `content` with no failure, then, a moment after it shows, with `failure`, as an answer
     /// comes to a screen already on show.
     private struct FailsOnceShown<Content: View>: View {
@@ -316,6 +324,7 @@ final class InvitationSnapshotTests: XCTestCase {
         }
     }
 
+    /// `screen` pushed onto a stack, as the tab pushes it.
     private func pushed(_ screen: some View) -> some View {
         NavigationStack(path: .constant([ClubRoute.invitation])) {
             Color.clear
@@ -363,9 +372,8 @@ final class InvitationSnapshotTests: XCTestCase {
     }
 }
 
-/// What a check gets: an answer, a failure, or none (a request still on its way).
+/// What a check gets: a failure, or none (a request still on its way).
 private enum Preview: Sendable {
-    case answers(InvitationPreview)
     case fails(APIFailure)
     case hangs
 }
@@ -377,7 +385,6 @@ private struct PreviewOnly: ClubService {
 
     func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
         switch preview {
-        case .answers(let answer): return answer
         case .fails(let failure): throw failure
         case .hangs:
             try? await Task.sleep(for: .seconds(3600))
@@ -437,8 +444,8 @@ private struct PreviewOnly: ClubService {
 }
 
 /// A made-up link in the only form the app reads: no server made it, and it's drawn only in the
-/// typed field's snapshot, where a real token would be redacted from the app switcher, not the
-/// screen.
+/// typed field's snapshots, as the screen shows a link while the app is active
+/// (`testG02LinkEntrySignedInInactive` shows it hidden once it isn't).
 private enum Links {
     static let debby = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
 }

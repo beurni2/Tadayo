@@ -1226,7 +1226,7 @@
       }
     },
     "invitation.checkFailed.title" : {
-      "comment" : "built from spec: G02-checking-failed's title, the first sentence of handoff 4 link.checkFailure, over load.network or load.refused (handoff 8's rule: 'Check your connection' only when no answer came); asked in design handoff 9",
+      "comment" : "handoff 9 check.title (frame 1): G02-checking-failed's title, over load.network when no answer came or load.refused otherwise (handoff 9 check.network.vo and check.answeredFailure.vo)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -2018,7 +2018,7 @@
       }
     },
     "linkEntry.cannotCheck.refused" : {
-      "comment" : "built from spec: an answer other than the invitation (a refusal, 429, a server error), handoff 8's rule applied to linkEntry.cannotCheck; asked in design handoff 9",
+      "comment" : "handoff 9 entry.answeredFailure: the paste step's line for an answer other than the invitation (a refusal, 429, a server error)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

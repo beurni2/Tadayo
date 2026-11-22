@@ -4,9 +4,10 @@ import XCTest
 /// services' invitation (`UITestLaunch.invite`): I have an invite pushes the paste step with the
 /// tab bar hidden and Continue waiting for a link; a link Debby shared shows Sunday people's
 /// roster with Ben first, proposed by Debby; Back returns to the field as it was; Accept this roster ends at
-/// `G03-waiting`, whose Done returns to Home, which still shows no club; and a link the server
-/// doesn't know shows `G02-revoked`, whose Close invitation returns to Home too. The paste
-/// control, which the snapshots can't draw, is checked here.
+/// `G03-waiting`, whose Done returns to Home, which still shows no club; a link Maya shared, whose
+/// Accept this roster joins Kitchen table, closes the invitation and the paste step, and Home
+/// shows the club; and a link the server doesn't know shows `G02-revoked`, whose Close invitation
+/// returns to Home too. The paste control, which the snapshots can't draw, is checked here.
 final class InvitationUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -63,6 +64,30 @@ final class InvitationUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Your acceptance is saved."].exists)
     }
 
+    @MainActor func testBenAcceptsALinkThatJoinsAndHomeShowsTheClub() {
+        let app = signedIn()
+        app.buttons["I have an invite"].tap()
+        let field = app.textFields["Invitation link"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(Self.mayasLink)
+        app.buttons["Check the invitation link."].tap()
+        XCTAssertTrue(app.staticTexts["Join Kitchen table"].waitForExistence(timeout: 10))
+        XCTAssertTrue(element("Maya invited you.", in: app).exists)
+
+        // Accept this roster joins: the invitation and the paste step close, the list is read
+        // again, and Home shows Kitchen table.
+        app.buttons["Accept this roster"].tap()
+        XCTAssertTrue(
+            eventually(10) {
+                shows(app.buttons["Switch club. Kitchen table selected."]) && tabBarShows(app)
+            },
+            "Home, with Kitchen table")
+        XCTAssertFalse(app.staticTexts["Join Kitchen table"].exists)
+        XCTAssertFalse(app.staticTexts["Have an invitation?"].exists)
+        XCTAssertFalse(app.buttons["Create a club."].exists)
+    }
+
     @MainActor func testALinkTheServerDoesntKnowIsNotAvailable() {
         let app = signedIn()
         app.buttons["I have an invite"].tap()
@@ -85,8 +110,9 @@ final class InvitationUITests: XCTestCase {
 
     // MARK: Helpers
 
-    /// The link the stand-in services know (`UITestLaunch.invitedLink`).
+    /// The links the stand-in services know (`UITestLaunch.invitedLink` and `.joiningLink`).
     private static let debbysLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
+    private static let mayasLink = "https://tadayo.app/i#" + String(repeating: "J", count: 43)
 
     /// Signed in on the stand-in services' named account with no club, at Home's Start your
     /// club.

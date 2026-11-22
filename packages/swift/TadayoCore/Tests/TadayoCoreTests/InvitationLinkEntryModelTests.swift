@@ -46,39 +46,60 @@ import Testing
     @Test func somethingThatIsntAnInvitationLinkIsNeverChecked() async {
         let service = ScriptedClubs()
         var made = 0
-        let entry = entry(service, made: { made += 1 })
+        // Each on a paste step of its own: after one, Continue waits for a plausible link.
         for text in [
             "hello", "https://example.com/i#" + Kitchen.token(1).secret,
             "https://tadayo.app/i?t=" + Kitchen.token(1).secret, "https://tadayo.app/i#short",
             "tadayo.app/i#" + Kitchen.token(1).secret,
         ] {
+            let entry = entry(service, made: { made += 1 })
             entry.text = text
             await entry.proceed()
             #expect(entry.problem == .invalid, "\(text)")
             #expect(entry.text == text)
+            // An edit that still isn't a link keeps the line (handoff 9's `localInvalid`).
+            entry.text = "hello again"
+            #expect(entry.problem == .invalid)
         }
         #expect(made == 0)
         #expect(service.calls.isEmpty)
-        // Editing clears the line.
-        entry.text = "hello again"
-        #expect(entry.problem == nil)
     }
 
-    /// Handoff 9's frame 4: what isn't a link keeps Continue unavailable until it's edited, or a
-    /// paste replaces it.
-    @Test func continueWaitsForAnEditAfterTextThatIsntALink() async {
-        let entry = entry(ScriptedClubs())
+    /// Handoff 9's frame 4 and `localInvalid`: once text isn't a link, its line stays and
+    /// Continue is unavailable until the field holds one that is plausible ("until the input is
+    /// locally plausible"), typed or pasted, or is emptied.
+    @Test func continueWaitsForAPlausibleLinkAfterTextThatIsntOne() async {
+        let service = ScriptedClubs()
+        let entry = entry(service)
         entry.text = "tadayo.app"
         #expect(entry.canContinue)
         await entry.proceed()
         #expect(entry.problem == .invalid)
         #expect(!entry.canContinue)
         entry.text = "tadayo.app/"
-        #expect(entry.canContinue)
-        await entry.proceed()
+        #expect(entry.problem == .invalid)
         #expect(!entry.canContinue)
-        entry.pasted(link)
+        // The paste control with nothing to give says so, and Continue still waits.
+        entry.pasted(" ")
+        #expect(entry.problem == .clipboardEmpty)
+        #expect(!entry.canContinue)
+        entry.pasted("https://tadayo.app/i")
+        #expect(entry.problem == .invalid)
+        #expect(!entry.canContinue)
+        // A plausible link clears the line and Continue takes it.
+        entry.text = link
+        #expect(entry.problem == nil)
         #expect(entry.canContinue)
+        // Emptied, the field starts again.
+        entry.text = "tadayo.app"
+        await entry.proceed()
+        #expect(entry.problem == .invalid)
+        entry.text = ""
+        #expect(entry.problem == nil)
+        entry.text = "tadayo.app/i"
+        #expect(entry.problem == nil)
+        #expect(entry.canContinue)
+        #expect(service.calls.isEmpty)
     }
 
     @Test func aLinkWithSpacesAroundItIsRead() async {

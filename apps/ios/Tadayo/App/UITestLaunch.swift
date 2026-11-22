@@ -29,11 +29,14 @@
         static let create = "-TadayoUITestCreate"
         /// The stand-in services with an account already named and in no club, where I have an
         /// invite checks a pasted link (`Invited`): Debby's link to Sunday people shows its
-        /// roster, which Accept this roster leaves waiting on the members, and any other link is
-        /// one the server doesn't know. A test seam, not product.
+        /// roster, which Accept this roster leaves waiting on the members; Maya's link to Kitchen
+        /// table shows its roster, which Accept this roster joins; and any other link is one the
+        /// server doesn't know. A test seam, not product.
         static let invite = "-TadayoUITestInvite"
-        /// The link `Invited` knows: made up, no server made it.
+        /// Debby's link `Invited` knows: made up, no server made it.
         static let invitedLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
+        /// Maya's link `Invited` knows, whose Accept joins: made up, no server made it.
+        static let joiningLink = "https://tadayo.app/i#" + String(repeating: "J", count: 43)
         static let rightCode = "123456"
 
         @MainActor static func fakeGraph(
@@ -42,18 +45,19 @@
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let made = creating ? NewClub() : nil
+            let invitations = invited ? Invited() : nil
             let accounts = FakeAccounts(
                 nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [],
                 thenClubs: inClubs ? TwoClubs.relisted : nil, named: creating || invited,
-                made: made)
+                made: made, joined: invitations)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let clubs: any ClubService
             if inClubs {
                 clubs = TwoClubs()
             } else if let made {
                 clubs = made
-            } else if invited {
-                clubs = Invited()
+            } else if let invitations {
+                clubs = invitations
             } else {
                 clubs = NoClubs()
             }
@@ -89,21 +93,24 @@
             private let listed: [ClubSummary]
             private let relisted: [ClubSummary]?
             private let made: NewClub?
+            private let joined: Invited?
             private var listReads = 0
             private var namesTried = 0
             private var account: Account
 
             /// A new account with no club, or, given `clubs` or `named`, Ben's, named and in them,
             /// the list read again giving `thenClubs` when there are some, and listing the club
-            /// `made` holds once it's made.
+            /// `made` holds once it's made, and any club `joined` has joined.
             init(
                 nameFailsThenHangs: Bool = false, clubs: [ClubSummary] = [],
-                thenClubs: [ClubSummary]? = nil, named: Bool = false, made: NewClub? = nil
+                thenClubs: [ClubSummary]? = nil, named: Bool = false, made: NewClub? = nil,
+                joined: Invited? = nil
             ) {
                 self.nameFailsThenHangs = nameFailsThenHangs
                 listed = clubs
                 relisted = thenClubs
                 self.made = made
+                self.joined = joined
                 account =
                     clubs.isEmpty && !named
                     ? Account(
@@ -151,7 +158,7 @@
                 }
                 return ClubList(
                     serverClock: ServerClock(serverNow: Date(), receivedAt: .now),
-                    clubs: clubs + (made?.listed ?? []), invitations: [])
+                    clubs: clubs + (made?.listed ?? []) + (joined?.listed ?? []), invitations: [])
             }
         }
 
@@ -439,12 +446,39 @@
             }
         }
 
-        /// The club calls for Ben, in no club, holding Debby's invitation to Sunday people: its link
-        /// (`invitedLink`) shows the frames' roster, Ben first, and Accept this roster leaves it
-        /// waiting on the members; any other link is one the server doesn't know (`NOT_FOUND`).
-        /// Every other call is `NoClubs`'.
-        struct Invited: ClubService {
+        /// The club calls for Ben, in no club, holding two invitations. Debby's to Sunday people:
+        /// its link (`invitedLink`) shows the frames' roster, Ben first, and Accept this roster
+        /// leaves it waiting on the members. Maya's to Kitchen table: its link (`joiningLink`)
+        /// shows its roster, and Accept this roster joins it, so the club list then holds it
+        /// (`listed`). Any other link is one the server doesn't know (`NOT_FOUND`). Every other
+        /// call is `NoClubs`'.
+        final class Invited: ClubService, @unchecked Sendable {
+            private let lock = NSLock()
+            private var hasJoined = false
             private let none = NoClubs()
+            private static let kitchen = ClubRef(
+                id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
+                myMembershipID: "mem_ben_kitchen")
+            private static let kitchenRoster = InvitationRoster(
+                invitationID: "inv_maya", inviterName: "Maya", clubName: "Kitchen table",
+                revisionID: "rev_kitchen", revisionVersion: 1,
+                roster: [
+                    InvitationRosterEntry(name: "Maya", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Alex", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Sam", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Debby", kind: .member, isYou: false),
+                    InvitationRosterEntry(name: "Ben", kind: .candidate, isYou: true),
+                ], expiresAt: nil)
+
+            /// The clubs Ben is in: Kitchen table, once its Accept has joined it.
+            var listed: [ClubSummary] {
+                guard lock.withLock({ hasJoined }) else { return [] }
+                return [
+                    ClubSummary(
+                        ref: Self.kitchen, state: .active, memberCount: 5, openDay: nil,
+                        nextDay: nil)
+                ]
+            }
             private static let roster = InvitationRoster(
                 invitationID: "inv_debby", inviterName: "Debby", clubName: "Sunday people",
                 revisionID: "rev_sunday", revisionVersion: 1,
@@ -457,21 +491,28 @@
                     InvitationRosterEntry(name: "Ben", kind: .candidate, isYou: true),
                 ], expiresAt: nil)
 
-            private static func knows(_ token: InvitationToken) -> Bool {
+            private static func isDebbys(_ token: InvitationToken) -> Bool {
                 InvitationToken(link: UITestLaunch.invitedLink) == token
             }
 
+            private static func isMayas(_ token: InvitationToken) -> Bool {
+                InvitationToken(link: UITestLaunch.joiningLink) == token
+            }
+
             func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
-                guard Self.knows(token) else { throw .notFound }
-                return .open(Self.roster)
+                if Self.isDebbys(token) { return .open(Self.roster) }
+                if Self.isMayas(token) { return .open(Self.kitchenRoster) }
+                throw .notFound
             }
 
             func accept(
                 _ token: InvitationToken, revisionID: String, expectedVersion: Int,
                 key: IdempotencyKey
             ) async throws(APIFailure) -> InvitationAcceptance {
-                guard Self.knows(token) else { throw .notFound }
-                return .waiting
+                if Self.isDebbys(token) { return .waiting }
+                guard Self.isMayas(token) else { throw .notFound }
+                lock.withLock { hasJoined = true }
+                return .joined(Self.kitchen)
             }
 
             func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
