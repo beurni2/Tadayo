@@ -90,6 +90,9 @@ import Observation
     public private(set) var account: Account?
     public private(set) var signIn: SignInModel?
     public private(set) var profile: ProfileModel?
+    /// The invitation shown over the tabs, from a link opened or an accepted invitation the club
+    /// list holds (`docs/plans/ios-b1-invitation.md` section 1), or nil.
+    public private(set) var invitation: InvitationModel?
 
     /// Moves each time the app leaves an account. An answer to a call made before is dropped, so
     /// nothing that lands after Leave sign-in can route back into the account left (spec 23).
@@ -102,6 +105,10 @@ import Observation
     /// Moves each time Home is read: an answer to an earlier read, for a club since left
     /// behind, say, is dropped.
     private var homeReads = 0
+    /// An invitation link opened before the tabs could show it, held in memory only until they do,
+    /// and never written anywhere before an account exists (book p9, `linkEntry.retention`;
+    /// FQ135's default). A newer link replaces it.
+    private var pendingInvitation: InvitationToken?
 
     /// Why a session is being ended. Only the server's ending is said on A02-email ("Your sign-in
     /// ended. Enter your email to sign in again.", handoff 7's `auth.email.signedOut`), which then
@@ -208,6 +215,8 @@ import Observation
         signIn = nil
         profile = nil
         account = nil
+        pendingInvitation = nil
+        invitation = nil
         forgetClubs()
         selection.forget()
         links.forget()
@@ -345,6 +354,97 @@ import Observation
             current: { [weak self] in self?.epoch == made },
             gone: { [weak self] in await self?.loadClubs() },
             signedOut: { [weak self] in await self?.endedByServer() })
+    }
+
+    /// An invitation link, from the link handler. While the tabs show an account it's presented at
+    /// once, checking, in place of any shown before: a newer link wins. Otherwise it's held in
+    /// memory and presented once the tabs show, after the club list's read, so nothing of the
+    /// club shows before sign-in (book p9; FQ135).
+    public func open(_ token: InvitationToken) async {
+        guard route == .tabs, let account else {
+            pendingInvitation = token
+            return
+        }
+        pendingInvitation = nil
+        await present(token, for: account)
+    }
+
+    /// An accepted invitation the club list holds: `G03-waiting` from the list's words, with no
+    /// call; `G03-declined`; or, for a changed roster, the kept token checked (`G02-changed`), or,
+    /// with none kept, the link opened again (FQ136).
+    public func openAccepted(_ accepted: MyInvitation) async {
+        guard route == .tabs, let account else { return }
+        let kept = links.received(invitation: accepted.invitationID, account: account.id)?.token
+        switch accepted.state {
+        case .waiting:
+            invitation = makeInvitation(
+                kept, state: .waiting(clubName: accepted.clubName), for: account)
+        case .didNotGoAhead:
+            invitation = makeInvitation(
+                nil, state: .didNotGoAhead(inviterName: accepted.inviterName), for: account)
+        case .rosterChanged:
+            guard let kept else {
+                invitation = makeInvitation(
+                    nil,
+                    state: .reopenLink(
+                        clubName: accepted.clubName, inviterName: accepted.inviterName),
+                    for: account)
+                return
+            }
+            await present(kept, for: account)
+        }
+    }
+
+    /// Not now, Done and Close invitation: nothing is granted or changed (handoff 1).
+    public func closeInvitation() {
+        invitation = nil
+    }
+
+    /// The paste step, `G02-link-entry-signed-in`, while the tabs show an account. It checks a
+    /// link on its own screen and hands over the invitation it found (handoff 4); once the session
+    /// it was made in has ended, it checks nothing.
+    public func linkEntry() -> InvitationLinkEntryModel? {
+        guard route == .tabs, let account else { return nil }
+        let made = epoch
+        return InvitationLinkEntryModel { [weak self] token in
+            guard let self, self.epoch == made else { return nil }
+            return self.makeInvitation(token, state: .checking, for: account)
+        }
+    }
+
+    private func present(_ token: InvitationToken, for account: Account) async {
+        let model = makeInvitation(token, state: .checking, for: account)
+        invitation = model
+        await model.check()
+    }
+
+    /// An invitation's model, for this session. Once the account has joined, the club is kept as
+    /// its selected club and the list read again, so Home opens on it, and the invitation then
+    /// closes; a `signedOut` answer ends the session.
+    private func makeInvitation(
+        _ token: InvitationToken?, state: InvitationModel.State, for account: Account
+    ) -> InvitationModel {
+        let made = epoch
+        weak var created: InvitationModel?
+        let model = InvitationModel(
+            token: token, state: state, service: clubService, book: links, account: account.id,
+            makeKey: makeKey,
+            current: { [weak self] in self?.epoch == made },
+            joined: { [weak self] club in
+                guard let self, self.epoch == made else { return }
+                self.selection.keep(club.id, for: account.id)
+                await self.loadClubs()
+                guard self.epoch == made, let created, self.invitation === created else {
+                    return
+                }
+                self.invitation = nil
+            },
+            signedOut: { [weak self] in
+                guard let self, self.epoch == made else { return }
+                await self.endedByServer()
+            })
+        created = model
+        return model
     }
 
     private func choose(_ clubID: String, relisting: Bool = false) async {
@@ -516,6 +616,11 @@ import Observation
         profile = nil
         self.account = account
         route = .tabs
+        let asked = epoch
         await loadClubs()
+        // A link opened before the tabs showed, presented after the list's read.
+        guard epoch == asked, route == .tabs, let token = pendingInvitation else { return }
+        pendingInvitation = nil
+        await present(token, for: account)
     }
 }

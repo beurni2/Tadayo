@@ -1,0 +1,95 @@
+# B1, PR 6: opening an invitation (`ios/b1-invitation`)
+
+Branch `ios/b1-invitation`, from `main` at `c650a78` (#104). Written on 22 November 2026. The sixth PR of `docs/plans/ios-b1-clubs.md` section 4, split in two, as PRs 3 and 4 were:
+
+- **6a, this branch:** what the screens stand on, with no screen and no link handler. `TadayoCore`'s model of one invitation (checking it, accepting its exact roster, and every answer), the root's pending invitation kept through sign-in, the token of an accepted invitation kept for the account so it can be accepted again after a change (the contract's `MyInvitationState`), and the paste step's model.
+- **6b, `ios/b1-invitation-screens`, next:** the screens and their states (section 2), the routes from I have an invite and from the club list, and the app's one link handler, which follows spike S6's run on build 6.1 (`docs/plans/ios-b0-spike-links.md`, section 1, point 3). It waits for the founder's device results, which say which way SwiftUI hands a universal link over.
+
+The split changes no product decision and no state the plan lists. It keeps the review of what's kept and when it's purged, where a mistake keeps a token too long or shows a club before sign-in, apart from the screens. Until 6b merges, nothing calls the new models. 6a's one change a person could notice is none: the keychain item gains an optional field that nothing writes until 6b.
+
+## 1. What 6a builds
+
+The sources: spec 04 (the invite landing names the inviter, the club and the exact roster; the candidate accepts that roster), spec 07 (an invited person who hasn't joined has no access), spec 29 (every loading and recoverable error); book p9 ("Expired, changed or pending invitations retain their intent through authentication"; no permission is needed to review one); handoff 1 (`G02-expired`, `G02-changed`, `G02-full`, `G03-waiting`, `G03-declined`), handoff 2 (the link entry, the roster row), handoff 4 (`G02-link-entry-signed-in`, `G02-revoked`), handoff 8 (`G02-checking`, `G02-invitation-failed`, `G02-changed-name`, `joinedLink`, `invitationRoster`); the contract's `previewInvitation`, `acceptInvitation`, `InvitationPreview`, `InvitationAcceptance`, `AcceptInvitationRequest` and `MyInvitationState`; T7, T11, T14, T19, T41 to T43, T49, T52.
+
+### The invitation (`InvitationModel`)
+
+One model for one token, made by the root. Its states, and the screen each is in 6b:
+
+| State | When | Screen |
+|---|---|---|
+| `checking` | made, and on Retry | `G02-checking`: nothing of the club, the inviter or the roster (T7) |
+| `checkFailed(network or other)` | `previewInvitation` gave no answer, or failed otherwise | 6b's `G02-checking-failed`, built from spec: `link.checkFailure` and Retry; never that the link no longer works (handoff 4) |
+| `open(roster)` | `open` | `G02-invitation` |
+| `changed(roster, nameChange)` | `changed` | `G02-changed`; `G02-changed-name` when this model saw the earlier roster (`nameChanged.explanation` with the viewer's name on it), or with `nameChanged.explanationAfterRelaunch` when the kept token says the server made the revision for the account's name and the earlier name isn't held |
+| `waiting(clubName)` | `waiting`, or Accept answered `waiting` | `G03-waiting` |
+| `expired(inviterName)` | `expired`, or Accept answered `INVITATION_EXPIRED` | `G02-expired` |
+| `full(inviterName?)` | `full`, or Accept answered `CLUB_FULL` | `G02-full`; the inviter only if this model showed the roster (the preview's `full` carries no name: section 2) |
+| `didNotGoAhead(inviterName?)` | `did_not_go_ahead`, or the club list says so | `G03-declined`, never who declined (book p30) |
+| `unavailable` | `NOT_FOUND`, from either call | `G02-revoked`: the same for an unknown, revoked, replaced or used link (T14, FQ59) |
+| `opening(club)` | `joined`, or Accept answered `joined` | the club, opened by the root; "Opening {clubName}…" only while the list is read again (`handoff8.joinedLink`) |
+| `reopenLink(clubName, inviterName)` | the club list's `roster_changed` with no token kept | 6b: I have an invite, "Paste the link, or open it where it was shared." (FQ136) |
+
+- **The roster** is shown as the server sends it, every entry once, the viewer first and then the rest in the server's order (`InvitationRoster.viewerFirst`, handoff 8's `invitationRoster`). Accept this roster always sends the whole revision the person saw, its id and version.
+- **Accept this roster** (`acceptInvitation`) is one action per revision, with one key made when it starts and sent again on every retry of it (T19); a new revision is a new action with a new key. While it's out, a second tap does nothing. Its answers:
+    - `joined`: the kept token goes; the root opens the club (`opening`). With no club in the answer, the token is checked again, which answers `joined` with it.
+    - `waiting`: the token is kept for the account (below); `G03-waiting`.
+    - `changed`: the server made a revision with the account's name (FQ66). The token is kept, marked so; the viewer's name on the roster just shown is held as the earlier name; the token is checked again, and its `changed` or `open` roster shows as `G02-changed-name` with that name (handoff 8: "The previous name can come only from the authorized roster the app retained").
+    - `VERSION_CONFLICT` or `ROSTER_CHANGED`: the token is checked again, which says where it stands (the contract's `acceptInvitation`).
+    - `CLUB_FULL`: `full`. `INVITATION_EXPIRED`: `expired`, its token gone. `NOT_FOUND`: `unavailable`, its token gone.
+    - No answer: the roster stays with "Couldn’t accept this roster. Check your connection and try again." (`G02-invitation-failed`), the key kept. A `429` or `503` (`unavailable`, which the server may have committed): "… Try again.", the key kept. Any other refusal: "… Try again.", the next tap a new action.
+    - `signedOut` ends the session; `profileIncomplete` is read as a refusal, since the root shows invitations only to a complete account.
+- **Checking again** (`previewInvitation`) changes the kept token as Accept does: `waiting` and `changed` keep it (the server has bound the token to this account), and `joined`, `did_not_go_ahead`, `expired` and `NOT_FOUND` drop it. `open` and `full` change nothing. No answer is `checkFailed(.network)`; any other failure `checkFailed(.other)`, Retry checking again.
+- **Every answer counts only in the session it was asked in** (`current`), as the other models' do: after Leave sign-in, an answer keeps no token, shows nothing and calls nothing.
+
+### The accepted invitation's token (`InvitationLinkBook`)
+
+The contract's `MyInvitationState` says what the app keeps: "Accepting a changed roster takes the link's token again, which the app keeps with the invitation's intent [...] in its per-account store, purged at logout and at an account switch, never in a log, a crash or breadcrumb record or analytics, and dropped once the invitation has joined or ended." The book that keeps a proposer's links (ADR-037, `docs/plans/ios-b1-create.md` section 1) keeps these too, in the same file and keychain item, with the same rules for a vault that can't be read or written.
+
+- **`KeptReceivedInvitation`:** the invitation's id, its token, and whether the server last made a revision for the account's name (`nameChanged`). Nothing it prints, reflects or dumps holds the token (T7, T52).
+- **`keepReceived(_:invitation:account:nameChanged:)`**, when the server has shown the token is this account's: a preview's `waiting` or `changed`, an acceptance's `waiting` or `changed`. It replaces a record of the same invitation or the same token. `nameChanged` is set by an acceptance's `changed`, cleared by its `waiting`, and left as it was by a preview.
+- **`received(_ token:account:)`** and **`received(invitation:account:)`** read a record; **`dropReceived(_ token:account:)`** removes it at once: `joined`, `did_not_go_ahead`, `expired`, `NOT_FOUND`.
+- **`settle(_ list: ClubList, stamp:account:)`** also drops each record kept before the read was requested whose invitation the list no longer holds as `waiting` or `roster_changed`: it joined, or ended.
+- **`forget()`**, at Leave sign-in, empties the whole file, so these go with the links (T11).
+- **The file's shape** gains `received`, optional: a file written by an earlier build decodes with none, and an earlier build reading this one ignores it (the plan of 4a: "a later change to the file's shape only adds optional fields").
+
+### The root (`RootModel`)
+
+- **`open(_ token:)`**, from the link handler or the paste step. While the tabs show an account, the invitation is presented at once, checking, in place of any presented before: a newer link wins. Otherwise (launching, reading the account, signing in, confirming the age, the profile, a failure, leaving), the token is held in memory as the pending invitation, a newer one replacing it, and presented once the tabs show, after the club list's read: no club and no roster before sign-in (book p9, `linkEntry.retention`). It's never written anywhere before an account exists (FQ135's default), so a relaunch during sign-in loses it, and the link opens it again.
+- **Leave sign-in, or the server ending the session,** forgets the pending invitation and the presented one, with the kept tokens (the book's `forget()`).
+- **`openAccepted(_:)`**, for an invitation the club list holds: `waiting` presents `G03-waiting` from the list's words, with no call; `did_not_go_ahead` presents `G03-declined` and drops its token; `roster_changed` with a kept token presents it, checking (then `G02-changed`, or `G02-changed-name` with the relaunch line when the record says so); without one, `reopenLink` (FQ136).
+- **`joined`:** the club is kept as the account's selected club, the list is read again, and the invitation closes once the list has answered, so Home opens on that club.
+- **`closeInvitation()`:** Not now, Done and Close invitation. Not now grants nothing (handoff 1).
+- **A `signedOut` answer** from the invitation ends the session.
+
+### The paste step (`InvitationLinkEntryModel`)
+
+`G02-link-entry-signed-in` in 6b, from I have an invite on `G06-no-club` and `F01-no-club`; the signed-out `G02-link-entry` comes with Welcome (B1 plan PR 8), whose I have an invite it is.
+
+- **The field** holds what was pasted or typed. Paste gives the model the clipboard's text, read only when the person uses the system's paste control (handoff 2: "Do not read the clipboard before the user chooses Paste"); no text is `clipboardEmpty` ("There isn’t an invitation link to paste. Copy the link and try again."). Editing clears the line.
+- **Continue** is enabled when the field has text. A field that isn't an invitation link (`InvitationToken(link:)`) is `invalid` ("That doesn’t look like a Tadayo invitation link. Check the link and try again."), the text kept; no pasted URL is ever fetched.
+- **Signed in, Continue checks the link on this screen** (handoff 4): no answer is `cannotCheck` ("Couldn’t check the invitation link. Check your connection and try again."), the text kept; any answer is the invitation, which 6b pushes. Back returns to the field with the text kept (handoff 4's `G02-revoked`).
+
+### Tests first, on Linux (`swift test --package-path packages/swift/TadayoCore`)
+
+- `InvitationModelTests`: each preview answer's state; `NOT_FOUND` is one state whatever the cause; the roster viewer first, then the server's order, each entry once; Accept's key reused on a retry of the same revision and new for a new one; each acceptance answer and failure as the table says; a `changed` acceptance holds the earlier name and shows it on the next roster, and a fresh `changed` shows none; the kept token kept, marked and dropped as above; one Accept at a time; an answer after the session ended does nothing.
+- `InvitationLinkBookTests` (new cases): a received token kept, read by token and by invitation, replaced, marked and dropped; settled by a club list, with a token kept after the read's stamp left alone; forgotten with the links; a file without `received` decodes; nothing of a token in any description, debug description or mirror.
+- `RootModelInvitationTests`: a link while the tabs show is presented and checked; a link before sign-in is held and presented only once the tabs show, after the list; a newer link replaces a held or presented one; Leave sign-in forgets both; `joined` selects the club and reads the list before closing; the list's invitations open as `openAccepted` says; an invitation made before Leave sign-in changes nothing after it.
+- `InvitationLinkEntryModelTests`: paste, empty clipboard, invalid text kept, Continue's enabling, a check that fails stays with the text, an answer hands the invitation over.
+
+## 2. What 6b builds
+
+- **The screens:** `G02-checking`, `G02-invitation`, `G02-invitation-failed`, `G02-changed`, `G02-changed-name` (and its relaunch line), `G02-expired`, `G02-full`, `G02-revoked`, `G03-waiting`, `G03-declined`, `G02-link-entry-signed-in` with its three lines, each in light, dark and the largest text, with VoiceOver readings. Built from spec, as new inventory rows asked for in design handoff 9: the check's failure (`G02-checking-failed`), the opening wait ("Opening {clubName}…"), and the link entry's lines.
+- **The link handler:** one, as S6's run says (Apple's documentation of `onOpenURL(perform:)` says SwiftUI hands a universal link over as a URL). The Lab's `labLinkReceipts()` goes, or the Lab's `OpenedLinks` is fed from the app's handler, so no build holds two.
+- **Where the club list's accepted invitations show:** no frame places `G03-waiting` or `G03-declined` on a root with no club, or beside a club. 6b builds it from spec and asks handoff 9.
+- **The inviter on `G02-full` and `G03-declined`:** handoff 1's frames say "Ask Ben for a new invitation if a place opens." and "Ben can start a new invitation later.", but the contract's `InvitationFull` and `InvitationEnded` carry no name. The api lane is asked whether they should; until then the screen names the inviter only when the model showed the roster.
+- **A UI test** of the whole flow with stand-in services, and B1's device checks for the founder (a link from Messages opens the invitation; a link opened while signed out reaches it after sign-in).
+
+## 3. Questions and readings
+
+- **FQ135** (reserved at 08:17 UTC on 2026-11-22): an invitation opened or pasted before sign-in is held in memory only through sign-in (the default), or written to the device to survive a relaunch.
+- **FQ136** (reserved for this branch): an accepted invitation whose roster changed, when this phone no longer holds its link. Default: the app sends the person to I have an invite, with that screen's existing words; nothing is accepted until the link is opened again.
+- **Readings, no FQ:** `explanationAfterRelaunch` is used only when the kept record says the server made the revision for the account's name and this model didn't see the earlier roster, since the contract's `changed` names no cause; otherwise a `changed` roster is `G02-changed`, whose "The people in {clubName} have changed." is true either way. `profileIncomplete` from either call is a refusal, since the root presents an invitation only to a complete account.
+
+## 4. Privacy checks for the review
+
+From `docs/plans/ios-b1-clubs.md` section 4, as they apply to 6a: before an acceptance has made a membership, the models carry the club's name, the inviter and the exact roster only; a token appears in no description, mirror, log or URL the app builds; a kept token is purged when its invitation joins or ends, when the server says it no longer works, and at Leave sign-in; a `NOT_FOUND` is one state; a decline names nobody; nothing of a club reaches the root before the account is complete.

@@ -13,7 +13,12 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var proposeAnswers: [Result<RosterRevision, APIFailure>] = []
     var linkAnswers: [Result<InvitationLink, APIFailure>] = []
     var revokeAnswers: [Result<Void, APIFailure>] = []
+    var previewAnswers: [Result<InvitationPreview, APIFailure>] = []
+    var acceptAnswers: [Result<InvitationAcceptance, APIFailure>] = []
     private(set) var calls: [String] = []
+    /// Run inside each preview and each accept, before it answers.
+    var duringPreview: @Sendable () async -> Void = {}
+    var duringAccept: @Sendable () async -> Void = {}
     /// Run inside each members read, given which read it is (1 for the first), before it
     /// answers: a slow network, say.
     var duringMembers: @Sendable (Int) async -> Void = { _ in }
@@ -99,16 +104,23 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
         throw .refused
     }
 
+    /// Recorded with the token's last two characters, which tell the tests' made-up tokens apart.
     func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
-        lock.withLock { calls.append("preview") }
-        throw .refused
+        await duringPreview()
+        return try lock.withLock {
+            answer("preview \(token.secret.suffix(2))", &previewAnswers)
+        }.get()
     }
 
     func accept(
         _ token: InvitationToken, revisionID: String, expectedVersion: Int, key: IdempotencyKey
     ) async throws(APIFailure) -> InvitationAcceptance {
-        lock.withLock { calls.append("accept") }
-        throw .refused
+        await duringAccept()
+        return try lock.withLock {
+            answer(
+                "accept \(token.secret.suffix(2)) \(revisionID) v\(expectedVersion) \(key)",
+                &acceptAnswers)
+        }.get()
     }
 }
 
@@ -227,5 +239,37 @@ enum Sunday {
             serverClock: clock, club: ref,
             members: [Member(person: ben, position: 1, cover: nil, nextDay: nil, nextUp: false)],
             openRevision: candidates.map { revision($0, decision: decision) })
+    }
+}
+
+/// Kitchen table, as Leila holds Ben's invitation to it (`G02-invitation`, `G02-changed-name`,
+/// `G03-waiting`; handoffs 1, 2 and 8).
+enum Kitchen {
+    static let ref = ClubRef(
+        id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
+        myMembershipID: "mem_kitchen_leila")
+    static let account = "acct_leila"
+
+    /// A made-up token of the contract's shape, told apart by its last two digits.
+    static func token(_ n: Int) -> InvitationToken {
+        InvitationToken(secret: String(format: "tok%040d", n))!
+    }
+
+    /// Ben's roster for Kitchen table, with the viewer as `you`, listed where the server puts
+    /// them: after Ben and Maya.
+    static func roster(
+        you: String = "Leila", revision: String = "rev_1", version: Int = 1,
+        invitation: String = "inv_leila"
+    ) -> InvitationRoster {
+        InvitationRoster(
+            invitationID: invitation, inviterName: "Ben", clubName: "Kitchen table",
+            revisionID: revision, revisionVersion: version,
+            roster: [
+                InvitationRosterEntry(name: "Ben", kind: .member, isYou: false),
+                InvitationRosterEntry(name: "Maya", kind: .member, isYou: false),
+                InvitationRosterEntry(name: you, kind: .candidate, isYou: true),
+                InvitationRosterEntry(name: "Nina", kind: .candidate, isYou: false),
+            ],
+            expiresAt: Sunday.now.addingTimeInterval(7 * 86_400))
     }
 }
