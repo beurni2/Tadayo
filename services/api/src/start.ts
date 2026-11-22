@@ -1,13 +1,15 @@
 // The API's startup: the configuration, the database and the server's clock, before anything
 // listens. The environment's value goes to the time module as it is, so a missing or mistyped one
 // stops the API instead of picking a clock (ADR-013); a missing or mistyped SUPABASE_URL stops it too,
-// so it never runs believing no token or the wrong project's (identity/token.ts).
+// so it never runs believing no token or the wrong project's (identity/token.ts), and so does a missing
+// SUPABASE_SERVICE_KEY, which only Storage's calls carry (media/storage.ts; T56).
 
 import { prepareClock } from "@tadayo/domain";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "./app.ts";
 import { connect, type ApiSql } from "./connection.ts";
 import { supabaseVerifier } from "./identity/token.ts";
+import { supabaseStorage } from "./media/storage.ts";
 import { sessions } from "./session.ts";
 
 export interface Started {
@@ -39,7 +41,7 @@ function logLevelOf(value: string | undefined): string {
 
 /**
  * Connects, prepares the clock of `TADAYO_ENVIRONMENT`, reads the Supabase project's keys from
- * `SUPABASE_URL` and builds the app, or throws.
+ * `SUPABASE_URL`, takes Storage's key from `SUPABASE_SERVICE_KEY` and builds the app, or throws.
  */
 export async function startApi(env: Readonly<Record<string, string | undefined>>): Promise<Started> {
   const url = env.DATABASE_URL;
@@ -47,13 +49,16 @@ export async function startApi(env: Readonly<Record<string, string | undefined>>
   const supabase = env.SUPABASE_URL;
   if (supabase === undefined || supabase === "") throw new Error("api: SUPABASE_URL isn't set");
   const verifier = supabaseVerifier(supabase);
+  const serviceKey = env.SUPABASE_SERVICE_KEY;
+  if (serviceKey === undefined || serviceKey === "") throw new Error("api: SUPABASE_SERVICE_KEY isn't set");
+  const storage = supabaseStorage({ projectUrl: supabase, serviceKey });
   const port = portOf(env.PORT);
   const log = { level: logLevelOf(env.LOG_LEVEL) };
   const sql = connect(url);
   try {
     const clock = await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql);
     const authenticate = sessions({ verifier, sql, clock });
-    return { app: buildApp({ sql, clock, authenticate, log }), sql, port, host: env.HOST ?? "0.0.0.0" };
+    return { app: buildApp({ sql, clock, authenticate, storage, log }), sql, port, host: env.HOST ?? "0.0.0.0" };
   } catch (error) {
     await sql.end();
     throw error;

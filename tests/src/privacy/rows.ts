@@ -43,8 +43,26 @@
 //   at 32, longer values more often (about once in 310 million at 48 bytes, and once in 26 million at
 //   the contract's longest, 384), and handles of 12 about once in 100,000, which the matrix's runs
 //   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS, ownTextKey);
-// - for createUpload, the replays of its intent (TECH-DESIGN section 8), before it grants anything:
-//   spike S1's server part needs them before Gate A;
+// - for the uploads' three routes (spike S1's server part, done for a drop's photo: createUpload, getUpload and
+//   completeUpload; docs/plans/api-b2-spike-uploads.md): in every cell, createUpload with no body (the contract
+//   refuses it), and getUpload and completeUpload of the photo's upload Ben started under the slot he gave back
+//   (bindings.ts), pending with no bytes in Storage and living until the Saturday's evening: Ben's alone, so Ben
+//   reads it and gets MEDIA_NOT_READY completing it while it lives, and everyone else, and Ben once it lapsed, the
+//   neutral NOT_FOUND. Then, in every phase, a table judged by upload.ts from the world's rows before each request
+//   and held to its answer in the rows after it: each upload the viewer made in an earlier phase, read and
+//   completed again (preparing while it lives, nobody's after); createUpload under Cleo's lapsed slot, Ben's slot
+//   given back, the viewer's slot from the phase before (lapsed at the reveal), a link's slot the reservations'
+//   table holds, another club's slot and a guessed id; and, under the first slot that table held, live: the upload
+//   made with its one signed upload URL (T12), its replay with a new URL for the same object while it is pending
+//   and with none once it isn't (TECH-DESIGN sections 6 and 8), IDEMPOTENCY_CONFLICT to another body under its key
+//   (T19), MEDIA_NOT_READY before its bytes are in Storage, preparing after, the same again, and another member's
+//   read and completion finding nothing (T9, T14). The leak scanner holds the URL to the viewer's own pending
+//   upload's own object (scanner.ts). One test names the roles that made, completed, found again and were refused
+//   uploads, with the counts worked out by hand (matrix.test.ts, "the uploads' table ran"). What passes through no
+//   cell, and is held on Postgres (tests/src/db/uploads.test.ts), by the route tests
+//   (services/api/src/media/uploads.test.ts) and by upload.test.ts's judge tests: MEMBERSHIP_CHANGED, a consumed
+//   slot, the cutoff under the lock and the races with a release (T3, T18), Storage out of reach, and the other
+//   three purposes, which answer the neutral NOT_FOUND until their stages;
 // - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
@@ -188,12 +206,14 @@ import { MEMBERS_JUDGED } from "./members.ts";
 import { RESERVATION_JUDGED } from "./reservation.ts";
 import { ROSTER_JUDGED } from "./roster.ts";
 import { SCHEDULE_JUDGED } from "./schedule.ts";
+import { UPLOAD_JUDGED } from "./upload.ts";
 
 /**
  * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice),
  * the roster (B2's generation slice), the club's two routes (B1's first slice), the roster's four (B1's
  * second slice) and its two decisions and the invitation's three (B1's third slice), Home (B2's Home slice),
- * the leave (B1's fourth slice) and the reservations' two (B2's reservations slice).
+ * the leave (B1's fourth slice), the reservations' two (B2's reservations slice) and the uploads' three (spike
+ * S1's server part).
  */
 export const JUDGED: ReadonlySet<string> = new Set([
   ...ACCOUNT_JUDGED,
@@ -205,6 +225,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...INVITATION_JUDGED,
   ...LEAVE_JUDGED,
   ...RESERVATION_JUDGED,
+  ...UPLOAD_JUDGED,
 ]);
 
 const GATE =
@@ -394,13 +415,43 @@ export const RELEASE_RESERVATION = Object.freeze({
     `again; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
+/** createUpload for a drop's photo (spike S1's server part): upload.ts's uploadOutcome, uploadExpected and madeProblems. */
+export const CREATE_UPLOAD = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; PROFILE_INCOMPLETE to an account that hasn't finished its " +
+    "profile; then as upload.ts's uploadOutcome says from the world's rows: the neutral NOT_FOUND unless the " +
+    "reservation is the caller's, of their active interval in a club that isn't suspended on a day that is " +
+    "scheduled; MEMBERSHIP_CHANGED on a day whose star left or asked to delete before its reveal; OCCURRENCE_CLOSED " +
+    "with the day and the star's next day from the reveal on; the neutral NOT_FOUND unless the reservation is a " +
+    "photo's, live and not lapsed; or 201 with a new pending upload of the caller's, living 24 hours, and its one " +
+    "signed upload URL, a PUT to Storage for that upload's own object with its declared type and upsert off, good " +
+    "for Storage's lifetime; to its retry under its key, the same upload with a new URL for the same object while it " +
+    "is pending and lives, and with none once it isn't; IDEMPOTENCY_CONFLICT to another body under that key; a " +
+    `refusal leaving nothing (${GATE})`,
+});
+
+/** getUpload (spike S1's server part): upload.ts's readExpected. */
+export const GET_UPLOAD = Object.freeze({
+  answer:
+    "200 with the caller's own upload as the contract's UploadStatus until its expires_at; the neutral NOT_FOUND " +
+    `for anyone else's, a lapsed one, or an id nobody has (${GATE})`,
+});
+
+/** completeUpload (spike S1's server part): upload.ts's completeOutcome, completeExpected and completedProblems. */
+export const COMPLETE_UPLOAD = Object.freeze({
+  answer:
+    "for the caller's own upload until its expires_at: MEDIA_NOT_READY to a pending one whose bytes aren't in " +
+    "Storage, changing nothing; 202 preparing to one whose bytes are, moving it to preparing once; 202 as it is to " +
+    `one past pending; the neutral NOT_FOUND for anyone else's, a lapsed one, or an id nobody has (${GATE})`,
+});
+
 export const ROWS: Readonly<Record<string, unknown>> = {
   acceptInvitation: INVITATION_ACCEPT,
   approveRoster: ROSTER_DECISION,
   blockMember: NONE,
   chooseScheduleDays: SCHEDULE_COMMAND,
   clearReaction: NONE,
-  completeUpload: NONE,
+  completeUpload: COMPLETE_UPLOAD,
   confirmScheduleDays: SCHEDULE_COMMAND,
   createClub: CREATE_CLUB,
   createComment: NONE,
@@ -408,7 +459,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   createInvitation: CREATE_INVITATION,
   createReport: NONE,
   createReservation: RESERVATION,
-  createUpload: NONE,
+  createUpload: CREATE_UPLOAD,
   declineRoster: ROSTER_DECISION,
   deleteAccount: NONE,
   deleteComment: NONE,
@@ -430,7 +481,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getOwnDay: NONE,
   getRosterRevision: ROSTER_REVISION,
   getSchedule: SCHEDULE,
-  getUpload: NONE,
+  getUpload: GET_UPLOAD,
   hideDrop: NONE,
   leaveClub: LEAVE_CLUB,
   listBlocks: NONE,

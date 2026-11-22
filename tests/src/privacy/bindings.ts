@@ -23,6 +23,8 @@ export interface Targets {
   invitation: string;
   /** A slot Ben held in the day and gave back (reservation.ts). */
   reservation: string;
+  /** The photo's upload Ben started under that slot before giving it back, still pending (upload.ts). */
+  upload: string;
 }
 
 /** A fresh id that names nothing, in the contract's `Id` shape (T14: a guessed id). */
@@ -46,7 +48,7 @@ export const BINDINGS: Readonly<Record<string, ((targets: Targets) => string) | 
   star: (targets) => targets.star,
   comment_id: "missing",
   reservation_id: (targets) => targets.reservation,
-  upload_id: "missing",
+  upload_id: (targets) => targets.upload,
 };
 
 /** The value of Id parameter `name` in a cell whose world is `targets`. */

@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { firstBadField, meBody } from "./me.ts";
+import { noStorage } from "../testing.ts";
 
 const account = (over: Partial<Account> = {}): Account => ({
   id: "acct_ana",
@@ -33,7 +34,13 @@ async function appFor(
   begin: (...args: unknown[]) => Promise<unknown> = () => Promise.reject(new Error("no database")),
 ) {
   const sql = { end: () => Promise.resolve(), begin } as unknown as ApiSql;
-  const deps: Deps = { sql, clock: {} as Clock, authenticate: () => Promise.resolve(caller), log: { level: "silent" } };
+  const deps: Deps = {
+    sql,
+    clock: {} as Clock,
+    authenticate: () => Promise.resolve(caller),
+    storage: noStorage,
+    log: { level: "silent" },
+  };
   const app = buildApp(deps);
   await app.ready();
   open.push(app);

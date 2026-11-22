@@ -33,8 +33,16 @@ const NOWHERE = "postgres://tadayo_app:password@127.0.0.1:1/tadayo";
 /** A Supabase project's URL, shaped as theirs are (20 lowercase letters), which nothing here ever fetches. */
 const PROJECT = "https://abcdefghijklmnopqrst.supabase.co";
 
+/** A service key's shape, which nothing here ever sends anywhere. */
+const SERVICE_KEY = "sb_secret_notarealkeyfortheentrytests";
+
 /** The settings that are right, to which a test adds the one that is wrong. */
-const RIGHT = { DATABASE_URL: NOWHERE, SUPABASE_URL: PROJECT, TADAYO_ENVIRONMENT: "prod" };
+const RIGHT = {
+  DATABASE_URL: NOWHERE,
+  SUPABASE_URL: PROJECT,
+  SUPABASE_SERVICE_KEY: SERVICE_KEY,
+  TADAYO_ENVIRONMENT: "prod",
+};
 
 // Each test starts the entry as a process, some of them several times, and each start is given 20 seconds
 // before it is killed (`run`); vitest's default of 5 seconds for a whole test is less than a few slow starts
@@ -45,6 +53,7 @@ describe("the API's entry (ADR-013)", { timeout: 60_000 }, () => {
       const result = await run({
         DATABASE_URL: NOWHERE,
         SUPABASE_URL: PROJECT,
+        SUPABASE_SERVICE_KEY: SERVICE_KEY,
         ...(environment === undefined ? {} : { TADAYO_ENVIRONMENT: environment }),
       });
       expect(result.code, String(environment)).toBe(1);
@@ -97,6 +106,18 @@ describe("the API's entry (ADR-013)", { timeout: 60_000 }, () => {
       expect(result.stderr, value).toMatch(/SUPABASE_URL isn't/);
       expect(result.stdout + result.stderr, value).not.toContain(marker);
       expect(result.stdout, value).not.toMatch(/listening/);
+    }
+  });
+
+  it("stops before it connects when SUPABASE_SERVICE_KEY is missing, empty or not a key, and never repeats it (T56)", async () => {
+    const marker = `marker${randomBytes(8).toString("hex")}`;
+    for (const value of [undefined, "", `two ${marker}`, ` ${marker}`]) {
+      const rest = Object.fromEntries(Object.entries(RIGHT).filter(([name]) => name !== "SUPABASE_SERVICE_KEY"));
+      const result = await run({ ...rest, ...(value === undefined ? {} : { SUPABASE_SERVICE_KEY: value }) });
+      expect(result.code, String(value)).toBe(1);
+      expect(result.stderr, String(value)).toMatch(/SUPABASE_SERVICE_KEY isn't/);
+      expect(result.stdout + result.stderr, String(value)).not.toContain(marker);
+      expect(result.stdout, String(value)).not.toMatch(/listening/);
     }
   });
 

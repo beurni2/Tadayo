@@ -67,6 +67,11 @@ export function ok(reply: FastifyReply, body: unknown): FastifyReply {
   return reply.code(200).header("cache-control", NO_STORE).type(JSON_TYPE).send(JSON.stringify(body));
 }
 
+/** A success that started work (the contract's 202): `body` as JSON, which only the caller may keep. */
+export function accepted(reply: FastifyReply, body: unknown): FastifyReply {
+  return reply.code(202).header("cache-control", NO_STORE).type(JSON_TYPE).send(JSON.stringify(body));
+}
+
 /** A success that made something (the contract's 201): `body` as JSON, which only the caller may keep. */
 export function created(reply: FastifyReply, body: unknown): FastifyReply {
   return reply.code(201).header("cache-control", NO_STORE).type(JSON_TYPE).send(JSON.stringify(body));
@@ -81,8 +86,9 @@ export function unauthenticated(reply: FastifyReply): FastifyReply {
 }
 
 /**
- * Sign-in can't be judged: the keys that check a token can't be read, so no token is believed or refused
- * (token.ts). A 503 with no body, never a 401, which the app answers by ending a session (FQ89).
+ * A service the answer needs can't be reached: sign-in's keys, so no token is believed or refused (token.ts),
+ * and never a 401, which the app answers by ending a session (FQ89); or Storage, for an upload's signed URL or
+ * its bytes (media/storage.ts). A 503 with no body.
  */
 export function unavailable(reply: FastifyReply): FastifyReply {
   return reply.code(503).header("cache-control", NO_STORE).send();

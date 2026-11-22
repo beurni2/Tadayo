@@ -97,9 +97,9 @@ export function reservationExpiry(at: Temporal.Instant, revealAt: Temporal.Insta
 /**
  * Takes the club's and the day's rows, then the caller's and the star's membership rows, each `FOR SHARE`,
  * in TECH-DESIGN's order, the intervals by id byte by byte. A refusal never needs them released: its
- * transaction rolls back.
+ * transaction rolls back. The upload intent takes the same locks before the counter's (../media/upload.ts).
  */
-async function lockDay(tx: QuerySql, facts: AddTargetFacts, interval: string): Promise<void> {
+export async function lockDay(tx: QuerySql, facts: AddTargetFacts, interval: string): Promise<void> {
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${facts.day.clubId} FOR SHARE`;
   await bound(tx)`SELECT id FROM app.occurrences WHERE id = ${facts.day.id} FOR SHARE`;
   await bound(tx)`
@@ -110,7 +110,7 @@ async function lockDay(tx: QuerySql, facts: AddTargetFacts, interval: string): P
 }
 
 /** The same person's next day after `facts`' day, read under the locks, for a refusal to offer (T4). */
-async function nextTarget(tx: QuerySql, facts: AddTargetFacts, at: ServerNow): Promise<PlacedDay | undefined> {
+export async function nextTarget(tx: QuerySql, facts: AddTargetFacts, at: ServerNow): Promise<PlacedDay | undefined> {
   const next = nextTargetOf(facts, await loadLaterDays(tx, facts.day), at);
   return next ?? undefined;
 }

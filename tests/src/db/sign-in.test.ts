@@ -8,7 +8,7 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { buildApp, connect, KeysUnavailable, sessions, verifierFor, type KeySet } from "@tadayo/api";
-import { testSigner, TEST_EMAIL, type TestSigner } from "@tadayo/api/testing";
+import { noStorage, TEST_EMAIL, testSigner, type TestSigner } from "@tadayo/api/testing";
 import { ClubList, Me } from "@tadayo/contracts";
 import { fakeClock } from "@tadayo/domain/testing";
 import type { FastifyInstance } from "fastify";
@@ -32,7 +32,13 @@ let unreadable: FastifyInstance;
 beforeAll(async () => {
   signer = await testSigner();
   const verifier = verifierFor(signer.keys, { issuer: signer.issuer });
-  app = buildApp({ sql: api, clock, authenticate: sessions({ verifier, sql: api, clock }), log: { level: "silent" } });
+  app = buildApp({
+    sql: api,
+    clock,
+    authenticate: sessions({ verifier, sql: api, clock }),
+    storage: noStorage,
+    log: { level: "silent" },
+  });
   await app.ready();
   // A project whose keys can't be read at all, as when Supabase can't be reached.
   const down: KeySet = Object.assign(() => Promise.reject(new KeysUnavailable("unreachable")), {
@@ -43,6 +49,7 @@ beforeAll(async () => {
     sql: api,
     clock,
     authenticate: sessions({ verifier: lost, sql: api, clock }),
+    storage: noStorage,
     log: { level: "silent" },
   });
   await unreadable.ready();

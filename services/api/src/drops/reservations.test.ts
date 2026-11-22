@@ -24,6 +24,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { releasedBody, reservationBody } from "./reservations.ts";
+import { noStorage } from "../testing.ts";
 
 type Body = Record<string, unknown>;
 
@@ -181,7 +182,13 @@ afterEach(async () => {
 /** An app for Ben whose transactions are `begin`: what the route does with the database, with no database. */
 async function appFor(begin: (...args: unknown[]) => Promise<unknown>, clock: Clock = {} as Clock) {
   const sql = { end: () => Promise.resolve(), begin } as unknown as ApiSql;
-  const deps: Deps = { sql, clock, authenticate: () => Promise.resolve(account), log: { level: "silent" } };
+  const deps: Deps = {
+    sql,
+    clock,
+    authenticate: () => Promise.resolve(account),
+    storage: noStorage,
+    log: { level: "silent" },
+  };
   const app = buildApp(deps);
   await app.ready();
   open.push(app);

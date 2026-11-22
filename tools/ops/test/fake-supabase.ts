@@ -46,6 +46,12 @@ export interface FakeOptions {
   readonly buckets?: readonly Partial<FakeBucket>[];
   /** A call by this method and path fails with a server error, once. */
   readonly failing?: string;
+  /** The seconds from a signed upload token's `iat` to its `exp`: Storage's two hours unless given. */
+  readonly uploadLifetime?: number;
+  /** Claims put over Storage's own in each signed upload token, as a Storage the API would misread signs. */
+  readonly uploadClaims?: Readonly<Record<string, unknown>>;
+  /** A Storage whose signed `PUT` puts over an object already there, whatever its token says. */
+  readonly overwrites?: boolean;
 }
 
 export type Who = "service" | "anon" | "user" | "none" | "bad";
@@ -76,6 +82,25 @@ const STORAGE_REFUSED = {
 const NO_BUCKET = { statusCode: "404", code: "NoSuchBucket", error: "Bucket not found", message: "Bucket not found" };
 const NO_KEY = { statusCode: "404", code: "NoSuchKey", error: "not_found", message: "Object not found" };
 const DUPLICATE = { statusCode: "409", error: "Duplicate", message: "The resource already exists" };
+
+/**
+ * A signed upload's token as Storage makes one (`signUploadObjectUrl`): a JWT whose payload names the object,
+ * `<bucket>/<path>`, says whether the `PUT` may put over it, and carries `iat` and `exp`, Storage's two hours
+ * apart (services/api/src/media/storage.ts reads all four). Its signature holds only the grant, so two tokens for
+ * the same object differ; the fake keeps the grant by the whole token.
+ */
+export function uploadToken(
+  grant: string,
+  object: string,
+  upsert: boolean,
+  lifetime = 7200,
+  claims: Readonly<Record<string, unknown>> = {},
+): string {
+  const part = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const iat = 1_793_000_000;
+  const payload = { owner: "", url: object, upsert, scope: "upload", iat, exp: iat + lifetime, ...claims };
+  return `${part({ alg: "HS256", typ: "JWT" })}.${part(payload)}.${part(grant)}`;
+}
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
@@ -374,6 +399,13 @@ export function fakeSupabase(options: FakeOptions = {}): Fake {
       }
       return { who, response: storageError(NO_KEY) };
     }
+    if (head === "object" && second === "info" && method === "GET") {
+      // An object's details, which the API asks for before it hands an upload to preparation.
+      const key = `${tail[0] ?? ""}/${decodeURIComponent(tail.slice(1).join("/"))}`;
+      const bytes = objects.get(key);
+      if (bytes && privileged) return { who, response: json(200, { name: key, size: bytes.length }) };
+      return { who, response: storageError(NO_KEY) };
+    }
     if (head === "object" && second === "public" && method === "GET") {
       const key = `${tail[0] ?? ""}/${decodeURIComponent(tail.slice(1).join("/"))}`;
       const bytes = objects.get(key);
@@ -419,7 +451,13 @@ export function fakeSupabase(options: FakeOptions = {}): Fake {
         const upsert = request.headers.get("x-upsert") === "true";
         if (objects.has(`${bucketName}/${path2}`) && !upsert)
           return { who, response: storageError({ ...DUPLICATE, code: "KeyAlreadyExists" }) };
-        const token = next("upload-token-");
+        const token = uploadToken(
+          next("upload-token-"),
+          `${bucketName}/${path2}`,
+          upsert,
+          options.uploadLifetime,
+          options.uploadClaims,
+        );
         uploads.set(token, { bucket: bucketName, path: path2, upsert });
         return {
           who,
@@ -441,7 +479,13 @@ export function fakeSupabase(options: FakeOptions = {}): Fake {
         }
         return {
           who,
-          response: store(bucketName, path2, await body(), request.headers.get("content-type"), grant.upsert),
+          response: store(
+            bucketName,
+            path2,
+            await body(),
+            request.headers.get("content-type"),
+            grant.upsert || options.overwrites === true,
+          ),
         };
       }
     }
