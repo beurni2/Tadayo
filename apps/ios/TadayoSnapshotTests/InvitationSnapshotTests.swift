@@ -284,7 +284,7 @@ final class InvitationSnapshotTests: XCTestCase {
                     token: token, service: service, book: book, account: "acc_ben",
                     current: { true }, joined: { _ in }, signedOut: {})
             },
-            released: { $0.close() })
+            released: { _ in })
         model.text = typed
         return model
     }
