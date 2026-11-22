@@ -303,9 +303,10 @@ export const RECENT_DAYS = 6;
  * DayLink; spec 08, 18; T5, T9, T15). A recent day is a day of the club that has closed (`close_at <= now`),
  * that `placeable`'s three conditions keep, and that holds a drop the viewer may see the media of
  * (`readableDrops`, the read predicate itself), the newest by `reveal_at`, then id byte by byte, at most
- * `RECENT_DAYS`. The statement orders them by `close_at` instead, newest first: the same order, since a
- * club's scheduled days never overlap, and the one the index `occurrences_upcoming` holds, which Postgres may
- * read backward rather than sort (docs/plans/api-b2-home.md section 6 has the plan it chose). So a withdrawn,
+ * `RECENT_DAYS`. The statement picks them by `close_at` instead, newest first: the same order, since a
+ * club's scheduled days never overlap, and the one the index `occurrences_upcoming` holds; on a club with two
+ * years of days, measured, Postgres sorted the club's readable days rather than read the index
+ * (docs/plans/api-b2-home.md section 6). So a withdrawn,
  * removed or held drop, a cancelled or suspended day, a drop whose audience the viewer's active interval
  * isn't in (a late joiner's, a rejoined member's old ones), an author's deletion and a block each keep a day
  * out when nothing else of it is readable, and nothing says why (T14, T15).

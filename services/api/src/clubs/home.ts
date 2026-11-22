@@ -7,8 +7,9 @@
 //
 // The open day's page is the domain's first page of it: each drop the viewer may see, star first, and the
 // highlight rail. Its reactions, favourites and reply previews are B6's: the domain's read refuses a page whose
-// drops have any (the plan's section 0.1), so each drop's `reactions` is empty and `viewer_favourite` false,
-// truly; that refusal reaches the app as a server error, never as a page that hides something.
+// drops have a reaction or a comment, or the viewer's own favourite (the plan's section 0.1), so each drop's
+// `reactions` is empty and `viewer_favourite` false, truly; that refusal reaches the app as a server error,
+// never as a page that hides something.
 
 import {
   contractInstant,

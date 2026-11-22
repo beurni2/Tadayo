@@ -19,14 +19,15 @@
 // a tiebreak, byte by byte (T35; addendum 4), each with its author as the club sees them (FQ75), its caption,
 // its highlight flag, a photo's frame from its display rendition and its content version (spec 33), or a
 // video's provider; and the highlight rail of the highlights the viewer may see, the star's pick first, then
-// the day's own schedule from Monday, a member with two days by the earlier, then anyone without a day in the
-// order they joined (FQ26). Nothing counts what the viewer can't see (T15).
+// the day's own schedule from Monday, a member with two days by the earlier, then anyone without a day that
+// week in the order they joined (FQ26). Nothing counts what the viewer can't see (T15).
 //
 // What later stages own stays theirs (docs/plans/api-b2-home.md section 0.1): reactions, favourites and reply
 // previews are B6's, and no route writes their rows until B6, so the read throws rather than answer a page
-// whose drops have any (the B6 PR builds them, T49); a day's drops past the first 36 page through
-// getOccurrence's cursor, which B5 builds, so the read throws rather than cut a page short. Neither can happen
-// on `dev` or `prod` before B6 writes those rows. The second can't before B3 commits drops, and then only far
+// whose drops have a reaction or a comment, or the viewer's own favourite (the B6 PR builds them, T49); a
+// day's drops past the first 36 page through getOccurrence's cursor, which B5 builds, so the read throws
+// rather than cut a page short. The first can't happen on `dev` or `prod` before B6 writes those rows. The
+// second can't before B3 commits drops, and then only far
 // from the trial's clubs: six members at once give a day at most 21 drops (six for the star, three for each
 // friend, T17), but the allowances are each interval's, so a day passes 36 only when members who leave keep
 // their drops and others join or rejoin while it collects, again and again. Until B5's cursor, such a day's
@@ -200,11 +201,13 @@ function pageDrops<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
 /**
  * The open day's highlight rail for `viewer` at `now`, as a jsonb array for `openPage`: each highlight that
  * points to a drop the viewer may see the media of, the star's pick first, then by each contributor's earliest
- * weekday from Monday in the day's own schedule version, then anyone without a day in it in the order they
- * joined, by interval id byte by byte on a tie (FQ26, FQ114). A weekday counts only from its first date on or
- * before the day's own date: a member whose days start later has no day yet (FQ26), and the order stays fixed
- * for the day, since a member who confirms while it is open is given a first date at least a day on (FQ55),
- * though their row joins the first days' version the day was made under.
+ * weekday from Monday in the day's own schedule version, then anyone without a day that week in the order
+ * they joined, by interval id byte by byte on a tie (FQ26, FQ114). A weekday counts when its first date falls
+ * in the day's own week, Monday to Saturday, or before it: a member whose days start in a later week has no day
+ * that week (FQ26), while one whose first day comes later the same week has it. And it counts only if it was
+ * confirmed before the day opened, so the order stays fixed for the day: in a club's first days a member can
+ * confirm while a day is open, and the row joins the version that day was made under (FQ55), with a first
+ * date 24 hours on at least (FQ79), which can be later that week.
  */
 function pageRail<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
   return bound(sql)`(
@@ -218,7 +221,9 @@ function pageRail<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
                          FROM app.schedule_assignments sa
                         WHERE sa.schedule_version_id = o.schedule_version_id
                           AND sa.star_interval_id = hl.interval_id
-                          AND sa.first_date <= o.local_date) NULLS LAST,
+                          AND pg_catalog.date_trunc('week', sa.first_date::pg_catalog.timestamp)
+                              <= pg_catalog.date_trunc('week', o.local_date::pg_catalog.timestamp)
+                          AND sa.confirmed_at < o.reveal_at) NULLS LAST,
                       s.joined_at, s.interval_id COLLATE "C")
       FROM app.highlights hl
       JOIN app.occurrences o ON o.id = hl.occurrence_id
@@ -229,10 +234,10 @@ function pageRail<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
 }
 
 /**
- * Whether a drop of the open day that `viewer` may see has a row B6's fields would show them: a reaction or a
- * comment by anyone (the reaction summary and the reply preview are everyone's who can see the drop), or the
- * viewer's own favourite, under their interval in the club (readHome's alias `lm`). Someone else's favourite
- * is private to them (spec 18) and is never asked about, so this can't tell the viewer one exists.
+ * Whether a drop of the open day that `viewer` may see has a row B6's fields may show them: a reaction or a
+ * comment, whoever wrote it (which of them each reader sees is B6's rule, FQ73), or the viewer's own favourite,
+ * under their interval in the club (readHome's alias `lm`). Someone else's favourite is private to them
+ * (spec 18) and is never asked about, so this can't tell the viewer one exists.
  */
 function laterRows<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
   return bound(sql)`EXISTS (
@@ -390,7 +395,9 @@ export async function readHome(
       if (open === null) throw shape();
       // Reactions, favourites and reply previews are B6's (the header): a page that left out one would be false.
       if (flag(row["open_page_later"]))
-        throw new Error("home: the open day's drops have reactions, favourites or comments, which B6's page shows");
+        throw new Error(
+          "home: the open day's drops have reactions or comments, or the viewer's favourite, which B6's page shows",
+        );
       const page = openPage(row["open_drops"], row["open_rail"], open.star.membershipId);
       const addTarget = ownDay(chosenDay(row["add_target"], "collecting"), clubId);
       if (addTarget !== null && addTarget.star.membershipId !== open.star.membershipId) throw shape();

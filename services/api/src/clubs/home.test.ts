@@ -341,7 +341,9 @@ describe("the handler (T1, T14, T34)", () => {
   it("answers a refused read as a server error with nothing in it, never a page that hides a drop", async () => {
     const answer = await appFor(() =>
       Promise.reject(
-        new Error("home: the open day's drops have reactions, favourites or comments, which B6's page shows"),
+        new Error(
+          "home: the open day's drops have reactions or comments, or the viewer's favourite, which B6's page shows",
+        ),
       ),
     );
     const got = await answer("/v1/clubs/club_x/home");

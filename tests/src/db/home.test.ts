@@ -536,23 +536,62 @@ describe("the open day's highlight rail (T22; FQ26)", () => {
     });
   });
 
-  it("gives a member whose days start after the day none yet, and keeps the order while the day is open (FQ26, FQ55)", async () => {
+  it("counts a member's day that first opens later the same week, not one that starts the week after, nor one confirmed while the day is open (FQ26, FQ55, FQ79)", async () => {
     await rolledBack(db, async (tx) => {
-      const s = await fiveHighlights(tx);
-      // Mo's Monday in the day's own version starts on 9 November, after Ana's Saturday: no day yet, so Mo
-      // stays after Pat, as they joined, though Monday comes first.
-      await tx`
+      // The club's first days, from Monday 2 November: Cleo's Thursday 5, Ben's Friday 6 and Ana's Saturday 7
+      // (the world's), and Mo's Tuesday 3, Mo, Pat and Lu having joined the first days on 1 November.
+      const w = await newWorld(plain(tx));
+      const [mo, pat, lu] = [
+        await newUser(plain(tx), "Mo"),
+        await newUser(plain(tx), "Pat"),
+        await newUser(plain(tx), "Lu"),
+      ];
+      const joined: Member[] = [];
+      for (const [user, label, hour] of [
+        [mo, "Mo", 13],
+        [pat, "Pat", 14],
+        [lu, "Lu", 15],
+      ] as const) {
+        const at = new Date(`2026-11-01T${String(hour)}:00:00Z`);
+        const [interval] = await joinByRoster(plain(tx), w.club, w.ana, [{ user, label }], at);
+        if (interval === undefined) throw new Error("the roster added nobody");
+        joined.push({ user, interval });
+      }
+      const [moMember, patMember, luMember] = joined as [Member, Member, Member];
+      const confirm = (weekday: string, member: Member, first: string, at: Date) => tx`
         INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
-        VALUES (${s.w.version}, ${s.w.club}, 'monday', ${s.mo.interval}, '2026-11-09', ${AT.generated})`;
-      const order = async (instant: Temporal.Instant) =>
-        (await page(tx, s.w.ana.user, s.w.club, instant)).highlights.map((one) => one.author.displayName);
-      expect(await order(OPENED)).toEqual(["Ana", "Cleo", "Ben", "Pat", "Mo"]);
-      // Pat confirms Tuesday while the day is open, as the first days let a member do (FQ55): the row joins
-      // the version the day was made under, its first date a day on at least. The rail doesn't move.
-      await tx`
-        INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
-        VALUES (${s.w.version}, ${s.w.club}, 'tuesday', ${s.pat.interval}, '2026-11-10', ${date(OPENED)})`;
-      expect(await order(OPENED.add({ hours: 1 }))).toEqual(["Ana", "Cleo", "Ben", "Pat", "Mo"]);
+        VALUES (${w.version}, ${w.club}, ${weekday}, ${member.interval}, ${first}, ${at})`;
+      await confirm("tuesday", moMember, "2026-11-03", AT.generated);
+      // Pat confirms Monday on Monday 2 November after its 7 AM: less than 24 hours before a Monday 7 AM until
+      // the next, so the first is 9 November (FQ79), the week after Mo's Tuesday.
+      await confirm("monday", patMember, "2026-11-09", new Date("2026-11-02T09:00:00Z"));
+      const tuesday = await addDay(tx, w, moMember, "2026-11-03");
+      // Each adds a video link to Mo's Tuesday on Monday evening (world.ts' photos hold their slot until the
+      // world's Saturday, past this day's reveal) and points their highlight at it.
+      const authors: [Member, string][] = [
+        [luMember, "Lu"],
+        [patMember, "Pat"],
+        [w.ana, "Ana"],
+        [w.ben, "Ben"],
+        [w.cleo, "Cleo"],
+        [moMember, "Mo"],
+      ];
+      for (const [index, [member]] of authors.entries()) {
+        const at = new Date(Date.UTC(2026, 10, 2, 18, index));
+        const drop = await commitTo(tx, w, tuesday, member, { media: "external_video", at });
+        await tx`
+          INSERT INTO app.highlights (occurrence_id, interval_id, drop_id, version, updated_at)
+          VALUES (${tuesday}, ${member.interval}, ${drop}, 1, ${new Date(Date.UTC(2026, 10, 2, 20, index))})`;
+      }
+      const order = async (instant: string) =>
+        (await page(tx, w.ana.user, w.club, at(instant))).highlights.map((one) => one.author.displayName);
+      // Mo's pick, then Cleo (Thursday), Ben (Friday) and Ana (Saturday), whose days first open later that
+      // week; then Pat, whose Monday starts the week after, and Lu, with no day, as they joined.
+      expect(await order("2026-11-03T09:00:00Z")).toEqual(["Mo", "Cleo", "Ben", "Ana", "Pat", "Lu"]);
+      // Lu confirms Wednesday while Mo's day is open: its first date is Wednesday 4 November, that week (the
+      // row joins the version the day was made under, FQ55). The rail doesn't move until the next day.
+      await confirm("wednesday", luMember, "2026-11-04", new Date("2026-11-03T09:00:00Z"));
+      expect(await order("2026-11-03T10:00:00Z")).toEqual(["Mo", "Cleo", "Ben", "Ana", "Pat", "Lu"]);
     });
   });
 
@@ -706,7 +745,7 @@ describe("the recent days, with their covers (spec 08, 18; D08; T9, T15)", () =>
     });
   });
 
-  it("covers a day with the star's own highlighted photo only: a friend's highlight, or the star's highlighted video, gives way to the star's earliest photo (D08)", async () => {
+  it("covers a day with the star's own highlighted photo only: a friend's highlight, or the star's highlighted video, gives way to the star's earliest photo, or with none of the star's to the earliest (D08)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       const t = (minutes: number) => new Date(AT.added.getTime() + minutes * 60_000);
@@ -726,9 +765,15 @@ describe("the recent days, with their covers (spec 08, 18; D08; T9, T15)", () =>
       await commitTo(tx, w, friday20, w.ben, { at: t(5) });
       const ben20 = await commitTo(tx, w, friday20, w.ben, { at: t(6) });
       await highlight(tx, friday20, w.ben, ben20);
+      // Cleo's Thursday 19, with no photo of Cleo's: Ana's photo first, then Ben's, his highlight.
+      const thursday19 = await addDay(tx, w, w.cleo, "2026-11-19");
+      const ana19 = await commitTo(tx, w, thursday19, w.ana, { at: t(7) });
+      const ben19 = await commitTo(tx, w, thursday19, w.ben, { at: t(8) });
+      await highlight(tx, thursday19, w.ben, ben19);
       await addDay(tx, w, w.ben, "2026-11-27");
       expect(ids(await home(tx, w.ana.user, w.club, SUNDAY_22))).toEqual([
         ["2026-11-20", ben20],
+        ["2026-11-19", ana19],
         ["2026-11-14", ana14],
       ]);
     });

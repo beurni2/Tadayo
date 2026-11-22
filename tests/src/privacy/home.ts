@@ -15,8 +15,8 @@
 //   the contract's RevealedDayDrop: its author as the club sees them (FQ75), its caption, whether it's its
 //   author's highlight, a photo's display frame and content version or a video's provider, and no reaction or
 //   favourite; and the highlight rail of those drops, the star's pick first, then the day's own schedule from
-//   Monday by each author's earliest weekday from its first date on or before the day's, then anyone with no day
-//   in it as they joined (FQ26). A page whose drops have a reaction or a comment, or the viewer's own favourite
+//   Monday by each author's earliest weekday that first opens in the day's week or before and was confirmed
+//   before the day opened, then anyone with no day that week as they joined (FQ26). A page whose drops have a reaction or a comment, or the viewer's own favourite
 //   (B6's), or more than 36 drops (B5's cursor), must be the server's empty 500 (the plan's section 0.1): no
 //   world of the matrix has either.
 // - `recent_days`: the club's closed days that `daysOf`'s rule keeps and that hold a drop the viewer may see
@@ -64,6 +64,8 @@ export interface HomeRows {
   favoured: ReadonlyMap<string, ReadonlySet<string>>;
   /** Each day's schedule version, by day id. */
   weeks: ReadonlyMap<string, string>;
+  /** When each confirmed day of each week was confirmed, by `${version} ${weekday}`. */
+  confirmed: ReadonlyMap<string, Temporal.Instant>;
 }
 
 /** Reads those rows of `clubs` on `db`, a connection of the test's own. */
@@ -95,6 +97,9 @@ export async function homeRowsOf(db: WorldTx, clubs: readonly string[]): Promise
     SELECT blocker_user_id AS blocker, blocked_user_id AS blocked FROM app.blocks`;
   const days = await db<{ id: string; week: string }[]>`
     SELECT id, schedule_version_id AS week FROM app.occurrences WHERE club_id IN ${db(clubs)}`;
+  const confirmations = await db<{ week: string; weekday: string; confirmed_at: Temporal.Instant }[]>`
+    SELECT schedule_version_id AS week, weekday::text AS weekday, confirmed_at
+      FROM app.schedule_assignments WHERE club_id IN ${db(clubs)}`;
   const frames = new Map<string, { width: number; height: number; version: string }>();
   const providers = new Map<string, string>();
   for (const row of drops) {
@@ -111,6 +116,7 @@ export async function homeRowsOf(db: WorldTx, clubs: readonly string[]): Promise
     shared: new Set(drops.filter((row) => row.shared).map((row) => row.id)),
     favoured: new Map(drops.map((row) => [row.id, new Set(row.favoured)])),
     weeks: new Map(days.map((row) => [row.id, row.week])),
+    confirmed: new Map(confirmations.map((row) => [`${row.week} ${row.weekday}`, row.confirmed_at])),
   };
 }
 
@@ -222,14 +228,27 @@ export function pageFor(
       section: drop.author === found.star ? "star" : "friends",
     };
   });
-  // The rail: the day's own week from Monday, by each author's earliest weekday in it from its first date on or
-  // before the day's own date (a member whose days start later has none yet); no day, after, as they joined.
+  // The rail: the day's own week from Monday, by each author's earliest weekday in it that first opens in the
+  // day's calendar week or before (a member whose days start in a later week has no day that week) and was
+  // confirmed before the day opened (so nothing moves while it is open); no day, after, as they joined.
   const week = schedule.versions.find((version) => version.id === home.weeks.get(day));
   if (week === undefined) throw new Error("the open day's week isn't the world's");
+  const monday = (date: string) => {
+    const plain = Temporal.PlainDate.from(date);
+    return plain.subtract({ days: plain.dayOfWeek - 1 });
+  };
+  const hasThatWeek = (one: { weekday: string; firstDate: string }) => {
+    const confirmedAt = home.confirmed.get(`${week.id} ${one.weekday}`);
+    if (confirmedAt === undefined) throw new Error("a confirmed day with no confirmation");
+    return (
+      Temporal.PlainDate.compare(monday(one.firstDate), monday(found.localDate)) <= 0 &&
+      Temporal.Instant.compare(confirmedAt, found.revealAt) < 0
+    );
+  };
   const earliest = (interval: string) =>
     Math.min(
       ...week.assignments
-        .filter((one) => one.star === interval && one.firstDate <= found.localDate)
+        .filter((one) => one.star === interval && hasThatWeek(one))
         .map((one) => WEEK.indexOf(one.weekday)),
       WEEK.length,
     );

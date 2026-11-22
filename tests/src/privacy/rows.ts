@@ -60,7 +60,8 @@
 //   its section, author, caption, highlight flag and display frame or provider) and its rail in FQ26's order
 //   (the world's Ben's photo is Ben's highlight), and the recent days with D08's covers (home.ts). Still to
 //   come: reactions, favourites and reply previews in the page (B6), which home.ts expects refused, the
-//   server's empty 500, where a drop of the page has any, as the read does; the page past 36 drops and its
+//   server's empty 500, where a drop of the page has a reaction or a comment, or the viewer's own favourite, as
+//   the read does; the page past 36 drops and its
 //   cursor (B5's getOccurrence); and a cell where the star has drops of their own on the open day (the
 //   world's two drops are friends'; tests/src/db/home.test.ts holds the star's section on Postgres);
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
@@ -342,8 +343,9 @@ export const HOME = Object.freeze({
     "`add_target`, the open day's page (each drop the viewer may see the media of by home.ts's own statement of " +
     "T9, star first, each in commit order, in its revealed form) and its highlight rail in FQ26's order, and the " +
     "recent days with D08's covers, to an account with an active interval in the club, suspended or not; the " +
-    "server's empty 500 where a drop of the page has a reaction, a favourite or a comment, which B6's page shows, " +
-    "or the page passes 36 drops, whose cursor is B5's (docs/plans/api-b2-home.md section 0.1); the neutral " +
+    "server's empty 500 where a drop of the page has a reaction or a comment, or the viewer's own favourite, " +
+    "which B6's page shows, or the page passes 36 drops, whose cursor is B5's (docs/plans/api-b2-home.md " +
+    "section 0.1); the neutral " +
     `NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
