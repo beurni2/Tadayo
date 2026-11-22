@@ -13,6 +13,7 @@ import { buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { occurrenceBody } from "../bodies.ts";
 import { clubListBody } from "./list.ts";
+import { noStorage } from "../testing.ts";
 
 const now = Temporal.Instant.from("2026-11-07T07:00:00.987654Z");
 
@@ -196,6 +197,7 @@ describe("GET /v1/clubs: one sample of the clock for the instant and the days (T
         },
       },
       authenticate: () => Promise.resolve(caller),
+      storage: noStorage,
       log: { level: "silent" },
     };
     const app = buildApp(deps);

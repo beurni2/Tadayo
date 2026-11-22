@@ -19,6 +19,7 @@ import {
   type JWTHeaderParameters,
 } from "jose";
 import type { KeySet } from "./identity/token.ts";
+import { StorageUnavailable, type UploadStorage } from "./media/storage.ts";
 
 /** A project's URL, as Supabase's: 20 lowercase letters before `.supabase.co`. */
 export const TEST_PROJECT_URL = "https://tadayotestprojectref.supabase.co";
@@ -95,6 +96,58 @@ export async function testSigner(project: string = TEST_PROJECT_URL): Promise<Te
       if (options.claims?.iat === undefined) jwt.setIssuedAt();
       if (options.claims?.exp === undefined) jwt.setExpirationTime("1h");
       return jwt.sign(options.secret ?? options.key ?? privateKey);
+    },
+  };
+}
+
+/** Storage for a test that never reaches it: any call is a bug in the test (media/storage.ts). */
+export const noStorage: UploadStorage = {
+  signUpload: () => Promise.reject(new Error("testing: this test's app signs no upload URL")),
+  objectThere: () => Promise.reject(new Error("testing: this test's app asks Storage nothing")),
+};
+
+/** The fake Storage's signed lifetime: Storage's two hours (media/storage.ts). */
+export const FAKE_SIGNED_SECONDS = 7200;
+
+/** An in-memory Storage that signs and remembers, for the upload routes' tests and the privacy matrix. */
+export interface FakeStorage extends UploadStorage {
+  /** Each object key a URL was signed for, in order, once per signing. */
+  readonly signed: string[];
+  /** The objects whose bytes are in. */
+  readonly objects: Set<string>;
+  /** Puts an object's bytes in, as a client's `PUT` to its signed URL would. */
+  put(objectKey: string): void;
+  /** Makes every later call fail as Storage out of reach does, until called with false. */
+  failing(on: boolean): void;
+}
+
+/** A fake Storage whose URLs are the real form for `TEST_PROJECT_URL`, with a token that holds nothing. */
+export function fakeStorage(): FakeStorage {
+  const signed: string[] = [];
+  const objects = new Set<string>();
+  let down = false;
+  return {
+    signed,
+    objects,
+    put(objectKey) {
+      objects.add(objectKey);
+    },
+    failing(on) {
+      down = on;
+    },
+    signUpload(objectKey, contentType) {
+      if (down) return Promise.reject(new StorageUnavailable("signing an upload URL got no answer"));
+      signed.push(objectKey);
+      const token = `test.${Buffer.from(`${objectKey}:${String(signed.length)}`).toString("base64url")}.unsigned`;
+      return Promise.resolve({
+        url: `${TEST_PROJECT_URL}/storage/v1/object/upload/sign/uploads/${objectKey}?token=${token}`,
+        headers: { "Content-Type": contentType, "x-upsert": "false" },
+        lifetimeSeconds: FAKE_SIGNED_SECONDS,
+      });
+    },
+    objectThere(objectKey) {
+      if (down) return Promise.reject(new StorageUnavailable("asking for an object got no answer"));
+      return Promise.resolve(objects.has(objectKey));
     },
   };
 }

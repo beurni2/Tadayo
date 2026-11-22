@@ -14,6 +14,7 @@ import {
   type Fake,
   type FakeOptions,
   type Leak,
+  uploadToken,
 } from "../test/fake-supabase.ts";
 import { COMMAND_SECONDS } from "./on-machine.ts";
 import { ALLOWED_TYPES, FILE_SIZE_LIMIT } from "./storage-setup.ts";
@@ -63,7 +64,7 @@ describe("apiChecks on a closed project", () => {
     expect(failed(checks)).toEqual([]);
     // Every door is asked for each caller: nothing is dropped without this saying so.
     const count = (prefix: string) => checks.filter((check) => check.name.startsWith(prefix)).length;
-    expect(count("control: ")).toBe(12);
+    expect(count("control: ")).toBe(14);
     // And the one question about every bucket the project has, which is no control.
     expect(count("storage: ")).toBe(1);
     // Per caller: 3 tables and the root of REST, GraphQL, the buckets' list and create, and 8 for each bucket.
@@ -78,7 +79,7 @@ describe("apiChecks on a closed project", () => {
     expect([...fake.buckets.keys()].sort()).toEqual(["renditions", "uploads"]);
   });
 
-  it("proves it could have seen what it was refused: the service key signs, uploads, reads, lists and signs first", async () => {
+  it("proves it could have seen what it was refused: the service key signs, uploads, reads, finds, lists and signs first", async () => {
     const fake = project();
     const checks = await probe(fake);
     const controls = checks.filter((check) => check.name.startsWith("control: ")).map((check) => check.name);
@@ -89,6 +90,7 @@ describe("apiChecks on a closed project", () => {
         `control: the service key signs an upload URL for ${bucket}`,
         `control: the signed URL puts the object in ${bucket}`,
         `control: the service key reads the object back from ${bucket}`,
+        `control: the service key finds the object's details in ${bucket}, and none for an object never put`,
         `control: the service key lists the object in ${bucket}`,
         `control: the service key signs a read URL for ${bucket} in a batch`,
       ]),
@@ -198,6 +200,8 @@ describe("apiChecks on a closed project", () => {
     expect(text).not.toContain(FAKE_SECRET);
     expect(text).not.toContain(FAKE_PUBLISHABLE);
     expect(text).not.toMatch(/user-token-|hashed|upload-token-|someone-else/);
+    // A signed upload's token is a JWT, whose first part starts so.
+    expect(text).not.toContain("eyJ");
   });
 });
 
@@ -584,6 +588,105 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
     }
   });
 
+  it("signs the upload URL as the API does, with a body of {} and no x-upsert", async () => {
+    const fake = project();
+    const seen: { body: string; upsert: string | null }[] = [];
+    const spy = (async (input: string | URL | Request, init?: RequestInit) => {
+      const request = new Request(input, init);
+      if (request.method === "POST" && request.url.includes("/object/upload/sign/") && asService(request))
+        seen.push({ body: await request.clone().text(), upsert: request.headers.get("x-upsert") });
+      return fake.fetch(input, init);
+    }) as typeof fetch;
+    const checks = await probe(fake, spy);
+    expect(failed(checks)).toEqual([]);
+    expect(seen).toEqual([
+      { body: "{}", upsert: null },
+      { body: "{}", upsert: null },
+    ]);
+  });
+
+  it("asks for the object's details as the API does, and names that control when Storage doesn't answer as the API reads them", async () => {
+    const control = "control: the service key finds the object's details in uploads, and none for an object never put";
+    const info = (request: Request, which: "put" | "never") =>
+      request.method === "GET" &&
+      request.url.includes("/object/info/uploads/") &&
+      asService(request) &&
+      request.url.endsWith("/seen.png") === (which === "put");
+    const error = (statusCode: string) => new Response(JSON.stringify({ statusCode, error: "e" }), { status: 400 });
+    // Each answer the API's objectThere (services/api/src/media/storage.ts) would read wrongly, or not at all.
+    for (const [which, answer] of [
+      ["put", () => error("404")],
+      ["put", () => new Response("{}", { status: 404 })],
+      ["put", () => new Response(JSON.stringify({ statusCode: "404" }), { status: 200 })],
+      ["put", () => new Response("{}", { status: 500 })],
+      ["never", () => ok({ name: "x" })],
+      ["never", () => error("400")],
+      ["never", () => error("403")],
+      ["never", () => new Response("{}", { status: 500 })],
+    ] as const) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        answering(fake, (request) => (info(request, which) ? answer() : undefined)),
+      );
+      expect(failed(checks), `${which} ${String(answer().status)}`).toEqual([control]);
+    }
+    // Storage's not-found as a plain 404 is read as the API reads it too.
+    const plain = project();
+    const checks = await probe(
+      plain,
+      answering(plain, (request) => (info(request, "never") ? new Response("{}", { status: 404 }) : undefined)),
+    );
+    expect(failed(checks)).toEqual([]);
+    expect(
+      plain.calls.filter((call) => call.path.startsWith("/storage/v1/object/info/")).map((call) => call.who),
+    ).toEqual(["service", "service", "service"]);
+  });
+
+  it("names the control of the upload URL when its token's lifetime isn't a minute to a day, as the API reads it", async () => {
+    const part = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const jwt = (payload: unknown) => `${part({ alg: "HS256" })}.${part(payload)}.c2ln`;
+    const control = "control: the service key signs an upload URL for uploads";
+    for (const token of [
+      uploadToken("a", 59),
+      uploadToken("b", 86_401),
+      uploadToken("c", -7200),
+      jwt({ iat: 1_793_000_000 }),
+      jwt({ iat: "1793000000", exp: 1_793_007_200 }),
+      jwt({ iat: 1_793_000_000.5, exp: 1_793_007_200.5 }),
+      jwt([1_793_000_000, 1_793_007_200]),
+      `${part({ alg: "HS256" })}.not-json.c2ln`,
+      `${uploadToken("d")}.more`,
+      "upload-token-without-a-payload",
+    ]) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        answering(fake, (request) =>
+          request.method === "POST" && request.url.includes("/object/upload/sign/uploads/") && asService(request)
+            ? ok({ url: `/object/upload/sign/uploads/x?token=${token}`, token })
+            : undefined,
+        ),
+      );
+      expect(failed(checks), token).toEqual([control]);
+      expect(checks.find((check) => check.name === control)?.note, token).toBe(
+        "its token's lifetime isn't a minute to a day, as the API reads it",
+      );
+      // The run stops at the control, as every control's failure stops it, and leaves nothing behind.
+      expect(
+        checks.some((check) => check.name.startsWith("anon: ")),
+        token,
+      ).toBe(false);
+      expect(fake.objects.size).toBe(0);
+      expect(fake.users.size).toBe(0);
+    }
+    // A minute and a day are both believed, and the run goes on to every refusal.
+    for (const uploadLifetime of [60, 86_400]) {
+      const checks = await probe(project({ uploadLifetime }));
+      expect(failed(checks), String(uploadLifetime)).toEqual([]);
+    }
+  });
+
   it("asks REST for the schema app by name, since it would otherwise be asked for the public one", async () => {
     const fake = project();
     const profiles: [string, string | null][] = [];
@@ -811,9 +914,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up", async () => {
     const fake = project();
     const budget = new AbortController();
-    // The 16th call is the first refusal's; the 20th is anon's GraphQL.
+    // The 20th call is the first refusal's; the 24th is anon's GraphQL.
     const fetcher = counting(fake, (n) => {
-      if (n === 20) budget.abort();
+      if (n === 24) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     const cut = checks.findIndex((check) => check.name === "anon: GraphQL");
@@ -822,8 +925,8 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     // Every check of anon and user that wasn't asked, and the service key's root, which comes last.
     expect(later).toHaveLength(count(checks, "anon: ") + count(checks, "user: ") + count(checks, "service: ") - 5);
     expect(later.every((check) => !check.ok && check.note === OUT_OF_TIME)).toBe(true);
-    // 20 calls, then only the clean-up's: the two probe objects and the user.
-    expect(fake.calls.map((call) => call.method).slice(20)).toEqual(["DELETE", "DELETE", "DELETE"]);
+    // 24 calls, then only the clean-up's: the two probe objects and the user.
+    expect(fake.calls.map((call) => call.method).slice(24)).toEqual(["DELETE", "DELETE", "DELETE"]);
     expect(checks.filter((check) => check.name.startsWith("cleanup: ")).every((check) => check.ok)).toBe(true);
     expect(fake.objects.size).toBe(0);
     expect(fake.users.size).toBe(0);
@@ -866,9 +969,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("leaves no bucket to remove for a refusal it never asked", async () => {
     const fake = project();
     const budget = new AbortController();
-    // Spent after the controls (14 calls) and the bucket list (15): anon's REST is the next.
+    // Spent after the controls (18 calls) and the bucket list (19): anon's REST is the next.
     const fetcher = counting(fake, (n) => {
-      if (n === 16) budget.abort();
+      if (n === 20) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     expect(checks.some((check) => check.name === "anon: create a bucket" && check.note === OUT_OF_TIME)).toBe(true);
@@ -881,11 +984,11 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     const fake = project();
     const deadline = new AbortController();
     const fetcher = counting(fake, (n) => {
-      if (n === 16) deadline.abort();
+      if (n === 20) deadline.abort();
     });
     const checks = await probe(fake, fetcher, { deadline: deadline.signal });
-    // 16 calls were made, the 16th the first refusal's, and none after it: not even the clean-up's.
-    expect(fake.calls).toHaveLength(16);
+    // 20 calls were made, the 20th the first refusal's, and none after it: not even the clean-up's.
+    expect(fake.calls).toHaveLength(20);
     expect(checks.filter((check) => check.name.startsWith("cleanup: "))).toEqual([
       { name: "cleanup: delete the probe object in uploads", ok: false, note: OUT_OF_TIME },
       { name: "cleanup: delete the probe object in renditions", ok: false, note: OUT_OF_TIME },

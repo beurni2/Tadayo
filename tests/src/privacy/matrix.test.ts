@@ -25,7 +25,7 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
-import { TEST_EMAIL } from "@tadayo/api/testing";
+import { fakeStorage, TEST_EMAIL, type FakeStorage } from "@tadayo/api/testing";
 import { dayInstants, makeDays } from "@tadayo/domain";
 import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import type { FastifyInstance } from "fastify";
@@ -125,6 +125,18 @@ import {
   type RosterSeen,
 } from "./roster.ts";
 import { contractOperations, readDocument } from "./operations.ts";
+import {
+  completedProblems,
+  completeExpected,
+  completeOutcome,
+  madeProblems,
+  PHOTO_BODY,
+  readExpected,
+  replayProblems,
+  UPLOAD_NO_BODY,
+  uploadExpected,
+  uploadOutcome,
+} from "./upload.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
 import {
   SCHEDULE_JUDGED,
@@ -156,6 +168,7 @@ import {
   type WorldFacts,
   type WorldInvitation,
   type WorldReservation,
+  type WorldUpload,
 } from "./scanner.ts";
 import { bearer, signing, tokenCallers, type Signing } from "./tokens.ts";
 
@@ -183,6 +196,8 @@ const REVISIONS_LOST = new Map<string, number>();
 const SLOTS = new Map<string, { held: number; released: number; expired: number }>();
 /** By role: the answers in which Cleo's lapsed slot came back as the viewer's own (the role's test fills it). */
 const CLEOS_SLOT = new Map<string, number>();
+/** By role: what the uploads' table made, moved to preparing, refused as closed and found again (the role's test fills it). */
+const UPLOADS = new Map<string, { made: number; preparing: number; closed: number; later: number }>();
 /**
  * The answers the invitation's table gives someone other than the cell's viewer, for each revision: the
  * signed-out page twice, the link's holder ten times, another member three times.
@@ -235,6 +250,8 @@ let clock: FakeClock;
 let app: FastifyInstance;
 let keys: Signing;
 let elsewhere: Elsewhere;
+/** The app's Storage: it signs upload URLs and holds the objects the uploads' table puts (upload.ts). */
+let storage: FakeStorage;
 
 /**
  * Ben's photo "From Ben" and Cleo's video link "Cleo's pick" to Ana's Saturday, each caption ending
@@ -274,17 +291,26 @@ async function anaNextSaturday(tx: WorldTx, w: World): Promise<void> {
 /**
  * A slot Ben held in Ana's Saturday at 20:00 on Friday 6 November and gave back five minutes later: the
  * reservation every cell's releaseReservation names (bindings.ts), which only Ben may give back, and which the
- * counter no longer counts.
+ * counter no longer counts. Under it, a minute in, Ben started a photo's upload, as createUpload makes one: the
+ * upload every cell's getUpload and completeUpload name, Ben's alone, pending with no bytes in Storage, and
+ * living 24 hours, so it lapses at 20:01 on the Saturday, after the reveal and before the close (upload.ts).
  */
-async function releasedSlot(tx: WorldTx, w: World): Promise<string> {
-  const id = `rsv_${randomBytes(16).toString("base64url")}`;
+async function releasedSlot(tx: WorldTx, w: World): Promise<{ reservation: string; upload: string }> {
+  const reservation = `rsv_${randomBytes(16).toString("base64url")}`;
   await tx`
     INSERT INTO app.reservations (id, occurrence_id, interval_id, media_class, request_key, created_at, expires_at)
-    VALUES (${id}, ${w.day}, ${w.ben.interval}, 'photo', ${randomUUID()}, ${AT.added},
+    VALUES (${reservation}, ${w.day}, ${w.ben.interval}, 'photo', ${randomUUID()}, ${AT.added},
             ${new Date(AT.added.getTime() + 30 * 60_000)})`;
+  const upload = `upl_${randomBytes(16).toString("base64url")}`;
+  const started = new Date(AT.added.getTime() + 60_000);
+  await tx`
+    INSERT INTO app.uploads (id, owner_user_id, purpose, reservation_id, content_type, byte_size, object_key,
+                             created_at, expires_at)
+    VALUES (${upload}, ${w.ben.user}, 'drop_photo', ${reservation}, 'image/jpeg', 2500000,
+            ${randomBytes(24).toString("base64url")}, ${started}, ${new Date(started.getTime() + 24 * 3_600_000)})`;
   await tx`UPDATE app.reservations SET state = 'released', ended_at = ${new Date(AT.added.getTime() + 5 * 60_000)}
-            WHERE id = ${id}`;
-  return id;
+            WHERE id = ${reservation}`;
+  return { reservation, upload };
 }
 
 /**
@@ -329,10 +355,12 @@ beforeAll(async () => {
   keys = await signing();
   api = connect(url);
   clock = fakeClock(REVEAL);
+  storage = fakeStorage();
   app = buildApp({
     sql: api,
     clock,
     authenticate: sessions({ verifier: keys.verifier, sql: api, clock }),
+    storage,
     log: { level: "silent" },
   });
   await app.ready();
@@ -353,7 +381,7 @@ beforeAll(async () => {
       star: w.ana.interval,
       proposal,
       ...(await rosterTargets(tx, w)),
-      reservation: await releasedSlot(tx, w),
+      ...(await releasedSlot(tx, w)),
       avatar: avatar.id,
       subject: subject.auth_subject,
       account: w.ben.user,
@@ -453,6 +481,23 @@ async function factsOf(
      WHERE o.club_id IN ${db(clubs)}`;
   const clubRows = await db<{ id: string; name: string; suspended_at: Temporal.Instant | null }[]>`
     SELECT id, name, suspended_at FROM app.clubs WHERE id IN ${db(clubs)}`;
+  // The uploads of these clubs' people and of the accounts asked for: each its owner's alone (upload.ts).
+  const uploadRows = await db<
+    {
+      id: string;
+      owner: string;
+      purpose: string;
+      state: WorldUpload["state"];
+      rejection: string | null;
+      expires_at: Temporal.Instant;
+      object_key: string;
+      content_type: string;
+    }[]
+  >`
+    SELECT id, owner_user_id AS owner, purpose, state, rejection, expires_at, object_key, content_type
+      FROM app.uploads
+     WHERE owner_user_id IN (SELECT user_id FROM app.memberships WHERE club_id IN ${db(clubs)})
+        OR owner_user_id IN ${db([viewer ?? "", ...(options.accounts ?? [])])}`;
   // Each roster label, with when the first revision holding it was made (FQ75).
   const labelRows = await db<{ club: string; label: string; since: Temporal.Instant }[]>`
     SELECT c.club_id AS club, c.label, min(v.created_at) AS since
@@ -612,6 +657,20 @@ async function factsOf(
           },
         ]),
       ),
+      uploads: new Map(
+        uploadRows.map((row): [string, WorldUpload] => [
+          row.id,
+          {
+            owner: row.owner,
+            purpose: row.purpose,
+            state: row.state,
+            rejection: row.rejection,
+            expiresAt: row.expires_at,
+            objectKey: row.object_key,
+            contentType: row.content_type,
+          },
+        ]),
+      ),
       canaries,
       accounts: new Map(
         accountRows.map((row): [string, WorldAccount] => [
@@ -742,6 +801,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       const slots = { held: 0, released: 0, expired: 0 };
       // The answers in which Cleo's lapsed slot came back as the viewer's own. Asserted in the test after the roles.
       let cleosSlot = 0;
+      // What the uploads' table did for this role: the uploads it made, those its completion moved to preparing,
+      // the refusals that the day had revealed (OCCURRENCE_CLOSED), and the reads in a later phase that found an
+      // upload made in an earlier one. Asserted in the test after the roles.
+      const uploads = { made: 0, preparing: 0, closed: 0, later: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -749,7 +812,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const w = await newWorld(plain(tx), suffix());
           await anaNextSaturday(tx, w);
           const drop = await twoContributors(tx, w);
-          const reservation = await releasedSlot(tx, w);
+          const { reservation, upload } = await releasedSlot(tx, w);
           const cleos = await cleosLapsedSlot(tx, w);
           // The club's first days, before the role changes the club, as a leave or a join would meet them.
           const proposal = await addFirstDays(tx, w);
@@ -768,6 +831,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             star: w.ana.interval,
             proposal,
             reservation,
+            upload,
             ...(await rosterTargets(tx, w)),
           };
           return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "", cleos };
@@ -831,6 +895,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         // The first slot the viewer held in a phase, kept to the next phase, where it is given back after it
         // lapsed at the reveal (the reservations' table, below).
         let carried: string | undefined;
+        // The uploads the viewer made in this cell, read and completed again in each later phase (the uploads'
+        // table, below).
+        const madeUploads: string[] = [];
         const specs = operations
           .flatMap((operation) => specsFor(operation, cell.targets, authorization))
           .map((spec): Spec =>
@@ -932,20 +999,39 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                                     ? LEAVE_NO_BODY
                                     : gate === undefined && id === "createReservation"
                                       ? RESERVE_NO_BODY
-                                      : gate === undefined && id === "releaseReservation"
-                                        ? releaseExpected(
-                                            releaseOutcome(facts.world, cell.viewer, cell.targets.reservation, now),
-                                          )
-                                        : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                                          ? cellExpected(session, spec.operation, seen)
-                                          : id === "getSchedule"
-                                            ? weekExpected(scheduleSeen, cell.w.club)
-                                            : commandExpected(
-                                                scheduleSeen,
-                                                id as ScheduleCommand,
-                                                cell.targets.proposal,
-                                                startVersion,
-                                              );
+                                      : gate === undefined && id === "createUpload"
+                                        ? UPLOAD_NO_BODY
+                                        : gate === undefined && id === "getUpload"
+                                          ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
+                                          : gate === undefined && id === "completeUpload"
+                                            ? completeExpected(
+                                                completeOutcome(
+                                                  facts.world,
+                                                  cell.viewer,
+                                                  cell.targets.upload,
+                                                  now,
+                                                  storage.objects,
+                                                ),
+                                              )
+                                            : gate === undefined && id === "releaseReservation"
+                                              ? releaseExpected(
+                                                  releaseOutcome(
+                                                    facts.world,
+                                                    cell.viewer,
+                                                    cell.targets.reservation,
+                                                    now,
+                                                  ),
+                                                )
+                                              : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                                ? cellExpected(session, spec.operation, seen)
+                                                : id === "getSchedule"
+                                                  ? weekExpected(scheduleSeen, cell.w.club)
+                                                  : commandExpected(
+                                                      scheduleSeen,
+                                                      id as ScheduleCommand,
+                                                      cell.targets.proposal,
+                                                      startVersion,
+                                                    );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -1804,6 +1890,197 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               if (step.slot !== undefined) heldNow.push(step.slot);
             }
           }
+          // The uploads' table (upload.ts), in every phase, after the reservations' table and before its slots are
+          // given back. First, every upload the viewer made in an earlier phase, read and completed: preparing while
+          // it lives, and nobody's once it lapsed (T12, T14). Then createUpload under slots that aren't the viewer's
+          // to upload under: Cleo's lapsed slot, Ben's slot given back, the slot the viewer held in the phase before
+          // (lapsed at the reveal), a link's slot the table holds, live, another club's slot and an id nobody has;
+          // each judged from the rows before it (T3, T4, T9, T14, T18) and making nothing (T19). Then, under the
+          // first slot the table held, live: an upload made, with its signed upload (T12); its retry under its key,
+          // a new URL for the same object (T19); another body under that key, which conflicts; the upload read;
+          // completed before its bytes are in Storage, which changes nothing; its bytes put; completed, now
+          // preparing; completed again; the retry again, with no URL now; read again; and another member's read and
+          // completion of it, which find nothing and change nothing (T9, T14).
+          const uploadSpec = (operationId: string): Spec => {
+            const found = specs.find((spec) => spec.operation.id === operationId);
+            if (found === undefined) throw new Error(`the contract has no ${operationId}`);
+            return found;
+          };
+          const createUploadSpec = uploadSpec("createUpload");
+          const getUploadSpec = uploadSpec("getUpload");
+          const completeUploadSpec = uploadSpec("completeUpload");
+          const createUploadGate = gateOf(sessionNow, createUploadSpec.operation);
+          const getUploadGate = gateOf(sessionNow, getUploadSpec.operation);
+          const completeUploadGate = gateOf(sessionNow, completeUploadSpec.operation);
+          const uploadAsk = async (reservation: string, key: string, byteSize: number = PHOTO_BODY.byte_size) => {
+            const sent: Spec = {
+              ...createUploadSpec,
+              headers: { ...createUploadSpec.headers, "content-type": "application/json" },
+              body: JSON.stringify({ ...PHOTO_BODY, byte_size: byteSize, reservation_id: reservation }),
+            };
+            const request = render(sent);
+            request.headers["idempotency-key"] = key;
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, request);
+            counted.bodies += 1;
+            return { sent, answer };
+          };
+          // One createUpload: judged from the rows before it, with the rows after it held to its answer.
+          const uploadStep = async (reservation: string, key: string, note: string) => {
+            const previous = facts;
+            const outcome = uploadOutcome(previous.world, cell.viewer, reservation, now);
+            const { sent, answer } = await uploadAsk(reservation, key);
+            facts = await load();
+            const after = facts.world;
+            const problems =
+              createUploadGate === undefined
+                ? [
+                    ...takes(
+                      uploadExpected(outcome, () => after),
+                      answer,
+                    ),
+                    ...madeProblems(previous.world, after, answer, outcome),
+                  ]
+                : [
+                    ...pinnedProblems(answer, createUploadGate),
+                    ...(rowsSeen(after.uploads) === rowsSeen(previous.world.uploads)
+                      ? []
+                      : ["a refusal made an upload"]),
+                  ];
+            tellSlot("createUpload", sent, answer, problems, note);
+            if (createUploadGate !== undefined) return { answer, made: undefined };
+            if (outcome.kind === "refused" && outcome.code === "OCCURRENCE_CLOSED") uploads.closed += 1;
+            if (outcome.kind !== "made") return { answer, made: undefined };
+            uploads.made += 1;
+            const body = JSON.parse(answer.body) as { id?: unknown };
+            return { answer, made: typeof body.id === "string" ? body.id : undefined };
+          };
+          // getUpload of `id`, judged from the rows.
+          const readUpload = async (id: string, note: string) => {
+            const sent: Spec = { ...getUploadSpec, path: { upload_id: id } };
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, render(sent));
+            const problems =
+              getUploadGate === undefined
+                ? takes(readExpected(facts.world, cell.viewer, id, now), answer)
+                : pinnedProblems(answer, getUploadGate);
+            tellSlot("getUpload", sent, answer, problems, note);
+            return answer;
+          };
+          // completeUpload of `id`: judged from the rows before it and what Storage holds, with the rows after it
+          // held to its answer.
+          const completeUpload = async (id: string, note: string) => {
+            const previous = facts;
+            const outcome = completeOutcome(previous.world, cell.viewer, id, now, storage.objects);
+            const sent: Spec = { ...completeUploadSpec, path: { upload_id: id } };
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, render(sent));
+            facts = await load();
+            const problems =
+              completeUploadGate === undefined
+                ? [
+                    ...takes(completeExpected(outcome), answer),
+                    ...completedProblems(previous.world, facts.world, outcome),
+                  ]
+                : [
+                    ...pinnedProblems(answer, completeUploadGate),
+                    ...(rowsSeen(facts.world.uploads) === rowsSeen(previous.world.uploads)
+                      ? []
+                      : ["a refusal changed an upload"]),
+                  ];
+            tellSlot("completeUpload", sent, answer, problems, note);
+            if (completeUploadGate === undefined && outcome.kind === "status" && outcome.moves) uploads.preparing += 1;
+          };
+          // Another member's request for the viewer's upload: the neutral not-found, nothing changed, and the
+          // answer scanned with that member's own facts.
+          const byAnother = async (sent: Spec, note: string) => {
+            if (other === undefined) return;
+            const previous = facts;
+            const request = render(sent);
+            request.headers["authorization"] = other.authorization;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, request);
+            facts = await load();
+            const problems = pinnedProblems(answer, NEUTRAL);
+            if (rowsSeen(facts.world.uploads) !== rowsSeen(previous.world.uploads))
+              problems.push("another member's request changed an upload");
+            const theirs = await factsOf(clubs, other.account, { accounts: [cell.w.dan.user], secrets: [...secrets] });
+            scanner(
+              wrong,
+              `${state.name}, ${phase}`,
+              () => theirs,
+              now,
+              counted,
+            )({
+              problems: problems.map((problem) => `${sent.operation.id}: ${problem} (${note})`),
+              answers: [{ spec: sent, answer }],
+            });
+          };
+          for (const earlier of madeUploads) {
+            const answer = await readUpload(earlier, "an upload made in an earlier phase");
+            if (getUploadGate === undefined && answer.status === 200) uploads.later += 1;
+            await completeUpload(earlier, "an upload made in an earlier phase, completed again");
+          }
+          const linkSlot = heldNow.find((one) => facts.world.reservations.get(one)?.media === "external_video");
+          for (const [slot, note] of [
+            [cell.cleos, "Cleo's slot, held as a member and lapsed before any phase"],
+            [cell.targets.reservation, "Ben's slot, given back"],
+            [carried, "the slot held in the phase before, lapsed at the reveal"],
+            [linkSlot, "a link's slot the table holds, live"],
+            [elsewhere.reservation, "another club's slot"],
+            [freshId(), "a slot nobody has"],
+          ] as const) {
+            if (slot !== undefined) await uploadStep(slot, randomUUID(), note);
+          }
+          const photoSlot = first.slot;
+          if (photoSlot !== undefined) {
+            const uploadKey = randomUUID();
+            const made = await uploadStep(photoSlot, uploadKey, "an upload under the first slot the table held, live");
+            const id = made.made;
+            if (id !== undefined) {
+              madeUploads.push(id);
+              const again = async (note: string) => {
+                const previous = facts;
+                const { sent, answer } = await uploadAsk(photoSlot, uploadKey);
+                facts = await load();
+                tellSlot(
+                  "createUpload",
+                  sent,
+                  answer,
+                  replayProblems(made.answer, answer, previous.world, facts.world, now),
+                  note,
+                );
+              };
+              await again("the upload again under its key, pending");
+              {
+                const previous = facts;
+                const { sent, answer } = await uploadAsk(photoSlot, uploadKey, PHOTO_BODY.byte_size + 1);
+                facts = await load();
+                const problems = pinnedProblems(answer, IDEMPOTENCY_CONFLICT);
+                if (rowsSeen(facts.world.uploads) !== rowsSeen(previous.world.uploads))
+                  problems.push("another body under the upload's key changed an upload (T19)");
+                tellSlot("createUpload", sent, answer, problems, "another body under the upload's key");
+              }
+              await readUpload(id, "the upload made, read");
+              await completeUpload(id, "the upload completed before its bytes are in Storage");
+              const object = facts.world.uploads.get(id)?.objectKey;
+              if (object === undefined) wrong.push(`${state.name}, ${phase}: the upload made has no object`);
+              else storage.put(object);
+              await completeUpload(id, "the upload completed with its bytes in Storage");
+              await completeUpload(id, "the upload completed again");
+              await again("the upload again under its key, preparing");
+              await readUpload(id, "the upload read, preparing");
+              await byAnother(
+                { ...getUploadSpec, path: { upload_id: id } },
+                "another member reads the viewer's upload",
+              );
+              await byAnother(
+                { ...completeUploadSpec, path: { upload_id: id } },
+                "another member completes the viewer's upload",
+              );
+            }
+          }
           for (const slot of heldNow.filter((one) => one !== first.slot)) {
             const given = await giveBack(slot, "a slot held in the table, given back while it is live");
             if (given.ended === "released") slots.released += 1;
@@ -1955,6 +2232,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       SLOTS.set(role.name, slots);
       CLEOS_SLOT.set(role.name, cleosSlot);
       console.log(`${role.name}, the reservations' table: ${JSON.stringify(slots)}`);
+      UPLOADS.set(role.name, uploads);
+      console.log(`${role.name}, the uploads' table: ${JSON.stringify(uploads)}`);
       expect(roster.proposals).toBe(STATES.length * phases.length * proposeCases(0, "x").length);
       expect(roster.revisions).toBe(roster.due);
       expect(roster.memberPhases > 0).toBe(memberStates.size > 0);
@@ -2035,6 +2314,37 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
     expect([...CLEOS_SLOT].filter(([, answers]) => answers > 0)).toEqual([
       ["member in the audience", 16],
       ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 12],
+    ]);
+  });
+});
+
+describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
+  it("made, completed and found again the uploads each role's slots allow, and refused them once the day revealed", () => {
+    // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
+    // Counted by hand from the world (../matrix.ts), apart from the judge. An upload is made only under the first
+    // slot the reservations' table held, live, while the day is collecting: in the four states whose day takes
+    // slots, for the five roles that hold one (the reservations' table ran, above). Each is completed into
+    // preparing once, and found again in the two phases after (open, and past at the close), as it lives 24 hours
+    // from a microsecond before the reveal, and is nobody's a year on. From the reveal on, the day refuses an
+    // upload with OCCURRENCE_CLOSED to whoever owns the slot asked for: each of those five roles in the open phase,
+    // under the slot it held while collecting; the author in the three phases from the reveal under Ben's slot given
+    // back; and Cleo under Cleo's lapsed slot in the same three phases, as the member in the audience and once the
+    // author has blocked Cleo and left by the block (the slot is Cleo's first interval's: the reservations' table,
+    // above). Nobody else is refused for it, and nobody else makes one (T9, T14).
+    expect(UPLOADS.size).toBe(ROLES.length);
+    const each = { made: 4, preparing: 4, later: 8 };
+    expect(
+      [...UPLOADS].filter(([, table]) => table.made > 0 || table.preparing > 0 || table.closed > 0 || table.later > 0),
+    ).toEqual([
+      ["author", { ...each, closed: 4 + 12 }],
+      ["star", { ...each, closed: 4 }],
+      ["member in the audience", { ...each, closed: 4 + 12 }],
+      ["member who joined after the commit (T8)", { ...each, closed: 4 }],
+      ["rejoined member, a new interval (T8)", { ...each, closed: 4 }],
+      [
+        "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
+        { made: 0, preparing: 0, closed: 12, later: 0 },
+      ],
     ]);
   });
 });
@@ -2791,7 +3101,7 @@ describe("callers without a session, in each state of the drop and phase of the 
       const cell = await db.begin(async (tx) => {
         const w = await newWorld(plain(tx), suffix());
         const drop = await twoContributors(tx, w);
-        const reservation = await releasedSlot(tx, w);
+        const { reservation, upload } = await releasedSlot(tx, w);
         const proposal = await addFirstDays(tx, w);
         await state.make(tx, w, drop);
         await checkAsAtCommit(plain(tx));
@@ -2805,6 +3115,7 @@ describe("callers without a session, in each state of the drop and phase of the 
             star: w.ana.interval,
             proposal,
             reservation,
+            upload,
             ...(await rosterTargets(tx, w)),
           },
         };

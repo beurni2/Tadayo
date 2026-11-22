@@ -13,7 +13,7 @@ import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { KeysUnavailable } from "./identity/token.ts";
 import { REDACTED_FIELDS, requestId } from "./logging.ts";
-import { TEST_EMAIL } from "./testing.ts";
+import { noStorage, TEST_EMAIL } from "./testing.ts";
 import type { Authenticate } from "./session.ts";
 
 const READY: Account = {
@@ -45,6 +45,7 @@ async function logged(
     sql,
     clock: {} as Clock,
     authenticate,
+    storage: noStorage,
     log: { level: options.level ?? "info", stream: { write: (line) => void lines.push(line) } },
   };
   const app = buildApp(deps);

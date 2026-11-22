@@ -26,6 +26,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { homeBody } from "./home.ts";
+import { noStorage } from "../testing.ts";
 
 type Body = Record<string, unknown>;
 
@@ -262,6 +263,7 @@ async function appFor(begin: (...args: unknown[]) => Promise<unknown>) {
     sql,
     clock: {} as Clock,
     authenticate: () => Promise.resolve(account),
+    storage: noStorage,
     log: { level: "silent" },
   };
   const app = buildApp(deps);
@@ -317,7 +319,13 @@ describe("the handler (T1, T14, T34)", () => {
         return Promise.resolve(sample);
       },
     } as unknown as Clock;
-    const app = buildApp({ sql, clock, authenticate: () => Promise.resolve(account), log: { level: "silent" } });
+    const app = buildApp({
+      sql,
+      clock,
+      authenticate: () => Promise.resolve(account),
+      storage: noStorage,
+      log: { level: "silent" },
+    });
     await app.ready();
     open.push(app);
     const response = await app.inject({ method: "GET", url: "/v1/clubs/club_x/home" });

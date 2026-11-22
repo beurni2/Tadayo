@@ -8,6 +8,7 @@ export { invitationAcceptanceBody, invitationPreviewBody } from "./clubs/invitat
 export { invitationLinkBody, invitationUrl, rosterRevisionBody } from "./clubs/roster.ts";
 export { leftClubBody } from "./clubs/leave.ts";
 export { releasedBody, reservationBody } from "./drops/reservations.ts";
+export { uploadBody } from "./media/uploads.ts";
 export { connect, type ApiSql } from "./connection.ts";
 export {
   KeysUnavailable,

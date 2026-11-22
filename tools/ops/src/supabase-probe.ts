@@ -16,7 +16,11 @@
 // nothing, and neither does a request the probe got wrong, so `apiChecks` first shows that it could
 // have seen what it is refused. The service key makes a probe user, the user signs in without an
 // email (the admin API's generated code), and the service key puts one test object in each bucket,
-// reads it back, lists it and signs it. If any of that fails, the run stops there and says so; no
+// reads it back, finds its details, lists it and signs it. It signs the upload URL as the API does
+// (services/api/src/media/storage.ts: a body of `{}` and no `x-upsert`), and its token must carry the lifetime
+// the API reads from it, `iat` to `exp`, a minute to a day, or the API's createUpload would answer 503 on this
+// project; and it asks for an object's details as the API's completeUpload does, which must find the object put
+// and Storage's own not-found for one never put. If any of that fails, the run stops there and says so; no
 // refusal is run. Then every refusal asks for those same objects, and Storage's own refusal is the
 // only one that counts: a body naming status 403 (a policy refuses) or 404 (what the caller can't
 // see, as missing). A gateway's 401, a malformed request's 400 and a server error are failures,
@@ -105,6 +109,42 @@ function tokenIn(url: string | undefined): string | undefined {
     // A URL that isn't one has no token, and the control that wanted one fails, as it should.
     return undefined;
   }
+}
+
+/**
+ * Storage's own status, as the API reads it before it hands an upload to preparation (services/api/src/media/
+ * storage.ts, `objectThere`): the body's `statusCode` when it has one, else the HTTP status. Unlike a reply's
+ * `logical` (supabase.ts), it takes a whole number there too, since the API does.
+ */
+function storageStatus(reply: Reply): number {
+  const json = reply.json;
+  const code = typeof json === "object" && json !== null ? (json as Record<string, unknown>)["statusCode"] : undefined;
+  if (typeof code === "string" && /^[0-9]{3}$/.test(code)) return Number(code);
+  if (typeof code === "number" && Number.isInteger(code)) return code;
+  return reply.status;
+}
+
+/** The lifetime the API believes in a signed upload's token: a minute to a day (services/api/src/media/storage.ts). */
+const UPLOAD_LIFETIME = { least: 60, most: 86_400 } as const;
+
+/**
+ * Whether a signed upload's token says it lives a minute to a day, from its own `iat` and `exp` read as the API
+ * reads them: a JWT's payload, unverified, with both whole numbers.
+ */
+function believedLifetime(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  let payload: unknown;
+  try {
+    payload = JSON.parse(Buffer.from(parts[1] ?? "", "base64url").toString("utf8"));
+  } catch {
+    return false;
+  }
+  if (typeof payload !== "object" || payload === null) return false;
+  const { iat, exp } = payload as Record<string, unknown>;
+  if (typeof iat !== "number" || typeof exp !== "number" || !Number.isInteger(iat) || !Number.isInteger(exp))
+    return false;
+  return exp - iat >= UPLOAD_LIFETIME.least && exp - iat <= UPLOAD_LIFETIME.most;
 }
 
 function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
@@ -350,16 +390,15 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
       const path = `${folder}/${OBJECT}`;
       const at = `${bucket}/${urlPath(path)}`;
 
-      const signed = await ask(`/storage/v1/object/upload/sign/${at}`, { method: "POST", caller: service });
+      const signed = await ask(`/storage/v1/object/upload/sign/${at}`, { method: "POST", caller: service, json: {} });
       const token =
         signed?.status === 200 ? (text(signed.json, "token") ?? tokenIn(text(signed.json, "url"))) : undefined;
-      if (
-        !record(
-          `control: the service key signs an upload URL for ${bucket}`,
-          settle(signed, () => token !== undefined),
-        ) ||
-        token === undefined
-      ) {
+      const signing =
+        settle(signed, () => token !== undefined) ??
+        (token !== undefined && believedLifetime(token)
+          ? undefined
+          : "its token's lifetime isn't a minute to a day, as the API reads it");
+      if (!record(`control: the service key signs an upload URL for ${bucket}`, signing) || token === undefined) {
         return undefined;
       }
 
@@ -383,6 +422,22 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
         !record(
           `control: the service key reads the object back from ${bucket}`,
           settle(read, (reply) => reply.status === 200 && sameBytes(reply.bytes, PNG)),
+        )
+      ) {
+        return undefined;
+      }
+
+      // As the API asks before it hands an upload to preparation (storage.ts, `objectThere`): the object put
+      // is there, and one never put is Storage's own not-found, so a completed upload isn't answered 503 here.
+      const info = await ask(`/storage/v1/object/info/${at}`, { caller: service });
+      const never = await ask(`/storage/v1/object/info/${bucket}/${urlPath(`${folder}/never-${OBJECT}`)}`, {
+        caller: service,
+      });
+      if (
+        !record(
+          `control: the service key finds the object's details in ${bucket}, and none for an object never put`,
+          settle(info, (reply) => reply.status === 200 && storageStatus(reply) === 200) ??
+            settle(never, (reply) => storageStatus(reply) === 404),
         )
       ) {
         return undefined;

@@ -48,6 +48,26 @@ export {
   type ReservationAnswer,
 } from "./drops/reserve.ts";
 export { releaseReservation, type ReleasedAnswer, type ReleaseReservationInput } from "./drops/release.ts";
+export { newObjectKey, OBJECT_KEY, UPLOAD_HOURS, uploadExpiry } from "./media/object.ts";
+export {
+  createDropPhotoUpload,
+  markPreparing,
+  readOwnUpload,
+  UPLOAD_CONTENT_TYPES,
+  UPLOAD_MAX_BYTES,
+  UPLOAD_PURPOSES,
+  UPLOAD_REJECTIONS,
+  UPLOAD_STATES,
+  type CreateDropPhotoUploadInput,
+  type MadeUpload,
+  type OwnUpload,
+  type OwnUploadInput,
+  type UploadAnswer,
+  type UploadContentType,
+  type UploadPurpose,
+  type UploadRejection,
+  type UploadState,
+} from "./media/upload.ts";
 export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./authorization/read-sql.ts";
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
 export { CLUB_SIZE, readClub, type ClubDetail } from "./clubs/club.ts";

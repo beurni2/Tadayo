@@ -114,8 +114,16 @@
 // The answers TECH-DESIGN section 8 excepts, and the others that open at the reveal, are each
 // allowed by the slice that first returns them, with its rule and its tests. Until then any URL,
 // image, header or key of the never-list in them fails here:
-// - the signed upload URL, which must name its intent's own object with overwriting off, and the
-//   replays of that intent (spike S1's server part, then B3);
+// - the signed upload URL (spike S1's server part, api/b2-spike-uploads): an Upload's `signed_upload`,
+//   only in createUpload's 201, only for the viewer's own upload, still pending and living at the
+//   answer's instant in the world after it (a replay while pending; none once `complete` has moved it
+//   on), as a write-only `PUT` to Storage's upload route for that upload's own object in `uploads`
+//   (`https://<project>.supabase.co/storage/v1/object/upload/sign/uploads/<its object>?token=...`),
+//   with exactly its declared Content-Type and `x-upsert: false`, good for a minute to a day from the
+//   answer's instant. Its `url` is the one key of the never-list it may hold and the one value that
+//   may name a URL, a storage path and that object's key, which the world keeps back everywhere else
+//   (ownUploadUrls). An upload's id, in an Upload or an UploadStatus, is only ever the viewer's own;
+//   anyone else's is an id the viewer may not see (T12, T14);
 // - the invitation's preview to the person holding it, before they are in the club (B1, api/b1-accept):
 //   a caller who presents a link's own token, in `previewInvitationWeb`, `previewInvitation` or
 //   `acceptInvitation` (the context's `presented`, held to the SHA-256 the link's row keeps), may read
@@ -230,6 +238,23 @@ export interface WorldReservation {
   drop: string | null;
 }
 
+/** An upload, as its row says (spec 33): its owner's alone (T12). */
+export interface WorldUpload {
+  /** The account it belongs to. */
+  owner: string;
+  /** What it is for: a drop's photo, a replacement or an avatar (the contract's UploadPurpose). */
+  purpose: string;
+  state: "pending" | "preparing" | "ready" | "held" | "rejected";
+  /** Why it was rejected, once it was; null otherwise. */
+  rejection: string | null;
+  /** From then on it is answered as one nobody has. */
+  expiresAt: Temporal.Instant;
+  /** Its object in the bucket `uploads`, which only the signed upload URL may name. */
+  objectKey: string;
+  /** The type its owner declared, which the signed upload URL's Content-Type must be. */
+  contentType: string;
+}
+
 export interface WorldClub {
   name: string;
   /** When moderation suspended it, or null while it isn't (spec 22). */
@@ -290,6 +315,8 @@ export interface WorldFacts {
   clubs: ReadonlyMap<string, WorldClub>;
   /** Each reservation, in any state. */
   reservations: ReadonlyMap<string, WorldReservation>;
+  /** Each upload of the world's people, in any state. */
+  uploads: ReadonlyMap<string, WorldUpload>;
   /**
    * What the world keeps back, each with the drops whose media it is: a photo's content version and
    * a video's link and post id are their drop's; storage keys, and the versions and links of uploads
@@ -403,6 +430,28 @@ export const NEVER_VALUE = [
  */
 /** A proposer's link as createInvitation answers it: the web page, and the token in the fragment (T52). */
 const LINK_URL = /^https:\/\/tadayo\.app\/i#([A-Za-z0-9_-]{43})$/;
+/**
+ * A signed upload URL as the API's Storage client builds it (services/api/src/media/storage.ts): a project's
+ * own host, Storage's upload route for one object in `uploads`, and the signed token, percent-encoded.
+ */
+const UPLOAD_URL =
+  /^https:\/\/[a-z]{20}\.supabase\.co\/storage\/v1\/object\/upload\/sign\/uploads\/([A-Za-z0-9_-]{32})\?token=([A-Za-z0-9._~%-]{1,2048})$/;
+/** How long a signed upload URL may be good for: a minute to a day (storage.ts's SIGNED_LIFETIME). */
+const UPLOAD_LIFETIME = { least: 60, most: 86_400 } as const;
+
+/** `text` as an instant, or undefined when it isn't one. */
+function instantOf(text: string): Temporal.Instant | undefined {
+  try {
+    return Temporal.Instant.from(text);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Headers as one string, whatever the order of their names, to compare them exactly. */
+function canonicalHeaders(headers: Readonly<Record<string, unknown>>): string {
+  return JSON.stringify(Object.entries(headers).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+}
 const LINK_MARKS = [/[a-z][a-z0-9+.-]*:\/\//i, /www\./i, /data:/i];
 
 /**
@@ -577,12 +626,12 @@ interface Reader {
   /** Every text people wrote, in the world or as the viewer's own. */
   written: ReadonlySet<string>;
   /**
-   * The ids of the world's drops, days, clubs, people, reservations, accounts and invitations the viewer
-   * may not see: an account's and an invitation's id is no one's to see but where the world check
-   * judges it, the viewer's own `Me.id` and the invitation they accepted.
+   * The ids of the world's drops, days, clubs, people, reservations, uploads, accounts and invitations the
+   * viewer may not see: an upload's only its owner's, and an account's and an invitation's id no one's to
+   * see but where the world check judges it, the viewer's own `Me.id` and the invitation they accepted.
    */
   unseen: ReadonlySet<string>;
-  /** Every id of the world's drops, days, clubs, people, reservations, accounts and invitations, seen or not. */
+  /** Every id of the world's drops, days, clubs, people, reservations, uploads, accounts and invitations, seen or not. */
   ids: ReadonlySet<string>;
   /** The ids' forms without their type tags (untaggedOf), of those that have them. */
   untagged(): readonly Untagged[];
@@ -727,6 +776,7 @@ function readerOf(context: ScanContext): Reader {
   for (const id of world.members.keys()) if (!knows(id)) unseen.add(id);
   for (const id of world.clubs.keys()) if (!clubs.has(id)) unseen.add(id);
   for (const [id, reservation] of world.reservations) if (!viewer.intervals.has(reservation.interval)) unseen.add(id);
+  for (const [id, upload] of world.uploads) if (upload.owner !== viewer.account) unseen.add(id);
   for (const id of world.accounts.keys()) unseen.add(id);
   for (const id of world.invitations.keys()) unseen.add(id);
   const ids = new Set([
@@ -735,6 +785,7 @@ function readerOf(context: ScanContext): Reader {
     ...world.members.keys(),
     ...world.clubs.keys(),
     ...world.reservations.keys(),
+    ...world.uploads.keys(),
     ...world.accounts.keys(),
     ...world.invitations.keys(),
   ]);
@@ -1083,6 +1134,9 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
   const ownCards = new Set<JsonObject>();
   // The paths of a link's `url` the world check allowed: createInvitation's, to the link's proposer.
   const ownLinkUrls = new Set<string>();
+  // The paths of a signed upload's `url` the world check allowed, each with the object it names: createUpload's
+  // 201, to the upload's owner, while it is pending and lives.
+  const ownUploadUrls = new Map<string, string>();
   /** A proposer's link, by its id at `at`: only to a viewer whose active interval proposed its candidate. */
   const proposersLink = (id: unknown, at: string): WorldInvitation | undefined => {
     judged.add(at);
@@ -1227,6 +1281,43 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
         if (node.age_confirmed !== row.ageConfirmed)
           find("world", `${at}.age_confirmed`, "not whether the viewer's age is confirmed (FQ13)");
         if (node.version !== row.version) find("world", `${at}.version`, "not the viewer's own account's version");
+      }
+    }
+    if (kind === "Upload" || kind === "UploadStatus") {
+      // The caller's own upload, and nobody else's (T12, T14).
+      judged.add(`${at}.id`);
+      const upload = typeof node.id === "string" ? world.uploads.get(node.id) : undefined;
+      if (upload === undefined) find("world", `${at}.id`, "an upload this world doesn't have");
+      else if (upload.owner !== context.viewer.account)
+        find("world", `${at}.id`, "an upload that isn't the viewer's own (T12, T14)");
+      else if (node.signed_upload !== undefined) {
+        const where = `${at}.signed_upload`;
+        const signed = node.signed_upload;
+        const url = isObject(signed) && typeof signed.url === "string" ? UPLOAD_URL.exec(signed.url) : null;
+        const expires =
+          isObject(signed) && typeof signed.expires_at === "string" ? instantOf(signed.expires_at) : undefined;
+        const lifetime = expires === undefined ? undefined : expires.since(context.now).total("seconds");
+        const headers = isObject(signed) && isObject(signed.headers) ? signed.headers : undefined;
+        if (operation.id !== "createUpload" || answer.status !== 201 || kind !== "Upload")
+          find("world", where, "a signed upload URL outside createUpload's answer (T12)");
+        else if (upload.state !== "pending" || Temporal.Instant.compare(context.now, upload.expiresAt) >= 0)
+          find(
+            "world",
+            where,
+            "a signed upload URL for an upload that isn't pending and alive (TECH-DESIGN section 6)",
+          );
+        else if (url === null || url[1] !== upload.objectKey)
+          find("world", where, "a URL that isn't Storage's upload route for this upload's own object (T12)");
+        else if (!isObject(signed) || signed.method !== "PUT")
+          find("world", where, "a signed upload that isn't a PUT (T12)");
+        else if (
+          headers === undefined ||
+          canonicalHeaders(headers) !== canonicalHeaders({ "Content-Type": upload.contentType, "x-upsert": "false" })
+        )
+          find("world", where, "headers other than the declared Content-Type and x-upsert: false (T12)");
+        else if (lifetime === undefined || lifetime < UPLOAD_LIFETIME.least - 1 || lifetime > UPLOAD_LIFETIME.most)
+          find("world", where, "a signed upload good for less than a minute or more than a day");
+        else ownUploadUrls.set(`${where}.url`, upload.objectKey);
       }
     }
     if (kind === "CandidateInvitation") proposersLink(node.id, `${at}.id`);
@@ -1437,7 +1528,12 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     } else if (isObject(value) && !opened(value) && !ownCards.has(value)) {
       for (const [key, child] of Object.entries(value)) {
         const path = `${at}.${key}`;
-        if (NEVER_KEY.test(key) && walked.names.get(path) !== "HighlightPointer" && !ownLinkUrls.has(path))
+        if (
+          NEVER_KEY.test(key) &&
+          walked.names.get(path) !== "HighlightPointer" &&
+          !ownLinkUrls.has(path) &&
+          !ownUploadUrls.has(path)
+        )
           find("keys", path, "a key that names a URL, token, provider, dimension, colour or highlight (T10)");
         keys(child, path);
       }
@@ -1469,7 +1565,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       }
       find("values", at, "text people wrote that isn't the viewer's to read");
     } else {
-      if (!ownLinkUrls.has(at)) noLinks(value, at);
+      if (!ownLinkUrls.has(at) && !ownUploadUrls.has(at)) noLinks(value, at);
       for (const text of reader.hidden) {
         if (text.length >= SHORTEST_TEXT && value.includes(text))
           find("values", at, "text people wrote that the viewer may not read, inside another value");
@@ -1479,7 +1575,11 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       for (const [canary, drops] of world.canaries) {
         if (value.includes(canary) && !reader.shown(drops)) find("values", at, "a value the world keeps back (Q07)");
       }
-    } else keptBack(value, at);
+    } else {
+      // A signed upload's URL names its own upload's object, and nothing else the world keeps back.
+      const own = ownUploadUrls.get(at);
+      keptBack(own === undefined ? value : value.replace(`/uploads/${own}?`, "/uploads/?"), at);
+    }
     if (name === "Cursor") {
       const { bytes, canonical } = decodeCursor(value);
       if (!canonical) find("shape", at, "a cursor that isn't base64url (the contract's Cursor)");

@@ -16,6 +16,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, routesOf, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { END_SECONDS } from "./shutdown.ts";
+import { noStorage } from "./testing.ts";
 
 /** The neutral not-found, pinned here byte for byte, not taken from the app. */
 const NEUTRAL = {
@@ -56,7 +57,13 @@ const READY: Account = {
   version: 0,
   avatarVersion: null,
 };
-const deps: Deps = { sql, clock: {} as Clock, authenticate: () => Promise.resolve(READY), log: { level: "silent" } };
+const deps: Deps = {
+  sql,
+  clock: {} as Clock,
+  authenticate: () => Promise.resolve(READY),
+  storage: noStorage,
+  log: { level: "silent" },
+};
 /** The operations slice 8 builds; every other answers the neutral not-found (T14). */
 const BUILT = new Set([
   "getMe",
@@ -81,6 +88,9 @@ const BUILT = new Set([
   "confirmScheduleDays",
   "createReservation",
   "releaseReservation",
+  "createUpload",
+  "getUpload",
+  "completeUpload",
 ]);
 let app: FastifyInstance;
 
@@ -113,7 +123,7 @@ describe("the skeleton's routes (T14)", () => {
 
   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
     const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
-    expect(unbuilt).toHaveLength(45);
+    expect(unbuilt).toHaveLength(42);
     for (const operation of unbuilt) {
       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
       expect(await answer({ method: operation.method.toUpperCase(), url }), operation.id).toEqual(NEUTRAL);
