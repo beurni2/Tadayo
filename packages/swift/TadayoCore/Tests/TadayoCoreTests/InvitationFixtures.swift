@@ -75,6 +75,11 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
         try lock.withLock { answer("revokeInvitation \(invitationID)", &revokeAnswers) }.get()
     }
 
+    func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+        lock.withLock { calls.append("schedule \(clubID)") }
+        throw .refused
+    }
+
     func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
         lock.withLock { calls.append("revision \(revisionID)") }
         throw .refused

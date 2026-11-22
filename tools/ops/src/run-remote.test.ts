@@ -168,6 +168,7 @@ const FLY_SCRIPTS: readonly (readonly [string, readonly string[]])[] = [
   ["storage-setup", []],
   ["supabase-probe", []],
   ["spike-time", []],
+  ["spike-links", []],
 ];
 
 describe("every script that calls Fly", () => {
