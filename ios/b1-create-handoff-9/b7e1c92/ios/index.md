@@ -7,19 +7,18 @@ The `ios` workflow's evidence for `b7e1c929df09c32192edf8d02a2799eb3f9f2d46` (ht
 - iOS `26.5` on `iPhone 17`: tests `not run`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
 - Tests: `not run`
-- Odd draws: 8 in `logs/test-27.2.log`, below
+- Odd draws: 7 in `logs/test-27.2.log`, below
 - Carries the states this branch touches; 409 snapshot(s) not carried
 
 Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
 
-- `warning: ScreenSnapshot G01-invite-name-failed-dark: settled after 3 draws, SHA-256 212d1f79 e8a0725b e8a0725b; against the last draw, draw 1: 2748 pixels in x 31 to 120, y 124 to 212, by at most 2/255`
+- `warning: ScreenSnapshot G01-create-failed: settled after 3 draws, SHA-256 2a86d94a 69d91981 69d91981; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
 - `warning: ScreenSnapshot G05-club-details: settled after 3 draws, SHA-256 fec5cb63 8d5a6f2f 8d5a6f2f; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot A02-code: settled after 3 draws, SHA-256 12dab645 c7f47bdf c7f47bdf; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot A02-code-error-resend-failed-network: settled after 3 draws, SHA-256 8240bf56 8f789862 8f789862; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot A02-code-resend: settled after 3 draws, SHA-256 17b55557 da69c00b da69c00b; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot A02-code-verify-failed-network-dark: settled after 4 draws, SHA-256 7736d0bd 9c99b725 7736d0bd 7736d0bd; against the last draw, draw 2: 2748 pixels in x 31 to 120, y 124 to 212, by at most 2/255`
-- `warning: ScreenSnapshot A03-profile-refused-dark: settled after 3 draws, SHA-256 94b87ad3 6ebba93c 6ebba93c; against the last draw, draw 1: 12324 pixels in x 31 to 305, y 123 to 212, by at most 21/255`
+- `warning: ScreenSnapshot G02-checking-failed-retrying-xl: settled after 3 draws, SHA-256 0112f52e bfddeab9 bfddeab9; against the last draw, draw 1: 1871 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A02-code-resend-refused: settled after 3 draws, SHA-256 f3e589bc c051d6f2 c051d6f2; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A02-code-verify-failed-network: settled after 3 draws, SHA-256 1018e1e2 3fd1558c 3fd1558c; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
 - `warning: ScreenSnapshot F01-error-no-club: settled after 3 draws, SHA-256 8cec8ef7 9c836df3 9c836df3; against the last draw, draw 1: 9455 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
+- `warning: ScreenSnapshot M01-error-no-club: settled after 3 draws, SHA-256 546af4c1 12777442 12777442; against the last draw, draw 1: 9175 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
 |---|---|---|---|---|---|
