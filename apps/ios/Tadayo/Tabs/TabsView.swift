@@ -38,6 +38,13 @@ import TadayoDesign
 /// list's place (`docs/plans/ios-b1-create.md` section 7). These screens are the new club's, not
 /// the selected club's: they stay while the list is read again and another club is selected, and
 /// close when the list's model says the club is no longer the caller's, or with the tabs.
+///
+/// I have an invite, on a tab with no club, pushes the paste step onto that tab, with the model
+/// `linkEntry` makes, in place of any paste step on another tab. Continue checks the link there,
+/// then pushes the invitation it found; Back returns to the field as it was. Not now, Done and
+/// Close invitation close both, back to the tab; an Accept or a check that joins the club closes
+/// them once the list has been read again, so Home opens on the club. These screens stay while the
+/// list is read again, and go with the tabs (`docs/plans/ios-b1-invitation.md` section 5).
 struct TabsView: View {
     enum Selection: Hashable {
         case home, friends, memories, lab
@@ -82,6 +89,7 @@ struct TabsView: View {
     let details: @MainActor () -> ClubDetailsModel?
     let createClub: @MainActor () -> CreateClubModel?
     let invitations: @MainActor (ClubRef) -> InvitationListModel?
+    let linkEntry: @MainActor () -> InvitationLinkEntryModel?
     @State private var selection: Selection
     @State private var switching = false
     /// Each club tab's pushed screens.
@@ -98,6 +106,10 @@ struct TabsView: View {
     @State private var naming: InviteNameModel?
     /// The waiting screen asks for the creator's review (`G01-pending-approve`).
     @State private var pendingReview = false
+    /// I have an invite's paste step, and the invitation it last pushed, which stays drawn while
+    /// it slides away.
+    @State private var entering: InvitationLinkEntryModel?
+    @State private var shownInvitation: InvitationModel?
 
     init(
         clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
@@ -108,6 +120,7 @@ struct TabsView: View {
         details: @escaping @MainActor () -> ClubDetailsModel? = { nil },
         createClub: @escaping @MainActor () -> CreateClubModel? = { nil },
         invitations: @escaping @MainActor (ClubRef) -> InvitationListModel? = { _ in nil },
+        linkEntry: @escaping @MainActor () -> InvitationLinkEntryModel? = { nil },
         logOut: @escaping @MainActor () async -> Void
     ) {
         self.state = Values(clubs: clubs, selected: selected, home: home)
@@ -119,6 +132,7 @@ struct TabsView: View {
         self.details = details
         self.createClub = createClub
         self.invitations = invitations
+        self.linkEntry = linkEntry
         self.logOut = logOut
         _selection = State(initialValue: selection)
     }
@@ -194,14 +208,75 @@ struct TabsView: View {
         }
     }
 
-    /// The selected club's pushed screens close; the club being made keeps its own.
+    /// The selected club's pushed screens close; the club being made and I have an invite keep
+    /// their own.
     private func closeClubScreens() {
-        paths = paths.filter { $0.value.first?.isCreateFlow ?? false }
+        paths = paths.filter { _, route in
+            guard let first = route.first else { return false }
+            return first.isCreateFlow || first.isInvitationFlow
+        }
         detailsChosen = false
     }
 
     private func closeCreateScreens() {
         paths = paths.filter { !($0.value.first?.isCreateFlow ?? false) }
+    }
+
+    /// I have an invite: the paste step on `tab`, in place of any on another tab, whose
+    /// invitation is done with.
+    private func openLinkEntry(on tab: ClubTab) {
+        guard let model = linkEntry() else { return }
+        closeInvitationScreens()
+        entering = model
+        paths[tab] = [.linkEntry]
+    }
+
+    /// Continue: the link checked on the paste step, then the invitation it found pushed over it,
+    /// or, for a club the account is already in, the paste step closed once the list has been
+    /// read again.
+    private func proceed(on tab: ClubTab) async {
+        // Only from the paste step on top: a Continue that lands once the invitation it found
+        // is pushed (while it slides in) checks nothing and closes nothing.
+        guard let model = entering, paths[tab]?.last == .linkEntry else { return }
+        await model.proceed()
+        guard entering === model, paths[tab]?.last == .linkEntry else {
+            // The paste step was left while its link was checked: what it found is let go.
+            model.left()
+            return
+        }
+        if model.opened != nil {
+            closeInvitationScreens()
+        } else if let invitation = model.invitation {
+            shownInvitation = invitation
+            paths[tab, default: []].append(.invitation)
+        }
+    }
+
+    /// After Accept or Retry has answered: a club joined (`opening`) closes the invitation and
+    /// the paste step, the list having been read again. An invitation left with Back while its
+    /// Accept was on its way opens nothing; when the server joined all the same, the root reads
+    /// the list again (`RootModel`'s `joinedWhileClosed`), so Home shows the club.
+    private func answered(_ model: InvitationModel) {
+        guard entering?.invitation === model, case .opening = model.state else { return }
+        closeInvitationScreens()
+    }
+
+    /// I have an invite's screens close, and the paste step and the invitation shown are done
+    /// with.
+    private func closeInvitationScreens() {
+        entering?.left()
+        paths = paths.filter { !($0.value.first?.isInvitationFlow ?? false) }
+    }
+
+    /// Once no tab shows I have an invite's screens and theirs have slid away, what they held
+    /// goes from memory too: the text typed, which may be a link, and the invitation found.
+    private func forgetInvitationScreensIfGone() {
+        guard !paths.values.contains(where: { $0.first?.isInvitationFlow ?? false }) else {
+            return
+        }
+        entering?.left()
+        entering = nil
+        shownInvitation = nil
     }
 
     /// Create a club: G01-create on `tab`, in place of any club being made on another tab.
@@ -242,7 +317,17 @@ struct TabsView: View {
     private func path(for tab: ClubTab) -> Binding<[ClubRoute]> {
         Binding(
             get: { paths[tab] ?? [] },
-            set: { paths[tab] = $0 })
+            set: { now in
+                // Back from the invitation: the paste step is as it was.
+                if paths[tab]?.last == .invitation, now.last != .invitation {
+                    entering?.returned()
+                }
+                // Back from the paste step, even while its link is checked: it's done with.
+                if paths[tab]?.contains(.linkEntry) == true, !now.contains(.linkEntry) {
+                    entering?.left()
+                }
+                paths[tab] = now
+            })
     }
 
     @ViewBuilder private func destination(_ route: ClubRoute, on tab: ClubTab) -> some View {
@@ -279,6 +364,19 @@ struct TabsView: View {
             if let inviting {
                 PendingScreen(club: inviting.club.name, review: pendingReview)
             }
+        case .linkEntry:
+            if let entering {
+                LinkEntryScreen(model: entering) { await proceed(on: tab) }
+                    .onDisappear { forgetInvitationScreensIfGone() }
+            }
+        case .invitation:
+            if let shownInvitation {
+                InvitationDestination(
+                    model: shownInvitation, returnsTo: tab.title,
+                    answered: { answered($0) }, leave: { closeInvitationScreens() }
+                )
+                .onDisappear { forgetInvitationScreensIfGone() }
+            }
         }
     }
 
@@ -287,7 +385,8 @@ struct TabsView: View {
             TabContent(
                 tab: tab, clubs: state.clubs, selected: state.selected, home: state.home,
                 name: name, retry: retry, retryHome: retryHome, switchClub: { switching = true },
-                createClub: { startCreating(on: tab) }, goHome: { selection = .home }
+                createClub: { startCreating(on: tab) }, openInvite: { openLinkEntry(on: tab) },
+                goHome: { selection = .home }
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: ClubRoute.self) { route in

@@ -36,6 +36,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.create) {
                 return .live(UITestLaunch.fakeGraph(creating: true))
             }
+            if process.arguments.contains(UITestLaunch.invite) {
+                return .live(UITestLaunch.fakeGraph(invited: true))
+            }
         #endif
         if isHostingTests(process) { return .inert }
         return configured(

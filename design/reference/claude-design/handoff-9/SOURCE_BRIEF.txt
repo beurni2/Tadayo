@@ -1,0 +1,67 @@
+Design handoff 9: stage B1, opening an invitation in the app, the setup list's last states, and what handoff 8 left open
+Sources: the linked Tadayo repository: docs/tadayo-design-book-2.1.md, docs/tadayo-build-spec-v3.md, docs/tadayo-new-direction-addendum-r1.md (the founder's new direction, revision 1), and design/reference/, with the 2.1 renders, handoffs 1 to 8 in design/reference/claude-design/, the named frames in design/reference/screens/, and the brand in design/reference/brand/ (brand-tokens.md, brand-components.png, the wordmark and the icon; its README.md says which revision and which handoff each comes from). design/reference/INVENTORY.md lists every state. If the repository isn't linked: the attached Tadayo_UI_UX_Design_Book.pdf (design revision 2.1), Tadayo_v3_Build_and_Design.pdf, the new direction addendum (PDF), brand-tokens.md, brand-components.png, and the exports of handoffs 1 to 8. Use the brand's tokens, cover colours and components as they are (revision 1.1, with handoff 7's component sheet); if you have Tadayo's design system, it holds the same brand.
+What to design: one frame per state, 393×852 points, each titled with the state's exact name, in the order listed below (if an export loses the titles, the order identifies the frames).
+A. The invitation in the app: moments with no frame yet
+1. 
+G02-checking-failed: Ben opened Debby's invitation link to Sunday people, signed in, and the check got no answer. Nothing of the club, the inviter or the roster shows (handoff 8's G02-checking: "We’ll check the link before showing the club or its people."). Never say the link no longer works: only the server says that (G02-revoked). Retry checks again. Words for no connection, and for a check the server answered with a refusal, a rate limit or a server error. Screen G02, handoff 8's G02-checking.
+2. 
+G02-opening: Ben tapped Accept this roster, the members had already approved, and the app is opening Sunday people (handoff 8's joined.loading: "Opening {clubName}…"). Also used when the link is for a club Ben is already in. Screen G02.
+3. 
+G02-link-entry-signed-in-checking: Ben pasted Debby's link on I have an invite (handoff 4's G02-link-entry-signed-in) and tapped Continue; the app is checking the link on this screen.
+4. 
+G02-link-entry-signed-in-invalid: the pasted text isn't a Tadayo invitation link (handoff 4's linkEntry.invalid: "That doesn’t look like a Tadayo invitation link. Check the link and try again."). The text stays in the field.
+5. 
+G02-link-entry-signed-in-cannot-check: the check got no answer (linkEntry.cannotCheck: "Couldn’t check the invitation link. Check your connection and try again."). Give the words for a check the server answered with a refusal or a server error too.
+6. 
+G02-changed-name-relaunch: handoff 8's frame 15 (G02-changed-name) after the app was closed and opened again, so it no longer holds Leila's name: its explanation is handoff 8's nameChanged.explanationAfterRelaunch ("The updated roster now shows your profile name. Review it before accepting again.").
+B. Accepted invitations on the root (the club list holds them: the API contract's MyInvitation, with waiting, roster_changed and did_not_go_ahead; book p30; T33)
+7. 
+G06-no-club-invitation: Leila has no club and has accepted Ben's invitation to Kitchen table, which is waiting for the members. Home (handoff 4's G06-no-club). Where the waiting invitation shows, what it says, and how it opens handoff 2's G03-waiting. No approval count, progress or names of who approved (book p30, T33).
+8. 
+G06-no-club-invitation-xl: at the largest accessibility text size.
+9. 
+G06-no-club-invitation-changed: the same, but Kitchen table's roster changed and Leila must accept again (it opens G02-changed). And when this phone no longer holds Leila's link (it was opened on another phone): the app can't show the new roster until the link is opened or pasted again (FQ136's default sends Leila to I have an invite). Show what that row or screen says.
+10. 
+G06-no-club-invitation-declined: the same, but the invitation didn't go ahead (it opens handoff 1's G03-declined). Never who declined.
+11. 
+G06-switcher-invitation: Ben is in Sunday people and has accepted an invitation to Kitchen table that's waiting. The switcher (handoff 6's G06-switcher): where the accepted invitation shows, and how it opens G03-waiting.
+C. The signed-out invitation page on tadayo.app (G02-web; built from the book by the API lane's #94). The API lane's request, as it stands:
+The page today: G02-web (handoff 8, frames 4 to 6: the wordmark 144 CSS px, "Ben invited you to a club on Tadayo" in utilityTitle, the brand line in caption, Get Tadayo as a text link) and G02-web-revoked (handoff 4: "This invitation isn’t available.", "Ask for a new invitation link.", Get Tadayo). The page reads the link's token from the address's fragment and asks the server for the inviter's name, which takes a moment, and can fail. Draw each at 393 × 852 at a 393 px browser viewport, light, with the same dark and 200% text-zoom rules as G02-web (no extra frames unless a state needs one):
+12. 
+G02-web-checking: while the page asks the server. Today it shows the wordmark, "Checking invitation…" (handoff 8's in-app copy for G02-checking) and Get Tadayo. Nothing of the club or the inviter, since nothing is known yet (T7).
+13. 
+G02-web-failed: no answer, a network error or a server error. Today: the wordmark, "Couldn’t check the invitation link. Check your connection and try again." (handoff 4's link.checkFailure), a Retry control (handoff 4's common.retry) and Get Tadayo. It must not say the link no longer works (handoff 4).
+Say for each: the type role of each line, the gaps, whether Retry is a text link or a button and its size, whether Retry has a hint and its words (handoff 8 gives the app's Retry one that names its destination), where Get Tadayo sits, and whether "Checking invitation…" shows at once or only after a short delay. Say too where focus goes after Retry, whose control the checking state hides: today it moves to the first line of the state shown (checking, then the answer), and the page's live region is turned off after Retry so the state is read once. Say whether that is right, or whether the live region should stay and focus stay put. Say too whether the page needs a line for a browser with JavaScript off: today it stays at checking, with no <noscript> text. No new words unless you say why; the page shows no names, club, photographs or dates.
+D. The setup list while a club is created (handoff 4's G01-invite-people; the API contract's InvitationLink and CandidateLinkState): Ben is creating Sunday people and inviting the people handoff 4's frame draws
+14. 
+G01-invite-people-empty: the list before anyone is invited, the first thing Ben sees after Continue to invitations. Built today: the title, the club's name and its line, Create an invitation 32 under them, as it sits under the rows, then "Only you can see this list." and Done for now pinned. Say whether it needs a line of its own (handoff 1's list line is "Each person gets a separate link.").
+15. 
+G01-invite-people-live-not-held: after a reinstall or on another phone, the app no longer holds one person's live link, so the contract has it offer Create new link, which replaces the link that person may already have. Built today: handoff 4's Not shared status with Create new link in the action's place and Revoke link under More. Say whether the row reads Not shared, or something that says the link isn't on this phone (handoff 8's links.used.missing says it for a used link).
+16. 
+G01-invite-people-expired: a link that expired unused (seven days, FQ71). No frame or copy has it. Built today: "Link expired" with handoff 4's xmark.circle and Create new link, as the revoked row is. Give its words.
+17. 
+G01-invite-people-action-failed: Revoke link or Create new link failed (handoff 4 words both failures; the name step's words cover a first link made from Share link), but no frame places the line. Built today: the line, with the failure glyph, 24 above Done for now, said once as it shows, the rows unchanged. Say where it goes, whether it stays until the next action, and whether the row itself shows anything.
+Answer in words, with a frame only if your answer changes a screen:
+- 
+G01-create's words. Handoff 8's frame 7 (G01-create-failed) draws "Name your club" and "A private place for your people." above the field, where 2.1's G01-create draws "Your people, together.", "Start a private club with two to six people.", "Invite the people you want here. Everyone agrees to the same roster before the club starts." and the Drafts note, and handoff 8 says earlier entries are unchanged. Built today: 2.1's words, with frame 7's failure line under the field. Say which holds.
+- 
+A name over 40 characters (FQ70), for a club and for a person invited. Handoff 7 words it for the profile only ("Use 40 characters or fewer for your name."). Built today: Continue to invitations, and Create link and share, wait with no line. Give the line for each.
+E. Left open by handoff 8
+18. 
+A01-welcome, 19. A01-welcome-dark, 20. A01-welcome-xl (accessibility 5): handoff 8's frames 1 to 3 with 2.1's "Already here? Sign in" under I have an invite, the way a person with an account who is signed out, on a new phone or after a reinstall, reaches sign-in. Handoff 8's redraw left it out. Built today: the link below the two routes, as 2.1 draws it, and in the one scrolling column at the largest text. Draw it, or say how such a person reaches sign-in instead.
+- 
+Answer in words: Leave club's place on Club details. Handoff 8's frame 16 (G05-club-details-active) centres Leave club near the foot; 2.1's G05-club-details and handoff 6's G05-club-details-paused put it at the leading edge under the list, as handoff 7 put text actions. Built today: at the leading edge. Say which holds, and why.
+Content: the book's fixture clubs. Sunday people: Ben (Monday, the viewer unless stated), Maya, Alex, Sam, Debby (Friday), Nina; Debby's invitation in frames 1 to 5; Ben the creator in frames 14 to 17. Kitchen table: five members, Leila proposed, Ben the inviter (Leila the viewer in frames 7 to 10). Nothing invented.
+Rules that apply: book p9 (Welcome and invitation, Recovery), p24 (club details), p30 (member approval), p32 (the switcher), p33 (create a club), p34 (components), p35 (tokens), p41 (routes and labels); spec 04 and 07; T7, T33, T41 to T43. Names, not inferred pronouns. Exact dates. Native iOS controls. The type is the iOS system font at the book's sizes; in the frames, Arimo stands in for it, included in the export.
+Questions I need answered in the design:
+- 
+The words for each failure in frames 1 and 5, for no connection and for a refusal or server error, and what VoiceOver reads for each, with Retry's hint on frame 1.
+- 
+Whether the Proposed tag (handoff 8's proposedMemberTag) shows on another proposed person's row in an invitation's roster, and on the viewer's own row outside G02-changed-name (handoff 8's frame 9 draws none on "Ben · You"). Answer in words.
+- 
+Where accepted invitations show for someone with no club and for someone with clubs (frames 7 to 11), what each row says, and what VoiceOver reads.
+- 
+Whether frames 12 and 13 change on the signed-out page's dark and 200% forms (handoff 8's G02-web-dark and G02-web-xl). Answer in words.
+- 
+The questions in sections C, D and E, each answered where it is asked.
+Dark and large-text frames: only where listed above (frames 8, 19 and 20), titled <state>-dark and <state>-xl. 20 frames in all.

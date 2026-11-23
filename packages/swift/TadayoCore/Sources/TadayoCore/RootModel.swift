@@ -503,6 +503,13 @@ import Observation
                 }
                 self.setInvitation(nil)
             },
+            joinedWhileClosed: { [weak self] in
+                // An Accept the person left with Back, which the server joined all the same: the
+                // list is read again so Home shows the club, and nothing is selected or opened.
+                // Only while the tabs show the session the model was made in.
+                guard let self, self.epoch == made, self.route == .tabs else { return }
+                await self.loadClubs()
+            },
             signedOut: { [weak self] in
                 guard let self, self.epoch == made else { return }
                 await self.endedByServer()

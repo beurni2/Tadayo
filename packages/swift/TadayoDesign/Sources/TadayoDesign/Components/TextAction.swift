@@ -11,34 +11,53 @@ import SwiftUI
 /// A destructive one, Club details' Leave club (2.1's `G05-club-details`, handoff 8's frame 16),
 /// takes `destructive` instead, pressed or not: the brand has no pressed destructive ink, and no
 /// delivery draws it pressed.
+///
+/// One under a footer's primary action, an invitation's Not now under Accept this roster, is
+/// centred on the row (`Placement.underPrimary`), as handoff 8's frames 9 and 15 and handoff 9's
+/// frame 6 draw it: handoff 9's answer on Leave club keeps the leading edge for Leave club alone
+/// ("Leading alignment replaces only H8 frame16 centering", `handoff9.replaces.leaveClub`).
 public struct TextActionStyle: ButtonStyle {
     /// The action's ink.
     public enum Ink: Sendable {
         case action, destructive
     }
 
-    let ink: Ink
+    /// Where the words sit in the row.
+    public enum Placement: Sendable {
+        /// At the leading edge (handoff 7).
+        case leading
+        /// Centred, under a footer's primary action (handoffs 8 and 9).
+        case underPrimary
+    }
 
-    public init(ink: Ink = .action) {
+    let ink: Ink
+    let placement: Placement
+
+    public init(ink: Ink = .action, placement: Placement = .leading) {
         self.ink = ink
+        self.placement = placement
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        TextActionFace(configuration: configuration, ink: ink)
+        TextActionFace(configuration: configuration, ink: ink, placement: placement)
     }
 }
 
 private struct TextActionFace: View {
     let configuration: ButtonStyleConfiguration
     let ink: TextActionStyle.Ink
+    let placement: TextActionStyle.Placement
     @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
         configuration.label
             .textRole(.textAction)
-            .multilineTextAlignment(.leading)
+            .multilineTextAlignment(placement == .underPrimary ? .center : .leading)
             .foregroundStyle(color)
-            .frame(maxWidth: .infinity, minHeight: Size.touchTarget, alignment: .leading)
+            .frame(
+                maxWidth: .infinity, minHeight: Size.touchTarget,
+                alignment: placement == .underPrimary ? .center : .leading
+            )
             .contentShape(Rectangle())
     }
 
@@ -56,5 +75,10 @@ extension ButtonStyle where Self == TextActionStyle {
 
     public static func tadayoText(ink: TextActionStyle.Ink) -> TextActionStyle {
         TextActionStyle(ink: ink)
+    }
+
+    /// A text action centred under a footer's primary action.
+    public static var tadayoTextUnderPrimary: TextActionStyle {
+        TextActionStyle(placement: .underPrimary)
     }
 }
