@@ -16,14 +16,18 @@
 //   A child that ends before it is ready for the photo, that ends of its own accord or by another signal without
 //   answering, whose code throws or whose answer isn't one the worker can record is a failure, tried again by the
 //   outbox: it says nothing about the photo.
-// - The worker reads only the child's own kinds of message, kills the child's whole process group (it is forked
-//   `detached`), and settles a child's end GRACE_MS after it ended even if something else holds its channel open
-//   (PR #111's round 4, R4-3): each a child whose decoder a stranger's bytes took over.
+// - The worker reads only the child's own kinds of message, kills the child's process group (it is forked
+//   `detached`), settles a child's end GRACE_MS after it ended even if something else holds its channel open, and
+//   then closes its own ends of the child's pipes (PR #111's round 4, R4-3): each a child whose decoder a stranger's
+//   bytes took over.
 // - The child gets no environment and no output, so nothing it writes reaches the worker's log (T52). It is given the
 //   declared type and the decode's limit as its arguments, and the photo's bytes on its standard input, which the
-//   worker writes without a copy; its answer comes back over Node's channel. It runs as the worker's user, so code
-//   that took over a decoder could still read the worker's own environment from /proc, and a frame on the channel
-//   that isn't Node's serialization ends the worker (R4-2; the fix is its own PR: docs/LIMITATIONS.md, 2026-11-23).
+//   worker writes without a copy; its answer comes back over Node's channel.
+// - What code that took over a decoder can still do (R4-2, and the fifth commit's check; the fix is its own PR:
+//   docs/LIMITATIONS.md, 2026-11-23): it runs as the worker's user, so it can read the worker's environment from /proc;
+//   on the channel, a frame that isn't Node's serialization ends the worker, and one that declares a huge length makes
+//   the worker buffer it, up to 4 GiB, unwatched; a process it starts in a session of its own is outside the group the
+//   worker kills, and if it holds the channel mid-frame, Node keeps reading it after the child's end has settled.
 
 import { fork } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -241,7 +245,8 @@ export function prepareIsolated(
   const seconds = limits.seconds ?? DECODE_SECONDS;
   const mostBytes = limits.peakBytes ?? PEAK_BYTES;
   return new Promise((resolve, reject) => {
-    // `detached`: the child leads a process group of its own, so that killing the group ends anything it started.
+    // `detached`: the child leads a process group of its own, so that killing the group ends what it started in that
+    // group (a process it starts in a session of its own escapes it: the header).
     const child = fork(limits.child ?? CHILD, [declared, String(seconds)], {
       env: {},
       execArgv: [],

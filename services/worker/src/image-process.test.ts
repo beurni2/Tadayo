@@ -4,13 +4,13 @@
 // into an answer are tested on their own, case by case. Every image is made in the test.
 
 import { spawn } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import sharp from "sharp";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   DEADLINE_SECONDS,
   DECODE_SECONDS,
@@ -71,6 +71,20 @@ function commandOf(pid: number): string {
 function ended(pid: number): boolean {
   const state = statOf(pid)?.[0];
   return state === undefined || state === "Z";
+}
+
+/** The pipes and sockets this process holds open, as `/proc/self/fd` names them, by their inode. */
+function pipesHeld(): Set<string> {
+  const held = new Set<string>();
+  for (const fd of readdirSync("/proc/self/fd")) {
+    try {
+      const target = readlinkSync(`/proc/self/fd/${fd}`);
+      if (/^(pipe|socket):/.test(target)) held.add(target);
+    } catch {
+      // Closed as it was listed.
+    }
+  }
+  return held;
 }
 
 /** What `look` finds, looking every 10 ms, at most `tries` times; it throws if it finds nothing. */
@@ -244,6 +258,23 @@ setInterval(() => {}, 1000);`,
   aborts: `process.abort();`,
 } as const;
 
+/**
+ * A child that never reads the photo, and starts a process in a session of its own, outside the group the worker
+ * kills, which keeps the child's standard input and channel open (the fifth commit's check, C5-2). It says it is
+ * ready, and exits without answering.
+ */
+const ESCAPES = `
+import { spawn } from "node:child_process";
+spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
+  detached: true,
+  env: {},
+  stdio: [0, "ignore", "ignore", 3],
+});
+await new Promise((resolve) => process.send({ kind: "ready" }, undefined, undefined, resolve));
+await new Promise((resolve) => setTimeout(resolve, 300));
+process.exit(0);
+`;
+
 describe("a photo's process that misbehaves (R4-3)", () => {
   let folder = "";
   const fake = (name: keyof typeof MISBEHAVING) => pathToFileURL(join(folder, `${name}.mjs`));
@@ -254,15 +285,21 @@ describe("a photo's process that misbehaves (R4-3)", () => {
         )
       : [];
   const photo = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+  // The processes a fake child started, ended after each test, even one that failed on its time limit.
+  const started: number[] = [];
 
   beforeAll(async () => {
     folder = await mkdtemp(join(tmpdir(), "tadayo-image-fake-"));
     for (const [name, body] of Object.entries(MISBEHAVING)) {
       await writeFile(join(folder, `${name}.mjs`), PRELUDE + body);
     }
+    await writeFile(join(folder, "escapes.mjs"), ESCAPES);
   });
   afterAll(async () => {
     await rm(folder, { recursive: true, force: true });
+  });
+  afterEach(() => {
+    for (const pid of started.splice(0)) if (!ended(pid)) process.kill(pid, "SIGKILL");
   });
 
   it("ignores a message that isn't one of the child's, and a second ready, and keeps the first answer", async () => {
@@ -274,15 +311,31 @@ describe("a photo's process that misbehaves (R4-3)", () => {
     const run = prepareIsolated(photo, "image/jpeg", { child: fake("holder") });
     const child = await until(() => childrenOf(process.pid).find((pid) => commandOf(pid).includes("holder.mjs")), 300);
     const holder = await until(() => childrenOf(child)[0], 300);
-    const started = performance.now();
-    try {
-      expect(tagOf(await run)).toEqual([1, 1]);
-      // The child exits 0.3 s after it started its holder: then the grace, and no more.
-      expect(performance.now() - started).toBeLessThan(GRACE_MS + 1500);
-      await until(() => (ended(holder) ? true : undefined), 100);
-    } finally {
-      if (!ended(holder)) process.kill(holder, "SIGKILL");
-    }
+    started.push(holder);
+    const from = performance.now();
+    expect(tagOf(await run)).toEqual([1, 1]);
+    // The child exits 0.3 s after it started its holder: then the grace, and no more.
+    expect(performance.now() - from).toBeLessThan(GRACE_MS + 1500);
+    await until(() => (ended(holder) ? true : undefined), 100);
+  }, 20_000);
+
+  it("closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them", async () => {
+    const before = pipesHeld();
+    // A megabyte, more than a pipe holds: the worker's write waits on a child that never reads it.
+    const run = prepareIsolated(Buffer.alloc(MiB, 0xff), "image/jpeg", {
+      child: pathToFileURL(join(folder, "escapes.mjs")),
+    });
+    const child = await until(() => childrenOf(process.pid).find((pid) => commandOf(pid).includes("escapes.mjs")), 300);
+    const escaped = await until(() => childrenOf(child)[0], 300);
+    started.push(escaped);
+    // The child's standard input and its channel, as the worker holds them. Node closes the first itself as the child
+    // exits; the second only the worker's own disconnect closes.
+    const opened = [...pipesHeld()].filter((pipe) => !before.has(pipe));
+    expect(opened.length).toBeGreaterThanOrEqual(2);
+    await expect(run).rejects.toBeInstanceOf(ImageProcessFailed);
+    // Outside the group, the process the child started outlives the child's end, holding the other ends.
+    expect(ended(escaped)).toBe(false);
+    await until(() => (opened.some((pipe) => pipesHeld().has(pipe)) ? undefined : true), 100);
   }, 20_000);
 
   it("ends a child that answered but never exits at its deadline, and keeps its answer", async () => {
