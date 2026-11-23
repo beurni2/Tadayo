@@ -241,6 +241,10 @@ Each in light, dark and the largest text: `G06-no-club-invitation` (waiting, fra
 - **Hosted readings** (`TabsSnapshotTests` or a new `InvitationListReadingTests`): each state's row reads as one button with its label and hint and no selected trait, in order after the "Invitations" heading and before "Start your club."; the switcher's section after the clubs.
 - **UI test** (`InvitationUITests`): on `-TadayoUITestInvite`, Debby's link accepted and waiting, Done, and Home with Sunday people's row, which opens `G03-waiting` again, Done, and the row still there; on a new stand-in, `-TadayoUITestInviteChanged` (`UITestLaunch.inviteChanged`), Kitchen table's changed invitation with no link held: the row opens the paste step, Maya's link shows the changed roster, which joins, and the row goes; and Back from that paste step returns to Home and the row.
 
+### The first run, read
+
+`ios` run 45109235065 at `644b61f` (`ci` 45109234943 green): iOS 26.5 179 of 179, every UI, layout and announcement test with them; iOS 27.2 364 of 371, the five states' 15 images failing only for want of references, with the known glass (`A02-code-resend-failed-network`, match 0.9999993 in the Leave sign-in capsule) and the known `ArrivalFocusTests` lines 37 and 38 after the keyboard service's connection was invalidated (`logs/test-27.2.log` on `evidence`, lines 3840 to 4972). The images, read beside frames 7 to 11 and measured at 2x, match the frames but for what `design/reference/INVENTORY.md`'s rows keep as built: the header's inset, two single lines in their fonts' own heights, the larger text's titles and symbols (needs list item 70), and the switcher's own row line and text actions. All 15 are the references since.
+
 ### Not in 6d
 
 The link handler (6c). Who may declare an invitation closed for good: the server lists what it lists, and the app shows it. `G03-declined`'s Close invitation grants and changes nothing, as in 6b.
