@@ -177,6 +177,23 @@ export async function waitingOn(db: Db, pid: number, count = 1): Promise<void> {
   throw new Error("waitingOn: nothing came to wait for the club's row");
 }
 
+/**
+ * Fails unless a worker started by the real clock would find no upload to prepare: no pending `upload.prepare` event
+ * names an upload that is `preparing` and live by the database's own clock, which such a worker reads. It would
+ * fetch that upload's original from the test's stand-in Supabase project, which isn't there. Every upload the other
+ * files leave behind was made by a fake clock in November 2026 and has lapsed; this says so before a worker starts.
+ */
+export async function nothingToPrepare(db: Db): Promise<void> {
+  const [row] = await db<{ live: number }[]>`
+    SELECT pg_catalog.count(*)::int4 AS live FROM app.outbox_events e
+      JOIN app.uploads u ON u.id = e.payload ->> 'upload_id'
+     WHERE e.topic = 'upload.prepare' AND e.state = 'pending' AND u.state = 'preparing'
+       AND u.expires_at > pg_catalog.clock_timestamp()`;
+  if (row?.live !== 0) {
+    throw new Error("nothingToPrepare: another file left an upload a started worker would prepare, by the real clock");
+  }
+}
+
 /** A clock at `at` that counts its samples. */
 export function counting(at: string): { clock: FakeClock; samples: () => number } {
   const base = fakeClock(at);

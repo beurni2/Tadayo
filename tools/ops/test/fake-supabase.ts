@@ -497,7 +497,14 @@ export function fakeSupabase(options: FakeOptions = {}): Fake {
         if (!allowed) return { who, response: storageError(STORAGE_REFUSED) };
         return {
           who,
-          response: store(bucketName, objectPath, await body(), request.headers.get("content-type"), method === "PUT"),
+          // A PUT updates; a POST makes, and writes over what is there only with `x-upsert: true`, as Storage does.
+          response: store(
+            bucketName,
+            objectPath,
+            await body(),
+            request.headers.get("content-type"),
+            method === "PUT" || request.headers.get("x-upsert") === "true",
+          ),
         };
       }
       if (method === "DELETE") {
