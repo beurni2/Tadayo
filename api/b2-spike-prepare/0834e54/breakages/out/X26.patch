@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -177,7 +177,7 @@
+ function wellFormed(prepared: unknown): prepared is SentPrepared {
+   if (typeof prepared !== "object" || prepared === null) return false;
+   const { ok, rejection, renditions } = prepared as Record<string, unknown>;
+-  if (ok === false) return UPLOAD_REJECTIONS.some((code) => code === rejection);
++  if (ok === false) return typeof rejection === "string";
+   return (
+     ok === true &&
+     Array.isArray(renditions) &&

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 22902ms
+   ❯ a photo's own process (10)
+     × is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 5637ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:46:54
+   Duration  23.29s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels
+AssertionError: expected 317984768 to be less than 209715200
+ ❯ src/image-process.test.ts:139:30
+    137|     // Killed as it passed 100 MiB, within one read 10 ms apart: far b…
+    138|     expect(answer.peakBytes).toBeGreaterThan(100 * MiB);
+    139|     expect(answer.peakBytes).toBeLessThan(200 * MiB);
+       |                              ^
+    140|   }, 60_000);
+    141|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 14833ms
+   ❯ a photo's process that misbehaves (R4-3) (6)
+     × ignores a message that isn't one of the child's, and a second ready, and keeps the first answer 48ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:51:53
+   Duration  15.20s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > ignores a message that isn't one of the child's, and a second ready, and keeps the first answer
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:227:9
+    225|   if (end.signal !== null && CRASHES.has(end.signal))
+    226|     return { prepared: { ok: false, rejection: "unreadable" }, peakByt…
+    227|   throw new ImageProcessFailed();
+       |         ^
+    228| }
+    229|
+ ❯ settle src/image-process.ts:327:11
+ ❯ ChildProcess.<anonymous> src/image-process.ts:347:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 16749ms
+   ❯ a photo's own process (10)
+     × ends with the worker: a worker killed while its photo is decoded leaves no process behind 2199ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:51:19
+   Duration  17.11s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > ends with the worker: a worker killed while its photo is decoded leaves no process behind
+Error: not found in time
+ ❯ until src/image-process.test.ts:97:9
+     95|     await new Promise((resolve) => setTimeout(resolve, 10));
+     96|   }
+     97|   throw new Error("not found in time");
+       |         ^
+     98| }
+     99|
+ ❯ src/image-process.test.ts:200:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

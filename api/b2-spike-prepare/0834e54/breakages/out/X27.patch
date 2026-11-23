@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -200,7 +200,7 @@
+ 
+ /** The answer a child's end comes to (the rules above): a preparation, or ImageTimeout or ImageProcessFailed thrown. */
+ export function outcomeOf(end: ChildEnd): ProcessAnswer {
+-  if (end.killed === "time") throw new ImageTimeout();
++  if (end.killed === "time" || end.answer?.kind === "timeout") throw new ImageTimeout();
+   const { peakBytes } = end;
+   if (end.killed === "memory" || peakBytes > end.mostBytes) {
+     return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };

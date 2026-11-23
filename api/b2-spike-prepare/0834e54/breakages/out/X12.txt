@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 15773ms
+   ❯ a photo's own process (10)
+     × passes a decode's own timeout on as ImageTimeout 2245ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:50:27
+   Duration  16.09s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > passes a decode's own timeout on as ImageTimeout
+AssertionError: expected ImageProcessFailed: image: the photo's pr… { code: '…' } to be an instance of ImageTimeout
+ ❯ src/image-process.test.ts:171:69
+    169|       .png()
+    170|       .toBuffer();
+    171|     await expect(prepareIsolated(slow, "image/png", { seconds: 1 })).r…
+       |                                                                     ^
+    172|   }, 60_000);
+    173|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

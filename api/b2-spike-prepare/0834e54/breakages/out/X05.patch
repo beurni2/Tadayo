@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -222,8 +222,6 @@
+   if (answer?.kind === "timeout") throw new ImageTimeout();
+   if (answer?.kind === "failed" || !end.ready) throw new ImageProcessFailed();
+   if (end.signal === "SIGKILL") return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };
+-  if (end.signal !== null && CRASHES.has(end.signal))
+-    return { prepared: { ok: false, rejection: "unreadable" }, peakBytes };
+   throw new ImageProcessFailed();
+ }
+ 

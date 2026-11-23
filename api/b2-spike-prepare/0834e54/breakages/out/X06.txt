@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 14992ms
+   ❯ what a child's end comes to (6)
+     × throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:48:50
+   Duration  15.38s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw
+AssertionError: expected function to throw an error, but it didn't
+ ❯ src/image-process.test.ts:420:71
+    418|
+    419|   it("throws ImageProcessFailed when it ended before it was ready, of …
+    420|     expect(() => outcomeOf(end({ ready: false, signal: "SIGSEGV" }))).…
+       |                                                                       ^
+    421|     expect(() => outcomeOf(end({ answer: { kind: "failed" } }))).toThr…
+    422|     // Exited with a code, or ended by a signal that isn't a crash, af…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -164,9 +164,7 @@
+     Number.isInteger(width) &&
+     Number.isInteger(height) &&
+     width >= 1 &&
+-    height >= 1 &&
+-    width <= box.width &&
+-    height <= box.height
++    height >= 1
+   );
+ }
+ 

@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 16482ms
+   ❯ a photo's process that misbehaves (R4-3) (6)
+     × closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them 3402ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:56:10
+   Duration  16.85s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them
+Error: not found in time
+ ❯ until src/image-process.test.ts:97:9
+     95|     await new Promise((resolve) => setTimeout(resolve, 10));
+     96|   }
+     97|   throw new Error("not found in time");
+       |         ^
+     98| }
+     99|
+ ❯ src/image-process.test.ts:338:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

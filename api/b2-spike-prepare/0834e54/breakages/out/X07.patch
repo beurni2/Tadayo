@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -207,7 +207,6 @@
+   }
+   const { answer } = end;
+   if (answer?.kind === "prepared") {
+-    if (!wellFormed(answer.prepared)) throw new ImageProcessFailed();
+     const prepared: Prepared = answer.prepared.ok
+       ? {
+           ok: true,

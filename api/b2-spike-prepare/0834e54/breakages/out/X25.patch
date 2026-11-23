@@ -1,0 +1,12 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -156,9 +156,6 @@
+     its === kind &&
+     bytes instanceof Uint8Array &&
+     bytes.length > 3 &&
+-    bytes[0] === 0xff &&
+-    bytes[1] === 0xd8 &&
+-    bytes[2] === 0xff &&
+     typeof width === "number" &&
+     typeof height === "number" &&
+     Number.isInteger(width) &&

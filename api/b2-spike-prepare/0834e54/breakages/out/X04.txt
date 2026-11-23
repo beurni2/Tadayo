@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 15139ms
+   ❯ what a child's end comes to (6)
+     × refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:48:18
+   Duration  15.47s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:226:9
+    224|   if (end.signal !== null && CRASHES.has(end.signal))
+    225|     return { prepared: { ok: false, rejection: "unreadable" }, peakByt…
+    226|   throw new ImageProcessFailed();
+       |         ^
+    227| }
+    228|
+ ❯ src/image-process.test.ts:401:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

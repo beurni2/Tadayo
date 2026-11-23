@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -248,7 +248,7 @@
+     // `detached`: the child leads a process group of its own, so that killing the group ends what it started in that
+     // group (a process it starts in a session of its own escapes it: the header).
+     const child = fork(limits.child ?? CHILD, [declared, String(seconds)], {
+-      env: {},
++      env: process.env,
+       execArgv: [],
+       serialization: "advanced",
+       stdio: ["pipe", "ignore", "ignore", "ipc"],

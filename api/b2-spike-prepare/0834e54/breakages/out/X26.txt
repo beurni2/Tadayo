@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 1 failed) 14879ms
+   ❯ what a child's end comes to (6)
+     × throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:55:23
+   Duration  15.20s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code
+AssertionError: expected function to throw an error, but it didn't
+ ❯ src/image-process.test.ts:455:59
+    453|     for (const rejection of ["no_such_code", 42, undefined]) {
+    454|       const malformed = { ...prepared, prepared: { ok: false, rejectio…
+    455|       expect(() => outcomeOf(end({ answer: malformed }))).toThrow(Imag…
+       |                                                           ^
+    456|     }
+    457|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

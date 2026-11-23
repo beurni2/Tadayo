@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-child.ts
++++ b/services/worker/src/image-child.ts
+@@ -53,7 +53,7 @@
+     environment: Object.keys(process.env).length,
+   };
+ } catch (error) {
+-  answer = error instanceof ImageTimeout ? { kind: "timeout" } : { kind: "failed" };
++  answer = error instanceof ImageTimeout ? { kind: "timeout" } : { kind: "prepared", prepared: { ok: false, rejection: "unreadable" }, peakBytes: 0, oomScoreAdj: adjusted, environment: 0 };
+ }
+ await send(answer);
+ process.exit(0);

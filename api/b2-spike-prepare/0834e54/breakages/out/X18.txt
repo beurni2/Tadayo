@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 2 failed) 49974ms
+   ❯ a photo's process that misbehaves (R4-3) (6)
+     × settles when the child ends though a process it started holds its channel, and ends that process 20006ms
+     × closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them 20002ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 passed (22)
+   Start at  11:52:09
+   Duration  50.34s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > settles when the child ends though a process it started holds its channel, and ends that process
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:310:3
+    308|   }, 20_000);
+    309|
+    310|   it("settles when the child ends though a process it started holds it…
+       |   ^
+    311|     const run = prepareIsolated(photo, "image/jpeg", { child: fake("ho…
+    312|     const child = await until(() => childrenOf(process.pid).find((pid)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:322:3
+    320|   }, 20_000);
+    321|
+    322|   it("closes its ends of the child's pipes as it settles, though a pro…
+       |   ^
+    323|     const before = pipesHeld();
+    324|     // A megabyte, more than a pipe holds: the worker's write waits on…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,81 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (22 tests | 2 failed) 15242ms
+   ❯ what a child's end comes to (6)
+     × refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it 13ms
+     × throws ImageTimeout for its deadline even past its memory, and for a decode's timeout within it 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 passed (22)
+   Start at  11:48:01
+   Duration  15.63s (tests 99%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it
+AssertionError: expected { ok: true, …(1) } to deeply equal { ok: false, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "ok": false,
+-   "rejection": "too_many_pixels",
++   "ok": true,
++   "renditions": [
++     {
++       "bytes": {
++         "data": [
++           255,
++           216,
++           255,
++           224,
++         ],
++         "type": "Buffer",
++       },
++       "height": 2560,
++       "kind": "full",
++       "width": 2560,
++     },
++     {
++       "bytes": {
++         "data": [
++           255,
++           216,
++           255,
++           224,
++         ],
++         "type": "Buffer",
++       },
++       "height": 1290,
++       "kind": "display",
++       "width": 1290,
++     },
++   ],
+  }
+
+ ❯ src/image-process.test.ts:400:81
+    398|   it("refuses the photo as too_many_pixels when the worker killed it f…
+    399|     expect(outcomeOf(end({ killed: "memory", signal: "SIGKILL" })).pre…
+    400|     expect(outcomeOf(end({ answer: prepared, peakBytes: 353 * MiB })).…
+       |                                                                                 ^
+    401|     expect(outcomeOf(end({ signal: "SIGKILL" })).prepared).toEqual(ref…
+    402|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > throws ImageTimeout for its deadline even past its memory, and for a decode's timeout within it
+ImageTimeout: image: a decode took too long
+ ❯ outcomeOf src/image-process.ts:222:41
+    220|     return { prepared, peakBytes, oomScoreAdj: answer.oomScoreAdj, env…
+    221|   }
+    222|   if (answer?.kind === "timeout") throw new ImageTimeout();
+       |                                         ^
+    223|   if (answer?.kind === "failed" || !end.ready) throw new ImageProcessF…
+    224|   if (end.signal === "SIGKILL") return { prepared: { ok: false, reject…
+ ❯ src/image-process.test.ts:414:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

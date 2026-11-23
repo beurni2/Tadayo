@@ -1,0 +1,69 @@
+== X01 the child's memory isn't watched [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 5207ms
+== X02 the deadline kills nothing [process]: CAUGHT; exit 1 ['Tests  2 failed | 20 passed (22)']
+    × ends a child that answered but never exits at its deadline, and keeps its answer 20005ms
+    × is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout) 9569ms
+== X03 a peak past the cap that the child reports is taken [process]: CAUGHT; exit 1 ['Tests  2 failed | 20 passed (22)']
+    × refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it 11ms
+    × throws ImageTimeout for its deadline even past its memory, and for a decode's timeout within it 2ms
+== X04 a SIGKILL the worker didn't send refuses nothing [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it 5ms
+== X05 a child's crash is tried again [process]: CAUGHT; exit 1 ['Tests  2 failed | 20 passed (22)']
+    × refuses the photo as unreadable when the child crashed once it held it 2ms
+    × refuses the photo as unreadable when the child crashes once it holds it 46ms
+== X06 a child that ends before it is ready refuses the photo [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw 4ms
+== X07 the child's answer isn't checked [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code 6ms
+== X08 the child gets the worker's environment [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × goes first to the kernel's out-of-memory killer, and starts with an empty environment 198ms
+== X09 the child doesn't go first to the out-of-memory killer [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × goes first to the kernel's out-of-memory killer, and starts with an empty environment 178ms
+== X10 the cap is 512 MiB [process]: CAUGHT; exit 1 ['Tests  2 failed | 20 passed (22)']
+    × gives each decode a minute, and the process the header, both decodes and its start 7ms
+    × refuses a PNG whose compressed text would take the worker past its Machine, the worker holding none of it (R3-1) 1376ms
+== X11 a code's error in the child refuses the photo [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × fails, to be tried again, when its code throws, never refusing the photo 170ms
+== X12 a decode's timeout in the child is a failure [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × passes a decode's own timeout on as ImageTimeout 2488ms
+== X13 the renditions aren't made Buffers [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × is the child's answer when it answered within its memory, its renditions as Buffers 8ms
+== X14 the child outlives its worker [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × ends with the worker: a worker killed while its photo is decoded leaves no process behind 2186ms
+== X15 the child exits by process.exit when its worker goes, which waits for its decode [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × ends with the worker: a worker killed while its photo is decoded leaves no process behind 2128ms
+== X16 a message that isn't one of the child's is read as one [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × ignores a message that isn't one of the child's, and a second ready, and keeps the first answer 55ms
+== X17 a second ready is taken for the answer [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × ignores a message that isn't one of the child's, and a second ready, and keeps the first answer 59ms
+== X18 a child's end waits for its channel to close [process]: CAUGHT; exit 1 ['Tests  2 failed | 20 passed (22)']
+    × closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them 20002ms
+    × settles when the child ends though a process it started holds its channel, and ends that process 20008ms
+== X19 the child alone is killed, not its group [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × settles when the child ends though a process it started holds its channel, and ends that process 3376ms
+== X20 the child leads no group of its own [process]: CAUGHT; exit 1 ['Tests  4 failed | 18 passed (22)']
+    × ends a child that answered but never exits at its deadline, and keeps its answer 3012ms
+    × is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout) 3009ms
+    × is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 2741ms
+    × settles when the child ends though a process it started holds its channel, and ends that process 3392ms
+== X21 a child that answered is never killed [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × ends a child that answered but never exits at its deadline, and keeps its answer 20008ms
+== X22 a child's own exit refuses the photo [process]: CAUGHT; exit 1 ['Tests  3 failed | 19 passed (22)']
+    × closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them 2352ms
+    × fails, to be tried again, when the child exits with a code of its own without answering (R4-5) 50ms
+    × throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw 1ms
+== X23 any number of renditions [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code 6ms
+== X24 a rendition's size isn't checked against its box [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code 6ms
+== X25 a rendition's bytes needn't be a JPEG's [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code 6ms
+== X26 any string is a rejection [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code 5ms
+== X27 a decode's timeout past the memory is tried again [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × throws ImageTimeout for its deadline even past its memory, and for a decode's timeout within it 5ms
+== X28 the worker keeps its end of the child's standard input [process]: NOT CAUGHT; exit 0 ['Tests  22 passed (22)']
+== X29 the worker keeps its end of the child's channel [process]: CAUGHT; exit 1 ['Tests  1 failed | 21 passed (22)']
+    × closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them 3414ms
+restored: ' M docs/JOURNAL.md\n M docs/LIMITATIONS.md\n M docs/PROGRESS.md\n M docs/plans/api-b2-spike-prepare.md\n M services/worker/src/image-process.test.ts\n M services/worker/src/image-process.ts\n'
+done
