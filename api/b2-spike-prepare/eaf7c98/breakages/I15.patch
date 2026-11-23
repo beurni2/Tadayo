@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -165,7 +165,7 @@
+   }
+   if (!header.isProgressive) return 0;
+   if (header.format === "jpeg") {
+-    const padded = (side: number) => Math.ceil(side / 32) * 32;
++    const padded = (side: number) => side;
+     return padded(header.width) * padded(header.height) * header.channels * 2;
+   }
+   if (header.format === "png") {

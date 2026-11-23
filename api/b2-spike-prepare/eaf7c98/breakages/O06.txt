@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 1 failed) 264ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × kills an event claimed with its attempts spent without running its handler, as lease_lapsed, whatever an earlier attempt said 19ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  02:40:08
+   Duration  778ms (tests 55%, import 23%, transform 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > kills an event claimed with its attempts spent without running its handler, as lease_lapsed, whatever an earlier attempt said
+AssertionError: expected { state: 'dead', attempts: 5, …(3) } to match object { state: 'dead', attempts: 5, …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "attempts": 5,
+-   "last_error": "lease_lapsed",
++   "last_error": "storage.unavailable",
+    "processed_at": "2026-11-06T21:00:00.123456Z",
+    "state": "dead",
+  }
+
+ ❯ src/db/worker-outbox.test.ts:299:29
+    297|     expect(seen).toEqual([]);
+    298|     for (const id of [lapsed, failedBefore]) {
+    299|       expect(await row(id)).toMatchObject({
+       |                             ^
+    300|         state: "dead",
+    301|         attempts: 5,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

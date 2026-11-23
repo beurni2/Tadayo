@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -70,7 +70,7 @@
+ /** The wait before the retry after attempt `attempts`, in seconds: 30, 60, 120, 240. */
+ export function backoffSeconds(attempts: number): number {
+   if (!Number.isInteger(attempts) || attempts < 1) throw new RangeError("outbox: attempts count from 1");
+-  return BACKOFF_SECONDS * 2 ** (attempts - 1);
++  return BACKOFF_SECONDS * attempts;
+ }
+ 
+ /** A system's or a driver's own code: `ECONNRESET`, `CONNECTION_CLOSED`. */

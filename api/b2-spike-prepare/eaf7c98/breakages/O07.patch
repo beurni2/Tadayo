@@ -1,0 +1,10 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -200,7 +200,6 @@
+     try {
+       if (handler === undefined) throw new FailedForGood("topic");
+       await handler(event);
+-      await limited(sql, async (tx) => finishEvent(tx, event.id, await clock.sample(tx)));
+       handled += 1;
+     } catch (error) {
+       const code = failureCode(error);

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/supabase-probe.test.ts (70 tests | 1 failed) 541ms
+   ❯ apiChecks's controls: each must hold, in its own words, before a refusal means anything (14)
+     × fails the worker's write when Storage refuses the put over, or answers it and keeps the first bytes, and the run goes on and cleans up 22ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 69 passed (70)
+   Start at  03:23:14
+   Duration  816ms (tests 78%, transform 11%, import 10%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > fails the worker's write when Storage refuses the put over, or answers it and keeps the first bytes, and the run goes on and cleans up
+AssertionError: answered 200 and kept the first bytes: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+- ]
++ []
+
+ ❯ src/supabase-probe.test.ts:873:36
+    871|         return fake.fetch(input, init);
+    872|       });
+    873|       expect(failed(checks), what).toEqual([over]);
+       |                                    ^
+    874|       // The refusals still ran, and the rendition was removed.
+    875|       expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

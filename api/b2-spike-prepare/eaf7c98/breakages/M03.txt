@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+stdout | src/image-memory.test.ts > one preparation's peak memory (FQ138) > stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing
+a progressive JPEG at the budget: 188 MiB more, 291 MiB at the peak
+a progressive CMYK JPEG at the budget: 192 MiB more, 298 MiB at the peak
+an interlaced PNG at the budget: 223 MiB more, 331 MiB at the peak
+an interlaced 16-bit PNG at the budget: 210 MiB more, 319 MiB at the peak
+a lossless WebP at the budget: 161 MiB more, 263 MiB at the peak
+a lossy WebP with a lossless alpha at the budget: 162 MiB more, 265 MiB at the peak
+an animated WebP at the budget: 196 MiB more, 299 MiB at the peak
+a 16-bit PNG of 64 megapixels: 185 MiB more, 303 MiB at the peak
+a baseline JPEG of 64 megapixels to turn upright: 76 MiB more, 182 MiB at the peak
+a lossy WebP of 64 megapixels: 91 MiB more, 194 MiB at the peak
+a progressive JPEG of 64 megapixels: 0 MiB more, 108 MiB at the peak
+an interlaced 16-bit PNG of 64 megapixels: 0 MiB more, 116 MiB at the peak
+a lossless WebP of 64 megapixels: 0 MiB more, 104 MiB at the peak
+a lossy WebP with a lossless alpha of 64 megapixels: 340 MiB more, 442 MiB at the peak
+an animated WebP of 64 megapixels, its frames small: 0 MiB more, 103 MiB at the peak
+
+ ❯ src/image-memory.test.ts (1 test | 1 failed) 83833ms
+   ❯ one preparation's peak memory (FQ138) (1)
+     × stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing 83827ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  03:21:19
+   Duration  84.20s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-memory.test.ts > one preparation's peak memory (FQ138) > stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+    "name": "a lossy WebP with a lossless alpha of 64 megapixels",
+-   "ok": false,
+-   "within": true,
++   "ok": true,
++   "within": false,
+  }
+
+ ❯ src/image-memory.test.ts:175:84
+    173|     for (const result of results) {
+    174|       const most = result.refused ? MAX_REFUSAL_RISE_MIB : MAX_RISE_MI…
+    175|       expect({ name: result.name, ok: result.ok, within: result.riseMi…
+       |                                                                                    ^
+    176|         name: result.name,
+    177|         ok: !result.refused,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

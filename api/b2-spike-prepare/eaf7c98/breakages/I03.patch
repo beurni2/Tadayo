@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -188,7 +188,6 @@
+   declared: UploadContentType,
+   limit: { readonly seconds: number } = { seconds: DECODE_SECONDS },
+ ): Promise<Prepared> {
+-  if (bytes.length > UPLOAD_MAX_BYTES) return { ok: false, rejection: "too_large" };
+   const type = signatureOf(bytes);
+   if (type === undefined || type !== declared) return { ok: false, rejection: "unsupported_type" };
+ 

@@ -1,0 +1,51 @@
+== M01 what a decode would hold isn't checked, measured [memory]: CAUGHT; exit 1 ['Tests  1 failed (1)']
+    × stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing 97421ms
+== I17 an animated WebP holds nothing [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 33ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 35049ms
+== I18 a lossless WebP holds nothing [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 26ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 12572ms
+== I19 a lossy WebP's alpha holds only its plane [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 32ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 29192ms
+== I20 a WebP whose coding can't be read holds nothing [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 26ms
+== I21 an ALPH chunk isn't seen [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 28ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 28018ms
+== I22 a WebP's chunks aren't passed over [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 17ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 29390ms
+== I23 an animated WebP counts as two canvases [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 36ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 33005ms
+== I24 libvips' pages are passed over, the chunks alone deciding [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 22ms
+== M02 an animated WebP holds nothing, measured [memory]: CAUGHT; exit 1 ['Tests  1 failed (1)']
+    × stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing 81261ms
+== M03 a lossy WebP's alpha holds nothing, measured [memory]: CAUGHT; exit 1 ['Tests  1 failed (1)']
+    × stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing 83827ms
+== P10 the content version is derived from the bytes [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21) 158ms
+== S01 Storage's not-found is an error [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × gives no object for Storage's not-found, in the body as Storage sends it or in the status 6ms
+== S02 an original is read whole [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × reads no further than 20 MiB and a byte, so a larger object is refused as too large, not held whole 18201ms
+== S03 a rendition is put with upsert off [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × puts the JPEG at its key in renditions with upsert on, with the service key 3ms
+== S04 redirects are followed [storage]: CAUGHT; exit 1 ['Tests  2 failed | 10 passed (12)']
+    × asks for the one object in uploads with the service key, refusing redirects, with a time limit 28ms
+    × puts the JPEG at its key in renditions with upsert on, with the service key 2ms
+== W01 Storage's settings are read after the database answers [start]: CAUGHT; exit 1 ['Tests  1 failed | 3 passed (4)']
+    × stops before it connects when a Supabase setting is missing or isn't one, naming neither value 715ms
+== R01 the probe puts the rendition with upsert off [probe]: CAUGHT; exit 1 ['Tests  17 failed | 53 passed (70)']
+    × asks for the object's details as the API does, and names that control when Storage doesn't answer as the API reads them 17ms
+    × fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error 6ms
+    × fails a check, and not the run, when the project gives no answer to it 5ms
+    × fails a check, not the run, when a call gets no answer, and still cleans up 6ms
+    × fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused 7ms
+    × fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed 6ms
+== R02 the probe doesn't compare the bytes read back [probe]: CAUGHT; exit 1 ['Tests  1 failed | 69 passed (70)']
+    × fails the worker's write when Storage refuses the put over, or answers it and keeps the first bytes, and the run goes on and cleans up 22ms
+restored: ' M docs/LIMITATIONS.md\n M docs/QUESTIONS.md\n M docs/plans/api-b2-spike-prepare.md\n M services/worker/src/image-memory.test.ts\n M services/worker/src/image.test.ts\n M services/worker/src/image.ts\n M services/worker/src/testing.ts\n M tests/src/db/worker-prepare.test.ts\n'

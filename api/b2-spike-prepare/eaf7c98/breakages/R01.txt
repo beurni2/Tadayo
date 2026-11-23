@@ -1,0 +1,399 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/supabase-probe.test.ts (70 tests | 17 failed) 530ms
+   ❯ apiChecks on a closed project (6)
+     × passes every check, controls and refusals, and leaves no object, no bucket and no user behind 57ms
+   ❯ apiChecks and the Data API's root (4)
+     × still fails the public callers' root when a gateway answers it, which says a schema is served 6ms
+     × passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema 11ms
+     × fails the service key's root when the project doesn't answer, saying so 9ms
+   ❯ apiChecks counts only Storage's own refusal as one (6)
+     × fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused 7ms
+     × fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed 6ms
+     × fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error 6ms
+   ❯ apiChecks's controls: each must hold, in its own words, before a refusal means anything (14)
+     × signs the upload URL as the API does, with a body of {} and no x-upsert, and again once the object is there 9ms
+     × asks for the object's details as the API does, and names that control when Storage doesn't answer as the API reads them 17ms
+     × names the control of the upload URL when its token isn't one the API believes: its object, upsert false, a minute to a day 20ms
+     × puts a rendition as the worker does, a POST to renditions with the service key, image/jpeg and x-upsert, then other bytes at the same key, each read back 14ms
+   ❯ apiChecks when the project can't be trusted to answer (5)
+     × fails a check, not the run, when a call gets no answer, and still cleans up 6ms
+     × reports a clean-up that fails, with what is left, so that no test user stays behind unseen 4ms
+   ❯ apiChecks asks which buckets the project has, and none may be public or another's (T53) (7)
+     × fails a third bucket, which is none of storage-setup's, and counts it without naming it 11ms
+     × fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals 5ms
+     × fails a check, and not the run, when the project gives no answer to it 5ms
+   ❯ apiChecks is limited in time, since a killed command skips its clean-up (6)
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 5ms
+
+ Test Files  1 failed (1)
+      Tests  17 failed | 53 passed (70)
+   Start at  03:23:13
+   Duration  869ms (tests 73%, transform 15%, import 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 17 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > passes every check, controls and refusals, and leaves no object, no bucket and no user behind
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
++ ]
+
+ ❯ src/supabase-probe.test.ts:64:28
+     62|     const fake = project();
+     63|     const checks = await probe(fake);
+     64|     expect(failed(checks)).toEqual([]);
+       |                            ^
+     65|     // Every door is asked for each caller: nothing is dropped without…
+     66|     const count = (prefix: string) => checks.filter((check) => check.n…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > still fails the public callers' root when a gateway answers it, which says a schema is served
+AssertionError: expected [ …(3) ] to deeply equal [ Array(2) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "anon: REST root",
+    "user: REST root",
+  ]
+
+ ❯ src/supabase-probe.test.ts:331:28
+    329|       ),
+    330|     );
+    331|     expect(failed(checks)).toEqual(["anon: REST root", "user: REST roo…
+       |                            ^
+    332|     expect(checks.find((check) => check.name === "anon: REST root")?.n…
+    333|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+AssertionError: 404: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
++ ]
+
+ ❯ src/supabase-probe.test.ts:344:46
+    342|         ),
+    343|       );
+    344|       expect(failed(checks), String(status)).toEqual([]);
+       |                                              ^
+    345|     }
+    346|     for (const [body, note] of [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > fails the service key's root when the project doesn't answer, saying so
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "service: the Data API serves no schema at its root",
+  ]
+
+ ❯ src/supabase-probe.test.ts:373:28
+    371|       return fake.fetch(input, init);
+    372|     });
+    373|     expect(failed(silent)).toEqual([ROOT]);
+       |                            ^
+    374|     expect(silent.find((check) => check.name === ROOT)?.note).toBe("no…
+    375|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused
+AssertionError: expected [ …(3) ] to deeply equal [ 'anon: list the buckets', …(1) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "anon: list the buckets",
+    "user: list the buckets",
+  ]
+
+ ❯ src/supabase-probe.test.ts:409:28
+    407|       ),
+    408|     );
+    409|     expect(failed(checks)).toEqual(["anon: list the buckets", "user: l…
+       |                            ^
+    410|     expect(checks.find((check) => check.name === "anon: list the bucke…
+    411|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed
+AssertionError: expected [ …(3) ] to deeply equal [ 'anon: download from uploads', …(1) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "anon: download from uploads",
+    "user: download from uploads",
+  ]
+
+ ❯ src/supabase-probe.test.ts:423:28
+    421|       ),
+    422|     );
+    423|     expect(failed(checks)).toEqual(["anon: download from uploads", "us…
+       |                            ^
+    424|     expect(checks.find((check) => check.name === "user: download from …
+    425|       "answered HTTP 400, InvalidRequest",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "anon: list the objects of uploads",
+    "anon: sign read URLs for renditions in a batch",
+    "user: list the objects of uploads",
+    "user: sign read URLs for renditions in a batch",
+  ]
+
+ ❯ src/supabase-probe.test.ts:440:28
+    438|       }),
+    439|     );
+    440|     expect(failed(checks)).toEqual([
+       |                            ^
+    441|       "anon: list the objects of uploads",
+    442|       "anon: sign read URLs for renditions in a batch",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > signs the upload URL as the API does, with a body of {} and no x-upsert, and again once the object is there
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
++ ]
+
+ ❯ src/supabase-probe.test.ts:611:28
+    609|     }) as typeof fetch;
+    610|     const checks = await probe(fake, spy);
+    611|     expect(failed(checks)).toEqual([]);
+       |                            ^
+    612|     // For each bucket: the URL the object is put at, and the second s…
+    613|     expect(seen).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > asks for the object's details as the API does, and names that control when Storage doesn't answer as the API reads them
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
++ ]
+
+ ❯ src/supabase-probe.test.ts:653:28
+    651|       answering(plain, (request) => (info(request, "never") ? new Resp…
+    652|     );
+    653|     expect(failed(checks)).toEqual([]);
+       |                            ^
+    654|     expect(
+    655|       plain.calls.filter((call) => call.path.startsWith("/storage/v1/o…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the upload URL when its token isn't one the API believes: its object, upsert false, a minute to a day
+AssertionError: 60: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
++ ]
+
+ ❯ src/supabase-probe.test.ts:725:54
+    723|     for (const uploadLifetime of [60, 86_400]) {
+    724|       const checks = await probe(project({ uploadLifetime }));
+    725|       expect(failed(checks), String(uploadLifetime)).toEqual([]);
+       |                                                      ^
+    726|     }
+    727|     // A sign answer that names another status in its body, as Storage…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > puts a rendition as the worker does, a POST to renditions with the service key, image/jpeg and x-upsert, then other bytes at the same key, each read back
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
++ ]
+
+ ❯ src/supabase-probe.test.ts:833:28
+    831|     }) as typeof fetch;
+    832|     const checks = await probe(fake, spy);
+    833|     expect(failed(checks)).toEqual([]);
+       |                            ^
+    834|     expect(checks.filter((check) => check.name.startsWith("worker: "))…
+    835|       "worker: the service key puts a rendition in renditions, upsert …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > fails a check, not the run, when a call gets no answer, and still cleans up
+AssertionError: expected [ …(3) ] to deeply equal [ 'anon: GraphQL', 'user: GraphQL' ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "anon: GraphQL",
+    "user: GraphQL",
+  ]
+
+ ❯ src/supabase-probe.test.ts:946:28
+    944|     }) as typeof fetch;
+    945|     const checks = await probe(fake, failing);
+    946|     expect(failed(checks)).toEqual(["anon: GraphQL", "user: GraphQL"]);
+       |                            ^
+    947|     expect(checks.find((check) => check.name === "anon: GraphQL")?.not…
+    948|     expect(fake.objects.size).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > reports a clean-up that fails, with what is left, so that no test user stays behind unseen
+AssertionError: expected [ …(2) ] to deeply equal [ 'cleanup: delete the probe user' ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "cleanup: delete the probe user",
+  ]
+
+ ❯ src/supabase-probe.test.ts:998:28
+    996|     const fake = project({ failing: "DELETE /auth/v1/admin/users/00000…
+    997|     const checks = await probe(fake);
+    998|     expect(failed(checks)).toEqual(["cleanup: delete the probe user"]);
+       |                            ^
+    999|     expect(fake.users.size).toBe(1);
+    1000|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a third bucket, which is none of storage-setup's, and counts it without naming it
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "storage: every bucket is private, and only storage-setup's two exist",
+  ]
+
+ ❯ src/supabase-probe.test.ts:1039:28
+    1037|     const fake = project({ buckets: [...THE_TWO, bucketNamed("somebody…
+    1038|     const checks = await probe(fake);
+    1039|     expect(failed(checks)).toEqual([BUCKET_CHECK]);
+       |                            ^
+    1040|     expect(checkOf(checks)?.note).toBe("1 bucket isn't one storage-set…
+    1041|     expect(JSON.stringify(checks)).not.toContain("somebody-elses-bucke…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals
+AssertionError: answered HTTP 500: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "storage: every bucket is private, and only storage-setup's two exist",
+  ]
+
+ ❯ src/supabase-probe.test.ts:1087:36
+    1085|     ] as const) {
+    1086|       const checks = await probe(fake, listingBuckets(fake, answer));
+    1087|       expect(failed(checks), note).toEqual([BUCKET_CHECK]);
+       |                                    ^
+    1088|       expect(checkOf(checks)?.note).toBe(note);
+    1089|       expect(JSON.stringify(checks)).not.toContain("hunter2");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a check, and not the run, when the project gives no answer to it
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    "storage: every bucket is private, and only storage-setup's two exist",
+  ]
+
+ ❯ src/supabase-probe.test.ts:1100:28
+    1098|       listingBuckets(fake, () => Promise.reject(new TypeError("fetch f…
+    1099|     );
+    1100|     expect(failed(checks)).toEqual([BUCKET_CHECK]);
+       |                            ^
+    1101|     expect(checkOf(checks)?.note).toBe("no answer from the project");
+    1102|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/17]⎯
+
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/supabase-probe.test.ts:1136:65
+    1134|     const checks = await probe(fake, fetcher, { budget: budget.signal …
+    1135|     const cut = checks.findIndex((check) => check.name === "anon: Grap…
+    1136|     expect(checks.slice(0, cut + 1).every((check) => check.ok)).toBe(t…
+       |                                                                 ^
+    1137|     const later = checks.slice(cut + 1).filter((check) => !check.name.…
+    1138|     // Every check of anon and user that wasn't asked, and the service…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/17]⎯
+

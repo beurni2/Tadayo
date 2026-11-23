@@ -1,0 +1,10 @@
+--- a/services/worker/src/storage.ts
++++ b/services/worker/src/storage.ts
+@@ -122,7 +122,6 @@
+       );
+       if (response.status !== 200) {
+         const logical = storageStatus(response.status, await jsonOf(response));
+-        if (logical === 404) return null;
+         throw new StorageUnavailable(`reading an original answered ${String(logical)}`);
+       }
+       try {

@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (27 tests | 1 failed) 68374ms
+   ❯ the renditions (TECH-DESIGN section 1, Images) (8)
+     × makes the pixels upright from the EXIF orientation, which it doesn't keep 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  02:46:39
+   Duration  68.68s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the renditions (TECH-DESIGN section 1, Images) > makes the pixels upright from the EXIF orientation, which it doesn't keep
+AssertionError: expected { full: [ 40, 20 ], …(1) } to deeply equal { full: [ 20, 40 ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "display": [
+-     20,
+      40,
++     20,
+    ],
+    "full": [
++     40,
+      20,
+-     40,
+    ],
+  }
+
+ ❯ src/image.test.ts:338:31
+    336|     expect((await sharp(turned).metadata()).orientation).toBe(6);
+    337|     const renditions = await ready(turned);
+    338|     expect(kinds(renditions)).toEqual({ full: [20, 40], display: [20, …
+       |                               ^
+    339|     for (const rendition of renditions) expect((await sharp(rendition.…
+    340|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

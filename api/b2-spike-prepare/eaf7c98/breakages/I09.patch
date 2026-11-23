@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -221,7 +221,6 @@
+       const { data, info } = await pipeline.toBuffer({ resolveWithObject: true });
+       renditions.push({ kind, bytes: data, width: info.width, height: info.height });
+     } catch (error) {
+-      if (timedOut(error)) throw new ImageTimeout();
+       return { ok: false, rejection: "unreadable" };
+     }
+   }

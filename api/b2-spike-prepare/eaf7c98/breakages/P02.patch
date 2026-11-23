@@ -1,0 +1,11 @@
+--- a/packages/domain/src/media/prepare.ts
++++ b/packages/domain/src/media/prepare.ts
+@@ -110,7 +110,7 @@
+   const rows = await bound(tx)`SELECT state, expires_at FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
+   const at = await clock.sample(tx);
+   const row = rows[0];
+-  if (row?.["state"] !== "preparing") return { at, recorded: false };
++  if (row === undefined) return { at, recorded: false };
+   const expiresAt = row["expires_at"];
+   if (!(expiresAt instanceof Temporal.Instant)) throw new Error("media: an upload came back with no expiry");
+   if (Temporal.Instant.compare(expiresAt, at) <= 0) return { at, recorded: false };

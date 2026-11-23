@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (16 tests | 1 failed) 2127ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (4)
+     × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 117ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  02:40:48
+   Duration  2.96s (tests 81%, import 14%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8)
+AssertionError: expected 'ready' to be 'held' // Object.is equality
+
+Expected: "held"
+Received: "ready"
+
+ ❯ src/db/worker-prepare.test.ts:372:25
+    370|       expect(screened).toEqual([photo]);
+    371|       const row = await uploadRow(tx, one.id);
+    372|       expect(row.state).toBe("held");
+       |                         ^
+    373|       expect(Buffer.from(row.content_hash ?? [])).toEqual(Buffer.from(…
+    374|       expect(row.content_version).toMatch(/^mv_/);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:354:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

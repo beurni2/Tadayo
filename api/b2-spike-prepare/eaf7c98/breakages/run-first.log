@@ -1,0 +1,155 @@
+== O01 the claim waits on an event another claim holds [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × never gives two claimers the same event: one held by another claim is skipped, not waited for 5033ms
+== O02 the claim takes any topic [outbox]: CAUGHT; exit 1 ['Tests  7 failed | 5 passed (12)']
+    × brings an event back once its lease has passed when its attempt never reported back, as the next attempt 8ms
+    × marks a handled event done at the clock's sample, and its handler is given the event's payload 36ms
+    × never gives two claimers the same event: one held by another claim is skipped, not waited for 38ms
+    × takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own 39ms
+    × tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code 94ms
+    × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 30ms
+== O03 the claim counts no attempt [outbox]: CAUGHT; exit 1 ['Tests  9 failed | 3 passed (12)']
+    × brings an event back once its lease has passed when its attempt never reported back, as the next attempt 13ms
+    × kills at once an event whose failure no retry would end, keeping its code 8ms
+    × marks a handled event done at the clock's sample, and its handler is given the event's payload 13ms
+    × takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own 41ms
+    × tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code 10ms
+    × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 16ms
+== O04 the claim leases nothing [outbox]: CAUGHT; exit 1 ['Tests  4 failed | 8 passed (12)']
+    × brings an event back once its lease has passed when its attempt never reported back, as the next attempt 11ms
+    × never gives two claimers the same event: one held by another claim is skipped, not waited for 40ms
+    × takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own 39ms
+    × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 22ms
+== O05 a spent event is worked on again [outbox]: CAUGHT; exit 1 ['Tests  2 failed | 10 passed (12)']
+    × kills an event claimed with its attempts spent without running its handler, as lease_lapsed, whatever an earlier attempt said 22ms
+    × writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails 15ms
+== O06 a spent event keeps an earlier attempt's code [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × kills an event claimed with its attempts spent without running its handler, as lease_lapsed, whatever an earlier attempt said 20ms
+== O07 a handled event isn't marked done [outbox]: CAUGHT; exit 1 ['Tests  2 failed | 10 passed (12)']
+    × marks a handled event done at the clock's sample, and its handler is given the event's payload 14ms
+    × stops between events when told to, leaving the rest due 8ms
+== O08 the backoff doesn't double [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code 34ms
+== O09 a failure no retry would end is tried again [outbox]: CAUGHT; exit 1 ['Tests  2 failed | 10 passed (12)']
+    × kills at once an event whose failure no retry would end, keeping its code 13ms
+    × writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails 15ms
+== O10 a failure writes over an event its handler ended [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × writes nothing over an event its handler already ended, when the handler then fails 13ms
+== O11 a pass doesn't stop when told to [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × stops between events when told to, leaving the rest due 14ms
+== O12 a failure's code is its message [outboxu]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is unknown for anything else, and never anything an error says 7ms
+== O13 a retried failure is written over a newer claim [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 12ms
+== O14 a failure for good is written over a newer claim [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 24ms
+== O15 the lines are written when the pass ends [outbox]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails 24ms
+== P01 a lapsed upload is prepared [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × finishes an event whose upload isn't preparing, has lapsed or doesn't exist, calling Storage for nothing 61ms
+== P02 the record writes over an upload no longer preparing [prepare]: CAUGHT; exit 1 ['Tests  2 failed | 14 passed (16)']
+    × makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE) 137ms
+    × records nothing when another run of the same event recorded first, and finishes the event 44ms
+== P03 the record locks the upload FOR UPDATE [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE) 10128ms
+== P04 a purpose with no renditions built is prepared [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × kills at once an event whose payload names no upload, and one whose upload's renditions aren't built, with the alert line 24ms
+== P05 a payload's id isn't checked [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × kills at once an event whose payload names no upload, and one whose upload's renditions aren't built, with the alert line 31ms
+== P06 a held photo is recorded ready [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 72ms
+== P07 the hash is the original's, not the owner's [prepare]: CAUGHT; exit 1 ['Tests  2 failed | 14 passed (16)']
+    × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 78ms
+    × stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done 331ms
+== P08 a lapse during the work isn't seen under the lock [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × records nothing for an upload that lapses during the work, and finishes the event: its renditions stay stored at its key 37ms
+== P09 the record's clock is read before its lock [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × reads the record's clock after the upload's lock, so what it writes is dated when it could write it (T1) 77ms
+== I01 the declared type isn't checked against the bytes [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses bytes that aren't the type the intent declared as unsupported_type 16ms
+== I02 every decoder is allowed [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × decodes none but the three, even past the signature check: an SVG behind a JPEG's first bytes 16ms
+== I03 the size isn't checked [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses more than 20 MiB as too_large, before reading anything else 33ms
+== I04 the pixels aren't checked by the header [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses more than 64 megapixels by the header as too_many_pixels, and takes exactly 64,000,000 715ms
+== I05 the renditions keep the metadata [image]: CAUGHT; exit 1 ['Tests  3 failed | 24 passed (27)']
+    × makes the pixels upright from the EXIF orientation, which it doesn't keep 20ms
+    × strips a PNG's EXIF and text too 9ms
+    × strips the location, the capture date, every EXIF, XMP, IPTC and ICC block (spec 23, ADR-014) 27ms
+== I06 the pixels aren't made upright [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × makes the pixels upright from the EXIF orientation, which it doesn't keep 22ms
+== I07 display's height isn't bounded [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × never makes a long screenshot's display taller than its full 106ms
+== I08 a small photo is enlarged [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × makes the pixels upright from the EXIF orientation, which it doesn't keep 245ms
+    × never enlarges a small photo 290ms
+== I09 a slow decode is a rejection [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × is the worker's limit, a failure to try again, never a rejection of the photo 1741ms
+== I10 the hash isn't keyed by the owner [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × is the same for one owner's same bytes, and different for another owner or other bytes 10ms
+== I11 what a decode would hold isn't checked [image]: CAUGHT; exit 1 ['Tests  3 failed | 24 passed (27)']
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 11297ms
+    × refuses a progressive JPEG whose coefficients pass 128 MiB as too_many_pixels, subsampled or not, and takes one within it 1234ms
+    × refuses an interlaced PNG whose pixels pass 128 MiB as too_many_pixels, by its channels and its depth, and takes one within it 2061ms
+== I12 a JPEG's components aren't all counted [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest 7ms
+    × refuses a progressive JPEG whose coefficients pass 128 MiB as too_many_pixels, subsampled or not, and takes one within it 8140ms
+== I13 a 16-bit PNG's samples count as one byte [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest 8ms
+    × refuses an interlaced PNG whose pixels pass 128 MiB as too_many_pixels, by its channels and its depth, and takes one within it 5264ms
+== I14 an interlaced PNG holds nothing [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest 7ms
+    × refuses an interlaced PNG whose pixels pass 128 MiB as too_many_pixels, by its channels and its depth, and takes one within it 2023ms
+== I15 a JPEG's padding to whole MCUs isn't counted [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest 7ms
+== I16 the budget is 512 MiB [image]: CAUGHT; exit 1 ['Tests  4 failed | 23 passed (27)']
+    × counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest 8ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 11794ms
+    × refuses a progressive JPEG whose coefficients pass 128 MiB as too_many_pixels, subsampled or not, and takes one within it 1276ms
+    × refuses an interlaced PNG whose pixels pass 128 MiB as too_many_pixels, by its channels and its depth, and takes one within it 2067ms
+== M01 what a decode would hold isn't checked, measured [memory]: CAUGHT; exit 1 ['Tests  1 failed (1)']
+    × stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing 88124ms
+== I17 an animated WebP holds nothing [image]: NOT CAUGHT; exit 0 ['Tests  27 passed (27)']
+== I18 a lossless WebP holds nothing [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 19ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 11867ms
+== I19 a lossy WebP's alpha holds only its plane [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 28ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 26348ms
+== I20 a WebP whose coding can't be read holds nothing [image]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 25ms
+== I21 an ALPH chunk isn't seen [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 16ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 25689ms
+== I22 a WebP's chunks aren't passed over [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 21ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 28801ms
+== I23 an animated WebP counts as two canvases [image]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 26ms
+    × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 33787ms
+== M02 an animated WebP holds nothing, measured [memory]: NOT CAUGHT; exit 0 ['Tests  1 passed (1)']
+== M03 a lossy WebP's alpha holds nothing, measured [memory]: CAUGHT; exit 1 ['Tests  1 failed (1)']
+    × stays within 288 MiB for the largest photo each decoder takes, and refuses one past the budget holding nothing 82554ms
+== P10 the content version is derived from the bytes [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21) 111ms
+== S01 Storage's not-found is an error [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × gives no object for Storage's not-found, in the body as Storage sends it or in the status 6ms
+== S02 an original is read whole [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × reads no further than 20 MiB and a byte, so a larger object is refused as too large, not held whole 16209ms
+== S03 a rendition is put with upsert off [storage]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × puts the JPEG at its key in renditions with upsert on, with the service key 3ms
+== S04 redirects are followed [storage]: CAUGHT; exit 1 ['Tests  2 failed | 10 passed (12)']
+    × asks for the one object in uploads with the service key, refusing redirects, with a time limit 32ms
+    × puts the JPEG at its key in renditions with upsert on, with the service key 2ms
+== W01 Storage's settings are read after the database answers [start]: CAUGHT; exit 1 ['Tests  1 failed | 3 passed (4)']
+    × stops before it connects when a Supabase setting is missing or isn't one, naming neither value 587ms
+== R01 the probe puts the rendition with upsert off [probe]: CAUGHT; exit 1 ['Tests  17 failed | 53 passed (70)']
+    × asks for the object's details as the API does, and names that control when Storage doesn't answer as the API reads them 17ms
+    × fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error 7ms
+    × fails a check, and not the run, when the project gives no answer to it 5ms
+    × fails a check, not the run, when a call gets no answer, and still cleans up 6ms
+    × fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused 7ms
+    × fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed 6ms
+== R02 the probe doesn't compare the bytes read back [probe]: CAUGHT; exit 1 ['Tests  1 failed | 69 passed (70)']
+    × fails the worker's write when Storage refuses the put over, or answers it and keeps the first bytes, and the run goes on and cleans up 28ms
+restored: ' M docs/LIMITATIONS.md\n M docs/QUESTIONS.md\n M docs/plans/api-b2-spike-prepare.md\n M services/worker/src/image-memory.test.ts\n M services/worker/src/image.test.ts\n M services/worker/src/image.ts\n M services/worker/src/testing.ts\n M tests/src/db/worker-prepare.test.ts\n'

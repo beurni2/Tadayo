@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/storage.test.ts (12 tests | 1 failed) 108ms
+   ❯ putting a rendition (4)
+     × puts the JPEG at its key in renditions with upsert on, with the service key 3ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  03:23:07
+   Duration  383ms (tests 40%, transform 32%, import 27%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/storage.test.ts > putting a rendition > puts the JPEG at its key in renditions with upsert on, with the service key
+AssertionError: expected undefined to be 'true' // Object.is equality
+
+- Expected:
+"true"
+
++ Received:
+undefined
+
+ ❯ src/storage.test.ts:143:38
+    141|     expect(one?.method).toBe("POST");
+    142|     expect(one?.headers["content-type"]).toBe("image/jpeg");
+    143|     expect(one?.headers["x-upsert"]).toBe("true");
+       |                                      ^
+    144|     expect(one?.headers["apikey"]).toBe(KEY);
+    145|     expect(one?.headers["authorization"]).toBe(`Bearer ${KEY}`);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

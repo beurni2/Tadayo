@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (16 tests | 1 failed) 2079ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (4)
+     × gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21) 158ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  03:22:43
+   Duration  3.24s (tests 80%, import 13%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21)
+AssertionError: expected 'mv_rMxETuZu8zvvDXukKJJJKf' not to be 'mv_rMxETuZu8zvvDXukKJJJKf' // Object.is equality
+ ❯ src/db/worker-prepare.test.ts:323:41
+    321|       expect(first.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    322|       expect(second.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    323|       expect(first.content_version).not.toBe(second.content_version);
+       |                                         ^
+    324|     });
+    325|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

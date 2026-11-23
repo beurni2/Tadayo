@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -190,7 +190,7 @@
+ ): Promise<Prepared> {
+   if (bytes.length > UPLOAD_MAX_BYTES) return { ok: false, rejection: "too_large" };
+   const type = signatureOf(bytes);
+-  if (type === undefined || type !== declared) return { ok: false, rejection: "unsupported_type" };
++  if (type === undefined) return { ok: false, rejection: "unsupported_type" };
+ 
+   // Each pipeline is built outside its `try`, so a mistake of this code's, which `sharp` throws as it is built,
+   // is an error and never a rejection of the photo; only what the decode itself says is the photo's.

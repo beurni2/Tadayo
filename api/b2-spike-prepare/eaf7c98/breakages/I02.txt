@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (27 tests | 1 failed) 68191ms
+   ❯ what is refused, and with which code (D09, spec 33) (8)
+     × decodes none but the three, even past the signature check: an SVG behind a JPEG's first bytes 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  02:42:10
+   Duration  68.50s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > what is refused, and with which code (D09, spec 33) > decodes none but the three, even past the signature check: an SVG behind a JPEG's first bytes
+AssertionError: expected { format: 'gif', refused: false } to deeply equal { format: 'gif', refused: true }
+
+- Expected
++ Received
+
+  {
+    "format": "gif",
+-   "refused": true,
++   "refused": false,
+  }
+
+ ❯ src/image.test.ts:117:74
+    115|         .then(() => "decoded")
+    116|         .catch((error: unknown) => (error as Error).message);
+    117|       expect({ format, refused: /unsupported image format/.test(said) …
+       |                                                                          ^
+    118|     }
+    119|     for (const kind of ["jpeg", "png", "webp"] as const) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

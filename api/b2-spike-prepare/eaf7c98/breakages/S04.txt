@@ -1,0 +1,55 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/storage.test.ts (12 tests | 2 failed) 106ms
+   ❯ reading an original (7)
+     × asks for the one object in uploads with the service key, refusing redirects, with a time limit 28ms
+   ❯ putting a rendition (4)
+     × puts the JPEG at its key in renditions with upsert on, with the service key 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  03:23:08
+   Duration  353ms (tests 44%, transform 29%, import 26%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/storage.test.ts > reading an original > asks for the one object in uploads with the service key, refusing redirects, with a time limit
+AssertionError: expected undefined to be 'error' // Object.is equality
+
+- Expected:
+"error"
+
++ Received:
+undefined
+
+ ❯ src/storage.test.ts:74:27
+     72|     expect(one?.headers["authorization"]).toBe(`Bearer ${KEY}`);
+     73|     expect(one?.headers["user-agent"]).toBeUndefined();
+     74|     expect(one?.redirect).toBe("error");
+       |                           ^
+     75|     expect(one?.signal).toBeInstanceOf(AbortSignal);
+     76|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/storage.test.ts > putting a rendition > puts the JPEG at its key in renditions with upsert on, with the service key
+AssertionError: expected undefined to be 'error' // Object.is equality
+
+- Expected:
+"error"
+
++ Received:
+undefined
+
+ ❯ src/storage.test.ts:147:27
+    145|     expect(one?.headers["authorization"]).toBe(`Bearer ${KEY}`);
+    146|     expect(one?.body).toEqual(bytes);
+    147|     expect(one?.redirect).toBe("error");
+       |                           ^
+    148|     expect(one?.signal).toBeInstanceOf(AbortSignal);
+    149|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

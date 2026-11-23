@@ -1,0 +1,11 @@
+--- a/services/worker/src/prepare.ts
++++ b/services/worker/src/prepare.ts
+@@ -129,7 +129,7 @@
+     }
+     ms.store = step();
+     outcome = {
+-      state: verdict === "hold" ? "held" : "ready",
++      state: "ready",
+       contentHash: contentHash(upload.ownerUserId, original),
+       renditions,
+     };

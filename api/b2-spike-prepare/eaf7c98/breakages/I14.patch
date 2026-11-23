@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -168,7 +168,7 @@
+     const padded = (side: number) => Math.ceil(side / 32) * 32;
+     return padded(header.width) * padded(header.height) * header.channels * 2;
+   }
+-  if (header.format === "png") {
++  if (header.format === "gif") {
+     return pixels * header.channels * (header.depth === "uchar" ? 1 : 2);
+   }
+   return 0;

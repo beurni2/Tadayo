@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -126,7 +126,7 @@
+     if (!ID.test(row.id)) throw new Error("outbox: an event came back with no id");
+     if (row.attempts >= MAX_ATTEMPTS) {
+       await tx`
+-        UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${LEASE_LAPSED}
++        UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = COALESCE(last_error, ${LEASE_LAPSED})
+          WHERE id = ${row.id}`;
+       return { kind: "dead", event: row } as const;
+     }
