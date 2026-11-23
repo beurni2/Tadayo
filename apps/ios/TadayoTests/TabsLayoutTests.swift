@@ -27,17 +27,22 @@ final class TabsLayoutTests: XCTestCase {
     }
 
     private func content(
-        _ clubs: RootModel.Clubs, on tab: ClubTab, size: DynamicTypeSize = .large
+        _ clubs: RootModel.Clubs, on tab: ClubTab, size: DynamicTypeSize = .large,
+        invitations: [AcceptedInvitation] = []
     ) -> some View {
-        TabContent(tab: tab, clubs: clubs, name: "Ben", retry: {}, goHome: {})
-            .environment(\.dynamicTypeSize, size)
+        TabContent(
+            tab: tab, clubs: clubs, invitations: invitations, name: "Ben", retry: {}, goHome: {}
+        )
+        .environment(\.dynamicTypeSize, size)
     }
 
     private func measured(
         _ clubs: RootModel.Clubs = .noClub, on tab: ClubTab = .home,
-        size: DynamicTypeSize = .large, file: StaticString = #filePath, line: UInt = #line
+        size: DynamicTypeSize = .large, invitations: [AcceptedInvitation] = [],
+        file: StaticString = #filePath, line: UInt = #line
     ) throws -> Header {
-        let layout = AccessibilityElements.layout(of: content(clubs, on: tab, size: size))
+        let layout = AccessibilityElements.layout(
+            of: content(clubs, on: tab, size: size, invitations: invitations))
         let found = { (label: String) in layout.elements.first { $0.label == label } }
         return Header(
             wordmark: try XCTUnwrap(found("Tadayo"), "\(layout.elements)", file: file, line: line),
@@ -70,13 +75,14 @@ final class TabsLayoutTests: XCTestCase {
 
     func testTheHeaderIsTheSameInEveryStateOfATab() throws {
         let first = try measured()
-        let states: [RootModel.Clubs] = [.loading, .failed(.network), .notInThisBuild]
+        let states: [RootModel.Clubs] = [.noClub, .loading, .failed(.network)]
         for tab in ClubTab.allCases {
-            for clubs in [.noClub] + states {
-                let other = try measured(clubs, on: tab)
-                XCTAssertEqual(other.wordmark.frame, first.wordmark.frame, "\(tab), \(clubs)")
-                XCTAssertEqual(other.add.frame, first.add.frame, "\(tab), \(clubs)")
-                XCTAssertEqual(other.account.frame, first.account.frame, "\(tab), \(clubs)")
+            for (clubs, invitations) in states.map({ ($0, []) }) + [(.noClub, [Self.waiting])] {
+                let other = try measured(clubs, on: tab, invitations: invitations)
+                let shown = "\(tab), \(clubs), \(invitations.count) invitations"
+                XCTAssertEqual(other.wordmark.frame, first.wordmark.frame, shown)
+                XCTAssertEqual(other.add.frame, first.add.frame, shown)
+                XCTAssertEqual(other.account.frame, first.account.frame, shown)
             }
         }
     }
@@ -169,10 +175,71 @@ final class TabsLayoutTests: XCTestCase {
             XCTAssertEqual(retry.frame.minX, 20, accuracy: 0.5, "\(tab): \(retry)")
             XCTAssertEqual(retry.frame.width, 353, accuracy: 0.5, "\(tab): \(retry)")
         }
-        let other = try measured(.notInThisBuild)
-        let title = try XCTUnwrap(
-            other.layout.elements.first { $0.isHeader }, "\(other.layout.elements)")
-        XCTAssertEqual(title.frame.minY - other.add.frame.maxY, 32, accuracy: 0.5, "\(title)")
+    }
+
+    // MARK: Accepted invitations on Home with no club
+
+    private static let waiting = ClubFixtures.kitchenInvitation(.waiting)
+    private static let changed = ClubFixtures.kitchenInvitation(.rosterChanged)
+
+    func testInvitationsComeFirstAtFrame7sGapsWithG06sOwnUnderThem() throws {
+        // Handoff 9's frame 7, each line's top its baseline less 0.82 of its size: "Invitations"
+        // 32 under the header, as G06-no-club's title; the row 24 under it, at [20, 353, 84];
+        // "Start your club." 32 under the row, its first line 16 under it and its second 8 under
+        // that; Create a club 24 under the lines; Private drafts 32 under I have an invite.
+        let header = try measured(invitations: [Self.waiting])
+        let elements = header.layout.elements
+        func element(_ label: String) throws -> Element {
+            try XCTUnwrap(elements.first { $0.label == label }, "\(label): \(elements)")
+        }
+        let heading = try element("Invitations")
+        XCTAssertTrue(heading.isHeader, "\(heading)")
+        XCTAssertEqual(heading.frame.minX, 20, accuracy: 0.5, "\(heading)")
+        XCTAssertEqual(heading.frame.minY - header.add.frame.maxY, 32, accuracy: 0.5, "\(heading)")
+        let row = try element("Kitchen table. Waiting for members.")
+        XCTAssertEqual(row.frame.minY - heading.frame.maxY, 24, accuracy: 0.5, "\(row)")
+        XCTAssertEqual(row.frame.minX, 20, accuracy: 0.5, "\(row)")
+        XCTAssertEqual(row.frame.width, 353, accuracy: 0.5, "\(row)")
+        XCTAssertEqual(row.frame.height, 84, accuracy: 0.5, "\(row)")
+        let title = try element("Start your club.")
+        XCTAssertTrue(title.isHeader, "\(title)")
+        XCTAssertEqual(title.frame.minY - row.frame.maxY, 32, accuracy: 0.5, "\(title)")
+        let first = try element("A private place for two to six people.")
+        XCTAssertEqual(first.frame.minY - title.frame.maxY, 16, accuracy: 0.5, "\(first)")
+        let second = try element("Create a club or open an invitation.")
+        XCTAssertEqual(second.frame.minY - first.frame.maxY, 8, accuracy: 0.5, "\(second)")
+        let create = try element("Create a club.")
+        XCTAssertEqual(create.frame.minY - second.frame.maxY, 24, accuracy: 0.5, "\(create)")
+        let invite = try element("I have an invite")
+        let drafts = try element("Private drafts")
+        XCTAssertEqual(drafts.frame.minY - invite.frame.maxY, 32, accuracy: 0.5, "\(drafts)")
+    }
+
+    func testARowGrowsWithItsHelperLineAndKeepsItsSymbolsOnTheNamesFirstLine() throws {
+        // Frame 9: the helper line 8 under the state, the row 16 under it, so taller than 84;
+        // the lines take their fonts' own heights (`dynamicTypePolicy.lineHeight`), so less than
+        // the frame's 106.
+        let header = try measured(invitations: [Self.changed])
+        let row = try XCTUnwrap(
+            header.layout.elements.first {
+                $0.label
+                    == "Kitchen table. Review updated members. Open the invitation link to continue."
+            }, "\(header.layout.elements)")
+        XCTAssertGreaterThan(row.frame.height, 84 + 8, "\(row)")
+        XCTAssertLessThan(row.frame.height, 106, "\(row)")
+        XCTAssertEqual(row.frame.width, 353, accuracy: 0.5, "\(row)")
+    }
+
+    func testFriendsAndMemoriesDontRepeatTheInvitations() throws {
+        for tab in [ClubTab.friends, .memories] {
+            let header = try measured(on: tab, invitations: [Self.waiting])
+            XCTAssertFalse(
+                header.layout.elements.contains { $0.label == "Invitations" },
+                "\(tab): \(header.layout.elements)")
+            XCTAssertFalse(
+                header.layout.elements.contains { $0.label.hasPrefix("Kitchen table") },
+                "\(tab): \(header.layout.elements)")
+        }
     }
 
     // MARK: The selected club's header

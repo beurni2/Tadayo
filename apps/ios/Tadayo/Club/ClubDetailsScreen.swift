@@ -16,21 +16,23 @@ enum ClubRoute: Hashable {
     case pending
     case linkEntry
     case invitation
+    /// An accepted invitation from the club list, the root's (`RootModel.openAccepted`).
+    case accepted
 
     /// A screen of the club being made, which isn't the selected club's: it stays while another
     /// club is selected or the list is read again.
     var isCreateFlow: Bool {
         switch self {
-        case .details, .members, .linkEntry, .invitation: false
+        case .details, .members, .linkEntry, .invitation, .accepted: false
         case .create, .invitations, .inviteName, .pending: true
         }
     }
 
-    /// A screen of I have an invite, which isn't the selected club's either: it stays while the
-    /// list is read again, as an acceptance that joins reads it.
+    /// A screen of I have an invite or of an accepted invitation, which isn't the selected club's
+    /// either: it stays while the list is read again, as an acceptance that joins reads it.
     var isInvitationFlow: Bool {
         switch self {
-        case .linkEntry, .invitation: true
+        case .linkEntry, .invitation, .accepted: true
         default: false
         }
     }

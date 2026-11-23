@@ -4,10 +4,14 @@ import XCTest
 /// services' invitation (`UITestLaunch.invite`): I have an invite pushes the paste step with the
 /// tab bar hidden and Continue waiting for a link; a link Debby shared shows Sunday people's
 /// roster with Ben first, proposed by Debby; Back returns to the field as it was; Accept this roster ends at
-/// `G03-waiting`, whose Done returns to Home, which still shows no club; a link Maya shared, whose
-/// Accept this roster joins Kitchen table, closes the invitation and the paste step, and Home
-/// shows the club; and a link the server doesn't know shows `G02-revoked`, whose Close invitation
-/// returns to Home too. The paste control, which the snapshots can't draw, is checked here.
+/// `G03-waiting`, whose Done returns to Home, which still shows no club and now shows the
+/// invitation's row (`G06-no-club-invitation`), which opens `G03-waiting` again; a link Maya
+/// shared, whose Accept this roster joins Kitchen table, closes the invitation and the paste step,
+/// and Home shows the club; and a link the server doesn't know shows `G02-revoked`, whose Close
+/// invitation returns to Home too. On `UITestLaunch.inviteChanged`, Home's row for an accepted
+/// invitation whose roster changed, with no link held, opens the paste step (FQ136), and Maya's
+/// link then shows the changed roster, which joins. The paste control, which the snapshots can't
+/// draw, is checked here.
 final class InvitationUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -56,12 +60,65 @@ final class InvitationUITests: XCTestCase {
         XCTAssertTrue(element("Waiting for club approval", in: app).exists)
         XCTAssertFalse(tabBarShows(app), "no tab bar while waiting")
 
-        // Done: back on Home, which still shows no club.
+        // Done: back on Home, which still shows no club, with the invitation's row, the list
+        // having been read again while it waited.
+        app.buttons["Done"].tap()
+        let row = app.buttons["Sunday people. Waiting for members."]
+        XCTAssertTrue(
+            eventually(10) {
+                shows(row) && shows(app.buttons["Create a club."]) && tabBarShows(app)
+            },
+            "Home, with no club and the invitation's row")
+        XCTAssertFalse(app.staticTexts["Your acceptance is saved."].exists)
+        XCTAssertTrue(element("Invitations", in: app).exists)
+
+        // The row opens G03-waiting again, from the list's words, and Done returns to Home.
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Your acceptance is saved."].waitForExistence(timeout: 10))
+        XCTAssertTrue(eventually { !tabBarShows(app) }, "the tab bar hidden")
         app.buttons["Done"].tap()
         XCTAssertTrue(
-            eventually(10) { shows(app.buttons["Create a club."]) && tabBarShows(app) },
-            "Home, with no club")
-        XCTAssertFalse(app.staticTexts["Your acceptance is saved."].exists)
+            eventually(10) { shows(row) && tabBarShows(app) }, "Home, with the row still there")
+    }
+
+    @MainActor func testAChangedInvitationWithNoLinkAsksForItAndThenJoins() {
+        let app = signedIn(as: "-TadayoUITestInviteChanged")
+        let row = app.buttons[
+            "Kitchen table. Review updated members. Open the invitation link to continue."]
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(element("Invitations", in: app).exists)
+
+        // No link held: the paste step, nothing accepted (FQ136).
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Have an invitation?"].waitForExistence(timeout: 5))
+        XCTAssertTrue(eventually { !tabBarShows(app) }, "the tab bar hidden")
+        let field = app.textFields["Invitation link"]
+        field.tap()
+        field.typeText(Self.mayasLink)
+        app.buttons["Check the invitation link."].tap()
+
+        // The changed roster, which Accept this roster joins: Home shows Kitchen table, and the
+        // row is gone with the invitation.
+        XCTAssertTrue(app.staticTexts["Review the new roster"].waitForExistence(timeout: 10))
+        app.buttons["Accept this roster"].tap()
+        XCTAssertTrue(
+            eventually(10) {
+                shows(app.buttons["Switch club. Kitchen table selected."]) && tabBarShows(app)
+            },
+            "Home, with Kitchen table")
+        XCTAssertFalse(row.exists)
+    }
+
+    @MainActor func testBackFromThePasteStepAChangedRowOpenedReturnsToHomeAndItsRow() {
+        let app = signedIn(as: "-TadayoUITestInviteChanged")
+        let row = app.buttons[
+            "Kitchen table. Review updated members. Open the invitation link to continue."]
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Have an invitation?"].waitForExistence(timeout: 5))
+        back(in: app)
+        XCTAssertTrue(
+            eventually(10) { shows(row) && tabBarShows(app) }, "Home, with the row still there")
     }
 
     @MainActor func testBenAcceptsALinkThatJoinsAndHomeShowsTheClub() {
@@ -115,10 +172,10 @@ final class InvitationUITests: XCTestCase {
     private static let mayasLink = "https://tadayo.app/i#" + String(repeating: "J", count: 43)
 
     /// Signed in on the stand-in services' named account with no club, at Home's Start your
-    /// club.
-    @MainActor private func signedIn() -> XCUIApplication {
+    /// club, launched with `launch` (`UITestLaunch.invite` or `.inviteChanged`).
+    @MainActor private func signedIn(as launch: String = "-TadayoUITestInvite") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-TadayoUITestInvite"]
+        app.launchArguments = [launch]
         app.launch()
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")

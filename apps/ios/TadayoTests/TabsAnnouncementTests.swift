@@ -46,8 +46,9 @@ final class TabsAnnouncementTests: XCTestCase {
         XCTAssertEqual(
             said(.loading, .failed(.other), on: .home),
             ["Couldn’t load Home. Try again.", "at once"])
+        // A selected club's tab this build has no screen for.
         XCTAssertEqual(
-            said(.loading, .notInThisBuild, on: .memories),
+            heard(.loading, .notInThisBuild, on: .memories),
             ["This version of Tadayo can’t show clubs yet.", "at once"])
     }
 

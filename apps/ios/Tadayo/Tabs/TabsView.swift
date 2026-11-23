@@ -45,6 +45,13 @@ import TadayoDesign
 /// Close invitation close both, back to the tab; an Accept or a check that joins the club closes
 /// them once the list has been read again, so Home opens on the club. These screens stay while the
 /// list is read again, and go with the tabs (`docs/plans/ios-b1-invitation.md` section 5).
+///
+/// An accepted invitation's row, on Home with no club or in the switcher (which closes first),
+/// asks the root to open it (`openAccepted`), and the invitation the root then shows is pushed
+/// onto that tab (`.accepted`), with the tab bar hidden; one whose link this phone doesn't hold
+/// (`reopenLink`, FQ136) opens the paste step instead. Done, Not now, Close invitation and Back
+/// close it through the root, and the root closing it (a join, once the list has been read
+/// again) takes it off the tab (`docs/plans/ios-b1-invitation.md` section 6).
 struct TabsView: View {
     enum Selection: Hashable {
         case home, friends, memories, lab
@@ -73,6 +80,7 @@ struct TabsView: View {
         var clubs: RootModel.Clubs
         var selected: ClubSummary?
         var home: RootModel.Home
+        var accepted: [AcceptedInvitation] = []
 
         func shown(on tab: ClubTab) -> TabShown {
             TabShown(clubs, selected: selected, home: home, on: tab)
@@ -90,6 +98,11 @@ struct TabsView: View {
     let createClub: @MainActor () -> CreateClubModel?
     let invitations: @MainActor (ClubRef) -> InvitationListModel?
     let linkEntry: @MainActor () -> InvitationLinkEntryModel?
+    /// The invitation the root shows, from an accepted invitation's row, and how to open and close
+    /// one.
+    let invitation: InvitationModel?
+    let openAccepted: @MainActor (MyInvitation) async -> Void
+    let closeInvitation: @MainActor () -> Void
     @State private var selection: Selection
     @State private var switching = false
     /// Each club tab's pushed screens.
@@ -110,10 +123,17 @@ struct TabsView: View {
     /// it slides away.
     @State private var entering: InvitationLinkEntryModel?
     @State private var shownInvitation: InvitationModel?
+    /// The tab whose accepted invitation's row was chosen, until the root shows the invitation;
+    /// the switcher's row, until the sheet has closed; and the root's invitation last pushed,
+    /// which stays drawn while it slides away.
+    @State private var acceptedOn: ClubTab?
+    @State private var acceptedChosen: MyInvitation?
+    @State private var shownAccepted: InvitationModel?
 
     init(
         clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
-        name: String, selection: Selection = .home, showsLab: Bool = true,
+        accepted: [AcceptedInvitation] = [], name: String, selection: Selection = .home,
+        showsLab: Bool = true,
         retry: @escaping @MainActor () async -> Void,
         retryHome: @escaping @MainActor () async -> Void = {},
         select: @escaping @MainActor (String) async -> Void = { _ in },
@@ -121,9 +141,13 @@ struct TabsView: View {
         createClub: @escaping @MainActor () -> CreateClubModel? = { nil },
         invitations: @escaping @MainActor (ClubRef) -> InvitationListModel? = { _ in nil },
         linkEntry: @escaping @MainActor () -> InvitationLinkEntryModel? = { nil },
+        invitation: InvitationModel? = nil,
+        openAccepted: @escaping @MainActor (MyInvitation) async -> Void = { _ in },
+        closeInvitation: @escaping @MainActor () -> Void = {},
         logOut: @escaping @MainActor () async -> Void
     ) {
-        self.state = Values(clubs: clubs, selected: selected, home: home)
+        self.state = Values(
+            clubs: clubs, selected: selected, home: home, accepted: accepted)
         self.name = name
         self.showsLab = showsLab
         self.retry = retry
@@ -133,6 +157,9 @@ struct TabsView: View {
         self.createClub = createClub
         self.invitations = invitations
         self.linkEntry = linkEntry
+        self.invitation = invitation
+        self.openAccepted = openAccepted
+        self.closeInvitation = closeInvitation
         self.logOut = logOut
         _selection = State(initialValue: selection)
     }
@@ -156,7 +183,9 @@ struct TabsView: View {
         }
         .tint(Palette.action)
         .onChange(of: state, initial: true) { old, new in
-            guard let tab = selection.tab else { return }
+            // Nothing is said of a tab while a screen is pushed over it: the list read again
+            // under G03-waiting, say, or under a club being made (6d).
+            guard let tab = selection.tab, paths[tab]?.isEmpty ?? true else { return }
             let initial = old == new
             guard
                 let said = Self.announcement(
@@ -182,11 +211,16 @@ struct TabsView: View {
         .onChange(of: inviting?.closed ?? false) { _, closed in
             if closed { closeCreateScreens() }
         }
+        .onChange(of: invitation.map(ObjectIdentifier.init)) { _, _ in
+            rootInvitationChanged()
+        }
         .sheet(isPresented: $switching, onDismiss: openChosen) {
             if case .listed(let list) = state.clubs {
                 ClubSwitcher(
                     clubs: list.clubs, selectedID: state.selected?.id,
+                    invitations: state.accepted,
                     select: { club in Task { await select(club) } },
+                    openAccepted: { acceptedChosen = $0 },
                     openDetails: { detailsChosen = true },
                     createClub: { createChosen = true }
                 )
@@ -198,9 +232,11 @@ struct TabsView: View {
     /// Club details for the selected club, or G01-create, on the selected tab, once the switcher
     /// has closed.
     private func openChosen() {
-        defer { (detailsChosen, createChosen) = (false, false) }
+        defer { (detailsChosen, createChosen, acceptedChosen) = (false, false, nil) }
         guard let tab = selection.tab else { return }
-        if createChosen {
+        if let acceptedChosen {
+            open(acceptedChosen, on: tab)
+        } else if createChosen {
             startCreating(on: tab)
         } else if detailsChosen, let model = details() {
             shownDetails = model
@@ -265,7 +301,37 @@ struct TabsView: View {
     /// with.
     private func closeInvitationScreens() {
         entering?.left()
+        if paths.values.contains(where: { $0.contains(.accepted) }) { closeInvitation() }
         paths = paths.filter { !($0.value.first?.isInvitationFlow ?? false) }
+    }
+
+    /// An accepted invitation's row on `tab`: the root opens it, and `rootInvitationChanged`
+    /// pushes what it shows. Any I have an invite screens close first.
+    private func open(_ accepted: MyInvitation, on tab: ClubTab) {
+        closeInvitationScreens()
+        acceptedOn = tab
+        Task { await openAccepted(accepted) }
+    }
+
+    /// The root's invitation came or went. One a row asked for is pushed onto the row's tab, or,
+    /// with no link held for a changed roster, gives way to the paste step (FQ136). Gone, it's
+    /// taken off every tab; a row chosen meanwhile still waits for its own.
+    private func rootInvitationChanged() {
+        guard let model = invitation else {
+            for tab in Array(paths.keys) where paths[tab]?.contains(.accepted) == true {
+                paths[tab]?.removeAll { $0 == .accepted }
+            }
+            return
+        }
+        guard let tab = acceptedOn else { return }
+        acceptedOn = nil
+        if case .reopenLink = model.state {
+            closeInvitation()
+            openLinkEntry(on: tab)
+            return
+        }
+        shownAccepted = model
+        paths[tab] = [.accepted]
     }
 
     /// Once no tab shows I have an invite's screens and theirs have slid away, what they held
@@ -277,6 +343,7 @@ struct TabsView: View {
         entering?.left()
         entering = nil
         shownInvitation = nil
+        shownAccepted = nil
     }
 
     /// Create a club: G01-create on `tab`, in place of any club being made on another tab.
@@ -325,6 +392,10 @@ struct TabsView: View {
                 // Back from the paste step, even while its link is checked: it's done with.
                 if paths[tab]?.contains(.linkEntry) == true, !now.contains(.linkEntry) {
                     entering?.left()
+                }
+                // Back from an accepted invitation: the root closes it.
+                if paths[tab]?.contains(.accepted) == true, !now.contains(.accepted) {
+                    closeInvitation()
                 }
                 paths[tab] = now
             })
@@ -377,6 +448,15 @@ struct TabsView: View {
                 )
                 .onDisappear { forgetInvitationScreensIfGone() }
             }
+        case .accepted:
+            if let shownAccepted {
+                // A join closes it through the root, once the list has been read again.
+                InvitationDestination(
+                    model: shownAccepted, returnsTo: tab.title, answered: { _ in },
+                    leave: { closeInvitation() }
+                )
+                .onDisappear { forgetInvitationScreensIfGone() }
+            }
         }
     }
 
@@ -384,9 +464,10 @@ struct TabsView: View {
         NavigationStack(path: path(for: tab)) {
             TabContent(
                 tab: tab, clubs: state.clubs, selected: state.selected, home: state.home,
-                name: name, retry: retry, retryHome: retryHome, switchClub: { switching = true },
-                createClub: { startCreating(on: tab) }, openInvite: { openLinkEntry(on: tab) },
-                goHome: { selection = .home }
+                invitations: state.accepted, name: name, retry: retry, retryHome: retryHome,
+                switchClub: { switching = true }, createClub: { startCreating(on: tab) },
+                openInvite: { openLinkEntry(on: tab) },
+                openAccepted: { open($0, on: tab) }, goHome: { selection = .home }
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: ClubRoute.self) { route in
@@ -412,7 +493,8 @@ struct TabsView: View {
     /// - a failure's title and line, the title of a club this build can't show, or a suspended
     ///   club's denial (handoff 6's `denied.group.vo`), as soon as it shows, as sign-in says its
     ///   failures.
-    /// Changing tab says nothing more: each tab's words are on its screen.
+    /// Changing tab says nothing more: each tab's words are on its screen. Nor does a change
+    /// while a screen is pushed over the tab, which the person isn't looking at.
     static func announcement(
         from old: TabShown?, to new: TabShown, on tab: ClubTab?
     ) -> (words: String, politely: Bool)? {

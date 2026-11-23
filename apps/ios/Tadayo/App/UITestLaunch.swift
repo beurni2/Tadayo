@@ -29,10 +29,15 @@
         static let create = "-TadayoUITestCreate"
         /// The stand-in services with an account already named and in no club, where I have an
         /// invite checks a pasted link (`Invited`): Debby's link to Sunday people shows its
-        /// roster, which Accept this roster leaves waiting on the members; Maya's link to Kitchen
-        /// table shows its roster, which Accept this roster joins; and any other link is one the
-        /// server doesn't know. A test seam, not product.
+        /// roster, which Accept this roster leaves waiting on the members, and the club list then
+        /// lists; Maya's link to Kitchen table shows its roster, which Accept this roster joins;
+        /// and any other link is one the server doesn't know. A test seam, not product.
         static let invite = "-TadayoUITestInvite"
+        /// The same, except that the club list already lists Kitchen table's invitation from
+        /// Maya as accepted with its roster changed, and this phone holds no link for it: Home's
+        /// row asks for the link (FQ136), and Maya's link then shows the changed roster, which
+        /// Accept this roster joins. A test seam, not product.
+        static let inviteChanged = "-TadayoUITestInviteChanged"
         /// Debby's link `Invited` knows: made up, no server made it.
         static let invitedLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
         /// Maya's link `Invited` knows, whose Accept joins: made up, no server made it.
@@ -41,15 +46,15 @@
 
         @MainActor static func fakeGraph(
             hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false,
-            creating: Bool = false, invited: Bool = false
+            creating: Bool = false, invited: Bool = false, changedListed: Bool = false
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let made = creating ? NewClub() : nil
-            let invitations = invited ? Invited() : nil
+            let invitations = invited || changedListed ? Invited(changedListed: changedListed) : nil
             let accounts = FakeAccounts(
                 nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [],
-                thenClubs: inClubs ? TwoClubs.relisted : nil, named: creating || invited,
-                made: made, joined: invitations)
+                thenClubs: inClubs ? TwoClubs.relisted : nil,
+                named: creating || invitations != nil, made: made, joined: invitations)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let clubs: any ClubService
             if inClubs {
@@ -158,7 +163,8 @@
                 }
                 return ClubList(
                     serverClock: ServerClock(serverNow: Date(), receivedAt: .now),
-                    clubs: clubs + (made?.listed ?? []) + (joined?.listed ?? []), invitations: [])
+                    clubs: clubs + (made?.listed ?? []) + (joined?.listed ?? []),
+                    invitations: joined?.invitations ?? [])
             }
         }
 
@@ -448,14 +454,42 @@
 
         /// The club calls for Ben, in no club, holding two invitations. Debby's to Sunday people:
         /// its link (`invitedLink`) shows the frames' roster, Ben first, and Accept this roster
-        /// leaves it waiting on the members. Maya's to Kitchen table: its link (`joiningLink`)
-        /// shows its roster, and Accept this roster joins it, so the club list then holds it
-        /// (`listed`). Any other link is one the server doesn't know (`NOT_FOUND`). Every other
-        /// call is `NoClubs`'.
+        /// leaves it waiting on the members, so the club list then lists it (`invitations`).
+        /// Maya's to Kitchen table: its link (`joiningLink`) shows its roster, or, when the list
+        /// already lists it as accepted with its roster changed (`changedListed`), the changed
+        /// roster; Accept this roster joins it, so the club list then holds the club (`listed`)
+        /// and no longer the invitation. Any other link is one the server doesn't know
+        /// (`NOT_FOUND`). Every other call is `NoClubs`'.
         final class Invited: ClubService, @unchecked Sendable {
             private let lock = NSLock()
             private var hasJoined = false
+            private var debbyWaits = false
+            private let changedListed: Bool
             private let none = NoClubs()
+
+            init(changedListed: Bool = false) {
+                self.changedListed = changedListed
+            }
+
+            /// The accepted invitations the club list lists, in the server's order.
+            var invitations: [MyInvitation] {
+                lock.withLock {
+                    var listed: [MyInvitation] = []
+                    if debbyWaits {
+                        listed.append(
+                            MyInvitation(
+                                invitationID: "inv_debby", clubName: "Sunday people",
+                                inviterName: "Debby", state: .waiting))
+                    }
+                    if changedListed, !hasJoined {
+                        listed.append(
+                            MyInvitation(
+                                invitationID: "inv_maya", clubName: "Kitchen table",
+                                inviterName: "Maya", state: .rosterChanged))
+                    }
+                    return listed
+                }
+            }
             private static let kitchen = ClubRef(
                 id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
                 myMembershipID: "mem_ben_kitchen")
@@ -501,7 +535,9 @@
 
             func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
                 if Self.isDebbys(token) { return .open(Self.roster) }
-                if Self.isMayas(token) { return .open(Self.kitchenRoster) }
+                if Self.isMayas(token) {
+                    return changedListed ? .changed(Self.kitchenRoster) : .open(Self.kitchenRoster)
+                }
                 throw .notFound
             }
 
@@ -509,7 +545,10 @@
                 _ token: InvitationToken, revisionID: String, expectedVersion: Int,
                 key: IdempotencyKey
             ) async throws(APIFailure) -> InvitationAcceptance {
-                if Self.isDebbys(token) { return .waiting }
+                if Self.isDebbys(token) {
+                    lock.withLock { debbyWaits = true }
+                    return .waiting
+                }
                 guard Self.isMayas(token) else { throw .notFound }
                 lock.withLock { hasJoined = true }
                 return .joined(Self.kitchen)

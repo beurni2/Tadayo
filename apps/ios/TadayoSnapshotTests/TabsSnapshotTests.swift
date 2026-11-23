@@ -67,11 +67,31 @@ final class TabsSnapshotTests: XCTestCase {
         snap(.failed(.other), on: .memories, named: "M01-error-no-club-refused")
     }
 
-    // MARK: A club this build has no screen for
+    // MARK: No club, with accepted invitations
 
-    func testGlobalClubNotInBuild() {
-        // Every tab draws it the same, so Home stands for the three.
-        snap(.notInThisBuild, on: .home, named: "global-club-not-in-build")
+    func testG06NoClubInvitation() {
+        snap(
+            .noClub, invitations: [ClubFixtures.kitchenInvitation(.waiting)], on: .home,
+            named: "G06-no-club-invitation")
+    }
+
+    func testG06NoClubInvitationChanged() {
+        snap(
+            .noClub, invitations: [ClubFixtures.kitchenInvitation(.rosterChanged)], on: .home,
+            named: "G06-no-club-invitation-changed")
+    }
+
+    func testG06NoClubInvitationChangedHeld() {
+        snap(
+            .noClub,
+            invitations: [ClubFixtures.kitchenInvitation(.rosterChanged, linkHeld: true)],
+            on: .home, named: "G06-no-club-invitation-changed-held")
+    }
+
+    func testG06NoClubInvitationDeclined() {
+        snap(
+            .noClub, invitations: [ClubFixtures.kitchenInvitation(.didNotGoAhead)], on: .home,
+            named: "G06-no-club-invitation-declined")
     }
 
     // MARK: A club selected
@@ -150,7 +170,7 @@ final class TabsSnapshotTests: XCTestCase {
         heading("Couldn’t load Friends. Try again.", in: content(.failed(.other), on: .friends))
         heading(
             "This version of Tadayo can’t show clubs yet.",
-            in: content(.notInThisBuild, on: .memories))
+            in: club(ClubFixtures.kitchen, home: .notInThisBuild, on: .home))
     }
 
     func testTheNoClubActionsSayWhatTheyDo() {
@@ -208,9 +228,72 @@ final class TabsSnapshotTests: XCTestCase {
                 XCTAssertEqual(retry?.hint, hint, "\(tab), \(failure): \(failed)")
             }
         }
-        let other = AccessibilityElements.of(content(.notInThisBuild, on: .home))
+        let other = AccessibilityElements.of(
+            club(ClubFixtures.kitchen, home: .notInThisBuild, on: .home))
         XCTAssertTrue(other.contains { $0.label == "Account" }, "\(other)")
         XCTAssertFalse(other.contains { $0.label == "Retry" }, "\(other)")
+    }
+
+    // MARK: What VoiceOver finds with accepted invitations
+
+    func testEachInvitationIsOneButtonBetweenItsHeadingAndStartYourClub() {
+        // `acceptedInvitations.row.a11y`: one button, the club, its state and any helper line as
+        // its label, the state's hint, the symbols hidden, no selected trait; read after
+        // "Invitations" and before "Start your club.", in the list's order.
+        let rows: [(AcceptedInvitation, String, String)] = [
+            (
+                ClubFixtures.kitchenInvitation(.waiting), "Kitchen table. Waiting for members.",
+                "Open this invitation to see its current state."
+            ),
+            (
+                ClubFixtures.kitchenInvitation(.rosterChanged, linkHeld: true),
+                "Kitchen table. Review updated members.", "Review and accept the updated roster."
+            ),
+            (
+                ClubFixtures.kitchenInvitation(.rosterChanged),
+                "Kitchen table. Review updated members. Open the invitation link to continue.",
+                "Open or paste the invitation link to continue."
+            ),
+            (
+                ClubFixtures.kitchenInvitation(.didNotGoAhead),
+                "Kitchen table. Invitation didn’t go ahead.", "Open this invitation for details."
+            ),
+        ]
+        for (invitation, label, hint) in rows {
+            let elements = AccessibilityElements.of(
+                content(.noClub, on: .home, invitations: [invitation]))
+            let labels = elements.map(\.label)
+            let heading = labels.firstIndex(of: "Invitations")
+            let row = labels.firstIndex(of: label)
+            let start = labels.firstIndex(of: "Start your club.")
+            XCTAssertNotNil(heading, "\(elements)")
+            XCTAssertTrue(elements.first { $0.label == "Invitations" }?.isHeader ?? false)
+            XCTAssertEqual(row, heading.map { $0 + 1 }, "\(label): \(elements)")
+            XCTAssertEqual(start, row.map { $0 + 1 }, "\(label): \(elements)")
+            let element = elements.first { $0.label == label }
+            XCTAssertEqual(element?.hint, hint, "\(elements)")
+            XCTAssertTrue(element?.traits.contains(.button) ?? false, "\(elements)")
+            XCTAssertFalse(element?.traits.contains(.selected) ?? true, "\(elements)")
+            // Nothing else between them: the name, the state and the symbols aren't read on
+            // their own.
+            XCTAssertFalse(labels.contains("Kitchen table"), "\(elements)")
+        }
+    }
+
+    func testSeveralInvitationsAreReadInTheListsOrder() {
+        let sunday = AcceptedInvitation(
+            MyInvitation(
+                invitationID: "inv_sunday", clubName: "Sunday people", inviterName: "Debby",
+                state: .didNotGoAhead), linkHeld: false)
+        let elements = AccessibilityElements.of(
+            content(
+                .noClub, on: .home,
+                invitations: [ClubFixtures.kitchenInvitation(.waiting), sunday]))
+        let labels = elements.map(\.label)
+        let kitchen = labels.firstIndex(of: "Kitchen table. Waiting for members.")
+        let ended = labels.firstIndex(of: "Sunday people. Invitation didn’t go ahead.")
+        XCTAssertEqual(ended, kitchen.map { $0 + 1 }, "\(elements)")
+        XCTAssertEqual(labels.filter { $0 == "Invitations" }.count, 1, "\(elements)")
     }
 
     // MARK: What VoiceOver finds with a club selected
@@ -298,8 +381,11 @@ final class TabsSnapshotTests: XCTestCase {
 
     // MARK: Helpers
 
-    private func content(_ clubs: RootModel.Clubs, on tab: ClubTab) -> some View {
-        TabContent(tab: tab, clubs: clubs, name: "Ben", retry: {}, goHome: {})
+    private func content(
+        _ clubs: RootModel.Clubs, on tab: ClubTab, invitations: [AcceptedInvitation] = []
+    ) -> some View {
+        TabContent(
+            tab: tab, clubs: clubs, invitations: invitations, name: "Ben", retry: {}, goHome: {})
     }
 
     /// A tab with `selected` the selected club, in a list holding it alone.
@@ -336,14 +422,14 @@ final class TabsSnapshotTests: XCTestCase {
 
     private func snap(
         _ clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
-        on tab: TabsView.Selection, named state: String, testName: String = #function,
-        line: UInt = #line
+        invitations: [AcceptedInvitation] = [], on tab: TabsView.Selection,
+        named state: String, testName: String = #function, line: UInt = #line
     ) {
         let shown = tab.tab.map { TabShown(clubs, selected: selected, home: home, on: $0) }
         ScreenSnapshot.assert(
             TabsView(
-                clubs: clubs, selected: selected, home: home, name: "Ben", selection: tab,
-                showsLab: false, retry: {}, logOut: {}),
+                clubs: clubs, selected: selected, home: home, accepted: invitations, name: "Ben",
+                selection: tab, showsLab: false, retry: {}, logOut: {}),
             named: state, busy: shown == .loading, testName: testName,
             line: line)
     }

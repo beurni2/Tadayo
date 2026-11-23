@@ -699,6 +699,143 @@ import Testing
         #expect(links.received(token, account: leila.id) == nil)
     }
 
+    /// Handoff 9's `acceptedInvitations`: the rows are the list's, in its order, with no club
+    /// selected, and a changed one says whether this phone holds its link (FQ136).
+    @Test func anAccountWithOnlyAcceptedInvitationsHasNoClubAndTheirRowsInTheListsOrder() async {
+        let invitations = [
+            accepted(.rosterChanged, id: "inv_b"), accepted(.waiting, id: "inv_a"),
+            accepted(.didNotGoAhead, id: "inv_c"),
+        ]
+        let root = root(
+            FakeAccounts(me: [.success(leila)], clubs: [.success(list(invitations: invitations))]))
+        await root.start()
+        #expect(root.clubs == .noClub)
+        #expect(root.selectedClubID == nil)
+        #expect(root.acceptedInvitations.map(\.invitation) == invitations)
+        #expect(root.acceptedInvitations.map(\.linkHeld) == [false, false, false])
+    }
+
+    @Test func aListWithClubsKeepsItsInvitationsBesideThem() async {
+        let invitations = [accepted(.waiting)]
+        let root = root(
+            FakeAccounts(
+                me: [.success(leila)],
+                clubs: [.success(list([kitchen], invitations: invitations))]))
+        await root.start()
+        guard case .listed(let shown) = root.clubs else {
+            Issue.record("\(root.clubs)")
+            return
+        }
+        #expect(shown.clubs == [kitchen])
+        #expect(root.selectedClubID == Kitchen.ref.id)
+        #expect(root.acceptedInvitations.map(\.invitation) == invitations)
+    }
+
+    @Test func aChangedRowSaysWhetherThisPhoneHoldsItsLinkForThisAccountAlone() async {
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        links.keepReceived(token, invitation: "inv_leila", account: leila.id)
+        let root = root(
+            FakeAccounts(
+                me: [.success(leila)],
+                clubs: [
+                    .success(
+                        list(invitations: [
+                            accepted(.rosterChanged), accepted(.rosterChanged, id: "inv_other"),
+                        ]))
+                ]),
+            links: links)
+        await root.start()
+        #expect(root.acceptedInvitations.map(\.linkHeld) == [true, false])
+        // Another account's token is never this account's (T11): the book starts Maya's file in
+        // Leila's place, so Leila's next read holds no link at all.
+        let mayas = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        mayas.keepReceived(token, invitation: "inv_leila", account: maya.id)
+        let other = self.root(
+            FakeAccounts(
+                me: [.success(leila)],
+                clubs: [.success(list(invitations: [accepted(.rosterChanged)]))]),
+            links: mayas)
+        await other.start()
+        #expect(other.acceptedInvitations.map(\.linkHeld) == [false])
+    }
+
+    @Test func theRowsAreOnlyWhatTheLastReadSaid() async {
+        let accounts = FakeAccounts(
+            me: [.success(leila)],
+            clubs: [
+                .success(list(invitations: [accepted(.waiting)])), .failure(.network),
+                .success(list(invitations: [accepted(.waiting)])), .success(list([kitchen])),
+            ])
+        let root = root(accounts)
+        await root.start()
+        #expect(root.acceptedInvitations.count == 1)
+        // A read that failed shows none: the failure, with Retry.
+        await root.loadClubs()
+        #expect(root.clubs == .failed(.network))
+        #expect(root.acceptedInvitations.isEmpty)
+        await root.loadClubs()
+        #expect(root.acceptedInvitations.count == 1)
+        // Joined: the row goes with the list's next read, and the club is listed.
+        await root.loadClubs()
+        #expect(root.acceptedInvitations.isEmpty)
+        #expect(root.selectedClubID == Kitchen.ref.id)
+    }
+
+    @Test func anAcceptThatWaitsReadsTheListAgainSoItsRowShows() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(leila)],
+            clubs: [.success(list()), .success(list(invitations: [accepted(.waiting)]))])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        clubs.acceptAnswers = [.success(.waiting)]
+        let root = root(accounts, clubs: clubs)
+        await root.start()
+        #expect(root.acceptedInvitations.isEmpty)
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        let invitation = try #require(entry.invitation)
+        await invitation.accept()
+        // G03-waiting stays shown over Home, whose row is there for Done.
+        #expect(entry.invitation === invitation)
+        #expect(invitation.state == .waiting(clubName: "Kitchen table"))
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        #expect(root.clubs == .noClub)
+        #expect(root.acceptedInvitations.map(\.id) == ["inv_leila"])
+        #expect(root.acceptedInvitations.first?.linkHeld == true)
+    }
+
+    @Test func anAcceptThatWaitsInAnEndedSessionReadsNothing() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(leila)], clubs: [.success(list()), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        clubs.acceptAnswers = [.success(.waiting)]
+        let root = root(accounts, clubs: clubs)
+        await root.start()
+        await root.open(token)
+        let invitation = try #require(root.invitation)
+        let gate = Gate()
+        clubs.duringAccept = { await gate.wait() }
+        async let accepted: Void = invitation.accept()
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await accepted
+        #expect(accounts.calls == ["me", "clubs"])
+    }
+
+    @Test func theRowsGoWithTheAccountAtLeaveSignIn() async {
+        let root = root(
+            FakeAccounts(
+                me: [.success(leila)], clubs: [.success(list(invitations: [accepted(.waiting)]))]))
+        await root.start()
+        #expect(root.acceptedInvitations.count == 1)
+        await root.leave()
+        #expect(root.route == .signIn)
+        #expect(root.acceptedInvitations.isEmpty)
+    }
+
     @Test func nothingOpensOutsideTheTabs() async {
         let root = root(FakeAccounts(me: [.success(account())]))
         await root.start()

@@ -18,6 +18,20 @@ enum ClubFixtures {
         next: day(of: "club_kitchen", star: "Maya", on: november(9), phase: .collecting))
     static let kitchenPaused = club("club_kitchen", "Kitchen table", .paused, members: 1)
 
+    /// Kitchen table's invitation from Maya, which the account accepted and which hasn't become a
+    /// membership: waiting on the members, its roster changed, or not gone ahead (handoff 9's
+    /// frames 7 to 11, which draw Kitchen table and name the account Leila, whom the app's
+    /// fixtures don't have: Ben stands in). `linkHeld` says whether this phone holds its link.
+    static func kitchenInvitation(
+        _ state: MyInvitationState, linkHeld: Bool = false
+    ) -> AcceptedInvitation {
+        AcceptedInvitation(
+            MyInvitation(
+                invitationID: "inv_kitchen", clubName: "Kitchen table", inviterName: "Maya",
+                state: state),
+            linkHeld: linkHeld)
+    }
+
     /// Club details for Sunday people with its six members (2.1's `G05-club-details`).
     static let sundayDetail = ClubDetail(
         serverClock: ServerClock(serverNow: now, receivedAt: .now),

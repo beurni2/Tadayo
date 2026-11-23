@@ -1,4 +1,5 @@
 import SwiftUI
+import TadayoCore
 import TadayoDesign
 
 /// G06-no-club (handoff 4's frame): Home for an account with no club. "Start your club." in
@@ -10,12 +11,62 @@ import TadayoDesign
 /// The two lines are one text, each on its own line, so `body`'s 23-point leading spaces them as
 /// the frame does. `heading` is where VoiceOver's focus goes when this replaces the loading label
 /// it was on (`TabContent`).
+///
+/// With accepted invitations (handoff 9's frames 7 to 10, `acceptedInvitations.noClub`),
+/// "Invitations" is the page's heading in `utilityTitle`, where "Start your club." was, with the
+/// rows under it (`AcceptedInvitationRows`); then "Start your club." in `emptyTitle` 25/30, its two
+/// lines each its own text 8 apart, the two actions and Private drafts, at the frames' gaps
+/// (`TabGap.invitationRows` onwards). Friends and Memories don't repeat the rows.
 struct HomeNoClub: View {
     let heading: AccessibilityFocusState<TabFocus?>.Binding
+    var invitations: [AcceptedInvitation] = []
+    var openAccepted: (MyInvitation) -> Void = { _ in }
     var createClub: () -> Void = {}
     var openInvite: () -> Void = {}
 
     var body: some View {
+        if invitations.isEmpty {
+            alone
+        } else {
+            withInvitations
+        }
+    }
+
+    private var withInvitations: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("accepted.heading")
+                .textRole(.utilityTitle)
+                .foregroundStyle(Palette.primaryText)
+                .accessibilityAddTraits(.isHeader)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, Spacing.xxxl)
+                .accessibilityFocused(heading, equals: .heading)
+            AcceptedInvitationRows(invitations: invitations, open: openAccepted)
+                .padding(.top, TabGap.invitationRows)
+            Text("noClub.title")
+                .textRole(.emptyTitle)
+                .foregroundStyle(Palette.primaryText)
+                .accessibilityAddTraits(.isHeader)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, TabGap.invitationsStart)
+            VStack(alignment: .leading, spacing: TabGap.invitationsLines) {
+                Text("noClub.body1")
+                Text("noClub.body2")
+            }
+            .textRole(.body)
+            .foregroundStyle(Palette.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, TabGap.invitationsBody)
+            NoClubActions(createClub: createClub, openInvite: openInvite)
+                .padding(.top, TabGap.invitationsActions)
+            PrivateDraftsEntry(
+                title: Text("drafts.title"), subtitle: Text("drafts.subtitle"), action: {}
+            )
+            .padding(.top, TabGap.invitationsDrafts)
+        }
+    }
+
+    private var alone: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("noClub.title")
                 .textRole(.utilityTitle)
