@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -50,7 +50,7 @@
+  * hold beside everything else. 128 MiB keeps their peak near the largest a streaming decode reaches
+  * (docs/plans/api-b2-spike-prepare.md section 4.4, measured), and takes any photo the app sends (ADR-014).
+  */
+-export const MAX_HELD_BYTES = 128 * 1024 * 1024;
++export const MAX_HELD_BYTES = 512 * 1024 * 1024;
+ /**
+  * The most scans a JPEG may have. libjpeg takes in every scan before it gives a row, in one step that no timeout
+  * interrupts, and a valid file can have thousands, each a pass over every block of its component: one of 2,688 scans

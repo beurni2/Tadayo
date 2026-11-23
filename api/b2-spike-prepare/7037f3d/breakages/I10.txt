@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/prepare.test.ts (4 tests | 1 failed) 21ms
+   ❯ the scoped content hash (T21) (2)
+     × is the same for one owner's same bytes, and different for another owner or other bytes 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  07:19:36
+   Duration  401ms (import 52%, transform 36%, tests 9%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/prepare.test.ts > the scoped content hash (T21) > is the same for one owner's same bytes, and different for another owner or other bytes
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/prepare.test.ts:55:73
+     53|     expect(a).toHaveLength(32);
+     54|     expect(contentHash("acct_aaaaaaaaaaaaaaaaaaaaaa", bytes).equals(a)…
+     55|     expect(contentHash("acct_bbbbbbbbbbbbbbbbbbbbbb", bytes).equals(a)…
+       |                                                                         ^
+     56|     expect(contentHash("acct_aaaaaaaaaaaaaaaaaaaaaa", other).equals(a)…
+     57|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

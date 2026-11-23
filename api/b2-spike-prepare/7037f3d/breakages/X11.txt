@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (15 tests | 1 failed) 8615ms
+   ❯ a photo's own process (10)
+     × fails, to be tried again, when its code throws, never refusing the photo 147ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  08:02:30
+   Duration  8.93s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > fails, to be tried again, when its code throws, never refusing the photo
+AssertionError: promise resolved "{ prepared: { ok: false, …(1) }, …(3) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "environment": 0,
++   "oomScoreAdj": 1000,
++   "peakBytes": 94363648,
++   "prepared": {
++     "ok": false,
++     "rejection": "unreadable",
++   },
+  }
+
+ ❯ src/image-process.test.ts:149:91
+    147|   it("fails, to be tried again, when its code throws, never refusing t…
+    148|     // `sharp` refuses a timeout that isn't a whole number of seconds …
+    149|     await expect(prepareIsolated(await testImage(16, 16), "image/jpeg"…
+       |                                                                                           ^
+    150|       ImageProcessFailed,
+    151|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

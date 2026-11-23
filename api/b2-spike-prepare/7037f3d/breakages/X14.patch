@@ -1,0 +1,12 @@
+--- a/services/worker/src/image-child.ts
++++ b/services/worker/src/image-child.ts
+@@ -31,9 +31,6 @@
+ // When the channel to the worker closes, as it does when the worker is killed, nobody watches this process any more,
+ // so it ends at once. Not with process.exit, which waits for a decode in progress to finish: a child whose worker
+ // was killed mid-decode lived on 2.3 s in the session, and could for as long as its two decodes' limits.
+-process.on("disconnect", () => {
+-  process.kill(process.pid, "SIGKILL");
+-});
+ 
+ const [declared, seconds] = process.argv.slice(2) as [UploadContentType, string];
+ 

@@ -1,0 +1,71 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 2 failed) 5272ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21) 425ms
+     × makes the version at random: the same upload's same photo, prepared again from the same start, gets another (T21) 415ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  07:44:39
+   Duration  6.00s (tests 92%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts [ src/db/worker-prepare.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:236:15
+    234|     await admin.begin(async (tx) => {
+    235|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    236|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    237|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    238|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21)
+AssertionError: expected 'mv_8IPgtgf0Zim49VqJzpSRy8' not to be 'mv_8IPgtgf0Zim49VqJzpSRy8' // Object.is equality
+ ❯ src/db/worker-prepare.test.ts:324:41
+    322|       expect(first.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    323|       expect(second.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    324|       expect(first.content_version).not.toBe(second.content_version);
+       |                                         ^
+    325|     });
+    326|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:306:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > makes the version at random: the same upload's same photo, prepared again from the same start, gets another (T21)
+AssertionError: expected 'mv_E9D0k3uxg23i3ImMnpMooJ' not to be 'mv_E9D0k3uxg23i3ImMnpMooJ' // Object.is equality
+ ❯ src/db/worker-prepare.test.ts:358:25
+    356|       expect(first).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    357|       expect(second).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    358|       expect(first).not.toBe(second);
+       |                         ^
+    359|     });
+    360|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:331:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (32 tests | 2 failed) 67451ms
+   ❯ a decode that can't stream (FQ138) (6)
+     × counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable 23ms
+     × refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 30290ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  07:34:32
+   Duration  67.74s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > a decode that can't stream (FQ138) > counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable
+AssertionError: expected undefined to be 'lossy with alpha' // Object.is equality
+
+- Expected:
+"lossy with alpha"
+
++ Received:
+undefined
+
+ ❯ src/image.test.ts:321:31
+    319|     expect(webpCoding(lossy)).toBe("lossy");
+    320|     expect(webpCoding(lossless)).toBe("lossless");
+    321|     expect(webpCoding(alpha)).toBe("lossy with alpha");
+       |                               ^
+    322|     expect(webpCoding(losslessAlpha)).toBe("lossless");
+    323|     expect(webpCoding(withMetadata)).toBe("lossy with alpha");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image.test.ts > a decode that can't stream (FQ138) > refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/image.test.ts:373:88
+    371|     // Lossy with alpha at 5: 5182 x 5182 x 5 is 134,265,620 and 5181 …
+    372|     expect(await prepareImage(await losslessAlphaWebp(5182, 5182), "im…
+    373|     expect((await prepareImage(await losslessAlphaWebp(5181, 5181), "i…
+       |                                                                                        ^
+    374|     // Animated at 10 a canvas pixel: 3664 x 3664 x 10 is 134,248,960 …
+    375|     const corner = await pattern(64, 64).webp().toBuffer();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,10 @@
+--- a/tools/ops/src/supabase-probe.ts
++++ b/tools/ops/src/supabase-probe.ts
+@@ -544,7 +544,6 @@
+         caller: service,
+         body: bytes,
+         contentType: "image/jpeg",
+-        headers: { "x-upsert": "true" },
+       });
+       const stored = put?.status === 200 && storageStatus(put) === 200;
+       const back = stored

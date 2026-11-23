@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -249,7 +249,7 @@
+ ): Promise<Prepared> {
+   if (bytes.length > UPLOAD_MAX_BYTES) return { ok: false, rejection: "too_large" };
+   const type = signatureOf(bytes);
+-  if (type === undefined || type !== declared) return { ok: false, rejection: "unsupported_type" };
++  if (type === undefined) return { ok: false, rejection: "unsupported_type" };
+   if (type === "image/jpeg" && jpegScans(bytes) > MAX_JPEG_SCANS) return { ok: false, rejection: "unsupported_type" };
+   if (type === "image/webp") {
+     const chunks = webpChunks(bytes);

@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -117,7 +117,7 @@
+     const at = await clock.sample(tx);
+     const rows = await tx<{ id: string; topic: string; payload: unknown; attempts: number }[]>`
+       SELECT id, topic, payload, attempts FROM app.outbox_events
+-       WHERE state = 'pending' AND available_at <= ${at} AND topic = ANY(${tx.array([...topics])})
++       WHERE state = 'pending' AND available_at <= ${at}
+        ORDER BY available_at, id
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED`;

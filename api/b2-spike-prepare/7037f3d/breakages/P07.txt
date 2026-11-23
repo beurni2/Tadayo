@@ -1,0 +1,214 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 2 failed) 5396ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done 565ms
+     × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 201ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  07:08:04
+   Duration  6.11s (tests 93%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts [ src/db/worker-prepare.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:236:15
+    234|     await admin.begin(async (tx) => {
+    235|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    236|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    237|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    238|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done
+AssertionError: expected Buffer[ 28, 63, 89, 239, 139, 84, …(-65) ] to deeply equal Buffer[ 36, 250, 40, 78, 56, 138, …(26) ]
+
+- Expected
++ Received
+
+  {
+    "data": [
+-     36,
+-     250,
+-     40,
+-     78,
+-     56,
+-     138,
++     28,
++     63,
++     89,
++     239,
++     139,
++     84,
++     98,
+      7,
+-     153,
+-     117,
+-     149,
+-     178,
+-     251,
+-     164,
+-     42,
+-     177,
+-     254,
+-     66,
+-     168,
++     102,
++     220,
++     39,
++     21,
++     232,
++     87,
++     99,
++     133,
++     218,
++     130,
++     93,
++     160,
+      150,
+-     148,
+-     66,
+-     154,
+-     132,
+-     239,
+-     8,
+-     183,
+-     28,
++     163,
++     206,
+      134,
+-     252,
+-     0,
+-     54,
+-     149,
++     151,
++     152,
++     30,
++     113,
++     26,
++     217,
++     229,
++     191,
+    ],
+    "type": "Buffer",
+  }
+
+ ❯ src/db/worker-prepare.test.ts:287:51
+    285|       expect(row.rejection).toBeNull();
+    286|       // The owner's hash of the original (T21), and a version that is…
+    287|       expect(Buffer.from(row.content_hash ?? [])).toEqual(Buffer.from(…
+       |                                                   ^
+    288|       expect(Buffer.from(row.content_hash ?? [])).not.toEqual(Buffer.f…
+    289|       expect(row.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:248:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8)
+AssertionError: expected Buffer[ 172, 81, 74, 205, 16, …(-216) ] to deeply equal Buffer[ 75, 125, 134, 165, 159, …(-82) ]
+
+- Expected
++ Received
+
+  {
+    "data": [
++     172,
++     81,
++     74,
++     205,
++     16,
++     249,
++     131,
++     151,
++     233,
++     17,
++     212,
++     202,
++     108,
++     4,
+      75,
+-     125,
+-     134,
+-     165,
+-     159,
+-     115,
+-     246,
+-     255,
+-     25,
+-     146,
+-     85,
+-     22,
+-     234,
+-     176,
+-     254,
+-     220,
+-     159,
+-     10,
+-     50,
+-     137,
+-     251,
+      64,
+-     205,
+-     196,
+-     134,
+-     12,
+-     179,
+-     5,
+-     104,
+-     248,
+-     47,
+-     12,
++     225,
++     66,
++     193,
++     93,
++     99,
++     59,
++     59,
++     154,
++     238,
++     116,
++     253,
++     158,
++     226,
++     164,
++     182,
++     8,
+    ],
+    "type": "Buffer",
+  }
+
+ ❯ src/db/worker-prepare.test.ts:408:51
+    406|       const row = await uploadRow(tx, one.id);
+    407|       expect(row.state).toBe("held");
+    408|       expect(Buffer.from(row.content_hash ?? [])).toEqual(Buffer.from(…
+       |                                                   ^
+    409|       expect(row.content_version).toMatch(/^mv_/);
+    410|       expect(await renditionRows(tx, one.id)).toMatchObject([
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:389:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

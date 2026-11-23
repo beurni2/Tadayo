@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -213,7 +213,7 @@
+     const watch = setInterval(look, WATCH_MS);
+     const deadline = setTimeout(
+       () => {
+-        kill("time");
++        void 0;
+       },
+       (limits.deadlineSeconds ?? DEADLINE_SECONDS) * 1000,
+     );

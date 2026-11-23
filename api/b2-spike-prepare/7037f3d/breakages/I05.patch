@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -280,6 +280,7 @@
+     // Each its own pipeline from the bytes, one after the other, so no two decodes are held at once.
+     const pipeline = sharp(bytes, { limitInputPixels: MAX_PIXELS, failOn: "warning", autoOrient: true })
+       .resize({ ...BOXES[kind], fit: "inside", withoutEnlargement: true })
++      .keepMetadata()
+       .jpeg({ quality: 80 })
+       .timeout({ seconds: limit.seconds });
+     try {

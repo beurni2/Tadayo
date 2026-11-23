@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -150,7 +150,7 @@
+  * RIFF size doesn't end it exactly: libwebp would read fewer bytes than there are, or wait for more.
+  */
+ export function webpChunks(bytes: Uint8Array): number | undefined {
+-  if (bytes.length < 12 || riffEnd(bytes) !== bytes.length) return undefined;
++  if (bytes.length < 12 || riffEnd(bytes) > bytes.length) return undefined;
+   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+   let chunks = 0;
+   for (let at = 12; at + 8 <= bytes.length; chunks += 1) {

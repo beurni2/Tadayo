@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 1 failed) 321ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × writes nothing over an event its handler already ended, when the handler then fails 19ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  07:07:04
+   Duration  873ms (tests 60%, import 21%, transform 18%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes nothing over an event its handler already ended, when the handler then fails
+AssertionError: expected { handled: +0, …(1) } to deeply equal { handled: +0, err: [] }
+
+- Expected
++ Received
+
+  {
+-   "err": [],
++   "err": [
++     "worker: an event failed: test.outbox_vztlldwkpzzx evt_cg0FRpQqY1Nnv0YRepmGUQ, attempt 1: storage.unavailable",
++   ],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:431:52
+    429|       throw new StorageUnavailable("got no answer");
+    430|     });
+    431|     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: …
+       |                                                    ^
+    432|     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, …
+    433|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

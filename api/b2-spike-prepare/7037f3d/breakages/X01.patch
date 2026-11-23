@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -208,7 +208,6 @@
+       const peak = peakOf(child.pid);
+       if (peak === undefined) return;
+       seen = Math.max(seen, peak);
+-      if (peak > mostBytes) kill("memory");
+     };
+     const watch = setInterval(look, WATCH_MS);
+     const deadline = setTimeout(

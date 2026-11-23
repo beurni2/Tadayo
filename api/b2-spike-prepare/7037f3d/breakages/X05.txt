@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (15 tests | 1 failed) 8769ms
+   ❯ what a child's end comes to (5)
+     × refuses the photo as unreadable when the child died otherwise once it held it 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  08:01:33
+   Duration  9.08s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > refuses the photo as unreadable when the child died otherwise once it held it
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:174:9
+    172|   if (answer?.kind === "failed" || !end.ready) throw new ImageProcessF…
+    173|   if (end.signal === "SIGKILL") return { prepared: { ok: false, reject…
+    174|   throw new ImageProcessFailed();
+       |         ^
+    175| }
+    176|
+ ❯ src/image-process.test.ts:226:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

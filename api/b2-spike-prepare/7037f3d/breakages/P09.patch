@@ -1,0 +1,12 @@
+--- a/packages/domain/src/media/prepare.ts
++++ b/packages/domain/src/media/prepare.ts
+@@ -107,8 +107,8 @@
+   outcome: Preparation,
+ ): Promise<{ readonly at: ServerNow; readonly recorded: boolean }> {
+   if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
++  const at = await clock.sample(tx);
+   const rows = await bound(tx)`SELECT state, expires_at FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
+-  const at = await clock.sample(tx);
+   const row = rows[0];
+   if (row?.["state"] !== "preparing") return { at, recorded: false };
+   const expiresAt = row["expires_at"];

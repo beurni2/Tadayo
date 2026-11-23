@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+stdout | src/image-memory.test.ts > a photo's process's peak memory (FQ138) > refuses every file built to hold what no header shows, by its structure or by the cap
+a 50 KB PNG whose compressed text inflates to 49 MiB (R3-1): too_many_pixels, 354 MiB at the peak
+a 164 KB PNG of four compressed texts of 40 MiB (R3-1): too_many_pixels, 366 MiB at the peak
+a lossless WebP of 1 megapixel and 65,536 Huffman groups (R3-4): too_many_pixels, 353 MiB at the peak
+a lossless WebP at the budget with 30,000 Huffman groups (R3-4): too_many_pixels, 353 MiB at the peak
+one lossless frame on 64 megapixels, with a trailer past its RIFF (R3-2): unreadable, 89 MiB at the peak
+one small frame on 64 megapixels, no trailer (R3-2): too_many_pixels, 90 MiB at the peak
+a 20 MiB WebP of 2.6 million empty chunks: too_many_pixels, 361 MiB at the peak
+a progressive JPEG at the budget of 2,688 scans (R3-6): taken, 278 MiB at the peak
+
+ ❯ src/image-memory.test.ts (3 tests | 1 failed) 214567ms
+   ❯ a photo's process's peak memory (FQ138) (3)
+     × refuses every file built to hold what no header shows, by its structure or by the cap 41992ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  07:57:03
+   Duration  214.88s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-memory.test.ts > a photo's process's peak memory (FQ138) > refuses every file built to hold what no header shows, by its structure or by the cap
+AssertionError: expected [ [ …(2) ], [ …(2) ], [ …(2) ], …(5) ] to deeply equal [ [ …(2) ], [ …(2) ], [ …(2) ], …(5) ]
+
+- Expected
++ Received
+
+@@ -23,12 +23,12 @@
+      "one small frame on 64 megapixels, no trailer (R3-2)",
+      "too_many_pixels",
+    ],
+    [
+      "a 20 MiB WebP of 2.6 million empty chunks",
+-     "unsupported_type",
++     "too_many_pixels",
+    ],
+    [
+      "a progressive JPEG at the budget of 2,688 scans (R3-6)",
+-     "unsupported_type",
++     "taken",
+    ],
+  ]
+
+ ❯ src/image-memory.test.ts:280:52
+    278|     }
+    279|     console.info(results.map((r) => `${r.name}: ${r.answer}, ${String(…
+    280|     expect(results.map((r) => [r.name, r.answer])).toEqual(HOSTILE.map…
+       |                                                    ^
+    281|   }, 300_000);
+    282|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,186 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 6 failed) 2540ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done 442ms
+     × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 101ms
+   ❯ upload.prepare rejects what the checks refuse (D09, spec 33) (5)
+     × rejects a PNG declared as a JPEG as unsupported_type, storing nothing and writing no hash, and finishes the event 51ms
+     × rejects more than 20 MiB as too_large, storing nothing and writing no hash, and finishes the event 61ms
+     × rejects more than 64 million pixels as too_many_pixels, storing nothing and writing no hash, and finishes the event 682ms
+     × rejects a JPEG cut short as unreadable, storing nothing and writing no hash, and finishes the event 36ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 11 passed (17)
+   Start at  08:03:20
+   Duration  3.35s (tests 84%, import 11%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts [ src/db/worker-prepare.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:236:15
+    234|     await admin.begin(async (tx) => {
+    235|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    236|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    237|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    238|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done
+AssertionError: expected 'worker: prepared an upload upl_KPwPgo…' to match /^worker: prepared an upload upl_KPwPg…/
+
+- Expected:
+/^worker: prepared an upload upl_KPwPgogFU4Hf1-1RDcHD7A in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), ready, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_KPwPgogFU4Hf1-1RDcHD7A in 175 ms (read 0, image 164, store 0, record 7), ready, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:299:26
+    297|       // Its line holds the upload's opaque id and the times, never it…
+    298|       expect(r.lines).toHaveLength(1);
+    299|       expect(r.lines[0]).toMatch(LINE(one.id, "ready"));
+       |                          ^
+    300|       expect(r.lines[0]).not.toContain(w.ben.user);
+    301|       expect(r.lines[0]).not.toContain(one.objectKey);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:248:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8)
+AssertionError: expected 'worker: prepared an upload upl_7nFMG8…' to match /^worker: prepared an upload upl_7nFMG…/
+
+- Expected:
+/^worker: prepared an upload upl_7nFMG8cZc2ErKPZGsZ1QrQ in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), held, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_7nFMG8cZc2ErKPZGsZ1QrQ in 17 ms (read 0, image 12, store 0, record 4), held, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:414:26
+    412|         { kind: "full", width: 800, height: 600 },
+    413|       ]);
+    414|       expect(r.lines[0]).toMatch(LINE(one.id, "held"));
+       |                          ^
+    415|     });
+    416|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:389:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects a PNG declared as a JPEG as unsupported_type, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_jTYwwA…' to match /^worker: prepared an upload upl_jTYww…/
+
+- Expected:
+/^worker: prepared an upload upl_jTYwwATKOlfsM9CLBbF7TA in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected unsupported_type, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_jTYwwATKOlfsM9CLBbF7TA in 3 ms (read 0, image 0, store 0, record 2), rejected unsupported_type, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:471:28
+    469|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    470|         expect(r.lines).toHaveLength(1);
+    471|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    472|       });
+    473|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:452:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects more than 20 MiB as too_large, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_4S3k5v…' to match /^worker: prepared an upload upl_4S3k5…/
+
+- Expected:
+/^worker: prepared an upload upl_4S3k5v_0VTFqg_0NYB-jUQ in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected too_large, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_4S3k5v_0VTFqg_0NYB-jUQ in 4 ms (read 0, image 0, store 0, record 3), rejected too_large, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:471:28
+    469|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    470|         expect(r.lines).toHaveLength(1);
+    471|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    472|       });
+    473|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:452:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects more than 64 million pixels as too_many_pixels, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_NtmcbJ…' to match /^worker: prepared an upload upl_Ntmcb…/
+
+- Expected:
+/^worker: prepared an upload upl_NtmcbJQsTmgm4cn-auu_xg in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected too_many_pixels, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_NtmcbJQsTmgm4cn-auu_xg in 4 ms (read 0, image 1, store 0, record 2), rejected too_many_pixels, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:471:28
+    469|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    470|         expect(r.lines).toHaveLength(1);
+    471|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    472|       });
+    473|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:452:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects a JPEG cut short as unreadable, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_PspD7J…' to match /^worker: prepared an upload upl_PspD7…/
+
+- Expected:
+/^worker: prepared an upload upl_PspD7J6fcWCC2nGQaWC8Tg in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected unreadable, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_PspD7J6fcWCC2nGQaWC8Tg in 3 ms (read 0, image 1, store 0, record 2), rejected unreadable, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:471:28
+    469|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    470|         expect(r.lines).toHaveLength(1);
+    471|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    472|       });
+    473|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:452:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+

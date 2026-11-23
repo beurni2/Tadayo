@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/outbox.test.ts (7 tests | 1 failed) 14ms
+   ❯ a failure's code (T52) (4)
+     × is unknown for anything else, and never anything an error says 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  07:07:07
+   Duration  300ms (transform 50%, import 39%, tests 8%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/outbox.test.ts > a failure's code (T52) > is unknown for anything else, and never anything an error says
+AssertionError: expected 'postgres://tadayo_app:hunter2@db/tada…' to be 'unknown' // Object.is equality
+
+Expected: "unknown"
+Received: "postgres://tadayo_app:hunter2@db/tadayo"
+
+ ❯ src/outbox.test.ts:50:79
+     48|
+     49|   it("is unknown for anything else, and never anything an error says",…
+     50|     expect(failureCode(new Error("postgres://tadayo_app:hunter2@db/tad…
+       |                                                                               ^
+     51|     expect(failureCode(Object.assign(new Error("x"), { code: "postgres…
+     52|     expect(failureCode(Object.assign(new Error("x"), { code: 42 }))).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

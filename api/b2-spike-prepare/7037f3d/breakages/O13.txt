@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 1 failed) 332ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  07:07:08
+   Duration  922ms (tests 61%, import 22%, transform 17%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides
+AssertionError: expected { handled: +0, …(1) } to deeply equal { handled: +0, err: [] }
+
+- Expected
++ Received
+
+  {
+-   "err": [],
++   "err": [
++     "worker: an event failed: test.outbox_eplunfkmluvv evt_BkqfTRyV13odxSyTAJERag, attempt 1: storage.unavailable",
++   ],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:401:52
+    399|       throw new StorageUnavailable("got no answer");
+    400|     });
+    401|     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: …
+       |                                                    ^
+    402|     expect(seen.map((e) => e.attempts)).toEqual([1]);
+    403|     expect(await row(id)).toEqual({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

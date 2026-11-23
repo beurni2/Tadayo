@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (32 tests | 1 failed) 76078ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (7)
+     × reads a WebP's coding no further than its RIFF's end, as libwebp does (PR #111's third review: R3-2) 17ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  07:46:01
+   Duration  76.42s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > reads a WebP's coding no further than its RIFF's end, as libwebp does (PR #111's third review: R3-2)
+AssertionError: expected 'lossy' to be undefined
+
+- Expected:
+undefined
+
++ Received:
+"lossy"
+
+ ❯ src/image.test.ts:243:61
+    241|     const animation = animatedWebp(64, 48, [{ still: lossless, x: 0, y…
+    242|     expect(webpCoding(animation)).toBeUndefined();
+    243|     expect(webpCoding(Buffer.concat([animation, trailer]))).toBeUndefi…
+       |                                                             ^
+    244|   });
+    245|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

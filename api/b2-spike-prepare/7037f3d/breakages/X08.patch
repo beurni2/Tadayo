@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -187,7 +187,7 @@
+   const mostBytes = limits.peakBytes ?? PEAK_BYTES;
+   return new Promise((resolve, reject) => {
+     const child = fork(CHILD, [declared, String(seconds)], {
+-      env: {},
++      env: process.env,
+       execArgv: [],
+       serialization: "advanced",
+       stdio: ["pipe", "ignore", "ignore", "ipc"],

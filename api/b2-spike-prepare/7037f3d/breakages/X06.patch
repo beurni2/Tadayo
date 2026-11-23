@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -169,7 +169,7 @@
+     return { prepared, peakBytes, oomScoreAdj: answer.oomScoreAdj, environment: answer.environment };
+   }
+   if (answer?.kind === "timeout") throw new ImageTimeout();
+-  if (answer?.kind === "failed" || !end.ready) throw new ImageProcessFailed();
++  if (answer?.kind === "failed") throw new ImageProcessFailed();
+   if (end.signal === "SIGKILL") return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };
+   return { prepared: { ok: false, rejection: "unreadable" }, peakBytes };
+ }

@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/storage.test.ts (12 tests | 1 failed) 19461ms
+   ❯ reading an original (7)
+     × reads no further than 20 MiB and a byte, so a larger object is refused as too large, not held whole 19275ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  08:03:33
+   Duration  19.70s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/storage.test.ts > reading an original > reads no further than 20 MiB and a byte, so a larger object is refused as too large, not held whole
+StorageUnavailable: storage: reading an original broke off
+ ❯ Object.readOriginal src/storage.ts:131:15
+    129|         return new Uint8Array(await new Response(response.body).arrayB…
+    130|       } catch {
+    131|         throw new StorageUnavailable("reading an original broke off");
+       |               ^
+    132|       }
+    133|     },
+ ❯ src/storage.test.ts:92:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

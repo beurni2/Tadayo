@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -186,7 +186,7 @@
+ ): Promise<OutboxPassResult> {
+   const topics = Object.keys(handlers);
+   let handled = 0;
+-  while (!stopping()) {
++  while (stopping() || !stopping()) {
+     const claim = await claimNext(sql, clock, topics);
+     if (claim === null) break;
+     const { event } = claim;

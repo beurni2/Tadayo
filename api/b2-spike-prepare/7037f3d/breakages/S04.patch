@@ -1,0 +1,11 @@
+--- a/services/worker/src/storage.ts
++++ b/services/worker/src/storage.ts
+@@ -98,7 +98,7 @@
+ 
+   async function call(path: string, init: RequestInit, what: string): Promise<Response> {
+     try {
+-      return await send(`${base}${path}`, { ...init, redirect: "error", signal: AbortSignal.timeout(TIMEOUT_MS) });
++      return await send(`${base}${path}`, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+     } catch {
+       throw new StorageUnavailable(`${what} got no answer`);
+     }

@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 1 failed) 5753ms
+   ❯ upload.prepare when Storage is away, or another run gets there first (T54) (4)
+     × reads the record's clock after the upload's lock, so what it writes is dated when it could write it (T1) 255ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  07:08:18
+   Duration  6.55s (tests 93%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts [ src/db/worker-prepare.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:236:15
+    234|     await admin.begin(async (tx) => {
+    235|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    236|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    237|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    238|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare when Storage is away, or another run gets there first (T54) > reads the record's clock after the upload's lock, so what it writes is dated when it could write it (T1)
+AssertionError: expected [ [ 'display', …(1) ], …(1) ] to deeply equal [ [ 'display', …(1) ], …(1) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "display",
+-     "2026-11-06T21:01:10.123456Z",
++     "2026-11-06T21:01:00.123456Z",
+    ],
+    [
+      "full",
+-     "2026-11-06T21:01:10.123456Z",
++     "2026-11-06T21:01:00.123456Z",
+    ],
+  ]
+
+ ❯ src/db/worker-prepare.test.ts:738:61
+    736|       }
+    737|       const rows = await db.begin((tx) => renditionRows(tx as unknown …
+    738|       expect(rows.map((row) => [row.kind, row.created_at])).toEqual([
+       |                                                             ^
+    739|         ["display", later.toString()],
+    740|         ["full", later.toString()],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

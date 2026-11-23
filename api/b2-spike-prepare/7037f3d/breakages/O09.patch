@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -148,7 +148,7 @@
+ async function recordFailure(sql: WorkerSql, clock: Clock, event: OutboxEvent, code: string, forGood: boolean) {
+   return limited(sql, async (tx) => {
+     const at = await clock.sample(tx);
+-    const dies = forGood || event.attempts >= MAX_ATTEMPTS;
++    const dies = event.attempts >= MAX_ATTEMPTS;
+     const changed = dies
+       ? await tx`
+           UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${code}

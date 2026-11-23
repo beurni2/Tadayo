@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -273,7 +273,6 @@
+     return { ok: false, rejection: "unreadable" };
+   }
+   if (width * height > MAX_PIXELS) return { ok: false, rejection: "too_many_pixels" };
+-  if (heldBytes(header, bytes) > MAX_HELD_BYTES) return { ok: false, rejection: "too_many_pixels" };
+ 
+   const renditions: Rendition[] = [];
+   for (const kind of RENDITION_KINDS) {

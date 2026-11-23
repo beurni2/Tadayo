@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -162,7 +162,7 @@
+           ok: true,
+           renditions: answer.prepared.renditions.map((r) => ({
+             ...r,
+-            bytes: Buffer.from(r.bytes.buffer, r.bytes.byteOffset, r.bytes.byteLength),
++            bytes: r.bytes as Buffer,
+           })),
+         }
+       : answer.prepared;

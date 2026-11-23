@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 1 failed) 5532ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 230ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  07:07:57
+   Duration  6.29s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts [ src/db/worker-prepare.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:236:15
+    234|     await admin.begin(async (tx) => {
+    235|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    236|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    237|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    238|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8)
+AssertionError: expected 'ready' to be 'held' // Object.is equality
+
+Expected: "held"
+Received: "ready"
+
+ ❯ src/db/worker-prepare.test.ts:407:25
+    405|       expect(screened).toEqual([photo]);
+    406|       const row = await uploadRow(tx, one.id);
+    407|       expect(row.state).toBe("held");
+       |                         ^
+    408|       expect(Buffer.from(row.content_hash ?? [])).toEqual(Buffer.from(…
+    409|       expect(row.content_version).toMatch(/^mv_/);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:389:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

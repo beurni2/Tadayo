@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (32 tests | 2 failed) 73156ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (7)
+     × counts a JPEG's scans as libjpeg finds them: one for a baseline, each SOS for a progressive 28ms
+     × counts no SOS inside a segment, nor a stuffed byte, a restart, fill bytes or anything after the EOI 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  07:54:36
+   Duration  73.58s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > counts a JPEG's scans as libjpeg finds them: one for a baseline, each SOS for a progressive
+AssertionError: expected 43 to be 2688 // Object.is equality
+
+- Expected
++ Received
+
+- 2688
++ 43
+
+ ❯ src/image.test.ts:193:56
+    191|     ).toBe(10);
+    192|     expect(jpegScans(manyScansJpeg(64, 64, 100))).toBe(100);
+    193|     expect(jpegScans(manyScansJpeg(4704, 4704, 2688))).toBe(2688);
+       |                                                        ^
+    194|   });
+    195|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > counts no SOS inside a segment, nor a stuffed byte, a restart, fill bytes or anything after the EOI
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/image.test.ts:201:75
+    199|     // A scan's data with a stuffed 0xFF, a restart and fill bytes bef…
+    200|     const data = [0x12, 0xff, 0x00, 0x34, 0xff, 0xd3, 0x56, 0xff, 0xff…
+    201|     expect(jpegScans(jpeg(app1, sos, data, sos, [0xff, 0xd9], sos, sos…
+       |                                                                           ^
+    202|     // After the EOI, two bytes that would read as a segment's length,…
+    203|     expect(jpegScans(jpeg(sos, data, [0xff, 0xd9, 0x00, 0x02], sos, so…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

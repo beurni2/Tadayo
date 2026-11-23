@@ -1,0 +1,11 @@
+--- a/services/worker/src/prepare.ts
++++ b/services/worker/src/prepare.ts
+@@ -118,7 +118,7 @@
+   let prepared: Prepared = { ok: false, rejection: "unreadable" };
+   let photoPeakBytes = 0;
+   if (original !== null) {
+-    ({ prepared, peakBytes: photoPeakBytes } = await prepareIsolated(original, upload.contentType));
++    prepared = await (await import("./image.ts")).prepareImage(original, upload.contentType);
+   }
+   let outcome: Preparation;
+   if (!prepared.ok || original === null) {

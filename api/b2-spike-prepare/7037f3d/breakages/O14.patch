@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -152,7 +152,7 @@
+     const changed = dies
+       ? await tx`
+           UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${code}
+-           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}`
++           WHERE id = ${event.id} AND state = 'pending'`
+       : await tx`
+           UPDATE app.outbox_events
+              SET last_error = ${code}, available_at = ${at.add({ seconds: backoffSeconds(event.attempts) })}

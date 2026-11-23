@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (15 tests | 1 failed) 8697ms
+   ❯ what a child's end comes to (5)
+     × refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  08:01:23
+   Duration  9.03s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > refuses the photo as too_many_pixels when the worker killed it for memory, its peak passed, or SIGKILL ended it
+AssertionError: expected { ok: false, rejection: 'unreadable' } to deeply equal { ok: false, …(1) }
+
+- Expected
++ Received
+
+  {
+    "ok": false,
+-   "rejection": "too_many_pixels",
++   "rejection": "unreadable",
+  }
+
+ ❯ src/image-process.test.ts:222:60
+    220|     expect(outcomeOf(end({ killed: "memory", signal: "SIGKILL" })).pre…
+    221|     expect(outcomeOf(end({ answer: prepared, peakBytes: 353 * MiB })).…
+    222|     expect(outcomeOf(end({ signal: "SIGKILL" })).prepared).toEqual(ref…
+       |                                                            ^
+    223|   });
+    224|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (32 tests | 1 failed) 73341ms
+   ❯ a decode that can't stream (FQ138) (6)
+     × counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  07:23:48
+   Duration  73.77s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > a decode that can't stream (FQ138) > counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest
+AssertionError: expected 72000000 to be 72192000 // Object.is equality
+
+- Expected
++ Received
+
+- 72192000
++ 72000000
+
+ ❯ src/image.test.ts:294:60
+    292|     const none = new Uint8Array();
+    293|     // 64 two-byte coefficients for each 8-by-8 block of each componen…
+    294|     expect(heldBytes({ ...header, format: "jpeg" }, none)).toBe(4000 *…
+       |                                                            ^
+    295|     expect(heldBytes({ ...header, format: "jpeg", width: 1, height: 1 …
+    296|     expect(heldBytes({ ...header, format: "jpeg", channels: 4 }, none)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
