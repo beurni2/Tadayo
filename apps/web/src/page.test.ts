@@ -1,7 +1,8 @@
-// The signed-out invitation page (public/i.html, i.js, i.css; G02-web, G02-web-revoked; spec 04; T7, T52;
-// docs/plans/api-b0-spike-links-web.md): the script's logic, with a fake page and a fake fetch, and the files
-// as Pages serves them. How it looks is the screenshots' beside the renders (the PR's evidence); Safari on an
-// iPhone is the spike's run.
+// The signed-out invitation page (public/i.html, i.js, i.css; G02-web, G02-web-revoked, G02-web-checking,
+// G02-web-failed; spec 04; T7, T52; docs/plans/api-b0-spike-links-web.md and
+// docs/plans/api-b1-invitation-web-states.md): the script's logic, with a fake page and a fake fetch, and the
+// files as Pages serves them. How it looks is the screenshots' beside the frames (the PR's evidence); Safari
+// on an iPhone is the device run's.
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -15,8 +16,12 @@ const read = (path: string) => readFileSync(join(SOURCE, path), "utf8");
 const API = "https://api-dev.tadayo.app";
 const STORE = "https://apps.apple.com/app/testflight/id899247664";
 const LIVE = "q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM";
+const HINT = { "aria-describedby": "get-hint" };
+const NETWORK = { state: "failed", reason: "network" };
+const ANSWERED = { state: "failed", reason: "answered" };
 
 type Init = RequestInit & { signal: AbortSignal };
+type Page = Parameters<typeof show>[0];
 
 /** A fake answer: its status and the JSON it reads as, or a body that isn't JSON. */
 function answering(status: number, body?: unknown): Response {
@@ -26,47 +31,91 @@ function answering(status: number, body?: unknown): Response {
   } as unknown as Response;
 }
 
-/** A fake page with i.html's parts: each `data-state` and its first line, the name's place, Get Tadayo and Retry. */
+/** Lets every answer already given run through the page. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/**
+ * A fake page with i.html's parts as the HTML has them: each `data-state` part and each failure's
+ * `data-reason` line, hidden; the name's place; Retry, hidden, and its slot; Get Tadayo; the API's meta; and
+ * another control the person can focus. `focused` lists each focus the page moves, in turn.
+ */
 function fakePage(api: string | null = API) {
+  let active: unknown = null;
   const focused: string[] = [];
-  const parts = ["checking", "invited", "unavailable", "failed"].map((state) => {
-    const first = { focus: () => void focused.push(state) };
-    return {
-      dataset: { state },
-      hidden: state !== "checking",
-      querySelector: (selector: string) => (selector === "[tabindex='-1']" ? first : null),
+  const element = (label: string, hidden: boolean, dataset: Record<string, string> = {}, attributes = {}) => {
+    const attrs = new Map<string, string>(Object.entries(attributes));
+    const self = {
+      dataset,
+      hidden,
+      attrs,
+      setAttribute: (key: string, value: string) => void attrs.set(key, value),
+      removeAttribute: (key: string) => void attrs.delete(key),
+      getAttribute: (key: string) => attrs.get(key) ?? null,
+      focus: () => {
+        active = self;
+        focused.push(label);
+      },
     };
-  });
+    return self;
+  };
+  const parts = ["checking", "invited", "unavailable", "failed"].map((state) => element(state, true, { state }));
+  const reasons = ["network", "answered"].map((reason) => element(reason, reason !== "network", { reason }));
   const name = { textContent: "" as string | null };
-  const attributes = new Map<string, string>([["aria-describedby", "get-hint"]]);
-  const get = {
-    setAttribute: (key: string, value: string) => void attributes.set(key, value),
-    removeAttribute: (key: string) => void attributes.delete(key),
-  };
+  const get = element("get", false, {}, HINT);
   const clicks: (() => void)[] = [];
-  const retry = { addEventListener: (_type: string, listener: () => void) => void clicks.push(listener) };
+  const retry = Object.assign(element("retry", true, {}, { "aria-describedby": "retry-hint" }), {
+    addEventListener: (_type: string, listener: () => void) => void clicks.push(listener),
+  });
+  const slot = element("slot", false);
+  const other = element("other", false);
   const meta = { getAttribute: (key: string) => (key === "content" ? api : null) };
-  const live = {
-    value: "polite",
-    setAttribute: (key: string, value: string) => {
-      if (key === "aria-live") live.value = value;
-    },
-  };
   const page = {
-    querySelectorAll: (selector: string) => (selector === "[data-state]" ? parts : []),
+    get activeElement() {
+      return active;
+    },
+    querySelectorAll: (selector: string) =>
+      selector === "[data-state]" ? parts : selector === "[data-reason]" ? reasons : [],
     querySelector: (selector: string) =>
       (
         ({
           "[data-name]": name,
           "[data-get]": get,
           "[data-retry]": retry,
+          ".retry-slot": slot,
           'meta[name="tadayo-api"]': meta,
-          "[aria-live]": live,
         }) as Record<string, unknown>
       )[selector] ?? null,
-  } as unknown as Pick<Document, "querySelector" | "querySelectorAll">;
-  const visible = () => parts.filter((part) => !part.hidden).map((part) => part.dataset.state);
-  return { page, name, attributes, visible, clicks, focused, live };
+  } as unknown as Page;
+  /** What the page shows: its part, the failure's line, Retry's attributes or null, the slot, Get's names. */
+  const seen = () => ({
+    parts: parts.filter((part) => !part.hidden).map((part) => part.dataset["state"]),
+    line: reasons.filter((line) => !line.hidden).map((line) => line.dataset["reason"]),
+    retry: retry.hidden ? null : Object.fromEntries(retry.attrs),
+    slot: !slot.hidden,
+    get: Object.fromEntries(get.attrs),
+  });
+  return { page, name, seen, clicks, focused, retry, other };
+}
+
+/** A fetch the test answers one request at a time, the oldest open request first. */
+function network() {
+  const asked: [string, Init][] = [];
+  const open: { resolve: (response: Response) => void; reject: (error: unknown) => void }[] = [];
+  return {
+    asked,
+    fetch: (url: string, init: RequestInit) => {
+      asked.push([url, init as Init]);
+      return new Promise<Response>((resolve, reject) => void open.push({ resolve, reject }));
+    },
+    answer: async (response: Response) => {
+      open.shift()?.resolve(response);
+      await settle();
+    },
+    fail: async () => {
+      open.shift()?.reject(new TypeError("Load failed"));
+      await settle();
+    },
+  };
 }
 
 /** The contract's InvitationToken (packages/contracts/openapi.yaml): its lengths and its pattern. */
@@ -136,7 +185,7 @@ describe("the request for the inviter's name", () => {
 });
 
 describe("what each answer means", () => {
-  it("shows the name of a 200, and nothing it can't read as one", () => {
+  it("shows the name of a 200; a 200 it can't read a name in is the server's answer, a failure to try again", () => {
     expect(outcomeOf(200, { inviter_name: "Ben" })).toEqual({ state: "invited", name: "Ben" });
     expect(outcomeOf(200, { inviter_name: "Ben", club_name: "Kitchen table" })).toEqual({
       state: "invited",
@@ -152,28 +201,28 @@ describe("what each answer means", () => {
       { inviter_name: 7 },
       { name: "Ben" },
     ]) {
-      expect(outcomeOf(200, body), JSON.stringify(body)).toEqual({ state: "failed" });
+      expect(outcomeOf(200, body), JSON.stringify(body)).toEqual(ANSWERED);
     }
   });
 
-  it("says only a 404 isn't available; anything else, a 400 too, couldn't be checked, never that the link is gone", () => {
+  it("says only a 404 isn't available; any other answer, a 400 too, is a failure to try again, never a link that's gone", () => {
     expect(outcomeOf(404, null)).toEqual({ state: "unavailable" });
     expect(outcomeOf(404, { inviter_name: "Ben" })).toEqual({ state: "unavailable" });
     for (const status of [0, 201, 204, 301, 400, 401, 403, 409, 413, 415, 429, 500, 502, 503, 504]) {
-      expect(outcomeOf(status, { inviter_name: "Ben" }), String(status)).toEqual({ state: "failed" });
+      expect(outcomeOf(status, { inviter_name: "Ben" }), String(status)).toEqual(ANSWERED);
     }
   });
 
-  it("couldn't check when the network fails, the API is too slow or a 200's body isn't JSON", async () => {
-    expect(await check(() => Promise.reject(new TypeError("Load failed")), API, LIVE)).toEqual({ state: "failed" });
-    expect(await check(() => Promise.resolve(answering(200)), API, LIVE)).toEqual({ state: "failed" });
+  it("blames the connection only when no answer came whole: a failed request, the wait run out, a 200 that isn't JSON", async () => {
+    expect(await check(() => Promise.reject(new TypeError("Load failed")), API, LIVE)).toEqual(NETWORK);
+    expect(await check(() => Promise.resolve(answering(200)), API, LIVE)).toEqual(NETWORK);
     const slow = (_url: string, init: RequestInit) =>
       new Promise<Response>((_resolve, reject) => {
         init.signal?.addEventListener("abort", () => {
           reject(new DOMException("The operation timed out.", "TimeoutError"));
         });
       });
-    expect(await check(slow, API, LIVE, 20)).toEqual({ state: "failed" });
+    expect(await check(slow, API, LIVE, 20)).toEqual(NETWORK);
     expect(WAIT_MS).toBe(15_000);
     // The wait holds while the body is read, too.
     const slowBody = (_url: string, init: RequestInit) =>
@@ -186,7 +235,12 @@ describe("what each answer means", () => {
             });
           }),
       } as unknown as Response);
-    expect(await check(slowBody, API, LIVE, 20)).toEqual({ state: "failed" });
+    expect(await check(slowBody, API, LIVE, 20)).toEqual(NETWORK);
+    // An answer read in full is the server's, whatever its body: a status isn't the connection's fault.
+    for (const status of [400, 429, 500, 503]) {
+      expect(await check(() => Promise.resolve(answering(status)), API, LIVE), String(status)).toEqual(ANSWERED);
+    }
+    expect(await check(() => Promise.resolve(answering(200, { name: "Ben" })), API, LIVE)).toEqual(ANSWERED);
     expect(await check(() => Promise.resolve(answering(200, { inviter_name: "Ben" })), API, LIVE)).toEqual({
       state: "invited",
       name: "Ben",
@@ -207,7 +261,7 @@ describe("the wait, on a Safari older than 16", () => {
             reject(new DOMException("The operation was aborted.", "AbortError"));
           });
         });
-      expect(await check(slow, API, LIVE, 20)).toEqual({ state: "failed" });
+      expect(await check(slow, API, LIVE, 20)).toEqual(NETWORK);
     } finally {
       if (timeout !== undefined) Object.defineProperty(AbortSignal, "timeout", timeout);
     }
@@ -218,9 +272,7 @@ describe("the wait, on a Safari older than 16", () => {
     Reflect.deleteProperty(globalThis, "AbortController");
     try {
       expect("AbortController" in globalThis).toBe(false);
-      expect(await check(() => Promise.resolve(answering(200, { inviter_name: "Ben" })), API, LIVE)).toEqual({
-        state: "failed",
-      });
+      expect(await check(() => Promise.resolve(answering(200, { inviter_name: "Ben" })), API, LIVE)).toEqual(NETWORK);
     } finally {
       if (controller !== undefined) Object.defineProperty(globalThis, "AbortController", controller);
     }
@@ -228,84 +280,162 @@ describe("the wait, on a Safari older than 16", () => {
 });
 
 describe("what the page shows", () => {
-  it("shows one part at a time, the name as text, and Get Tadayo's name and hint as the renders have them", () => {
-    const { page, name, attributes, visible } = fakePage();
+  it("shows one part at a time, a failure's line by its reason, the name as text, and Get Tadayo's names by state", () => {
+    const { page, name, seen } = fakePage();
     show(page, { state: "invited", name: "<b>Ben</b> & co" });
-    expect(visible()).toEqual(["invited"]);
+    expect(seen()).toEqual({ parts: ["invited"], line: [], retry: null, slot: false, get: HINT });
     expect(name.textContent).toBe("<b>Ben</b> & co");
-    expect([...attributes]).toEqual([["aria-describedby", "get-hint"]]);
     show(page, { state: "unavailable" });
-    expect(visible()).toEqual(["unavailable"]);
+    expect(seen()).toEqual({
+      parts: ["unavailable"],
+      line: [],
+      retry: null,
+      slot: false,
+      get: { "aria-labelledby": "get-unavailable" },
+    });
     expect(name.textContent).toBe("");
-    expect([...attributes]).toEqual([["aria-labelledby", "get-unavailable"]]);
-    for (const state of ["checking", "failed"] as const) {
-      show(page, { state });
-      expect(visible()).toEqual([state]);
-      expect([...attributes]).toEqual([["aria-describedby", "get-hint"]]);
+    show(page, { state: "checking" });
+    expect(seen()).toEqual({ parts: ["checking"], line: [], retry: null, slot: true, get: HINT });
+    show(page, { state: "failed", reason: "network" });
+    const idle = { "aria-describedby": "retry-hint" };
+    expect(seen()).toEqual({ parts: ["failed"], line: ["network"], retry: idle, slot: true, get: HINT });
+    show(page, { state: "failed", reason: "answered" });
+    expect(seen()).toEqual({ parts: ["failed"], line: ["answered"], retry: idle, slot: true, get: HINT });
+  });
+
+  it("keeps Retry in place and busy in the checking after it, and only there (frame 12)", () => {
+    const { page, seen } = fakePage();
+    show(page, { state: "failed", reason: "network" });
+    show(page, { state: "checking" }, true);
+    expect(seen()).toEqual({
+      parts: ["checking"],
+      line: [],
+      retry: { "aria-describedby": "retry-busy", "aria-disabled": "true" },
+      slot: true,
+      get: HINT,
+    });
+    show(page, { state: "failed", reason: "answered" }, true);
+    expect(seen().retry).toEqual({ "aria-describedby": "retry-hint" });
+    show(page, { state: "invited", name: "Ben" }, true);
+    expect(seen()).toEqual({ parts: ["invited"], line: [], retry: null, slot: false, get: HINT });
+  });
+
+  it("moves no focus, but gives it to Get Tadayo when a final answer takes away a Retry that had it", () => {
+    const { page, focused, retry, other } = fakePage();
+    show(page, { state: "checking" });
+    show(page, { state: "failed", reason: "network" });
+    show(page, { state: "invited", name: "Ben" });
+    expect(focused).toEqual([]);
+    for (const final of [{ state: "invited", name: "Ben" } as const, { state: "unavailable" } as const]) {
+      show(page, { state: "failed", reason: "network" });
+      retry.focus();
+      focused.length = 0;
+      show(page, { state: "checking" }, true);
+      show(page, { state: "failed", reason: "answered" });
+      show(page, { state: "checking" }, true);
+      expect(focused, final.state).toEqual([]);
+      expect(page.activeElement, final.state).toBe(retry);
+      show(page, final);
+      expect(focused, final.state).toEqual(["get"]);
+      // Where the person put the focus elsewhere, the final answer leaves it there.
+      show(page, { state: "failed", reason: "network" });
+      other.focus();
+      focused.length = 0;
+      show(page, { state: "checking" }, true);
+      show(page, final);
+      expect(focused, final.state).toEqual([]);
+      expect(page.activeElement, final.state).toBe(other);
     }
   });
 
-  it("moves focus only when asked, to the first line of the part it shows", () => {
-    const { page, focused } = fakePage();
-    show(page, { state: "invited", name: "Ben" });
-    show(page, { state: "failed" });
+  it("checks at once with no Retry, then on Retry asks again in place, once at a time, and hands the focus on at the end", async () => {
+    const { page, name, seen, clicks, focused, retry } = fakePage();
+    const net = network();
+    const started = start({ location: { hash: `#${LIVE}` }, document: page, fetch: net.fetch });
+    await settle();
+    // The first load: checking, Retry's slot kept for it, nothing focused.
+    expect(seen()).toEqual({ parts: ["checking"], line: [], retry: null, slot: true, get: HINT });
+    expect(net.asked).toHaveLength(1);
+    expect(net.asked[0]?.[0]).toBe(`${API}/v1/invitations/web-preview`);
+    expect(net.asked[0]?.[1].body).toBe(`{"token":"${LIVE}"}`);
+    await net.answer(answering(503));
+    await started;
+    const idle = { "aria-describedby": "retry-hint" };
+    const busy = { "aria-describedby": "retry-busy", "aria-disabled": "true" };
+    expect(seen()).toEqual({ parts: ["failed"], line: ["answered"], retry: idle, slot: true, get: HINT });
     expect(focused).toEqual([]);
-    show(page, { state: "checking" }, true);
-    show(page, { state: "unavailable" }, true);
-    expect(focused).toEqual(["checking", "unavailable"]);
-  });
-
-  it("asks the API once with the fragment's token, shows the name, and asks again on Retry after a failure", async () => {
-    const { page, name, visible, clicks, focused, live } = fakePage();
-    const asked: [string, Init][] = [];
-    const answers = [Promise.resolve(answering(503)), Promise.resolve(answering(200, { inviter_name: "Ben" }))];
-    await start({
-      location: { hash: `#${LIVE}` },
-      document: page,
-      fetch: (url, init) => {
-        asked.push([url, init as Init]);
-        return answers.shift() ?? Promise.reject(new Error("asked too often"));
-      },
-    });
-    expect(visible()).toEqual(["failed"]);
-    expect(focused).toEqual([]);
-    expect(live.value).toBe("polite");
-    expect(asked).toHaveLength(1);
-    expect(asked[0]?.[0]).toBe(`${API}/v1/invitations/web-preview`);
-    expect(asked[0]?.[1].body).toBe(`{"token":"${LIVE}"}`);
+    // Retry, from the keyboard, so it has the focus: busy in place, and pressing it again asks nothing.
+    retry.focus();
+    focused.length = 0;
     expect(clicks).toHaveLength(1);
     clicks[0]?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(asked).toHaveLength(2);
-    expect(visible()).toEqual(["invited"]);
+    expect(seen()).toEqual({ parts: ["checking"], line: [], retry: busy, slot: true, get: HINT });
+    clicks[0]?.();
+    clicks[0]?.();
+    await settle();
+    expect(net.asked).toHaveLength(2);
+    // Another failure: Retry stays where it was, with the focus.
+    await net.fail();
+    expect(seen()).toEqual({ parts: ["failed"], line: ["network"], retry: idle, slot: true, get: HINT });
+    expect(focused).toEqual([]);
+    expect(page.activeElement).toBe(retry);
+    // Then the name: Retry goes, and the focus it had goes to Get Tadayo.
+    clicks[0]?.();
+    expect(net.asked).toHaveLength(3);
+    await net.answer(answering(200, { inviter_name: "Ben" }));
+    expect(seen()).toEqual({ parts: ["invited"], line: [], retry: null, slot: false, get: HINT });
     expect(name.textContent).toBe("Ben");
-    // Retry's button went with the failure: focus followed the page, to checking, then to the answer, and
-    // the live region fell silent, so neither is read twice.
-    expect(focused).toEqual(["checking", "invited"]);
-    expect(live.value).toBe("off");
+    expect(focused).toEqual(["get"]);
+    expect(net.asked.map(([, init]) => init.body)).toEqual(Array(3).fill(`{"token":"${LIVE}"}`));
   });
 
-  it("can't check without the API's address, and never says the link is gone (handoff 4)", async () => {
+  it("moves no focus after a Retry tapped without taking it, as Safari taps a button", async () => {
+    const { page, seen, clicks, focused } = fakePage();
+    const net = network();
+    const started = start({ location: { hash: `#${LIVE}` }, document: page, fetch: net.fetch });
+    await net.fail();
+    await started;
+    clicks[0]?.();
+    await net.answer(answering(404));
+    expect(seen()).toEqual({
+      parts: ["unavailable"],
+      line: [],
+      retry: null,
+      slot: false,
+      get: { "aria-labelledby": "get-unavailable" },
+    });
+    expect(focused).toEqual([]);
+    expect(page.activeElement).toBeNull();
+  });
+
+  it("can't check without the API's address: the server's kind of failure, never a link that's gone (handoff 4)", async () => {
     for (const api of [null, ""]) {
-      const { page, visible, clicks, focused } = fakePage(api);
+      const { page, seen, clicks, focused } = fakePage(api);
       let asked = 0;
       const fetch = () => {
         asked += 1;
         return Promise.resolve(answering(200, { inviter_name: "Ben" }));
       };
       await start({ location: { hash: `#${LIVE}` }, document: page, fetch });
-      expect(visible(), String(api)).toEqual(["failed"]);
+      const failed = {
+        parts: ["failed"],
+        line: ["answered"],
+        retry: { "aria-describedby": "retry-hint" },
+        slot: true,
+        get: HINT,
+      };
+      expect(seen(), String(api)).toEqual(failed);
       clicks[0]?.();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(visible(), String(api)).toEqual(["failed"]);
-      expect(focused, String(api)).toEqual(["failed"]);
+      await settle();
+      expect(seen(), String(api)).toEqual(failed);
+      expect(focused, String(api)).toEqual([]);
       expect(asked, String(api)).toBe(0);
     }
   });
 
   it("asks nothing for a fragment that holds no token: the invitation isn't available", async () => {
     for (const hash of ["", "#", "#short", `#${LIVE}=`]) {
-      const { page, visible } = fakePage();
+      const { page, seen } = fakePage();
       let asked = 0;
       await start({
         location: { hash },
@@ -315,14 +445,33 @@ describe("what the page shows", () => {
           return Promise.resolve(answering(200, { inviter_name: "Ben" }));
         },
       });
-      expect(visible(), hash).toEqual(["unavailable"]);
+      expect(seen().parts, hash).toEqual(["unavailable"]);
+      expect(seen().retry, hash).toBeNull();
       expect(asked, hash).toBe(0);
     }
+  });
+
+  it("never turns the live region off, focuses no heading and sends no alert: Get Tadayo is all it ever focuses", () => {
+    const js = read("i.js");
+    expect(js).not.toMatch(/aria-live|aria-atomic|\brole\b|alert|tabindex/i);
+    expect([...js.matchAll(/\.focus\(/g)]).toHaveLength(1);
+    expect(js).toContain("get?.focus()");
   });
 });
 
 describe("the files Pages serves", () => {
   const html = read("i.html");
+  const REGION = '<div class="status" role="status" aria-live="polite" aria-atomic="true">';
+  const strings = (
+    JSON.parse(readFileSync(join(REPO, "design/reference/claude-design/handoff-9/copy-contracts.json"), "utf8")) as {
+      handoff9: { strings: Record<string, string> };
+    }
+  ).handoff9.strings;
+  const say = (key: string) => {
+    const text = strings[key];
+    expect(text, key).toBeTypeOf("string");
+    return text ?? "";
+  };
 
   it("loads only its own files: no inline script or style, no handler, no font, nothing from elsewhere", () => {
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)/i);
@@ -337,19 +486,89 @@ describe("the files Pages serves", () => {
     );
   });
 
-  it("lets each part's first line take focus after Retry, whose button says what handoff 4's common.retry says", () => {
-    for (const state of ["checking", "invited", "unavailable", "failed"]) {
-      expect(html, state).toMatch(new RegExp(`<section data-state="${state}"[^>]*>\\s*<(h1|p) [^>]*tabindex="-1"`));
-    }
-    expect(html).toContain('<button class="action retry" type="button" data-retry>Retry</button>');
-    expect(html).toContain('<div class="parts" aria-live="polite">');
-    const copy = readFileSync(join(REPO, "design/reference/claude-design/handoff-4/copy-contracts.json"), "utf8");
-    expect(copy).toContain('"common.retry": "Retry",');
+  it("has one status region, polite and atomic, in the HTML before any change, holding the four parts and neither control", () => {
+    expect(html.match(/role=/g)).toHaveLength(1);
+    expect(html.match(/aria-live=/g)).toHaveLength(1);
+    expect(html).toContain(REGION);
+    const from = html.indexOf(REGION) + REGION.length;
+    const region = html.slice(from, html.indexOf("</div>", from));
+    expect([...region.matchAll(/<section data-state="([a-z]+)" hidden>/g)].map((match) => match[1])).toEqual([
+      "checking",
+      "invited",
+      "unavailable",
+      "failed",
+    ]);
+    expect(region).not.toMatch(/<div|<button|<a\b|data-retry|data-get|<noscript|<span id=/);
+    expect(html.indexOf("data-retry")).toBeGreaterThan(from);
+    expect(html.indexOf("data-get")).toBeGreaterThan(from);
+    expect(html).not.toContain("tabindex");
   });
 
-  it("puts the name in a bdi, so a right-to-left name can't reorder the sentence", () => {
+  it("says nothing of checking with JavaScript off: the noscript line, Retry and every part hidden in the HTML", () => {
+    expect(html).toContain(`<noscript><p class="body nojs">${say("handoff9.web.noJavaScript")}</p></noscript>`);
+    expect(html.indexOf("<noscript>")).toBeLessThan(html.indexOf(REGION));
+    expect(html).toContain('<button class="retry" type="button" aria-describedby="retry-hint" data-retry hidden>');
+    expect(html.match(/<section data-state="[a-z]+"(?! hidden>)/g)).toBeNull();
+  });
+
+  it("says each of handoff 9's words for the page as its copy contracts give them", () => {
+    expect(html).toContain(`<h1 class="title">${say("handoff9.web.checking")}</h1>`);
+    expect(html).toContain(`<h1 class="title">${say("handoff9.check.title")}</h1>`);
+    expect(html).toContain(`<p class="body" data-reason="network">${say("handoff9.check.network")}</p>`);
     expect(html).toContain(
-      '<h1 class="title" tabindex="-1"><bdi data-name></bdi> invited you to a club on Tadayo</h1>',
+      `<p class="body" data-reason="answered" hidden>${say("handoff9.check.answeredFailure")}</p>`,
+    );
+    expect(html).toMatch(new RegExp(`</svg\\s*>${say("handoff9.common.retry")}</span\\s*>\\s*</button>`));
+    expect(html).toContain(`<span id="retry-hint" hidden>${say("handoff9.check.retry.hint")}</span>`);
+    expect(html).toContain(`<span id="retry-busy" hidden>${say("handoff9.check.busy.value")}</span>`);
+    expect(html).toMatch(new RegExp(`data-get\\s*>${say("handoff9.web.get")}</a\\s*>`));
+    // Get Tadayo's hint follows its address, TestFlight's App Store page in the trial (FQ133, getHint).
+    expect(html).toContain(`<span id="get-hint" hidden>${say("handoff9.web.get.trialTestFlight.hint")}</span>`);
+    expect(html).not.toContain(say("handoff9.web.get.production.hint"));
+    // The atomic region reads a failure's title and its line, which is the failure's VoiceOver text.
+    expect(`${say("handoff9.check.title")} ${say("handoff9.check.network")}`).toBe(say("handoff9.check.network.vo"));
+    expect(`${say("handoff9.check.title")} ${say("handoff9.check.answeredFailure")}`).toBe(
+      say("handoff9.check.answeredFailure.vo"),
+    );
+  });
+
+  it("keeps the invited and unavailable pages' words, and puts the name in a bdi, so a right-to-left name can't reorder the sentence", () => {
+    expect(html).toContain('<h1 class="title"><bdi data-name></bdi> invited you to a club on Tadayo</h1>');
+    const four = readFileSync(join(REPO, "design/reference/claude-design/handoff-4/copy-contracts.json"), "utf8");
+    const eight = readFileSync(join(REPO, "design/reference/claude-design/handoff-8/copy-contracts.json"), "utf8");
+    for (const [contract, key, text, markup] of [
+      [four, "unavailable.title", "This invitation isn’t available.", '<h1 class="title neutral">'],
+      [four, "unavailable.body", "Ask for a new invitation link.", '<p class="body">'],
+      [four, "unavailable.web.get.vo", "Get Tadayo from the App Store.", '<span id="get-unavailable" hidden>'],
+      [eight, "handoff8.welcome.brand", "Your day. Your story. A thought from your friends.", '<p class="brand">'],
+    ] as const) {
+      expect(contract, key).toContain(`"${key}": "${text}"`);
+      expect(html, key).toContain(`${markup}${text}<`);
+    }
+  });
+
+  it("draws Retry's spinner as the frame's eight ticks, hidden from VoiceOver, and still under reduced motion", () => {
+    const svg = /<svg class="spinner"([^>]*)>([\s\S]*?)<\/svg/.exec(html);
+    expect(svg?.[1]).toBe(' viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"');
+    const ticks = [
+      ...(svg?.[2] ?? "").matchAll(
+        /<path d="M([\d.]+) ([\d.]+)([LVH])([\d.]+)(?: ([\d.]+))?"(?: opacity="([\d.]+)")? \/>/g,
+      ),
+    ];
+    expect(ticks.map((tick) => Number(tick[6] ?? 1))).toEqual([0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1]);
+    for (const [, x1, y1, op, a, b] of ticks) {
+      const [x2, y2] =
+        op === "L" ? [Number(a), Number(b)] : op === "V" ? [Number(x1), Number(a)] : [Number(a), Number(y1)];
+      const radius = (x: number, y: number) => Math.hypot(x - 8, y - 8);
+      expect(radius(Number(x1), Number(y1))).toBeCloseTo(4.32, 1);
+      expect(radius(x2, y2)).toBeCloseTo(6.88, 1);
+    }
+    const css = read("i.css");
+    expect(css).toMatch(
+      /\.retry\[aria-disabled="true"\] \.spinner \{\s*display: block;\s*animation: turn 1s steps\(8\) infinite;/,
+    );
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\.retry\[aria-disabled="true"\] \.spinner \{\s*animation: none;\s*\}\s*\}/,
     );
   });
 

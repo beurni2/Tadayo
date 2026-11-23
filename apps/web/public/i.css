@@ -1,7 +1,8 @@
 /*
- * The signed-out invitation page (G02-web, G02-web-revoked; docs/plans/api-b0-spike-links-web.md, section 1).
- * Colours: brand revision 1.1's canvas, primaryText, secondaryText, action and focusRing, light and dark
- * (design/reference/brand/brand-tokens.md). Type in rem, so browser text zoom doubles every role at 200%:
+ * The signed-out invitation page (G02-web, G02-web-revoked, G02-web-checking, G02-web-failed;
+ * docs/plans/api-b0-spike-links-web.md, section 1, and docs/plans/api-b1-invitation-web-states.md).
+ * Colours: brand revision 1.1's canvas, primaryText, secondaryText, action, onAction, actionPressed and
+ * focusRing, light and dark (design/reference/brand/brand-tokens.md). Type in rem, so browser text zoom doubles every role at 200%:
  * utilityTitle 32/35 bold (handoff 8), the unavailable title 2rem/1.1875 (handoff 4's neutralWebType),
  * caption 21/28 bold, body 17/23, the link 16/22. The gaps between blocks are the frames' own, in px,
  * measured from their SVGs (G02-web's wordmark at 124 px from the top, which the unavailable page keeps too,
@@ -15,6 +16,8 @@
   --primary-text: #182b25;
   --secondary-text: #607067;
   --action: #284cdb;
+  --on-action: #ffffff;
+  --action-pressed: #203fb7;
   --focus-ring: #284cdb;
 }
 
@@ -24,6 +27,8 @@
     --primary-text: #f7f8f2;
     --secondary-text: #b6c3b7;
     --action: #afbeff;
+    --on-action: #18233b;
+    --action-pressed: #96a9f2;
     --focus-ring: #afbeff;
   }
 }
@@ -72,8 +77,7 @@ main {
   font-weight: 700;
 }
 
-.body,
-.note {
+.body {
   font-size: 1.0625rem;
   line-height: 1.3529;
   color: var(--secondary-text);
@@ -87,7 +91,7 @@ main {
  * The gap above Get Tadayo's target, each state's own frame's: 53 under the brand line, 50 under the neutral
  * line, which puts its words where the frames draw them, in the middle of a target 50 high.
  */
-[data-state] {
+[data-state="invited"] {
   padding-bottom: 53px;
 }
 
@@ -95,8 +99,39 @@ main {
   padding-bottom: 50px;
 }
 
-.note {
-  margin: 88px 0 0;
+/*
+ * Checking, a failure, and the page without JavaScript (handoff 9's webCheck): the status block 90.36 under
+ * the wordmark (from 260), at least 132 high, so Retry's slot starts at 424, 32 under it, as frames 12 and 13
+ * draw it (the contract's statusBlockMinimum, 134, holds a 2-point optical allowance its rects don't use),
+ * and Get Tadayo's target 16 under the slot, at 490. In px, so at 200% text the text outgrows them and the
+ * page scrolls.
+ */
+[data-state="checking"],
+[data-state="failed"],
+.nojs {
+  box-sizing: content-box;
+  min-height: 132px;
+  margin: 0;
+  padding-top: 90.36px;
+}
+
+[data-state="checking"] .title,
+[data-state="failed"] .title {
+  margin: 0;
+}
+
+[data-state="failed"] .body {
+  margin: 16px 0 0;
+}
+
+/* Retry's place, kept on the first load, when Retry isn't shown, so Get Tadayo doesn't move (firstLoad). */
+.retry-slot {
+  margin-top: 32px;
+  min-height: max(50px, 2.75rem);
+}
+
+.retry-slot:not([hidden]) + .get {
+  margin-top: 16px;
 }
 
 .action {
@@ -118,7 +153,8 @@ main {
 }
 
 /* The brand's focus ring: focusRing, 2 wide, a gap of 2 (brand-tokens.md). */
-.action:focus-visible {
+.action:focus-visible,
+.retry:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -129,13 +165,72 @@ main {
   min-height: max(50px, 2.75rem);
 }
 
+/*
+ * Retry, frames 12 and 13: the column's width, 50 high (88 at 200% text, as Get Tadayo's target), buttonRadius
+ * 13, button 16/22 bold in onAction on action, actionPressed while pressed. Busy, it keeps its place and its
+ * label, with the frame's spinner 8 to the label's left, which doesn't move the label.
+ */
 .retry {
-  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: max(50px, 2.75rem);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--action);
+  color: var(--on-action);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.375;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-/* A part's first line takes focus after Retry, from the script; it is not a control, so it draws no ring. */
-[tabindex="-1"]:focus {
-  outline: none;
+.retry:not([aria-disabled="true"]):active {
+  background: var(--action-pressed);
+}
+
+.retry[aria-disabled="true"] {
+  cursor: default;
+}
+
+.label {
+  position: relative;
+}
+
+/* The frame's eight ticks: radii 4.32 to 6.88, 2 wide, round caps, onAction; turning once a second. */
+.spinner {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 8px);
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.retry[aria-disabled="true"] .spinner {
+  display: block;
+  animation: turn 1s steps(8) infinite;
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .retry[aria-disabled="true"] .spinner {
+    animation: none;
+  }
 }
 
 [hidden] {
