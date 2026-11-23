@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (17 tests | 2 failed) 5464ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (9)
+     × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 4ms
+     × a process past its deadline is still killed by the worker at once 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  22:21:20
+   Duration  5.67s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS
+AssertionError: expected 1839 to be less than 1000
+ ❯ src/privileges.test.ts:232:39
+    230|     const memory = fact("memory");
+    231|     expect(memory).toMatchObject({ outcome: "too_many_pixels", euid: 6…
+    232|     expect(memory["msAfterCrossing"]).toBeLessThan(GRACE_MS / 2);
+       |                                       ^
+    233|   });
+    234|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its deadline is still killed by the worker at once
+AssertionError: expected 2533 to be less than 1500
+ ❯ src/privileges.test.ts:239:28
+    237|     expect(deadline).toMatchObject({ outcome: "ImageTimeout", euid: 64…
+    238|     // Its deadline is 0.5 s; a kill the worker couldn't send would le…
+    239|     expect(deadline["ms"]).toBeLessThan(500 + GRACE_MS / 2);
+       |                            ^
+    240|   });
+    241|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -92,7 +92,7 @@
+   if (kind !== "prepared" || !isRecord(header.prepared)) throw new BrokenAnswer("a header of no known kind");
+   if (header.prepared.ok !== true) return [];
+   const { renditions } = header.prepared;
+-  if (!Array.isArray(renditions) || renditions.length > MOST_RENDITIONS) {
++  if (!Array.isArray(renditions)) {
+     throw new BrokenAnswer("renditions that aren't a list of at most two");
+   }
+   const lengths = renditions.map((rendition: unknown) => {

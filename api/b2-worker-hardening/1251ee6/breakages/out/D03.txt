@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/deploy-files.test.ts (19 tests | 1 failed) 401ms
+   ❯ Dockerfile (8)
+     × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, and nothing else 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  22:22:25
+   Duration  701ms (tests 69%, transform 17%, import 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, and nothing else
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+-   "groupadd --system --gid 10001 tadayo-image && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image",
++   "groupadd --system --gid 10001 tadayo-image && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /bin/sh tadayo-image",
+  ]
+
+ ❯ src/deploy-files.test.ts:211:18
+    209|     const image = stages().at(-1) ?? [];
+    210|     const runs = image.filter((instruction) => instruction.name === "R…
+    211|     expect(runs).toEqual([
+       |                  ^
+    212|       "groupadd --system --gid 10001 tadayo-image && useradd --system …
+    213|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

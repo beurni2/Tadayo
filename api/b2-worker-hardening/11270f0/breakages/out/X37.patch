@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -179,7 +179,6 @@
+   if (end.killed === "memory" || peakBytes > end.mostBytes) {
+     return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };
+   }
+-  if (end.killed === "broken") throw new ImageProcessFailed();
+   const { answer } = end;
+   if (answer?.kind === "prepared") {
+     if (!wellFormed(answer.prepared)) throw new ImageProcessFailed();

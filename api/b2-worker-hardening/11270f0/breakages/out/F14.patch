@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -73,7 +73,6 @@
+         renditions: renditions.map(({ bytes, ...rest }) => ({ ...rest, length: bytes.byteLength })),
+       },
+     };
+-    bodies = renditions.map((rendition) => rendition.bytes);
+   }
+   const json = Buffer.from(JSON.stringify(header), "utf8");
+   const length = Buffer.alloc(LENGTH_BYTES);

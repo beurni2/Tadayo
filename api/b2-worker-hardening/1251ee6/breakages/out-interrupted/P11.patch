@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -113,7 +113,7 @@
+   passwd: () => string = () => readFileSync("/etc/passwd", "utf8"),
+ ): PhotoUser | undefined {
+   const name = env.TADAYO_PHOTO_USER;
+-  const named = name !== undefined && name !== "";
++  const named = name !== undefined;
+   const started = inWorkerMode(ids);
+   if (!named && !started) return undefined;
+   if (!named) {

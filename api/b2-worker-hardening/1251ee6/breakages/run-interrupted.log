@@ -1,0 +1,45 @@
+== P01 the worker's mode is any real root [priv]: CAUGHT; exit 1 ['Tests  5 failed | 12 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 3ms
+    × asRoot refuses, and runs nothing 1ms
+    × is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one 5ms
+    × stops the worker when only one half is there: the variable without the start, or the start without it 3ms
+    × the sweep refuses root, root's group, and this process's own user and group, before it starts anything 42ms
+== P02 the start without the variable prepares in the worker's own user [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × stops the worker when only one half is there: the variable without the start, or the start without it 6ms
+== P03 the variable without the start is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × stops the worker when only one half is there: the variable without the start, or the start without it 5ms
+== P04 a name matches the start of a user's [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a name that isn't a user's, matching whole names only 5ms
+== P05 a line of six fields is read as an entry [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 6ms
+== P06 a photo user of uid 0 is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 6ms
+== P07 a photo user in group 0 is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 5ms
+== P08 the worker's own user is taken as the photo user [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 6ms
+== P09 the worker's own group is taken as the photo user's [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 7ms
+== P10 a negative id is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 6ms
+== P11 the variable alone, empty, counts as named [priv]: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one 5ms
+    × stops the worker when only one half is there: the variable without the start, or the start without it 4ms
+== A01 asRoot runs outside the worker's mode [priv]: CAUGHT; exit 1 ['Tests  3 failed | 14 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 4ms
+    × asRoot refuses, and runs nothing 7ms
+    × the sweep refuses root, root's group, and this process's own user and group, before it starts anything 50ms
+== A02 asRoot doesn't return to the worker's user [priv]: CAUGHT; exit 1 ['Tests  8 failed | 9 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+    × a process past its deadline is still killed by the worker at once 0ms
+    × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 0ms
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 148ms
+    × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 6ms
+== A03 asRoot stays root and doesn't check it came back [priv]: CAUGHT; exit 1 ['Tests  8 failed | 9 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+    × a process past its deadline is still killed by the worker at once 0ms
+    × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 1ms
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 140ms
+    × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 7ms

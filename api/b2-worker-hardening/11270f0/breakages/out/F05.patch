@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -190,7 +190,6 @@
+       } catch {
+         throw new BrokenAnswer("a header that isn't JSON");
+       }
+-      if (!isRecord(header)) throw new BrokenAnswer("a header that isn't an object");
+       if ((header.kind === "ready") !== (this.#seen === "nothing")) throw new BrokenAnswer("a message out of order");
+       this.#header = header;
+       this.#lengths = bodiesOf(header, MESSAGE_BYTES - LENGTH_BYTES - filled.length);

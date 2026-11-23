@@ -1,0 +1,133 @@
+== P01 the worker's mode is any real root [priv]: CAUGHT; exit 1 ['Tests  5 failed | 12 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 3ms
+    × asRoot refuses, and runs nothing 2ms
+    × is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one 8ms
+    × stops the worker when only one half is there: the variable without the start, or the start without it 6ms
+    × the sweep refuses root, root's group, and this process's own user and group, before it starts anything 48ms
+== P02 the start without the variable prepares in the worker's own user [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × stops the worker when only one half is there: the variable without the start, or the start without it 8ms
+== P03 the variable without the start is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × stops the worker when only one half is there: the variable without the start, or the start without it 6ms
+== P04 a name matches the start of a user's [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a name that isn't a user's, matching whole names only 5ms
+== P05 a line of six fields is read as an entry [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 13ms
+== P06 a photo user of uid 0 is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 6ms
+== P07 a photo user in group 0 is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 8ms
+== P08 the worker's own user is taken as the photo user [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 9ms
+== P09 the worker's own group is taken as the photo user's [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 9ms
+== P10 a negative id is taken [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses root, root's group, the worker's own user and the worker's own group 8ms
+== P11 the variable alone, empty, counts as named [priv]: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one 6ms
+    × stops the worker when only one half is there: the variable without the start, or the start without it 4ms
+== A01 asRoot runs outside the worker's mode [priv]: CAUGHT; exit 1 ['Tests  3 failed | 14 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 6ms
+    × asRoot refuses, and runs nothing 7ms
+    × the sweep refuses root, root's group, and this process's own user and group, before it starts anything 32ms
+== A02 asRoot doesn't return to the worker's user [priv]: CAUGHT; exit 1 ['Tests  8 failed | 9 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+    × a process past its deadline is still killed by the worker at once 1ms
+    × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 1ms
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 1ms
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 142ms
+    × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 11ms
+== A03 asRoot stays root and doesn't check it came back [priv]: CAUGHT; exit 1 ['Tests  8 failed | 9 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+    × a process past its deadline is still killed by the worker at once 0ms
+    × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 0ms
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 176ms
+    × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 6ms
+== W01 the sweep takes root [privbox]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 13ms
+== W07 the sweep takes root's group [priv]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 19ms
+== W08 the sweep takes the worker's own user [priv]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 12ms
+== W09 the sweep takes the worker's own group [priv]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 20ms
+== W02 the sweep runs with the photo user's group [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 10ms
+== W03 the sweep sends SIGTERM, which a process may ignore [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 6ms
+== W04 the sweep's time never runs out [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 181ms
+== W05 a sweep's exit not 0 is taken as done [priv]: NOT CAUGHT; exit 0 ['Tests  17 passed (17)']
+== W06 the sweep is the photo's process group only, not every process of its user [priv]: CAUGHT; exit 1 ['Tests  8 failed | 9 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+    × a process past its deadline is still killed by the worker at once 0ms
+    × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 0ms
+    × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 2ms
+    × so has every process of a forking loop, caught mid-fork 0ms
+== W10 the sweep's program doesn't check it isn't root [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 8ms
+== X01 the photo's process runs as the worker, not the photo user [privbox]: CAUGHT; exit 1 ['Tests  4 failed | 13 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 12ms
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 3ms
+    × so has every process of a forking loop, caught mid-fork 1ms
+    × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 2ms
+== X02 the photo's process keeps the worker's group [priv]: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 9ms
+    × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 2ms
+== X03 the photo's process is started without root [priv]: CAUGHT; exit 1 ['Tests  7 failed | 10 passed (17)']
+    × a photo's process is the photo's user alone, with no capability, and can't reach the worker 8ms
+    × a process past its deadline is still killed by the worker at once 1ms
+    × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 1ms
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 5ms
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 109ms
+    × so has every process of a forking loop, caught mid-fork 1ms
+== X04 the group's kill is sent without root [priv]: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × a process past its deadline is still killed by the worker at once 1ms
+    × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 4ms
+== X05 no sweep: the end settles as the group's kill leaves it [priv]: CAUGHT; exit 1 ['Tests  5 failed | 12 passed (17)']
+    × a process the photo's process started in a session of its own has ended once the photo's end settles 2ms
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 183ms
+    × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 14ms
+    × so has every process of a forking loop, caught mid-fork 1ms
+    × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 2ms
+== X06 a failed sweep fails only the photo [priv]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 180ms
+== S01 the worker reads no photo user as it starts [start]: CAUGHT; exit 1 ['Tests  1 failed | 4 passed (5)']
+    × stops before it connects when TADAYO_PHOTO_USER is set but it wasn't started as root with its own user effective 224ms
+== R01 the preparation is given no photo user [prepare]: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × prepares the photo as that user: a worker not started as root can take none, so the photo fails, to be tried again 220ms
+== M01 the start line says each photo is under a user of its own, always [startup]: CAUGHT; exit 1 ['Tests  3 failed | 12 passed (15)']
+    × starts with prod and stays up, making days, until it is told to stop 20038ms
+    × stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first 223ms
+    × stops cleanly on a SIGTERM that comes as it writes its started line: its handlers are in place first 257ms
+== D01 the image runs as node again [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 18 passed (19)']
+    × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 10ms
+== D02 the photo user is node's uid [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 18 passed (19)']
+    × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, and nothing else 8ms
+== D03 the photo user gets a shell [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 18 passed (19)']
+    × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, and nothing else 9ms
+== D04 the worker keeps a fourth capability [deploy]: CAUGHT; exit 1 ['Tests  2 failed | 17 passed (19)']
+    × has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other 47ms
+    × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 39ms
+== D05 the worker can gain privileges [deploy]: CAUGHT; exit 1 ['Tests  2 failed | 17 passed (19)']
+    × has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other 48ms
+    × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 42ms
+== D06 the worker's groups stay root's [deploy]: CAUGHT; exit 1 ['Tests  2 failed | 17 passed (19)']
+    × has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other 33ms
+    × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 40ms
+== D07 the API keeps its capabilities [deploy]: CAUGHT; exit 1 ['Tests  3 failed | 16 passed (19)']
+    × has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other 34ms
+    × puts the ops entry where the runner starts it, and the API's command where a bare run starts it 45ms
+    × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 42ms
+== D08 the API's real user stays root [deploy]: CAUGHT; exit 1 ['Tests  3 failed | 16 passed (19)']
+    × has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other 37ms
+    × puts the ops entry where the runner starts it, and the API's command where a bare run starts it 41ms
+    × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 50ms
+== D09 no photo user is named [deploy]: CAUGHT; exit 1 ['Tests  2 failed | 17 passed (19)']
+    × has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them, and the photo user's name 33ms
+    × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, and nothing else 39ms
+== D10 a bare run starts the API as root [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 18 passed (19)']
+    × puts the ops entry where the runner starts it, and the API's command where a bare run starts it 38ms
+restored: ' M Dockerfile\n M docs/DECISIONS.md\n M docs/LIMITATIONS.md\n M docs/plans/api-b0-deploy.md\n M docs/plans/api-b2-worker-hardening.md\n M fly.toml\n M packages/domain/src/time/one-clock.test.ts\n M services/worker/src/image-process.ts\n M services/worker/src/main.ts\n M services/worker/src/prepare.ts\n M services/worker/src/start.test.ts\n M services/worker/src/start.ts\n M tests/src/db/startup.test.ts\n M tests/src/db/worker-generation.test.ts\n M tests/src/db/worker-prepare.test.ts\n M tools/ops/src/deploy-files.test.ts\n?? services/worker/src/privileges-harness.ts\n?? services/worker/src/privileges.test.ts\n?? services/worker/src/privileges.ts\n'
+done

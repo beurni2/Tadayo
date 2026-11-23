@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -194,7 +194,7 @@
+       return;
+     }
+     const timer = setTimeout(() => {
+-      reject(new SweepFailed("time"));
++      void 0;
+     }, seconds * 1000);
+     started.on("error", () => {
+       clearTimeout(timer);

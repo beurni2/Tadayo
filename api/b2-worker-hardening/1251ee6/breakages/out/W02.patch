@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -184,7 +184,7 @@
+       started = asRoot(() =>
+         spawn(process.execPath, ["-e", SWEEP_PROGRAM], {
+           uid: user.uid,
+-          gid: own.egid,
++          gid: user.gid,
+           env: {},
+           stdio: "ignore",
+         }),

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -97,7 +97,7 @@
+   }
+   const lengths = renditions.map((rendition: unknown) => {
+     const length = isRecord(rendition) ? rendition.length : undefined;
+-    if (typeof length !== "number" || !Number.isSafeInteger(length) || length < 0) {
++    if (typeof length !== "number" || !Number.isSafeInteger(length)) {
+       throw new BrokenAnswer("a rendition without a length");
+     }
+     return length;

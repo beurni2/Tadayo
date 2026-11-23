@@ -1,0 +1,145 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (17 tests | 8 failed) 295ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (9)
+     × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 11ms
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+     × a process the photo's process started in a session of its own has ended once the photo's end settles 1ms
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 0ms
+     × so has every process of a forking loop, caught mid-fork 1ms
+     × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 1ms
+     × a process past its deadline is still killed by the worker at once 1ms
+     × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 142ms
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 9 passed (17)
+   Start at  22:20:45
+   Duration  505ms (tests 81%, transform 12%, import 5%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left
+AssertionError: expected 'worker: couldn\'t return to its own u…' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ worker: couldn't return to its own user
++
+
+ ❯ src/privileges.test.ts:170:24
+    168|
+    169|   it("ran as root, with the photo's user and the worker's unused, and …
+    170|     expect(run.stderr).toBe("");
+       |                        ^
+    171|     expect(run.code).toBe(0);
+    172|     expect(fact("start")).toMatchObject({ uid: 0, euid: 0, photoUserFr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+Error: the harness didn't report probe: worker: couldn't return to its own user
+
+ ❯ fact src/privileges.test.ts:161:36
+    159|   const fact = (name: string): Record<string, unknown> => {
+    160|     const found = run.cases.get(name);
+    161|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    162|     return found;
+    163|   };
+ ❯ src/privileges.test.ts:190:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process the photo's process started in a session of its own has ended once the photo's end settles
+Error: the harness didn't report escapes: worker: couldn't return to its own user
+
+ ❯ fact src/privileges.test.ts:161:36
+    159|   const fact = (name: string): Record<string, unknown> => {
+    160|     const found = run.cases.get(name);
+    161|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    162|     return found;
+    163|   };
+ ❯ src/privileges.test.ts:211:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+Error: the harness didn't report watcher: worker: couldn't return to its own user
+
+ ❯ fact src/privileges.test.ts:161:36
+    159|   const fact = (name: string): Record<string, unknown> => {
+    160|     const found = run.cases.get(name);
+    161|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    162|     return found;
+    163|   };
+ ❯ src/privileges.test.ts:216:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > so has every process of a forking loop, caught mid-fork
+Error: the harness didn't report forks: worker: couldn't return to its own user
+
+ ❯ fact src/privileges.test.ts:161:36
+    159|   const fact = (name: string): Record<string, unknown> => {
+    160|     const found = run.cases.get(name);
+    161|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    162|     return found;
+    163|   };
+ ❯ src/privileges.test.ts:224:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS
+Error: the harness didn't report memory: worker: couldn't return to its own user
+
+ ❯ fact src/privileges.test.ts:161:36
+    159|   const fact = (name: string): Record<string, unknown> => {
+    160|     const found = run.cases.get(name);
+    161|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    162|     return found;
+    163|   };
+ ❯ src/privileges.test.ts:230:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its deadline is still killed by the worker at once
+Error: the harness didn't report deadline: worker: couldn't return to its own user
+
+ ❯ fact src/privileges.test.ts:161:36
+    159|   const fact = (name: string): Record<string, unknown> => {
+    160|     const found = run.cases.get(name);
+    161|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    162|     return found;
+    163|   };
+ ❯ src/privileges.test.ts:236:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive
+AssertionError: expected 'worker: couldn\'t return to its own u…' to be 'worker: a photo\'s processes weren\'t…' // Object.is equality
+
+- Expected
++ Received
+
+- worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
++ worker: couldn't return to its own user
+
+
+ ❯ src/privileges.test.ts:245:28
+    243|     const stopped = await harness(["sweep-timeout"], 60);
+    244|     expect(stopped.code).toBe(1);
+    245|     expect(stopped.stderr).toBe(
+       |                            ^
+    246|       "worker: a photo's processes weren't all ended, so the worker st…
+    247|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

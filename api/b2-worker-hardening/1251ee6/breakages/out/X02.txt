@@ -1,0 +1,79 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (17 tests | 2 failed) 1467ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (9)
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 9ms
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  22:21:16
+   Duration  1.67s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+AssertionError: expected { uid: 64999, euid: 64999, …(9) } to deeply equal { uid: 64999, euid: 64999, …(9) }
+
+- Expected
++ Received
+
+@@ -1,14 +1,14 @@
+  {
+    "capEff": "0000000000000000",
+    "capPrm": "0000000000000000",
+-   "egid": 64999,
++   "egid": 64998,
+    "environ": "EACCES",
+    "euid": 64999,
+-   "gid": 64999,
++   "gid": 0,
+    "groups": [
+-     64999,
++     64998,
+    ],
+    "mem": "EACCES",
+    "signal": "EPERM",
+    "stdout": "EACCES",
+    "uid": 64999,
+
+ ❯ src/privileges.test.ts:192:28
+    190|     const probe = fact("probe");
+    191|     expect(probe["outcome"]).toBe("prepared");
+    192|     expect(probe["child"]).toEqual({
+       |                            ^
+    193|       uid: 64999,
+    194|       euid: 64999,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+AssertionError: expected { case: 'watcher', …(3) } to match object { outcome: 'prepared', …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+    "outcome": "prepared",
+    "seen": {
+      "gid": 64998,
+-     "mem": "EACCES",
++     "mem": "opened",
+      "uid": 64999,
+    },
+  }
+
+ ❯ src/privileges.test.ts:216:29
+    214|   it("the sweep runs with the worker's group, not the photo user's, so…
+    215|     // Attaching (ptrace, /proc/<pid>/mem) needs every user and group …
+    216|     expect(fact("watcher")).toMatchObject({
+       |                             ^
+    217|       outcome: "prepared",
+    218|       seen: { uid: 64999, gid: 64998, mem: "EACCES" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

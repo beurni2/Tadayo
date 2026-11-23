@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -166,7 +166,7 @@
+       this.#broken = true;
+       throw error;
+     } finally {
+-      if (this.done || this.#broken) this.#into = Buffer.alloc(0);
++      if (this.done) this.#into = Buffer.alloc(0);
+     }
+     return messages;
+   }

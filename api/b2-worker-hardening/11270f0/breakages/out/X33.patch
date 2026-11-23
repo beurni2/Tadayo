@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -292,7 +292,6 @@
+           child.stdin?.end(bytes);
+         } else {
+           answer = message;
+-          end();
+         }
+       }
+     });

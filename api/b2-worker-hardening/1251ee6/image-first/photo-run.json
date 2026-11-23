@@ -1,0 +1,59 @@
+{
+ "worker": {
+  "Uid": "0 1000 1000 1000",
+  "Gid": "0 1000 1000 1000",
+  "Groups": "1000",
+  "CapInh": "0000000000000000",
+  "CapPrm": "00000000000000e0",
+  "CapEff": "0000000000000000",
+  "CapBnd": "00000000000000e0",
+  "CapAmb": "0000000000000000",
+  "NoNewPrivs": "1"
+ },
+ "ids": {
+  "uid": 0,
+  "euid": 1000,
+  "egid": 1000
+ },
+ "workerMode": true,
+ "user": {
+  "uid": 10001,
+  "gid": 10001
+ },
+ "ms": 304,
+ "peakMiB": 119,
+ "outcome": {
+  "ok": true,
+  "renditions": [
+   "full 900x1125 ",
+   "display 900x1125 "
+  ]
+ },
+ "processesOfPhotoUser": [
+  {
+   "Uid": "10001 10001 10001 10001",
+   "Gid": "10001 10001 10001 10001",
+   "Groups": "",
+   "CapInh": "0000000000000000",
+   "CapPrm": "0000000000000000",
+   "CapEff": "0000000000000000",
+   "CapBnd": "00000000000000e0",
+   "CapAmb": "0000000000000000",
+   "NoNewPrivs": "1",
+   "cmd": "image-child.ts image/jpeg"
+  },
+  {
+   "Uid": "10001 10001 10001 10001",
+   "Gid": "1000 1000 1000 1000",
+   "Groups": "",
+   "CapInh": "0000000000000000",
+   "CapPrm": "0000000000000000",
+   "CapEff": "0000000000000000",
+   "CapBnd": "00000000000000e0",
+   "CapAmb": "0000000000000000",
+   "NoNewPrivs": "1",
+   "cmd": "-e try { process.kill(-1, \"SIGKILL\"); } catch (error) { if (error.code !== \"ESRCH\") throw error; }"
+  }
+ ],
+ "leftAfter": 0
+}

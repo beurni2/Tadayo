@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (24 tests | 2 failed) 71630ms
+   ❯ a photo's process that misbehaves (R4-3, C5-1) (8)
+     × fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once 30007ms
+     × fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1) 30003ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  14:54:01
+   Duration  72.05s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:375:3
+    373|   });
+    374|
+    375|   it("fails, to be tried again, when the child sends anything but read…
+       |   ^
+    376|     for (const name of ["bogus", "twice", "garbled", "early"] as const…
+    377|       const from = performance.now();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1)
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:386:3
+    384|   }, 30_000);
+    385|
+    386|   it("fails at once on a length past its cap, the worker holding none …
+       |   ^
+    387|     const before = peakOf("self") ?? 0;
+    388|     for (const name of ["huge", "overlong"] as const) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

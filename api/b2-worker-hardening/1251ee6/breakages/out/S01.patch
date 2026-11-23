@@ -1,0 +1,11 @@
+--- a/services/worker/src/start.ts
++++ b/services/worker/src/start.ts
+@@ -29,7 +29,7 @@
+   const serviceKey = env.SUPABASE_SERVICE_KEY;
+   if (serviceKey === undefined || serviceKey === "") throw new Error("worker: SUPABASE_SERVICE_KEY isn't set");
+   const storage = workerStorage({ projectUrl: project, serviceKey });
+-  const photoUser = photoUserFor(env);
++  const photoUser = undefined as PhotoUser | undefined;
+   const sql = connect(url);
+   try {
+     return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql), storage, photoUser };

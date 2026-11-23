@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-frames.test.ts (7 tests | 1 failed) 32ms
+   ❯ a photo's process's messages (3)
+     × read nothing after the answer, though more bytes come in the same read or after it 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  14:53:57
+   Duration  226ms (transform 38%, tests 38%, import 19%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-frames.test.ts > a photo's process's messages > read nothing after the answer, though more bytes come in the same read or after it
+BrokenAnswer: image: the photo's process sent a broken answer: a header's length past its cap
+ ❯ MessageReader.#completed src/image-frames.ts:181:39
+    179|       const bytes = filled.readUInt32BE(0);
+    180|       // A length of 0 makes an empty header, which isn't JSON.
+    181|       if (bytes > HEADER_BYTES) throw new BrokenAnswer("a header's len…
+       |                                       ^
+    182|       this.#part = "header";
+    183|       this.#into = Buffer.alloc(bytes);
+ ❯ MessageReader.push src/image-frames.ts:156:32
+ ❯ src/image-frames.test.ts:81:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -178,7 +178,7 @@
+     if (this.#part === "length") {
+       const bytes = filled.readUInt32BE(0);
+       // A length of 0 makes an empty header, which isn't JSON.
+-      if (bytes > HEADER_BYTES) throw new BrokenAnswer("a header's length past its cap");
++      if (bytes > 2 ** 32) throw new BrokenAnswer("a header's length past its cap");
+       this.#part = "header";
+       this.#into = Buffer.alloc(bytes);
+       return undefined;

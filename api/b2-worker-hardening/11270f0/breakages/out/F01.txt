@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-frames.test.ts (7 tests | 1 failed) 25ms
+   ❯ a broken answer (4)
+     × is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  14:53:48
+   Duration  223ms (transform 42%, import 27%, tests 26%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-frames.test.ts > a broken answer > is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept
+AssertionError: expected function to throw an error, but it didn't
+ ❯ refused src/image-frames.test.ts:114:48
+    112|   function refused(bytes: Buffer, step = bytes.length) {
+    113|     const reader = new MessageReader();
+    114|     expect(() => readAll(bytes, step, reader)).toThrow(BrokenAnswer);
+       |                                                ^
+    115|     expect(reader.heldBytes).toBe(0);
+    116|     expect(() => reader.push(frameOf(READY))).toThrow(BrokenAnswer);
+ ❯ src/image-frames.test.ts:122:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

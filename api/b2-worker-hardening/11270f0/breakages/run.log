@@ -1,0 +1,73 @@
+== F01 a header's length past its cap is read [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept 5ms
+== F02 a message out of order is taken [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a message out of order: an answer before ready, or a second ready 5ms
+== F03 a second ready is taken [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a message out of order: an answer before ready, or a second ready 4ms
+== F04 a header of no known kind is taken [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a header that isn't a JSON object of one of the child's kinds 4ms
+== F05 a header that isn't an object is taken [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a header that isn't a JSON object of one of the child's kinds 5ms
+== F06 more than two renditions are read [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 7ms
+== F07 a negative length is taken [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 7ms
+== F08 a length that isn't whole is taken [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 7ms
+== F09 renditions past the message's cap are read [frames]: CAUGHT; exit 1 ['Tests  2 failed | 5 passed (7)']
+    × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 2ms
+    × take a header of HEADER_BYTES, and a message of MESSAGE_BYTES, and keep only what each length allows 5ms
+== F10 the header's own bytes aren't counted against the message's cap [frames]: CAUGHT; exit 1 ['Tests  2 failed | 5 passed (7)']
+    × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 2ms
+    × take a header of HEADER_BYTES, and a message of MESSAGE_BYTES, and keep only what each length allows 5ms
+== F11 the reader reads on after the answer [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × read nothing after the answer, though more bytes come in the same read or after it 10ms
+== F12 the reader keeps its buffer after a broken answer [frames]: CAUGHT; exit 1 ['Tests  4 failed | 3 passed (7)']
+    × is a header that isn't a JSON object of one of the child's kinds 1ms
+    × is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept 5ms
+    × is a message out of order: an answer before ready, or a second ready 2ms
+    × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 1ms
+== F13 the reader reads on after a broken answer [frames]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept 7ms
+== F14 a rendition's bytes aren't sent [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × come back as they were sent, ready then each kind of answer, whole or a byte at a time 11ms
+== F15 a rendition's length stays in place of its bytes [frames]: CAUGHT; exit 1 ['Tests  1 failed | 6 passed (7)']
+    × come back as they were sent, ready then each kind of answer, whole or a byte at a time 5ms
+== X30 a broken answer doesn't end the child [process]: CAUGHT; exit 1 ['Tests  2 failed | 22 passed (24)']
+    × fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1) 30003ms
+    × fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once 30007ms
+== X31 a broken answer leaves the worker's end of the pipe open [process]: CAUGHT; exit 1 ['Tests  1 failed | 23 passed (24)']
+    × fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once 2138ms
+== X32 the answer leaves the worker's end of the pipe open [process]: CAUGHT; exit 1 ['Tests  1 failed | 23 passed (24)']
+    × keeps the first answer, and reads nothing after it 2054ms
+== X33 the answer doesn't end the child [process]: CAUGHT; exit 1 ['Tests  3 failed | 21 passed (24)']
+    × ends a child that answered at once, though it would never exit, and keeps its answer 10015ms
+    × keeps the first answer, and reads nothing after it 2152ms
+    × settles when the child ends though a process it started holds its pipes, and ends that process 2354ms
+== X34 the worker keeps its end of the child's pipe as the end settles [process]: CAUGHT; exit 1 ['Tests  1 failed | 23 passed (24)']
+    × closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them mid-message 3426ms
+== X35 the worker keeps its end of the child's standard input as the end settles [process]: NOT CAUGHT; exit 0 ['Tests  24 passed (24)']
+== X36 the child is given the worker's environment [process]: CAUGHT; exit 1 ['Tests  1 failed | 23 passed (24)']
+    × goes first to the kernel's out-of-memory killer, and starts with an empty environment 203ms
+== X37 a broken answer is the child's to retry as anything [process]: CAUGHT; exit 1 ['Tests  3 failed | 21 passed (24)']
+    × fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1) 42ms
+    × fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once 60ms
+    × throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw 1ms
+== X38 the photo is never written [process]: CAUGHT; exit 1 ['Tests  7 failed | 17 passed (24)']
+    × answers as prepareImage does in this process, rendition for rendition, byte for byte 1261ms
+    × ends with the worker: a worker killed while its photo is decoded leaves no process behind 35499ms
+    × fails, to be tried again, when its code throws, never refusing the photo 149ms
+    × is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout) 841ms
+    × is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 759ms
+    × passes a decode's own timeout on as ImageTimeout 1338ms
+== C01 the child lives on when the worker has gone [process]: CAUGHT; exit 1 ['Tests  1 failed | 23 passed (24)']
+    × ends with the worker: a worker killed while its photo is decoded leaves no process behind 2182ms
+== C02 the child sends no ready [process]: CAUGHT; exit 1 ['Tests  8 failed | 16 passed (24)']
+    × answers as prepareImage does in this process, rendition for rendition, byte for byte 60007ms
+    × ends with the worker: a worker killed while its photo is decoded leaves no process behind 35029ms
+    × fails, to be tried again, when its code throws, never refusing the photo 20001ms
+    × goes first to the kernel's out-of-memory killer, and starts with an empty environment 20000ms
+    × is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 60003ms
+    × passes a decode's own timeout on as ImageTimeout 60002ms
+restored: ' M docs/DECISIONS.md\n M docs/LIMITATIONS.md\n M docs/PROGRESS.md\n M docs/plans/api-b2-spike-prepare.md\n M services/worker/src/image-child.ts\n M services/worker/src/image-process.test.ts\n M services/worker/src/image-process.ts\n?? docs/plans/api-b2-worker-hardening.md\n?? services/worker/src/image-frames.test.ts\n?? services/worker/src/image-frames.ts\n'
+done

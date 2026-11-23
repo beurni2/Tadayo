@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (18 tests | 1 failed) 1507ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (10)
+     × a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  22:25:29
+   Duration  1.73s (tests 96%, transform 2%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it
+AssertionError: expected { case: 'sweep-fails', …(4) } to deeply equal { case: 'sweep-fails', …(4) }
+
+- Expected
++ Received
+
+  {
+    "case": "sweep-fails",
+    "done": "swept",
+    "euid": 64998,
+-   "signal": "exit",
+-   "status": "exit",
++   "signal": "swept",
++   "status": "swept",
+  }
+
+ ❯ src/privileges.test.ts:190:33
+    188|
+    189|   it("a sweep that exits other than 0, or is killed by a signal, is ne…
+    190|     expect(fact("sweep-fails")).toEqual({
+       |                                 ^
+    191|       case: "sweep-fails",
+    192|       status: "exit",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

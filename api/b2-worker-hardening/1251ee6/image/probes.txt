@@ -1,0 +1,14 @@
+Image tadayo-api-dev:hardening2, built from the branch's final tree (docker build, the session's CA base), 2026-11-23 ~22:50 UTC. Each command as fly.toml's [processes] runs it.
+
+== The API's command
+{"Uid":"1000 1000 1000 1000","Gid":"1000 1000 1000 1000","Groups":"1000","CapInh":"0000000000000000","CapPrm":"0000000000000000","CapEff":"0000000000000000","CapBnd":"0000000000000000","CapAmb":"0000000000000000","NoNewPrivs":"1","environSelf":"environ readable"}
+
+== The worker's command
+{"Uid":"0 1000 1000 1000","Gid":"0 1000 1000 1000","Groups":"1000","CapInh":"0000000000000000","CapPrm":"00000000000000e0","CapEff":"0000000000000000","CapBnd":"00000000000000e0","CapAmb":"0000000000000000","NoNewPrivs":"1","environSelf":"EACCES"}
+
+== The image's CMD, run bare
+["setpriv","--reuid=node","--regid=node","--init-groups","--inh-caps=-all","--bounding-set=-all","--no-new-privs","--","node","services/api/src/main.ts"] user=""
+
+== tadayo-image in /etc/passwd
+/etc/passwd:tadayo-image:x:10001:10001::/nonexistent:/usr/sbin/nologin
+/etc/group:tadayo-image:x:10001:

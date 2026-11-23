@@ -1,0 +1,11 @@
+--- a/fly.toml
++++ b/fly.toml
+@@ -42,7 +42,7 @@
+ # effect only, its real user root, so its /proc files are root's, and it keeps setuid, setgid and kill, which it uses
+ # only for an instant at a time to start each photo's process as TADAYO_PHOTO_USER and end it.
+ [processes]
+-  api = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node services/api/src/main.ts"
++  api = "setpriv --euid=node --egid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node services/api/src/main.ts"
+   worker = "setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node services/worker/src/main.ts"
+ 
+ # The API's service. It listens only after the database and the clock are ready, so an open port is a

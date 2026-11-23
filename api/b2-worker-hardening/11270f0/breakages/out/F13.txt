@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-frames.test.ts (7 tests | 1 failed) 23ms
+   ❯ a broken answer (4)
+     × is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  14:53:59
+   Duration  239ms (transform 48%, tests 27%, import 18%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-frames.test.ts > a broken answer > is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept
+AssertionError: expected error to be instance of BrokenAnswer
+
+- Expected:
+[Function BrokenAnswer]
+
++ Received:
+RangeError {
+  "message": "Attempt to access memory outside buffer bounds",
+  "code": "ERR_BUFFER_OUT_OF_BOUNDS",
+}
+
+ ❯ refused src/image-frames.test.ts:116:47
+    114|     expect(() => readAll(bytes, step, reader)).toThrow(BrokenAnswer);
+    115|     expect(reader.heldBytes).toBe(0);
+    116|     expect(() => reader.push(frameOf(READY))).toThrow(BrokenAnswer);
+       |                                               ^
+    117|   }
+    118|   const ready = frameOf(READY);
+ ❯ src/image-frames.test.ts:122:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

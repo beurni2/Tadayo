@@ -1,0 +1,21 @@
+Image tadayo-api-dev:hardening, built from the branch's Dockerfile in the session (docker build), 2026-11-23 ~21:45 UTC.
+Each command is the image's own, run with `docker run`, as fly.toml's [processes] run them.
+
+== The API: setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node /check/status.mjs
+{"Uid":"1000 1000 1000 1000","Gid":"1000 1000 1000 1000","Groups":"1000","CapInh":"0000000000000000","CapPrm":"0000000000000000","CapEff":"0000000000000000","CapBnd":"0000000000000000","CapAmb":"0000000000000000","NoNewPrivs":"1","environSelf":"environ readable"}
+
+== The worker: setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node /check/status.mjs
+{"Uid":"0 1000 1000 1000","Gid":"0 1000 1000 1000","Groups":"1000","CapInh":"0000000000000000","CapPrm":"00000000000000e0","CapEff":"0000000000000000","CapBnd":"00000000000000e0","CapAmb":"0000000000000000","NoNewPrivs":"1","environSelf":"EACCES"}
+(0xe0 = CAP_KILL, CAP_SETGID, CAP_SETUID; permitted, not effective. environ EACCES: non-dumpable, its /proc files are root's.)
+
+== The worker's own main.ts, started exactly as fly.toml's worker command, TADAYO_PHOTO_USER=tadayo-image, against the session's local Postgres (schema bootstrapped, no migrations, so the outbox pass fails with 42P01, which is beside the point)
+stdout/stderr first line: worker: started, making days every minute and preparing uploads, each photo under a user of its own
+/proc/1/status: Uid 0 1000 1000 1000; Gid 0 1000 1000 1000; Groups 1000; CapPrm 00000000000000e0; CapEff 0000000000000000; CapBnd 00000000000000e0; NoNewPrivs 1
+/proc/1/environ: -r-------- root root
+From a shell as tadayo-image (docker exec -u tadayo-image): environ refused; mem refused; signal (kill -0 1) refused; fd listing refused
+From a shell as node (docker exec -u node): environ refused; signal allowed (the worker's saved uid is node's; no other process of node runs on the worker's Machine: Fly runs each process group on Machines of its own)
+
+== A real photo (a 900x1125 JPEG) prepared by prepareIsolated as the photo user, under the worker's command: photo-run.json
+outcome ok, renditions full and display; the child: uid 10001 x4, gid 10001 x4, no supplementary group, CapEff 0, NoNewPrivs 1, `image-child.ts image/jpeg`;
+the sweep: uid 10001 x4, gid 1000 x4 (the worker's group), no supplementary group, CapEff 0, `-e try { process.kill(-1, "SIGKILL"); } ...`;
+processes of uid 10001 left after the answer: 0.

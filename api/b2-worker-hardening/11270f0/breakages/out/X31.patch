@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -258,7 +258,7 @@
+     // same.
+     const end = (why?: "memory" | "time" | "broken") => {
+       if (why !== undefined && killed === undefined && answer === undefined) killed = why;
+-      if (why === "broken" || answer !== undefined) answers?.destroy();
++      if (answer !== undefined) answers?.destroy();
+       killGroup();
+       allowGrace();
+     };

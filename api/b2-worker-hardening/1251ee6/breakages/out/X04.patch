@@ -1,0 +1,18 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -259,13 +259,13 @@
+     const killGroup = () => {
+       const { pid } = child;
+       if (pid === undefined) return;
+-      privileged(() => {
++      (() => {
+         try {
+           process.kill(-pid, "SIGKILL");
+         } catch {
+           // The group has ended.
+         }
+-      });
++      })();
+     };
+     let grace: NodeJS.Timeout | undefined;
+     // Once the child has ended or been killed, its end is settled when its pipes close, or after GRACE_MS if

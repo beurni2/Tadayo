@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -304,7 +304,6 @@
+       clearTimeout(deadline);
+       clearTimeout(grace);
+       killGroup();
+-      child.stdin?.destroy();
+       answers?.destroy();
+       if (failed) {
+         reject(new ImageProcessFailed());

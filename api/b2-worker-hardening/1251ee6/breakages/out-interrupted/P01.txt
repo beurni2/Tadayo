@@ -1,0 +1,119 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (17 tests | 5 failed) 1347ms
+   ❯ the photo user (photoUserFor) (5)
+     × is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one 5ms
+     × stops the worker when only one half is there: the variable without the start, or the start without it 3ms
+   ❯ outside the worker's mode (3)
+     × asRoot refuses, and runs nothing 1ms
+     × the sweep refuses root, root's group, and this process's own user and group, before it starts anything 42ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (9)
+     × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 3ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 12 passed (17)
+   Start at  22:08:38
+   Duration  1.54s (tests 95%, transform 3%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one
+Error: worker: started to prepare each photo under a user of its own, but TADAYO_PHOTO_USER isn't set
+ ❯ photoUserFor src/privileges.ts:120:11
+    118|   if (!named && !started) return undefined;
+    119|   if (!named) {
+    120|     throw new Error("worker: started to prepare each photo under a use…
+       |           ^
+    121|   }
+    122|   if (!started) {
+ ❯ src/privileges.test.ts:39:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > stops the worker when only one half is there: the variable without the start, or the start without it
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:58:76
+     56|       { uid: 1000, euid: 0, egid: 0 },
+     57|     ]) {
+     58|       expect(() => photoUserFor(named("tadayo-image"), ids, () => PASS…
+       |                                                                            ^
+     59|         /TADAYO_PHOTO_USER is set, but the worker wasn't started as ro…
+     60|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > asRoot refuses, and runs nothing
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:95:8
+     93|         ran = true;
+     94|       });
+     95|     }).toThrow(/only for a worker started as root/);
+       |        ^
+     96|     expect(ran).toBe(false);
+     97|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > the sweep refuses root, root's group, and this process's own user and group, before it starts anything
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:111:26
+    109|     // A user it would sweep, but this process isn't in the worker's m…
+    110|     const refused = sweep({ uid: 64999, gid: 64999 });
+    111|     await expect(refused).rejects.toBeInstanceOf(SweepFailed);
+       |                          ^
+    112|     await expect(refused).rejects.toMatchObject({ why: "start" });
+    113|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group
+AssertionError: expected { case: 'refusals', …(7) } to deeply equal { case: 'refusals', …(7) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "asRootAsPlainRoot": "refused",
++   "asRootAsPlainRoot": "ran",
+    "case": "refusals",
+    "egid": 64998,
+    "euid": 64998,
+    "sweepRoot": "refused",
+    "sweepRootsGroup": "refused",
+
+ ❯ src/privileges.test.ts:176:30
+    174|
+    175|   it("asRoot refuses a process that is only root, and the sweep refuse…
+    176|     expect(fact("refusals")).toEqual({
+       |                              ^
+    177|       case: "refusals",
+    178|       asRootAsPlainRoot: "refused",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

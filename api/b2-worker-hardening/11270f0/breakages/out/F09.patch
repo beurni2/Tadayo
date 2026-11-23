@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -102,7 +102,7 @@
+     }
+     return length;
+   });
+-  if (lengths.reduce((sum, length) => sum + length, 0) > left)
++  if (false)
+     throw new BrokenAnswer("renditions past the message's cap");
+   return lengths;
+ }

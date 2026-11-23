@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -147,7 +147,6 @@
+   }
+ 
+   push(chunk: Buffer): ChildMessage[] {
+-    if (this.#broken) throw new BrokenAnswer("bytes after a broken answer");
+     const messages: ChildMessage[] = [];
+     try {
+       let at = 0;

@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-frames.test.ts (7 tests | 2 failed) 23ms
+   ❯ a photo's process's messages (3)
+     × take a header of HEADER_BYTES, and a message of MESSAGE_BYTES, and keep only what each length allows 5ms
+   ❯ a broken answer (4)
+     × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  14:53:56
+   Duration  209ms (transform 50%, tests 29%, import 17%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-frames.test.ts > a photo's process's messages > take a header of HEADER_BYTES, and a message of MESSAGE_BYTES, and keep only what each length allows
+AssertionError: expected function to throw an error, but it didn't
+ ❯ src/image-frames.test.ts:104:100
+    102|     expect(reader.push(raw(answer(left)))).toEqual([]);
+    103|     expect(reader.heldBytes).toBe(left);
+    104|     expect(() => new MessageReader().push(Buffer.concat([frameOf(READY…
+       |                                                                                                    ^
+    105|       BrokenAnswer,
+    106|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-frames.test.ts > a broken answer > is a prepared answer whose renditions aren't a list of at most two, each with a length that fits
+AssertionError: expected function to throw an error, but it didn't
+ ❯ refused src/image-frames.test.ts:114:48
+    112|   function refused(bytes: Buffer, step = bytes.length) {
+    113|     const reader = new MessageReader();
+    114|     expect(() => readAll(bytes, step, reader)).toThrow(BrokenAnswer);
+       |                                                ^
+    115|     expect(reader.heldBytes).toBe(0);
+    116|     expect(() => reader.push(frameOf(READY))).toThrow(BrokenAnswer);
+ ❯ src/image-frames.test.ts:160:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

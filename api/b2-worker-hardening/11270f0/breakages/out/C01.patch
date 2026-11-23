@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-child.ts
++++ b/services/worker/src/image-child.ts
+@@ -29,7 +29,6 @@
+ const gone = () => {
+   process.kill(process.pid, "SIGKILL");
+ };
+-worker.on("end", gone);
+ worker.on("error", gone);
+ worker.resume();
+ 

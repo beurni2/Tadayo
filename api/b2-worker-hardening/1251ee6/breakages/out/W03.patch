@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -52,7 +52,7 @@
+  * whatever the refusal before its start let through: a sweep that doesn't exit 0 stops the worker.
+  */
+ export const SWEEP_PROGRAM =
+-  'if (process.getuid() === 0) process.exit(2); try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }';
++  'if (process.getuid() === 0) process.exit(2); try { process.kill(-1, "SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }';
+ 
+ const STOP_LINE =
+   "worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them";

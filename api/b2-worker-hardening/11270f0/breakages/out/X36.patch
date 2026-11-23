@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -224,7 +224,7 @@
+     // group (a process it starts in a session of its own escapes it: the header). Its fd 3 is the worker's pipe for
+     // its messages (./image-frames.ts), and its environment is empty: no Node channel, no variable at all.
+     const child = spawn(process.execPath, [fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
+-      env: {},
++      env: process.env,
+       stdio: ["pipe", "ignore", "ignore", "pipe"],
+       detached: true,
+     });

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -283,7 +283,7 @@
+       try {
+         messages = reader.push(chunk);
+       } catch {
+-        end("broken");
++        killed ??= "broken";
+         return;
+       }
+       for (const message of messages) {

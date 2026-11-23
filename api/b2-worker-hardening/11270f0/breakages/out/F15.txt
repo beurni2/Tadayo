@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-frames.test.ts (7 tests | 1 failed) 13ms
+   ❯ a photo's process's messages (3)
+     × come back as they were sent, ready then each kind of answer, whole or a byte at a time 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  14:54:00
+   Duration  171ms (transform 50%, tests 22%, import 21%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-frames.test.ts > a photo's process's messages > come back as they were sent, ready then each kind of answer, whole or a byte at a time
+TypeError: rendition.bytes is not iterable
+ ❯ src/image-frames.test.ts:60:107
+     58| function plain(message: ChildMessage): unknown {
+     59|   if (message.kind !== "prepared" || !message.prepared.ok) return mess…
+     60|   const renditions = message.prepared.renditions.map((rendition) => ({…
+       |                                                                                                           ^
+     61|   return { ...message, prepared: { ...message.prepared, renditions } };
+     62| }
+ ❯ plain src/image-frames.test.ts:60:50
+ ❯ src/image-frames.test.ts:70:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

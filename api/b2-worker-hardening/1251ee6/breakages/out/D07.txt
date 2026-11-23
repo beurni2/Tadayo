@@ -1,0 +1,88 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/deploy-files.test.ts (19 tests | 3 failed) 420ms
+   ❯ Dockerfile (8)
+     × puts the ops entry where the runner starts it, and the API's command where a bare run starts it 45ms
+     × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 42ms
+   ❯ fly.toml (8)
+     × has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other 34ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 16 passed (19)
+   Start at  22:22:30
+   Duration  698ms (tests 72%, transform 14%, import 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > puts the ops entry where the runner starts it, and the API's command where a bare run starts it
+AssertionError: expected [ 'setpriv', '--reuid=node', …(8) ] to deeply equal [ 'setpriv', '--reuid=node', …(7) ]
+
+- Expected
++ Received
+
+@@ -2,10 +2,11 @@
+    "setpriv",
+    "--reuid=node",
+    "--regid=node",
+    "--init-groups",
+    "--inh-caps=-all",
++   "--bounding-set=-all",
+    "--no-new-privs",
+    "--",
+    "node",
+    "services/api/src/main.ts",
+  ]
+
+ ❯ src/deploy-files.test.ts:186:43
+    184|     const api = String(table(flyToml()["processes"], "[processes]")["a…
+    185|     const cmd = dockerfile().find((instruction) => instruction.name ==…
+    186|     expect(JSON.parse(cmd?.args ?? "[]")).toEqual(api);
+       |                                           ^
+    187|   });
+    188|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/deploy-files.test.ts:196:73
+    194|     expect(image.filter((instruction) => instruction.name === "USER"))…
+    195|     const processes = table(flyToml()["processes"], "[processes]");
+    196|     expect(String(processes["api"]).startsWith(`${API_DROP} -- node `)…
+       |                                                                         ^
+    197|     expect(String(processes["worker"]).startsWith(`${WORKER_DROP} -- n…
+    198|     expect(image.filter((instruction) => instruction.name === "ENV").m…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/deploy-files.test.ts > fly.toml > has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "api": "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node services/api/src/main.ts",
++   "api": "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --no-new-privs -- node services/api/src/main.ts",
+    "worker": "setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node services/worker/src/main.ts",
+  }
+
+ ❯ src/deploy-files.test.ts:314:23
+    312|   it("has the two process groups, each dropping root with its setpriv …
+    313|     const processes = table(flyToml()["processes"], "[processes]");
+    314|     expect(processes).toEqual({
+       |                       ^
+    315|       api: `${API_DROP} -- node services/api/src/main.ts`,
+    316|       worker: `${WORKER_DROP} -- node services/worker/src/main.ts`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

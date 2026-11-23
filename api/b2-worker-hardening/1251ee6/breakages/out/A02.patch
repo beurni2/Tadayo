@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -156,7 +156,7 @@
+     return fn();
+   } finally {
+     try {
+-      calls.seteuid(before.euid);
++      void before;
+     } catch {
+       // Checked below.
+     }

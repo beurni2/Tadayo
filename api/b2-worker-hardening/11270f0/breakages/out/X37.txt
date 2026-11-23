@@ -1,0 +1,82 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (24 tests | 3 failed) 12928ms
+   ❯ a photo's process that misbehaves (R4-3, C5-1) (8)
+     × fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once 60ms
+     × fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1) 42ms
+   ❯ what a child's end comes to (6)
+     × throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 21 passed (24)
+   Start at  14:56:55
+   Duration  13.31s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once
+AssertionError: promise resolved "{ prepared: { ok: false, …(1) }, …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "peakBytes": 45535232,
++   "prepared": {
++     "ok": false,
++     "rejection": "too_many_pixels",
++   },
+  }
+
+ ❯ src/image-process.test.ts:378:86
+    376|     for (const name of ["bogus", "twice", "garbled", "early"] as const…
+    377|       const from = performance.now();
+    378|       await expect(prepareIsolated(photo, "image/jpeg", { child: fake(…
+       |                                                                                      ^
+    379|         ImageProcessFailed,
+    380|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1)
+AssertionError: promise resolved "{ prepared: { ok: false, …(1) }, …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "peakBytes": 45551616,
++   "prepared": {
++     "ok": false,
++     "rejection": "too_many_pixels",
++   },
+  }
+
+ ❯ src/image-process.test.ts:390:86
+    388|     for (const name of ["huge", "overlong"] as const) {
+    389|       const from = performance.now();
+    390|       await expect(prepareIsolated(photo, "image/jpeg", { child: fake(…
+       |                                                                                      ^
+    391|         ImageProcessFailed,
+    392|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw
+AssertionError: expected function to throw an error, but it didn't
+ ❯ src/image-process.test.ts:516:75
+    514|     expect(() => outcomeOf(end({ ready: false, signal: "SIGSEGV" }))).…
+    515|     // Killed for a broken answer, whatever signal that left (the work…
+    516|     expect(() => outcomeOf(end({ killed: "broken", signal: "SIGKILL" }…
+       |                                                                           ^
+    517|     expect(() => outcomeOf(end({ killed: "broken", signal: "SIGKILL", …
+    518|     expect(() => outcomeOf(end({ answer: { kind: "failed" } }))).toThr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

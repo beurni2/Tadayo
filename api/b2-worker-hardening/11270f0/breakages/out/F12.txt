@@ -1,0 +1,98 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-frames.test.ts (7 tests | 4 failed) 16ms
+   ❯ a broken answer (4)
+     × is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept 5ms
+     × is a header that isn't a JSON object of one of the child's kinds 1ms
+     × is a message out of order: an answer before ready, or a second ready 2ms
+     × is a prepared answer whose renditions aren't a list of at most two, each with a length that fits 1ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 3 passed (7)
+   Start at  14:53:58
+   Duration  210ms (transform 45%, tests 24%, import 23%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-frames.test.ts > a broken answer > is a header's length of 0, past HEADER_BYTES, or of 4 GiB, refused at its fourth byte with nothing kept
+AssertionError: expected 4 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 4
+
+ ❯ refused src/image-frames.test.ts:115:30
+    113|     const reader = new MessageReader();
+    114|     expect(() => readAll(bytes, step, reader)).toThrow(BrokenAnswer);
+    115|     expect(reader.heldBytes).toBe(0);
+       |                              ^
+    116|     expect(() => reader.push(frameOf(READY))).toThrow(BrokenAnswer);
+    117|   }
+ ❯ src/image-frames.test.ts:122:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/image-frames.test.ts > a broken answer > is a header that isn't a JSON object of one of the child's kinds
+AssertionError: expected 8 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 8
+
+ ❯ refused src/image-frames.test.ts:115:30
+    113|     const reader = new MessageReader();
+    114|     expect(() => readAll(bytes, step, reader)).toThrow(BrokenAnswer);
+    115|     expect(reader.heldBytes).toBe(0);
+       |                              ^
+    116|     expect(() => reader.push(frameOf(READY))).toThrow(BrokenAnswer);
+    117|   }
+ ❯ src/image-frames.test.ts:132:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/image-frames.test.ts > a broken answer > is a message out of order: an answer before ready, or a second ready
+AssertionError: expected 17 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 17
+
+ ❯ refused src/image-frames.test.ts:115:30
+    113|     const reader = new MessageReader();
+    114|     expect(() => readAll(bytes, step, reader)).toThrow(BrokenAnswer);
+    115|     expect(reader.heldBytes).toBe(0);
+       |                              ^
+    116|     expect(() => reader.push(frameOf(READY))).toThrow(BrokenAnswer);
+    117|   }
+ ❯ src/image-frames.test.ts:139:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/image-frames.test.ts > a broken answer > is a prepared answer whose renditions aren't a list of at most two, each with a length that fits
+AssertionError: expected 61 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 61
+
+ ❯ refused src/image-frames.test.ts:115:30
+    113|     const reader = new MessageReader();
+    114|     expect(() => readAll(bytes, step, reader)).toThrow(BrokenAnswer);
+    115|     expect(reader.heldBytes).toBe(0);
+       |                              ^
+    116|     expect(() => reader.push(frameOf(READY))).toThrow(BrokenAnswer);
+    117|   }
+ ❯ src/image-frames.test.ts:160:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

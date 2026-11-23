@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -127,7 +127,7 @@
+   const entry = passwd()
+     .split("\n")
+     .map((line) => line.split(":"))
+-    .find((fields) => fields.length === 7 && fields[0] === name);
++    .find((fields) => fields.length === 7 && (fields[0] ?? "").startsWith(name ?? ""));
+   if (entry === undefined) throw new Error("worker: TADAYO_PHOTO_USER names no user in /etc/passwd");
+   const [, , uid, gid] = entry;
+   if (!isId(uid) || !isId(gid)) throw new Error("worker: TADAYO_PHOTO_USER's entry isn't a user's id and group");

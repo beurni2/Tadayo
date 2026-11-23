@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -151,7 +151,7 @@
+     const messages: ChildMessage[] = [];
+     try {
+       let at = 0;
+-      while (!this.done) {
++      while (true) {
+         if (this.#filled === this.#into.length) {
+           const message = this.#completed();
+           if (message !== undefined) messages.push(message);

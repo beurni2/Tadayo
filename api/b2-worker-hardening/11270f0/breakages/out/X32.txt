@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (24 tests | 1 failed) 14660ms
+   ❯ a photo's process that misbehaves (R4-3, C5-1) (8)
+     × keeps the first answer, and reads nothing after it 2054ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  14:55:29
+   Duration  15.04s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > keeps the first answer, and reads nothing after it
+AssertionError: expected 2047.512628999999 to be less than 2000
+ ❯ src/image-process.test.ts:403:38
+    401|     expect(tagOf(await prepareIsolated(photo, "image/jpeg", { child: f…
+    402|     // A process outside the group holds fd 3, so the end settles at o…
+    403|     expect(performance.now() - from).toBeLessThan(GRACE_MS);
+       |                                      ^
+    404|   }, 20_000);
+    405|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

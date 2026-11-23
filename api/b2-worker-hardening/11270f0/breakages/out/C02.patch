@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-child.ts
++++ b/services/worker/src/image-child.ts
+@@ -43,7 +43,6 @@
+ 
+ const [declared, seconds] = process.argv.slice(2) as [UploadContentType, string];
+ 
+-await send({ kind: "ready" });
+ const chunks: Buffer[] = [];
+ for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+ const bytes = Buffer.concat(chunks);

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-frames.ts
++++ b/services/worker/src/image-frames.ts
+@@ -113,7 +113,7 @@
+     return header as ChildMessage;
+   }
+   const renditions = (header.prepared.renditions as readonly Record<string, unknown>[]).map((rendition, i) => {
+-    const sent: Record<string, unknown> = { ...rendition, bytes: bodies[i] };
++    const sent: Record<string, unknown> = { ...rendition };
+     delete sent.length;
+     return sent;
+   });

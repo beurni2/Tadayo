@@ -1,0 +1,10 @@
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -45,6 +45,7 @@
+ COPY services/api/src services/api/src
+ COPY services/worker/src services/worker/src
+ COPY tools/ops/src tools/ops/src
++USER node
+ # fly.toml's [processes] give each group its command in place of this one; run bare, the image starts the API, as
+ # fly.toml's `api` does.
+ CMD ["setpriv", "--reuid=node", "--regid=node", "--init-groups", "--inh-caps=-all", "--bounding-set=-all", "--no-new-privs", "--", "node", "services/api/src/main.ts"]

@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/deploy-files.test.ts (19 tests | 1 failed) 422ms
+   ❯ Dockerfile (8)
+     × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  22:22:22
+   Duration  786ms (tests 64%, transform 25%, import 10%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them
+AssertionError: expected [ { name: 'USER', args: 'node' } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "args": "node",
++     "name": "USER",
++   },
++ ]
+
+ ❯ src/deploy-files.test.ts:194:72
+    192|     const image = stages().at(-1) ?? [];
+    193|     // No USER: each group's command drops with setpriv before any Nod…
+    194|     expect(image.filter((instruction) => instruction.name === "USER"))…
+       |                                                                        ^
+    195|     const processes = table(flyToml()["processes"], "[processes]");
+    196|     expect(String(processes["api"]).startsWith(`${API_DROP} -- node `)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
