@@ -207,6 +207,14 @@ final class ClubCreateSnapshotTests: XCTestCase {
                 elements.first { $0.label == control }?.traits.contains(.button) ?? false,
                 "\(control): \(elements)")
         }
+        // Create new link explains the replacement before it's used (handoff 9's
+        // `missingLive.behavior`: "Explain inline before action"), since VoiceOver reaches it
+        // before the line under the row.
+        XCTAssertEqual(
+            elements.first { $0.label == "Create new link for Alex" }?.hint,
+            "A new link replaces the previous link.", "\(elements)")
+        XCTAssertEqual(
+            elements.first { $0.label == "Share link for Sam" }?.hint, "", "\(elements)")
         // It doesn't claim the link wasn't shared, and the glyph and the status alone aren't read.
         XCTAssertFalse(elements.contains { $0.label == "Alex. Not shared." }, "\(elements)")
         XCTAssertFalse(elements.contains { $0.label == "Link not on this phone" }, "\(elements)")

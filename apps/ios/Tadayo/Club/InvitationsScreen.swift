@@ -204,7 +204,8 @@ struct ClubSetupHeading: View {
 /// status, before the action. VoiceOver reads the name and the status as one element, "Maya.
 /// Shared.", then each control by its own label ("Share again for Maya", "More options for
 /// Maya’s invitation"), and a link not on this phone's line as its own text (handoff 9: "The
-/// replacement helper remains separately reachable"); the glyphs and the avatar are decorative
+/// replacement helper remains separately reachable") and as Create new link's hint; the glyphs
+/// and the avatar are decorative
 /// (handoff 4: "Invitee glyphs … are decorative beside their words").
 struct InvitationRowView: View {
     let row: InvitationRow
@@ -370,11 +371,14 @@ struct InvitationRowView: View {
     }
 
     /// The row's action; `trailing` is space inside its target after the words, `fullWidth` a
-    /// target across the row.
-    private func actionButton(
+    /// target across the row. On a link not on this phone, Create new link also carries "A new
+    /// link replaces the previous link." as its hint: handoff 9 explains the replacement "inline
+    /// before action" (`missingLive.behavior`), and at the default sizes VoiceOver reaches the
+    /// action before the line drawn under the row, which stays its own text too.
+    @ViewBuilder private func actionButton(
         _ action: InvitationRow.Action, trailing: CGFloat = 0, fullWidth: Bool = false
     ) -> some View {
-        Button {
+        let button = Button {
             switch action {
             case .shareLink, .shareAgain: actions.share(row)
             case .createNewLink: actions.createNewLink(row)
@@ -385,6 +389,11 @@ struct InvitationRowView: View {
         .buttonStyle(RowActionStyle(trailing: trailing, fullWidth: fullWidth))
         .disabled(busy)
         .accessibilityLabel(Text(verbatim: actionLabel(action)))
+        if case .createNewLink = action, case .notOnThisPhone = row.status {
+            button.accessibilityHint(Text("invite.notOnThisPhone.replacement"))
+        } else {
+            button
+        }
     }
 
     private var more: some View {
