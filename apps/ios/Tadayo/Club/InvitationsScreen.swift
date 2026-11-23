@@ -109,7 +109,9 @@ struct InvitationsScreen: View {
                 .accessibilityInputLabels([Text("invite.done")])
             }
         }
-        .announcing(failure?.words)
+        // One polite announcement as the line shows (handoff 9's `mutationFailure.a11y`); the line
+        // stays as the list scrolls and changes, and isn't said again until a new failure.
+        .announcing(failure?.words, politely: true)
         .alert(
             confirming.map { Self.words("revoke.title", $0.name) } ?? "",
             isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
@@ -166,8 +168,9 @@ struct ClubSetupHeading: View {
 /// handoff 8's `usedInvitationRow`; `docs/plans/ios-b1-create.md` section 2):
 /// - the 36-point avatar with their initial, their name in `row` 17/22 49 from the leading edge,
 ///   and 4 under it the status in `metadata` 13/18 `secondaryText` after its 12-point glyph
-///   (`link`, `square.and.arrow.up`, `checkmark`, `arrow.clockwise`, `xmark.circle`), the glyph
-///   and the words saying the same, never colour alone;
+///   (`link`, `square.and.arrow.up`, `checkmark`, `arrow.clockwise`, `xmark.circle`, and handoff
+///   9's `clock` for Link expired and `iphone.slash` for Link not on this phone:
+///   `setupLinks.statusGlyphs`), the glyph and the words saying the same, never colour alone;
 /// - the action, if the row has one, in `rowAction` 15/20 `action` (`RowActionStyle`), a target at
 ///   least 44 square, its words ending at 328 and its target at 333, and More where the row has a
 ///   menu: `ellipsis` in `secondaryText`, as every frame draws it, in a 44-point target from 333
@@ -176,17 +179,26 @@ struct ClubSetupHeading: View {
 ///   the action's words turn `secondaryText` and the status says so;
 /// - a used link the app doesn't hold adds handoff 8's two lines under the status, and offers
 ///   nothing (`links.used.missing`);
+/// - a live link the app doesn't hold reads Link not on this phone, offers Create new link, with
+///   Revoke link in More, and says "A new link replaces the previous link." 8 under the status
+///   and the action, from 49 to the trailing margin, in `metadata` `secondaryText` (handoff 9's
+///   `setupLinks.missingLive`, frame 15); its avatar, action and More are centred on the line
+///   between the name and the status, where a 74 row puts them, as the status wraps;
+/// - an expired link offers Create new link and no More (`setupLinks.expiredUnused`, frame 16);
 /// - at least 74 high, centred, growing with the text; a used row at least 84, its content where a
-///   74 row puts it (`usedInvitationRow.defaultSamHeight`); the separator from 49 to the trailing
-///   edge.
+///   74 row puts it (`usedInvitationRow.defaultSamHeight`); a link not on this phone at least 112
+///   (`missingLive.minimumHeight`), its content from the top; the separator from 49 to the
+///   trailing edge.
 ///
 /// At the accessibility sizes the status and the action go under the name, from the leading edge,
 /// with More kept beside the name, and the separator runs the full width (handoff 2's AX5 rule,
 /// frame `G01-invite-people-xl`); the action's target takes the full width, as a used row's Share
-/// again must (`usedInvitationRow.largestText`). VoiceOver reads the name and the status as one
-/// element, "Maya. Shared.", then each control by its own label ("Share again for Maya", "More
-/// options for Maya’s invitation"); the glyphs and the avatar are decorative (handoff 4: "Invitee
-/// glyphs … are decorative beside their words").
+/// again must (`usedInvitationRow.largestText`); a link not on this phone's line goes under the
+/// status, before the action. VoiceOver reads the name and the status as one element, "Maya.
+/// Shared.", then each control by its own label ("Share again for Maya", "More options for
+/// Maya’s invitation"), and a link not on this phone's line as its own text (handoff 9: "The
+/// replacement helper remains separately reachable"); the glyphs and the avatar are decorative
+/// (handoff 4: "Invitee glyphs … are decorative beside their words").
 struct InvitationRowView: View {
     let row: InvitationRow
     let busy: Bool
@@ -213,29 +225,46 @@ struct InvitationRowView: View {
     }
 
     private var inline: some View {
-        HStack(spacing: 0) {
-            Avatar(name: row.name, size: .row)
-                .padding(.trailing, Size.personRowTextInset - AvatarSize.row.rawValue)
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                name
-                status
-                missing
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            // A link not on this phone's status wraps (frame 15): the controls stay centred on the
+            // line under the name, as in a row whose status doesn't.
+            HStack(alignment: notOnThisPhone ? .nameEnd : .center, spacing: 0) {
+                Avatar(name: row.name, size: .row)
+                    .padding(.trailing, Size.personRowTextInset - AvatarSize.row.rawValue)
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    name
+                    status
+                    missing
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if let action = row.action {
+                    actionButton(action, trailing: row.menu.isEmpty ? 0 : Self.actionToMore)
+                        .padding(.leading, Spacing.s)
+                }
+                if !row.menu.isEmpty {
+                    more
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if let action = row.action {
-                actionButton(action, trailing: row.menu.isEmpty ? 0 : Self.actionToMore)
-                    .padding(.leading, Spacing.s)
-            }
-            if !row.menu.isEmpty {
-                more
+            if notOnThisPhone {
+                replacement
+                    .padding(.leading, Size.personRowTextInset)
             }
         }
         .padding(.vertical, Spacing.m)
         .frame(maxWidth: .infinity, minHeight: Self.minimumHeight)
-        .frame(
-            minHeight: row.status == .needsToAcceptAgain ? Self.usedMinimumHeight : nil,
-            alignment: .top)
+        .frame(minHeight: tallMinimumHeight, alignment: .top)
     }
+
+    /// A used row's 84 or a link not on this phone's 112, from the top; nil for the others.
+    private var tallMinimumHeight: CGFloat? {
+        switch row.status {
+        case .needsToAcceptAgain: Self.usedMinimumHeight
+        case .notOnThisPhone: Self.notOnThisPhoneMinimumHeight
+        default: nil
+        }
+    }
+
+    private var notOnThisPhone: Bool { row.status == .notOnThisPhone }
 
     private var stacked: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
@@ -250,6 +279,9 @@ struct InvitationRowView: View {
             }
             status
             missing
+            if notOnThisPhone {
+                replacement
+            }
             if let action = row.action {
                 actionButton(action, fullWidth: true)
             }
@@ -266,6 +298,10 @@ struct InvitationRowView: View {
     /// row 84 high at the default size, its name, status and Share again where a 74 row puts them
     /// and the 10 more under them. A row whose text needs more grows past it.
     static let usedMinimumHeight: CGFloat = 84
+
+    /// `setupLinks.missingLive.minimumHeight`: frame 15 draws Alex's row 112 high, from 319 to
+    /// 431, its status on two lines and its replacement line under them.
+    static let notOnThisPhoneMinimumHeight: CGFloat = 112
 
     /// More's target past the screen's 20-point margin: handoff 4's
     /// `invitationRowActions.moreTarget` is [333, 15, 44, 44] on a 393-point screen, so it ends at
@@ -286,6 +322,7 @@ struct InvitationRowView: View {
             .foregroundStyle(Palette.primaryText)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityLabel(Text(verbatim: spoken))
+            .alignmentGuide(.nameEnd) { $0[.bottom] }
     }
 
     private var status: some View {
@@ -304,6 +341,16 @@ struct InvitationRowView: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, Spacing.xs)
         }
+    }
+
+    /// "A new link replaces the previous link.", under a link not on this phone (handoff 9's
+    /// `links.missing.replacement`), read as its own text.
+    private var replacement: some View {
+        Text("invite.notOnThisPhone.replacement")
+            .textRole(.metadata)
+            .foregroundStyle(Palette.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// The row's action; `trailing` is space inside its target after the words, `fullWidth` a
@@ -369,7 +416,9 @@ struct InvitationRowView: View {
         case .shared: "square.and.arrow.up"
         case .accepted: "checkmark"
         case .needsToAcceptAgain: "arrow.clockwise"
-        case .revoked, .expired: "xmark.circle"
+        case .revoked: "xmark.circle"
+        case .expired: "clock"
+        case .notOnThisPhone: "iphone.slash"
         }
     }
 
@@ -382,6 +431,7 @@ struct InvitationRowView: View {
         case .needsToAcceptAgain: String(localized: "invite.used")
         case .revoked: String(localized: "invite.revoked")
         case .expired: String(localized: "invite.expired")
+        case .notOnThisPhone: String(localized: "invite.notOnThisPhone")
         }
     }
 
@@ -487,4 +537,16 @@ extension InvitationListModel.ActionFailure {
             InvitationsScreen.words(uncertain ? "revoke.uncertain" : "revoke.failed", name)
         }
     }
+}
+
+extension VerticalAlignment {
+    /// The bottom of a setup row's name, the line between it and the status: where a row whose
+    /// status wraps centres its avatar, action and More.
+    fileprivate enum NameEnd: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[VerticalAlignment.center]
+        }
+    }
+
+    fileprivate static var nameEnd: VerticalAlignment { VerticalAlignment(NameEnd.self) }
 }

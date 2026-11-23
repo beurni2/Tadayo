@@ -26,15 +26,22 @@ import Testing
                 row(.live, kept: kept("inv_sam", shared: true)),
                 (.shared, .shareAgain, [.revokeLink], false)
             ),
-            (row(.live), (.notShared, .createNewLink, [.revokeLink], false)),
+            // A live link the app doesn't hold: "Link not on this phone" (handoff 9's
+            // `setupLinks.missingLive`, frame 15).
+            (row(.live), (.notOnThisPhone, .createNewLink, [.revokeLink], false)),
             // A kept link that isn't this invitation's isn't held.
-            (row(.live, kept: kept("inv_old")), (.notShared, .createNewLink, [.revokeLink], false)),
+            (
+                row(.live, kept: kept("inv_old")),
+                (.notOnThisPhone, .createNewLink, [.revokeLink], false)
+            ),
             (row(.accepted, kept: kept("inv_sam")), (.accepted, nil, [], false)),
             (row(.accepted), (.accepted, nil, [], false)),
             (row(.used, kept: kept("inv_sam")), (.needsToAcceptAgain, .shareAgain, [], false)),
             (row(.used), (.needsToAcceptAgain, nil, [], true)),
             (row(.revoked), (.revoked, .createNewLink, [.createNewLink], false)),
-            (row(.expired), (.expired, .createNewLink, [.createNewLink], false)),
+            // An expired link has no More: its action is the only one (handoff 9's
+            // `setupLinks.expiredUnused`, frame 16).
+            (row(.expired), (.expired, .createNewLink, [], false)),
         ]
         for (index, (row, expected)) in cases.enumerated() {
             #expect(row.status == expected.0, "case \(index)")
@@ -324,16 +331,19 @@ import Testing
         clubs.clubAnswers = [.success(Sunday.detail()), .success(Sunday.detail())]
         clubs.memberAnswers = [
             .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .expired)])),
-            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .used)])),
+            .success(
+                Sunday.members([Sunday.candidate("cand_sam", "Sam", .expired, invitation: "inv_2")])
+            ),
         ]
         clubs.linkAnswers = [.failure(.notAllowed)]
         let list = model(clubs)
         await list.load()
         await list.createNewLink(for: "cand_sam")
         // A new link in place of the expired one: handoff 4's words for Create new link, not the
-        // first link's.
+        // first link's. The read again still offers Create new link, so the line stays.
+        #expect(clubs.calls.filter { $0 == "members club_sunday" }.count == 2)
         #expect(list.actionFailure == .createNewLink(name: "Sam", network: false))
-        #expect(row(list, "cand_sam")?.status == .needsToAcceptAgain)
+        #expect(row(list, "cand_sam")?.status == .expired)
     }
 
     @Test func aNewLinkWithNoAnswerSaysSoInItsOwnWordsAndKeepsTheRow() async {
@@ -393,7 +403,7 @@ import Testing
         await list.load()
         await list.revoke("cand_alex")
         #expect(list.actionFailure == .revoke(name: "Alex", uncertain: true))
-        #expect(row(list, "cand_alex")?.status == .notShared)
+        #expect(row(list, "cand_alex")?.status == .notOnThisPhone)
         await list.revoke("cand_alex")
         #expect(list.actionFailure == .revoke(name: "Alex", uncertain: false))
         #expect(row(list, "cand_alex")?.menu == [.revokeLink])
@@ -682,6 +692,226 @@ import Testing
     }
 }
 
+/// The failure line's lifetime (handoff 9's `setupLinks.mutationFailure.lifetime`;
+/// `docs/plans/ios-b1-create.md` section 8): it stays through scrolling, the system's menus and a
+/// share sheet; it clears when another link action starts, when a read shows the action that
+/// failed no longer applies, or when the person leaves the list (a new list each visit).
+@MainActor @Suite struct InvitationFailureLineTests {
+    let account = Sunday.account
+    let club = Sunday.ref.id
+
+    func model(_ clubs: ScriptedClubs, book: InvitationLinkBook? = nil) -> InvitationListModel {
+        let keys = NumberedKeys()
+        return InvitationListModel(
+            club: Sunday.ref, accountID: account, service: clubs,
+            book: book ?? InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
+            makeKey: { keys.make() }, current: { true })
+    }
+
+    func row(_ list: InvitationListModel, _ candidateID: String) -> InvitationRow? {
+        guard case .loaded(let shown) = list.state else { return nil }
+        return shown.rows.first { $0.candidateID == candidateID }
+    }
+
+    /// Frame 17's five, before Maya's revoke: Maya's link kept and live, Alex's live and not on
+    /// this phone, Sam's revoked, Debby accepted and Nina with no link yet; with `changed`, one of
+    /// them as a later read lists them.
+    func five(_ changed: Candidate? = nil) -> MemberList {
+        let five = [
+            Sunday.candidate("cand_maya", "Maya", .live),
+            Sunday.candidate("cand_alex", "Alex", .live),
+            Sunday.candidate("cand_sam", "Sam", .revoked),
+            Sunday.candidate("cand_debby", "Debby", .accepted),
+            Sunday.candidate("cand_nina", "Nina", nil),
+        ]
+        return Sunday.members(five.map { $0.id == changed?.id ? changed ?? $0 : $0 })
+    }
+
+    func keepingMaya() -> InvitationLinkBook {
+        let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        book.keep(
+            Sunday.link("inv_maya", for: "cand_maya", url: Sunday.url(1)), club: club,
+            account: account)
+        return book
+    }
+
+    @Test func itStaysThroughSharingAKeptLinkCancelledOrCompleted() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 2)
+        clubs.memberAnswers = Array(repeating: .success(five()), count: 2)
+        clubs.revokeAnswers = [.failure(.network)]
+        let list = model(clubs, book: keepingMaya())
+        await list.load()
+        await list.revoke("cand_alex")
+        // The read again still offers Revoke link for Alex: the line stays.
+        let failure = InvitationListModel.ActionFailure.revoke(name: "Alex", uncertain: true)
+        #expect(clubs.calls.filter { $0 == "members club_sunday" }.count == 2)
+        #expect(list.actionFailure == failure)
+        // A share of a kept link changes no link.
+        #expect(await list.linkToShare(for: "cand_maya") == Sunday.url(1))
+        #expect(list.actionFailure == failure)
+        list.shareFinished(for: "cand_maya", completed: false)
+        #expect(list.actionFailure == failure)
+        #expect(await list.linkToShare(for: "cand_maya") == Sunday.url(1))
+        list.shareFinished(for: "cand_maya", completed: true)
+        #expect(row(list, "cand_maya")?.status == .shared)
+        #expect(list.actionFailure == failure)
+    }
+
+    @Test func anotherLinkActionClearsItAsItStarts() async {
+        // Each of these succeeds, and the read again (where there is one) still shows Alex's
+        // link live with Revoke link, so only the action's start can have cleared the line.
+        enum Next: CaseIterable { case createNewLink, revoke, firstLink, invite }
+        for next in Next.allCases {
+            let clubs = ScriptedClubs()
+            // The read after Create new link lists Sam's new link, and the read after Revoke
+            // link lists Maya's link revoked.
+            let after: Candidate? =
+                switch next {
+                case .createNewLink:
+                    Sunday.candidate("cand_sam", "Sam", .live, invitation: "inv_new")
+                case .revoke: Sunday.candidate("cand_maya", "Maya", .revoked)
+                case .firstLink, .invite: nil
+                }
+            clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 3)
+            clubs.memberAnswers = [.success(five()), .success(five()), .success(five(after))]
+            clubs.revokeAnswers = [.failure(.network), .success(())]
+            let madeFor = next == .firstLink ? "cand_nina" : "cand_sam"
+            clubs.linkAnswers = [.success(Sunday.link("inv_new", for: madeFor, url: Sunday.url(2)))]
+            let list = model(clubs, book: keepingMaya())
+            await list.load()
+            await list.revoke("cand_alex")
+            #expect(list.actionFailure == .revoke(name: "Alex", uncertain: true), "\(next)")
+            switch next {
+            case .createNewLink:
+                await list.createNewLink(for: "cand_sam")
+                #expect(row(list, "cand_sam")?.action == .shareLink, "\(next)")
+            case .revoke:
+                await list.revoke("cand_maya")
+                #expect(row(list, "cand_maya")?.status == .revoked, "\(next)")
+            case .firstLink:
+                #expect(await list.linkToShare(for: "cand_nina") == Sunday.url(2), "\(next)")
+            case .invite:
+                #expect(list.makeInvite() != nil, "\(next)")
+            }
+            #expect(list.actionFailure == nil, "\(next)")
+        }
+    }
+
+    @Test func aNewFailureTakesItsPlace() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 2)
+        clubs.memberAnswers = Array(repeating: .success(five()), count: 2)
+        clubs.revokeAnswers = [.failure(.network)]
+        clubs.linkAnswers = [.failure(.network)]
+        let list = model(clubs, book: keepingMaya())
+        await list.load()
+        await list.revoke("cand_alex")
+        await list.createNewLink(for: "cand_sam")
+        #expect(list.actionFailure == .createNewLink(name: "Sam", network: true))
+    }
+
+    @Test func aRevokeWithNoAnswerThatTheServerMadeIsSettledByTheReadAgain() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 2)
+        clubs.memberAnswers = [
+            .success(five()),
+            .success(
+                Sunday.members([
+                    Sunday.candidate("cand_maya", "Maya", .revoked),
+                    Sunday.candidate("cand_alex", "Alex", .live),
+                ])),
+        ]
+        clubs.revokeAnswers = [.failure(.network)]
+        let reading = Gate()
+        clubs.duringMembers = { read in if read == 2 { await reading.wait() } }
+        let list = model(clubs, book: keepingMaya())
+        await list.load()
+        let revoking = Task { await list.revoke("cand_maya") }
+        // While the list is read again, the line says the revoke wasn't confirmed (frame 17).
+        await reading.reached()
+        #expect(list.actionFailure == .revoke(name: "Maya", uncertain: true))
+        reading.open()
+        await revoking.value
+        // The server revoked it: Maya's row no longer offers Revoke link, and the line goes.
+        #expect(row(list, "cand_maya")?.status == .revoked)
+        #expect(row(list, "cand_maya")?.menu.contains(.revokeLink) == false)
+        #expect(list.actionFailure == nil)
+    }
+
+    @Test func aRefusedNewLinkIsSettledWhenTheReadAgainOffersNone() async {
+        // Sam accepted meanwhile, or the link has been used: neither the row nor More offers
+        // Create new link, so the line's Try again has nothing to try.
+        for after in [CandidateLinkState.accepted, .used] {
+            let clubs = ScriptedClubs()
+            clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 2)
+            clubs.memberAnswers = [
+                .success(five()),
+                .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", after)])),
+            ]
+            clubs.linkAnswers = [.failure(.notAllowed)]
+            let reading = Gate()
+            clubs.duringMembers = { read in if read == 2 { await reading.wait() } }
+            let list = model(clubs)
+            await list.load()
+            let making = Task { await list.createNewLink(for: "cand_sam") }
+            await reading.reached()
+            #expect(list.actionFailure == .createNewLink(name: "Sam", network: false), "\(after)")
+            reading.open()
+            await making.value
+            #expect(row(list, "cand_sam")?.action != .createNewLink, "\(after)")
+            #expect(row(list, "cand_sam")?.menu.contains(.createNewLink) == false, "\(after)")
+            #expect(list.actionFailure == nil, "\(after)")
+        }
+    }
+
+    @Test func aFirstLinkWithNoAnswerIsSettledByAReadThatShowsALink() async {
+        // The link was made, but its answer was lost: the next read shows Nina's link, which this
+        // phone doesn't hold, and the row offers Create new link instead of Share link.
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 3)
+        clubs.memberAnswers = [
+            .success(five()), .success(five()),
+            .success(Sunday.members([Sunday.candidate("cand_nina", "Nina", .live)])),
+        ]
+        clubs.linkAnswers = [.failure(.network)]
+        let list = model(clubs)
+        await list.load()
+        #expect(await list.linkToShare(for: "cand_nina") == nil)
+        #expect(list.actionFailure == .createLink(name: "Nina", network: true))
+        // A read that still shows no link keeps the line.
+        await list.refresh()
+        #expect(list.actionFailure == .createLink(name: "Nina", network: true))
+        await list.refresh()
+        #expect(row(list, "cand_nina")?.status == .notOnThisPhone)
+        #expect(list.actionFailure == nil)
+    }
+
+    @Test func aReadThatNoLongerListsThePersonSettlesIt() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 2)
+        clubs.memberAnswers = [.success(five()), .success(Sunday.members(nil))]
+        clubs.revokeAnswers = [.failure(.refused)]
+        let list = model(clubs, book: keepingMaya())
+        await list.load()
+        await list.revoke("cand_alex")
+        #expect(row(list, "cand_alex") == nil)
+        #expect(list.actionFailure == nil)
+    }
+
+    @Test func aFailedReadKeepsIt() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 2)
+        clubs.memberAnswers = [.success(five()), .failure(.network)]
+        clubs.revokeAnswers = [.failure(.network)]
+        let list = model(clubs, book: keepingMaya())
+        await list.load()
+        await list.revoke("cand_maya")
+        #expect(list.actionFailure == .revoke(name: "Maya", uncertain: true))
+        #expect(row(list, "cand_maya")?.menu == [.revokeLink])
+    }
+}
+
 /// The name step (`G01-invite-name`; `docs/plans/ios-b1-create.md` section 1).
 @MainActor @Suite struct InviteNameModelTests {
     let account = Sunday.account
@@ -911,6 +1141,14 @@ import Testing
     @Test func overFortyCharactersWaits() {
         let invite = model(ScriptedClubs())
         invite.name = String(repeating: "a", count: 41)
+        #expect(invite.nameIsTooLong)
+        #expect(!invite.canCreate)
+        // Counted as a person sees characters, never in UTF-16 units (FQ70, T13), as the club's
+        // name is.
+        invite.name = String(repeating: "👩‍👩‍👧", count: 40)
+        #expect(!invite.nameIsTooLong)
+        #expect(invite.canCreate)
+        invite.name = String(repeating: "👩‍👩‍👧", count: 41)
         #expect(invite.nameIsTooLong)
         #expect(!invite.canCreate)
     }

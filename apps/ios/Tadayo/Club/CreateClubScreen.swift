@@ -12,6 +12,9 @@ import TadayoDesign
 /// - 24 under that, Club name's field (`LabelledField`), 54 high;
 /// - after Continue to invitations failed, frame 7's line 12 under the field, with the failure
 ///   glyph and the field's border unchanged (`handoff8.failureStates`), said once as it shows;
+///   while the name is longer than 40 characters, "Use 40 characters or fewer for the club name."
+///   in its place, with the field's `destructive` border (handoff 9's `nameLimits`), said
+///   politely once each time the name goes over;
 /// - 24 under the field, or the line, the roster line in `body` `secondaryText`, and 24 under it
 ///   the Drafts note (`ShieldNote`, handoff 4's `approvalNote`: "the existing shield and surface
 ///   component");
@@ -19,7 +22,8 @@ import TadayoDesign
 ///   the keyboard while one shows, as A03's Continue is (`authForm.keyboardFooter`).
 ///
 /// Continue waits for a name with something in it besides spaces and no longer than 40
-/// characters (FQ70; over 40 there are no words yet, item 67), and makes the club with the name,
+/// characters, counted as a person sees them (FQ70; handoff 9's `nameLimits`), the name kept as
+/// typed and never cut, and makes the club with the name,
 /// trimmed, and the device's zone (FQ19). While it's made the name is read-only, not disabled, so
 /// it keeps its focus and its keyboard, and Continue is busy and says "In progress"
 /// (`busyPrimary`). A failure keeps the name, editable, and the focus. Once the club is made, the
@@ -72,13 +76,20 @@ struct CreateClubScreen: View {
         .onChange(of: focused) { _, now in
             if !now, returnCreates > 0 || model.isCreating { focused = true }
         }
-        .announcing(line)
+        // Continue's failure is said once, as it comes, not again when it shows once more after
+        // the length line; the length line politely, after the character VoiceOver echoes as it
+        // is typed, each time the name goes over (handoff 9's `nameLimits`, as A03-profile's).
+        .announcing(model.failure?.words)
+        .announcing(model.nameIsTooLong ? Self.tooLong : nil, politely: true)
     }
 
     private var column: some View {
         SetupScroll {
             SetupHeading(title: "create.title", subtitle: Text("create.subtitle"))
-            LabelledField(Text("create.nameLabel"), isFocused: focus ?? focused) {
+            LabelledField(
+                Text("create.nameLabel"), isFocused: focus ?? focused,
+                isInvalid: model.nameIsTooLong, error: Text(verbatim: Self.tooLong)
+            ) {
                 ModelText(held: { model.name }, offer: { model.name = $0 }) { text in
                     TextField(String(), text: text)
                         .textInputAutocapitalization(.words)
@@ -115,8 +126,11 @@ struct CreateClubScreen: View {
         .scrollDismissesKeyboard(.never)
     }
 
-    /// Frame 7's line, after Continue failed; nothing otherwise.
-    private var line: String? { model.failure?.words }
+    /// The length line while the name is longer than 40 characters, or frame 7's line after
+    /// Continue failed; nothing otherwise.
+    private var line: String? { model.nameIsTooLong ? Self.tooLong : model.failure?.words }
+
+    private static var tooLong: String { String(localized: "create.tooLong") }
 
     /// Continue 12 above the keyboard, or 44 above the safe area's bottom with none
     /// (`formFooterToSafeAreaBottom`), as A03's.
