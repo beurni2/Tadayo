@@ -78,9 +78,9 @@ export function outcomeOf(status, body) {
 /**
  * Asks `api` about `token`, waiting `wait` milliseconds at most for the answer and its body. No complete
  * answer is a failure of the connection (handoff 9's web.network): a request that failed (no network, a
- * CORS refusal, a redirect, which is what a captive portal's page comes as), the wait run out, or a 200 whose
- * body isn't JSON, which only something the device trusts between the page and the API could send (the API's
- * edge, or a TLS proxy installed on the device): never the server's answer about the link. The wait is an
+ * CORS refusal, a redirect or a TLS failure, which is how a captive portal's page comes), the wait run out, or
+ * a 200 whose body isn't JSON, which only something the device trusts between the page and the API could send
+ * (the API's edge, or a TLS proxy installed on the device): never the server's answer about the link. The wait is an
  * AbortController's and a timer's, which every Safari that runs the page has (`AbortSignal.timeout` came only
  * with Safari 16).
  * @param {(url: string, init: RequestInit) => Promise<Response>} fetcher
@@ -154,7 +154,7 @@ export function show(page, shown, busy = false) {
  *   fetch: (url: string, init: RequestInit) => Promise<Response>,
  *   addEventListener: (type: "hashchange", listener: () => void) => void,
  *   requestAnimationFrame: (callback: () => void) => unknown,
- * }} Window
+ * }} Host
  */
 
 /**
@@ -169,7 +169,7 @@ export function show(page, shown, busy = false) {
  * began, and the region would have nothing to announce. And the status block keeps, until the answer, the
  * height it had, so Retry and Get Tadayo stay under the person's finger at any text size (handoff 9's layout:
  * "Both controls keep position between checking and failure"); the first load waits for nothing (firstLoad).
- * @param {Window} page
+ * @param {Host} page
  * @param {number} [wait]
  */
 export async function start(page, wait = WAIT_MS) {

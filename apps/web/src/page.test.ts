@@ -73,13 +73,14 @@ function fakePage(api: string | null = API) {
     },
   });
   const slot = element("slot", false);
-  // The status block: the height it is drawn at, and the least height the page holds it to.
-  // Its height is the drawn one, fractions of a pixel included (offsetHeight would round them away).
+  // The status block: the height it is drawn at, which is the shown part's, and the least height the page
+  // holds it to. Its height is the drawn one, fractions of a pixel included (offsetHeight would round them away).
   const held: { minHeight: string | null } = { minHeight: null };
   const status = {
-    height: 132.5,
+    heights: { checking: 96, invited: 180, unavailable: 150, failed: 132.5 } as Record<string, number>,
     getBoundingClientRect() {
-      return { height: this.height };
+      const shown = parts.find((part) => !part.hidden)?.dataset["state"] ?? "";
+      return { height: this.heights[shown] ?? 0 };
     },
     style: {
       set minHeight(value: string) {
@@ -498,8 +499,9 @@ describe("what the page shows", () => {
     await net.fail();
     await started;
     expect(held.minHeight).toBeNull();
-    // At 200% text the failure's block is taller than the checking's: Retry keeps it at the failure's height.
-    status.height = 478.33;
+    // At 200% text the failure's block is taller than the checking's: Retry keeps it at the failure's height,
+    // measured before the checking is shown (measured after, it would be the checking's, and hold nothing).
+    status.heights["failed"] = 478.33;
     clicks[0]?.();
     expect(seen().parts).toEqual(["checking"]);
     expect(held.minHeight).toBe("478.33px");
