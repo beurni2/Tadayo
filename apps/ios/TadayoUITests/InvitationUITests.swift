@@ -102,12 +102,7 @@ final class InvitationUITests: XCTestCase {
         // The changed roster, which Accept this roster joins: Home shows Kitchen table, and the
         // row is gone with the invitation.
         XCTAssertTrue(app.staticTexts["Review the new roster"].waitForExistence(timeout: 10))
-        app.buttons["Accept this roster"].tap()
-        XCTAssertTrue(
-            eventually(10) {
-                shows(app.buttons["Switch club. Kitchen table selected."]) && tabBarShows(app)
-            },
-            "Home, with Kitchen table")
+        acceptJoinsKitchenTable(in: app)
         XCTAssertFalse(row.exists)
     }
 
@@ -137,12 +132,7 @@ final class InvitationUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Review the new roster"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts["Have an invitation?"].exists, "no paste step")
         XCTAssertTrue(eventually { !tabBarShows(app) }, "the tab bar hidden")
-        app.buttons["Accept this roster"].tap()
-        XCTAssertTrue(
-            eventually(10) {
-                shows(app.buttons["Switch club. Kitchen table selected."]) && tabBarShows(app)
-            },
-            "Home, with Kitchen table")
+        acceptJoinsKitchenTable(in: app)
         XCTAssertFalse(row.exists)
     }
 
@@ -170,10 +160,8 @@ final class InvitationUITests: XCTestCase {
         field.typeText(Self.mayasLink)
         app.buttons["Check the invitation link."].tap()
         XCTAssertTrue(app.staticTexts["Join Kitchen table"].waitForExistence(timeout: 10))
-        app.buttons["Accept this roster"].tap()
+        acceptJoinsKitchenTable(in: app)
         let selector = app.buttons["Switch club. Kitchen table selected."]
-        XCTAssertTrue(
-            eventually(10) { shows(selector) && tabBarShows(app) }, "Home, with Kitchen table")
 
         // The switcher lists Debby's invitation, whose row opens G03-waiting on the tab once the
         // sheet has closed; Done returns to Home with Kitchen table.
@@ -213,12 +201,7 @@ final class InvitationUITests: XCTestCase {
 
         // Accept this roster joins: the invitation and the paste step close, the list is read
         // again, and Home shows Kitchen table.
-        app.buttons["Accept this roster"].tap()
-        XCTAssertTrue(
-            eventually(10) {
-                shows(app.buttons["Switch club. Kitchen table selected."]) && tabBarShows(app)
-            },
-            "Home, with Kitchen table")
+        acceptJoinsKitchenTable(in: app)
         XCTAssertFalse(app.staticTexts["Join Kitchen table"].exists)
         XCTAssertFalse(app.staticTexts["Have an invitation?"].exists)
         XCTAssertFalse(app.buttons["Create a club."].exists)
@@ -264,6 +247,39 @@ final class InvitationUITests: XCTestCase {
         app.buttons["Verify code"].tap()
         XCTAssertTrue(app.buttons["I have an invite"].waitForExistence(timeout: 10))
         return app
+    }
+
+    /// Accept this roster, on an invitation that joins Kitchen table: Home shows the club, with
+    /// the tab bar, within 10 s. When it doesn't, what's on screen goes into the test's log, then
+    /// whether a second Accept joins (the first tap reached nothing) or does nothing too (the
+    /// invitation shown no longer accepts), because the run's result bundle can't be read from a
+    /// cloud session. The test fails at the first Accept either way.
+    @MainActor private func acceptJoinsKitchenTable(
+        in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let accept = app.buttons["Accept this roster"]
+        let selector = app.buttons["Switch club. Kitchen table selected."]
+        accept.tap()
+        let joined = eventually(10) { shows(selector) && tabBarShows(app) }
+        if !joined {
+            printScreen(app, "no Home with Kitchen table 10 s after Accept this roster")
+            if shows(accept) {
+                accept.tap()
+                let again = eventually(10) { shows(selector) && tabBarShows(app) }
+                print(
+                    "InvitationUITests: a second Accept this roster "
+                        + (again ? "joined" : "did nothing either"))
+                if !again { printScreen(app, "10 s after the second Accept this roster") }
+            }
+        }
+        XCTAssertTrue(joined, "Home, with Kitchen table", file: file, line: line)
+    }
+
+    /// What's on screen, as the accessibility tree with its element ids masked, into the log.
+    @MainActor private func printScreen(_ app: XCUIApplication, _ why: String) {
+        let tree = app.debugDescription.replacingOccurrences(
+            of: "#[A-Za-z0-9_-]+", with: "#…", options: .regularExpression)
+        print("InvitationUITests: \(why):\n\(tree)")
     }
 
     /// Whether `condition` holds within `timeout` seconds, read every 0.2 s.
