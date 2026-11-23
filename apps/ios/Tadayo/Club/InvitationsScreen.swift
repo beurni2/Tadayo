@@ -183,8 +183,11 @@ struct ClubSetupHeading: View {
 ///   Revoke link in More, and says "A new link replaces the previous link." 8 under the status
 ///   and the action, from 49 to the trailing margin, in `metadata` `secondaryText` (handoff 9's
 ///   `setupLinks.missingLive`, frame 15); its avatar, action and More are centred on the line
-///   between the name and the status, where a 74 row puts them, as the status wraps;
-/// - an expired link offers Create new link and no More (`setupLinks.expiredUnused`, frame 16);
+///   between the name and the status, as frame 15 centres its avatar, however the status wraps;
+/// - an expired link offers Create new link and no More, its action where the others' are, More's
+///   column left empty (`setupLinks.expiredUnused`; frame 16 draws Create new link's target from
+///   209 to 333), where a used row's Share again, which has no More either, reaches the trailing
+///   margin, as handoff 8's frame 12 draws it;
 /// - at least 74 high, centred, growing with the text; a used row at least 84, its content where a
 ///   74 row puts it (`usedInvitationRow.defaultSamHeight`); a link not on this phone at least 112
 ///   (`missingLive.minimumHeight`), its content from the top; the separator from 49 to the
@@ -226,8 +229,8 @@ struct InvitationRowView: View {
 
     private var inline: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
-            // A link not on this phone's status wraps (frame 15): the controls stay centred on the
-            // line under the name, as in a row whose status doesn't.
+            // A link not on this phone's status wraps (frame 15): the avatar and the controls stay
+            // centred on the line under the name, as frame 15 draws its avatar.
             HStack(alignment: notOnThisPhone ? .nameEnd : .center, spacing: 0) {
                 Avatar(name: row.name, size: .row)
                     .padding(.trailing, Size.personRowTextInset - AvatarSize.row.rawValue)
@@ -238,11 +241,16 @@ struct InvitationRowView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if let action = row.action {
-                    actionButton(action, trailing: row.menu.isEmpty ? 0 : Self.actionToMore)
+                    actionButton(action, trailing: keepsMoreColumn ? Self.actionToMore : 0)
                         .padding(.leading, Spacing.s)
                 }
                 if !row.menu.isEmpty {
                     more
+                } else if keepsMoreColumn {
+                    // More's place, as More takes it past the margin.
+                    Color.clear
+                        .frame(width: Size.touchTarget - Self.moreOverhang, height: 1)
+                        .accessibilityHidden(true)
                 }
             }
             if notOnThisPhone {
@@ -265,6 +273,10 @@ struct InvitationRowView: View {
     }
 
     private var notOnThisPhone: Bool { row.status == .notOnThisPhone }
+
+    /// The row keeps More's column: it has More, or it's an expired link, whose action frame 16
+    /// keeps where the others' are.
+    private var keepsMoreColumn: Bool { !row.menu.isEmpty || row.status == .expired }
 
     private var stacked: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {

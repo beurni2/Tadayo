@@ -85,10 +85,14 @@ struct InviteNameScreen: View {
             if !now, model.isCreating { focused = true }
         }
         .task { await takeFocusOnArrival() }
-        // A failure is said once, as it comes; the length line politely, after the character
-        // VoiceOver echoes as it is typed, each time the name goes over (handoff 9's
-        // `nameLimits`, as A03-profile's).
-        .announcing(failureLine)
+        // A failure is said once, as it comes, by the failure itself, not by its words, which name
+        // the person as typed and so change with each keystroke after it; the length line
+        // politely, after the character VoiceOver echoes as it is typed, each time the name goes
+        // over (handoff 9's `nameLimits`, as A03-profile's).
+        .onChange(of: model.failure) { _, failure in
+            guard let failure else { return }
+            Announcement.post(failure.words(for: model.failureName))
+        }
         .announcing(model.nameIsTooLong ? Self.tooLong : nil, politely: true)
     }
 

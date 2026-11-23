@@ -331,19 +331,19 @@ import Testing
         clubs.clubAnswers = [.success(Sunday.detail()), .success(Sunday.detail())]
         clubs.memberAnswers = [
             .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .expired)])),
-            .success(
-                Sunday.members([Sunday.candidate("cand_sam", "Sam", .expired, invitation: "inv_2")])
-            ),
+            // Revoked meanwhile: the row changes, and still offers Create new link.
+            .success(Sunday.members([Sunday.candidate("cand_sam", "Sam", .revoked)])),
         ]
         clubs.linkAnswers = [.failure(.notAllowed)]
         let list = model(clubs)
         await list.load()
         await list.createNewLink(for: "cand_sam")
         // A new link in place of the expired one: handoff 4's words for Create new link, not the
-        // first link's. The read again still offers Create new link, so the line stays.
-        #expect(clubs.calls.filter { $0 == "members club_sunday" }.count == 2)
+        // first link's. The read again reached the row, which still offers Create new link, so
+        // the line stays.
+        #expect(row(list, "cand_sam")?.status == .revoked)
+        #expect(row(list, "cand_sam")?.action == .createNewLink)
         #expect(list.actionFailure == .createNewLink(name: "Sam", network: false))
-        #expect(row(list, "cand_sam")?.status == .expired)
     }
 
     @Test func aNewLinkWithNoAnswerSaysSoInItsOwnWordsAndKeepsTheRow() async {
@@ -760,7 +760,7 @@ import Testing
 
     @Test func anotherLinkActionClearsItAsItStarts() async {
         // Each of these succeeds, and the read again (where there is one) still shows Alex's
-        // link live with Revoke link, so only the action's start can have cleared the line.
+        // link live with Revoke link; while each is held on its way, the line is already gone.
         enum Next: CaseIterable { case createNewLink, revoke, firstLink, invite }
         for next in Next.allCases {
             let clubs = ScriptedClubs()
@@ -782,17 +782,29 @@ import Testing
             await list.load()
             await list.revoke("cand_alex")
             #expect(list.actionFailure == .revoke(name: "Alex", uncertain: true), "\(next)")
-            switch next {
-            case .createNewLink:
-                await list.createNewLink(for: "cand_sam")
-                #expect(row(list, "cand_sam")?.action == .shareLink, "\(next)")
-            case .revoke:
-                await list.revoke("cand_maya")
-                #expect(row(list, "cand_maya")?.status == .revoked, "\(next)")
-            case .firstLink:
-                #expect(await list.linkToShare(for: "cand_nina") == Sunday.url(2), "\(next)")
-            case .invite:
+            let held = Gate()
+            clubs.duringLink = { await held.wait() }
+            clubs.duringRevoke = { await held.wait() }
+            let action: Task<Void, Never>? =
+                switch next {
+                case .createNewLink: Task { await list.createNewLink(for: "cand_sam") }
+                case .revoke: Task { await list.revoke("cand_maya") }
+                case .firstLink: Task { _ = await list.linkToShare(for: "cand_nina") }
+                case .invite: nil
+                }
+            if let action {
+                await held.reached()
+                #expect(list.actionFailure == nil, "while held: \(next)")
+                held.open()
+                await action.value
+            } else {
                 #expect(list.makeInvite() != nil, "\(next)")
+            }
+            switch next {
+            case .createNewLink: #expect(row(list, "cand_sam")?.action == .shareLink, "\(next)")
+            case .revoke: #expect(row(list, "cand_maya")?.status == .revoked, "\(next)")
+            case .firstLink: #expect(row(list, "cand_nina")?.status == .notShared, "\(next)")
+            case .invite: break
             }
             #expect(list.actionFailure == nil, "\(next)")
         }
