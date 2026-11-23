@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 1 failed) 2359ms
+   ❯ the audience is the club's active members at the commit, written once and sealed (T8) (2)
+     × leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after 47ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  23:28:14
+   Duration  3.09s (tests 86%, import 9%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > the audience is the club's active members at the commit, written once and sealed (T8) > leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after
+PostgresError: app.drop_audience: mem_8BYHFGB2fC-EZEM2XUInEA isn't an active member, so it isn't in an audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createDrop ../packages/domain/src/drops/commit.ts:357:18
+    355|     VALUES (${dropId}, 1, ${caption}, ${at}::pg_catalog.timestamptz)`;
+    356|   const row = live ? await consumeSlot(tx, key, slotId, dropId, at) : …
+    357|   await bound(tx)`
+       |                  ^
+    358|     INSERT INTO app.drop_audience (drop_id, club_id, interval_id)
+    359|     SELECT ${dropId}, m.club_id, m.interval_id FROM app.memberships m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

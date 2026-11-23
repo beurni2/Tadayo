@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/drops/drops.test.ts (20 tests | 1 failed) 264ms
+   ❯ what createDrop refuses before any transaction (5)
+     × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 95ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:28:46
+   Duration  869ms (import 38%, tests 36%, transform 25%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/drops/drops.test.ts > what createDrop refuses before any transaction > names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong
+AssertionError: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"Idempotency-Key\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"media\"}",
+    "status": 400,
+  }
+
+ ❯ src/drops/drops.test.ts:180:32
+    178|     for (const key of [null, "", "abc", `${KEY}0`, `${KEY}, ${KEY}`]) {
+    179|       const got = await answer(post('{"media":7,"audience":["mem_cleo"…
+    180|       expect(got, String(key)).toMatchObject(invalid("Idempotency-Key"…
+       |                                ^
+    181|       expect(got.headers["cache-control"]).toBe("private, no-store");
+    182|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -254,7 +254,7 @@
+     if (keptStar(stored.replay) !== seen.day.starInterval) throw new Error("drops: a receipt names another star");
+     const star = placedStar(seen.day);
+     if (star === null) throw new Refused("MEMBERSHIP_CHANGED");
+-    return withStar(stored.replay, render.star(star));
++    return stored.replay;
+   }
+ 
+   // 3. The locks: the day's rows, the counter, then the caller's own upload and its slot when that slot is the

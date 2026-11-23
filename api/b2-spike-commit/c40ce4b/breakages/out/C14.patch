@@ -1,0 +1,10 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -292,7 +292,6 @@
+   if (facts === null || outcome.kind === "not_found" || facts.viewerInterval !== interval) {
+     throw new Refused("NOT_FOUND");
+   }
+-  if (outcome.kind === "held") throw new Refused("MEMBERSHIP_CHANGED");
+   if (outcome.kind === "closed") {
+     const next = await nextTarget(tx, facts, at);
+     throw new Refused("OCCURRENCE_CLOSED", {

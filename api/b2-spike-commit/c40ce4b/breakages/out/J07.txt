@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 40ms
+   ❯ the DropReceipt and the rows after it (commitExpected, committedProblems) (6)
+     × takes the receipt of the drop added, with the caller's allowance and highlight as they stand 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:28:57
+   Duration  415ms (import 51%, transform 34%, tests 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > the DropReceipt and the rows after it (commitExpected, committedProblems) > takes the receipt of the drop added, with the caller's allowance and highlight as they stand
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the drop added's highlight is {\"drop_id\":\"drp_old\",\"version\":3}, not {\"version\":0}",
++ ]
+
+ ❯ src/privacy/drop.test.ts:530:108
+    528|     expect(takes(judge(), answer(receipt(), 201))).toEqual([]);
+    529|     const pointed = afterAdding({ highlights: { [`${SAT} itv_ben`]: { …
+    530|     expect(takes(judge(pointed), answer(receipt({ highlight: { drop_id…
+       |                                                                                                            ^
+    531|     const cleared = afterAdding({ highlights: { [`${SAT} itv_ben`]: { …
+    532|     expect(takes(judge(cleared), answer(receipt({ highlight: { version…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

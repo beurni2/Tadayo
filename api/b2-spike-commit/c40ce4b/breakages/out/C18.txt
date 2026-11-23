@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 1 failed) 2610ms
+   ❯ one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) (8)
+     × names the day's star in a retry as members see them then, and keeps no name in the receipt (FQ139, FQ75) 48ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  23:28:33
+   Duration  3.42s (tests 86%, import 9%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > names the day's star in a retry as members see them then, and keeps no name in the receipt (FQ139, FQ75)
+AssertionError: expected { display_name: 'Ana', …(2) } to deeply equal { Object (membership_id) }
+
+- Expected
++ Received
+
+  {
++   "avatar_version": "v_Aw0ryDtyuZRXCwIryaZ7Ew",
++   "display_name": "Ana",
+    "membership_id": "mem_p1FgBPG2rJzWaV5G_Cw0-Q",
+  }
+
+ ❯ src/db/create-drop.test.ts:557:26
+    555|         SELECT response_body->'occurrence'->'star' AS star, response_b…
+    556|          WHERE actor_user_id = ${d.w.ben.user} AND operation = 'create…
+    557|       expect(kept?.star).toEqual({ membership_id: d.w.ana.interval });
+       |                          ^
+    558|       expect(kept?.text).not.toContain("Ana");
+    559|       expect(kept?.text).not.toContain(avatar.version);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:544:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

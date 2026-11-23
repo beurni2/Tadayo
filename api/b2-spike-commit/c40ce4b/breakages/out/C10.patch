@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -329,7 +329,7 @@
+   const slot = await readSlot(tx, slotId);
+   if (slot === null) throw new Error("drops: the reservation this command holds is gone");
+   const live = slot.state === "live";
+-  if (!live) {
++  if (!live && live) {
+     const refusal = limitRefusal(allowanceOf(before, outcome.isStar), "photo");
+     if (refusal !== null) {
+       const next = await nextTarget(tx, facts, at);

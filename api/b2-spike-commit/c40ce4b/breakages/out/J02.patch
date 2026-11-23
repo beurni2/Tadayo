@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -175,7 +175,7 @@
+     .map(([id]) => id)
+     .sort((a, b) => {
+       const at = (id: string) => rows.drops.get(id)?.submittedAt ?? now;
+-      return Temporal.Instant.compare(at(a), at(b)) || byBytes(a, b);
++      return byBytes(a, b) || at(a).epochNanoseconds.toString().length;
+     });
+   const existing = same[0];
+   if (existing !== undefined)

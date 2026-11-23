@@ -1,0 +1,63 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 47ms
+   ❯ what createDrop must answer (commitOutcome) (9)
+     × gives the neutral not-found unless the upload is the caller's own live photo, under their slot in this day (T4, T12, T14) 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:28:53
+   Duration  420ms (import 53%, transform 30%, tests 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what createDrop must answer (commitOutcome) > gives the neutral not-found unless the upload is the caller's own live photo, under their slot in this day (T4, T12, T14)
+AssertionError: reservation_id naming another slot: expected { kind: 'added', …(7) } to deeply equal { kind: 'pinned', answer: { …(4) } }
+
+- Expected
++ Received
+
+  {
+-   "answer": {
+-     "body": "{\"code\":\"NOT_FOUND\"}",
+-     "headers": {
+-       "cache-control": "private, no-store",
+-       "connection": "keep-alive",
+-       "content-length": "20",
+-       "content-type": "application/json; charset=utf-8",
++   "day": "occ_sat",
++   "interval": "itv_ben",
++   "kind": "added",
++   "live": true,
++   "now": "2026-11-06T14:41:00.5Z",
++   "slot": "rsv_ben",
++   "target": {
++     "close_at": "2026-11-08T06:00:00Z",
++     "club_id": "clb_here",
++     "id": "occ_sat",
++     "local_date": "2026-11-07",
++     "phase": "collecting",
++     "reveal_at": "2026-11-07T12:00:00Z",
++     "star": {
++       "display_name": "ana",
++       "membership_id": "itv_ana",
+      },
+-     "reason": "Not Found",
+-     "status": 404,
+    },
+-   "kind": "pinned",
++   "upload": "upl_ben",
+  }
+
+ ❯ src/privacy/drop.test.ts:351:82
+    349|       ["reservation_id naming another slot", world(), { ...BENS, reser…
+    350|     ];
+    351|     for (const [name, w, ask] of cases) expect(outcome(w, "usr_ben", a…
+       |                                                                                  ^
+    352|     // A rejoined account's earlier upload is under the interval that …
+    353|     const rejoined = world({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

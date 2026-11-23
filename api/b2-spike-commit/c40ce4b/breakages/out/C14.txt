@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 1 failed) 2440ms
+   ❯ a held day, and the cutoff read after the locks (T1, T3, T4; FQ63) (5)
+     × answers MEMBERSHIP_CHANGED, with no facts, for a day whose star has left, the slot left as it was 41ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  23:28:26
+   Duration  3.30s (tests 84%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a held day, and the cutoff read after the locks (T1, T3, T4; FQ63) > answers MEMBERSHIP_CHANGED, with no facts, for a day whose star has left, the slot left as it was
+Error: allowance: the counter's limits aren't the caller's role's
+ ❯ allowanceOf ../packages/domain/src/drops/allowance.ts:78:11
+     76|     typeof isStar !== "boolean"
+     77|   ) {
+     78|     throw new Error("allowance: the counter's limits aren't the caller…
+       |           ^
+     79|   }
+     80|   const committedTotal = count(row.committedTotal, "committed_total");
+ ❯ createDrop ../packages/domain/src/drops/commit.ts:379:16
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ outcomeOf src/db/create-drop.test.ts:222:18
+ ❯ src/db/create-drop.test.ts:845:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

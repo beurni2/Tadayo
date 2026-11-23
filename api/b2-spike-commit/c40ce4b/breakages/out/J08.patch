@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -317,7 +317,6 @@
+     ...(dropsSeen(after) === dropsSeen(previous) ? [] : ["a drop was made or changed"]),
+     ...(rowsSeen(after.world.reservations) === rowsSeen(previous.world.reservations) ? [] : ["a reservation changed"]),
+     ...(rowsSeen(after.world.uploads) === rowsSeen(previous.world.uploads) ? [] : ["an upload changed"]),
+-    ...(highlightsSeen(after.rows) === highlightsSeen(previous.rows) ? [] : ["a highlight changed"]),
+   ];
+ }
+ 

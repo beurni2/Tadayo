@@ -1,0 +1,134 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 2 failed) 2703ms
+   ❯ a held day, and the cutoff read after the locks (T1, T3, T4; FQ63) (5)
+     × waits for the day's own row, and reads the clock after it: a commit held on the day across 07:00 is refused (ADR-013) 83ms
+     × waits for the counter's row, and reads the clock after it: a commit that waited across 07:00 is refused 67ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 33 passed (35)
+   Start at  23:27:32
+   Duration  4.05s (tests 87%, import 8%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a held day, and the cutoff read after the locks (T1, T3, T4; FQ63) > waits for the day's own row, and reads the clock after it: a commit held on the day across 07:00 is refused (ADR-013)
+AssertionError: expected { status: 201, body: { …(7) }, …(1) } to match object { code: 'OCCURRENCE_CLOSED', …(1) }
+(10 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "OCCURRENCE_CLOSED",
+-   "facts": {
+-     "target": {
++   "body": {
++     "allowance": {
++       "added": 1,
++       "external_added": 0,
++       "external_limit": 1,
++       "external_reserved": 0,
++       "is_star": false,
++       "limit": 3,
++       "photo_added": 1,
++       "photo_limit": 2,
++       "photo_reserved": 0,
++       "reserved": 0,
++     },
++     "drop_id": "drp_V50awGg5469hSD_5sWePdQ",
++     "highlight": {
++       "version": 0,
++     },
++     "media_class": "photo",
++     "occurrence": {
++       "close_at": "2026-11-08T01:00:00Z",
++       "club_id": "club_IJ2zGtnE1ObUoavsl9DLJQ",
+        "id": "occ_S2JIu9kwQBc8PB6oypmSCA",
+-       "phase": "open",
++       "local_date": "2026-11-07",
++       "phase": "collecting",
++       "reveal_at": "2026-11-07T07:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "mem_XR3-kfXD3fY57_kFm1a_hg",
++       },
+      },
++     "state": "added",
++     "version": 1,
+    },
++   "status": 201,
++   "text": "{\"state\":\"added\",\"drop_id\":\"drp_V50awGg5469hSD_5sWePdQ\",\"version\":1,\"allowance\":{\"added\":1,\"limit\":3,\"is_star\":false,\"reserved\":0,\"photo_added\":1,\"photo_limit\":2,\"external_added\":0,\"external_limit\":1,\"photo_reserved\":0,\"external_reserved\":0},\"highlight\":{\"version\":0},\"occurrence\":{\"id\":\"occ_S2JIu9kwQBc8PB6oypmSCA\",\"star\":{\"membership_id\":\"mem_XR3-kfXD3fY57_kFm1a_hg\",\"display_name\":\"Ana\"},\"phase\":\"collecting\",\"club_id\":\"club_IJ2zGtnE1ObUoavsl9DLJQ\",\"close_at\":\"2026-11-08T01:00:00Z\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"local_date\":\"2026-11-07\"},\"media_class\":\"photo\"}",
+  }
+
+ ❯ src/db/create-drop.test.ts:909:29
+    907|         await hold.release();
+    908|       }
+    909|       expect(await waiting).toMatchObject({
+       |                             ^
+    910|         code: "OCCURRENCE_CLOSED",
+    911|         facts: { target: { id: d.w.day, phase: "open" } },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-drop.test.ts > a held day, and the cutoff read after the locks (T1, T3, T4; FQ63) > waits for the counter's row, and reads the clock after it: a commit that waited across 07:00 is refused
+AssertionError: expected { status: 201, body: { …(7) }, …(1) } to match object { code: 'OCCURRENCE_CLOSED', …(1) }
+(10 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "OCCURRENCE_CLOSED",
+-   "facts": {
+-     "target": {
++   "body": {
++     "allowance": {
++       "added": 1,
++       "external_added": 0,
++       "external_limit": 1,
++       "external_reserved": 0,
++       "is_star": false,
++       "limit": 3,
++       "photo_added": 1,
++       "photo_limit": 2,
++       "photo_reserved": 0,
++       "reserved": 0,
++     },
++     "drop_id": "drp_dom9WZh7vpk5ue_AeY8S-w",
++     "highlight": {
++       "version": 0,
++     },
++     "media_class": "photo",
++     "occurrence": {
++       "close_at": "2026-11-08T01:00:00Z",
++       "club_id": "club_BZzIpKMYity-8UV04PWTXg",
+        "id": "occ_CFkaME5sotYVEAGn4DknEg",
+-       "phase": "open",
++       "local_date": "2026-11-07",
++       "phase": "collecting",
++       "reveal_at": "2026-11-07T07:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "mem_61A0lz-r2BHhbQ2K9YrWvA",
++       },
+      },
++     "state": "added",
++     "version": 1,
+    },
++   "status": 201,
++   "text": "{\"state\":\"added\",\"drop_id\":\"drp_dom9WZh7vpk5ue_AeY8S-w\",\"version\":1,\"allowance\":{\"added\":1,\"limit\":3,\"is_star\":false,\"reserved\":0,\"photo_added\":1,\"photo_limit\":2,\"external_added\":0,\"external_limit\":1,\"photo_reserved\":0,\"external_reserved\":0},\"highlight\":{\"version\":0},\"occurrence\":{\"id\":\"occ_CFkaME5sotYVEAGn4DknEg\",\"star\":{\"membership_id\":\"mem_61A0lz-r2BHhbQ2K9YrWvA\",\"display_name\":\"Ana\"},\"phase\":\"collecting\",\"club_id\":\"club_BZzIpKMYity-8UV04PWTXg\",\"close_at\":\"2026-11-08T01:00:00Z\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"local_date\":\"2026-11-07\"},\"media_class\":\"photo\"}",
+  }
+
+ ❯ src/db/create-drop.test.ts:936:29
+    934|         await hold.release();
+    935|       }
+    936|       expect(await waiting).toMatchObject({
+       |                             ^
+    937|         code: "OCCURRENCE_CLOSED",
+    938|         facts: { target: { id: d.w.day, phase: "open" } },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

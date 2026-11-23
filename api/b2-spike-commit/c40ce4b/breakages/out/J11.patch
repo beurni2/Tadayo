@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -142,7 +142,7 @@
+     ...(next === undefined ? {} : { next_target: next }),
+     ...extra,
+   });
+-  if (!before(now, theDay.revealAt))
++  if (ask.media.kind === "photo" && !before(now, theDay.revealAt))
+     return { kind: "refused", code: "OCCURRENCE_CLOSED", body: facts("OCCURRENCE_CLOSED") };
+   if (ask.media.kind !== "photo") return { kind: "pinned", answer: NEUTRAL };
+   const uploadId = ask.media.upload;

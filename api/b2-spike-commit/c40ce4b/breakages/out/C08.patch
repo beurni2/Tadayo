@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -325,7 +325,7 @@
+   if ((await bound(tx)`SELECT 1 AS used FROM app.drops WHERE upload_id = ${uploadId}`).length > 0) {
+     throw new Refused("NOT_FOUND");
+   }
+-  const before = await settleLapsed(tx, key, at);
++  const before = await settleLapsed(tx, key, at.subtract({ hours: 1000 }));
+   const slot = await readSlot(tx, slotId);
+   if (slot === null) throw new Error("drops: the reservation this command holds is gone");
+   const live = slot.state === "live";

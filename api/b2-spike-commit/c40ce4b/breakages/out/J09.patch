@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -184,7 +184,7 @@
+       code: "DUPLICATE_DROP",
+       body: { code: "DUPLICATE_DROP", existing_drop_id: existing },
+     };
+-  if ([...rows.drops.values()].some((drop) => drop.upload === uploadId)) return { kind: "pinned", answer: NEUTRAL };
++  if ([...rows.drops.values()].some((drop) => drop.upload === uploadId && drop.upload === null)) return { kind: "pinned", answer: NEUTRAL };
+   const live = slot.state === "live" && before(now, slot.expiresAt);
+   if (!live) {
+     // The command settles the counter's lapsed slots first; `allowanceIn` already leaves them off.

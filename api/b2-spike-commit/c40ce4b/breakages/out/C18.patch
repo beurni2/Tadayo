@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -386,7 +386,7 @@
+   const kept = await completeReceipt(
+     tx,
+     receipt,
+-    withStar(body, { membership_id: outcome.target.star.membershipId }),
++    body,
+     201,
+   );
+   return withStar(kept, render.star(outcome.target.star));

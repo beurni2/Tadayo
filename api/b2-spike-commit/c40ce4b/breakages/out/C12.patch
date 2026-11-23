@@ -1,0 +1,10 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -359,7 +359,6 @@
+     SELECT ${dropId}, m.club_id, m.interval_id FROM app.memberships m
+      WHERE m.club_id = ${key.club} AND m.state = 'active'
+      ORDER BY m.interval_id COLLATE "C"`;
+-  await bound(tx)`UPDATE app.drops SET audience_sealed_at = ${at}::pg_catalog.timestamptz WHERE id = ${dropId}`;
+   const [pointer] = await bound(tx)`
+     SELECT drop_id, version FROM app.highlights WHERE occurrence_id = ${key.day} AND interval_id = ${key.interval}`;
+   const highlighted = pointer?.["drop_id"];

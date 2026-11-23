@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -377,7 +377,7 @@
+     occurrence: outcome.target,
+     mediaClass: "photo",
+     version: 1,
+-    allowance: allowanceOf(row, outcome.isStar),
++    allowance: allowanceOf(before, outcome.isStar),
+     highlight:
+       pointer === undefined
+         ? { dropId: null, version: 0 }

@@ -1,0 +1,210 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 8 failed) 2177ms
+   ❯ a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) (4)
+     × adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience 147ms
+     × adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22) 133ms
+   ❯ one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) (8)
+     × makes one drop when the same send arrives twice at once: the second waits for the first, then gets its answer 75ms
+   ❯ a slot that ended before its photo was added (T17, T18; spec 11) (4)
+     × takes a free slot for a photo whose slot lapsed, the reservation left as it ended 28ms
+   ❯ two photos racing for the last free slot are put in order by the counter (Q10, T17) (2)
+     × makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT 45ms
+     × lets exactly one of two commits and a reservation, all at once, take the last photo, never three 45ms
+   ❯ the audience is the club's active members at the commit, written once and sealed (T8) (2)
+     × leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after 25ms
+     × makes a join wait for the commit's hold on the club, so the joiner comes after the seal and is never in it 74ms
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 27 passed (35)
+     Errors  2 errors
+   Start at  23:28:18
+   Duration  2.93s (tests 85%, import 9%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) > adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience
+AssertionError: expected { …(12) } to deeply equal { …(12) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "audience_sealed_at": "2026-11-06T21:05:00.123456Z",
++   "audience_sealed_at": null,
+    "author_interval_id": "mem_JmEg1Yzl6ExbO2gXZIm3Ow",
+    "caption": "The ferry at dawn 🌅",
+    "club_id": "club_asrrAXqHkPVCMoWzyr5viQ",
+    "dedupe_key": "a5ab217cb8b6fd01e2907736fac72ace93b7c4fe694a0ade6f4f232ae065583e",
+    "media_class": "photo",
+
+ ❯ src/db/create-drop.test.ts:450:51
+    448|         reserved_external: 0,
+    449|       });
+    450|       expect(await dropRow(tx, one.body.drop_id)).toEqual({
+       |                                                   ^
+    451|         occurrence_id: d.w.day,
+    452|         club_id: d.w.club,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/db/create-drop.test.ts > a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) > adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22)
+PostgresError: app.drops: drop drp_77iNmOm1sE8tK_KmDYrf_Q was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:324:11
+    322| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    323| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    324|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    325|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    326| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > makes one drop when the same send arrives twice at once: the second waits for the first, then gets its answer
+PostgresError: app.drops: drop drp_yOgFVXB4E7hscsAApkeFXw was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:278:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/db/create-drop.test.ts > a slot that ended before its photo was added (T17, T18; spec 11) > takes a free slot for a photo whose slot lapsed, the reservation left as it ended
+PostgresError: app.drops: drop drp_vDgjj22t7ggRqU_DRNnjEQ was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:324:11
+    322| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    323| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    324|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    325|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    326| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/db/create-drop.test.ts > two photos racing for the last free slot are put in order by the counter (Q10, T17) > makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT
+PostgresError: app.drops: drop drp_-CnVUwVs3Jq-RTys3IVpXg was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:278:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/db/create-drop.test.ts > two photos racing for the last free slot are put in order by the counter (Q10, T17) > lets exactly one of two commits and a reservation, all at once, take the last photo, never three
+PostgresError: app.drops: drop drp_JGytw0nkfVjcCKO19hhfyg was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:278:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/db/create-drop.test.ts > the audience is the club's active members at the commit, written once and sealed (T8) > leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after
+PostgresError: app.drops: drop drp_Vkg3jCvgMDwkBQB0Kjp8AQ was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:324:11
+    322| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    323| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    324|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    325|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    326| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/db/create-drop.test.ts > the audience is the club's active members at the commit, written once and sealed (T8) > makes a join wait for the commit's hold on the club, so the joiner comes after the seal and is never in it
+PostgresError: app.drops: drop drp_fC3vwb1iWEfHFM-4d5qf4Q was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:278:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 2 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+PostgresError: app.drops: drop drp_eP_KAgis3ss2CBvM-2nlmw was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ Socket.emit node:events:514:20
+ ❯ addChunk node:internal/streams/readable:605:12
+ ❯ readableAddChunkPushByteMode node:internal/streams/readable:556:3
+ ❯ Readable.push node:internal/streams/readable:436:5
+ ❯ TCP.onStreamRead node:internal/stream_base_commons:194:23
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:278:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { severity_local: 'ERROR', severity: 'ERROR', code: '23000', where: 'PL/pgSQL function app.drops_sealed() line 9 at RAISE', file: 'pl_exec.c', routine: 'exec_stmt_raise', query: 'commit', parameters: [], args: [], types: [] }
+This error originated in "src/db/create-drop.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "refuses another caption, another upload or another day under the same key with IDEMPOTENCY_CONFLICT". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+PostgresError: app.drops: drop drp_HbAiLjkK8C17tKQoOTJf3g was committed without sealing its audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ Socket.emit node:events:514:20
+ ❯ addChunk node:internal/streams/readable:605:12
+ ❯ readableAddChunkPushByteMode node:internal/streams/readable:556:3
+ ❯ Readable.push node:internal/streams/readable:436:5
+ ❯ TCP.onStreamRead node:internal/stream_base_commons:194:23
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:278:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { severity_local: 'ERROR', severity: 'ERROR', code: '23000', where: 'PL/pgSQL function app.drops_sealed() line 9 at RAISE', file: 'pl_exec.c', routine: 'exec_stmt_raise', query: 'commit', parameters: [], args: [], types: [] }
+This error originated in "src/db/create-drop.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "lets exactly one of two commits and a reservation, all at once, take the last photo, never three". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+

@@ -1,0 +1,136 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 2 failed) 2787ms
+   ❯ one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) (8)
+     × answers a retry MEMBERSHIP_CHANGED once the day's star has no name left to show, before the reveal, keeping the drop held (FQ139) 73ms
+     × answers a retry MEMBERSHIP_CHANGED too when the star's account goes with no name after the reveal, the drop still active in the opened day (FQ139) 41ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 33 passed (35)
+   Start at  23:28:38
+   Duration  3.54s (tests 87%, import 8%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > answers a retry MEMBERSHIP_CHANGED once the day's star has no name left to show, before the reveal, keeping the drop held (FQ139)
+AssertionError: expected { status: 201, body: { …(7) }, …(1) } to deeply equal { code: 'MEMBERSHIP_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "MEMBERSHIP_CHANGED",
+-   "facts": {},
++   "body": {
++     "allowance": {
++       "added": 1,
++       "external_added": 0,
++       "external_limit": 1,
++       "external_reserved": 0,
++       "is_star": false,
++       "limit": 3,
++       "photo_added": 1,
++       "photo_limit": 2,
++       "photo_reserved": 0,
++       "reserved": 0,
++     },
++     "drop_id": "drp_sYFIsELTH2x_udmornNLOw",
++     "highlight": {
++       "version": 0,
++     },
++     "media_class": "photo",
++     "occurrence": {
++       "close_at": "2026-11-08T01:00:00Z",
++       "club_id": "club_9FJRFxXEcaAeioyIW9jmuQ",
++       "id": "occ_1plbuchZcqSrRD2kCMazAw",
++       "local_date": "2026-11-07",
++       "phase": "collecting",
++       "reveal_at": "2026-11-07T07:00:00Z",
++       "star": {
++         "membership_id": "mem_oEdlApDu6_ivr6agKIACmA",
++       },
++     },
++     "state": "added",
++     "version": 1,
++   },
++   "status": 201,
++   "text": "{\"state\":\"added\",\"drop_id\":\"drp_sYFIsELTH2x_udmornNLOw\",\"version\":1,\"allowance\":{\"added\":1,\"limit\":3,\"is_star\":false,\"reserved\":0,\"photo_added\":1,\"photo_limit\":2,\"external_added\":0,\"external_limit\":1,\"photo_reserved\":0,\"external_reserved\":0},\"highlight\":{\"version\":0},\"occurrence\":{\"id\":\"occ_1plbuchZcqSrRD2kCMazAw\",\"star\":{\"membership_id\":\"mem_oEdlApDu6_ivr6agKIACmA\"},\"phase\":\"collecting\",\"club_id\":\"club_9FJRFxXEcaAeioyIW9jmuQ\",\"close_at\":\"2026-11-08T01:00:00Z\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"local_date\":\"2026-11-07\"},\"media_class\":\"photo\"}",
+  }
+
+ ❯ src/db/create-drop.test.ts:592:67
+    590|          WHERE interval_id = ${d.w.ana.interval}`;
+    591|       clock.advance({ minutes: 2 });
+    592|       expect(await commit(tx, d, d.w.ben, photo.upload, { key })).toEq…
+       |                                                                   ^
+    593|       expect(await tx`SELECT id FROM app.drops WHERE occurrence_id = $…
+    594|       expect(await dropReceipts(tx, d.w.ben.user)).toHaveLength(1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:582:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > answers a retry MEMBERSHIP_CHANGED too when the star's account goes with no name after the reveal, the drop still active in the opened day (FQ139)
+AssertionError: expected { status: 201, body: { …(7) }, …(1) } to deeply equal { code: 'MEMBERSHIP_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "MEMBERSHIP_CHANGED",
+-   "facts": {},
++   "body": {
++     "allowance": {
++       "added": 1,
++       "external_added": 0,
++       "external_limit": 1,
++       "external_reserved": 0,
++       "is_star": false,
++       "limit": 3,
++       "photo_added": 1,
++       "photo_limit": 2,
++       "photo_reserved": 0,
++       "reserved": 0,
++     },
++     "drop_id": "drp_PZESKjUBLHqYozJcVBX4VQ",
++     "highlight": {
++       "version": 0,
++     },
++     "media_class": "photo",
++     "occurrence": {
++       "close_at": "2026-11-08T01:00:00Z",
++       "club_id": "club_KYDW4i8YJYLxvV506y0Cuw",
++       "id": "occ_Oh2S1ToCMuxZoUoiubEWRQ",
++       "local_date": "2026-11-07",
++       "phase": "collecting",
++       "reveal_at": "2026-11-07T07:00:00Z",
++       "star": {
++         "membership_id": "mem_nsIfHWSpUwfAa2Y7QFKpYw",
++       },
++     },
++     "state": "added",
++     "version": 1,
++   },
++   "status": 201,
++   "text": "{\"state\":\"added\",\"drop_id\":\"drp_PZESKjUBLHqYozJcVBX4VQ\",\"version\":1,\"allowance\":{\"added\":1,\"limit\":3,\"is_star\":false,\"reserved\":0,\"photo_added\":1,\"photo_limit\":2,\"external_added\":0,\"external_limit\":1,\"photo_reserved\":0,\"external_reserved\":0},\"highlight\":{\"version\":0},\"occurrence\":{\"id\":\"occ_Oh2S1ToCMuxZoUoiubEWRQ\",\"star\":{\"membership_id\":\"mem_nsIfHWSpUwfAa2Y7QFKpYw\"},\"phase\":\"collecting\",\"club_id\":\"club_KYDW4i8YJYLxvV506y0Cuw\",\"close_at\":\"2026-11-08T01:00:00Z\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"local_date\":\"2026-11-07\"},\"media_class\":\"photo\"}",
+  }
+
+ ❯ src/db/create-drop.test.ts:611:67
+    609|       // The day has no star to name, so no answer can send it: the re…
+    610|       // reachable until account deletion is built (B6), which decides…
+    611|       expect(await commit(tx, d, d.w.ben, photo.upload, { key })).toEq…
+       |                                                                   ^
+    612|       expect(await tx`SELECT id, state FROM app.drops WHERE occurrence…
+    613|         { id: first.body.drop_id, state: "active" },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:599:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

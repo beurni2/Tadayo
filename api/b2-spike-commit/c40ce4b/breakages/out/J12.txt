@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 34ms
+   ❯ the DropReceipt and the rows after it (commitExpected, committedProblems) (6)
+     × holds the rows of a drop added: one drop of the caller's, its caption, upload, hash, instant and audience (T8) 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:29:01
+   Duration  477ms (import 61%, transform 27%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > the DropReceipt and the rows after it (commitExpected, committedProblems) > holds the rows of a drop added: one drop of the caller's, its caption, upload, hash, instant and audience (T8)
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/drop.test.ts:571:72
+    569|     expect(problems(afterAdding({ audience: ["itv_ana", "itv_ben"] }))…
+    570|     expect(problems(afterAdding({ audience: ["itv_ana", "itv_ben", "it…
+    571|     expect(problems(afterAdding({ row: { dedupe: OTHER_HASH } }))).not…
+       |                                                                        ^
+    572|     expect(problems(afterAdding({ row: { upload: "upl_other" } }))).no…
+    573|     expect(problems(afterAdding({ row: { submittedAt: NOW.add({ micros…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

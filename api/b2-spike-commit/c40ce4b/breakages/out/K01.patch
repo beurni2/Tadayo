@@ -1,0 +1,27 @@
+--- a/packages/domain/src/idempotency/receipt.ts
++++ b/packages/domain/src/idempotency/receipt.ts
+@@ -34,13 +34,17 @@
+   { userId, key, request }: ReceiptKey,
+   at: Temporal.Instant,
+ ): Promise<{ readonly replay: Json } | null> {
+-  const reserved = await bound(tx)`
+-    INSERT INTO app.idempotency_receipts (actor_user_id, operation, idempotency_key, request_hash, created_at)
+-    VALUES (${userId}, ${request.operation}, ${key}::pg_catalog.uuid, ${requestHash(request)},
+-            ${at}::pg_catalog.timestamptz)
+-    ON CONFLICT (actor_user_id, operation, idempotency_key) DO NOTHING
+-    RETURNING 1 AS reserved`;
+-  if (reserved.length > 0) return null;
++  const seen = await bound(tx)`
++    SELECT 1 AS seen FROM app.idempotency_receipts
++     WHERE actor_user_id = ${userId} AND operation = ${request.operation}
++       AND idempotency_key = ${key}::pg_catalog.uuid`;
++  if (seen.length === 0) {
++    await bound(tx)`
++      INSERT INTO app.idempotency_receipts (actor_user_id, operation, idempotency_key, request_hash, created_at)
++      VALUES (${userId}, ${request.operation}, ${key}::pg_catalog.uuid, ${requestHash(request)},
++              ${at}::pg_catalog.timestamptz)`;
++    return null;
++  }
+   const [receipt] = await bound(tx)`
+     SELECT request_hash, state, response_body FROM app.idempotency_receipts
+      WHERE actor_user_id = ${userId} AND operation = ${request.operation}

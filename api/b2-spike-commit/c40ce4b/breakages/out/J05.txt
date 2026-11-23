@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 39ms
+   ❯ the DropReceipt and the rows after it (commitExpected, committedProblems) (6)
+     × holds the slot consumed by the drop when live, and nothing else changed but the caller's own lapsed slots (T18, T20) 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:28:55
+   Duration  376ms (import 55%, transform 29%, tests 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > the DropReceipt and the rows after it (commitExpected, committedProblems) > holds the slot consumed by the drop when live, and nothing else changed but the caller's own lapsed slots (T18, T20)
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/drop.test.ts:604:81
+    602|     expect(problems(after({}), "The ferry", previous)).toEqual([]);
+    603|     expect(problems(after({ rsv_lapsed: "expired" }), "The ferry", pre…
+    604|     expect(problems(after({ rsv_cleo: "expired" }), "The ferry", previ…
+       |                                                                                 ^
+    605|     expect(problems(after({ rsv_next: "expired" }), "The ferry", previ…
+    606|     expect(problems(after({ rsv_lapsed: "released" }), "The ferry", pr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

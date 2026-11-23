@@ -1,0 +1,12 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -308,8 +308,7 @@
+     upload.purpose !== "drop_photo" ||
+     slotId === null ||
+     slotSeen === null ||
+-    !ownsReservation(facts, slotSeen, at) ||
+-    (input.reservationId !== undefined && input.reservationId !== slotId)
++    !ownsReservation(facts, slotSeen, at)
+   ) {
+     throw new Refused("NOT_FOUND");
+   }

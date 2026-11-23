@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 4 failed) 2547ms
+   ❯ a slot that ended before its photo was added (T17, T18; spec 11) (4)
+     × refuses Ben's third photo with PHOTO_LIMIT, his own allowance and Ana's next day, and Ana's third not at all 66ms
+     × refuses with QUOTA_FULL, not PHOTO_LIMIT, once all of Ben's are used, and Ana's with photos still left to her 120ms
+   ❯ two photos racing for the last free slot are put in order by the counter (Q10, T17) (2)
+     × makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT 103ms
+     × lets exactly one of two commits and a reservation, all at once, take the last photo, never three 68ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 31 passed (35)
+   Start at  23:28:10
+   Duration  3.43s (tests 83%, import 11%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a slot that ended before its photo was added (T17, T18; spec 11) > refuses Ben's third photo with PHOTO_LIMIT, his own allowance and Ana's next day, and Ana's third not at all
+ FAIL  src/db/create-drop.test.ts > a slot that ended before its photo was added (T17, T18; spec 11) > refuses with QUOTA_FULL, not PHOTO_LIMIT, once all of Ben's are used, and Ana's with photos still left to her
+ FAIL  src/db/create-drop.test.ts > two photos racing for the last free slot are put in order by the counter (Q10, T17) > makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT
+ FAIL  src/db/create-drop.test.ts > two photos racing for the last free slot are put in order by the counter (Q10, T17) > lets exactly one of two commits and a reservation, all at once, take the last photo, never three
+PostgresError: new row for relation "contribution_counters" violates check constraint "contribution_counters_photos_within_limit"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ takeSlot ../packages/domain/src/drops/counter.ts:205:31
+    203| export async function takeSlot(tx: QuerySql, key: CounterKey, media: M…
+    204|   const external = media === "external_video" ? "1" : "0";
+    205|   const rows = await bound(tx)`
+       |                               ^
+    206|     UPDATE app.contribution_counters
+    207|        SET committed_total = committed_total + 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+

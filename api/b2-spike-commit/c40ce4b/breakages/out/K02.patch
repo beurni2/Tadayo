@@ -1,0 +1,10 @@
+--- a/packages/domain/src/drops/reserve.ts
++++ b/packages/domain/src/drops/reserve.ts
+@@ -101,7 +101,6 @@
+  */
+ export async function lockDay(tx: QuerySql, facts: AddTargetFacts, interval: string): Promise<void> {
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${facts.day.clubId} FOR SHARE`;
+-  await bound(tx)`SELECT id FROM app.occurrences WHERE id = ${facts.day.id} FOR SHARE`;
+   await bound(tx)`
+     SELECT interval_id FROM app.memberships
+      WHERE interval_id IN (${interval}, ${facts.day.starInterval})

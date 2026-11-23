@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/drops/drops.test.ts (20 tests | 1 failed) 271ms
+   ❯ the receipt's serializer against the contract's example (T15, T20, T22, T55) (3)
+     × makes it field for field, and no other 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:28:48
+   Duration  891ms (import 38%, tests 36%, transform 25%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/drops/drops.test.ts > the receipt's serializer against the contract's example (T15, T20, T22, T55) > makes it field for field, and no other
+AssertionError: expected { drop_id: 'drp_ben_13', …(6) } to deeply equal { drop_id: 'drp_ben_13', …(6) }
+
+- Expected
++ Received
+
+@@ -11,10 +11,11 @@
+      "photo_reserved": 0,
+      "reserved": 0,
+    },
+    "drop_id": "drp_ben_13",
+    "highlight": {
++     "drop_id": "drp_ben_13",
+      "version": 0,
+    },
+    "media_class": "photo",
+    "occurrence": {
+      "close_at": "2026-11-14T06:00:00Z",
+
+ ❯ src/drops/drops.test.ts:82:18
+     80|       highlight: { dropId: null, version: 0 },
+     81|     });
+     82|     expect(made).toEqual(added);
+       |                  ^
+     83|     expect(DropReceipt.strict().safeParse(made).success).toBe(true);
+     84|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

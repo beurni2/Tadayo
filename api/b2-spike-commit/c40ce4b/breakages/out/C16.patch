@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -322,7 +322,7 @@
+      LIMIT 1`;
+   const existing = duplicate[0]?.["id"];
+   if (typeof existing === "string") throw new Refused("DUPLICATE_DROP", { existing_drop_id: existing });
+-  if ((await bound(tx)`SELECT 1 AS used FROM app.drops WHERE upload_id = ${uploadId}`).length > 0) {
++  if ((await bound(tx)`SELECT 1 AS used FROM app.drops WHERE upload_id = ${uploadId}`).length > 99) {
+     throw new Refused("NOT_FOUND");
+   }
+   const before = await settleLapsed(tx, key, at);

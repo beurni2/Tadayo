@@ -1,0 +1,46 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 1 failed) 2674ms
+   ❯ a slot that ended before its photo was added (T17, T18; spec 11) (4)
+     × takes a free slot for a photo whose slot lapsed, the reservation left as it ended 39ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  23:28:02
+   Duration  3.41s (tests 87%, import 8%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a slot that ended before its photo was added (T17, T18; spec 11) > takes a free slot for a photo whose slot lapsed, the reservation left as it ended
+AssertionError: expected { state: 'consumed', …(3) } to deeply equal { state: 'expired', …(3) }
+
+- Expected
++ Received
+
+  {
+-   "drop_id": null,
+-   "ended_at": "2026-11-06T21:30:00.123456Z",
++   "drop_id": "drp_6ceZwP9Ci8tEMzzBVRgKaw",
++   "ended_at": "2026-11-06T21:40:00.123456Z",
+    "expires_at": "2026-11-06T21:30:00.123456Z",
+-   "state": "expired",
++   "state": "consumed",
+  }
+
+ ❯ src/db/create-drop.test.ts:1034:45
+    1032|       const one = added(await commit(tx, d, d.w.ben, photo.upload));
+    1033|       expect(one.body.allowance).toEqual(allowanceBody(allowance(FRIEN…
+    1034|       expect(await slotRow(tx, photo.slot)).toEqual({
+       |                                             ^
+    1035|         state: "expired",
+    1036|         expires_at: EVENING.add({ minutes: 30 }).toString(),
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:1028:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

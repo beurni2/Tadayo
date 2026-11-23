@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 40ms
+   ❯ what createDrop must answer (commitOutcome) (9)
+     × answers DUPLICATE_DROP with the caller's earliest active or held drop of the same photo in the day (T21) 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:28:52
+   Duration  402ms (import 54%, transform 29%, tests 14%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what createDrop must answer (commitOutcome) > answers DUPLICATE_DROP with the caller's earliest active or held drop of the same photo in the day (T21)
+AssertionError: expected { kind: 'refused', …(2) } to deeply equal { kind: 'refused', …(2) }
+
+- Expected
++ Received
+
+  {
+    "body": {
+      "code": "DUPLICATE_DROP",
+-     "existing_drop_id": "drp_b",
++     "existing_drop_id": "drp_a",
+    },
+    "code": "DUPLICATE_DROP",
+    "kind": "refused",
+  }
+
+ ❯ src/privacy/drop.test.ts:393:37
+    391|       },
+    392|     });
+    393|     expect(outcome(two, "usr_ben")).toEqual(duplicate("drp_b"));
+       |                                     ^
+    394|     const tied = world({
+    395|       drops: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

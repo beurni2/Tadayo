@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/packages/domain
+
+ ❯ src/drops/commit.test.ts (12 tests | 1 failed) 15ms
+   ❯ the commit checks what the route hands it before anything else (11)
+     × names no day for an id that can't be one, the neutral not-found, asking the database nothing 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  23:28:50
+   Duration  266ms (transform 57%, import 27%, tests 12%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/drops/commit.test.ts > the commit checks what the route hands it before anything else > names no day for an id that can't be one, the neutral not-found, asking the database nothing
+AssertionError: expected Error: the command asked the database bef… to be an instance of Refused
+ ❯ src/drops/commit.test.ts:55:23
+     53|     for (const occurrenceId of ["occ.saturday", "", "x".repeat(65)]) {
+     54|       const refused = await run({ ...VALID, occurrenceId }).catch((err…
+     55|       expect(refused).toBeInstanceOf(Refused);
+       |                       ^
+     56|       expect(refused).toMatchObject({ code: "NOT_FOUND", facts: {} });
+     57|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

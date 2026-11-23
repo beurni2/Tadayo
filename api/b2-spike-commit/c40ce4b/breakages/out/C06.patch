@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -313,7 +313,7 @@
+   ) {
+     throw new Refused("NOT_FOUND");
+   }
+-  if (upload.state !== "ready") throw new Refused("MEDIA_NOT_READY");
++  if (upload.state !== "ready" && upload.state !== "preparing") throw new Refused("MEDIA_NOT_READY");
+   const duplicate = await bound(tx)`
+     SELECT d.id FROM app.drops d JOIN app.uploads u ON u.id = ${uploadId}
+      WHERE d.occurrence_id = ${key.day} AND d.author_interval_id = ${key.interval}

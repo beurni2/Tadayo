@@ -1,0 +1,11 @@
+--- a/services/api/src/drops/drops.ts
++++ b/services/api/src/drops/drops.ts
+@@ -61,7 +61,7 @@
+     const account = signedIn(request);
+     // The key is judged before the body's fields, the contract's order; nothing here echoes a value.
+     const key = request.headers["idempotency-key"];
+-    if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
++    if (typeof key !== "string") {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+     const parsed = CreateDropRequest.safeParse(request.body);

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 38ms
+   ❯ the DropReceipt and the rows after it (commitExpected, committedProblems) (6)
+     × holds that a refusal, a retry and another body under a key make and change nothing (T19) 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  23:28:58
+   Duration  387ms (import 54%, transform 30%, tests 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > the DropReceipt and the rows after it (commitExpected, committedProblems) > holds that a refusal, a retry and another body under a key make and change nothing (T19)
+AssertionError: expected [] to deeply equal [ 'a highlight changed' ]
+
+- Expected
++ Received
+
+- [
+-   "a highlight changed",
+- ]
++ []
+
+ ❯ src/privacy/drop.test.ts:657:7
+    655|     expect(
+    656|       unchangedProblems(afterAdding(), afterAdding({ highlights: { [`$…
+    657|     ).toEqual(["a highlight changed"]);
+       |       ^
+    658|     const base = afterAdding();
+    659|     expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

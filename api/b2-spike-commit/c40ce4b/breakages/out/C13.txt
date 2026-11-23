@@ -1,0 +1,206 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 5 failed) 2764ms
+   ❯ a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) (4)
+     × adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience 147ms
+     × adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22) 107ms
+   ❯ a slot that ended before its photo was added (T17, T18; spec 11) (4)
+     × takes a free slot for a photo whose slot lapsed, the reservation left as it ended 50ms
+     × refuses Ben's third photo with PHOTO_LIMIT, his own allowance and Ana's next day, and Ana's third not at all 98ms
+   ❯ two photos racing for the last free slot are put in order by the counter (Q10, T17) (2)
+     × makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT 103ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 30 passed (35)
+   Start at  23:28:21
+   Duration  3.61s (tests 86%, import 9%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) > adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience
+AssertionError: expected { state: 'added', …(6) } to deeply equal { …(7) }
+
+- Expected
++ Received
+
+@@ -1,17 +1,17 @@
+  {
+    "allowance": {
+-     "added": 1,
++     "added": 0,
+      "external_added": 0,
+      "external_limit": 1,
+      "external_reserved": 0,
+      "is_star": false,
+      "limit": 3,
+-     "photo_added": 1,
++     "photo_added": 0,
+      "photo_limit": 2,
+-     "photo_reserved": 0,
+-     "reserved": 0,
++     "photo_reserved": 1,
++     "reserved": 1,
+    },
+    "drop_id": "drp_Y2M7rC6kaE7QDqCNWwzqHg",
+    "highlight": {
+      "version": 0,
+    },
+
+ ❯ src/db/create-drop.test.ts:417:24
+    415|       const sample = EVENING.add({ minutes: 5 });
+    416|       const one = added(await commit(tx, d, d.w.ben, photo.upload, { c…
+    417|       expect(one.body).toEqual({
+       |                        ^
+    418|         drop_id: one.body.drop_id,
+    419|         occurrence: one.body.occurrence,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) > adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22)
+AssertionError: expected { added: 4, limit: 6, …(8) } to deeply equal { added: 5, reserved: +0, …(8) }
+
+- Expected
++ Received
+
+  {
+-   "added": 5,
++   "added": 4,
+    "external_added": 0,
+    "external_limit": 2,
+    "external_reserved": 0,
+    "is_star": true,
+    "limit": 6,
+-   "photo_added": 5,
++   "photo_added": 4,
+    "photo_limit": 6,
+-   "photo_reserved": 0,
+-   "reserved": 0,
++   "photo_reserved": 1,
++   "reserved": 1,
+  }
+
+ ❯ src/db/create-drop.test.ts:492:36
+    490|       const photo = await prepared(tx, d, d.w.ana);
+    491|       const fifth = added(await commit(tx, d, d.w.ana, photo.upload));
+    492|       expect(fifth.body.allowance).toEqual(allowanceBody(allowance(STA…
+       |                                    ^
+    493|       expect(fifth.body.highlight).toEqual({ drop_id: earlier, version…
+    494|       expect(await audienceOf(tx, fifth.body.drop_id)).toContain(d.w.a…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:483:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > a slot that ended before its photo was added (T17, T18; spec 11) > takes a free slot for a photo whose slot lapsed, the reservation left as it ended
+AssertionError: expected { added: +0, limit: 3, …(8) } to deeply equal { added: 1, reserved: +0, …(8) }
+
+- Expected
++ Received
+
+  {
+-   "added": 1,
++   "added": 0,
+    "external_added": 0,
+    "external_limit": 1,
+    "external_reserved": 0,
+    "is_star": false,
+    "limit": 3,
+-   "photo_added": 1,
++   "photo_added": 0,
+    "photo_limit": 2,
+    "photo_reserved": 0,
+    "reserved": 0,
+  }
+
+ ❯ src/db/create-drop.test.ts:1033:34
+    1031|       clock.advance({ minutes: 40 });
+    1032|       const one = added(await commit(tx, d, d.w.ben, photo.upload));
+    1033|       expect(one.body.allowance).toEqual(allowanceBody(allowance(FRIEN…
+       |                                  ^
+    1034|       expect(await slotRow(tx, photo.slot)).toEqual({
+    1035|         state: "expired",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:1028:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > a slot that ended before its photo was added (T17, T18; spec 11) > refuses Ben's third photo with PHOTO_LIMIT, his own allowance and Ana's next day, and Ana's third not at all
+AssertionError: expected { added: 2, limit: 6, …(8) } to deeply equal { added: 3, reserved: +0, …(8) }
+
+- Expected
++ Received
+
+  {
+-   "added": 3,
++   "added": 2,
+    "external_added": 0,
+    "external_limit": 2,
+    "external_reserved": 0,
+    "is_star": true,
+    "limit": 6,
+-   "photo_added": 3,
++   "photo_added": 2,
+    "photo_limit": 6,
+    "photo_reserved": 0,
+    "reserved": 0,
+  }
+
+ ❯ src/db/create-drop.test.ts:1078:35
+    1076|       expect(await slotRow(tx, bens.slot)).toMatchObject({ state: "exp…
+    1077|       const star = added(await commit(tx, d, d.w.ana, anas.upload));
+    1078|       expect(star.body.allowance).toEqual(allowanceBody(allowance(STAR…
+       |                                   ^
+    1079|     });
+    1080|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:1064:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > two photos racing for the last free slot are put in order by the counter (Q10, T17) > makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT
+AssertionError: expected { added: +0, limit: 3, …(8) } to deeply equal { added: 1, reserved: 1, …(8) }
+
+- Expected
++ Received
+
+  {
+-   "added": 1,
++   "added": 0,
+    "external_added": 0,
+    "external_limit": 1,
+    "external_reserved": 0,
+    "is_star": false,
+    "limit": 3,
+-   "photo_added": 1,
++   "photo_added": 0,
+    "photo_limit": 2,
+    "photo_reserved": 1,
+    "reserved": 1,
+  }
+
+ ❯ src/db/create-drop.test.ts:1199:47
+    1197|       open();
+    1198|     }
+    1199|     expect(added(await first).body.allowance).toEqual(allowanceBody(al…
+       |                                               ^
+    1200|     expectLimit(await second, "PHOTO_LIMIT", d, allowance(FRIEND, { ph…
+    1201|     await expectCounted(db as unknown as WorldTx, d.w.day);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -161,7 +161,7 @@
+     (ask.reservation !== undefined && ask.reservation !== slotId)
+   )
+     return { kind: "pinned", answer: NEUTRAL };
+-  if (upload.state !== "ready") return { kind: "pinned", answer: MEDIA_NOT_READY };
++  if (upload.state === "pending") return { kind: "pinned", answer: MEDIA_NOT_READY };
+   const hash = rows.hashes.get(uploadId) ?? null;
+   const same = [...world.drops]
+     .filter(

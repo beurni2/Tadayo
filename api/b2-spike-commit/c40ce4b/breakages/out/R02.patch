@@ -1,0 +1,11 @@
+--- a/services/api/src/drops/drops.ts
++++ b/services/api/src/drops/drops.ts
+@@ -35,7 +35,7 @@
+     version: receipt.version,
+     allowance: allowanceBody(receipt.allowance),
+     highlight: {
+-      ...(receipt.highlight.dropId === null ? {} : { drop_id: receipt.highlight.dropId }),
++      drop_id: receipt.highlight.dropId ?? receipt.dropId,
+       version: receipt.highlight.version,
+     },
+   };
