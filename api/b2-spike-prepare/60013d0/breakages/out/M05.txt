@@ -1,0 +1,99 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+stdout | src/image-memory.test.ts > a photo's process's peak memory (FQ138) > keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing
+a progressive JPEG at the budget: 279 MiB at the peak
+a progressive CMYK JPEG at the budget: 285 MiB at the peak
+an interlaced PNG at the budget: 323 MiB at the peak
+an interlaced 16-bit PNG at the budget: 310 MiB at the peak
+a greyscale progressive JPEG of 64 megapixels: 262 MiB at the peak
+an interlaced 16-bit greyscale PNG of 64 megapixels: 276 MiB at the peak
+an interlaced greyscale PNG with alpha of 64 megapixels: 297 MiB at the peak
+a lossless WebP at the budget: 250 MiB at the peak
+a lossy WebP with a lossless alpha at the budget: 251 MiB at the peak
+an animated WebP at the budget: 286 MiB at the peak
+a 16-bit PNG of 64 megapixels: 304 MiB at the peak
+a baseline JPEG of 64 megapixels to turn upright: 171 MiB at the peak
+a lossy WebP of 64 megapixels: 182 MiB at the peak
+a progressive JPEG of 64 megapixels: 98 MiB at the peak
+an interlaced 16-bit PNG of 64 megapixels: 117 MiB at the peak
+a lossless WebP of 64 megapixels: 90 MiB at the peak
+a lossy WebP with a lossless alpha of 64 megapixels: 92 MiB at the peak
+an animated WebP of 64 megapixels, its frames small: 90 MiB at the peak
+
+stdout | src/image-memory.test.ts > a photo's process's peak memory (FQ138) > refuses every file built to hold what no header shows, by its structure or by the cap
+a 50 KB PNG whose compressed text inflates to 49 MiB (R3-1): too_many_pixels, 367 MiB at the peak
+a 164 KB PNG of four compressed texts of 40 MiB (R3-1): too_many_pixels, 367 MiB at the peak
+a lossless WebP of 1 megapixel and 65,536 Huffman groups (R3-4): too_many_pixels, 355 MiB at the peak
+a lossless WebP at the budget with 30,000 Huffman groups (R3-4): too_many_pixels, 353 MiB at the peak
+one lossless frame on 64 megapixels, with a trailer past its RIFF (R3-2): unreadable, 89 MiB at the peak
+one small frame on 64 megapixels, no trailer (R3-2): unreadable, 90 MiB at the peak
+a 20 MiB WebP of 2.6 million empty chunks: unsupported_type, 129 MiB at the peak
+a progressive JPEG at the budget of 2,688 scans (R3-6): unsupported_type, 92 MiB at the peak
+
+ ❯ src/image-memory.test.ts (3 tests | 2 failed) 208285ms
+   ❯ a photo's process's peak memory (FQ138) (3)
+     × keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing 98566ms
+     × refuses every file built to hold what no header shows, by its structure or by the cap 22277ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  10:25:56
+   Duration  208.62s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-memory.test.ts > a photo's process's peak memory (FQ138) > keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "answer": "too_many_pixels",
++   "answer": "unreadable",
+    "name": "a progressive JPEG of 64 megapixels",
+    "within": true,
+  }
+
+ ❯ src/image-memory.test.ts:261:92
+    259|     for (const result of results) {
+    260|       const most = result.refused ? MAX_REFUSAL_PEAK_MIB : PEAK_BYTES …
+    261|       expect({ name: result.name, answer: result.answer, within: resul…
+       |                                                                                            ^
+    262|         name: result.name,
+    263|         answer: result.refused ? "too_many_pixels" : "taken",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-memory.test.ts > a photo's process's peak memory (FQ138) > refuses every file built to hold what no header shows, by its structure or by the cap
+AssertionError: expected [ [ …(2) ], [ …(2) ], [ …(2) ], …(5) ] to deeply equal [ [ …(2) ], [ …(2) ], [ …(2) ], …(5) ]
+
+- Expected
++ Received
+
+@@ -19,11 +19,11 @@
+      "one lossless frame on 64 megapixels, with a trailer past its RIFF (R3-2)",
+      "unreadable",
+    ],
+    [
+      "one small frame on 64 megapixels, no trailer (R3-2)",
+-     "too_many_pixels",
++     "unreadable",
+    ],
+    [
+      "a 20 MiB WebP of 2.6 million empty chunks",
+      "unsupported_type",
+    ],
+
+ ❯ src/image-memory.test.ts:280:52
+    278|     }
+    279|     console.info(results.map((r) => `${r.name}: ${r.answer}, ${String(…
+    280|     expect(results.map((r) => [r.name, r.answer])).toEqual(HOSTILE.map…
+       |                                                    ^
+    281|   }, 300_000);
+    282|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

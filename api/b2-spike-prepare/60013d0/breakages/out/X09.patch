@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-child.ts
++++ b/services/worker/src/image-child.ts
+@@ -10,7 +10,6 @@
+ 
+ function oomScoreAdj(): number | undefined {
+   try {
+-    writeFileSync("/proc/self/oom_score_adj", "1000");
+     return Number(readFileSync("/proc/self/oom_score_adj", "latin1").trim());
+   } catch {
+     return undefined;

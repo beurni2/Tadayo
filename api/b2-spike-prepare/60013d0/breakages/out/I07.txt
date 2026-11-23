@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 1 failed) 74448ms
+   ❯ the renditions (TECH-DESIGN section 1, Images) (8)
+     × never makes a long screenshot's display taller than its full 119ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 33 passed (34)
+   Start at  09:25:27
+   Duration  74.81s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the renditions (TECH-DESIGN section 1, Images) > never makes a long screenshot's display taller than its full
+AssertionError: expected { full: [ 1181, 2560 ], …(1) } to deeply equal { full: [ 1181, 2560 ], …(1) }
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  {
+    "display": [
+-     1181,
+-     2560,
++     1290,
++     2796,
+    ],
+    "full": [
+      1181,
+      2560,
+    ],
+
+ ❯ src/image.test.ts:451:76
+    449|
+    450|   it("never makes a long screenshot's display taller than its full", a…
+    451|     expect(kinds(await ready(await flat(1290, 2796, "png"), "image/png…
+       |                                                                            ^
+    452|       full: [1181, 2560],
+    453|       display: [1181, 2560],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

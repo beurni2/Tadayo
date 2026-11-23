@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 2 failed) 78373ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (9)
+     × counts a WebP's chunks at its top level, up to its RIFF's end, and none if that end isn't the file's 17ms
+     × refuses a WebP whose RIFF size isn't its length as unreadable: one frame on 64 megapixels with a trailer had passed as lossy 7ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 32 passed (34)
+   Start at  10:02:43
+   Duration  78.78s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > counts a WebP's chunks at its top level, up to its RIFF's end, and none if that end isn't the file's
+AssertionError: expected 2 to be undefined
+
+- Expected:
+undefined
+
++ Received:
+2
+
+ ❯ src/image.test.ts:255:57
+    253|     expect(webpChunks(await junkWebp(10))).toBe(12);
+    254|     // Bytes past the RIFF's end, or a RIFF that names more bytes than…
+    255|     expect(webpChunks(Buffer.concat([lossy, trailer]))).toBeUndefined(…
+       |                                                         ^
+    256|     expect(webpChunks(lossy.subarray(0, lossy.length - 2))).toBeUndefi…
+    257|     expect(webpChunks(lossy.subarray(0, 11))).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > refuses a WebP whose RIFF size isn't its length as unreadable: one frame on 64 megapixels with a trailer had passed as lossy
+AssertionError: expected { ok: false, …(1) } to deeply equal { ok: false, rejection: 'unreadable' }
+
+- Expected
++ Received
+
+  {
+    "ok": false,
+-   "rejection": "unreadable",
++   "rejection": "too_many_pixels",
+  }
+
+ ❯ src/image.test.ts:274:80
+    272|     const single = animatedWebp(8000, 8000, [{ still: corner, x: 7936,…
+    273|     expect(Buffer.concat([single, trailer]).length).toBeLessThan(256);
+    274|     expect(await prepareImage(Buffer.concat([single, trailer]), "image…
+       |                                                                                ^
+    275|       ok: false,
+    276|       rejection: "unreadable",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

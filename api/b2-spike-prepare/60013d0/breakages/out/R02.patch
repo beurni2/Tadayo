@@ -1,0 +1,11 @@
+--- a/tools/ops/src/supabase-probe.ts
++++ b/tools/ops/src/supabase-probe.ts
+@@ -553,7 +553,7 @@
+       if (
+         !record(
+           name,
+-          settle(put, () => stored) ?? settle(back, (reply) => reply.status === 200 && sameBytes(reply.bytes, bytes)),
++          settle(put, () => stored) ?? settle(back, (reply) => reply.status === 200),
+         )
+       )
+         break;

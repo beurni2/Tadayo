@@ -1,0 +1,69 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 1 failed) 15430ms
+   ❯ upload.prepare when Storage is away, or another run gets there first (T54) (4)
+     × makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE) 10519ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+     Errors  1 error
+   Start at  09:16:45
+   Duration  16.30s (tests 97%, import 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare when Storage is away, or another run gets there first (T54) > makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE)
+AssertionError: expected '55P03' to be 1 // Object.is equality
+
+- Expected:
+1
+
++ Received:
+"55P03"
+
+ ❯ src/db/worker-prepare.test.ts:798:25
+    796|             (error: unknown) => (error as { code?: string }).code ?? S…
+    797|           );
+    798|         expect(sharing).toBe(1);
+       |                         ^
+    799|         go();
+    800|         expect(await first).toMatchObject({ outcome: "ready" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+PostgresError: canceling statement due to lock timeout
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ Socket.emit node:events:514:20
+ ❯ addChunk node:internal/streams/readable:605:12
+ ❯ readableAddChunkPushByteMode node:internal/streams/readable:556:3
+ ❯ Readable.push node:internal/streams/readable:436:5
+ ❯ TCP.onStreamRead node:internal/stream_base_commons:194:23
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ recordPreparation ../packages/domain/src/media/prepare.ts:110:31
+    108| ): Promise<{ readonly at: ServerNow; readonly recorded: boolean }> {
+    109|   if (typeof id !== "string" || !ID.test(id)) throw new TypeError("med…
+    110|   const rows = await bound(tx)`SELECT state, expires_at FROM app.uploa…
+       |                               ^
+    111|   const at = await clock.sample(tx);
+    112|   const row = rows[0];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { severity_local: 'ERROR', severity: 'ERROR', code: '55P03', where: 'while locking tuple (0,167) in relation "uploads"', file: 'postgres.c', routine: 'ProcessInterrupts', query: 'SELECT state, expires_at FROM app.uploads WHERE id = $1 FOR UPDATE', parameters: [ 'upl_Ya-CJIBLy1kmb0RXmV9zyA' ], args: [ 'upl_Ya-CJIBLy1kmb0RXmV9zyA' ], types: [ 25 ] }
+This error originated in "src/db/worker-prepare.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE)". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+

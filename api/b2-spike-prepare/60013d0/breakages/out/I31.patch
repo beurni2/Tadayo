@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -246,7 +246,7 @@
+   if (type === undefined || type !== declared) return { ok: false, rejection: "unsupported_type" };
+   if (type === "image/jpeg") {
+     const scans = jpegScans(bytes);
+-    if (scans === undefined || scans > MAX_JPEG_SCANS) return { ok: false, rejection: "unsupported_type" };
++    if (scans === undefined) return { ok: false, rejection: "unsupported_type" };
+   }
+   if (type === "image/webp") {
+     const chunks = webpChunks(bytes);

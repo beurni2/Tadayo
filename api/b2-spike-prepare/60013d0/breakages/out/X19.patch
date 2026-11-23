@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -258,7 +258,7 @@
+     const killGroup = () => {
+       if (child.pid === undefined) return;
+       try {
+-        process.kill(-child.pid, "SIGKILL");
++        process.kill(child.pid, "SIGKILL");
+       } catch {
+         // The group has ended.
+       }

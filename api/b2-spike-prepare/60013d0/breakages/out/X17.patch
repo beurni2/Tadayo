@@ -1,0 +1,12 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -295,8 +295,7 @@
+     child.on("message", (sent: unknown) => {
+       const message = messageOf(sent);
+       if (message === undefined) return;
+-      if (message.kind === "ready") {
+-        if (ready) return;
++      if (message.kind === "ready" && !ready) {
+         ready = true;
+         child.stdin?.end(bytes);
+       } else if (ready && answer === undefined) {

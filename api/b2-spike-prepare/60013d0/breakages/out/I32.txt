@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 2 failed) 78583ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (9)
+     × counts no SOS inside a segment, nor a stuffed byte, a restart, fill bytes or anything after the EOI 11ms
+     × gives no count for a reserved marker before the EOI, which libjpeg passes over without its length at a restart 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 32 passed (34)
+   Start at  10:05:22
+   Duration  78.97s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > counts no SOS inside a segment, nor a stuffed byte, a restart, fill bytes or anything after the EOI
+AssertionError: expected 5 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 5
+
+ ❯ src/image.test.ts:201:75
+    199|     // A scan's data with a stuffed 0xFF, a restart and fill bytes bef…
+    200|     const data = [0x12, 0xff, 0x00, 0x34, 0xff, 0xd3, 0x56, 0xff, 0xff…
+    201|     expect(jpegScans(jpeg(app1, sos, data, sos, [0xff, 0xd9], sos, sos…
+       |                                                                           ^
+    202|     // After the EOI, two bytes that would read as a segment's length,…
+    203|     expect(jpegScans(jpeg(sos, data, [0xff, 0xd9, 0x00, 0x02], sos, so…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > gives no count for a reserved marker before the EOI, which libjpeg passes over without its length at a restart
+AssertionError: expected undefined to be 1 // Object.is equality
+
+- Expected:
+1
+
++ Received:
+undefined
+
+ ❯ src/image.test.ts:218:104
+    216|     // Not inside a segment, which is passed over by its length, nor a…
+    217|     // is passed over.
+    218|     expect(jpegScans(jpeg([0xff, 0xe1, 0, 6, 0xff, 0x05, 0, 2], sos, d…
+       |                                                                                                        ^
+    219|     expect(jpegScans(jpeg(sos, data, [0xff, 0x01], sos, [0xff, 0xd9]))…
+    220|     expect(jpegScans(jpeg([0xff, 0xc0, 0, 4, 0xff, 0xda], sos, [0xff, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

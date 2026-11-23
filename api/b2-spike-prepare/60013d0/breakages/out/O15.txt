@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 1 failed) 288ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails 21ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  09:16:31
+   Duration  850ms (tests 55%, import 27%, transform 17%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails
+AssertionError: expected [] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+- [
+-   "worker: an event is dead: test.outbox_nezizqbcseoq evt_Ym0XMvX0zF7g-PUqKS9RoQ after 5 attempts: lease_lapsed",
+-   "worker: an event is dead: test.outbox_nezizqbcseoq evt_4EZ70eEm1HVvoWdBH8V2vQ after 1 attempts: payload",
+- ]
++ []
+
+ ❯ src/db/worker-outbox.test.ts:331:17
+    329|       outboxPass(failingFrom(4), clock, { [mine]: handler }, { warn: (…
+    330|     ).rejects.toThrow("connection lost");
+    331|     expect(err).toEqual(dead);
+       |                 ^
+    332|     // The spent event's line was out before the next event's work beg…
+    333|     expect(seenLines).toEqual([1]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

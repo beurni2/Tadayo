@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -250,7 +250,6 @@
+   }
+   if (type === "image/webp") {
+     const chunks = webpChunks(bytes);
+-    if (chunks === undefined) return { ok: false, rejection: "unreadable" };
+     if (chunks > MAX_WEBP_CHUNKS) return { ok: false, rejection: "unsupported_type" };
+   }
+ 

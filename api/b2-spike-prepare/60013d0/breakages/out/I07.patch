@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -62,7 +62,7 @@
+  */
+ export const RENDITION_BOXES: Readonly<Record<RenditionKind, { readonly width: number; readonly height: number }>> = {
+   full: { width: 2560, height: 2560 },
+-  display: { width: 1290, height: 2560 },
++  display: { width: 1290 },
+ };
+ 
+ const CHILD = new URL("./image-child.ts", import.meta.url);

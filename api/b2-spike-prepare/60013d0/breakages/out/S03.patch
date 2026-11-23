@@ -1,0 +1,11 @@
+--- a/services/worker/src/storage.ts
++++ b/services/worker/src/storage.ts
+@@ -139,7 +139,7 @@
+         `/storage/v1/object/${RENDITIONS_BUCKET}/${renditionAt}`,
+         {
+           method: "POST",
+-          headers: { ...auth, "content-type": "image/jpeg", "x-upsert": "true" },
++          headers: { ...auth, "content-type": "image/jpeg" },
+           body: bytes,
+         },
+         "putting a rendition",

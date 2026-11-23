@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 1 failed) 5570ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × makes the version at random: the same upload's same photo, prepared again from the same start, gets another (T21) 430ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  10:17:35
+   Duration  6.42s (tests 92%, import 6%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > makes the version at random: the same upload's same photo, prepared again from the same start, gets another (T21)
+AssertionError: expected 'mv_LxU1oFt-bU6_8lJSI0yaAQ' not to be 'mv_LxU1oFt-bU6_8lJSI0yaAQ' // Object.is equality
+ ❯ src/db/worker-prepare.test.ts:358:25
+    356|       expect(first).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    357|       expect(second).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    358|       expect(first).not.toBe(second);
+       |                         ^
+    359|     });
+    360|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:331:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+stdout | src/image-memory.test.ts > a photo's process's peak memory (FQ138) > keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing
+a progressive JPEG at the budget: 279 MiB at the peak
+a progressive CMYK JPEG at the budget: 286 MiB at the peak
+an interlaced PNG at the budget: 323 MiB at the peak
+an interlaced 16-bit PNG at the budget: 310 MiB at the peak
+a greyscale progressive JPEG of 64 megapixels: 262 MiB at the peak
+an interlaced 16-bit greyscale PNG of 64 megapixels: 276 MiB at the peak
+an interlaced greyscale PNG with alpha of 64 megapixels: 297 MiB at the peak
+a lossless WebP at the budget: 250 MiB at the peak
+a lossy WebP with a lossless alpha at the budget: 251 MiB at the peak
+an animated WebP at the budget: 286 MiB at the peak
+a 16-bit PNG of 64 megapixels: 303 MiB at the peak
+a baseline JPEG of 64 megapixels to turn upright: 171 MiB at the peak
+a lossy WebP of 64 megapixels: 182 MiB at the peak
+a progressive JPEG of 64 megapixels: 98 MiB at the peak
+an interlaced 16-bit PNG of 64 megapixels: 117 MiB at the peak
+a lossless WebP of 64 megapixels: 91 MiB at the peak
+a lossy WebP with a lossless alpha of 64 megapixels: 92 MiB at the peak
+an animated WebP of 64 megapixels, its frames small: 352 MiB at the peak
+
+ ❯ src/image-memory.test.ts (3 tests | 1 failed) 202946ms
+   ❯ a photo's process's peak memory (FQ138) (3)
+     × keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing 94538ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  09:48:54
+   Duration  203.27s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-memory.test.ts > a photo's process's peak memory (FQ138) > keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+    "answer": "too_many_pixels",
+    "name": "an animated WebP of 64 megapixels, its frames small",
+-   "within": true,
++   "within": false,
+  }
+
+ ❯ src/image-memory.test.ts:261:92
+    259|     for (const result of results) {
+    260|       const most = result.refused ? MAX_REFUSAL_PEAK_MIB : PEAK_BYTES …
+    261|       expect({ name: result.name, answer: result.answer, within: resul…
+       |                                                                                            ^
+    262|         name: result.name,
+    263|         answer: result.refused ? "too_many_pixels" : "taken",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

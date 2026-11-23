@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (21 tests | 2 failed) 12943ms
+   ❯ a photo's process that misbehaves (R4-3) (5)
+     × refuses the photo as unreadable when the child crashes once it holds it 50ms
+   ❯ what a child's end comes to (6)
+     × refuses the photo as unreadable when the child crashed once it held it 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)
+   Start at  10:57:54
+   Duration  13.33s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > refuses the photo as unreadable when the child crashes once it holds it
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:221:9
+    219|   if (answer?.kind === "failed" || !end.ready) throw new ImageProcessF…
+    220|   if (end.signal === "SIGKILL") return { prepared: { ok: false, reject…
+    221|   throw new ImageProcessFailed();
+       |         ^
+    222| }
+    223|
+ ❯ settle src/image-process.ts:321:11
+ ❯ ChildProcess.<anonymous> src/image-process.ts:341:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > refuses the photo as unreadable when the child crashed once it held it
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:221:9
+    219|   if (answer?.kind === "failed" || !end.ready) throw new ImageProcessF…
+    220|   if (end.signal === "SIGKILL") return { prepared: { ok: false, reject…
+    221|   throw new ImageProcessFailed();
+       |         ^
+    222| }
+    223|
+ ❯ src/image-process.test.ts:353:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

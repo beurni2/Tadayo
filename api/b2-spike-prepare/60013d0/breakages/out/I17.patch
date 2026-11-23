@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -211,7 +211,7 @@
+ ): number {
+   const pixels = header.width * header.height;
+   if (header.format === "webp") {
+-    if (header.pages !== undefined) return pixels * 10;
++    if (header.pages !== undefined) return 0;
+     const coding = webpCoding(bytes);
+     return pixels * (coding === "lossy" ? 0 : coding === "lossless" ? 4 : coding === "lossy with alpha" ? 5 : 10);
+   }

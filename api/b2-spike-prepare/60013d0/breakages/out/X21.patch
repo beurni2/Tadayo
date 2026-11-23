@@ -1,0 +1,12 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -273,7 +273,8 @@
+     };
+     // A child that has answered keeps its answer, but is ended all the same: it may never exit of itself.
+     const kill = (why: "memory" | "time") => {
+-      if (killed === undefined && answer === undefined) killed = why;
++      if (killed !== undefined || answer !== undefined) return;
++      killed = why;
+       killGroup();
+       allowGrace();
+     };

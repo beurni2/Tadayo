@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -337,7 +337,6 @@
+     child.on("error", () => {
+       settle(null, true);
+     });
+-    child.on("exit", allowGrace);
+     // `close` comes once the process has ended and its channel has closed, so after its last message.
+     child.on("close", (_code, signal) => {
+       settle(signal, false);

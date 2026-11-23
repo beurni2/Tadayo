@@ -1,0 +1,12 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -171,8 +171,7 @@
+     if (fourcc === "VP8 ") return alpha ? "lossy with alpha" : "lossy";
+     if (fourcc === "VP8L") return "lossless";
+     if (fourcc === "ALPH") alpha = true;
+-    const size = view.getUint32(at + 4, true);
+-    at += 8 + size + (size % 2);
++    at = bytes.length;
+   }
+   return undefined;
+ }

@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 1 failed) 77175ms
+   ❯ a slow decode (2)
+     × is the worker's limit, a failure to try again, never a rejection of the photo 1857ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 33 passed (34)
+   Start at  09:28:04
+   Duration  77.55s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > a slow decode > is the worker's limit, a failure to try again, never a rejection of the photo
+AssertionError: promise resolved "{ ok: false, rejection: 'unreadable' }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "ok": false,
++   "rejection": "unreadable",
+  }
+
+ ❯ src/image.test.ts:561:67
+    559|       .png()
+    560|       .toBuffer();
+    561|     await expect(prepareImage(bytes, "image/png", { seconds: 1 })).rej…
+       |                                                                   ^
+    562|   }, 60_000);
+    563|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

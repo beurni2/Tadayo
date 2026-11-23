@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -128,7 +128,7 @@
+       at += 2;
+     } else {
+       if (marker === 0xda) scans += 1;
+-      at += 2 + (((bytes[at + 2] ?? 0) << 8) | (bytes[at + 3] ?? 0));
++      at += 2;
+     }
+   }
+ }

@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (21 tests | 1 failed) 12708ms
+   ❯ what a child's end comes to (6)
+     × throws ImageTimeout for its deadline even past its memory, and for a decode's timeout within it 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  11:03:50
+   Duration  13.03s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > throws ImageTimeout for its deadline even past its memory, and for a decode's timeout within it
+ImageTimeout: image: a decode took too long
+ ❯ outcomeOf src/image-process.ts:199:70
+    197| /** The answer a child's end comes to (the rules above): a preparation…
+    198| export function outcomeOf(end: ChildEnd): ProcessAnswer {
+    199|   if (end.killed === "time" || end.answer?.kind === "timeout") throw n…
+       |                                                                      ^
+    200|   const { peakBytes } = end;
+    201|   if (end.killed === "memory" || peakBytes > end.mostBytes) {
+ ❯ src/image-process.test.ts:361:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

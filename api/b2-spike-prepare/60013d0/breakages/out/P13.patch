@@ -1,0 +1,11 @@
+--- a/services/worker/src/prepare.ts
++++ b/services/worker/src/prepare.ts
+@@ -125,7 +125,7 @@
+   step = stopwatch();
+   let prepared: Prepared = { ok: false, rejection: "unreadable" };
+   let photoPeakBytes = 0;
+-  if (original !== null && original.length > UPLOAD_MAX_BYTES) {
++  if (original !== null && original.length > UPLOAD_MAX_BYTES * 2) {
+     // Its size alone refuses it (D09), as prepareImage would: no process is started for it (PR #111's round 4, R4-8).
+     prepared = { ok: false, rejection: "too_large" };
+   } else if (original !== null) {

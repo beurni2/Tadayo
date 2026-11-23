@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 1 failed) 80674ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (9)
+     × refuses a JPEG that hides its scans behind a reserved marker as unsupported_type, before its decode 4088ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 33 passed (34)
+   Start at  10:20:55
+   Duration  81.09s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > refuses a JPEG that hides its scans behind a reserved marker as unsupported_type, before its decode
+AssertionError: expected { ok: false, rejection: 'unreadable' } to deeply equal { ok: false, …(1) }
+
+- Expected
++ Received
+
+  {
+    "ok": false,
+-   "rejection": "unsupported_type",
++   "rejection": "unreadable",
+  }
+
+ ❯ src/image.test.ts:229:54
+    227|     const hidden = hiddenScansJpeg(4704, 4704, 881, 32767);
+    228|     const started = performance.now();
+    229|     expect(await prepareImage(hidden, "image/jpeg")).toEqual({ ok: fal…
+       |                                                      ^
+    230|     expect(performance.now() - started).toBeLessThan(1000);
+    231|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (21 tests | 1 failed) 12358ms
+   ❯ a photo's process that misbehaves (R4-3) (5)
+     × ignores a message that isn't one of the child's, and a second ready, and keeps the first answer 44ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+     Errors  1 error
+   Start at  11:00:31
+   Duration  12.69s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > ignores a message that isn't one of the child's, and a second ready, and keeps the first answer
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:223:9
+    221|   if (end.signal !== null && CRASHES.has(end.signal))
+    222|     return { prepared: { ok: false, rejection: "unreadable" }, peakByt…
+    223|   throw new ImageProcessFailed();
+       |         ^
+    224| }
+    225|
+ ❯ settle src/image-process.ts:322:11
+ ❯ ChildProcess.<anonymous> src/image-process.ts:342:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of null (reading 'kind')
+ ❯ ChildProcess.<anonymous> src/image-process.ts:297:19
+    295|     child.on("message", (sent: unknown) => {
+    296|       const message = sent as ChildMessage;
+    297|       if (message.kind === "ready") {
+       |                   ^
+    298|         if (ready) return;
+    299|         ready = true;
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ emit node:internal/child_process:1004:14
+ ❯ process.processTicksAndRejections node:internal/process/task_queues:91:21
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "ignores a message that isn't one of the child's, and a second ready, and keeps the first answer". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+

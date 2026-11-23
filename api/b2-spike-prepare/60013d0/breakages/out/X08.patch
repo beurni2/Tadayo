@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -243,7 +243,7 @@
+   return new Promise((resolve, reject) => {
+     // `detached`: the child leads a process group of its own, so that killing the group ends anything it started.
+     const child = fork(limits.child ?? CHILD, [declared, String(seconds)], {
+-      env: {},
++      env: process.env,
+       execArgv: [],
+       serialization: "advanced",
+       stdio: ["pipe", "ignore", "ignore", "ipc"],

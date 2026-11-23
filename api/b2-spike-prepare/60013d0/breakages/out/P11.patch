@@ -1,0 +1,11 @@
+--- a/services/worker/src/prepare.ts
++++ b/services/worker/src/prepare.ts
+@@ -129,7 +129,7 @@
+     // Its size alone refuses it (D09), as prepareImage would: no process is started for it (PR #111's round 4, R4-8).
+     prepared = { ok: false, rejection: "too_large" };
+   } else if (original !== null) {
+-    ({ prepared, peakBytes: photoPeakBytes } = await prepareIsolated(original, upload.contentType));
++    prepared = await (await import("./image.ts")).prepareImage(original, upload.contentType);
+   }
+   let outcome: Preparation;
+   if (!prepared.ok || original === null) {

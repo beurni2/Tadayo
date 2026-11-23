@@ -1,0 +1,236 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 9 failed) 259ms
+   ❯ a claim (spec 34, T54) (3)
+     × takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own 48ms
+     × brings an event back once its lease has passed when its attempt never reported back, as the next attempt 10ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × marks a handled event done at the clock's sample, and its handler is given the event's payload 9ms
+     × tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code 9ms
+     × kills at once an event whose failure no retry would end, keeping its code 7ms
+     × writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails 16ms
+     × writes a failure's code, never its message: Postgres's SQLSTATE, a system's code, else unknown (T52) 35ms
+     × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 13ms
+     × writes nothing over an event its handler already ended, when the handler then fails 14ms
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 3 passed (12)
+   Start at  09:16:13
+   Duration  797ms (tests 56%, import 25%, transform 18%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > takes the oldest due event of the worker's topics alone, counts the attempt and leases it, in a transaction of its own
+AssertionError: expected { Object (state, attempts, ...) } to deeply equal { state: 'pending', attempts: 1, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "attempts": 1,
++   "attempts": 0,
+    "available_at": "2026-11-06T21:05:00.123456Z",
+    "last_error": null,
+    "processed_at": null,
+    "state": "pending",
+  }
+
+ ❯ src/db/worker-outbox.test.ts:145:30
+    143|     });
+    144|     // Committed: another connection sees the attempt and the lease.
+    145|     expect(await row(first)).toEqual({
+       |                              ^
+    146|       state: "pending",
+    147|       attempts: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > brings an event back once its lease has passed when its attempt never reported back, as the next attempt
+AssertionError: expected { kind: 'work', event: { …(4) } } to match object { event: { …(2) } }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "event": {
+-     "attempts": 2,
++     "attempts": 1,
+      "id": "evt_PY1wcSpwmbQmWg8cEb630Q",
+    },
+  }
+
+ ❯ src/db/worker-outbox.test.ts:206:52
+    204|     expect(await claimNext(worker, clock, [mine])).toBeNull();
+    205|     clock.set(T.add({ seconds: LEASE_SECONDS }));
+    206|     expect(await claimNext(worker, clock, [mine])).toMatchObject({ eve…
+       |                                                    ^
+    207|   });
+    208| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > marks a handled event done at the clock's sample, and its handler is given the event's payload
+AssertionError: expected { state: 'done', attempts: +0, …(3) } to match object { state: 'done', attempts: 1, …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "attempts": 1,
++   "attempts": 0,
+    "processed_at": "2026-11-06T21:00:05.123456Z",
+    "state": "done",
+  }
+
+ ❯ src/db/worker-outbox.test.ts:218:27
+    216|     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: …
+    217|     expect(seen).toEqual([{ id, topic: mine, payload: { upload_id: "up…
+    218|     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, …
+       |                           ^
+    219|     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: …
+    220|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code
+AssertionError: expected { handled: +0, err: [] } to deeply equal { handled: +0, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "err": [
+-     "worker: an event failed: test.outbox_xopsrtjddiag evt_04YGA-kpeb72V_H0jj--0A, attempt 1: storage.unavailable",
+-   ],
++   "err": [],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:229:54
+    227|     let now = T;
+    228|     for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt += 1) {
+    229|       expect(await pass(clock, { [mine]: handler })).toEqual({
+       |                                                      ^
+    230|         handled: 0,
+    231|         err: [`worker: an event failed: ${mine} ${id}, attempt ${Strin…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > kills at once an event whose failure no retry would end, keeping its code
+AssertionError: expected { handled: +0, err: [] } to deeply equal { handled: +0, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "err": [
+-     "worker: an event is dead: test.outbox_xrdijjnjqnat evt_PxA_bA97s-YVZgNz25HsNQ after 1 attempts: payload",
+-   ],
++   "err": [],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:268:52
+    266|     const clock = fakeClock(T);
+    267|     const { handler } = recording(() => Promise.reject(new FailedForGo…
+    268|     expect(await pass(clock, { [mine]: handler })).toEqual({
+       |                                                    ^
+    269|       handled: 0,
+    270|       err: [`worker: an event is dead: ${mine} ${id} after 1 attempts:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails
+AssertionError: expected [ Array(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "worker: an event is dead: test.outbox_xnzwmgndkqay evt_z4RiLNXm5KTR-fJhLm-QbA after 5 attempts: lease_lapsed",
+-   "worker: an event is dead: test.outbox_xnzwmgndkqay evt_VeWpFTGflEBPeGGHflaovg after 1 attempts: payload",
+  ]
+
+ ❯ src/db/worker-outbox.test.ts:331:17
+    329|       outboxPass(failingFrom(4), clock, { [mine]: handler }, { warn: (…
+    330|     ).rejects.toThrow("connection lost");
+    331|     expect(err).toEqual(dead);
+       |                 ^
+    332|     // The spent event's line was out before the next event's work beg…
+    333|     expect(seenLines).toEqual([1]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes a failure's code, never its message: Postgres's SQLSTATE, a system's code, else unknown (T52)
+AssertionError: expected [] to have a length of 5 but got +0
+
+- Expected
++ Received
+
+- 5
++ 0
+
+ ❯ src/db/worker-outbox.test.ts:367:24
+    365|     const result = await pass(clock, { [mine]: handler });
+    366|     expect(result.handled).toBe(0);
+    367|     expect(result.err).toHaveLength(failures.length);
+       |                        ^
+    368|     expect(result.err.join("\n")).not.toContain(secret);
+    369|     for (const [what, , code] of failures) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides
+AssertionError: expected { Object (state, attempts, ...) } to deeply equal { state: 'pending', attempts: 2, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "attempts": 2,
++   "attempts": 0,
+    "available_at": "2026-11-06T21:10:00.123456Z",
+    "last_error": null,
+    "processed_at": null,
+    "state": "pending",
+  }
+
+ ❯ src/db/worker-outbox.test.ts:403:27
+    401|     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: …
+    402|     expect(seen.map((e) => e.attempts)).toEqual([1]);
+    403|     expect(await row(id)).toEqual({
+       |                           ^
+    404|       state: "pending",
+    405|       attempts: 2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes nothing over an event its handler already ended, when the handler then fails
+AssertionError: expected { state: 'done', attempts: +0, …(3) } to match object { state: 'done', attempts: 1, …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "attempts": 1,
++   "attempts": 0,
+    "last_error": null,
+    "processed_at": "2026-11-06T21:00:00.123456Z",
+    "state": "done",
+  }
+
+ ❯ src/db/worker-outbox.test.ts:432:27
+    430|     });
+    431|     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: …
+    432|     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, …
+       |                           ^
+    433|   });
+    434| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+

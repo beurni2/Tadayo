@@ -1,0 +1,192 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 2 failed) 5716ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done 590ms
+     × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 243ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  09:17:22
+   Duration  6.55s (tests 92%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done
+AssertionError: expected Buffer[ 28, 63, 89, 239, 139, 84, …(-65) ] to deeply equal Buffer[ 230, 194, 150, 137, 87, …(14) ]
+
+- Expected
++ Received
+
+  {
+    "data": [
+-     230,
+-     194,
++     28,
++     63,
++     89,
++     239,
++     139,
++     84,
++     98,
++     7,
++     102,
++     220,
++     39,
++     21,
++     232,
++     87,
++     99,
++     133,
++     218,
++     130,
++     93,
++     160,
+      150,
+-     137,
+-     87,
+-     19,
+-     174,
++     163,
++     206,
++     134,
++     151,
++     152,
++     30,
++     113,
++     26,
+      217,
+-     225,
+-     43,
+-     123,
+-     212,
+-     35,
+-     214,
+-     17,
+-     66,
+-     120,
+-     122,
+-     48,
+-     20,
+-     36,
+-     153,
+-     176,
+      229,
+-     219,
+-     149,
+-     45,
+-     105,
+-     89,
+-     174,
+-     249,
+-     201,
++     191,
+    ],
+    "type": "Buffer",
+  }
+
+ ❯ src/db/worker-prepare.test.ts:287:51
+    285|       expect(row.rejection).toBeNull();
+    286|       // The owner's hash of the original (T21), and a version that is…
+    287|       expect(Buffer.from(row.content_hash ?? [])).toEqual(Buffer.from(…
+       |                                                   ^
+    288|       expect(Buffer.from(row.content_hash ?? [])).not.toEqual(Buffer.f…
+    289|       expect(row.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:248:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8)
+AssertionError: expected Buffer[ 172, 81, 74, 205, 16, …(-216) ] to deeply equal Buffer[ 7, 81, 85, 142, 134, 254, …(27) ]
+
+- Expected
++ Received
+
+  {
+    "data": [
+-     7,
++     172,
+      81,
+-     85,
+-     142,
+-     134,
+-     254,
+-     6,
+-     157,
+-     95,
+-     224,
+-     200,
+-     247,
+-     206,
+-     58,
+-     122,
+-     113,
+-     55,
+-     111,
+-     98,
+-     73,
+-     204,
+      74,
+-     13,
+-     27,
+-     173,
+-     44,
+-     34,
+-     9,
+-     157,
++     205,
++     16,
++     249,
++     131,
++     151,
+      233,
+-     219,
+-     123,
++     17,
++     212,
++     202,
++     108,
++     4,
++     75,
++     64,
++     225,
++     66,
++     193,
++     93,
++     99,
++     59,
++     59,
++     154,
++     238,
++     116,
++     253,
++     158,
++     226,
++     164,
++     182,
++     8,
+    ],
+    "type": "Buffer",
+  }
+
+ ❯ src/db/worker-prepare.test.ts:408:51
+    406|       const row = await uploadRow(tx, one.id);
+    407|       expect(row.state).toBe("held");
+    408|       expect(Buffer.from(row.content_hash ?? [])).toEqual(Buffer.from(…
+       |                                                   ^
+    409|       expect(row.content_version).toMatch(/^mv_/);
+    410|       expect(await renditionRows(tx, one.id)).toMatchObject([
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:389:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

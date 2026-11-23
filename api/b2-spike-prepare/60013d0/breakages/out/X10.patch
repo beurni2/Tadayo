@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -43,7 +43,7 @@
+  * so a child near this cap can take the Machine past its 512 MB (488 MiB): then the kernel kills the child, which
+  * asked to go first, and the photo is refused all the same.
+  */
+-export const PEAK_BYTES = 352 * 1024 * 1024;
++export const PEAK_BYTES = 512 * 1024 * 1024;
+ /** How often the worker reads the child's peak. */
+ const WATCH_MS = 10;
+ /**

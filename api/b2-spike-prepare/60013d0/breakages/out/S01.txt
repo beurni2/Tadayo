@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/storage.test.ts (12 tests | 1 failed) 113ms
+   ❯ reading an original (7)
+     × gives no object for Storage's not-found, in the body as Storage sends it or in the status 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  10:17:42
+   Duration  460ms (transform 39%, tests 36%, import 23%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/storage.test.ts > reading an original > gives no object for Storage's not-found, in the body as Storage sends it or in the status
+StorageUnavailable: storage: reading an original answered 404
+ ❯ Object.readOriginal src/storage.ts:125:15
+    123|       if (response.status !== 200) {
+    124|         const logical = storageStatus(response.status, await jsonOf(re…
+    125|         throw new StorageUnavailable(`reading an original answered ${S…
+       |               ^
+    126|       }
+    127|       try {
+ ❯ src/storage.test.ts:79:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (21 tests | 1 failed) 12731ms
+   ❯ a photo's own process (10)
+     × goes first to the kernel's out-of-memory killer, and starts with an empty environment 167ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  10:58:38
+   Duration  13.06s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > goes first to the kernel's out-of-memory killer, and starts with an empty environment
+AssertionError: expected 239 to be less than or equal to 1
+ ❯ src/image-process.test.ts:111:34
+    109|       expect(answer.oomScoreAdj).toBe(1000);
+    110|       // Node's own channel to the worker, and nothing else.
+    111|       expect(answer.environment).toBeLessThanOrEqual(1);
+       |                                  ^
+    112|     } finally {
+    113|       delete process.env["TADAYO_TEST_SECRET"];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

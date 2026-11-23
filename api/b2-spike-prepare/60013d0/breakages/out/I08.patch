@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -276,7 +276,7 @@
+   for (const kind of RENDITION_KINDS) {
+     // Each its own pipeline from the bytes, one after the other, so no two decodes are held at once.
+     const pipeline = sharp(bytes, { limitInputPixels: MAX_PIXELS, failOn: "warning", autoOrient: true })
+-      .resize({ ...RENDITION_BOXES[kind], fit: "inside", withoutEnlargement: true })
++      .resize({ ...RENDITION_BOXES[kind], fit: "inside" })
+       .jpeg({ quality: 80 })
+       .timeout({ seconds: limit.seconds });
+     try {

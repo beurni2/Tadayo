@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 1 failed) 83500ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (9)
+     × refuses a WebP whose RIFF size isn't its length as unreadable: one frame on 64 megapixels with a trailer had passed as lossy 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 33 passed (34)
+   Start at  09:59:56
+   Duration  83.89s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > refuses a WebP whose RIFF size isn't its length as unreadable: one frame on 64 megapixels with a trailer had passed as lossy
+AssertionError: expected { ok: false, …(1) } to deeply equal { ok: false, rejection: 'unreadable' }
+
+- Expected
++ Received
+
+  {
+    "ok": false,
+-   "rejection": "unreadable",
++   "rejection": "too_many_pixels",
+  }
+
+ ❯ src/image.test.ts:274:80
+    272|     const single = animatedWebp(8000, 8000, [{ still: corner, x: 7936,…
+    273|     expect(Buffer.concat([single, trailer]).length).toBeLessThan(256);
+    274|     expect(await prepareImage(Buffer.concat([single, trailer]), "image…
+       |                                                                                ^
+    275|       ok: false,
+    276|       rejection: "unreadable",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

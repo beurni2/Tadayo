@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -177,7 +177,6 @@
+   return (
+     ok === true &&
+     Array.isArray(renditions) &&
+-    renditions.length === RENDITION_KINDS.length &&
+     RENDITION_KINDS.every((kind) => renditions.filter((rendition) => wellFormedRendition(rendition, kind)).length === 1)
+   );
+ }

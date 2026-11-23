@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 2 failed) 79633ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (9)
+     × gives no count for a reserved marker before the EOI, which libjpeg passes over without its length at a restart 7ms
+     × refuses a JPEG that hides its scans behind a reserved marker as unsupported_type, before its decode 4299ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 32 passed (34)
+   Start at  10:18:18
+   Duration  80.01s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > gives no count for a reserved marker before the EOI, which libjpeg passes over without its length at a restart
+AssertionError: expected 1 to be undefined
+
+- Expected:
+undefined
+
++ Received:
+1
+
+ ❯ src/image.test.ts:212:88
+    210|     // Where a restart is due, libjpeg scans on past a marker of 0x02 …
+    211|     const data = [0x12, 0xff, 0x00, 0x34];
+    212|     expect(jpegScans(jpeg(sos, data, [0xff, 0x05, 0, 12], sos, [0, 0],…
+       |                                                                                        ^
+    213|     expect(jpegScans(jpeg(sos, data, [0xff, 0x02, 0, 2], [0xff, 0xd9])…
+    214|     expect(jpegScans(jpeg(sos, data, [0xff, 0xbf, 0, 2], [0xff, 0xd9])…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > refuses a JPEG that hides its scans behind a reserved marker as unsupported_type, before its decode
+AssertionError: expected { ok: false, rejection: 'unreadable' } to deeply equal { ok: false, …(1) }
+
+- Expected
++ Received
+
+  {
+    "ok": false,
+-   "rejection": "unsupported_type",
++   "rejection": "unreadable",
+  }
+
+ ❯ src/image.test.ts:229:54
+    227|     const hidden = hiddenScansJpeg(4704, 4704, 881, 32767);
+    228|     const started = performance.now();
+    229|     expect(await prepareImage(hidden, "image/jpeg")).toEqual({ ok: fal…
+       |                                                      ^
+    230|     expect(performance.now() - started).toBeLessThan(1000);
+    231|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

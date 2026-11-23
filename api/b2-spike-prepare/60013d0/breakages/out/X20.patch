@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -247,7 +247,6 @@
+       execArgv: [],
+       serialization: "advanced",
+       stdio: ["pipe", "ignore", "ignore", "ipc"],
+-      detached: true,
+     });
+     // A child that ends before it has read everything closes the pipe under the write: its end says why.
+     child.stdin?.on("error", () => undefined);

@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -120,7 +120,6 @@
+     at = bytes.indexOf(0xff, at);
+     if (at < 0 || at + 1 >= bytes.length) return scans;
+     const marker = bytes[at + 1] ?? 0;
+-    if (marker === 0xd9) return scans;
+     if (marker >= 0x02 && marker <= 0xbf) return undefined;
+     if (marker === 0xff) {
+       at += 1;

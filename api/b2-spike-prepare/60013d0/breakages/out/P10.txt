@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 2 failed) 5754ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21) 439ms
+     × makes the version at random: the same upload's same photo, prepared again from the same start, gets another (T21) 408ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  09:55:49
+   Duration  6.54s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21)
+AssertionError: expected 'mv_viXYMDRgb9cjC57bRIKMzV' not to be 'mv_viXYMDRgb9cjC57bRIKMzV' // Object.is equality
+ ❯ src/db/worker-prepare.test.ts:324:41
+    322|       expect(first.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    323|       expect(second.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    324|       expect(first.content_version).not.toBe(second.content_version);
+       |                                         ^
+    325|     });
+    326|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:306:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > makes the version at random: the same upload's same photo, prepared again from the same start, gets another (T21)
+AssertionError: expected 'mv_MpMaP0PtwcSDW6EQUEHRcu' not to be 'mv_MpMaP0PtwcSDW6EQUEHRcu' // Object.is equality
+ ❯ src/db/worker-prepare.test.ts:358:25
+    356|       expect(first).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    357|       expect(second).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+    358|       expect(first).not.toBe(second);
+       |                         ^
+    359|     });
+    360|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:331:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

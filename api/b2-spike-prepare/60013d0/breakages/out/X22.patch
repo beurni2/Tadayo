@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -220,7 +220,7 @@
+   if (end.signal === "SIGKILL") return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };
+   if (end.signal !== null && CRASHES.has(end.signal))
+     return { prepared: { ok: false, rejection: "unreadable" }, peakBytes };
+-  throw new ImageProcessFailed();
++  return { prepared: { ok: false, rejection: "unreadable" }, peakBytes };
+ }
+ 
+ /**

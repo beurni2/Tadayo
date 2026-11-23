@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 1 failed) 359ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides 32ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  09:16:29
+   Duration  894ms (tests 60%, import 21%, transform 18%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides
+AssertionError: expected { handled: +0, …(1) } to deeply equal { handled: +0, err: [] }
+
+- Expected
++ Received
+
+  {
+-   "err": [],
++   "err": [
++     "worker: an event is dead: test.outbox_bqaatqjmfskf evt_jFbtODux3hoEg_OYDXgSTQ after 1 attempts: payload",
++   ],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:418:57
+    416|       throw new FailedForGood("payload");
+    417|     });
+    418|     expect(await pass(clock, { [mine]: late.handler })).toEqual({ hand…
+       |                                                         ^
+    419|     expect(await row(other)).toMatchObject({ state: "pending", attempt…
+    420|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

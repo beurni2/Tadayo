@@ -1,0 +1,62 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 2 failed) 323ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × kills at once an event whose failure no retry would end, keeping its code 15ms
+     × writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails 14ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  09:16:22
+   Duration  840ms (tests 59%, import 23%, transform 17%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > kills at once an event whose failure no retry would end, keeping its code
+AssertionError: expected { handled: +0, …(1) } to deeply equal { handled: +0, …(1) }
+
+- Expected
++ Received
+
+  {
+    "err": [
+-     "worker: an event is dead: test.outbox_ytacgnmdperj evt_isFbhyOerKpEk__NgeuiCw after 1 attempts: payload",
++     "worker: an event failed: test.outbox_ytacgnmdperj evt_isFbhyOerKpEk__NgeuiCw, attempt 1: payload",
+    ],
+    "handled": 0,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:268:52
+    266|     const clock = fakeClock(T);
+    267|     const { handler } = recording(() => Promise.reject(new FailedForGo…
+    268|     expect(await pass(clock, { [mine]: handler })).toEqual({
+       |                                                    ^
+    269|       handled: 0,
+    270|       err: [`worker: an event is dead: ${mine} ${id} after 1 attempts:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "worker: an event is dead: test.outbox_mhwyjyjeckvm evt_Eci3BEZuB_4e80P9GccW5w after 5 attempts: lease_lapsed",
+-   "worker: an event is dead: test.outbox_mhwyjyjeckvm evt_zTp5OMqPwv2yLXtDqbVanw after 1 attempts: payload",
++   "worker: an event failed: test.outbox_mhwyjyjeckvm evt_zTp5OMqPwv2yLXtDqbVanw, attempt 1: payload",
+  ]
+
+ ❯ src/db/worker-outbox.test.ts:331:17
+    329|       outboxPass(failingFrom(4), clock, { [mine]: handler }, { warn: (…
+    330|     ).rejects.toThrow("connection lost");
+    331|     expect(err).toEqual(dead);
+       |                 ^
+    332|     // The spent event's line was out before the next event's work beg…
+    333|     expect(seenLines).toEqual([1]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

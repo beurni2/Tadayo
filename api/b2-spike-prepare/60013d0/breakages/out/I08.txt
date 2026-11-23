@@ -1,0 +1,143 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image.test.ts (34 tests | 4 failed) 79848ms
+   ❯ the file's structure, walked before any decoder reads it (FQ138) (9)
+     × refuses a JPEG of more than 100 scans as unsupported_type, before its decode, and takes one of 100 286ms
+     × refuses a WebP of more than 1000 chunks as unsupported_type, and takes one of 1000 409ms
+   ❯ the renditions (TECH-DESIGN section 1, Images) (8)
+     × never enlarges a small photo 259ms
+     × makes the pixels upright from the EXIF orientation, which it doesn't keep 307ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 30 passed (34)
+   Start at  09:26:43
+   Duration  80.24s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > refuses a JPEG of more than 100 scans as unsupported_type, before its decode, and takes one of 100
+AssertionError: expected { full: [ 2560, 2560 ], …(1) } to deeply equal { full: [ 64, 64 ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "display": [
+-     64,
+-     64,
++     1290,
++     1290,
+    ],
+    "full": [
+-     64,
+-     64,
++     2560,
++     2560,
+    ],
+  }
+
+ ❯ src/image.test.ts:239:60
+    237|       rejection: "unsupported_type",
+    238|     });
+    239|     expect(kinds(await ready(manyScansJpeg(64, 64, 100)))).toEqual({ f…
+       |                                                            ^
+    240|   });
+    241|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/image.test.ts > the file's structure, walked before any decoder reads it (FQ138) > refuses a WebP of more than 1000 chunks as unsupported_type, and takes one of 1000
+AssertionError: expected { full: [ 2560, 2560 ], …(1) } to deeply equal { full: [ 64, 64 ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "display": [
+-     64,
+-     64,
++     1290,
++     1290,
+    ],
+    "full": [
+-     64,
+-     64,
++     2560,
++     2560,
+    ],
+  }
+
+ ❯ src/image.test.ts:291:83
+    289|       rejection: "unsupported_type",
+    290|     });
+    291|     expect(kinds(await ready(await junkWebp(MAX_WEBP_CHUNKS - 2), "ima…
+       |                                                                                   ^
+    292|       full: [64, 64],
+    293|       display: [64, 64],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/image.test.ts > the renditions (TECH-DESIGN section 1, Images) > never enlarges a small photo
+AssertionError: expected { full: [ 2560, 1920 ], …(1) } to deeply equal { full: [ 800, 600 ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "display": [
+-     800,
+-     600,
++     1290,
++     968,
+    ],
+    "full": [
+-     800,
+-     600,
++     2560,
++     1920,
+    ],
+  }
+
+ ❯ src/image.test.ts:458:76
+    456|
+    457|   it("never enlarges a small photo", async () => {
+    458|     expect(kinds(await ready(await flat(800, 600, "webp"), "image/webp…
+       |                                                                            ^
+    459|       full: [800, 600],
+    460|       display: [800, 600],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/image.test.ts > the renditions (TECH-DESIGN section 1, Images) > makes the pixels upright from the EXIF orientation, which it doesn't keep
+AssertionError: expected { full: [ 1280, 2560 ], …(1) } to deeply equal { full: [ 20, 40 ], …(1) }
+
+- Expected
++ Received
+
+  {
+    "display": [
+-     20,
+-     40,
++     1280,
++     2560,
+    ],
+    "full": [
+-     20,
+-     40,
++     1280,
++     2560,
+    ],
+  }
+
+ ❯ src/image.test.ts:471:31
+    469|     expect((await sharp(turned).metadata()).orientation).toBe(6);
+    470|     const renditions = await ready(turned);
+    471|     expect(kinds(renditions)).toEqual({ full: [20, 40], display: [20, …
+       |                               ^
+    472|     for (const rendition of renditions) expect((await sharp(rendition.…
+    473|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

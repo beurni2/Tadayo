@@ -1,0 +1,55 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (21 tests | 2 failed) 12259ms
+   ❯ a photo's process that misbehaves (R4-3) (5)
+     × fails, to be tried again, when the child exits with a code of its own without answering (R4-5) 72ms
+   ❯ what a child's end comes to (6)
+     × throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)
+   Start at  11:02:40
+   Duration  12.63s (tests 98%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > fails, to be tried again, when the child exits with a code of its own without answering (R4-5)
+AssertionError: promise resolved "{ prepared: { ok: false, …(1) }, …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "peakBytes": 49373184,
++   "prepared": {
++     "ok": false,
++     "rejection": "unreadable",
++   },
+  }
+
+ ❯ src/image-process.test.ts:297:81
+    295|
+    296|   it("fails, to be tried again, when the child exits with a code of it…
+    297|     await expect(prepareIsolated(photo, "image/jpeg", { child: fake("e…
+       |                                                                                 ^
+    298|       ImageProcessFailed,
+    299|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-process.test.ts > what a child's end comes to > throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw
+AssertionError: expected function to throw an error, but it didn't
+ ❯ src/image-process.test.ts:370:38
+    368|     expect(() => outcomeOf(end({ answer: { kind: "failed" } }))).toThr…
+    369|     // Exited with a code, or ended by a signal that isn't a crash, af…
+    370|     expect(() => outcomeOf(end({}))).toThrow(ImageProcessFailed);
+       |                                      ^
+    371|     expect(() => outcomeOf(end({ signal: "SIGTERM" }))).toThrow(ImageP…
+    372|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

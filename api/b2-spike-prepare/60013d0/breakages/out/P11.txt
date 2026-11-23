@@ -1,0 +1,140 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 5 failed) 2798ms
+   ❯ upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) (5)
+     × stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done 490ms
+     × holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8) 93ms
+   ❯ upload.prepare rejects what the checks refuse (D09, spec 33) (5)
+     × rejects a PNG declared as a JPEG as unsupported_type, storing nothing and writing no hash, and finishes the event 31ms
+     × rejects more than 64 million pixels as too_many_pixels, storing nothing and writing no hash, and finishes the event 858ms
+     × rejects a JPEG cut short as unreadable, storing nothing and writing no hash, and finishes the event 38ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 12 passed (17)
+   Start at  10:17:31
+   Duration  3.63s (tests 84%, import 10%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > stores full and display at the upload's key, then records them with the owner's hash, a random version and the event done
+AssertionError: expected 'worker: prepared an upload upl_eVCCg0…' to match /^worker: prepared an upload upl_eVCCg…/
+
+- Expected:
+/^worker: prepared an upload upl_eVCCg0JBrbiX0eISW1TqWA in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), ready, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_eVCCg0JBrbiX0eISW1TqWA in 182 ms (read 0, image 168, store 0, record 9), ready, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:299:26
+    297|       // Its line holds the upload's opaque id and the times, never it…
+    298|       expect(r.lines).toHaveLength(1);
+    299|       expect(r.lines[0]).toMatch(LINE(one.id, "ready"));
+       |                          ^
+    300|       expect(r.lines[0]).not.toContain(w.ben.user);
+    301|       expect(r.lines[0]).not.toContain(one.objectKey);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:248:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21) > holds a photo the safety provider holds: its renditions are made and recorded, its state held (FQ8)
+AssertionError: expected 'worker: prepared an upload upl_wKRqkB…' to match /^worker: prepared an upload upl_wKRqk…/
+
+- Expected:
+/^worker: prepared an upload upl_wKRqkBDvLPhE1EpjVArrrw in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), held, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_wKRqkBDvLPhE1EpjVArrrw in 15 ms (read 0, image 12, store 0, record 3), held, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:414:26
+    412|         { kind: "full", width: 800, height: 600 },
+    413|       ]);
+    414|       expect(r.lines[0]).toMatch(LINE(one.id, "held"));
+       |                          ^
+    415|     });
+    416|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:389:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects a PNG declared as a JPEG as unsupported_type, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_E2v5vE…' to match /^worker: prepared an upload upl_E2v5v…/
+
+- Expected:
+/^worker: prepared an upload upl_E2v5vEgyKV_LvRMyERjmFg in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected unsupported_type, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_E2v5vEgyKV_LvRMyERjmFg in 2 ms (read 0, image 0, store 0, record 2), rejected unsupported_type, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:474:28
+    472|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    473|         expect(r.lines).toHaveLength(1);
+    474|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    475|       });
+    476|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:455:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects more than 64 million pixels as too_many_pixels, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_a-tIho…' to match /^worker: prepared an upload upl_a-tIh…/
+
+- Expected:
+/^worker: prepared an upload upl_a-tIhoq7X752E38mCT6KrA in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected too_many_pixels, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_a-tIhoq7X752E38mCT6KrA in 7 ms (read 0, image 1, store 0, record 4), rejected too_many_pixels, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:474:28
+    472|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    473|         expect(r.lines).toHaveLength(1);
+    474|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    475|       });
+    476|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:455:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects a JPEG cut short as unreadable, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_Yi9Ae0…' to match /^worker: prepared an upload upl_Yi9Ae…/
+
+- Expected:
+/^worker: prepared an upload upl_Yi9Ae0_CN-_9FaEyxn-qHg in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected unreadable, peak memory: worker 123 MiB, photo [1-9]\d* MiB$/
+
++ Received:
+"worker: prepared an upload upl_Yi9Ae0_CN-_9FaEyxn-qHg in 3 ms (read 0, image 1, store 0, record 2), rejected unreadable, peak memory: worker 123 MiB, photo 0 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:474:28
+    472|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    473|         expect(r.lines).toHaveLength(1);
+    474|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    475|       });
+    476|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:455:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

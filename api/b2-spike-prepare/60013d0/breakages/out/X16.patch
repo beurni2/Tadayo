@@ -1,0 +1,12 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -293,8 +293,7 @@
+     );
+     // A message that isn't one of the child's kinds, a second `ready` and anything after the answer are ignored.
+     child.on("message", (sent: unknown) => {
+-      const message = messageOf(sent);
+-      if (message === undefined) return;
++      const message = sent as ChildMessage;
+       if (message.kind === "ready") {
+         if (ready) return;
+         ready = true;

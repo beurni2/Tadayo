@@ -1,0 +1,68 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (21 tests | 4 failed) 22023ms
+   ❯ a photo's own process (10)
+     × is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 2797ms
+     × is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout) 3091ms
+   ❯ a photo's process that misbehaves (R4-3) (5)
+     × settles when the child ends though a process it started holds its channel, and ends that process 3384ms
+     × ends a child that answered but never exits at its deadline, and keeps its answer 3008ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 17 passed (21)
+   Start at  11:01:44
+   Duration  22.37s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels
+AssertionError: expected 282009600 to be less than 209715200
+ ❯ src/image-process.test.ts:125:30
+    123|     // Killed as it passed 100 MiB, within one read 10 ms apart: far b…
+    124|     expect(answer.peakBytes).toBeGreaterThan(100 * MiB);
+    125|     expect(answer.peakBytes).toBeLessThan(200 * MiB);
+       |                              ^
+    126|   }, 60_000);
+    127|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout)
+AssertionError: expected 2512 to be less than 1500
+ ❯ src/image-process.test.ts:146:34
+    144|     const started = Date.now();
+    145|     await expect(prepareIsolated(slow, "image/png", { deadlineSeconds:…
+    146|     expect(Date.now() - started).toBeLessThan(1500);
+       |                                  ^
+    147|   }, 60_000);
+    148|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > settles when the child ends though a process it started holds its channel, and ends that process
+Error: not found in time
+ ❯ until src/image-process.test.ts:83:9
+     81|     await new Promise((resolve) => setTimeout(resolve, 10));
+     82|   }
+     83|   throw new Error("not found in time");
+       |         ^
+     84| }
+     85|
+ ❯ src/image-process.test.ts:282:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3) > ends a child that answered but never exits at its deadline, and keeps its answer
+AssertionError: expected 3007.4943969999986 to be less than 3000
+ ❯ src/image-process.test.ts:293:41
+    291|       1, 1,
+    292|     ]);
+    293|     expect(performance.now() - started).toBeLessThan(1000 + GRACE_MS);
+       |                                         ^
+    294|   }, 20_000);
+    295|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

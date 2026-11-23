@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 1 failed) 5287ms
+   ❯ a claim (spec 34, T54) (3)
+     × never gives two claimers the same event: one held by another claim is skipped, not waited for 5035ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  09:16:05
+   Duration  5.81s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a claim (spec 34, T54) > never gives two claimers the same event: one held by another claim is skipped, not waited for
+PostgresError: canceling statement due to lock timeout
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ ../services/worker/src/outbox.ts:118:95
+    116|   return limited(sql, async (tx) => {
+    117|     const at = await clock.sample(tx);
+    118|     const rows = await tx<{ id: string; topic: string; payload: unknow…
+       |                                                                                               ^
+    119|       SELECT id, topic, payload, attempts FROM app.outbox_events
+    120|        WHERE state = 'pending' AND available_at <= ${at} AND topic = A…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

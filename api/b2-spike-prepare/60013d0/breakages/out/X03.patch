@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -198,7 +198,7 @@
+ export function outcomeOf(end: ChildEnd): ProcessAnswer {
+   if (end.killed === "time") throw new ImageTimeout();
+   const { peakBytes } = end;
+-  if (end.killed === "memory" || peakBytes > end.mostBytes) {
++  if (end.killed === "memory") {
+     return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };
+   }
+   const { answer } = end;

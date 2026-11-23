@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -164,7 +164,7 @@
+  */
+ export function webpCoding(bytes: Uint8Array): WebpCoding | undefined {
+   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+-  const end = Math.min(bytes.length, riffEnd(bytes));
++  const end = bytes.length;
+   let alpha = false;
+   for (let at = 12; at + 8 <= end;) {
+     const fourcc = Buffer.from(bytes.subarray(at, at + 4)).toString("latin1");

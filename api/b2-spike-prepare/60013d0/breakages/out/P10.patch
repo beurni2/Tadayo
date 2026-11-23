@@ -1,0 +1,11 @@
+--- a/packages/domain/src/media/prepare.ts
++++ b/packages/domain/src/media/prepare.ts
+@@ -128,7 +128,7 @@
+   // The photo's media_version: random, never derived from the bytes (T21; db/migrations/0006_contributions.sql).
+   await bound(tx)`
+     UPDATE app.uploads SET state = ${outcome.state}, content_hash = ${outcome.contentHash},
+-                           content_version = ${newId("mv")}
++                           content_version = ${"mv_" + Buffer.from(outcome.contentHash).toString("base64url").slice(0, 22)}
+      WHERE id = ${id}`;
+   return { at, recorded: true };
+ }

@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (17 tests | 1 failed) 5493ms
+   ❯ upload.prepare rejects what the checks refuse (D09, spec 33) (5)
+     × rejects more than 20 MiB, starting no process for it as too_large, storing nothing and writing no hash, and finishes the event 257ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  10:25:49
+   Duration  6.25s (tests 92%, import 5%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare rejects what the checks refuse (D09, spec 33) > rejects more than 20 MiB, starting no process for it as too_large, storing nothing and writing no hash, and finishes the event
+AssertionError: expected 'worker: prepared an upload upl_MdJOm_…' to match /^worker: prepared an upload upl_MdJOm…/
+
+- Expected:
+/^worker: prepared an upload upl_MdJOm_Gvdb9YJH-oSTFEDA in \d+ ms \(read \d+, image \d+, store \d+, record \d+\), rejected too_large, peak memory: worker 123 MiB, photo 0 MiB$/
+
++ Received:
+"worker: prepared an upload upl_MdJOm_Gvdb9YJH-oSTFEDA in 209 ms (read 0, image 205, store 0, record 4), rejected too_large, peak memory: worker 123 MiB, photo 129 MiB"
+
+ ❯ src/db/worker-prepare.test.ts:474:28
+    472|         expect(await eventRow(tx, event.id)).toMatchObject({ state: "d…
+    473|         expect(r.lines).toHaveLength(1);
+    474|         expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejectio…
+       |                            ^
+    475|       });
+    476|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:455:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
