@@ -32,7 +32,8 @@ struct InvitationActions {
 ///   frame 1's club of six draws none);
 /// - 32 under that, "Only you can see this list." in `metadata` `secondaryText`;
 /// - Done for now pinned 44 above the safe area's bottom, as a form's primary action, with an
-///   action's failure line 24 above it, said once as it shows.
+///   action's failure line 24 above it, said once as it shows, and the list hidden from 24 above
+///   the line (handoff 9's `mutationFailure.placement`: "scroll body ends24 above block").
 ///
 /// Nothing counts who has accepted (T33). While the list loads, the loading form; after it fails,
 /// frame 11's form with the list's words (`handoff8.loadStates.invitations`). Revoke link asks
@@ -95,7 +96,10 @@ struct InvitationsScreen: View {
                 .padding(.top, Spacing.xxxl)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom, spacing: Spacing.xxl) {
+            SetupFooter(
+                bottom: SetupGap.formFooterToSafeAreaBottom, spacing: Spacing.xxl,
+                top: failure == nil ? Spacing.s : Spacing.xxl
+            ) {
                 if let failure {
                     InlineError(Text(verbatim: failure.words))
                 }

@@ -154,7 +154,7 @@ The action labels already name the person, from handoff 8's words, which handoff
 ### The failure line (`InvitationListModel.actionFailure`)
 
 - **Words:** handoff 9's `links.new.failed.*` and `links.revoke.failed.*` are handoff 4's, as built. A first link made by Share link keeps handoff 8's `createInvitation.createFailure` words; handoff 9 gives none of its own for it.
-- **Place:** as built, 24 above Done for now, the scroll body ending 24 above it, the rows as they were (`mutationFailure.placement`, `.row`). It is said once, politely, as it shows (`failureStates.links.*.announcement`); it was said assertively.
+- **Place:** as built, 24 above Done for now; the scroll body ending 24 above it (fixed by the third commit: "Reading the snapshots" below); the rows as they were (`mutationFailure.placement`, `.row`). It is said once, politely, as it shows (`failureStates.links.*.announcement`); it was said assertively.
 - **Lifetime** (`mutationFailure.lifetime`): it stays through scrolling, the system's menus and a share sheet, cancelled or completed. A share of a kept link changes no link, so Share link and Share again no longer clear it. It clears:
     - when another link action starts: a first link made by Share link, Create new link, Revoke link (each as built), and Create an invitation, whose name step makes a link (new);
     - when a read of the list answers and that person's row no longer offers the action that failed, which settles it (`authoritative reconciliation resolves it`): their row is gone; or, for Revoke link, More no longer holds Revoke link; for Create new link, neither the row nor More offers it; for a first link, the person now has a link. A row that still offers the action keeps the line, since the failure still holds;
@@ -186,6 +186,15 @@ No must-fix. Fixed: the expired row's action and the frame 16 records (above); t
 - **No read again after Create new link or a first link with no answer.** A read would list the link the server may have made, which this phone doesn't hold, and the row would then offer Create new link under a new key, a second replacement; without it, Retry sends the same key (T19), which `mutationFailure.retry` asks for ("preserve operation idempotency; no duplicate link replacement"). The line is settled by the next read that comes anyway (the list shown again).
 - **VoiceOver reaches Create new link before the replacement line** at the default sizes, since the line is drawn under the row (frame 15); handoff 9 asks that it be separately reachable, and at the accessibility sizes it comes first, before the full-width action.
 - **An uncertain revoke the read again confirms** shows the line while the read is out, then clears it, and the list says the link was revoked: what happened, in order.
+
+### Reading the snapshots (`ios` run 45150202042 at `3a76bdc`)
+
+The 15 images, read beside frames 15 to 17 and measured at 2x (`design/reference/INVENTORY.md`'s five rows):
+
+- **The list showed under the failure line.** "Place" above said the scroll body ended 24 above the line as built; it ended 8 above it, where the footer's canvas starts (`SetupFooter`), so the tops of "Only you can see this list." peeked out above the line, where frame 17 leaves 24 clear. `SetupFooter` takes a `top`, 8 as before for every other footer, and the setup list gives it 24 while a failure line shows (`mutationFailure.placement`: "scroll body ends24 above block"). Its references come from the next run.
+- **The rows** keep the frames' pitch (74, and 112 for Alex's missing link), separators, actions and More. The frames draw the name, status and avatar about 4.5 higher in the row than the action and More; the app centres them, as `INVENTORY.md`'s known differences say.
+- **Frame 16's action** ends its words at 326.5, where the frame centres them in its 209 to 333 target (321.5): every row's action words end 5 before More's column (`shareRightEdge`).
+- The other 12 images (`-live-not-held`, `-expired` and the two name-length states, light, dark and at the largest text) are taken as references from that run; the footer's change doesn't touch them.
 
 ### Changed tests
 
