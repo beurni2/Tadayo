@@ -8,9 +8,13 @@
 //    open to is the neutral NOT_FOUND, before the receipt (T14; Q06).
 // 2. The receipt (T19, Q12): the same request under the same key gets its first answer back, as it was, after the
 //    cutoff, midnight or a release, but for the day's star, whom it names as members see them now (FQ75, FQ139);
-//    a star with no name to show any more (an ended interval with none kept) is MEMBERSHIP_CHANGED, as the day is
-//    to a new commit. Another request under the key is IDEMPOTENCY_CONFLICT; a key an earlier interval of the
-//    account used names nothing to this one (`reserveAsMember`, FQ112).
+//    a star with no name to show any more (an ended interval with none kept, which only an account deletion
+//    leaves) is MEMBERSHIP_CHANGED, since no answer may send the day nameless. Before the reveal that day is held
+//    and the drop with it (FQ63), as a new commit would find it; after the reveal the drop stays active in the
+//    opened day, which members no longer see (`placeable`), so the retry refuses an add that was made: account
+//    deletion (B6) decides how such a day ends, and this answer with it (FQ139). Another request under the key is
+//    IDEMPOTENCY_CONFLICT; a key an earlier interval of the account used names nothing to this one
+//    (`reserveAsMember`, FQ112).
 // 3. The locks, in TECH-DESIGN's order: the club's row, the day's and the caller's and the star's membership rows
 //    `FOR SHARE` (./reserve.ts `lockDay`), which hold off a membership that begins or ends, a suspension and a
 //    cancellation until this commits, so the audience written below is the club's as it stands; the counter
@@ -304,8 +308,7 @@ export async function createDrop(
     upload.purpose !== "drop_photo" ||
     slotId === null ||
     slotSeen === null ||
-    !ours ||
-    !ownsReservation(facts, slotSeen.interval, at) ||
+    !ownsReservation(facts, slotSeen, at) ||
     (input.reservationId !== undefined && input.reservationId !== slotId)
   ) {
     throw new Refused("NOT_FOUND");

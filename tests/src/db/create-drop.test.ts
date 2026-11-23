@@ -578,7 +578,7 @@ describe("one drop per Idempotency-Key, and its first answer on every retry (T19
     });
   });
 
-  it("answers a retry MEMBERSHIP_CHANGED once the day's star has no name left to show, keeping the drop (FQ139)", async () => {
+  it("answers a retry MEMBERSHIP_CHANGED once the day's star has no name left to show, before the reveal, keeping the drop held (FQ139)", async () => {
     await rolledBack(db, async (tx) => {
       const d = await days(tx);
       const photo = await prepared(tx, d, d.w.ben);
@@ -594,6 +594,70 @@ describe("one drop per Idempotency-Key, and its first answer on every retry (T19
       expect(await dropReceipts(tx, d.w.ben.user)).toHaveLength(1);
     });
   });
+
+  it("answers a retry MEMBERSHIP_CHANGED too when the star's account goes with no name after the reveal, the drop still active in the opened day (FQ139)", async () => {
+    await rolledBack(db, async (tx) => {
+      const d = await days(tx);
+      const photo = await prepared(tx, d, d.w.ben);
+      const key = randomUUID();
+      const first = added(await commit(tx, d, d.w.ben, photo.upload, { key }));
+      // The day opens at 07:00; at 07:30 Ana's account is deleted with no name kept (T27; migration 0003).
+      await tx`
+        UPDATE app.memberships SET state = 'account_deleted', left_at = ${new Date("2026-11-07T07:30:00Z")}
+         WHERE interval_id = ${d.w.ana.interval}`;
+      clock.set(REVEAL.add({ hours: 1 }));
+      // The day has no star to name, so no answer can send it: the retry is refused, though the drop was added. Not
+      // reachable until account deletion is built (B6), which decides how such a day ends (FQ139).
+      expect(await commit(tx, d, d.w.ben, photo.upload, { key })).toEqual(bare("MEMBERSHIP_CHANGED"));
+      expect(await tx`SELECT id, state FROM app.drops WHERE occurrence_id = ${d.w.day}`).toEqual([
+        { id: first.body.drop_id, state: "active" },
+      ]);
+      expect(await dropReceipts(tx, d.w.ben.user)).toHaveLength(1);
+    });
+  });
+
+  it(
+    "makes one drop when the same send arrives twice at once: the second waits for the first, then gets its answer",
+    { timeout: 30_000 },
+    async () => {
+      const d = await committedWorld();
+      const photo = await db.begin((tx) => prepared(tx as unknown as WorldTx, d, d.w.ben));
+      const key = randomUUID();
+      let open = (): void => undefined;
+      const gate = new Promise<void>((resolve) => (open = resolve));
+      let ready: (pid: number) => void = () => undefined;
+      const started = new Promise<number>((resolve) => (ready = resolve));
+      // The first holds its transaction open once it has committed the drop and reserved the receipt.
+      const first = outcomeOf(
+        db.begin(async (raw) => {
+          const tx = raw as unknown as WorldTx;
+          const [row] = await tx<{ pid: number }[]>`SELECT pg_catalog.pg_backend_pid() AS pid`;
+          const body = await createDrop(
+            tx,
+            clock,
+            input(d, d.w.ben, photo.upload, { key, caption: "Ferry" }),
+            dropRender,
+          );
+          ready(row?.pid ?? 0);
+          await gate;
+          return body;
+        }),
+      );
+      const pid = await started;
+      const second = commitAlone(d, d.w.ben, photo.upload, { key, caption: "Ferry" });
+      try {
+        // The second send waits on the first's receipt, not past it.
+        await waitingOn(db, pid, 1);
+      } finally {
+        open();
+      }
+      const one = added(await first);
+      expect(added(await second).text).toBe(one.text);
+      expect(await dropsIn(db as unknown as WorldTx, d.w.day)).toHaveLength(1);
+      expect(await dropReceipts(db as unknown as WorldTx, d.w.ben.user)).toHaveLength(1);
+      await expectCounted(db as unknown as WorldTx, d.w.day);
+    },
+  );
 
   it("refuses another caption, another upload or another day under the same key with IDEMPOTENCY_CONFLICT", async () => {
     await rolledBack(db, async (tx) => {
@@ -827,6 +891,33 @@ describe("a held day, and the cutoff read after the locks (T1, T3, T4; FQ63)", (
   });
 
   it(
+    "waits for the day's own row, and reads the clock after it: a commit held on the day across 07:00 is refused (ADR-013)",
+    { timeout: 30_000 },
+    async () => {
+      const d = await committedWorld();
+      clock.set(REVEAL.subtract({ minutes: 10 }));
+      const photo = await db.begin((tx) => prepared(tx as unknown as WorldTx, d, d.w.ben));
+      clock.set(REVEAL.subtract({ seconds: 1 }));
+      const hold = await holdingDay(d.w.day);
+      const waiting = commitAlone(d, d.w.ben, photo.upload);
+      try {
+        await waitingOn(db, hold.pid, 1);
+        clock.set(REVEAL);
+      } finally {
+        await hold.release();
+      }
+      expect(await waiting).toMatchObject({
+        code: "OCCURRENCE_CLOSED",
+        facts: { target: { id: d.w.day, phase: "open" } },
+      });
+      expect(await db`SELECT FROM app.drops WHERE occurrence_id = ${d.w.day}`).toHaveLength(0);
+      expect(
+        await db`SELECT FROM app.idempotency_receipts WHERE actor_user_id = ${d.w.ben.user} AND operation = 'createDrop'`,
+      ).toHaveLength(0);
+    },
+  );
+
+  it(
     "waits for the counter's row, and reads the clock after it: a commit that waited across 07:00 is refused",
     { timeout: 30_000 },
     async () => {
@@ -1024,6 +1115,28 @@ describe("a slot that ended before its photo was added (T17, T18; spec 11)", () 
  * Another connection holding `interval`'s counter row in `day` `FOR NO KEY UPDATE`, the command's own lock on it,
  * writing nothing, until released.
  */
+/** Another connection holding Ana's Saturday's own row, as a write to the day would, until released. */
+async function holdingDay(day: string): Promise<{ pid: number; release: () => Promise<void> }> {
+  let release = (): void => undefined;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let held: (pid: number) => void = () => undefined;
+  const taken = new Promise<number>((resolve) => (held = resolve));
+  const done = db.begin(async (tx) => {
+    const [row] = await tx<{ pid: number }[]>`
+      SELECT pg_catalog.pg_backend_pid() AS pid FROM app.occurrences WHERE id = ${day} FOR NO KEY UPDATE`;
+    if (row === undefined) throw new Error("holdingDay: no such day");
+    held(row.pid);
+    await released;
+  });
+  return {
+    pid: await taken,
+    release: async () => {
+      release();
+      await done;
+    },
+  };
+}
+
 async function holdingCounter(day: string, interval: string): Promise<{ pid: number; release: () => Promise<void> }> {
   let release = (): void => undefined;
   const released = new Promise<void>((resolve) => (release = resolve));

@@ -240,8 +240,8 @@ describe("the same person's next day, for a refusal to offer (T4)", () => {
 
 describe("whose a reservation is (ownsReservation; T9, T14)", () => {
   it("is the caller's when its interval is the caller's active one and the day is anything but nobody's", () => {
-    const owns = (facts: AddTargetFacts | null, interval: string, instant: Temporal.Instant) =>
-      ownsReservation(facts, interval, serverNow(instant));
+    const owns = (facts: AddTargetFacts | null, interval: string, instant: Temporal.Instant, day = DAY.id) =>
+      ownsReservation(facts, { day, interval }, serverNow(instant));
     for (const instant of [BEFORE, SAT.reveal, SAT.close]) expect(owns(BEN, "mem_ben", instant)).toBe(true);
     const held = {
       ...BEN,
@@ -252,6 +252,8 @@ describe("whose a reservation is (ownsReservation; T9, T14)", () => {
     expect(owns(BEN, "mem_cleo", BEFORE)).toBe(false);
     expect(owns({ ...BEN, viewerInterval: "mem_ben2" }, "mem_ben", BEFORE)).toBe(false);
     expect(owns(null, "mem_ben", BEFORE)).toBe(false);
+    // The caller's own slot, but of another day than the one the facts were read for.
+    expect(owns(BEN, "mem_ben", BEFORE, "occ_other")).toBe(false);
     for (const change of [
       { viewerAccount: "deleting" as const },
       { viewerInterval: null, viewerJoinedAt: null },
