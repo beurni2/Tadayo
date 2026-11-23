@@ -9,8 +9,8 @@
 //    or hostile client.
 // 3. The header, with no pixel decoded: its format the signature's (else unsupported_type), and its width times
 //    height at most 64,000,000 pixels (D09), else too_many_pixels. A header that can't be read: unreadable.
-// 4. What the decode would hold at once, from the header: at most 128 MiB for a decoder that can't stream (FQ138),
-//    else too_many_pixels.
+// 4. What the decode would hold at once, from the header and, for a WebP, its chunks: at most 128 MiB (FQ138), else
+//    too_many_pixels.
 // 5. Each rendition, decoded with the pixel limit again, `failOn: "warning"` and a timeout: pixel data that won't
 //    decode is unreadable; the timeout is the worker's limit, not the photo's fault, so it throws ImageTimeout,
 //    which the outbox tries again.
@@ -37,11 +37,10 @@ sharp.concurrency(1);
 /** D09: 64 megapixels decoded. */
 export const MAX_PIXELS = 64_000_000;
 /**
- * The most a decoder that can't stream may hold at once, in bytes (FQ138). Every decode here streams, a few rows at
- * a time, except two, which hold the whole image before they give a row: a JPEG whose data comes in more than one
- * scan (progressive, or each component in a scan of its own) keeps every coefficient until the last scan, and an
- * interlaced PNG keeps every pixel until its last pass. Within 64 megapixels those reach 488 MiB, which the 512 MB
- * Machine can't hold beside everything else. 128 MiB keeps their peak near the largest a streaming decode reaches
+ * The most a decode may hold at once beyond what a streaming one does, in bytes (FQ138). A baseline JPEG, a PNG that
+ * isn't interlaced and a lossy WebP with no alpha stream decode a few rows at a time. The others hold the whole image
+ * before they give a row (`heldBytes`): within 64 megapixels, up to 610 MiB counted, which the 512 MB Machine can't
+ * hold beside everything else. 128 MiB keeps their peak near the largest a streaming decode reaches
  * (docs/plans/api-b2-spike-prepare.md section 4.4, measured), and takes any photo the app sends (ADR-014).
  */
 export const MAX_HELD_BYTES = 128 * 1024 * 1024;
@@ -106,30 +105,71 @@ const FORMATS: Readonly<Record<UploadContentType, string>> = {
   "image/webp": "webp",
 };
 
+/** How a WebP that isn't animated codes its pixels, as libwebp reads its chunks. */
+export type WebpCoding = "lossy" | "lossy with alpha" | "lossless";
+
 /**
- * The bytes the decoder will hold whole before it gives a row, from the header alone, or 0 when it streams.
- * `isProgressive` is libvips' own reading of the header, the one its decoder acts on: a JPEG with more than one scan
- * (libjpeg's `jpeg_has_multiple_scans`, whatever its frame marker says), or an Adam7 PNG.
- * - JPEG: libjpeg keeps 64 two-byte coefficients for each 8-by-8 block of each component, its blocks padded to whole
- *   MCUs of at most 32 pixels a side. Counting every component at full size is the most a subsampled one needs.
- * - PNG: every pixel, each of its samples 1 byte, or 2 at 16 bits, which is a PNG's most.
- * - WebP: libvips gives libwebp the scale it needs, so its buffer is the rendition's size (measured, section 4.4).
+ * The first image chunk at the top level of a WebP, `VP8 ` (lossy) or `VP8L` (lossless), and whether an `ALPH` chunk
+ * came before it, as libwebp takes them: every other chunk is skipped. Undefined when there is none, as in an
+ * animation, whose frames are inside `ANMF` chunks, or a file that ends first.
  */
-export function heldBytes(header: {
-  readonly format: string;
-  readonly width: number;
-  readonly height: number;
-  readonly channels: number;
-  readonly depth: string;
-  readonly isProgressive: boolean;
-}): number {
+export function webpCoding(bytes: Uint8Array): WebpCoding | undefined {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let alpha = false;
+  for (let at = 12; at + 8 <= bytes.length;) {
+    const fourcc = Buffer.from(bytes.subarray(at, at + 4)).toString("latin1");
+    if (fourcc === "VP8 ") return alpha ? "lossy with alpha" : "lossy";
+    if (fourcc === "VP8L") return "lossless";
+    if (fourcc === "ALPH") alpha = true;
+    const size = view.getUint32(at + 4, true);
+    at += 8 + size + (size % 2);
+  }
+  return undefined;
+}
+
+/**
+ * The bytes the decode will hold whole before it gives a row, or 0 when it streams, from the header and a WebP's
+ * chunks. `isProgressive` and `pages` are libvips' own reading of the header, the one its decoder acts on:
+ * `isProgressive` is a JPEG with more than one scan (libjpeg's `jpeg_has_multiple_scans`, whatever its frame marker
+ * says) or an Adam7 PNG, and `pages` a WebP's frames.
+ * - JPEG of more than one scan: libjpeg keeps 64 two-byte coefficients for each 8-by-8 block of each component, its
+ *   blocks padded to whole MCUs of at most 32 pixels a side. Counting every component at full size is the most a
+ *   subsampled one needs.
+ * - Interlaced PNG: every pixel, each of its samples 1 byte, or 2 at 16 bits, which is a PNG's most.
+ * - WebP, lossy: libvips gives libwebp the scale it needs, so its rows are the rendition's size: 0.
+ * - WebP, lossless: libwebp keeps every pixel as 4 bytes, whatever its scale.
+ * - WebP, lossy with alpha: the alpha plane, a byte a pixel, and, when it is coded losslessly, its decoder's 4: 5.
+ * - WebP, animated (more than one page): libvips composites each frame onto a canvas of 4 bytes a pixel, beside
+ *   another, and a frame's own alpha besides; the worst frames measured 9.2 bytes a canvas pixel, counted as 10.
+ *   A WebP whose coding can't be read is counted the same: libwebp would refuse it, or it is an animation. So an
+ *   animation is counted by two readings, libvips' pages first, as its decoder acts on them, and then the chunks,
+ *   where its frames sit in `ANMF`: neither alone decides, should the other ever read a file otherwise.
+ */
+export function heldBytes(
+  header: {
+    readonly format: string;
+    readonly width: number;
+    readonly height: number;
+    readonly channels: number;
+    readonly depth: string;
+    readonly isProgressive: boolean;
+    readonly pages?: number | undefined;
+  },
+  bytes: Uint8Array,
+): number {
+  const pixels = header.width * header.height;
+  if (header.format === "webp") {
+    if ((header.pages ?? 1) > 1) return pixels * 10;
+    const coding = webpCoding(bytes);
+    return pixels * (coding === "lossy" ? 0 : coding === "lossless" ? 4 : coding === "lossy with alpha" ? 5 : 10);
+  }
   if (!header.isProgressive) return 0;
   if (header.format === "jpeg") {
     const padded = (side: number) => Math.ceil(side / 32) * 32;
     return padded(header.width) * padded(header.height) * header.channels * 2;
   }
   if (header.format === "png") {
-    return header.width * header.height * header.channels * (header.depth === "uchar" ? 1 : 2);
+    return pixels * header.channels * (header.depth === "uchar" ? 1 : 2);
   }
   return 0;
 }
@@ -168,7 +208,7 @@ export async function prepareImage(
     return { ok: false, rejection: "unreadable" };
   }
   if (width * height > MAX_PIXELS) return { ok: false, rejection: "too_many_pixels" };
-  if (heldBytes(header) > MAX_HELD_BYTES) return { ok: false, rejection: "too_many_pixels" };
+  if (heldBytes(header, bytes) > MAX_HELD_BYTES) return { ok: false, rejection: "too_many_pixels" };
 
   const renditions: Rendition[] = [];
   for (const kind of RENDITION_KINDS) {

@@ -2,6 +2,7 @@
 // and 4; D09; spec 23, 33; ADR-014; T12, T21). Every image here is made by `sharp` in the test, so no photograph
 // is committed and nothing in one names anybody.
 
+import { crc32 } from "node:zlib";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import {
@@ -12,8 +13,10 @@ import {
   MAX_PIXELS,
   prepareImage,
   signatureOf,
+  webpCoding,
   type Rendition,
 } from "./image.ts";
+import { animatedWebp, losslessAlphaWebp, pattern } from "./testing.ts";
 
 const MiB = 1024 * 1024;
 
@@ -98,11 +101,24 @@ describe("what is refused, and with which code (D09, spec 33)", () => {
     const disguised = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), svg]);
     const prepared = await prepareImage(disguised, "image/jpeg");
     expect(prepared.ok).toBe(false);
-    expect(
-      await sharp(svg)
+    // Each other format's own bytes, given to the decoder itself with no signature check: refused by it.
+    const base = sharp({ create: { width: 16, height: 16, channels: 3, background: "#808080" } });
+    const others = {
+      gif: await base.clone().gif().toBuffer(),
+      tiff: await base.clone().tiff().toBuffer(),
+      avif: await base.clone().heif({ compression: "av1" }).toBuffer(),
+      svg,
+    };
+    for (const [format, bytes] of Object.entries(others)) {
+      const said = await sharp(bytes)
         .metadata()
-        .catch((error: unknown) => (error as Error).message),
-    ).toMatch(/unsupported image format/);
+        .then(() => "decoded")
+        .catch((error: unknown) => (error as Error).message);
+      expect({ format, refused: /unsupported image format/.test(said) }).toEqual({ format, refused: true });
+    }
+    for (const kind of ["jpeg", "png", "webp"] as const) {
+      expect((await sharp(await flat(16, 16, kind)).metadata()).format).toBe(kind);
+    }
   });
 
   it("refuses more than 20 MiB as too_large, before reading anything else", async () => {
@@ -172,15 +188,53 @@ describe("a decode that can't stream (FQ138)", () => {
   it("counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest", () => {
     expect(MAX_HELD_BYTES).toBe(128 * MiB);
     const header = { width: 4000, height: 3000, channels: 3, depth: "uchar", isProgressive: true };
+    const none = new Uint8Array();
     // 64 two-byte coefficients for each 8-by-8 block of each component, padded to whole 32-pixel MCUs.
-    expect(heldBytes({ ...header, format: "jpeg" })).toBe(4000 * 3008 * 3 * 2);
-    expect(heldBytes({ ...header, format: "jpeg", width: 1, height: 1 })).toBe(32 * 32 * 3 * 2);
-    expect(heldBytes({ ...header, format: "jpeg", channels: 4 })).toBe(4000 * 3008 * 4 * 2);
-    expect(heldBytes({ ...header, format: "png" })).toBe(4000 * 3000 * 3);
-    expect(heldBytes({ ...header, format: "png", channels: 4, depth: "ushort" })).toBe(4000 * 3000 * 4 * 2);
-    expect(heldBytes({ ...header, format: "jpeg", isProgressive: false })).toBe(0);
-    expect(heldBytes({ ...header, format: "png", isProgressive: false })).toBe(0);
-    expect(heldBytes({ ...header, format: "webp" })).toBe(0);
+    expect(heldBytes({ ...header, format: "jpeg" }, none)).toBe(4000 * 3008 * 3 * 2);
+    expect(heldBytes({ ...header, format: "jpeg", width: 1, height: 1 }, none)).toBe(32 * 32 * 3 * 2);
+    expect(heldBytes({ ...header, format: "jpeg", channels: 4 }, none)).toBe(4000 * 3008 * 4 * 2);
+    expect(heldBytes({ ...header, format: "png" }, none)).toBe(4000 * 3000 * 3);
+    expect(heldBytes({ ...header, format: "png", channels: 4, depth: "ushort" }, none)).toBe(4000 * 3000 * 4 * 2);
+    expect(heldBytes({ ...header, format: "jpeg", isProgressive: false }, none)).toBe(0);
+    expect(heldBytes({ ...header, format: "png", isProgressive: false }, none)).toBe(0);
+  });
+
+  it("counts a WebP by how its chunks code it: nothing when lossy, 4 bytes a pixel lossless, 5 lossy with alpha, 10 a canvas pixel animated or unreadable", async () => {
+    const lossy = await flat(64, 48, "webp");
+    const lossless = await sharp(lossy).webp({ lossless: true }).toBuffer();
+    const alpha = await sharp({ create: { width: 64, height: 48, channels: 4, background: "#4a7a5c80" } })
+      .webp()
+      .toBuffer();
+    const losslessAlpha = await sharp(alpha).webp({ lossless: true }).toBuffer();
+    // An `ALPH` and other chunks before the image chunk are passed over, as libwebp passes them.
+    const withMetadata = await sharp(alpha)
+      .withExif({ IFD0: { Artist: "x" } })
+      .webp()
+      .toBuffer();
+    const animation = animatedWebp(64, 48, [
+      { still: lossy, x: 0, y: 0, width: 64, height: 48 },
+      { still: await flat(16, 16, "webp"), x: 48, y: 32, width: 16, height: 16 },
+    ]);
+    expect(webpCoding(lossy)).toBe("lossy");
+    expect(webpCoding(lossless)).toBe("lossless");
+    expect(webpCoding(alpha)).toBe("lossy with alpha");
+    expect(webpCoding(losslessAlpha)).toBe("lossless");
+    expect(webpCoding(withMetadata)).toBe("lossy with alpha");
+    expect(webpCoding(animation)).toBeUndefined();
+    expect(webpCoding(lossy.subarray(0, 12))).toBeUndefined();
+
+    const header = (bytes: Buffer) => sharp(bytes).metadata();
+    expect((await header(animation)).pages).toBe(2);
+    expect(heldBytes(await header(lossy), lossy)).toBe(0);
+    expect(heldBytes(await header(lossless), lossless)).toBe(64 * 48 * 4);
+    expect(heldBytes(await header(alpha), alpha)).toBe(64 * 48 * 5);
+    expect(heldBytes(await header(losslessAlpha), losslessAlpha)).toBe(64 * 48 * 4);
+    expect(heldBytes(await header(animation), animation)).toBe(64 * 48 * 10);
+    // One page whose coding can't be read counts as an animation; and more than one page, libvips' own reading,
+    // counts as an animation whatever the chunks say.
+    const unread = { ...(await header(lossy)), pages: 1 };
+    expect(heldBytes(unread, lossy.subarray(0, 12))).toBe(64 * 48 * 10);
+    expect(heldBytes({ ...(await header(lossy)), pages: 2 }, lossy)).toBe(64 * 48 * 10);
   });
 
   it("refuses a progressive JPEG whose coefficients pass 128 MiB as too_many_pixels, subsampled or not, and takes one within it", async () => {
@@ -203,7 +257,33 @@ describe("a decode that can't stream (FQ138)", () => {
     expect((await prepareImage(await interlaced(canvas(4096, 4096, 4), true), "image/png")).ok).toBe(true);
   }, 60_000);
 
-  it("takes the same sizes when their decode streams: a baseline JPEG, a PNG that isn't interlaced, a WebP", async () => {
+  it("refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it", async () => {
+    // Lossless at 4 bytes a pixel: 5793 x 5793 x 4 is 134,235,396 and 5792 x 5792 x 4 is 134,189,056.
+    const lossless = (side: number) => pattern(side, side, 4).webp({ lossless: true }).toBuffer();
+    expect(await prepareImage(await lossless(5793), "image/webp")).toEqual(refused);
+    expect((await prepareImage(await lossless(5792), "image/webp")).ok).toBe(true);
+    // Lossy with alpha at 5: 5182 x 5182 x 5 is 134,265,620 and 5181 x 5181 x 5 is 134,213,805.
+    expect(await prepareImage(await losslessAlphaWebp(5182, 5182), "image/webp")).toEqual(refused);
+    expect((await prepareImage(await losslessAlphaWebp(5181, 5181), "image/webp")).ok).toBe(true);
+    // Animated at 10 a canvas pixel: 3664 x 3664 x 10 is 134,248,960 and 3663 x 3663 x 10 is 134,175,690.
+    const corner = await pattern(64, 64).webp().toBuffer();
+    const animated = async (side: number) =>
+      animatedWebp(side, side, [
+        { still: await pattern(side, side).webp().toBuffer(), x: 0, y: 0, width: side, height: side },
+        { still: corner, x: (side - 64) & ~1, y: (side - 64) & ~1, width: 64, height: 64 },
+      ]);
+    expect(await prepareImage(await animated(3664), "image/webp")).toEqual(refused);
+    expect((await prepareImage(await animated(3663), "image/webp")).ok).toBe(true);
+    // An animation of 64 megapixels whose frames are small is refused by its canvas, its file a few hundred bytes.
+    const small = animatedWebp(8000, 8000, [
+      { still: corner, x: 0, y: 0, width: 64, height: 64 },
+      { still: corner, x: 7936, y: 7936, width: 64, height: 64 },
+    ]);
+    expect(small.length).toBeLessThan(4096);
+    expect(await prepareImage(small, "image/webp")).toEqual(refused);
+  }, 120_000);
+
+  it("takes the same sizes when their decode streams: a baseline JPEG, a PNG that isn't interlaced, a lossy WebP with no alpha", async () => {
     expect((await prepareImage(await make(canvas(4736, 4736)).jpeg().toBuffer(), "image/jpeg")).ok).toBe(true);
     expect(
       (
@@ -215,16 +295,7 @@ describe("a decode that can't stream (FQ138)", () => {
         )
       ).ok,
     ).toBe(true);
-    expect(
-      (
-        await prepareImage(
-          await make(canvas(5793, 5793, 4))
-            .webp()
-            .toBuffer(),
-          "image/webp",
-        )
-      ).ok,
-    ).toBe(true);
+    expect((await prepareImage(await make(canvas(8000, 8000)).webp().toBuffer(), "image/webp")).ok).toBe(true);
   }, 60_000);
 });
 
@@ -308,14 +379,25 @@ describe("the renditions (TECH-DESIGN section 1, Images)", () => {
   });
 
   it("strips a PNG's EXIF and text too", async () => {
-    const png = await sharp({ create: { width: 64, height: 48, channels: 3, background: "#123456" } })
+    const exif = await sharp({ create: { width: 64, height: 48, channels: 3, background: "#123456" } })
       .withExif({ IFD0: { Artist: "PngArtistName" } })
       .png()
       .toBuffer();
-    expect((await sharp(png).metadata()).exif).toBeDefined();
+    // A tEXt chunk after the header (8 bytes of signature, then IHDR's 25), as a PNG carries a comment.
+    const data = Buffer.from("Comment\0PngCommentText", "latin1");
+    const typed = Buffer.concat([Buffer.from("tEXt", "latin1"), data]);
+    const text = Buffer.alloc(12 + data.length);
+    text.writeUInt32BE(data.length, 0);
+    typed.copy(text, 4);
+    text.writeUInt32BE(crc32(typed), 8 + data.length);
+    const png = Buffer.concat([exif.subarray(0, 33), text, exif.subarray(33)]);
+    const header = await sharp(png).metadata();
+    expect(header.exif).toBeDefined();
+    expect(header.comments).toEqual([{ keyword: "Comment", text: "PngCommentText" }]);
     for (const rendition of await ready(png, "image/png")) {
       expect((await sharp(rendition.bytes).metadata()).exif).toBeUndefined();
       expect(rendition.bytes.includes("PngArtistName")).toBe(false);
+      expect(rendition.bytes.includes("PngCommentText")).toBe(false);
     }
   });
 

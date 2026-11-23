@@ -301,6 +301,29 @@ describe("upload.prepare makes a drop's photo's renditions and records them (spe
     });
   });
 
+  it("gives one owner's same photo the same hash and each upload its own random version, never one from the bytes (T21)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const photo = await testImage(1200, 900);
+      const one = await handed(tx, w, w.ben);
+      const two = await handed(tx, w, w.ben);
+      r.storage.originals.set(one.objectKey, photo);
+      r.storage.originals.set(two.objectKey, photo);
+
+      expect(await pass(tx, r.deps(tx))).toEqual({ handled: 2, err: [] });
+
+      const first = await uploadRow(tx, one.id);
+      const second = await uploadRow(tx, two.id);
+      expect([first.state, second.state]).toEqual(["ready", "ready"]);
+      expect(Buffer.from(first.content_hash ?? [])).toEqual(Buffer.from(second.content_hash ?? []));
+      expect(first.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+      expect(second.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+      expect(first.content_version).not.toBe(second.content_version);
+    });
+  });
+
   it("does it once: a repeat of the event, and a later pass, find nothing to prepare and call Storage for nothing (T54)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
