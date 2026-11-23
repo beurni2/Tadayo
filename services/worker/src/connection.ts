@@ -9,6 +9,8 @@ import { INSTANT_TYPE, transportOptions } from "@tadayo/domain";
 import postgres from "postgres";
 
 export type WorkerSql = postgres.Sql<{ instant: Temporal.Instant }>;
+/** A transaction on the worker's connection. */
+export type WorkerTx = postgres.TransactionSql<{ instant: Temporal.Instant }>;
 
 export function connect(url: string): WorkerSql {
   return postgres(url, { types: { instant: INSTANT_TYPE }, onnotice: () => undefined, ...transportOptions(url) });
