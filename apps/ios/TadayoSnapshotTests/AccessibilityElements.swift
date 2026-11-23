@@ -120,8 +120,11 @@ enum AccessibilityElements {
             .first
         let window = scene.map { UIWindow(windowScene: $0) } ?? UIWindow()
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        // The app in the foreground, as the snapshots draw it (`ScreenSnapshot`): a hosting
+        // controller outside the app's own scene isn't told the app is active.
         let controller = UIHostingController(
-            rootView: view.environment(\.locale, Locale(identifier: "en_US")))
+            rootView: view.environment(\.locale, Locale(identifier: "en_US"))
+                .environment(\.scenePhase, .active))
         // The snapshots' scale (`ScreenSnapshot.Variant.traits`), not the screen's 3x. In `ios`
         // run 42990527058 `RootWait` was read here before any snapshot drew its indicator, and
         // the light snapshots of the tabs' loading states, which draw the same indicator, came

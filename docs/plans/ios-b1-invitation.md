@@ -185,7 +185,7 @@ A privacy review and a general review, each by a fresh subagent that hadn't seen
     - a check still on its way, which is closed at once, so its answer opens no club and keeps no link (handoff 9's `linkEntry.cancellation`).
 
   Two Linux tests cover it, `aPasteStepLeftWhileItsLinkIsCheckedLetsWhatItFindsGoAndHoldsNothing` and `aPasteStepLeftWhileItsLinkIsCheckedOpensNoClub`. Each fails without the fix.
-- **The paste field's text isn't drawn while the app isn't active** (`LinkEntryScreen`, `scenePhase`), so the app switcher's snapshot never shows a link. The snapshot is `G02-link-entry-signed-in-inactive`.
+- **The paste field's text isn't drawn while the app isn't active** (`LinkEntryScreen`, `scenePhase`), so the app switcher's snapshot never shows a link. The snapshot is `G02-link-entry-signed-in-inactive`. The snapshot tests and the hosted readings host each screen outside the app's own scene, where `scenePhase` isn't `.active`, so they set it `.active` at their root, as the app in the foreground has it (`docs/LIMITATIONS.md`, 2026-11-23): at `57d59da` the field was hidden in every state there, while `InvitationUITests` typed into it in the app.
 - **Back while Accept is on its way.**
     - The invitation is closed and opens nothing, as before.
     - If the server joined all the same, the model tells the root (`InvitationModel`'s `joinedWhileClosed`), which reads the club list again, only while the tabs show the session the model was made in. Home then shows the club rather than Start your club. Linux tests: `RootModelInvitationTests.anAcceptLeftWithBackThatTheServerJoinedReadsTheListAgain` and `InvitationModelTests.aClosedModelsAcceptJoinedWithNoClubIsToldAndChecksNothing`.

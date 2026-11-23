@@ -7,7 +7,10 @@ import XCTest
 
 /// A screen as the renders draw it: 393 by 852 points, at 2x like the renders, in sRGB, in light,
 /// in dark, and at the largest accessibility text size (docs/TECH-DESIGN.md section 2). The
-/// keyboard and the status bar aren't drawn (T45): a field shows its focus itself.
+/// keyboard and the status bar aren't drawn (T45): a field shows its focus itself. It's the app
+/// in the foreground, `scenePhase` `.active`, as a person sees it: a hosting controller outside
+/// the app's own scene isn't told the app is active (`docs/LIMITATIONS.md`, 2026-11-23), and a
+/// state of the app gone to the background says so itself (`G02-link-entry-signed-in-inactive`).
 ///
 /// It's drawn in the host app's key window, as the screen shows it (`drawHierarchy`), since
 /// iOS 26's bars draw their title and buttons through effects a layer render leaves out: their
@@ -86,6 +89,7 @@ enum ScreenSnapshot {
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
+                .environment(\.scenePhase, .active)
             let (drawn, problem) = settled(
                 { FramedHost(rootView: shown) }, variant: variant, width: width, name: name)
             if let problem { XCTFail("\(name): \(problem)", file: file, line: line) }
