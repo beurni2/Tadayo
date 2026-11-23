@@ -38,6 +38,7 @@ import {
 } from "./clubs/roster.ts";
 import { leaveClubHandler } from "./clubs/leave.ts";
 import type { Deps, Handler } from "./deps.ts";
+import { createDropHandler } from "./drops/drops.ts";
 import { createReservationHandler, releaseReservationHandler } from "./drops/reservations.ts";
 import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./media/uploads.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
@@ -82,7 +83,9 @@ export const BODY_LIMIT = 128 * 1024;
  * under 250 bytes, so 1 KiB (`clubs/leave.test.ts`). A reservation's is one media class, under 200 bytes
  * written the same way, so 1 KiB (`drops/reservations.test.ts`). An upload's intent is a purpose, an id of 64
  * characters, a type and a size, under 850 bytes with every key and character written as an escape, so 2 KiB
- * (`media/uploads.test.ts`).
+ * (`media/uploads.test.ts`). A drop's commit is two ids of 64 characters, the longest kind and a caption of 140
+ * grapheme clusters, which `Caption` lets hold 2,240 UTF-16 units, under 14,600 bytes written the same way, so
+ * 29 KiB (`drops/drops.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
@@ -97,6 +100,7 @@ const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   leaveClub: 1024,
   createReservation: 1024,
   createUpload: 2 * 1024,
+  createDrop: 29 * 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
 };
@@ -176,6 +180,7 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     confirmScheduleDays: confirmScheduleDaysHandler(deps),
     createReservation: createReservationHandler(deps),
     releaseReservation: releaseReservationHandler(deps),
+    createDrop: createDropHandler(deps),
     createUpload: createUploadHandler(deps),
     getUpload: getUploadHandler(deps),
     completeUpload: completeUploadHandler(deps),

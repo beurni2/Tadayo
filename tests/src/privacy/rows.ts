@@ -63,6 +63,26 @@
 //   (services/api/src/media/uploads.test.ts) and by upload.test.ts's judge tests: MEMBERSHIP_CHANGED, a consumed
 //   slot, the cutoff under the lock and the races with a release (T3, T18), Storage out of reach, and the other
 //   three purposes, which answer the neutral NOT_FOUND until their stages;
+// - for the commit (step (w), done for a photo: createDrop; docs/plans/api-b2-spike-commit.md): in every cell,
+//   createDrop with no body (the contract refuses it) and its guessed and malformed days with a photo nobody
+//   uploaded. Then, in every phase, a table judged by drop.ts from the world's rows before each request and held to
+//   its answer in the rows after it: each drop the viewer added in an earlier phase, again under its key (the first
+//   answer, byte for byte but for the day's star, named as the world names them then, the day revealed or closed:
+//   T19, FQ139); Ben's upload still pending under the slot he gave
+//   back, the world's drop's photo, the viewer's two avatars, another club's upload, an upload nobody has and a
+//   link; each upload the viewer made in an earlier phase and the one left pending in this one; and, in the phase
+//   the worker made the viewer's upload ready, that upload under its slot with a caption and the slot's id, added
+//   (its audience every active member, T8; the slot consumed, T20), its retry the same bytes, IDEMPOTENCY_CONFLICT
+//   to another caption under its key, DUPLICATE_DROP to the same upload under a new key (T21), and another
+//   member's commit of it finding nothing (T9, T14). From the reveal on, every body is OCCURRENCE_CLOSED to whoever
+//   may still add to the day (T3, T4). Home's own rows are read again after the table, so the open day's page and
+//   the recent days are judged with the drop added in them, the star's own section included. One test names the
+//   roles that added, replayed and were refused drops, with the counts worked out by hand (matrix.test.ts, "the
+//   commit's table ran"). What passes through no cell, and is held on Postgres (tests/src/db/create-drop.test.ts),
+//   by the route tests (services/api/src/drops/drops.test.ts) and by drop.test.ts's judge tests: MEMBERSHIP_CHANGED,
+//   a slot that ended before the commit (a free place taken, or QUOTA_FULL and PHOTO_LIMIT), the cutoff under the
+//   lock and the races for the last place, a join that waits behind the commit, a held or rejected upload, and a
+//   link's commit, which answers the neutral NOT_FOUND until `resolveSource` is built;
 // - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
@@ -79,9 +99,10 @@
 //   (the world's Ben's photo is Ben's highlight), and the recent days with D08's covers (home.ts). Still to
 //   come: reactions, favourites and reply previews in the page (B6), which home.ts expects refused, the
 //   server's empty 500, where a drop of the page has a reaction or a comment, or the viewer's own favourite, as
-//   the read does; the page past 36 drops and its
-//   cursor (B5's getOccurrence); and a cell where the star has drops of their own on the open day (the
-//   world's two drops are friends'; tests/src/db/home.test.ts holds the star's section on Postgres);
+//   the read does; and the page past 36 drops and its cursor (B5's getOccurrence). The world's two drops are
+//   friends', and since the commit (step (w), below) the star role adds a photo of their own to the day in each
+//   state whose day takes slots, so the star's section passes through those cells from the reveal on
+//   (tests/src/db/home.test.ts holds it on Postgres too);
 // - for the reservations' two routes (B2's reservations slice, done): in every cell, createReservation with
 //   no body (the contract refuses it) and its guessed and malformed days with a photo, and releaseReservation
 //   of the slot Ben held in the world and gave back (bindings.ts), which only Ben gets back, still released.
@@ -99,9 +120,10 @@
 //   who got Cleo's slot back. No matrix role joins after the day closes: Q06's not-found for a day that closed
 //   before the caller's interval began is held on Postgres and by the judge's tests. What passes
 //   through no cell, and is held on Postgres (tests/src/db/reservations.test.ts) and by reservation.test.ts's
-//   judge tests: MEMBERSHIP_CHANGED (no cell's star leaves before the reveal), a consumed slot (no drop is
-//   committed through the app before B3), two phones racing for the last slot (Q10) and the cutoff under the
-//   lock (T3);
+//   judge tests: MEMBERSHIP_CHANGED (no cell's star leaves before the reveal), two phones racing for the last
+//   slot (Q10) and the cutoff under the lock (T3). Since the commit (step (w), below), the slot held first in a
+//   phase holds the upload the commit's table adds, so it is given back after the reveal consumed, naming the
+//   drop (T20), where it used to come back expired; Cleo's slot still comes back expired;
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header);
 // - for the schedule's routes built by B2's schedule slice (getSchedule, chooseScheduleDays and
@@ -199,6 +221,7 @@
 
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";
+import { DROP_JUDGED } from "./drop.ts";
 import { HOME_JUDGED } from "./home.ts";
 import { INVITATION_JUDGED } from "./invitation.ts";
 import { LEAVE_JUDGED } from "./leave.ts";
@@ -212,8 +235,8 @@ import { UPLOAD_JUDGED } from "./upload.ts";
  * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice),
  * the roster (B2's generation slice), the club's two routes (B1's first slice), the roster's four (B1's
  * second slice) and its two decisions and the invitation's three (B1's third slice), Home (B2's Home slice),
- * the leave (B1's fourth slice), the reservations' two (B2's reservations slice) and the uploads' three (spike
- * S1's server part).
+ * the leave (B1's fourth slice), the reservations' two (B2's reservations slice), the uploads' three (spike
+ * S1's server part) and the commit (step (w), for a photo).
  */
 export const JUDGED: ReadonlySet<string> = new Set([
   ...ACCOUNT_JUDGED,
@@ -226,6 +249,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...LEAVE_JUDGED,
   ...RESERVATION_JUDGED,
   ...UPLOAD_JUDGED,
+  ...DROP_JUDGED,
 ]);
 
 const GATE =
@@ -430,6 +454,25 @@ export const CREATE_UPLOAD = Object.freeze({
     `refusal leaving nothing (${GATE})`,
 });
 
+/** createDrop for a photo (step (w)): drop.ts's commitOutcome, commitExpected and committedProblems. */
+export const CREATE_DROP = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; then as drop.ts's commitOutcome says from the world's rows: the " +
+    "neutral NOT_FOUND to anyone without an active interval in the day's club, in a suspended club or on a day that " +
+    "isn't scheduled; the first answer, byte for byte but for the day's star, named as members see them then, to " +
+    "the same request under the same key, after the cutoff too, or MEMBERSHIP_CHANGED once the star has no name " +
+    "left to show (FQ139), and IDEMPOTENCY_CONFLICT to another body under it; MEMBERSHIP_CHANGED with no fact on a day whose star " +
+    "left or asked to delete before its reveal; OCCURRENCE_CLOSED with the day at that instant and the star's next " +
+    "day from the reveal on, whatever the body names; the neutral NOT_FOUND to a link (no source can be named yet) " +
+    "and unless the upload is the caller's own live photo under a slot of theirs in this day, which `reservation_id` " +
+    "names when sent; MEDIA_NOT_READY until it is ready; DUPLICATE_DROP with the caller's earliest active or held " +
+    "drop of the same photo in the day; the neutral NOT_FOUND to an upload another drop used; QUOTA_FULL, then " +
+    "PHOTO_LIMIT, with the day, the caller's allowance and the next day, when the slot has ended and no place is " +
+    "free; or 201 with the DropReceipt: the new drop, the day, a photo added at version 1, the caller's allowance " +
+    "with it counted and their highlight in the day, the drop active with its caption, upload and hash and every " +
+    `active member in its audience, the slot consumed by it when live, a refusal leaving nothing (${GATE})`,
+});
+
 /** getUpload (spike S1's server part): upload.ts's readExpected. */
 export const GET_UPLOAD = Object.freeze({
   answer:
@@ -455,7 +498,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   confirmScheduleDays: SCHEDULE_COMMAND,
   createClub: CREATE_CLUB,
   createComment: NONE,
-  createDrop: NONE,
+  createDrop: CREATE_DROP,
   createInvitation: CREATE_INVITATION,
   createReport: NONE,
   createReservation: RESERVATION,
