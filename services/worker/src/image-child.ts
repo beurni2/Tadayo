@@ -1,11 +1,14 @@
 // The process one photo is prepared in (./image-process.ts starts it, with no environment and no output). It asks to
 // go first to the kernel's out-of-memory killer, says it is ready, reads the photo from its standard input, the
 // declared type and the decode's limit being its arguments, answers with prepareImage's answer (./image.ts) and its
-// own peak resident memory, and exits. It ends with the worker: when the channel to the worker closes, it kills itself.
+// own peak resident memory, and exits. Its messages go to fd 3, the worker's pipe (./image-frames.ts). It ends with
+// the worker: the worker never writes to that pipe, so when reading it ends, the worker has gone, and it kills itself.
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { Socket } from "node:net";
 import type { UploadContentType } from "@tadayo/domain";
-import { ImageTimeout, peakOf, type ChildMessage } from "./image-process.ts";
+import { frameOf, type ChildMessage } from "./image-frames.ts";
+import { ImageTimeout, peakOf } from "./image-process.ts";
 import { prepareImage } from "./image.ts";
 
 function oomScoreAdj(): number | undefined {
@@ -19,21 +22,24 @@ function oomScoreAdj(): number | undefined {
 
 const adjusted = oomScoreAdj();
 
+// When the worker's end of the pipe closes, as it does when the worker is killed, nobody watches this process any
+// more, so it ends at once. Not with process.exit, which waits for a decode in progress to finish: a child whose
+// worker was killed mid-decode lived on 2.3 s in the session, and could for as long as its two decodes' limits.
+const worker = new Socket({ fd: 3, readable: true, writable: true });
+const gone = () => {
+  process.kill(process.pid, "SIGKILL");
+};
+worker.on("end", gone);
+worker.on("error", gone);
+worker.resume();
+
 function send(message: ChildMessage): Promise<void> {
   return new Promise((resolve) => {
-    if (process.send === undefined) process.exit(1);
-    process.send(message, undefined, undefined, () => {
+    worker.write(frameOf(message), () => {
       resolve();
     });
   });
 }
-
-// When the channel to the worker closes, as it does when the worker is killed, nobody watches this process any more,
-// so it ends at once. Not with process.exit, which waits for a decode in progress to finish: a child whose worker
-// was killed mid-decode lived on 2.3 s in the session, and could for as long as its two decodes' limits.
-process.on("disconnect", () => {
-  process.kill(process.pid, "SIGKILL");
-});
 
 const [declared, seconds] = process.argv.slice(2) as [UploadContentType, string];
 

@@ -16,24 +16,30 @@
 //   A child that ends before it is ready for the photo, that ends of its own accord or by another signal without
 //   answering, whose code throws or whose answer isn't one the worker can record is a failure, tried again by the
 //   outbox: it says nothing about the photo.
-// - The worker reads only the child's own kinds of message, kills the child's process group (it is forked
-//   `detached`), settles a child's end GRACE_MS after it ended even if something else holds its channel open, and
-//   then closes its own ends of the child's pipes (PR #111's round 4, R4-3): each a child whose decoder a stranger's
-//   bytes took over.
+// - The child's messages come on a pipe of the worker's own, its fd 3, not Node's channel (./image-frames.ts;
+//   docs/plans/api-b2-worker-hardening.md section 1): `ready`, then one answer, each length checked against a cap
+//   before the worker keeps a byte of it. Anything else is a broken answer: the worker reads no more, kills the child
+//   and fails the photo, tried again by the outbox. Once the answer is in, the worker reads no more and kills the
+//   child's process group (it is started `detached`) all the same: it may never exit of itself.
+// - The worker settles a child's end GRACE_MS after it ended even if something else holds one of its pipes open, and
+//   then closes its own ends of both (PR #111's round 4, R4-3; C5-2), so a process the child started that holds one
+//   mid-message is read no more.
 // - The child gets no environment and no output, so nothing it writes reaches the worker's log (T52). It is given the
 //   declared type and the decode's limit as its arguments, and the photo's bytes on its standard input, which the
-//   worker writes without a copy; its answer comes back over Node's channel.
-// - What code that took over a decoder can still do (R4-2, and the fifth commit's check; the fix is its own PR:
-//   docs/LIMITATIONS.md, 2026-11-23): it runs as the worker's user, so it can read the worker's environment from /proc;
-//   on the channel, a frame that isn't Node's serialization ends the worker, and one that declares a huge length makes
-//   the worker buffer it, up to 4 GiB, unwatched; a process it starts in a session of its own is outside the group the
-//   worker kills, and if it holds the channel mid-frame, Node keeps reading it after the child's end has settled.
+//   worker writes without a copy.
+// - What code that took over a decoder can still do (R4-2, and the fifth commit's check; the fix is the rest of
+//   docs/plans/api-b2-worker-hardening.md, section 2: docs/LIMITATIONS.md, 2026-11-23): it runs as the worker's user,
+//   so it can read the worker's environment from /proc, open the worker's standard output, signal the worker, and
+//   start a process in a session of its own, outside the group the worker kills, which outlives the photo.
 
-import { fork } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
+import type { Readable } from "node:stream";
+import { fileURLToPath } from "node:url";
 import type { UploadContentType } from "@tadayo/domain";
-import { UPLOAD_REJECTIONS, type UploadRejection } from "@tadayo/domain/limits";
-import type { Prepared, Rendition } from "./image.ts";
+import { UPLOAD_REJECTIONS } from "@tadayo/domain/limits";
+import { MessageReader, type ChildMessage, type SentPrepared } from "./image-frames.ts";
+import type { Prepared } from "./image.ts";
 
 /** The longest one rendition's decode may take, in seconds (sharp's own timeout, in the child). */
 export const DECODE_SECONDS = 60;
@@ -51,8 +57,8 @@ export const PEAK_BYTES = 352 * 1024 * 1024;
 /** How often the worker reads the child's peak. */
 const WATCH_MS = 10;
 /**
- * How long the worker waits, once the child has ended or been killed, for its channel to close. Its last message is
- * written before it exits, so the channel closes within milliseconds unless another process holds it open.
+ * How long the worker waits, once the child has ended or been killed, for its pipes to close. Its last message is
+ * written before it exits, so they close within milliseconds unless another process holds one open.
  */
 export const GRACE_MS = 2000;
 
@@ -101,29 +107,6 @@ export function peakOf(pid: number | "self"): number | undefined {
   return found === null ? undefined : Number(found[1]) * 1024;
 }
 
-/** prepareImage's answer as it comes over the channel, a rendition's bytes a Uint8Array. */
-export type SentPrepared =
-  | { readonly ok: false; readonly rejection: UploadRejection }
-  | {
-      readonly ok: true;
-      readonly renditions: readonly (Omit<Rendition, "bytes"> & { readonly bytes: Uint8Array })[];
-    };
-
-/** What the child sends the worker. */
-export type ChildMessage =
-  | { readonly kind: "ready" }
-  | {
-      readonly kind: "prepared";
-      readonly prepared: SentPrepared;
-      readonly peakBytes: number;
-      /** Its `oom_score_adj` as it read it back, or undefined if it couldn't. */
-      readonly oomScoreAdj: number | undefined;
-      /** How many variables its environment has. */
-      readonly environment: number;
-    }
-  | { readonly kind: "timeout" }
-  | { readonly kind: "failed" };
-
 /** prepareImage's answer from the child, and the child's peak resident memory. */
 export interface ProcessAnswer {
   readonly prepared: Prepared;
@@ -137,8 +120,8 @@ export interface ProcessAnswer {
 export interface ChildEnd {
   /** It said it was ready for the photo, and was given it. */
   readonly ready: boolean;
-  /** Why the worker killed it, if it did. */
-  readonly killed?: "memory" | "time";
+  /** Why the worker killed it before its answer, if it did: its memory, its deadline, or a broken answer. */
+  readonly killed?: "memory" | "time" | "broken";
   /** Its last message after `ready`, if any. */
   readonly answer?: ChildMessage;
   readonly signal: NodeJS.Signals | null;
@@ -186,15 +169,6 @@ function wellFormed(prepared: unknown): prepared is SentPrepared {
   );
 }
 
-/** A message from the child, if it is one of the kinds it sends; anything else is ignored. */
-function messageOf(message: unknown): ChildMessage | undefined {
-  if (typeof message !== "object" || message === null) return undefined;
-  const { kind } = message as Record<string, unknown>;
-  return kind === "ready" || kind === "prepared" || kind === "timeout" || kind === "failed"
-    ? (message as ChildMessage)
-    : undefined;
-}
-
 /** The signals a process crashes by: a decoder that met what it couldn't read. */
 const CRASHES: ReadonlySet<NodeJS.Signals> = new Set(["SIGSEGV", "SIGBUS", "SIGABRT", "SIGILL", "SIGFPE"]);
 
@@ -205,6 +179,7 @@ export function outcomeOf(end: ChildEnd): ProcessAnswer {
   if (end.killed === "memory" || peakBytes > end.mostBytes) {
     return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };
   }
+  if (end.killed === "broken") throw new ImageProcessFailed();
   const { answer } = end;
   if (answer?.kind === "prepared") {
     if (!wellFormed(answer.prepared)) throw new ImageProcessFailed();
@@ -246,18 +221,19 @@ export function prepareIsolated(
   const mostBytes = limits.peakBytes ?? PEAK_BYTES;
   return new Promise((resolve, reject) => {
     // `detached`: the child leads a process group of its own, so that killing the group ends what it started in that
-    // group (a process it starts in a session of its own escapes it: the header).
-    const child = fork(limits.child ?? CHILD, [declared, String(seconds)], {
+    // group (a process it starts in a session of its own escapes it: the header). Its fd 3 is the worker's pipe for
+    // its messages (./image-frames.ts), and its environment is empty: no Node channel, no variable at all.
+    const child = spawn(process.execPath, [fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
       env: {},
-      execArgv: [],
-      serialization: "advanced",
-      stdio: ["pipe", "ignore", "ignore", "ipc"],
+      stdio: ["pipe", "ignore", "ignore", "pipe"],
       detached: true,
     });
+    const answers = child.stdio[3] as Readable | null;
     // A child that ends before it has read everything closes the pipe under the write: its end says why.
     child.stdin?.on("error", () => undefined);
+    answers?.on("error", () => undefined);
     let ready = false;
-    let killed: "memory" | "time" | undefined;
+    let killed: "memory" | "time" | "broken" | undefined;
     let answer: ChildMessage | undefined;
     let seen = 0;
     const killGroup = () => {
@@ -269,16 +245,20 @@ export function prepareIsolated(
       }
     };
     let grace: NodeJS.Timeout | undefined;
-    // Once the child has ended or been killed, its end is settled when its channel closes, or after GRACE_MS if
-    // something else holds the channel open: a process the child started, which the group's kill ends.
+    // Once the child has ended or been killed, its end is settled when its pipes close, or after GRACE_MS if
+    // something else holds one open: a process the child started, which the group's kill ends unless it left the
+    // group.
     const allowGrace = () => {
       grace ??= setTimeout(() => {
         settle(child.signalCode, false);
       }, GRACE_MS);
     };
-    // A child that has answered keeps its answer, but is ended all the same: it may never exit of itself.
-    const kill = (why: "memory" | "time") => {
-      if (killed === undefined && answer === undefined) killed = why;
+    // The worker reads nothing more from the child once its answer is in, or once what it sent broke the order or a
+    // cap, and ends it: a child that answered keeps its answer, and one that may never exit of itself is ended all the
+    // same.
+    const end = (why?: "memory" | "time" | "broken") => {
+      if (why !== undefined && killed === undefined && answer === undefined) killed = why;
+      if (why === "broken" || answer !== undefined) answers?.destroy();
       killGroup();
       allowGrace();
     };
@@ -287,25 +267,33 @@ export function prepareIsolated(
       const peak = peakOf(child.pid);
       if (peak === undefined) return;
       seen = Math.max(seen, peak);
-      if (peak > mostBytes) kill("memory");
+      if (peak > mostBytes) end("memory");
     };
     const watch = setInterval(look, WATCH_MS);
     const deadline = setTimeout(
       () => {
-        kill("time");
+        end("time");
       },
       (limits.deadlineSeconds ?? DEADLINE_SECONDS) * 1000,
     );
-    // A message that isn't one of the child's kinds, a second `ready` and anything after the answer are ignored.
-    child.on("message", (sent: unknown) => {
-      const message = messageOf(sent);
-      if (message === undefined) return;
-      if (message.kind === "ready") {
-        if (ready) return;
-        ready = true;
-        child.stdin?.end(bytes);
-      } else if (ready && answer === undefined) {
-        answer = message;
+    // `ready`, then the answer: the reader refuses anything else, and reads nothing after the answer.
+    const reader = new MessageReader();
+    answers?.on("data", (chunk: Buffer) => {
+      let messages: ChildMessage[];
+      try {
+        messages = reader.push(chunk);
+      } catch {
+        end("broken");
+        return;
+      }
+      for (const message of messages) {
+        if (message.kind === "ready") {
+          ready = true;
+          child.stdin?.end(bytes);
+        } else {
+          answer = message;
+          end();
+        }
       }
     });
     let settled = false;
@@ -317,7 +305,7 @@ export function prepareIsolated(
       clearTimeout(grace);
       killGroup();
       child.stdin?.destroy();
-      if (child.connected) child.disconnect();
+      answers?.destroy();
       if (failed) {
         reject(new ImageProcessFailed());
         return;
@@ -343,7 +331,7 @@ export function prepareIsolated(
       settle(null, true);
     });
     child.on("exit", allowGrace);
-    // `close` comes once the process has ended and its channel has closed, so after its last message.
+    // `close` comes once the process has ended and its pipes have closed, so after its last message.
     child.on("close", (_code, signal) => {
       settle(signal, false);
     });
