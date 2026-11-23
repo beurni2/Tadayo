@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (15 tests | 1 failed) 1975ms
+   ❯ upload.prepare when Storage is away, or another run gets there first (T54) (4)
+     × reads the record's clock after the upload's lock, so what it writes is dated when it could write it (T1) 82ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  00:25:28
+   Duration  2.71s (tests 83%, import 11%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare when Storage is away, or another run gets there first (T54) > reads the record's clock after the upload's lock, so what it writes is dated when it could write it (T1)
+AssertionError: expected [ [ 'display', …(1) ], …(1) ] to deeply equal [ [ 'display', …(1) ], …(1) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "display",
+-     "2026-11-06T21:01:10.123456Z",
++     "2026-11-06T21:01:00.123456Z",
+    ],
+    [
+      "full",
+-     "2026-11-06T21:01:10.123456Z",
++     "2026-11-06T21:01:00.123456Z",
+    ],
+  ]
+
+ ❯ src/db/worker-prepare.test.ts:680:61
+    678|       }
+    679|       const rows = await db.begin((tx) => renditionRows(tx as unknown …
+    680|       expect(rows.map((row) => [row.kind, row.created_at])).toEqual([
+       |                                                             ^
+    681|         ["display", later.toString()],
+    682|         ["full", later.toString()],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

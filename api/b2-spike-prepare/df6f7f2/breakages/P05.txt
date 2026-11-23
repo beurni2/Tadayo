@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (15 tests | 1 failed) 2059ms
+   ❯ upload.prepare with nothing to prepare, or nothing it can (T54) (3)
+     × kills at once an event whose payload names no upload, and one whose upload's renditions aren't built, with the alert line 35ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  00:25:15
+   Duration  2.77s (tests 82%, import 11%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare with nothing to prepare, or nothing it can (T54) > kills at once an event whose payload names no upload, and one whose upload's renditions aren't built, with the alert line
+AssertionError: expected [ …(3) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+-   "worker: an event is dead: upload.prepare evt_ae98b68070cc428ab8f96f5dbacdfb6e after 1 attempts: payload",
++   "worker: an event failed: upload.prepare evt_ae98b68070cc428ab8f96f5dbacdfb6e, attempt 1: unknown",
+    "worker: an event is dead: upload.prepare evt_cc9be934b9724d8684ce2f3c7851f242 after 1 attempts: purpose.avatar",
+    "worker: an event is dead: upload.prepare evt_d3c2d9761d5a4d889f5840d0f3a625a4 after 1 attempts: payload",
+  ]
+
+ ❯ src/db/worker-prepare.test.ts:520:38
+    518|       const result = await pass(tx, r.deps(tx));
+    519|       expect(result.handled).toBe(0);
+    520|       expect([...result.err].sort()).toEqual(
+       |                                      ^
+    521|         [
+    522|           `worker: an event is dead: upload.prepare ${none} after 1 at…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:509:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

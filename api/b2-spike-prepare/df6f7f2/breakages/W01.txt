@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/start.test.ts (4 tests | 1 failed) 2889ms
+   ❯ the worker's entry (ADR-013) (4)
+     × stops before it connects when a Supabase setting is missing or isn't one, naming neither value 679ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  00:34:21
+   Duration  3.04s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/start.test.ts > the worker's entry (ADR-013) > stops before it connects when a Supabase setting is missing or isn't one, naming neither value
+AssertionError: expected 'connect ECONNREFUSED 127.0.0.1:1\n' to match /SUPABASE_URL isn't a project's URL/
+
+- Expected:
+/SUPABASE_URL isn't a project's URL/
+
++ Received:
+"connect ECONNREFUSED 127.0.0.1:1
+"
+
+ ❯ src/start.test.ts:71:29
+     69|       const result = await run({ DATABASE_URL: NOWHERE, TADAYO_ENVIRON…
+     70|       expect(result.code).toBe(1);
+     71|       expect(result.stderr).toMatch(said);
+       |                             ^
+     72|       expect(result.stdout + result.stderr).not.toContain(marker);
+     73|       expect(result.stdout).not.toMatch(/started/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

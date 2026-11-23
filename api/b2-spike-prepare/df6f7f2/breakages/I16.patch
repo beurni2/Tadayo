@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -44,7 +44,7 @@
+  * Machine can't hold beside everything else. 128 MiB keeps their peak near the largest a streaming decode reaches
+  * (docs/plans/api-b2-spike-prepare.md section 4.4, measured), and takes any photo the app sends (ADR-014).
+  */
+-export const MAX_HELD_BYTES = 128 * 1024 * 1024;
++export const MAX_HELD_BYTES = 512 * 1024 * 1024;
+ /** The longest one rendition's decode may take, in seconds. */
+ export const DECODE_SECONDS = 60;
+ 

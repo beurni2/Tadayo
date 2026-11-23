@@ -1,0 +1,11 @@
+--- a/services/worker/src/storage.ts
++++ b/services/worker/src/storage.ts
+@@ -126,7 +126,7 @@
+         throw new StorageUnavailable(`reading an original answered ${String(logical)}`);
+       }
+       try {
+-        return await readUpTo(response.body, UPLOAD_MAX_BYTES + 1);
++        return new Uint8Array(await new Response(response.body).arrayBuffer());
+       } catch {
+         throw new StorageUnavailable("reading an original broke off");
+       }

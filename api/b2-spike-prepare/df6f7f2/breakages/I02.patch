@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -29,7 +29,6 @@
+ import { UPLOAD_MAX_BYTES, type UploadContentType, type UploadRejection } from "@tadayo/domain";
+ import sharp, { type Metadata } from "sharp";
+ 
+-sharp.block({ operation: ["VipsForeignLoad"] });
+ sharp.unblock({ operation: ["VipsForeignLoadJpegBuffer", "VipsForeignLoadPngBuffer", "VipsForeignLoadWebpBuffer"] });
+ sharp.cache(false);
+ sharp.concurrency(1);

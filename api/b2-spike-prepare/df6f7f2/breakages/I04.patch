@@ -1,0 +1,10 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -167,7 +167,6 @@
+   if (![width, height, channels].every((n) => Number.isInteger(n) && n >= 1)) {
+     return { ok: false, rejection: "unreadable" };
+   }
+-  if (width * height > MAX_PIXELS) return { ok: false, rejection: "too_many_pixels" };
+   if (heldBytes(header) > MAX_HELD_BYTES) return { ok: false, rejection: "too_many_pixels" };
+ 
+   const renditions: Rendition[] = [];

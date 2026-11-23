@@ -1,0 +1,11 @@
+--- a/services/worker/src/outbox.ts
++++ b/services/worker/src/outbox.ts
+@@ -131,7 +131,7 @@
+       return { kind: "dead", event: row } as const;
+     }
+     await tx`
+-      UPDATE app.outbox_events SET attempts = attempts + 1, available_at = ${at.add({ seconds: LEASE_SECONDS })}
++      UPDATE app.outbox_events SET available_at = ${at.add({ seconds: LEASE_SECONDS })}
+        WHERE id = ${row.id}`;
+     return {
+       kind: "work",

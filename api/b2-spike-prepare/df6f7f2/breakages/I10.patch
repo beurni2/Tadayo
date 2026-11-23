@@ -1,0 +1,9 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -194,5 +194,5 @@
+  * can compute it.
+  */
+ export function contentHash(ownerUserId: string, bytes: Uint8Array): Buffer {
+-  return createHmac("sha256", `tadayo.upload.v1:${ownerUserId}`).update(bytes).digest();
++  return createHmac("sha256", "tadayo.upload.v1:").update(bytes).digest();
+ }

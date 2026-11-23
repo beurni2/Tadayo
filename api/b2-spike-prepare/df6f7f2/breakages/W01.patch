@@ -1,0 +1,15 @@
+--- a/services/worker/src/start.ts
++++ b/services/worker/src/start.ts
+@@ -23,10 +23,10 @@
+   if (project === undefined || project === "") throw new Error("worker: SUPABASE_URL isn't set");
+   const serviceKey = env.SUPABASE_SERVICE_KEY;
+   if (serviceKey === undefined || serviceKey === "") throw new Error("worker: SUPABASE_SERVICE_KEY isn't set");
+-  const storage = workerStorage({ projectUrl: project, serviceKey });
+   const sql = connect(url);
+   try {
+-    return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql), storage };
++    const clock = await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql);
++    return { sql, clock, storage: workerStorage({ projectUrl: project, serviceKey }) };
+   } catch (error) {
+     await sql.end();
+     throw error;

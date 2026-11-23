@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-outbox.test.ts (12 tests | 1 failed) 285ms
+   ❯ a pass (spec 34, T52, T54) (9)
+     × stops between events when told to, leaving the rest due 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  00:24:47
+   Duration  818ms (tests 55%, transform 23%, import 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-outbox.test.ts > a pass (spec 34, T52, T54) > stops between events when told to, leaving the rest due
+AssertionError: expected { handled: 2, err: [] } to deeply equal { handled: 1, err: [] }
+
+- Expected
++ Received
+
+  {
+    "err": [],
+-   "handled": 1,
++   "handled": 2,
+  }
+
+ ❯ src/db/worker-outbox.test.ts:386:64
+    384|       return Promise.resolve();
+    385|     });
+    386|     expect(await pass(clock, { [mine]: handler }, () => stop)).toEqual…
+       |                                                                ^
+    387|     expect((await row(first)).state).toBe("done");
+    388|     expect(await row(second)).toMatchObject({ state: "pending", attemp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

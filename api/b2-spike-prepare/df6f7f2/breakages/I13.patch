@@ -1,0 +1,11 @@
+--- a/services/worker/src/image.ts
++++ b/services/worker/src/image.ts
+@@ -129,7 +129,7 @@
+     return padded(header.width) * padded(header.height) * header.channels * 2;
+   }
+   if (header.format === "png") {
+-    return header.width * header.height * header.channels * (header.depth === "uchar" ? 1 : 2);
++    return header.width * header.height * header.channels * 1;
+   }
+   return 0;
+ }

@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (15 tests | 1 failed) 2116ms
+   ❯ upload.prepare with nothing to prepare, or nothing it can (T54) (3)
+     × records nothing for an upload that lapses during the work, and finishes the event: its renditions stay stored at its key 53ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  00:25:25
+   Duration  2.87s (tests 83%, import 10%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare with nothing to prepare, or nothing it can (T54) > records nothing for an upload that lapses during the work, and finishes the event: its renditions stay stored at its key
+AssertionError: expected { …(3) } to match object { …(2) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "outcome": "skipped",
++   "outcome": "ready",
+    "upload": "upl_v8uFMyftGeK8wKwn-Je-0g",
+  }
+
+ ❯ src/db/worker-prepare.test.ts:496:67
+    494|         },
+    495|       };
+    496|       expect(await prepareUpload(r.deps(tx, { storage }), event)).toMa…
+       |                                                                   ^
+    497|       expect(r.storage.puts).toEqual([`${one.objectKey}/full`, `${one.…
+    498|       expect(await renditionRows(tx, one.id)).toEqual([]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:479:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
