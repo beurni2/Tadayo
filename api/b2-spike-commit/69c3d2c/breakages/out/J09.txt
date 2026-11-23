@@ -1,0 +1,63 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 44ms
+   ❯ what createDrop must answer (commitOutcome) (9)
+     × gives the neutral not-found for an upload another drop already used, the withdrawn one's included 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  17:02:49
+   Duration  448ms (import 52%, transform 33%, tests 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what createDrop must answer (commitOutcome) > gives the neutral not-found for an upload another drop already used, the withdrawn one's included
+AssertionError: expected { kind: 'added', …(7) } to deeply equal { kind: 'pinned', answer: { …(4) } }
+
+- Expected
++ Received
+
+  {
+-   "answer": {
+-     "body": "{\"code\":\"NOT_FOUND\"}",
+-     "headers": {
+-       "cache-control": "private, no-store",
+-       "connection": "keep-alive",
+-       "content-length": "20",
+-       "content-type": "application/json; charset=utf-8",
++   "day": "occ_sat",
++   "interval": "itv_ben",
++   "kind": "added",
++   "live": true,
++   "now": "2026-11-06T14:41:00.5Z",
++   "slot": "rsv_ben",
++   "target": {
++     "close_at": "2026-11-08T06:00:00Z",
++     "club_id": "clb_here",
++     "id": "occ_sat",
++     "local_date": "2026-11-07",
++     "phase": "collecting",
++     "reveal_at": "2026-11-07T12:00:00Z",
++     "star": {
++       "display_name": "ana",
++       "membership_id": "itv_ana",
+      },
+-     "reason": "Not Found",
+-     "status": 404,
+    },
+-   "kind": "pinned",
++   "upload": "upl_ben",
+  }
+
+ ❯ src/privacy/drop.test.ts:420:38
+    418|       drops: { drp_first: { ...drop("itv_ben", { state: "withdrawn", e…
+    419|     });
+    420|     expect(outcome(used, "usr_ben")).toEqual(neutral);
+       |                                      ^
+    421|   });
+    422|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

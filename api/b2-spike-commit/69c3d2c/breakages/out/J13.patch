@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -279,7 +279,7 @@
+   if (!isObject(star) || typeof star["display_name"] !== "string") return MEMBERSHIP_CHANGED;
+   const body: unknown = JSON.parse(first.body);
+   if (!isObject(body) || !isObject(body["occurrence"])) throw new Error("drop: the first answer is no receipt");
+-  return said({ ...first, body: JSON.stringify({ ...body, occurrence: { ...body["occurrence"], star } }) });
++  return said(first);
+ }
+ 
+ /** The world's drops as one text to compare: each field, its audience in order, its instants in full. */

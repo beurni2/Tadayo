@@ -1,0 +1,12 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -305,8 +305,7 @@
+     slotId === null ||
+     slotSeen === null ||
+     !ours ||
+-    !ownsReservation(facts, slotSeen.interval, at) ||
+-    (input.reservationId !== undefined && input.reservationId !== slotId)
++    !ownsReservation(facts, slotSeen.interval, at)
+   ) {
+     throw new Refused("NOT_FOUND");
+   }

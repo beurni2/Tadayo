@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 2 failed) 58ms
+   ❯ what a retry under the key that added a drop must get (replayExpected; T19, Q12, FQ139) (4)
+     × names a renamed star as members see them now, where the first answer had them, nothing else moved 12ms
+     × names a star who has left by the name they left with, and no avatar (FQ75) 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  17:02:53
+   Duration  481ms (import 52%, transform 29%, tests 18%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what a retry under the key that added a drop must get (replayExpected; T19, Q12, FQ139) > names a renamed star as members see them now, where the first answer had them, nothing else moved
+AssertionError: expected '201 Created [["cache-control","privat…' to be '201 Created [["cache-control","privat…' // Object.is equality
+
+Expected: "201 Created [["cache-control","private, no-store"],["content-type","application/json; charset=utf-8"],["content-length","520"],["date","(the answer's time)"],["connection","keep-alive"]] {"drop_id":"drp_new","occurrence":{"id":"occ_sat","club_id":"clb_here","star":{"membership_id":"itv_ana","display_name":"Annie","avatar_version":"v_now"},"local_date":"2026-11-07","reveal_at":"2026-11-07T12:00:00Z","close_at":"2026-11-08T06:00:00Z","phase":"collecting"},"media_class":"photo","state":"added","version":1,"allowance":{"added":1,"reserved":0,"limit":3,"photo_added":1,"photo_reserved":0,"photo_limit":2,"external_added":0,"external_reserved":0,"external_limit":1,"is_star":false},"highlight":{"version":0}}"
+Received: "201 Created [["cache-control","private, no-store"],["content-type","application/json; charset=utf-8"],["content-length","520"],["date","(the answer's time)"],["connection","keep-alive"]] {"drop_id":"drp_new","occurrence":{"id":"occ_sat","club_id":"clb_here","star":{"membership_id":"itv_ana","display_name":"ana","avatar_version":"v_then"},"local_date":"2026-11-07","reveal_at":"2026-11-07T12:00:00Z","close_at":"2026-11-08T06:00:00Z","phase":"collecting"},"media_class":"photo","state":"added","version":1,"allowance":{"added":1,"reserved":0,"limit":3,"photo_added":1,"photo_reserved":0,"photo_limit":2,"external_added":0,"external_reserved":0,"external_limit":1,"is_star":false},"highlight":{"version":0}}"
+
+ ❯ src/privacy/drop.test.ts:691:17
+    689|   it("names a renamed star as members see them now, where the first an…
+    690|     const now = replay({ accounts: { usr_ana: { avatar: "v_now" } }, m…
+    691|     expect(now).toBe(
+       |                 ^
+    692|       said({ ...first, body: JSON.stringify(receipt({ ...ana, display_…
+    693|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/drop.test.ts > what a retry under the key that added a drop must get (replayExpected; T19, Q12, FQ139) > names a star who has left by the name they left with, and no avatar (FQ75)
+AssertionError: expected '201 Created [["cache-control","privat…' to be '201 Created [["cache-control","privat…' // Object.is equality
+
+Expected: "201 Created [["cache-control","private, no-store"],["content-type","application/json; charset=utf-8"],["content-length","520"],["date","(the answer's time)"],["connection","keep-alive"]] {"drop_id":"drp_new","occurrence":{"id":"occ_sat","club_id":"clb_here","star":{"membership_id":"itv_ana","display_name":"Annie"},"local_date":"2026-11-07","reveal_at":"2026-11-07T12:00:00Z","close_at":"2026-11-08T06:00:00Z","phase":"collecting"},"media_class":"photo","state":"added","version":1,"allowance":{"added":1,"reserved":0,"limit":3,"photo_added":1,"photo_reserved":0,"photo_limit":2,"external_added":0,"external_reserved":0,"external_limit":1,"is_star":false},"highlight":{"version":0}}"
+Received: "201 Created [["cache-control","private, no-store"],["content-type","application/json; charset=utf-8"],["content-length","520"],["date","(the answer's time)"],["connection","keep-alive"]] {"drop_id":"drp_new","occurrence":{"id":"occ_sat","club_id":"clb_here","star":{"membership_id":"itv_ana","display_name":"ana","avatar_version":"v_then"},"local_date":"2026-11-07","reveal_at":"2026-11-07T12:00:00Z","close_at":"2026-11-08T06:00:00Z","phase":"collecting"},"media_class":"photo","state":"added","version":1,"allowance":{"added":1,"reserved":0,"limit":3,"photo_added":1,"photo_reserved":0,"photo_limit":2,"external_added":0,"external_reserved":0,"external_limit":1,"is_star":false},"highlight":{"version":0}}"
+
+ ❯ src/privacy/drop.test.ts:699:18
+    697|   it("names a star who has left by the name they left with, and no ava…
+    698|     const gone = replay({ accounts: avatar, members: { itv_ana: { name…
+    699|     expect(gone).toBe(
+       |                  ^
+    700|       said({ ...first, body: JSON.stringify(receipt({ membership_id: "…
+    701|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

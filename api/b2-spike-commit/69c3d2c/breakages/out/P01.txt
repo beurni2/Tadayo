@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/packages/domain
+
+ ❯ src/drops/commit.test.ts (12 tests | 1 failed) 17ms
+   ❯ an empty caption is none (the plan's section 0.9) (1)
+     × keeps none for an absent or empty caption, and any other caption as it came 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  17:02:37
+   Duration  385ms (transform 71%, import 18%, tests 8%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/drops/commit.test.ts > an empty caption is none (the plan's section 0.9) > keeps none for an absent or empty caption, and any other caption as it came
+AssertionError: expected '' to be null
+
+- Expected:
+null
+
++ Received:
+""
+
+ ❯ src/drops/commit.test.ts:64:29
+     62|   it("keeps none for an absent or empty caption, and any other caption…
+     63|     expect(keptCaption(undefined)).toBeNull();
+     64|     expect(keptCaption("")).toBeNull();
+       |                             ^
+     65|     expect(keptCaption(" ")).toBe(" ");
+     66|     expect(keptCaption("The ferry at dawn 🌅")).toBe("The ferry at daw…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

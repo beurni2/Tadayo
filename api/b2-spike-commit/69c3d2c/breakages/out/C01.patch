@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -280,7 +280,7 @@
+   }
+ 
+   // 4. The clock.
+-  const at = await clock.sample(tx);
++  const at = first;
+ 
+   // 5. The rule again, under the locks.
+   const facts = await loadAddTarget(tx, userId, occurrenceId);

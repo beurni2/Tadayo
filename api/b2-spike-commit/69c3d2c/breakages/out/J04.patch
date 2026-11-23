@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -346,7 +346,7 @@
+   const row = id === undefined ? undefined : after.rows.drops.get(id);
+   const club = previous.world.days.get(outcome.day)?.club;
+   const audience = [...previous.world.members]
+-    .filter(([, member]) => member.club === club && member.leftAt === null)
++    .filter(([, member]) => member.club === club)
+     .map(([interval]) => interval)
+     .sort(byBytes);
+   if (drop !== undefined) {

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 2 failed) 2583ms
+   ❯ one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) (6)
+     × leaves no receipt for a refusal, so the same key adds the photo once it is ready 36ms
+   ❯ only a ready photo is added (spec 33; T12) (1)
+     × answers MEDIA_NOT_READY for a pending, a preparing, a held and a rejected upload, leaving each slot live 113ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  17:01:41
+   Duration  3.40s (tests 85%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > leaves no receipt for a refusal, so the same key adds the photo once it is ready
+ FAIL  src/db/create-drop.test.ts > only a ready photo is added (spec 33; T12) > answers MEDIA_NOT_READY for a pending, a preparing, a held and a rejected upload, leaving each slot live
+PostgresError: app.drops: a drop's photo is its author's ready upload for this day or this drop (T12)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createDrop ../packages/domain/src/drops/commit.ts:344:18
+    342|   const dropId = newId("drp");
+    343|   const caption = keptCaption(input.caption);
+    344|   await bound(tx)`
+       |                  ^
+    345|     INSERT INTO app.drops (id, occurrence_id, club_id, author_interval…
+    346|                            submitted_at, updated_at)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

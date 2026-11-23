@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 49ms
+   ❯ what createDrop must answer (commitOutcome) (9)
+     × answers DUPLICATE_DROP with the caller's earliest active or held drop of the same photo in the day (T21) 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  17:02:39
+   Duration  693ms (transform 58%, import 32%, tests 9%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what createDrop must answer (commitOutcome) > answers DUPLICATE_DROP with the caller's earliest active or held drop of the same photo in the day (T21)
+AssertionError: withdrawn: expected { kind: 'refused', …(2) } to deeply equal { kind: 'added', …(7) }
+
+- Expected
++ Received
+
+  {
+-   "day": "occ_sat",
+-   "interval": "itv_ben",
+-   "kind": "added",
+-   "live": true,
+-   "now": "2026-11-06T14:41:00.5Z",
+-   "slot": "rsv_ben",
+-   "target": {
+-     "close_at": "2026-11-08T06:00:00Z",
+-     "club_id": "clb_here",
+-     "id": "occ_sat",
+-     "local_date": "2026-11-07",
+-     "phase": "collecting",
+-     "reveal_at": "2026-11-07T12:00:00Z",
+-     "star": {
+-       "display_name": "ana",
+-       "membership_id": "itv_ana",
+-     },
++   "body": {
++     "code": "DUPLICATE_DROP",
++     "existing_drop_id": "drp_first",
+    },
+-   "upload": "upl_ben",
++   "code": "DUPLICATE_DROP",
++   "kind": "refused",
+  }
+
+ ❯ src/privacy/drop.test.ts:409:78
+    407|       ["another photo", { ...drop("itv_ben"), row: { upload: "upl_firs…
+    408|     ] as const)
+    409|       expect(outcome(world({ drops: { drp_first: one } }), "usr_ben"),…
+       |                                                                              ^
+    410|     const judge = commitExpected(duplicate("drp_first") as CommitOutco…
+    411|     expect(takes(judge, answer({ code: "DUPLICATE_DROP", existing_drop…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

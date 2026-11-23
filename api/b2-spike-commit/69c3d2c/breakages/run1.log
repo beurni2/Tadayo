@@ -1,0 +1,117 @@
+== C01 the clock sampled before the locks [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × waits for the counter's row, and reads the clock after it: a commit that waited across 07:00 is refused 98ms
+== C02 the counter's lock dropped [db]: CAUGHT; exit 1 ['Tests  3 failed | 29 passed (32)']
+    × lets exactly one of two commits and a reservation, all at once, take the last photo, never three 67ms
+    × makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT 89ms
+    × waits for the counter's row, and reads the clock after it: a commit that waited across 07:00 is refused 94ms
+== C03 the upload's day not checked [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × moves nothing: an upload made for another day, or a reservation_id naming another slot, is not found (T4) 35ms
+== C04 reservation_id not compared [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × moves nothing: an upload made for another day, or a reservation_id naming another slot, is not found (T4) 50ms
+== C05 ownsUpload's lapse not checked [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × gives the neutral not-found for an upload that has lapsed, 24 hours after it began (spec 33) 52ms
+== C06 a preparing upload taken [db]: CAUGHT; exit 1 ['Tests  2 failed | 30 passed (32)']
+    × answers MEDIA_NOT_READY for a pending, a preparing, a held and a rejected upload, leaving each slot live 113ms
+    × leaves no receipt for a refusal, so the same key adds the photo once it is ready 36ms
+== C07 the duplicate not checked [db]: CAUGHT; exit 1 ['Tests  3 failed | 29 passed (32)']
+    × counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found 66ms
+    × refuses an upload already added, under a new key, with DUPLICATE_DROP and its own drop (T20's net) 81ms
+    × refuses the same photo under a second slot with DUPLICATE_DROP and the first drop, the second slot kept 127ms
+== C08 the lapsed slot not settled [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × takes a free slot for a photo whose slot lapsed, the reservation left as it ended 62ms
+== C09 a consumed slot also counted as a free one [db]: CAUGHT; exit 1 ['Tests  5 failed | 27 passed (32)']
+    × adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22) 106ms
+    × adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience 166ms
+    × counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found 52ms
+    × refuses another caption, another upload or another day under the same key with IDEMPOTENCY_CONFLICT 54ms
+    × refuses the same photo under a second slot with DUPLICATE_DROP and the first drop, the second slot kept 90ms
+== C10 the limits not checked for an ended slot [db]: CAUGHT; exit 1 ['Tests  4 failed | 28 passed (32)']
+    × lets exactly one of two commits and a reservation, all at once, take the last photo, never three 66ms
+    × makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT 65ms
+    × refuses Ben's third photo with PHOTO_LIMIT, his own allowance and Ana's next day, and Ana's third not at all 77ms
+    × refuses with QUOTA_FULL, not PHOTO_LIMIT, once all of Ben's are used, and Ana's with photos still left to her 110ms
+== C11 the audience without the active filter [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after 42ms
+== C12 the seal left out [db]: CAUGHT; exit 1 ['Tests  6 failed | 26 passed (32)']
+    × adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22) 134ms
+    × adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience 141ms
+    × leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after 27ms
+    × makes a join wait for the commit's hold on the club, so the joiner comes after the seal and is never in it 81ms
+    × makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT 77ms
+    × takes a free slot for a photo whose slot lapsed, the reservation left as it ended 52ms
+== C13 the receipt's allowance read before the write [db]: CAUGHT; exit 1 ['Tests  5 failed | 27 passed (32)']
+    × adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22) 110ms
+    × adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience 151ms
+    × makes the second wait for the first's commit, then sees its drop: PHOTO_LIMIT 88ms
+    × refuses Ben's third photo with PHOTO_LIMIT, his own allowance and Ana's next day, and Ana's third not at all 91ms
+    × takes a free slot for a photo whose slot lapsed, the reservation left as it ended 45ms
+== C14 the held day not refused [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × answers MEMBERSHIP_CHANGED, with no facts, for a day whose star has left, the slot left as it was 54ms
+== C17 a retry answers the receipt as kept, the star not named again [db]: CAUGHT; exit 1 ['Tests  2 failed | 30 passed (32)']
+    × names the day's star in a retry as members see them then, and keeps no name in the receipt (FQ139, FQ75) 60ms
+    × returns the first receipt byte for byte after midnight and after the cutoff, with one drop made 57ms
+== C18 the receipt keeps the star's name [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × names the day's star in a retry as members see them then, and keeps no name in the receipt (FQ139, FQ75) 72ms
+== C19 a retry with no star to name answers the receipt as kept [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × answers a retry MEMBERSHIP_CHANGED once the day's star has no name left to show, keeping the drop (FQ139) 63ms
+== C16 an upload another drop used taken [db]: CAUGHT; exit 1 ['Tests  1 failed | 31 passed (32)']
+    × counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found 77ms
+== R01 the key's form not checked [route]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 104ms
+== R02 the serializer adds the caller's own drop to the highlight [route]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × makes it field for field, and no other 8ms
+== P01 an empty caption kept [pure]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × keeps none for an absent or empty caption, and any other caption as it came 5ms
+== P02 a day id that can't be one asks the database [pure]: CAUGHT; exit 1 ['Tests  1 failed | 11 passed (12)']
+    × names no day for an id that can't be one, the neutral not-found, asking the database nothing 6ms
+== J01 the judge counts a withdrawn drop as a duplicate [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × answers DUPLICATE_DROP with the caller's earliest active or held drop of the same photo in the day (T21) 15ms
+== J02 the judge picks a duplicate by id alone [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × answers DUPLICATE_DROP with the caller's earliest active or held drop of the same photo in the day (T21) 10ms
+== J03 the judge doesn't compare reservation_id [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives the neutral not-found unless the upload is the caller's own live photo, under their slot in this day (T4, T12, T14) 10ms
+== J04 the judge's audience takes members who left [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × holds the rows of a drop added: one drop of the caller's, its caption, upload, hash, instant and audience (T8) 12ms
+== J05 the judge lets anyone's lapsed slot be settled [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × holds the slot consumed by the drop when live, and nothing else changed but the caller's own lapsed slots (T18, T20) 11ms
+== J06 the judge forgets QUOTA_FULL [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes a free slot for an ended one, or refuses QUOTA_FULL, then PHOTO_LIMIT, with the allowance (T17, T18) 18ms
+== J07 the judge's receipt ignores the highlight [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes the receipt of the drop added, with the caller's allowance and highlight as they stand 10ms
+== J08 the judge's unchanged rows ignore highlights [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × holds that a refusal, a retry and another body under a key make and change nothing (T19) 10ms
+== J09 the judge takes an upload another drop used [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives the neutral not-found for an upload another drop already used, the withdrawn one's included 14ms
+== J10 the judge takes a photo not ready [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × answers MEDIA_NOT_READY to the caller's own upload until it is ready 16ms
+== J11 the judge lets a link through after the reveal [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses from the reveal on with the day as it is then and the star's next day, whatever the body names (T3, T4) 13ms
+== J12 the judge's added rows ignore the dedupe key [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × holds the rows of a drop added: one drop of the caller's, its caption, upload, hash, instant and audience (T8) 12ms
+== J13 the judge's retry ignores the star as they are now [judge]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × names a renamed star as members see them now, where the first answer had them, nothing else moved 12ms
+    × names a star who has left by the name they left with, and no avatar (FQ75) 3ms
+== J14 the judge's retry names a star with no name [judge]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is MEMBERSHIP_CHANGED once the star has no name left to show 9ms
+== M01 the audience without the active filter, through the matrix [matrix]: CAUGHT; exit 1 ['Tests  7 failed | 16 passed (23)']
+    × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 1ms
+    × answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find 3242ms
+    × gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it 0ms
+    × held, gave back and saw lapse the slots each role's allowance gives, and none for any other role 0ms
+    × left the club for the roles who are members the club answers in the last phase, and for no other role 1ms
+    × made revisions and links for the six roles who are members the club answers, and for no other role 5ms
+== M02 the route's receipt carrying the caption, through the matrix [matrix]: CAUGHT; exit 1 ['Tests  11 failed | 12 passed (23)']
+    × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 1ms
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 5035ms
+    × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 4185ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 4214ms
+    × answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find 4056ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 4934ms
+== M03 a retry answers the receipt as kept, through the matrix [matrix]: CAUGHT; exit 1 ['Tests  11 failed | 12 passed (23)']
+    × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 1ms
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 73772ms
+    × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 73152ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 72008ms
+    × answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find 71912ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 73698ms
+restored: ''

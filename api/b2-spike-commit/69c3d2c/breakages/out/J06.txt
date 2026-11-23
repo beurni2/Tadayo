@@ -1,0 +1,55 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 54ms
+   ❯ what createDrop must answer (commitOutcome) (9)
+     × takes a free slot for an ended one, or refuses QUOTA_FULL, then PHOTO_LIMIT, with the allowance (T17, T18) 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  17:02:45
+   Duration  533ms (import 54%, transform 30%, tests 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what createDrop must answer (commitOutcome) > takes a free slot for an ended one, or refuses QUOTA_FULL, then PHOTO_LIMIT, with the allowance (T17, T18)
+AssertionError: expected { kind: 'refused', …(2) } to deeply equal { kind: 'refused', …(2) }
+
+- Expected
++ Received
+
+@@ -10,11 +10,11 @@
+        "photo_added": 2,
+        "photo_limit": 2,
+        "photo_reserved": 0,
+        "reserved": 0,
+      },
+-     "code": "QUOTA_FULL",
++     "code": "PHOTO_LIMIT",
+      "next_target": {
+        "close_at": "2026-11-15T06:00:00Z",
+        "club_id": "clb_here",
+        "id": "occ_next",
+        "local_date": "2026-11-14",
+@@ -36,8 +36,8 @@
+          "display_name": "ana",
+          "membership_id": "itv_ana",
+        },
+      },
+    },
+-   "code": "QUOTA_FULL",
++   "code": "PHOTO_LIMIT",
+    "kind": "refused",
+  }
+
+ ❯ src/privacy/drop.test.ts:452:88
+    450|       },
+    451|     });
+    452|     expect(outcome(world({ reservations: released, drops: photos(2, 1)…
+       |                                                                                        ^
+    453|       kind: "refused",
+    454|       code: "QUOTA_FULL",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

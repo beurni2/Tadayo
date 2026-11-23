@@ -1,0 +1,10 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -229,7 +229,6 @@
+   check(input);
+   const { userId, occurrenceId, media } = input;
+   // An id that can't be one names no day, as one nobody has.
+-  if (!ID.test(occurrenceId)) throw new Refused("NOT_FOUND");
+   const receipt: ReceiptKey = {
+     userId,
+     key: input.key,

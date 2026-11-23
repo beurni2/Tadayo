@@ -1,0 +1,232 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2016 cells run, 37715 answers scanned
+author, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 37772 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 2016 cells run, 37752 answers scanned
+member in the audience, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+member who joined after the commit (T8): 2016 cells run, 37760 answers scanned
+member who joined after the commit (T8), the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find
+rejoined member, a new interval (T8): 2016 cells run, 37760 answers scanned
+rejoined member, a new interval (T8), the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (23 tests | 11 failed) 721850ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 73772ms
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 73698ms
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 73152ms
+     × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 72008ms
+     × answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find 71912ms
+   ❯ the roster's table ran (tests/src/privacy/roster.ts) (1)
+     × made revisions and links for the six roles who are members the club answers, and for no other role 3ms
+   ❯ the leave ran (tests/src/privacy/leave.ts) (1)
+     × left the club for the roles who are members the club answers in the last phase, and for no other role 1ms
+   ❯ the reservations' table ran (tests/src/privacy/reservation.ts) (2)
+     × held, gave back and saw lapse the slots each role's allowance gives, and none for any other role 0ms
+     × gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it 1ms
+   ❯ the uploads' table ran (tests/src/privacy/upload.ts) (1)
+     × made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed 1ms
+   ❯ the commit's table ran (tests/src/privacy/drop.ts) (1)
+     × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 1ms
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 12 passed (23)
+   Start at  17:18:55
+   Duration  723.16s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 48, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 48,
++   "first": [
++     "active, collecting: createDrop: a retry under its key got another answer than the first (T19) (the drop added, again under its key)",
++     "active, collecting, createDrop: shape at $: not createDrop's declared answer",
++     "active, collecting, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "active, open: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "active, open, createDrop: shape at $: not createDrop's declared answer",
++     "active, open, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "active, past: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "active, past, createDrop: shape at $: not createDrop's declared answer",
++     "active, past, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "active, past, a year on: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "active, past, a year on, createDrop: shape at $: not createDrop's declared answer",
++     "active, past, a year on, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "withdrawn, collecting: createDrop: a retry under its key got another answer than the first (T19) (the drop added, again under its key)",
++     "withdrawn, collecting, createDrop: shape at $: not createDrop's declared answer",
++     "withdrawn, collecting, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "withdrawn, open: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "withdrawn, open, createDrop: shape at $: not createDrop's declared answer",
++     "withdrawn, open, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "withdrawn, past: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "withdrawn, past, createDrop: shape at $: not createDrop's declared answer",
++     "withdrawn, past, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "withdrawn, past, a year on: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "withdrawn, past, a year on, createDrop: shape at $: not createDrop's declared answer",
++     "withdrawn, past, a year on, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "removed by moderation, collecting: createDrop: a retry under its key got another answer than the first (T19) (the drop added, again under its key)",
++     "removed by moderation, collecting, createDrop: shape at $: not createDrop's declared answer",
++     "removed by moderation, collecting, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "removed by moderation, open: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "removed by moderation, open, createDrop: shape at $: not createDrop's declared answer",
++     "removed by moderation, open, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "removed by moderation, past: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "removed by moderation, past, createDrop: shape at $: not createDrop's declared answer",
++     "removed by moderation, past, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "removed by moderation, past, a year on: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++     "removed by moderation, past, a year on, createDrop: shape at $: not createDrop's declared answer",
++     "removed by moderation, past, a year on, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "held (T29), collecting: createDrop: a retry under its key got another answer than the first (T19) (the drop added, again under its key)",
++     "held (T29), collecting, createDrop: shape at $: not createDrop's declared answer",
++     "held (T29), collecting, createDrop: world at $.occurrence.star.display_name: not the name members see (FQ75)",
++     "held (T29), open: createDrop: a retry under its key got another answer than the first (T19) (a drop added in an earlier phase, again under its key)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2627:66
+    2625|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2626|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2627|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2628|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2629|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the roster's table ran (tests/src/privacy/roster.ts) > made revisions and links for the six roles who are members the club answers, and for no other role
+AssertionError: expected 7 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 7
+
+ ❯ src/privacy/matrix.test.ts:2678:32
+    2676|     // what the role tests above left, so it holds only when the whole…
+    2677|     // for one role, or after a role's test failed before it stored it…
+    2678|     expect(ROSTER_TABLES.size).toBe(ROLES.length);
+       |                                ^
+    2679|     const made = [...ROSTER_TABLES].filter(([, table]) => table.revisi…
+    2680|     expect(made).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the leave ran (tests/src/privacy/leave.ts) > left the club for the roles who are members the club answers in the last phase, and for no other role
+AssertionError: expected 7 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 7
+
+ ❯ src/privacy/matrix.test.ts:2694:25
+    2692|   it("left the club for the roles who are members the club answers in …
+    2693|     // As the roster's table above: it reads what the role tests left,…
+    2694|     expect(LEAVES.size).toBe(ROLES.length);
+       |                         ^
+    2695|     expect([...LEAVES].filter(([, states]) => states > 0)).toEqual([
+    2696|       ["author", 6],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > held, gave back and saw lapse the slots each role's allowance gives, and none for any other role
+AssertionError: expected 7 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 7
+
+ ❯ src/privacy/matrix.test.ts:2721:24
+    2719|     // (T20), in each of the four states; until the commit was built i…
+    2720|     // expired. A lapsed slot coming back expired is still asked in ev…
+    2721|     expect(SLOTS.size).toBe(ROLES.length);
+       |                        ^
+    2722|     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
+    2723|       ["author", { held: 9, released: 5, expired: 0, consumed: 4 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it
+AssertionError: expected 7 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 7
+
+ ❯ src/privacy/matrix.test.ts:2742:29
+    2740|     // the four states that neither suspend nor cancel them. Cleo afte…
+    2741|     // interval, or after blocking the author and leaving by it has no…
+    2742|     expect(CLEOS_SLOT.size).toBe(ROLES.length);
+       |                             ^
+    2743|     expect([...CLEOS_SLOT].filter(([, answers]) => answers > 0)).toEqu…
+    2744|       ["member in the audience", 16],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the uploads' table ran (tests/src/privacy/upload.ts) > made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed
+AssertionError: expected 7 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 7
+
+ ❯ src/privacy/matrix.test.ts:2775:26
+    2773|     // table, above). Another member's live slot is never the viewer's…
+    2774|     // for it, and nobody else makes one (T9, T14).
+    2775|     expect(UPLOADS.size).toBe(ROLES.length);
+       |                          ^
+    2776|     const one = {
+    2777|       made: 4 + 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the commit's table ran (tests/src/privacy/drop.ts) > added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed
+AssertionError: expected 7 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 7
+
+ ❯ src/privacy/matrix.test.ts:2829:24
+    2827|     // interval may still add to the day (the uploads' table ran, abov…
+    2828|     // day, or meets a duplicate (T9, T14).
+    2829|     expect(DROPS.size).toBe(ROLES.length);
+       |                        ^
+    2830|     const one = { added: 4, replayed: 4 + 3 * 4, conflicts: 4, duplica…
+    2831|     expect([...DROPS].filter(([, table]) => Object.values(table).some(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+

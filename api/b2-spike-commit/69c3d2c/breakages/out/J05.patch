@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -389,7 +389,6 @@
+       was.state === "live" &&
+       now_.state === "expired" &&
+       now_.drop === null &&
+-      was.interval === outcome.interval &&
+       was.day === outcome.day &&
+       !before(outcome.now, was.expiresAt);
+     if (!settled) problems.push(`${other} went from ${was.state} to ${now_.state}`);

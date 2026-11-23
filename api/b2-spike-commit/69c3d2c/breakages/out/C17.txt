@@ -1,0 +1,72 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 2 failed) 2435ms
+   ❯ one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) (6)
+     × returns the first receipt byte for byte after midnight and after the cutoff, with one drop made 57ms
+     × names the day's star in a retry as members see them then, and keeps no name in the receipt (FQ139, FQ75) 60ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 30 passed (32)
+   Start at  17:02:17
+   Duration  3.28s (tests 85%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > returns the first receipt byte for byte after midnight and after the cutoff, with one drop made
+AssertionError: expected '{"state":"added","drop_id":"drp_Q4_Zt…' to be '{"state":"added","drop_id":"drp_Q4_Zt…' // Object.is equality
+
+Expected: "{"state":"added","drop_id":"drp_Q4_Zt39UJTPiJi-sGg77PA","version":1,"allowance":{"added":1,"limit":3,"is_star":false,"reserved":0,"photo_added":1,"photo_limit":2,"external_added":0,"external_limit":1,"photo_reserved":0,"external_reserved":0},"highlight":{"version":0},"occurrence":{"id":"occ_4aHNzqxGKVfy6wVG6L7SLA","star":{"membership_id":"mem_CSc-KSSpcxvmTRlsbU_FoA","display_name":"Ana"},"phase":"collecting","club_id":"club_p3XWmhsNfVBCqIx88iN_CA","close_at":"2026-11-08T01:00:00Z","reveal_at":"2026-11-07T07:00:00Z","local_date":"2026-11-07"},"media_class":"photo"}"
+Received: "{"state":"added","drop_id":"drp_Q4_Zt39UJTPiJi-sGg77PA","version":1,"allowance":{"added":1,"limit":3,"is_star":false,"reserved":0,"photo_added":1,"photo_limit":2,"external_added":0,"external_limit":1,"photo_reserved":0,"external_reserved":0},"highlight":{"version":0},"occurrence":{"id":"occ_4aHNzqxGKVfy6wVG6L7SLA","star":{"membership_id":"mem_CSc-KSSpcxvmTRlsbU_FoA"},"phase":"collecting","club_id":"club_p3XWmhsNfVBCqIx88iN_CA","close_at":"2026-11-08T01:00:00Z","reveal_at":"2026-11-07T07:00:00Z","local_date":"2026-11-07"},"media_class":"photo"}"
+
+ ❯ src/db/create-drop.test.ts:533:97
+    531|       const key = randomUUID();
+    532|       const first = added(await commit(tx, d, d.w.ben, photo.upload, {…
+    533|       expect(added(await commit(tx, d, d.w.ben, photo.upload, { key, c…
+       |                                                                                                 ^
+    534|       clock.set(at("2026-11-07T00:00:00.5Z"));
+    535|       expect(added(await commit(tx, d, d.w.ben, photo.upload, { key, c…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:528:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > names the day's star in a retry as members see them then, and keeps no name in the receipt (FQ139, FQ75)
+AssertionError: expected { state: 'added', …(6) } to deeply equal { state: 'added', …(6) }
+
+- Expected
++ Received
+
+@@ -22,12 +22,10 @@
+      "id": "occ_3cc9JHSWgdllZ5EqZhyJWA",
+      "local_date": "2026-11-07",
+      "phase": "collecting",
+      "reveal_at": "2026-11-07T07:00:00Z",
+      "star": {
+-       "avatar_version": "v_JgLcD2HldDZdFcVj4Tjpog",
+-       "display_name": "Annie",
+        "membership_id": "mem_MQL5v5ydsQK4CRmPkIK2Yg",
+      },
+    },
+    "state": "added",
+    "version": 1,
+
+ ❯ src/db/create-drop.test.ts:567:79
+    565|       await tx`UPDATE app.users SET display_name = 'Annie' WHERE id = …
+    566|       clock.advance({ minutes: 1 });
+    567|       expect(added(await commit(tx, d, d.w.ben, photo.upload, { key })…
+       |                                                                               ^
+    568|         starred({ ...ana, display_name: "Annie" }),
+    569|       );
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:544:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

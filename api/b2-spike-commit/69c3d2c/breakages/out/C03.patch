@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -274,7 +274,7 @@
+   // this counter's: a slot of another counter is never locked without that counter's lock.
+   const slotId = upload?.reservation ?? null;
+   const slotSeen = slotId === null ? null : await readSlot(tx, slotId);
+-  const ours = slotSeen !== null && slotSeen.day === key.day && slotSeen.interval === key.interval;
++  const ours = slotSeen !== null && slotSeen.interval === key.interval;
+   if (ours && slotId !== null) {
+     await bound(tx)`SELECT id FROM app.reservations WHERE id = ${slotId} FOR NO KEY UPDATE`;
+   }

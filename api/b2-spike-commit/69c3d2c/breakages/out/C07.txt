@@ -1,0 +1,66 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 3 failed) 2584ms
+   ❯ the same photo twice in one day (T20, T21) (3)
+     × refuses the same photo under a second slot with DUPLICATE_DROP and the first drop, the second slot kept 127ms
+     × refuses an upload already added, under a new key, with DUPLICATE_DROP and its own drop (T20's net) 81ms
+     × counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found 66ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 29 passed (32)
+   Start at  17:01:45
+   Duration  3.40s (tests 86%, import 9%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > the same photo twice in one day (T20, T21) > refuses the same photo under a second slot with DUPLICATE_DROP and the first drop, the second slot kept
+ FAIL  src/db/create-drop.test.ts > the same photo twice in one day (T20, T21) > counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found
+PostgresError: duplicate key value violates unique constraint "drops_no_duplicate"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createDrop ../packages/domain/src/drops/commit.ts:344:18
+    342|   const dropId = newId("drp");
+    343|   const caption = keptCaption(input.caption);
+    344|   await bound(tx)`
+       |                  ^
+    345|     INSERT INTO app.drops (id, occurrence_id, club_id, author_interval…
+    346|                            submitted_at, updated_at)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/create-drop.test.ts > the same photo twice in one day (T20, T21) > refuses an upload already added, under a new key, with DUPLICATE_DROP and its own drop (T20's net)
+AssertionError: expected { code: 'NOT_FOUND', facts: {} } to deeply equal { code: 'DUPLICATE_DROP', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "DUPLICATE_DROP",
+-   "facts": {
+-     "existing_drop_id": "drp_ZmwSVVtEWkN4vbeaLbELUg",
+-   },
++   "code": "NOT_FOUND",
++   "facts": {},
+  }
+
+ ❯ src/db/create-drop.test.ts:903:58
+    901|       const photo = await prepared(tx, d, d.w.ben);
+    902|       const first = added(await commit(tx, d, d.w.ben, photo.upload));
+    903|       expect(await commit(tx, d, d.w.ben, photo.upload)).toEqual({
+       |                                                          ^
+    904|         code: "DUPLICATE_DROP",
+    905|         facts: { existing_drop_id: first.body.drop_id },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:899:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+

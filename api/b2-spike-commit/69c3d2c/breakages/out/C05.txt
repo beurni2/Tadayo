@@ -1,0 +1,76 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 1 failed) 2831ms
+   ❯ nothing for anyone the day or the photo isn't theirs to add (T4, T9, T12, T14) (6)
+     × gives the neutral not-found for an upload that has lapsed, 24 hours after it began (spec 33) 52ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  17:01:37
+   Duration  3.57s (tests 88%, import 8%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > nothing for anyone the day or the photo isn't theirs to add (T4, T9, T12, T14) > gives the neutral not-found for an upload that has lapsed, 24 hours after it began (spec 33)
+AssertionError: expected { status: 201, body: { …(7) }, …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "body": {
++     "allowance": {
++       "added": 1,
++       "external_added": 0,
++       "external_limit": 1,
++       "external_reserved": 0,
++       "is_star": false,
++       "limit": 3,
++       "photo_added": 1,
++       "photo_limit": 2,
++       "photo_reserved": 0,
++       "reserved": 0,
++     },
++     "drop_id": "drp_oD-jXhJ4u0ILyCmfGYA9EQ",
++     "highlight": {
++       "version": 0,
++     },
++     "media_class": "photo",
++     "occurrence": {
++       "close_at": "2026-11-15T01:00:00Z",
++       "club_id": "club_04LkWe92hVipAy74kccBNg",
++       "id": "occ_6d8b67027b3e492da811927365c91004",
++       "local_date": "2026-11-14",
++       "phase": "collecting",
++       "reveal_at": "2026-11-14T07:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "mem_SfCLTV3tpp7u6TRLpamrJQ",
++       },
++     },
++     "state": "added",
++     "version": 1,
++   },
++   "status": 201,
++   "text": "{\"state\":\"added\",\"drop_id\":\"drp_oD-jXhJ4u0ILyCmfGYA9EQ\",\"version\":1,\"allowance\":{\"added\":1,\"limit\":3,\"is_star\":false,\"reserved\":0,\"photo_added\":1,\"photo_limit\":2,\"external_added\":0,\"external_limit\":1,\"photo_reserved\":0,\"external_reserved\":0},\"highlight\":{\"version\":0},\"occurrence\":{\"id\":\"occ_6d8b67027b3e492da811927365c91004\",\"star\":{\"membership_id\":\"mem_SfCLTV3tpp7u6TRLpamrJQ\",\"display_name\":\"Ana\"},\"phase\":\"collecting\",\"club_id\":\"club_04LkWe92hVipAy74kccBNg\",\"close_at\":\"2026-11-15T01:00:00Z\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"local_date\":\"2026-11-14\"},\"media_class\":\"photo\"}",
+  }
+
+ ❯ src/db/create-drop.test.ts:747:75
+    745|       const photo = await prepared(tx, d, d.w.ben, { day: d.next });
+    746|       clock.set(at("2026-11-13T10:00:00Z"));
+    747|       expect(await commit(tx, d, d.w.ben, photo.upload, { day: d.next …
+       |                                                                           ^
+    748|       expect(await dropsIn(tx, d.next)).toHaveLength(0);
+    749|       // A microsecond before, it is still Ben's, its slot long lapsed…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:742:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

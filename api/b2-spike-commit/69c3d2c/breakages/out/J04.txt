@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 42ms
+   ❯ the DropReceipt and the rows after it (commitExpected, committedProblems) (6)
+     × holds the rows of a drop added: one drop of the caller's, its caption, upload, hash, instant and audience (T8) 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  17:02:43
+   Duration  475ms (import 56%, transform 30%, tests 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > the DropReceipt and the rows after it (commitExpected, committedProblems) > holds the rows of a drop added: one drop of the caller's, its caption, upload, hash, instant and audience (T8)
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the drop added's row's audience is [\"itv_ana\",\"itv_ben\"], not [\"itv_ana\",\"itv_ben\",\"itv_cleo\"]",
++ ]
+
+ ❯ src/privacy/drop.test.ts:579:56
+    577|     const leftBefore = world({ members: { itv_cleo: { leftAt: NOW.subt…
+    578|     const without = afterAdding({ audience: ["itv_ana", "itv_ben"] });
+    579|     expect(problems(without, "The ferry", leftBefore)).toEqual([]);
+       |                                                        ^
+    580|     expect(problems(afterAdding(), "The ferry", leftBefore)).not.toEqu…
+    581|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

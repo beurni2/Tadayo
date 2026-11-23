@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -350,7 +350,7 @@
+   await bound(tx)`
+     INSERT INTO app.drop_caption_versions (drop_id, drop_version, caption, created_at)
+     VALUES (${dropId}, 1, ${caption}, ${at}::pg_catalog.timestamptz)`;
+-  const row = live ? await consumeSlot(tx, key, slotId, dropId, at) : await takeSlot(tx, key, "photo");
++  const row = live ? (await consumeSlot(tx, key, slotId, dropId, at), await takeSlot(tx, key, "photo")) : await takeSlot(tx, key, "photo");
+   await bound(tx)`
+     INSERT INTO app.drop_audience (drop_id, club_id, interval_id)
+     SELECT ${dropId}, m.club_id, m.interval_id FROM app.memberships m

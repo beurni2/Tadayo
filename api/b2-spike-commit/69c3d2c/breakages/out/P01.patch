@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -126,7 +126,7 @@
+ 
+ /** The caption as the drop keeps it: an empty one is none (the plan's section 0.9). */
+ export function keptCaption(caption: string | undefined): string | null {
+-  return caption === undefined || caption === "" ? null : caption;
++  return caption === undefined ? null : caption;
+ }
+ 
+ function isRecord(value: Json | undefined): value is { readonly [key: string]: Json } {

@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 1 failed) 2610ms
+   ❯ the audience is the club's active members at the commit, written once and sealed (T8) (2)
+     × leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after 42ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  17:02:01
+   Duration  3.52s (tests 84%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > the audience is the club's active members at the commit, written once and sealed (T8) > leaves out a member who left before, and Home at 07:00 shows the drop to its audience, not to one who joined after
+PostgresError: app.drop_audience: mem_Pe32DOV7f6RJHHMdPZfTRQ isn't an active member, so it isn't in an audience (T8)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createDrop ../packages/domain/src/drops/commit.ts:354:18
+    352|     VALUES (${dropId}, 1, ${caption}, ${at}::pg_catalog.timestamptz)`;
+    353|   const row = live ? await consumeSlot(tx, key, slotId, dropId, at) : …
+    354|   await bound(tx)`
+       |                  ^
+    355|     INSERT INTO app.drop_audience (drop_id, club_id, interval_id)
+    356|     SELECT ${dropId}, m.club_id, m.interval_id FROM app.memberships m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

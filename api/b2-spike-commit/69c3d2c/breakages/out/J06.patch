@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -190,7 +190,7 @@
+     // The command settles the counter's lapsed slots first; `allowanceIn` already leaves them off.
+     const allowance = allowanceIn(world, day, interval, now);
+     const code =
+-      allowance.added + allowance.reserved >= allowance.limit
++      false
+         ? "QUOTA_FULL"
+         : allowance.photo_added + allowance.photo_reserved >= allowance.photo_limit
+           ? "PHOTO_LIMIT"

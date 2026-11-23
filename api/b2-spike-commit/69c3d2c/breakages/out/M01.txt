@@ -1,0 +1,153 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/matrix.test.ts (23 tests | 7 failed) 578231ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find 3242ms
+   ❯ the roster's table ran (tests/src/privacy/roster.ts) (1)
+     × made revisions and links for the six roles who are members the club answers, and for no other role 5ms
+   ❯ the leave ran (tests/src/privacy/leave.ts) (1)
+     × left the club for the roles who are members the club answers in the last phase, and for no other role 1ms
+   ❯ the reservations' table ran (tests/src/privacy/reservation.ts) (2)
+     × held, gave back and saw lapse the slots each role's allowance gives, and none for any other role 0ms
+     × gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it 0ms
+   ❯ the uploads' table ran (tests/src/privacy/upload.ts) (1)
+     × made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed 1ms
+   ❯ the commit's table ran (tests/src/privacy/drop.ts) (1)
+     × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 1ms
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 16 passed (23)
+   Start at  17:02:56
+   Duration  580.80s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find
+SyntaxError: Unexpected end of JSON input
+ ❯ replayExpected src/privacy/drop.ts:280:30
+    278|   const star = occurrenceOf(world, day, "collecting")?.["star"];
+    279|   if (!isObject(star) || typeof star["display_name"] !== "string") ret…
+    280|   const body: unknown = JSON.parse(first.body);
+       |                              ^
+    281|   if (!isObject(body) || !isObject(body["occurrence"])) throw new Erro…
+    282|   return said({ ...first, body: JSON.stringify({ ...body, occurrence: …
+ ❯ src/privacy/matrix.test.ts:2457:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the roster's table ran (tests/src/privacy/roster.ts) > made revisions and links for the six roles who are members the club answers, and for no other role
+AssertionError: expected 11 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 11
+
+ ❯ src/privacy/matrix.test.ts:2678:32
+    2676|     // what the role tests above left, so it holds only when the whole…
+    2677|     // for one role, or after a role's test failed before it stored it…
+    2678|     expect(ROSTER_TABLES.size).toBe(ROLES.length);
+       |                                ^
+    2679|     const made = [...ROSTER_TABLES].filter(([, table]) => table.revisi…
+    2680|     expect(made).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the leave ran (tests/src/privacy/leave.ts) > left the club for the roles who are members the club answers in the last phase, and for no other role
+AssertionError: expected 11 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 11
+
+ ❯ src/privacy/matrix.test.ts:2694:25
+    2692|   it("left the club for the roles who are members the club answers in …
+    2693|     // As the roster's table above: it reads what the role tests left,…
+    2694|     expect(LEAVES.size).toBe(ROLES.length);
+       |                         ^
+    2695|     expect([...LEAVES].filter(([, states]) => states > 0)).toEqual([
+    2696|       ["author", 6],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > held, gave back and saw lapse the slots each role's allowance gives, and none for any other role
+AssertionError: expected 11 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 11
+
+ ❯ src/privacy/matrix.test.ts:2721:24
+    2719|     // (T20), in each of the four states; until the commit was built i…
+    2720|     // expired. A lapsed slot coming back expired is still asked in ev…
+    2721|     expect(SLOTS.size).toBe(ROLES.length);
+       |                        ^
+    2722|     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
+    2723|       ["author", { held: 9, released: 5, expired: 0, consumed: 4 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it
+AssertionError: expected 11 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 11
+
+ ❯ src/privacy/matrix.test.ts:2742:29
+    2740|     // the four states that neither suspend nor cancel them. Cleo afte…
+    2741|     // interval, or after blocking the author and leaving by it has no…
+    2742|     expect(CLEOS_SLOT.size).toBe(ROLES.length);
+       |                             ^
+    2743|     expect([...CLEOS_SLOT].filter(([, answers]) => answers > 0)).toEqu…
+    2744|       ["member in the audience", 16],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the uploads' table ran (tests/src/privacy/upload.ts) > made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed
+AssertionError: expected 11 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 11
+
+ ❯ src/privacy/matrix.test.ts:2775:26
+    2773|     // table, above). Another member's live slot is never the viewer's…
+    2774|     // for it, and nobody else makes one (T9, T14).
+    2775|     expect(UPLOADS.size).toBe(ROLES.length);
+       |                          ^
+    2776|     const one = {
+    2777|       made: 4 + 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the commit's table ran (tests/src/privacy/drop.ts) > added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed
+AssertionError: expected 11 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 11
+
+ ❯ src/privacy/matrix.test.ts:2829:24
+    2827|     // interval may still add to the day (the uploads' table ran, abov…
+    2828|     // day, or meets a duplicate (T9, T14).
+    2829|     expect(DROPS.size).toBe(ROLES.length);
+       |                        ^
+    2830|     const one = { added: 4, replayed: 4 + 3 * 4, conflicts: 4, duplica…
+    2831|     expect([...DROPS].filter(([, table]) => Object.values(table).some(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+

@@ -1,0 +1,12 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -157,8 +157,7 @@
+     slotId === null ||
+     slot === undefined ||
+     slot.day !== day ||
+-    slot.interval !== interval ||
+-    (ask.reservation !== undefined && ask.reservation !== slotId)
++    slot.interval !== interval
+   )
+     return { kind: "pinned", answer: NEUTRAL };
+   if (upload.state !== "ready") return { kind: "pinned", answer: MEDIA_NOT_READY };

@@ -1,0 +1,11 @@
+--- a/services/api/src/drops/drops.ts
++++ b/services/api/src/drops/drops.ts
+@@ -83,7 +83,7 @@
+     };
+     let response: Json;
+     try {
+-      response = await deps.sql.begin((tx) => createDrop(tx, deps.clock, input, dropRender));
++      response = await deps.sql.begin((tx) => createDrop(tx, deps.clock, input, { ...dropRender, receipt: (made) => ({ ...(dropReceiptBody(made) as object), caption: input.caption ?? null }) }));
+     } catch (error) {
+       if (error instanceof Refused) return refusal(reply, error);
+       throw error;

@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 53ms
+   ❯ what a retry under the key that added a drop must get (replayExpected; T19, Q12, FQ139) (4)
+     × is MEMBERSHIP_CHANGED once the star has no name left to show 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  17:02:55
+   Duration  518ms (import 59%, transform 26%, tests 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what a retry under the key that added a drop must get (replayExpected; T19, Q12, FQ139) > is MEMBERSHIP_CHANGED once the star has no name left to show
+AssertionError: expected '201 Created [["cache-control","privat…' to deeply equal { status: 409, …(3) }
+
+- Expected:
+{
+  "body": "{\"code\":\"MEMBERSHIP_CHANGED\"}",
+  "headers": {
+    "cache-control": "private, no-store",
+    "connection": "keep-alive",
+    "content-length": "29",
+    "content-type": "application/json; charset=utf-8",
+  },
+  "reason": "Conflict",
+  "status": 409,
+}
+
++ Received:
+"201 Created [[\"cache-control\",\"private, no-store\"],[\"content-type\",\"application/json; charset=utf-8\"],[\"content-length\",\"520\"],[\"date\",\"(the answer's time)\"],[\"connection\",\"keep-alive\"]] {\"drop_id\":\"drp_new\",\"occurrence\":{\"id\":\"occ_sat\",\"club_id\":\"clb_here\",\"star\":{\"membership_id\":\"itv_ana\",\"display_name\":null},\"local_date\":\"2026-11-07\",\"reveal_at\":\"2026-11-07T12:00:00Z\",\"close_at\":\"2026-11-08T06:00:00Z\",\"phase\":\"collecting\"},\"media_class\":\"photo\",\"state\":\"added\",\"version\":1,\"allowance\":{\"added\":1,\"reserved\":0,\"limit\":3,\"photo_added\":1,\"photo_reserved\":0,\"photo_limit\":2,\"external_added\":0,\"external_reserved\":0,\"external_limit\":1,\"is_star\":false},\"highlight\":{\"version\":0}}"
+
+ ❯ src/privacy/drop.test.ts:710:75
+    708|
+    709|   it("is MEMBERSHIP_CHANGED once the star has no name left to show", (…
+    710|     expect(replay({ members: { itv_ana: { name: null, leftAt: NOW } } …
+       |                                                                           ^
+    711|   });
+    712| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

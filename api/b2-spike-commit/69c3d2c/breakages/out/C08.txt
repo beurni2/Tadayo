@@ -1,0 +1,46 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 1 failed) 2726ms
+   ❯ a slot that ended before its photo was added (T17, T18; spec 11) (4)
+     × takes a free slot for a photo whose slot lapsed, the reservation left as it ended 62ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  17:01:49
+   Duration  3.57s (tests 85%, import 9%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a slot that ended before its photo was added (T17, T18; spec 11) > takes a free slot for a photo whose slot lapsed, the reservation left as it ended
+AssertionError: expected { state: 'consumed', …(3) } to deeply equal { state: 'expired', …(3) }
+
+- Expected
++ Received
+
+  {
+-   "drop_id": null,
+-   "ended_at": "2026-11-06T21:30:00.123456Z",
++   "drop_id": "drp_IwHpEliy4Led1JryEYj-KQ",
++   "ended_at": "2026-11-06T21:40:00.123456Z",
+    "expires_at": "2026-11-06T21:30:00.123456Z",
+-   "state": "expired",
++   "state": "consumed",
+  }
+
+ ❯ src/db/create-drop.test.ts:943:45
+    941|       const one = added(await commit(tx, d, d.w.ben, photo.upload));
+    942|       expect(one.body.allowance).toEqual(allowanceBody(allowance(FRIEN…
+    943|       expect(await slotRow(tx, photo.slot)).toEqual({
+       |                                             ^
+    944|         state: "expired",
+    945|         expires_at: EVENING.add({ minutes: 30 }).toString(),
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:937:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

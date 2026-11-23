@@ -1,0 +1,10 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -257,7 +257,6 @@
+   //    caller's interval's in this day. Another account's upload is neither read nor locked.
+   await lockDay(tx, seen, interval);
+   const key: CounterKey = { day: seen.day.id, interval, club: seen.day.clubId };
+-  await lockCounter(tx, key);
+   const uploadId = media.kind === "photo" && ID.test(media.uploadId) ? media.uploadId : null;
+   const upload =
+     uploadId === null

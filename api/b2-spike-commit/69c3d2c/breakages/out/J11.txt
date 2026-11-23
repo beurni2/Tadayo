@@ -1,0 +1,73 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/privacy/drop.test.ts (20 tests | 1 failed) 55ms
+   ❯ what createDrop must answer (commitOutcome) (9)
+     × refuses from the reveal on with the day as it is then and the star's next day, whatever the body names (T3, T4) 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  17:02:51
+   Duration  576ms (import 56%, transform 29%, tests 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/drop.test.ts > what createDrop must answer (commitOutcome) > refuses from the reveal on with the day as it is then and the star's next day, whatever the body names (T3, T4)
+AssertionError: expected { kind: 'pinned', answer: { …(4) } } to deeply equal { kind: 'refused', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "body": {
+-     "code": "OCCURRENCE_CLOSED",
+-     "next_target": {
+-       "close_at": "2026-11-15T06:00:00Z",
+-       "club_id": "clb_here",
+-       "id": "occ_next",
+-       "local_date": "2026-11-14",
+-       "phase": "collecting",
+-       "reveal_at": "2026-11-14T12:00:00Z",
+-       "star": {
+-         "display_name": "ana",
+-         "membership_id": "itv_ana",
+-       },
+-     },
+-     "target": {
+-       "close_at": "2026-11-08T06:00:00Z",
+-       "club_id": "clb_here",
+-       "id": "occ_sat",
+-       "local_date": "2026-11-07",
+-       "phase": "open",
+-       "reveal_at": "2026-11-07T12:00:00Z",
+-       "star": {
+-         "display_name": "ana",
+-         "membership_id": "itv_ana",
+-       },
++   "answer": {
++     "body": "{\"code\":\"NOT_FOUND\"}",
++     "headers": {
++       "cache-control": "private, no-store",
++       "connection": "keep-alive",
++       "content-length": "20",
++       "content-type": "application/json; charset=utf-8",
+      },
++     "reason": "Not Found",
++     "status": 404,
+    },
+-   "code": "OCCURRENCE_CLOSED",
+-   "kind": "refused",
++   "kind": "pinned",
+  }
+
+ ❯ src/privacy/drop.test.ts:306:56
+    304|       { ...BENS, reservation: "rsv_other" },
+    305|     ] as const)
+    306|       expect(outcome(world(), "usr_ben", ask, REVEAL)).toEqual(open);
+       |                                                        ^
+    307|     expect(outcome(world({ next: false }), "usr_ben", BENS, REVEAL)).t…
+    308|       kind: "refused",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

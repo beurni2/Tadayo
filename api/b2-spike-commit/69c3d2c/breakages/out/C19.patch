@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -249,7 +249,7 @@
+   if (stored !== null) {
+     if (keptStar(stored.replay) !== seen.day.starInterval) throw new Error("drops: a receipt names another star");
+     const star = placedStar(seen.day);
+-    if (star === null) throw new Refused("MEMBERSHIP_CHANGED");
++    if (star === null) return stored.replay;
+     return withStar(stored.replay, render.star(star));
+   }
+ 

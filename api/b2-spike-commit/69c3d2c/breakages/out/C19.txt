@@ -1,0 +1,75 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 1 failed) 2818ms
+   ❯ one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) (6)
+     × answers a retry MEMBERSHIP_CHANGED once the day's star has no name left to show, keeping the drop (FQ139) 63ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  17:02:25
+   Duration  3.61s (tests 86%, import 8%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > answers a retry MEMBERSHIP_CHANGED once the day's star has no name left to show, keeping the drop (FQ139)
+AssertionError: expected { status: 201, body: { …(7) }, …(1) } to deeply equal { code: 'MEMBERSHIP_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "MEMBERSHIP_CHANGED",
+-   "facts": {},
++   "body": {
++     "allowance": {
++       "added": 1,
++       "external_added": 0,
++       "external_limit": 1,
++       "external_reserved": 0,
++       "is_star": false,
++       "limit": 3,
++       "photo_added": 1,
++       "photo_limit": 2,
++       "photo_reserved": 0,
++       "reserved": 0,
++     },
++     "drop_id": "drp_aqI_HZcDoTAsanumwHjBaw",
++     "highlight": {
++       "version": 0,
++     },
++     "media_class": "photo",
++     "occurrence": {
++       "close_at": "2026-11-08T01:00:00Z",
++       "club_id": "club_Vz2khs5AMwWp4RiEjw--zw",
++       "id": "occ_iRL1MexuC6bvrO2r4UqpDg",
++       "local_date": "2026-11-07",
++       "phase": "collecting",
++       "reveal_at": "2026-11-07T07:00:00Z",
++       "star": {
++         "membership_id": "mem_e-UyS9RF7b6BuNNVyDTvyg",
++       },
++     },
++     "state": "added",
++     "version": 1,
++   },
++   "status": 201,
++   "text": "{\"state\":\"added\",\"drop_id\":\"drp_aqI_HZcDoTAsanumwHjBaw\",\"version\":1,\"allowance\":{\"added\":1,\"limit\":3,\"is_star\":false,\"reserved\":0,\"photo_added\":1,\"photo_limit\":2,\"external_added\":0,\"external_limit\":1,\"photo_reserved\":0,\"external_reserved\":0},\"highlight\":{\"version\":0},\"occurrence\":{\"id\":\"occ_iRL1MexuC6bvrO2r4UqpDg\",\"star\":{\"membership_id\":\"mem_e-UyS9RF7b6BuNNVyDTvyg\"},\"phase\":\"collecting\",\"club_id\":\"club_Vz2khs5AMwWp4RiEjw--zw\",\"close_at\":\"2026-11-08T01:00:00Z\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"local_date\":\"2026-11-07\"},\"media_class\":\"photo\"}",
+  }
+
+ ❯ src/db/create-drop.test.ts:592:67
+    590|          WHERE interval_id = ${d.w.ana.interval}`;
+    591|       clock.advance({ minutes: 2 });
+    592|       expect(await commit(tx, d, d.w.ben, photo.upload, { key })).toEq…
+       |                                                                   ^
+    593|       expect(await tx`SELECT id FROM app.drops WHERE occurrence_id = $…
+    594|       expect(await dropReceipts(tx, d.w.ben.user)).toHaveLength(1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:582:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

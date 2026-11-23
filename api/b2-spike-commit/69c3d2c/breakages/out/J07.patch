@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -260,7 +260,7 @@
+       version: 1,
+       allowance: allowanceIn(world, outcome.day, outcome.interval, outcome.now),
+       highlight:
+-        pointer === undefined
++        pointer !== null
+           ? { version: 0 }
+           : { ...(pointer.drop === null ? {} : { drop_id: pointer.drop }), version: pointer.version },
+     });

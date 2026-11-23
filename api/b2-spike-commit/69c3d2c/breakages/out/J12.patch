@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/drop.ts
++++ b/tests/src/privacy/drop.ts
+@@ -360,7 +360,7 @@
+       audience,
+       comments: [],
+       upload: outcome.upload,
+-      dedupe: previous.rows.hashes.get(outcome.upload) ?? null,
++      dedupe: row?.dedupe ?? null,
+       submittedAt: outcome.now.toString(),
+     };
+     const got = {

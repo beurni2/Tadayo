@@ -1,0 +1,154 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 5 failed) 2402ms
+   ❯ a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) (4)
+     × adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience 166ms
+     × adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22) 106ms
+   ❯ one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) (6)
+     × refuses another caption, another upload or another day under the same key with IDEMPOTENCY_CONFLICT 54ms
+   ❯ the same photo twice in one day (T20, T21) (3)
+     × refuses the same photo under a second slot with DUPLICATE_DROP and the first drop, the second slot kept 90ms
+     × counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found 52ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 27 passed (32)
+   Start at  17:01:53
+   Duration  3.27s (tests 83%, import 11%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) > adds Ben's photo: the receipt, the slot consumed, the counts, the drop, its caption and its sealed audience
+AssertionError: expected { state: 'added', …(6) } to deeply equal { …(7) }
+
+- Expected
++ Received
+
+@@ -1,14 +1,14 @@
+  {
+    "allowance": {
+-     "added": 1,
++     "added": 2,
+      "external_added": 0,
+      "external_limit": 1,
+      "external_reserved": 0,
+      "is_star": false,
+      "limit": 3,
+-     "photo_added": 1,
++     "photo_added": 2,
+      "photo_limit": 2,
+      "photo_reserved": 0,
+      "reserved": 0,
+    },
+    "drop_id": "drp_MwLOnoLHvh0D4sjZ-jcKVA",
+
+ ❯ src/db/create-drop.test.ts:417:24
+    415|       const sample = EVENING.add({ minutes: 5 });
+    416|       const one = added(await commit(tx, d, d.w.ben, photo.upload, { c…
+    417|       expect(one.body).toEqual({
+       |                        ^
+    418|         drop_id: one.body.drop_id,
+    419|         occurrence: one.body.occurrence,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > a photo is added under the slot it was uploaded for (T17, T20; spec 06, 11) > adds Ana's own photos under the star's limits, and answers Ana's highlight as it stands (ND01, T22)
+AssertionError: expected { added: 6, limit: 6, …(8) } to deeply equal { added: 5, reserved: +0, …(8) }
+
+- Expected
++ Received
+
+  {
+-   "added": 5,
++   "added": 6,
+    "external_added": 0,
+    "external_limit": 2,
+    "external_reserved": 0,
+    "is_star": true,
+    "limit": 6,
+-   "photo_added": 5,
++   "photo_added": 6,
+    "photo_limit": 6,
+    "photo_reserved": 0,
+    "reserved": 0,
+  }
+
+ ❯ src/db/create-drop.test.ts:492:36
+    490|       const photo = await prepared(tx, d, d.w.ana);
+    491|       const fifth = added(await commit(tx, d, d.w.ana, photo.upload));
+    492|       expect(fifth.body.allowance).toEqual(allowanceBody(allowance(STA…
+       |                                    ^
+    493|       expect(fifth.body.highlight).toEqual({ drop_id: earlier, version…
+    494|       expect(await audienceOf(tx, fifth.body.drop_id)).toContain(d.w.a…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:483:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > one drop per Idempotency-Key, and its first answer on every retry (T19, Q12) > refuses another caption, another upload or another day under the same key with IDEMPOTENCY_CONFLICT
+PostgresError: new row for relation "contribution_counters" violates check constraint "contribution_counters_photos_within_limit"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ takeSlot ../packages/domain/src/drops/counter.ts:205:31
+    203| export async function takeSlot(tx: QuerySql, key: CounterKey, media: M…
+    204|   const external = media === "external_video" ? "1" : "0";
+    205|   const rows = await bound(tx)`
+       |                               ^
+    206|     UPDATE app.contribution_counters
+    207|        SET committed_total = committed_total + 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > the same photo twice in one day (T20, T21) > refuses the same photo under a second slot with DUPLICATE_DROP and the first drop, the second slot kept
+Refused: refused: PHOTO_LIMIT
+ ❯ createReservation ../packages/domain/src/drops/reserve.ts:180:11
+    178|   if (refusal !== null) {
+    179|     const next = await nextTarget(tx, facts, at);
+    180|     throw new Refused(refusal, {
+       |           ^
+    181|       target: outcome.target,
+    182|       allowance: before,
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ slot src/db/create-drop.test.ts:136:17
+ ❯ prepared src/db/create-drop.test.ts:169:25
+ ❯ src/db/create-drop.test.ts:883:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/create-drop.test.ts > the same photo twice in one day (T20, T21) > counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found
+Refused: refused: PHOTO_LIMIT
+ ❯ createReservation ../packages/domain/src/drops/reserve.ts:180:11
+    178|   if (refusal !== null) {
+    179|     const next = await nextTarget(tx, facts, at);
+    180|     throw new Refused(refusal, {
+       |           ^
+    181|       target: outcome.target,
+    182|       allowance: before,
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ slot src/db/create-drop.test.ts:136:17
+ ❯ prepared src/db/create-drop.test.ts:169:25
+ ❯ src/db/create-drop.test.ts:917:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

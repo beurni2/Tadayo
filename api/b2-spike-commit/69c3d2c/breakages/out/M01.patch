@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/commit.ts
++++ b/packages/domain/src/drops/commit.ts
+@@ -354,7 +354,7 @@
+   await bound(tx)`
+     INSERT INTO app.drop_audience (drop_id, club_id, interval_id)
+     SELECT ${dropId}, m.club_id, m.interval_id FROM app.memberships m
+-     WHERE m.club_id = ${key.club} AND m.state = 'active'
++     WHERE m.club_id = ${key.club}
+      ORDER BY m.interval_id COLLATE "C"`;
+   await bound(tx)`UPDATE app.drops SET audience_sealed_at = ${at}::pg_catalog.timestamptz WHERE id = ${dropId}`;
+   const [pointer] = await bound(tx)`

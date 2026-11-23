@@ -1,0 +1,82 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/wbrk/tree/tests
+
+ ❯ src/db/create-drop.test.ts (32 tests | 1 failed) 2686ms
+   ❯ the same photo twice in one day (T20, T21) (3)
+     × counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found 77ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  17:02:29
+   Duration  3.58s (tests 85%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > the same photo twice in one day (T20, T21) > counts a held drop as the same photo, and not a withdrawn one, whose own upload is then not found
+AssertionError: expected { Object (code, facts) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "PHOTO_LIMIT",
++   "facts": {
++     "allowance": {
++       "added": 1,
++       "externalAdded": 0,
++       "externalLimit": 1,
++       "externalReserved": 0,
++       "isStar": false,
++       "limit": 3,
++       "photoAdded": 1,
++       "photoLimit": 2,
++       "photoReserved": 1,
++       "reserved": 1,
++     },
++     "next_target": {
++       "closeAt": "2026-11-15T01:00:00Z",
++       "clubId": "club_w7p3Hup5VnpP641zocjnLw",
++       "id": "occ_a889879820764b019223ffe224429a49",
++       "localDate": "2026-11-14",
++       "phase": "collecting",
++       "revealAt": "2026-11-14T07:00:00Z",
++       "star": {
++         "avatarVersion": null,
++         "displayName": "Ana",
++         "membershipId": "mem_sEAoLMxEjqjd_0baVPmntQ",
++       },
++     },
++     "target": {
++       "closeAt": "2026-11-08T01:00:00Z",
++       "clubId": "club_w7p3Hup5VnpP641zocjnLw",
++       "id": "occ_ovMUgxo6BSi00qJ2Z-r0RA",
++       "localDate": "2026-11-07",
++       "phase": "collecting",
++       "revealAt": "2026-11-07T07:00:00Z",
++       "star": {
++         "avatarVersion": null,
++         "displayName": "Ana",
++         "membershipId": "mem_sEAoLMxEjqjd_0baVPmntQ",
++       },
++     },
++   },
+  }
+
+ ❯ src/db/create-drop.test.ts:929:58
+    927|          WHERE id = ${first.body.drop_id}`;
+    928|       clock.set(at("2026-11-06T21:13:00Z"));
+    929|       expect(await commit(tx, d, d.w.ben, photo.upload)).toEqual(bare(…
+       |                                                          ^
+    930|       added(await commit(tx, d, d.w.ben, again.upload));
+    931|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:912:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
