@@ -3,6 +3,7 @@
 // one call, to stand in for Storage away. And the images those tests prepare, made here by `sharp`, so no
 // photograph is committed and nothing in one names anybody.
 
+import { crc32, deflateSync } from "node:zlib";
 import sharp, { type Sharp } from "sharp";
 import { StorageUnavailable, type WorkerStorage } from "./storage.ts";
 
@@ -193,4 +194,235 @@ export async function losslessAlphaWebp(width: number, height: number): Promise<
   head.write("RIFF", 0, "latin1");
   head.writeUInt32LE(body.length, 4);
   return Buffer.concat([head, body]);
+}
+
+/** A WebP of `chunks`, its RIFF header made for them. */
+function riffWebp(chunks: readonly Buffer[]): Buffer {
+  const body = Buffer.concat([Buffer.from("WEBP", "latin1"), ...chunks]);
+  const head = Buffer.alloc(8);
+  head.write("RIFF", 0, "latin1");
+  head.writeUInt32LE(body.length, 4);
+  return Buffer.concat([head, body]);
+}
+
+/**
+ * A lossy WebP of 64 by 64 (`VP8X`, `VP8 `) followed, inside its RIFF, by `junk` empty chunks of a kind libwebp
+ * doesn't know, which it keeps a record of all the same: 8 bytes each, so 20 MiB holds 2.6 million.
+ */
+export async function junkWebp(junk: number): Promise<Buffer> {
+  const still = await pattern(64, 64).webp().toBuffer();
+  const empty = Buffer.alloc(junk * 8);
+  for (let i = 0; i < junk; i += 1) empty.write("JUNK", i * 8, "latin1");
+  return riffWebp([riffChunk("VP8X", Buffer.concat([Buffer.alloc(4), u24(63), u24(63)])), imageChunks(still), empty]);
+}
+
+/** One PNG chunk: its length, its four letters, its data and its CRC. */
+function pngChunk(kind: string, data: Uint8Array): Buffer {
+  const head = Buffer.alloc(8);
+  head.writeUInt32BE(data.length, 0);
+  head.write(kind, 4, "latin1");
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([head.subarray(4), data])), 0);
+  return Buffer.concat([head, data, crc]);
+}
+
+/**
+ * A PNG of 64 by 64 with `count` `zTXt` chunks before its pixels, each inflating to `mib` MiB, a few dozen KB each in
+ * the file: libpng inflates every one as it reads the header, and libvips keeps their text.
+ */
+export function textBombPng(count: number, mib: number): Buffer {
+  const rows = Buffer.alloc(64 * (1 + 64 * 3));
+  for (let y = 0; y < 64; y += 1) {
+    for (let x = 0; x < 64 * 3; x += 1) rows[y * (1 + 64 * 3) + 1 + x] = (x * 3 + y) & 255;
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(64, 0);
+  ihdr.writeUInt32BE(64, 4);
+  ihdr.set([8, 2, 0, 0, 0], 8);
+  const text = deflateSync(Buffer.alloc(Math.round(mib * 1024 * 1024), 0x41), { level: 9 });
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", ihdr),
+    ...Array.from({ length: count }, (_, i) =>
+      pngChunk("zTXt", Buffer.concat([Buffer.from(`Comment${String(i)}\0\0`, "latin1"), text])),
+    ),
+    pngChunk("IDAT", deflateSync(rows)),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+/** Bits written most significant first, with a 0x00 after each 0xFF, as a JPEG's entropy-coded data has them. */
+class JpegBits {
+  readonly out: number[] = [];
+  #acc = 0;
+  #n = 0;
+  put(value: number, bits: number): void {
+    for (let i = bits - 1; i >= 0; i -= 1) {
+      this.#acc = (this.#acc << 1) | ((value >> i) & 1);
+      this.#n += 1;
+      if (this.#n === 8) this.#byte(this.#acc);
+    }
+  }
+  #byte(b: number): void {
+    this.out.push(b);
+    if (b === 0xff) this.out.push(0);
+    this.#acc = 0;
+    this.#n = 0;
+  }
+  done(): Buffer {
+    if (this.#n > 0) this.#byte((this.#acc << (8 - this.#n)) | ((1 << (8 - this.#n)) - 1));
+    return Buffer.from(this.out);
+  }
+}
+
+/** One JPEG marker segment: its marker, its length and its body. */
+function jpegSegment(marker: number, body: Uint8Array): Buffer {
+  const head = Buffer.from([0xff, marker, 0, 0]);
+  head.writeUInt16BE(body.length + 2, 2);
+  return Buffer.concat([head, body]);
+}
+
+/**
+ * A progressive JPEG of `width` by `height`, three components, every coefficient zero, in `scans` scans of a valid
+ * progression, so libjpeg warns of nothing: for each component in turn, its DC first at Al 13 and refined down to 0,
+ * then each AC coefficient alone, first at Al 13 and refined down to 0, as far as `scans` goes. Each scan passes
+ * over every block of its component. Ported from PR #111's third review (`manyscans.py`).
+ */
+export function manyScansJpeg(width: number, height: number, scans: number): Buffer {
+  const blocks = Math.ceil(width / 8) * Math.ceil(height / 8);
+  const sof = Buffer.alloc(15);
+  sof.writeUInt8(8, 0);
+  sof.writeUInt16BE(height, 1);
+  sof.writeUInt16BE(width, 3);
+  sof.writeUInt8(3, 5);
+  for (let c = 0; c < 3; c += 1) sof.set([c + 1, 0x11, 0], 6 + c * 3);
+  // DC table 0: category 0 alone, a 1-bit code. AC table 0: EOB0 to EOB14, 4-bit codes in that order.
+  const dc = Buffer.from([0x00, 1, ...Array<number>(15).fill(0), 0]);
+  const ac = Buffer.from([
+    0x10,
+    0,
+    0,
+    0,
+    15,
+    ...Array<number>(12).fill(0),
+    ...Array.from({ length: 15 }, (_, n) => n << 4),
+  ]);
+  const parts: Buffer[] = [
+    Buffer.from([0xff, 0xd8]),
+    jpegSegment(0xdb, Buffer.from([0, ...Array<number>(64).fill(1)])),
+    jpegSegment(0xc2, sof),
+    jpegSegment(0xc4, Buffer.concat([dc, ac])),
+  ];
+  const dcScan = () => {
+    const bits = new JpegBits();
+    for (let i = 0; i < blocks; i += 1) bits.put(0, 1);
+    return bits.done();
+  };
+  const acScan = () => {
+    const bits = new JpegBits();
+    for (let left = blocks; left > 0;) {
+      const run = Math.min(left, 32767);
+      const n = 31 - Math.clz32(run);
+      bits.put(n, 4);
+      if (n > 0) bits.put(run - (1 << n), n);
+      left -= run;
+    }
+    return bits.done();
+  };
+  let made = 0;
+  const scan = (component: number, ss: number, ah: number, al: number, data: Buffer) => {
+    if (made >= scans) return;
+    parts.push(jpegSegment(0xda, Buffer.from([1, component, 0x00, ss, ss, (ah << 4) | al])), data);
+    made += 1;
+  };
+  for (let component = 1; component <= 3; component += 1) {
+    const dcData = dcScan();
+    scan(component, 0, 0, 13, dcData);
+    for (let ah = 13; ah > 0; ah -= 1) scan(component, 0, ah, ah - 1, dcData);
+    const acData = acScan();
+    for (let k = 1; k <= 63; k += 1) {
+      scan(component, k, 0, 13, acData);
+      for (let ah = 13; ah > 0; ah -= 1) scan(component, k, ah, ah - 1, acData);
+    }
+  }
+  if (made < scans) throw new Error(`testing: a progression has at most ${String(made)} scans`);
+  parts.push(Buffer.from([0xff, 0xd9]));
+  return Buffer.concat(parts);
+}
+
+/** Bits written least significant first, as a lossless WebP's stream has them. */
+class WebpBits {
+  readonly out: number[] = [];
+  #acc = 0;
+  #n = 0;
+  put(value: number, bits: number): void {
+    for (let i = 0; i < bits; i += 1) {
+      this.#acc |= ((value >> i) & 1) << this.#n;
+      this.#n += 1;
+      if (this.#n === 8) {
+        this.out.push(this.#acc);
+        this.#acc = 0;
+        this.#n = 0;
+      }
+    }
+  }
+  /** A canonical Huffman code, its first bit first. */
+  code(value: number, length: number): void {
+    for (let i = length - 1; i >= 0; i -= 1) this.put((value >> i) & 1, 1);
+  }
+  done(): Buffer {
+    if (this.#n > 0) this.out.push(this.#acc);
+    return Buffer.concat([Buffer.from(this.out), Buffer.alloc(16)]);
+  }
+}
+
+/**
+ * A lossless WebP of `width` by `height` whose image uses `groups` meta-Huffman groups of five one-symbol codes each:
+ * libwebp builds a table of thousands of entries for every group, whatever the image's size. Ported from PR #111's
+ * third review (`huffbomb.py`).
+ */
+export function huffmanWebp(width: number, height: number, groups: number): Buffer {
+  const order = [17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  const b = new WebpBits();
+  const oneSymbol = () => {
+    b.put(1, 1); // simple
+    b.put(0, 1); // one symbol
+    b.put(0, 1); // of 1 bit
+    b.put(0, 1); // symbol 0
+  };
+  const all256OfLength8 = () => {
+    // A normal code whose code-length code is symbol 16 alone: 43 repeats of length 8 (6 * 42 + 4).
+    b.put(0, 1);
+    b.put(9 - 4, 4);
+    for (let i = 0; i < 9; i += 1) b.put(order[i] === 16 ? 1 : 0, 3);
+    b.put(1, 1);
+    b.put(2, 3);
+    b.put(43 - 2, 6);
+    for (let k = 0; k < 43; k += 1) b.put(k < 42 ? 3 : 1, 2);
+  };
+  b.put(0x2f, 8);
+  b.put(width - 1, 14);
+  b.put(height - 1, 14);
+  b.put(0, 1);
+  b.put(0, 3);
+  b.put(0, 1); // no transform
+  b.put(0, 1); // no colour cache
+  b.put(1, 1); // meta Huffman
+  b.put(0, 3); // precision 2
+  const across = (width + 3) >> 2;
+  const down = (height + 3) >> 2;
+  if (across * down < groups) throw new Error("testing: too few entropy blocks for the groups");
+  b.put(0, 1); // the entropy image: no colour cache
+  all256OfLength8(); // green
+  all256OfLength8(); // red
+  oneSymbol(); // blue
+  oneSymbol(); // alpha
+  oneSymbol(); // distance
+  for (let i = 0; i < across * down; i += 1) {
+    const group = i % groups;
+    b.code(group & 255, 8);
+    b.code(group >> 8, 8);
+  }
+  for (let g = 0; g < groups; g += 1) for (let c = 0; c < 5; c += 1) oneSymbol();
+  return riffWebp([riffChunk("VP8L", b.done())]);
 }

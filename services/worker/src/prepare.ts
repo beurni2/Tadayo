@@ -10,20 +10,24 @@
 //    message's renditions aren't built, and their uploads can't be made yet, so their events fail for good.
 // 4. The original from `uploads`, to at most 20 MiB and a byte (./storage.ts). Not there: rejected `unreadable`, as
 //    `completeUpload` saw it there and it won't come back. Storage away: a failure, tried again.
-// 5. The checks and the renditions (./image.ts), then the safety provider on a photo that passed (./safety.ts, FQ8),
-//    then each rendition stored in `renditions`, at its upload's key and its kind, before anything is recorded.
+// 5. The checks and the renditions (./image.ts), in a process of the photo's own that the worker watches and ends
+//    (./image-process.ts), then the safety provider on a photo that passed (./safety.ts, FQ8), then each rendition
+//    stored in `renditions`, at its upload's key and its kind, before anything is recorded.
 // 6. One transaction (`recordPreparation`): the upload's row `FOR NO KEY UPDATE`, still `preparing`, then its
 //    renditions' rows and its state, scoped hash and version, or its rejection; and the event done, in the same
 //    transaction.
 //
-// Each step is bounded: Storage's calls by their time limit, each decode by its own (./image.ts), each statement by
-// generation's limits. A line says what it came to and how long each step took, with the process's peak memory, for
-// spike S2 (the plan's section 6): the upload's opaque id, never its owner, its key or anything of the photo (T52).
+// Each step is bounded: Storage's calls by their time limit, the photo's process by its deadline and its memory
+// (./image-process.ts), each statement by generation's limits. A line says what it came to and how long each step
+// took, with the worker's peak memory and the photo's process's, for spike S2 (the plan's section 6): the upload's
+// opaque id, never its owner, its key or anything of the photo (T52).
 
+import { createHmac } from "node:crypto";
 import { recordPreparation, stopwatch, uploadToPrepare, type Clock, type Preparation } from "@tadayo/domain";
 import type { WorkerSql, WorkerTx } from "./connection.ts";
 import { LOCK_WAIT_MS, STATEMENT_MS } from "./generation.ts";
-import { contentHash, prepareImage, type Prepared } from "./image.ts";
+import { prepareIsolated } from "./image-process.ts";
+import type { Prepared } from "./image.ts";
 import { FailedForGood, finishEvent, type Handler, type OutboxEvent } from "./outbox.ts";
 import type { SafetyProvider } from "./safety.ts";
 import { renditionKey, type WorkerStorage } from "./storage.ts";
@@ -44,7 +48,7 @@ export interface PrepareDeps {
   readonly safety: SafetyProvider;
   /** Where the line of each preparation goes. */
   readonly say: (line: string) => void;
-  /** The process's peak memory so far, in bytes; `process.resourceUsage().maxRSS` unless the tests give one. */
+  /** The worker's peak memory so far, in bytes; `process.resourceUsage().maxRSS` unless the tests give one. */
   readonly peakBytes?: () => number;
 }
 
@@ -61,6 +65,8 @@ export interface Prepping {
     readonly store: number;
     readonly record: number;
   };
+  /** The peak resident memory of the photo's process, in bytes, when one ran. */
+  readonly photoPeakBytes?: number;
 }
 
 function uploadIdOf(payload: unknown): string {
@@ -72,14 +78,18 @@ function uploadIdOf(payload: unknown): string {
 
 const MiB = 1024 * 1024;
 
-/** The line of one preparation: its opaque id, its outcome, its times and the peak memory, nothing else (T52). */
+/**
+ * The line of one preparation: its opaque id, its outcome, its times, the worker's peak memory and its photo's
+ * process's, nothing else (T52).
+ */
 export function preparedLine(prepping: Prepping, peakBytes: number): string {
   const { ms } = prepping;
   const outcome = prepping.outcome === "rejected" ? `rejected ${prepping.rejection ?? ""}` : prepping.outcome;
   return (
     `worker: prepared an upload ${prepping.upload} in ${String(ms.total)} ms ` +
     `(read ${String(ms.read)}, image ${String(ms.image)}, store ${String(ms.store)}, record ${String(ms.record)}), ` +
-    `${outcome}, peak memory ${String(Math.round(peakBytes / MiB))} MiB`
+    `${outcome}, peak memory: worker ${String(Math.round(peakBytes / MiB))} MiB, ` +
+    `photo ${String(Math.round((prepping.photoPeakBytes ?? 0) / MiB))} MiB`
   );
 }
 
@@ -105,8 +115,11 @@ export async function prepareUpload(deps: PrepareDeps, event: OutboxEvent): Prom
   ms.read = step();
 
   step = stopwatch();
-  const prepared: Prepared =
-    original === null ? { ok: false, rejection: "unreadable" } : await prepareImage(original, upload.contentType);
+  let prepared: Prepared = { ok: false, rejection: "unreadable" };
+  let photoPeakBytes = 0;
+  if (original !== null) {
+    ({ prepared, peakBytes: photoPeakBytes } = await prepareIsolated(original, upload.contentType));
+  }
   let outcome: Preparation;
   if (!prepared.ok || original === null) {
     outcome = { state: "rejected", rejection: prepared.ok ? "unreadable" : prepared.rejection };
@@ -148,6 +161,7 @@ export async function prepareUpload(deps: PrepareDeps, event: OutboxEvent): Prom
     outcome: recorded ? outcome.state : "skipped",
     ...(recorded && outcome.state === "rejected" ? { rejection: outcome.rejection } : {}),
     ms: { ...ms, total: total() },
+    photoPeakBytes,
   };
 }
 
@@ -158,4 +172,13 @@ export function prepareHandler(deps: PrepareDeps): Handler {
     const prepping = await prepareUpload(deps, event);
     if (prepping.outcome !== "skipped") deps.say(preparedLine(prepping, peak()));
   };
+}
+
+/**
+ * The scoped content hash (T21; db/migrations/0006_contributions.sql): HMAC-SHA-256 of the original's bytes, keyed
+ * by the owner, so one account's same photo matches and two accounts' never do, and nobody holding the photo alone
+ * can compute it.
+ */
+export function contentHash(ownerUserId: string, bytes: Uint8Array): Buffer {
+  return createHmac("sha256", `tadayo.upload.v1:${ownerUserId}`).update(bytes).digest();
 }

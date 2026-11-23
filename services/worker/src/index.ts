@@ -1,5 +1,6 @@
 // The worker as a library, for the tests: importing it starts nothing (the entry is main.ts). Importing it does
-// restrict `sharp`'s decoders, through ./image.ts, which is what every use of it here needs.
+// restrict `sharp`'s decoders in this process, through ./image.ts, which is what every use of it here needs; the
+// worker itself decodes only in a photo's own process (./image-process.ts).
 export { connect, type WorkerSql, type WorkerTx } from "./connection.ts";
 export {
   describeFailure,
@@ -10,10 +11,10 @@ export {
   type PassResult,
 } from "./generation.ts";
 export {
-  contentHash,
-  DECODE_SECONDS,
-  ImageTimeout,
+  MAX_HELD_BYTES,
+  MAX_JPEG_SCANS,
   MAX_PIXELS,
+  MAX_WEBP_CHUNKS,
   prepareImage,
   RENDITION_KINDS,
   signatureOf,
@@ -21,6 +22,15 @@ export {
   type Rendition,
   type RenditionKind,
 } from "./image.ts";
+export {
+  DEADLINE_SECONDS,
+  DECODE_SECONDS,
+  ImageProcessFailed,
+  ImageTimeout,
+  PEAK_BYTES,
+  prepareIsolated,
+  type ProcessAnswer,
+} from "./image-process.ts";
 export { runLoop, type Loop } from "./loop.ts";
 export {
   backoffSeconds,
@@ -39,6 +49,7 @@ export {
   type OutboxPassResult,
 } from "./outbox.ts";
 export {
+  contentHash,
   PREPARE_TOPIC,
   prepareHandler,
   preparedLine,

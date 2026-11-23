@@ -3,7 +3,7 @@
 // letters run against Postgres in tests/src/db/worker-outbox.test.ts.
 
 import { describe, expect, it } from "vitest";
-import { ImageTimeout } from "./image.ts";
+import { ImageProcessFailed, ImageTimeout } from "./image-process.ts";
 import { BACKOFF_SECONDS, backoffSeconds, FailedForGood, failureCode, LEASE_SECONDS, MAX_ATTEMPTS } from "./outbox.ts";
 import { StorageUnavailable } from "./storage.ts";
 
@@ -29,6 +29,7 @@ describe("a failure's code (T52)", () => {
   it("is the worker's own code for its own errors", () => {
     expect(failureCode(new StorageUnavailable("reading an original answered 500"))).toBe("storage.unavailable");
     expect(failureCode(new ImageTimeout())).toBe("image.timeout");
+    expect(failureCode(new ImageProcessFailed())).toBe("image.process_failed");
     expect(failureCode(new FailedForGood("purpose.avatar"))).toBe("purpose.avatar");
     expect(failureCode(new FailedForGood("payload"))).toBe("payload");
   });

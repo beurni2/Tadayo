@@ -13,8 +13,8 @@
 // process that exited would leave its Machine stopped, since fly.toml's `[[restart]] on-failure` restarts a failure
 // and not a clean exit.
 //
-// Importing ./image.ts, through prepare.ts, restricts `sharp` to the JPEG, PNG and WebP decoders before any loop
-// starts (spec 33).
+// The worker decodes no photo itself: each is prepared in a process of its own, which it watches and ends
+// (./image-process.ts), and where `sharp` can run only the JPEG, PNG and WebP decoders (./image.ts, spec 33).
 
 import { describeFailure, generationPass, passLines } from "./generation.ts";
 import { runLoop } from "./loop.ts";

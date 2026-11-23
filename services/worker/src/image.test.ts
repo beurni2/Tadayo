@@ -1,22 +1,26 @@
 // The checks and the renditions of a photo, from its bytes alone (docs/plans/api-b2-spike-prepare.md sections 3
-// and 4; D09; spec 23, 33; ADR-014; T12, T21). Every image here is made by `sharp` in the test, so no photograph
+// and 4; D09; spec 23, 33; ADR-014; T12), run in this process; the worker runs them in a photo's own process, which
+// ./image-process.test.ts tests. Every image here is made in the test, by `sharp` or byte by byte, so no photograph
 // is committed and nothing in one names anybody.
 
 import { crc32 } from "node:zlib";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
+import { ImageTimeout } from "./image-process.ts";
 import {
-  contentHash,
   heldBytes,
-  ImageTimeout,
+  jpegScans,
   MAX_HELD_BYTES,
+  MAX_JPEG_SCANS,
   MAX_PIXELS,
+  MAX_WEBP_CHUNKS,
   prepareImage,
   signatureOf,
+  webpChunks,
   webpCoding,
   type Rendition,
 } from "./image.ts";
-import { animatedWebp, losslessAlphaWebp, pattern } from "./testing.ts";
+import { animatedWebp, junkWebp, losslessAlphaWebp, manyScansJpeg, pattern } from "./testing.ts";
 
 const MiB = 1024 * 1024;
 
@@ -170,6 +174,103 @@ describe("what is refused, and with which code (D09, spec 33)", () => {
   });
 });
 
+describe("the file's structure, walked before any decoder reads it (FQ138)", () => {
+  /** A JPEG's segments by hand: SOI, then each part as given. */
+  const jpeg = (...parts: number[][]) => Buffer.from([0xff, 0xd8, ...parts.flat()]);
+  const sos = [0xff, 0xda, 0, 8, 1, 1, 0, 0, 63, 0];
+  const trailer = Buffer.concat([Buffer.from("VP8 ", "latin1"), Buffer.alloc(4)]);
+
+  it("counts a JPEG's scans as libjpeg finds them: one for a baseline, each SOS for a progressive", async () => {
+    expect(jpegScans(await flat(64, 48))).toBe(1);
+    expect(
+      jpegScans(
+        await sharp(await flat(64, 48))
+          .jpeg({ progressive: true })
+          .toBuffer(),
+      ),
+    ).toBe(10);
+    expect(jpegScans(manyScansJpeg(64, 64, 100))).toBe(100);
+    expect(jpegScans(manyScansJpeg(4704, 4704, 2688))).toBe(2688);
+  });
+
+  it("counts no SOS inside a segment, nor a stuffed byte, a restart, fill bytes or anything after the EOI", () => {
+    // An APP1 of 10 bytes holding an SOS's bytes, as an EXIF thumbnail does.
+    const app1 = [0xff, 0xe1, 0, 10, 0xff, 0xda, 0xff, 0xda, 0xff, 0xda, 0, 0];
+    // A scan's data with a stuffed 0xFF, a restart and fill bytes before the next marker.
+    const data = [0x12, 0xff, 0x00, 0x34, 0xff, 0xd3, 0x56, 0xff, 0xff];
+    expect(jpegScans(jpeg(app1, sos, data, sos, [0xff, 0xd9], sos, sos))).toBe(2);
+    // After the EOI, two bytes that would read as a segment's length, then scans: none is counted.
+    expect(jpegScans(jpeg(sos, data, [0xff, 0xd9, 0x00, 0x02], sos, sos))).toBe(1);
+    expect(jpegScans(jpeg(sos, data))).toBe(1);
+    expect(jpegScans(jpeg(sos.slice(0, 3)))).toBe(1);
+    expect(jpegScans(jpeg())).toBe(0);
+  });
+
+  it(`refuses a JPEG of more than ${String(MAX_JPEG_SCANS)} scans as unsupported_type, before its decode, and takes one of ${String(MAX_JPEG_SCANS)}`, async () => {
+    expect(MAX_JPEG_SCANS).toBe(100);
+    expect(await prepareImage(manyScansJpeg(64, 64, 101), "image/jpeg")).toEqual({
+      ok: false,
+      rejection: "unsupported_type",
+    });
+    expect(kinds(await ready(manyScansJpeg(64, 64, 100)))).toEqual({ full: [64, 64], display: [64, 64] });
+  });
+
+  it("counts a WebP's chunks at its top level, up to its RIFF's end, and none if that end isn't the file's", async () => {
+    const lossy = await flat(64, 48, "webp");
+    expect(webpChunks(lossy)).toBe(1);
+    expect(
+      webpChunks(
+        await sharp(lossy)
+          .withExif({ IFD0: { Artist: "x" } })
+          .webp()
+          .toBuffer(),
+      ),
+    ).toBe(3);
+    expect(webpChunks(await junkWebp(10))).toBe(12);
+    // Bytes past the RIFF's end, or a RIFF that names more bytes than there are.
+    expect(webpChunks(Buffer.concat([lossy, trailer]))).toBeUndefined();
+    expect(webpChunks(lossy.subarray(0, lossy.length - 2))).toBeUndefined();
+    expect(webpChunks(lossy.subarray(0, 11))).toBeUndefined();
+  });
+
+  it("reads a WebP's coding no further than its RIFF's end, as libwebp does (PR #111's third review: R3-2)", async () => {
+    const lossless = await sharp(await flat(64, 48, "webp"))
+      .webp({ lossless: true })
+      .toBuffer();
+    expect(webpCoding(Buffer.concat([lossless.subarray(0, 12), trailer]))).toBe("lossy");
+    const animation = animatedWebp(64, 48, [{ still: lossless, x: 0, y: 0, width: 64, height: 48 }]);
+    expect(webpCoding(animation)).toBeUndefined();
+    expect(webpCoding(Buffer.concat([animation, trailer]))).toBeUndefined();
+  });
+
+  it("refuses a WebP whose RIFF size isn't its length as unreadable: one frame on 64 megapixels with a trailer had passed as lossy", async () => {
+    const corner = await pattern(64, 64).webp().toBuffer();
+    const single = animatedWebp(8000, 8000, [{ still: corner, x: 7936, y: 7936, width: 64, height: 64 }]);
+    expect(Buffer.concat([single, trailer]).length).toBeLessThan(256);
+    expect(await prepareImage(Buffer.concat([single, trailer]), "image/webp")).toEqual({
+      ok: false,
+      rejection: "unreadable",
+    });
+    expect(await prepareImage(Buffer.concat([await flat(64, 48, "webp"), trailer]), "image/webp")).toEqual({
+      ok: false,
+      rejection: "unreadable",
+    });
+  });
+
+  it(`refuses a WebP of more than ${String(MAX_WEBP_CHUNKS)} chunks as unsupported_type, and takes one of ${String(MAX_WEBP_CHUNKS)}`, async () => {
+    expect(MAX_WEBP_CHUNKS).toBe(1000);
+    // `VP8X`, `VP8 ` and the empty chunks.
+    expect(await prepareImage(await junkWebp(MAX_WEBP_CHUNKS - 1), "image/webp")).toEqual({
+      ok: false,
+      rejection: "unsupported_type",
+    });
+    expect(kinds(await ready(await junkWebp(MAX_WEBP_CHUNKS - 2), "image/webp"))).toEqual({
+      full: [64, 64],
+      display: [64, 64],
+    });
+  });
+});
+
 describe("a decode that can't stream (FQ138)", () => {
   type Canvas = { width: number; height: number; channels: 3 | 4; background: string };
   const canvas = (width: number, height: number, channels: 3 | 4 = 3): Canvas => ({
@@ -230,11 +331,16 @@ describe("a decode that can't stream (FQ138)", () => {
     expect(heldBytes(await header(alpha), alpha)).toBe(64 * 48 * 5);
     expect(heldBytes(await header(losslessAlpha), losslessAlpha)).toBe(64 * 48 * 4);
     expect(heldBytes(await header(animation), animation)).toBe(64 * 48 * 10);
-    // One page whose coding can't be read counts as an animation; and more than one page, libvips' own reading,
-    // counts as an animation whatever the chunks say.
-    const unread = { ...(await header(lossy)), pages: 1 };
-    expect(heldBytes(unread, lossy.subarray(0, 12))).toBe(64 * 48 * 10);
+    // A still WebP whose coding can't be read counts as an animation; and any pages at all, libvips' own reading,
+    // count as an animation whatever the chunks say, one page included.
+    expect((await header(lossy)).pages).toBeUndefined();
+    expect(heldBytes(await header(lossy), lossy.subarray(0, 12))).toBe(64 * 48 * 10);
     expect(heldBytes({ ...(await header(lossy)), pages: 2 }, lossy)).toBe(64 * 48 * 10);
+    expect(heldBytes({ ...(await header(lossy)), pages: 1 }, lossy)).toBe(64 * 48 * 10);
+    // libvips gives one page to an animation of a single frame, which it still puts on its canvas.
+    const one = animatedWebp(64, 48, [{ still: lossy, x: 0, y: 0, width: 64, height: 48 }]);
+    expect((await header(one)).pages).toBe(1);
+    expect(heldBytes(await header(one), one)).toBe(64 * 48 * 10);
   });
 
   it("refuses a progressive JPEG whose coefficients pass 128 MiB as too_many_pixels, subsampled or not, and takes one within it", async () => {
@@ -281,6 +387,9 @@ describe("a decode that can't stream (FQ138)", () => {
     ]);
     expect(small.length).toBeLessThan(4096);
     expect(await prepareImage(small, "image/webp")).toEqual(refused);
+    // So is one of a single small frame, which libvips gives one page (PR #111's third review: R3-2).
+    const single = animatedWebp(8000, 8000, [{ still: corner, x: 7936, y: 7936, width: 64, height: 64 }]);
+    expect(await prepareImage(single, "image/webp")).toEqual(refused);
   }, 120_000);
 
   it("takes the same sizes when their decode streams: a baseline JPEG, a PNG that isn't interlaced, a lossy WebP with no alpha", async () => {
@@ -430,25 +539,5 @@ describe("a slow decode", () => {
 
   it("is an error, never a rejection, when the code asks sharp for something it refuses", async () => {
     await expect(prepareImage(await flat(16, 16), "image/jpeg", { seconds: 0.5 })).rejects.toThrow(/seconds/);
-  });
-});
-
-describe("the scoped content hash (T21)", () => {
-  it("is the same for one owner's same bytes, and different for another owner or other bytes", async () => {
-    const bytes = await flat(32, 32);
-    const other = await flat(32, 33);
-    const a = contentHash("acct_aaaaaaaaaaaaaaaaaaaaaa", bytes);
-    expect(a).toHaveLength(32);
-    expect(contentHash("acct_aaaaaaaaaaaaaaaaaaaaaa", bytes).equals(a)).toBe(true);
-    expect(contentHash("acct_bbbbbbbbbbbbbbbbbbbbbb", bytes).equals(a)).toBe(false);
-    expect(contentHash("acct_aaaaaaaaaaaaaaaaaaaaaa", other).equals(a)).toBe(false);
-  });
-
-  it("is never a plain hash of the bytes, which anyone holding the photo could compute", async () => {
-    const { createHash } = await import("node:crypto");
-    const bytes = await flat(32, 32);
-    expect(contentHash("acct_aaaaaaaaaaaaaaaaaaaaaa", bytes).equals(createHash("sha256").update(bytes).digest())).toBe(
-      false,
-    );
   });
 });

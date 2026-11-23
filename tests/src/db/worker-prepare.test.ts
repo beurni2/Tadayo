@@ -237,9 +237,10 @@ async function pass(tx: WorldTx, deps: PrepareDeps) {
   return { handled, err };
 }
 
-const LINE = (id: string, outcome: string) =>
+/** A preparation's line; the photo's process's peak is more than nothing whenever the photo was read. */
+const LINE = (id: string, outcome: string, photo = "[1-9]\\d*") =>
   new RegExp(
-    `^worker: prepared an upload ${id} in \\d+ ms \\(read \\d+, image \\d+, store \\d+, record \\d+\\), ${outcome}, peak memory 123 MiB$`,
+    `^worker: prepared an upload ${id} in \\d+ ms \\(read \\d+, image \\d+, store \\d+, record \\d+\\), ${outcome}, peak memory: worker 123 MiB, photo ${photo} MiB$`,
   );
 
 describe("upload.prepare makes a drop's photo's renditions and records them (spec 33, T12, T21)", () => {
@@ -321,6 +322,40 @@ describe("upload.prepare makes a drop's photo's renditions and records them (spe
       expect(first.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
       expect(second.content_version).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
       expect(first.content_version).not.toBe(second.content_version);
+    });
+  });
+
+  it("makes the version at random: the same upload's same photo, prepared again from the same start, gets another (T21)", async () => {
+    // A version made from anything the preparation is given (the upload, its owner, its bytes, the clock) would come
+    // out the same twice here (PR #111's third review: R3-7).
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const one = await handed(tx, w, w.ben);
+      r.storage.originals.set(one.objectKey, await testImage(1200, 900));
+      const event = await eventOf(tx, one.id);
+      const undone = new Error("undone");
+      const versionOnce = async () => {
+        let version: string | null = null;
+        await tx
+          .savepoint(async (sp) => {
+            expect(await prepareUpload(r.deps(sp), event)).toMatchObject({ outcome: "ready" });
+            version = (await uploadRow(sp, one.id)).content_version;
+            throw undone;
+          })
+          .catch((error: unknown) => {
+            if (error !== undone) throw error;
+          });
+        return version;
+      };
+
+      const first = await versionOnce();
+      const second = await versionOnce();
+      expect((await uploadRow(tx, one.id)).state).toBe("preparing");
+      expect(first).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+      expect(second).toMatch(/^mv_[A-Za-z0-9_-]{22}$/);
+      expect(first).not.toBe(second);
     });
   });
 
@@ -433,7 +468,7 @@ describe("upload.prepare rejects what the checks refuse (D09, spec 33)", () => {
         expect(r.storage.puts).toEqual([]);
         expect(await eventRow(tx, event.id)).toMatchObject({ state: "done", attempts: 1, last_error: null });
         expect(r.lines).toHaveLength(1);
-        expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejection}`));
+        expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejection}`, bytes === null ? "0" : undefined));
       });
     });
   }
