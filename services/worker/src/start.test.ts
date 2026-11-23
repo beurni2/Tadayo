@@ -74,6 +74,21 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
     }
   });
 
+  it("stops before it connects when TADAYO_PHOTO_USER is set but it wasn't started as root with its own user effective", async () => {
+    // This process is root (the session) or the runner's user (CI): neither is the start fly.toml gives the worker.
+    const result = await run({
+      DATABASE_URL: NOWHERE,
+      TADAYO_ENVIRONMENT: "prod",
+      ...SUPABASE,
+      TADAYO_PHOTO_USER: "tadayo-image",
+    });
+    expect(result.code).toBe(1);
+    expect(result.stderr).toBe(
+      "worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root with its own user effective (fly.toml's worker command)\n",
+    );
+    expect(result.stdout).not.toMatch(/started/);
+  });
+
   it("writes the failure's message alone, never the database URL's password (T52, T56)", async () => {
     const marker = `marker${randomBytes(8).toString("hex")}`;
     for (const url of [

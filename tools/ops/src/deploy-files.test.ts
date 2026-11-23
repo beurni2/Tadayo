@@ -99,6 +99,12 @@ const copies = (stage: "deps" | "runtime") => {
     });
 };
 
+// How each group drops root (fly.toml's [processes]; ADR-038): the API for good, the worker in effect only, keeping
+// setuid, setgid and kill to start and end each photo's process as TADAYO_PHOTO_USER.
+const API_DROP = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs";
+const WORKER_DROP =
+  "setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
+
 // ---- The Dockerfile.
 
 describe("Dockerfile", () => {
@@ -124,7 +130,8 @@ describe("Dockerfile", () => {
     const packages = workspace();
     const commands = table(table(flyToml()["processes"], "[processes]"), "[processes]");
     const running = Object.values(commands).map((command) => {
-      const file = /^node (\S+)$/.exec(String(command))?.[1] ?? "";
+      // Each command drops root first (fly.toml; ADR-038), then runs `node <file>`.
+      const file = /^setpriv .*? -- node (\S+)$/.exec(String(command))?.[1] ?? "";
       const dir = [...packages.keys()].find((candidate) => file.startsWith(`${candidate}/`));
       expect(dir, String(command)).toBeDefined();
       return packages.get(dir ?? "")?.name ?? "";
@@ -179,11 +186,15 @@ describe("Dockerfile", () => {
     expect(JSON.parse(cmd?.args ?? "[]")).toEqual(api);
   });
 
-  it("runs, in the stage that is the image, as an unprivileged user and in production, with the dependencies copied once as pnpm laid them", () => {
+  it("starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them", () => {
     expect(stages()).toHaveLength(2);
     // The second stage is what Fly runs; the first only builds node_modules.
     const image = stages().at(-1) ?? [];
-    expect(image.filter((instruction) => instruction.name === "USER").at(-1)?.args).toBe("node");
+    // No USER: each group's command drops with setpriv before any Node code runs (fly.toml; ADR-038).
+    expect(image.filter((instruction) => instruction.name === "USER")).toEqual([]);
+    const processes = table(flyToml()["processes"], "[processes]");
+    expect(String(processes["api"]).startsWith(`${API_DROP} -- node `)).toBe(true);
+    expect(String(processes["worker"]).startsWith(`${WORKER_DROP} -- node `)).toBe(true);
     expect(image.filter((instruction) => instruction.name === "ENV").map((instruction) => instruction.args)).toContain(
       "NODE_ENV=production",
     );
@@ -192,6 +203,17 @@ describe("Dockerfile", () => {
       (instruction) => instruction.name === "COPY" && instruction.args.startsWith("--from="),
     );
     expect(fromDeps.map((instruction) => instruction.args)).toEqual(["--from=deps /app/ ./"]);
+  });
+
+  it("makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, and nothing else", () => {
+    const image = stages().at(-1) ?? [];
+    const runs = image.filter((instruction) => instruction.name === "RUN").map((instruction) => instruction.args);
+    expect(runs).toEqual([
+      "groupadd --system --gid 10001 tadayo-image && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image",
+    ]);
+    // useradd leaves the password locked unless one is given; none is.
+    expect(runs[0]).not.toMatch(/--password|-p |chpasswd/);
+    expect(table(flyToml()["env"], "[env]")["TADAYO_PHOTO_USER"]).toBe("tadayo-image");
   });
 
   it("names no secret, key, password or environment file in what it sets or copies", () => {
@@ -272,7 +294,7 @@ describe(".dockerignore", () => {
 // ---- fly.toml.
 
 /** The names `[env]` may have: public values only, as the probe and the API read them. */
-const ENV_NAMES = ["TADAYO_ENVIRONMENT", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "LOG_LEVEL"];
+const ENV_NAMES = ["TADAYO_ENVIRONMENT", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "LOG_LEVEL", "TADAYO_PHOTO_USER"];
 
 describe("fly.toml", () => {
   it("is the dev app, in Virginia, built from the Dockerfile, with one rolling strategy and no release command", () => {
@@ -287,11 +309,14 @@ describe("fly.toml", () => {
     expect(Object.keys(deploy)).toEqual(["strategy"]);
   });
 
-  it("has the two process groups, each running a file that is there, and no other", () => {
+  it("has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other", () => {
     const processes = table(flyToml()["processes"], "[processes]");
-    expect(processes).toEqual({ api: "node services/api/src/main.ts", worker: "node services/worker/src/main.ts" });
+    expect(processes).toEqual({
+      api: `${API_DROP} -- node services/api/src/main.ts`,
+      worker: `${WORKER_DROP} -- node services/worker/src/main.ts`,
+    });
     for (const command of Object.values(processes)) {
-      expect(existsSync(join(ROOT, String(command).split(" ")[1] ?? "")), String(command)).toBe(true);
+      expect(existsSync(join(ROOT, String(command).split(" ").at(-1) ?? "")), String(command)).toBe(true);
     }
   });
 
@@ -347,11 +372,12 @@ describe("fly.toml", () => {
     expect(vms).toEqual([{ size: "shared-cpu-1x", memory: "512mb" }]);
   });
 
-  it("has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them", () => {
+  it("has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them, and the photo user's name", () => {
     const env = table(flyToml()["env"], "[env]");
     expect(Object.keys(env).sort()).toEqual([...ENV_NAMES].sort());
     expect(env["TADAYO_ENVIRONMENT"]).toBe("dev");
     expect(env["LOG_LEVEL"]).toBe("info");
+    expect(env["TADAYO_PHOTO_USER"]).toBe("tadayo-image");
     // The same project the app signs in to (apps/ios/project.yml, Dev), by the verifier's own rule for its URL.
     const dev = /^ {4}Dev:\n(?: {6}.*\n)+/m.exec(read("apps/ios/project.yml"))?.[0] ?? "";
     expect(projectUrl(String(env["SUPABASE_URL"]))).toBe(String(env["SUPABASE_URL"]));

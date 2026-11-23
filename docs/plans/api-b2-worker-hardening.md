@@ -78,7 +78,7 @@ either). A new module, `services/worker/src/image-frames.ts`, writes and reads i
 What the child's answer may say doesn't change (`wellFormed`: one rendition of each kind, a JPEG inside its box, or a
 rejection's code), nor what a child's end comes to (`outcomeOf`), but for the broken answer above.
 
-## 2. Each photo under a user of its own (ADR-038, proposed)
+## 2. Each photo under a user of its own (ADR-038, approved by the founder at 21:09 UTC on 2026-11-23)
 
 - **The image** creates a system user and group `tadayo-image`, uid and gid 10001, with no home, no shell and no
   password, and ends without `USER node`: each process group's command starts as root and drops at once with
@@ -104,10 +104,20 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
 - **The sweep.** As the child's end settles, after the group's kill, the worker starts one more process as
   `tadayo-image`, which calls `kill(-1, SIGKILL)`: Linux sends it to every process that user may signal, which is every
   process of `tadayo-image` but the sweep itself, in one pass under the kernel's task list lock, so a process forking as
-  fast as it can is caught too. It runs `node -e`, the one program the image is sure to have. The photo's end settles
-  once the sweep has exited; a sweep that fails to start or doesn't exit within 5 s fails the photo as
-  `ImageProcessFailed`. Photos are prepared one at a time (`outbox.ts`, one event at a time), so no other photo's
-  process is alive then. The sweep's uid is checked to be neither 0 nor the worker's own before it starts.
+  fast as it can is caught too, and a process with that signal pending never runs another instruction of its own. It
+  runs `node -e`, the one program the image is sure to have, with an empty environment. It runs with the worker's own
+  group, not `tadayo-image`'s: Linux lets a process attach to another (ptrace, `/proc/<pid>/mem`) only when every user
+  and group id of the two match, so a process the photo's process left behind can't take the sweep over. It can still
+  stop or kill the sweep, as it may signal any process of its user; so a sweep that fails to start, exits other than 0
+  or doesn't exit within 5 s (`SWEEP_SECONDS`) stops the worker (`stopWorker`: one line on standard error, exit 1).
+  Fly's `[[restart]]` policy `on-failure` restarts the Machine, and every process on it ends with it; the photo in hand
+  comes back once its lease has passed, its attempt counted (`outbox.ts`). Failing only the photo would have left a
+  process of `tadayo-image` alive beside the next one. Photos are prepared one at a time (`outbox.ts`, one event at a
+  time), so no other photo's process is alive then. The sweep refuses, starting nothing, uid 0, gid 0, and the worker's
+  own uid and gid; and its program checks its own user first and exits 2 as root, since `kill(-1)` as root would end
+  every process on the Machine (the breakage run found it: with the refusal removed, the harness, run as root, ended
+  every process of the session's container, twice; that breakage and one that starts the photo's process as root now
+  run in a container of the image, with a process limit of its own).
 - **What a taken-over decoder can still do:** use the network (no namespace of its own: nothing it can reach is the
   worker's, as it holds no key), write to `/tmp` and use the CPU until its deadline. Each is noted in
   `docs/LIMITATIONS.md`'s row, which this PR closes for the four points of section 0.
@@ -143,7 +153,18 @@ back as one line of JSON:
 - a child past its memory and a child past its deadline are still killed (the group's kill needs `asRoot`: without it
   `EPERM` would be swallowed and the child would live on);
 - the worker's effective uid is back to 64998 after each photo, whatever the photo did;
-- `asRoot` refuses outside the worker's mode, and the sweep refuses uid 0 and the worker's own.
+- `asRoot` refuses outside the worker's mode, and the sweep refuses uid 0, gid 0, and the worker's own uid and gid;
+- a sweep that doesn't exit in time (`sweepSeconds` 0.001) stops the worker with its line and exit 1, and the photo's
+  end never settles;
+- a sweep that exits 3, or is killed by SIGKILL (as a process left behind could kill it), fails with `exit`, never done,
+  and one that exits 0 is done (the harness gives `sweep` a program of its own for this: the breakage run found that a
+  sweep taking any exit as done passed every other test);
+- the sweep runs with the worker's group: a process left behind, watching for it, sees the photo user's uid and the
+  worker's gid, and can't open its `/proc/<pid>/mem` (`EACCES`).
+
+`photoUserFor`'s rules, with no process: neither half gives none; either half alone throws; a name matches whole
+`/etc/passwd` entries only; root, root's group, the worker's own user or group, and ids that aren't numbers are
+refused. `start.test.ts`: the worker stops as it starts when `TADAYO_PHOTO_USER` is set and it wasn't started as root.
 
 `tools/ops/src/deploy-files.test.ts`: the image test reads "starts as root only to drop: each process group's command
 begins with its `setpriv` line, exactly", the user `tadayo-image` is made with uid and gid 10001 and no shell, and the
@@ -152,7 +173,11 @@ Dockerfile's `CMD` is fly's `api` command.
 ## 4. Verified where
 
 - The session: every test above; the image built with Docker and run as fly runs it, both commands, with the worker
-  preparing a photo under `tadayo-image` and the checks of section 3's harness run inside it.
+  preparing a photo under `tadayo-image` and the checks of section 3's harness run inside it. Done at 2026-11-23
+  ~21:50 UTC, and again at ~22:50 UTC with the tree as committed (the sweep's program refusing root, the harness's
+  failing-sweep case): the evidence branch's `api/b2-worker-hardening/<sha>/image/` holds the probes, the photo's run
+  and the harness's lines. The harness file ships in the image, as `testing.ts` does (`.dockerignore` leaves out `*.test.ts`
+  only); it does anything only when root runs it, and root can do anything already.
 - CI: the same tests (the harness through `sudo -n`).
 - `dev`, once its worker runs (`ops` `worker-scale`, on the founder's yes): the worker's start line saying it isolates
   photos, a preparation's line, and an `ops` check (`flyctl ssh console` as root) of the worker's `/proc` owner and
@@ -166,3 +191,11 @@ left), `docs/DECISIONS.md` ADR-038, `docs/plans/api-b0-deploy.md` (the runtime s
 the audit's T52 and T56 rows, table 4.1, a log entry per commit), `docs/PROGRESS.md`. A full-depth review by a fresh
 subagent (`docs/GITHUB.md`): it changes how the worker runs and touches T52 and T56. Breakages of `image-frames.ts`,
 `image-process.ts` and `privileges.ts`, each caught by a named test.
+
+As run, 2026-11-23: 44 breakages of this part (`photoUserFor`, `asRoot`, the sweep, the photo's process, `start.ts`,
+`prepare.ts`, `main.ts`, the Dockerfile and `fly.toml`), each caught by the test it names, the tree's hash the same
+before and after. One went uncaught at first (W05, a sweep's exit not 0 taken as done) and has its test now, with W11
+(an exit by a signal taken as done). The refusal's four (W01, W07 to W09) are caught by the harness's case in the
+session, where the unit test's own ids are root's; on CI's runner the unit test catches them too. The two that would
+run something as root without the worker's mode (W01, X01) run in a container of the image with a process limit of
+its own. The list and its log go on the evidence branch beside the image's.

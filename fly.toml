@@ -34,10 +34,16 @@ kill_timeout = 30
   SUPABASE_URL = "https://rhsycmycocbzakrydahi.supabase.co"
   SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5kJcQ8JCyWiHHMGjucf00w_8ehpABvL"
   LOG_LEVEL = "info"
+  # The user each photo's process runs as, which the Dockerfile makes (services/worker/src/privileges.ts).
+  TADAYO_PHOTO_USER = "tadayo-image"
 
+# Each command starts as root and drops at once with `setpriv` (the Dockerfile's header; ADR-038). The API becomes
+# `node` for good: real, effective and saved ids, no capability, no way to gain one. The worker becomes `node` in
+# effect only, its real user root, so its /proc files are root's, and it keeps setuid, setgid and kill, which it uses
+# only for an instant at a time to start each photo's process as TADAYO_PHOTO_USER and end it.
 [processes]
-  api = "node services/api/src/main.ts"
-  worker = "node services/worker/src/main.ts"
+  api = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node services/api/src/main.ts"
+  worker = "setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node services/worker/src/main.ts"
 
 # The API's service. It listens only after the database and the clock are ready, so an open port is a
 # started API. The check is on the port and not on a route: a route to ask would be one outside the

@@ -27,10 +27,12 @@
 // - The child gets no environment and no output, so nothing it writes reaches the worker's log (T52). It is given the
 //   declared type and the decode's limit as its arguments, and the photo's bytes on its standard input, which the
 //   worker writes without a copy.
-// - What code that took over a decoder can still do (R4-2, and the fifth commit's check; the fix is the rest of
-//   docs/plans/api-b2-worker-hardening.md, section 2: docs/LIMITATIONS.md, 2026-11-23): it runs as the worker's user,
-//   so it can read the worker's environment from /proc, open the worker's standard output, signal the worker, and
-//   start a process in a session of its own, outside the group the worker kills, which outlives the photo.
+// - On Fly the child runs as a user of its own, TADAYO_PHOTO_USER, not the worker's (./privileges.ts;
+//   docs/plans/api-b2-worker-hardening.md section 2; ADR-038): it can't read the worker's environment or memory, open
+//   its pipes or signal it, and once its end settles every process of that user is ended by the sweep, so a process
+//   it started in a session of its own, outside the group the worker kills, doesn't outlive the photo. The worker
+//   takes root for an instant to start it and to kill its group. Without that user (the tests, CI, the session) the
+//   child runs as the worker's own, as before. What it can still do: docs/LIMITATIONS.md, 2026-11-23.
 
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -40,6 +42,7 @@ import type { UploadContentType } from "@tadayo/domain";
 import { UPLOAD_REJECTIONS } from "@tadayo/domain/limits";
 import { MessageReader, type ChildMessage, type SentPrepared } from "./image-frames.ts";
 import type { Prepared } from "./image.ts";
+import { asRoot, stopWorker, sweep, type PhotoUser } from "./privileges.ts";
 
 /** The longest one rendition's decode may take, in seconds (sharp's own timeout, in the child). */
 export const DECODE_SECONDS = 60;
@@ -203,9 +206,10 @@ export function outcomeOf(end: ChildEnd): ProcessAnswer {
 }
 
 /**
- * prepareImage on `bytes` in a child process (the rules above). `seconds` is each decode's limit, `deadlineSeconds`
- * the child's and `peakBytes` its memory's; the tests make them small, and give a `child` module of their own to
- * play a child that misbehaves.
+ * prepareImage on `bytes` in a child process (the rules above), as `user` when the worker has one for photos
+ * (./privileges.ts), else as the worker's own user. `seconds` is each decode's limit, `deadlineSeconds` the child's,
+ * `peakBytes` its memory's and `sweepSeconds` the sweep's; the tests make them small, and give a `child` module of
+ * their own to play a child that misbehaves.
  */
 export function prepareIsolated(
   bytes: Uint8Array,
@@ -215,19 +219,35 @@ export function prepareIsolated(
     readonly deadlineSeconds?: number;
     readonly peakBytes?: number;
     readonly child?: URL;
+    readonly user?: PhotoUser | undefined;
+    readonly sweepSeconds?: number;
   } = {},
 ): Promise<ProcessAnswer> {
   const seconds = limits.seconds ?? DECODE_SECONDS;
   const mostBytes = limits.peakBytes ?? PEAK_BYTES;
+  const { user } = limits;
+  // As the photo's user, the start and the kill need the worker's root for an instant: the child's user isn't its own.
+  const privileged = <T>(fn: () => T): T => (user === undefined ? fn() : asRoot(fn));
   return new Promise((resolve, reject) => {
     // `detached`: the child leads a process group of its own, so that killing the group ends what it started in that
-    // group (a process it starts in a session of its own escapes it: the header). Its fd 3 is the worker's pipe for
-    // its messages (./image-frames.ts), and its environment is empty: no Node channel, no variable at all.
-    const child = spawn(process.execPath, [fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
-      env: {},
-      stdio: ["pipe", "ignore", "ignore", "pipe"],
-      detached: true,
-    });
+    // group (a process it starts in a session of its own escapes it, which the sweep ends: ./privileges.ts). Its fd 3
+    // is the worker's pipe for its messages (./image-frames.ts), and its environment is empty: no Node channel, no
+    // variable at all.
+    let child: ReturnType<typeof spawn>;
+    try {
+      child = privileged(() =>
+        spawn(process.execPath, [fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
+          env: {},
+          stdio: ["pipe", "ignore", "ignore", "pipe"],
+          detached: true,
+          ...(user === undefined ? {} : { uid: user.uid, gid: user.gid }),
+        }),
+      );
+    } catch {
+      // A start Node refuses at once (a child it couldn't make) ran nothing of the photo's.
+      reject(new ImageProcessFailed());
+      return;
+    }
     const answers = child.stdio[3] as Readable | null;
     // A child that ends before it has read everything closes the pipe under the write: its end says why.
     child.stdin?.on("error", () => undefined);
@@ -237,12 +257,15 @@ export function prepareIsolated(
     let answer: ChildMessage | undefined;
     let seen = 0;
     const killGroup = () => {
-      if (child.pid === undefined) return;
-      try {
-        process.kill(-child.pid, "SIGKILL");
-      } catch {
-        // The group has ended.
-      }
+      const { pid } = child;
+      if (pid === undefined) return;
+      privileged(() => {
+        try {
+          process.kill(-pid, "SIGKILL");
+        } catch {
+          // The group has ended.
+        }
+      });
     };
     let grace: NodeJS.Timeout | undefined;
     // Once the child has ended or been killed, its end is settled when its pipes close, or after GRACE_MS if
@@ -306,25 +329,34 @@ export function prepareIsolated(
       killGroup();
       child.stdin?.destroy();
       answers?.destroy();
-      if (failed) {
-        reject(new ImageProcessFailed());
-        return;
-      }
-      const reported = answer?.kind === "prepared" ? answer.peakBytes : 0;
-      try {
-        resolve(
-          outcomeOf({
-            ready,
-            ...(killed === undefined ? {} : { killed }),
-            ...(answer === undefined ? {} : { answer }),
-            signal,
-            peakBytes: Math.max(seen, typeof reported === "number" ? reported : 0),
-            mostBytes,
-          }),
-        );
-      } catch (error) {
-        reject(error instanceof Error ? error : new ImageProcessFailed());
-      }
+      const finish = () => {
+        if (failed) {
+          reject(new ImageProcessFailed());
+          return;
+        }
+        const reported = answer?.kind === "prepared" ? answer.peakBytes : 0;
+        try {
+          resolve(
+            outcomeOf({
+              ready,
+              ...(killed === undefined ? {} : { killed }),
+              ...(answer === undefined ? {} : { answer }),
+              signal,
+              peakBytes: Math.max(seen, typeof reported === "number" ? reported : 0),
+              mostBytes,
+            }),
+          );
+        } catch (error) {
+          reject(error instanceof Error ? error : new ImageProcessFailed());
+        }
+      };
+      // As the photo's user, its end settles once every process of that user has been ended; a sweep that failed may
+      // have left one alive, so the worker stops rather than prepare another photo beside it (./privileges.ts).
+      if (user === undefined) finish();
+      else
+        sweep(user, limits.sweepSeconds).then(finish, () => {
+          stopWorker();
+        });
     };
     // A child that can't be started gives `error` and may never give `exit`.
     child.on("error", () => {

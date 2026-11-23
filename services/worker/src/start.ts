@@ -4,15 +4,20 @@
 // preparation reads originals and writes renditions with the service key (./storage.ts; T56), which Fly's secrets
 // give both process groups. Its jobs run in the loops main.ts starts (loop.ts): the days each club's week makes
 // (generation.ts), and the outbox's events (outbox.ts), of which the first is a photo's preparation (prepare.ts).
+// Before it connects it reads, too, whether each photo is prepared under a user of its own (./privileges.ts): with
+// TADAYO_PHOTO_USER and the start fly.toml gives it, or neither; either alone stops it.
 
 import { prepareClock, type Clock } from "@tadayo/domain";
 import { connect, type WorkerSql } from "./connection.ts";
+import { photoUserFor, type PhotoUser } from "./privileges.ts";
 import { workerStorage, type WorkerStorage } from "./storage.ts";
 
 export interface Started {
   sql: WorkerSql;
   clock: Clock;
   storage: WorkerStorage;
+  /** The user each photo's process runs as, or undefined when photos are prepared in the worker's own. */
+  photoUser: PhotoUser | undefined;
 }
 
 /** Reads Storage's settings, connects and prepares the clock of `TADAYO_ENVIRONMENT`, or throws. */
@@ -24,9 +29,10 @@ export async function startWorker(env: Readonly<Record<string, string | undefine
   const serviceKey = env.SUPABASE_SERVICE_KEY;
   if (serviceKey === undefined || serviceKey === "") throw new Error("worker: SUPABASE_SERVICE_KEY isn't set");
   const storage = workerStorage({ projectUrl: project, serviceKey });
+  const photoUser = photoUserFor(env);
   const sql = connect(url);
   try {
-    return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql), storage };
+    return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql), storage, photoUser };
   } catch (error) {
     await sql.end();
     throw error;
