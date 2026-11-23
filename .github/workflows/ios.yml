@@ -60,7 +60,7 @@ jobs:
     runs-on: xcode-27
     # Each step that can hang has its own timeout, which fails the step and lets collect and the
     # upload run; the job's own, a backstop, cancels the job, and then nothing is published.
-    timeout-minutes: 135
+    timeout-minutes: 175
     permissions:
       contents: read
     steps:
@@ -76,7 +76,9 @@ jobs:
       - run: python3 tools/ci/ios_steps.py build
         timeout-minutes: 25
       - run: python3 tools/ci/ios_steps.py test
-        timeout-minutes: 50  # a pass on each iOS, and a second boot
+        # A pass on each iOS and a second boot, on the runner as slow as it ran on 2026-11-23
+        # (docs/LIMITATIONS.md).
+        timeout-minutes: 90
       - if: ${{ !cancelled() }}
         run: python3 tools/ci/ios_steps.py collect
         timeout-minutes: 5
