@@ -4,12 +4,13 @@
 // photo handed to preparation comes out with its two renditions stored and recorded, its owner's hash, a random
 // version and its event done, in one transaction; what the checks refuse comes out rejected with its code and
 // nothing stored; an event with nothing to prepare changes nothing and calls Storage for nothing; an event that
-// can't ever be prepared dies at once; Storage away is tried again, and the retry writes over the same keys; and a
+// can't ever be prepared dies at once; Storage away is tried again, and the retry writes over the same keys; an
+// upload that lapses during the work is recorded as nothing; the record's clock is read after its lock (T1); and a
 // second run of the same event records nothing, whether it comes after the first or at the same time.
 //
 // The world is world.ts's: Ana's Saturday 7 November 2026 in a London club, revealed at 07:00Z; Ben and Cleo are its
 // other members. Storage is the worker's in-memory fake (@tadayo/worker/testing), and every image is made by
-// `sharp` in the test. Each test but the last runs in one transaction rolled back at its end, the worker's own
+// `sharp` in the test. Each test but the last two runs in one transaction rolled back at its end, the worker's own
 // transactions being savepoints in it (`inside`): other files leave events of the same topic committed, which a
 // pass here would claim, so a pass first sets every pending event aside, in the same rolled-back transaction.
 //
@@ -222,9 +223,18 @@ function rig(): Rig {
   };
 }
 
-/** One pass of the outbox with the worker's one handler, as main.ts runs it. */
-function pass(tx: WorldTx, deps: PrepareDeps) {
-  return outboxPass(inside(tx), clock, { [PREPARE_TOPIC]: prepareHandler(deps) });
+/** One pass of the outbox with the worker's one handler, as main.ts runs it, with the lines it wrote. */
+async function pass(tx: WorldTx, deps: PrepareDeps) {
+  const err: string[] = [];
+  const { handled } = await outboxPass(
+    inside(tx),
+    clock,
+    { [PREPARE_TOPIC]: prepareHandler(deps) },
+    {
+      warn: (line) => err.push(line),
+    },
+  );
+  return { handled, err };
 }
 
 const LINE = (id: string, outcome: string) =>
@@ -465,6 +475,36 @@ describe("upload.prepare with nothing to prepare, or nothing it can (T54)", () =
     });
   });
 
+  it("records nothing for an upload that lapses during the work, and finishes the event: its renditions stay stored at its key", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const one = await handed(tx, w, w.ben);
+      r.storage.originals.set(one.objectKey, await testImage(640, 480));
+      const event = await eventOf(tx, one.id);
+      // Read a microsecond before its expires_at, 24 hours after it was made; recorded at it.
+      const lapses = EVENING.add({ hours: 24 });
+      clock.set(lapses.subtract({ microseconds: 1 }));
+      const storage: WorkerStorage = {
+        readOriginal: (key) => r.storage.readOriginal(key),
+        putRendition: (key, bytes) => {
+          clock.set(lapses);
+          return r.storage.putRendition(key, bytes);
+        },
+      };
+      expect(await prepareUpload(r.deps(tx, { storage }), event)).toMatchObject({ upload: one.id, outcome: "skipped" });
+      expect(r.storage.puts).toEqual([`${one.objectKey}/full`, `${one.objectKey}/display`]);
+      expect(await renditionRows(tx, one.id)).toEqual([]);
+      expect(await uploadRow(tx, one.id)).toMatchObject({
+        state: "preparing",
+        content_hash: null,
+        content_version: null,
+      });
+      expect(await eventRow(tx, event.id)).toMatchObject({ state: "done", processed_at: lapses.toString() });
+    });
+  });
+
   it("kills at once an event whose payload names no upload, and one whose upload's renditions aren't built, with the alert line", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
@@ -598,6 +638,54 @@ describe("upload.prepare when Storage is away, or another run gets there first (
       expect(await eventRow(tx, event.id)).toMatchObject({ state: "done" });
     });
   });
+
+  it(
+    "reads the record's clock after the upload's lock, so what it writes is dated when it could write it (T1)",
+    { timeout: 30_000 },
+    async () => {
+      const r = rig();
+      const w = await db.begin((tx) => newWorld(plain(tx as unknown as WorldTx)));
+      committed.days.push(w.day);
+      const one = await db.begin((tx) => handed(tx as unknown as WorldTx, w, w.ben));
+      committed.uploads.push(one.id);
+      r.storage.originals.set(one.objectKey, await testImage(800, 600));
+      const event = await db.begin((tx) => eventOf(tx as unknown as WorldTx, one.id));
+      const worker = db as unknown as WorkerSql;
+
+      // Another transaction holds the upload's row while the run reaches its record.
+      let go = (): void => undefined;
+      const gate = new Promise<void>((resolve) => (go = resolve));
+      let held: (pid: number) => void = () => undefined;
+      const holding = new Promise<number>((resolve) => (held = resolve));
+      const holder = db.begin(async (tx) => {
+        const [row] = await tx<{ pid: number }[]>`
+          SELECT pg_catalog.pg_backend_pid() AS pid FROM app.uploads WHERE id = ${one.id} FOR UPDATE`;
+        held(row?.pid ?? 0);
+        await gate;
+      });
+      const pid = await holding;
+      const later = HANDED.add({ seconds: 10 });
+      try {
+        clock.set(HANDED);
+        const run = prepareUpload({ ...r.deps(db as unknown as WorldTx), sql: worker }, event);
+        await waitingOn(db, pid);
+        clock.set(later);
+        go();
+        await holder;
+        expect(await run).toMatchObject({ outcome: "ready" });
+      } finally {
+        go();
+      }
+      const rows = await db.begin((tx) => renditionRows(tx as unknown as WorldTx, one.id));
+      expect(rows.map((row) => [row.kind, row.created_at])).toEqual([
+        ["display", later.toString()],
+        ["full", later.toString()],
+      ]);
+      const [done] = await db<{ state: string; processed_at: Temporal.Instant | null }[]>`
+        SELECT state, processed_at FROM app.outbox_events WHERE id = ${event.id}`;
+      expect([done?.state, done?.processed_at?.toString()]).toEqual(["done", later.toString()]);
+    },
+  );
 
   it(
     "makes a second run recording at the same time wait for the first and then write nothing, while a row naming the upload goes by (FOR NO KEY UPDATE)",

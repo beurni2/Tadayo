@@ -35,6 +35,7 @@ export {
   type Claim,
   type Handler,
   type OutboxEvent,
+  type OutboxPassOptions,
   type OutboxPassResult,
 } from "./outbox.ts";
 export {

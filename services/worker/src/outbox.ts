@@ -12,16 +12,20 @@
 //    come back for ever: it comes back once its lease has passed, at most MAX_ATTEMPTS times. The lease does what a
 //    transaction held across the work would, without holding a connection and a row lock through seconds of network
 //    and CPU: nobody else claims the event while it lasts.
-// 2. An event claimed with its attempts already spent dies at once, keeping its last code, or `lease_lapsed` when its
-//    last attempt never reported back.
+// 2. An event claimed with its attempts already spent dies at once, as `lease_lapsed`: its last attempt never
+//    reported back, since a last attempt that failed dies as it reports (item 3). The codes of the attempts before
+//    it are in their own lines.
 // 3. The work: the handler, given the event. It returns once the work is done, and the event is marked done; a
 //    handler that changes rows marks it done itself, in the same transaction (`finishEvent`), so the change and the
 //    event's end commit together. A throw is tried again after BACKOFF_SECONDS times two to the attempts before it,
-//    and dies once MAX_ATTEMPTS are spent; a `FailedForGood` dies at once.
+//    and dies once MAX_ATTEMPTS are spent; a `FailedForGood` dies at once. A failure is written only over the claim
+//    it came from: if its lease passed and another claim took the event, that claim's is the event's.
 //
 // The dead-letter table is `app.outbox_events` with `state = 'dead'`, and its alert is a line on standard error,
 // which Fly's logs keep; nothing pages anyone before monitoring exists (docs/LIMITATIONS.md). Every line and every
-// `last_error` holds codes and opaque ids, never an error's message, which could quote a row or a URL (T52).
+// `last_error` holds codes and opaque ids, never an error's message, which could quote a row or a URL (T52). Each line
+// is written as soon as what it says is committed, so a pass that then fails, or that runs on while events keep
+// coming, loses or holds back none.
 
 import type { Clock } from "@tadayo/domain";
 import type { WorkerSql, WorkerTx } from "./connection.ts";
@@ -100,21 +104,19 @@ export async function finishEvent(tx: WorkerTx, id: string, at: Temporal.Instant
   await tx`UPDATE app.outbox_events SET state = 'done', processed_at = ${at} WHERE id = ${id} AND state = 'pending'`;
 }
 
-/** What a claim found: an event to work on, one whose attempts were spent, or nothing due. */
-export type Claim =
-  | { readonly kind: "work"; readonly event: OutboxEvent }
-  | { readonly kind: "dead"; readonly event: OutboxEvent; readonly code: string }
-  | null;
+/** The code of an event whose last attempt never reported back. */
+const LEASE_LAPSED = "lease_lapsed";
+
+/** What a claim found: an event to work on, one whose attempts were spent (now dead), or nothing due. */
+export type Claim = { readonly kind: "work" | "dead"; readonly event: OutboxEvent } | null;
 
 /** Claims the oldest due event of `topics`, in its own transaction (item 1 above). */
 export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly string[]): Promise<Claim> {
   if (topics.length === 0) return null;
   return limited(sql, async (tx) => {
     const at = await clock.sample(tx);
-    const rows = await tx<
-      { id: string; topic: string; payload: unknown; attempts: number; last_error: string | null }[]
-    >`
-      SELECT id, topic, payload, attempts, last_error FROM app.outbox_events
+    const rows = await tx<{ id: string; topic: string; payload: unknown; attempts: number }[]>`
+      SELECT id, topic, payload, attempts FROM app.outbox_events
        WHERE state = 'pending' AND available_at <= ${at} AND topic = ANY(${tx.array([...topics])})
        ORDER BY available_at, id
        LIMIT 1
@@ -123,10 +125,10 @@ export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly s
     if (row === undefined) return null;
     if (!ID.test(row.id)) throw new Error("outbox: an event came back with no id");
     if (row.attempts >= MAX_ATTEMPTS) {
-      const code = row.last_error ?? "lease_lapsed";
       await tx`
-        UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${code} WHERE id = ${row.id}`;
-      return { kind: "dead", event: { ...row, attempts: row.attempts }, code } as const;
+        UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${LEASE_LAPSED}
+         WHERE id = ${row.id}`;
+      return { kind: "dead", event: row } as const;
     }
     await tx`
       UPDATE app.outbox_events SET attempts = attempts + 1, available_at = ${at.add({ seconds: LEASE_SECONDS })}
@@ -138,7 +140,11 @@ export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly s
   });
 }
 
-/** Records a failed attempt of `event`: tried again after its backoff, or dead. Returns whether it died. */
+/**
+ * Records a failed attempt of `event`: tried again after its backoff, or dead. Returns whether it died, and whether
+ * anything was written: nothing is when the event has ended, or when another claim has taken it since (its lease
+ * passed while this attempt worked), whose attempt then decides.
+ */
 async function recordFailure(sql: WorkerSql, clock: Clock, event: OutboxEvent, code: string, forGood: boolean) {
   return limited(sql, async (tx) => {
     const at = await clock.sample(tx);
@@ -146,11 +152,11 @@ async function recordFailure(sql: WorkerSql, clock: Clock, event: OutboxEvent, c
     const changed = dies
       ? await tx`
           UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${code}
-           WHERE id = ${event.id} AND state = 'pending'`
+           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}`
       : await tx`
           UPDATE app.outbox_events
              SET last_error = ${code}, available_at = ${at.add({ seconds: backoffSeconds(event.attempts) })}
-           WHERE id = ${event.id} AND state = 'pending'`;
+           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}`;
     return { dies, changed: changed.count > 0 };
   });
 }
@@ -158,31 +164,35 @@ async function recordFailure(sql: WorkerSql, clock: Clock, event: OutboxEvent, c
 export interface OutboxPassResult {
   /** Events whose work was done. */
   readonly handled: number;
-  /** The lines for standard error: each failure, and each event that died, by topic, id and code. */
-  readonly err: readonly string[];
+}
+
+export interface OutboxPassOptions {
+  /** Writes a line for standard error, at once: each failure, and each event that died, by topic, id and code. */
+  readonly warn: (line: string) => void;
+  /** Answers true once the worker is told to stop. */
+  readonly stopping?: (() => boolean) | undefined;
 }
 
 /**
  * One pass: claims and works on due events of the handlers' topics, one at a time, until none is due or `stopping`
  * answers true. Throws only when the database can't be reached for a claim or a failure's record; the event's lease
- * then brings it back.
+ * then brings it back. Every line is already written when it throws.
  */
 export async function outboxPass(
   sql: WorkerSql,
   clock: Clock,
   handlers: Readonly<Record<string, Handler>>,
-  stopping: () => boolean = () => false,
+  { warn, stopping = () => false }: OutboxPassOptions,
 ): Promise<OutboxPassResult> {
   const topics = Object.keys(handlers);
   let handled = 0;
-  const err: string[] = [];
   while (!stopping()) {
     const claim = await claimNext(sql, clock, topics);
     if (claim === null) break;
     const { event } = claim;
     if (claim.kind === "dead") {
-      err.push(
-        `worker: an event is dead: ${event.topic} ${event.id} after ${String(event.attempts)} attempts: ${claim.code}`,
+      warn(
+        `worker: an event is dead: ${event.topic} ${event.id} after ${String(event.attempts)} attempts: ${LEASE_LAPSED}`,
       );
       continue;
     }
@@ -196,12 +206,12 @@ export async function outboxPass(
       const code = failureCode(error);
       const { dies, changed } = await recordFailure(sql, clock, event, code, error instanceof FailedForGood);
       if (!changed) continue;
-      err.push(
+      warn(
         dies
           ? `worker: an event is dead: ${event.topic} ${event.id} after ${String(event.attempts)} attempts: ${code}`
           : `worker: an event failed: ${event.topic} ${event.id}, attempt ${String(event.attempts)}: ${code}`,
       );
     }
   }
-  return { handled, err };
+  return { handled };
 }

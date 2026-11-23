@@ -64,8 +64,10 @@ try {
     }),
     runLoop({
       pass: async () => {
-        const result = await outboxPass(sql, clock, handlers, () => stopping);
-        for (const line of result.err) process.stderr.write(`${line}\n`);
+        await outboxPass(sql, clock, handlers, {
+          warn: (line) => process.stderr.write(`${line}\n`),
+          stopping: () => stopping,
+        });
       },
       everyMs: OUTBOX_EVERY_MS,
       stopped,

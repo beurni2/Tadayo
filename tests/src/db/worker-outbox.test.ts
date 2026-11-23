@@ -3,8 +3,9 @@
 // api-b2-spike-prepare.md sections 1 and 9; spec 34; T52, T54): a claim takes the oldest due event of the worker's
 // topics, counts its attempt and leases it, in its own committed transaction, and two claimers never take the same
 // one; a handled event is done; a failed one comes back after its backoff, and dies after five attempts or at once
-// when it can never work, with its alert line; an event whose last attempt never reported back dies when claimed
-// again; and a line or a row says a failure's code, never its message.
+// when it can never work, with its alert line, written as it happens; an event whose last attempt never reported
+// back dies when claimed again; a failure is written only over its own claim; and a line or a row says a failure's
+// code, never its message.
 //
 // Each test writes its events under a topic of its own (`topic()`), which no other file's worker has a handler for,
 // and commits them, so the claims here are the real ones, each in its own transaction, as the worker makes them. The
@@ -14,7 +15,7 @@
 // existed. The deliberate breakages, run at the PR's last head, show they can fail.
 
 import { randomBytes } from "node:crypto";
-import { isPlainLoopback } from "@tadayo/domain";
+import { isPlainLoopback, type Clock } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import {
   BACKOFF_SECONDS,
@@ -91,6 +92,29 @@ async function row(id: string) {
     available_at: found.available_at.toString(),
     processed_at: found.processed_at === null ? null : found.processed_at.toString(),
   };
+}
+
+/** One pass of `handlers`, with the lines it wrote, in the order it wrote them. */
+async function pass(clock: Clock, handlers: Record<string, Handler>, stopping?: () => boolean) {
+  const err: string[] = [];
+  const { handled } = await outboxPass(worker, clock, handlers, { warn: (line) => err.push(line), stopping });
+  return { handled, err };
+}
+
+/** The worker's connection, whose `n`th transaction and every one after it fail as a lost connection would. */
+function failingFrom(n: number): WorkerSql {
+  let begun = 0;
+  return new Proxy(worker, {
+    get(target, key, receiver) {
+      if (key !== "begin") return Reflect.get(target, key, receiver) as unknown;
+      return (...args: Parameters<WorkerSql["begin"]>) => {
+        begun += 1;
+        if (begun >= n)
+          return Promise.reject(Object.assign(new Error("connection lost"), { code: "CONNECTION_CLOSED" }));
+        return target.begin(...args);
+      };
+    },
+  });
 }
 
 /** A handler that records the events it was given, then does `then`. */
@@ -189,10 +213,10 @@ describe("a pass (spec 34, T52, T54)", () => {
     const id = await event(mine, T, {}, { upload_id: "upl_one" });
     const clock = fakeClock(T.add({ seconds: 5 }));
     const { seen, handler } = recording();
-    expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({ handled: 1, err: [] });
+    expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 1, err: [] });
     expect(seen).toEqual([{ id, topic: mine, payload: { upload_id: "upl_one" }, attempts: 1 }]);
     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, processed_at: T.add({ seconds: 5 }).toString() });
-    expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
+    expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
   });
 
   it("tries a failed event again after 30, 60, 120 and 240 seconds, and kills it after five attempts with its code", async () => {
@@ -202,7 +226,7 @@ describe("a pass (spec 34, T52, T54)", () => {
     const { seen, handler } = recording(() => Promise.reject(new StorageUnavailable("got no answer")));
     let now = T;
     for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt += 1) {
-      expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({
+      expect(await pass(clock, { [mine]: handler })).toEqual({
         handled: 0,
         err: [`worker: an event failed: ${mine} ${id}, attempt ${String(attempt)}: storage.unavailable`],
       });
@@ -216,12 +240,12 @@ describe("a pass (spec 34, T52, T54)", () => {
       });
       // Not a microsecond before.
       clock.set(now.add({ seconds: wait }).subtract({ microseconds: 1 }));
-      expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
+      expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
       now = now.add({ seconds: wait });
       clock.set(now);
     }
     expect([30, 60, 120, 240].reduce((sum, s) => sum + s, 0)).toBe(T.until(now).total("seconds"));
-    expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({
+    expect(await pass(clock, { [mine]: handler })).toEqual({
       handled: 0,
       err: [`worker: an event is dead: ${mine} ${id} after 5 attempts: storage.unavailable`],
     });
@@ -233,7 +257,7 @@ describe("a pass (spec 34, T52, T54)", () => {
     });
     expect(seen.map((e) => e.attempts)).toEqual([1, 2, 3, 4, 5]);
     clock.set(now.add({ hours: 24 }));
-    expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
+    expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
   });
 
   it("kills at once an event whose failure no retry would end, keeping its code", async () => {
@@ -241,7 +265,7 @@ describe("a pass (spec 34, T52, T54)", () => {
     const id = await event(mine, T);
     const clock = fakeClock(T);
     const { handler } = recording(() => Promise.reject(new FailedForGood("payload")));
-    expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({
+    expect(await pass(clock, { [mine]: handler })).toEqual({
       handled: 0,
       err: [`worker: an event is dead: ${mine} ${id} after 1 attempts: payload`],
     });
@@ -253,25 +277,61 @@ describe("a pass (spec 34, T52, T54)", () => {
     });
   });
 
-  it("kills an event claimed with its attempts spent without running its handler, as lease_lapsed when the last never reported back", async () => {
+  it("kills an event claimed with its attempts spent without running its handler, as lease_lapsed, whatever an earlier attempt said", async () => {
     const mine = topic();
+    // The fifth attempt never reported back: a fifth that failed would have died as it reported.
     const lapsed = await event(mine, T.subtract({ minutes: 2 }), { attempts: MAX_ATTEMPTS });
-    const failed = await event(mine, T.subtract({ minutes: 1 }), {
+    const failedBefore = await event(mine, T.subtract({ minutes: 1 }), {
       attempts: MAX_ATTEMPTS,
-      lastError: "image.timeout",
+      lastError: "storage.unavailable",
     });
     const clock = fakeClock(T);
     const { seen, handler } = recording();
-    expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({
+    expect(await pass(clock, { [mine]: handler })).toEqual({
       handled: 0,
       err: [
         `worker: an event is dead: ${mine} ${lapsed} after 5 attempts: lease_lapsed`,
-        `worker: an event is dead: ${mine} ${failed} after 5 attempts: image.timeout`,
+        `worker: an event is dead: ${mine} ${failedBefore} after 5 attempts: lease_lapsed`,
       ],
     });
     expect(seen).toEqual([]);
-    expect(await row(lapsed)).toMatchObject({ state: "dead", attempts: 5, last_error: "lease_lapsed" });
-    expect(await row(failed)).toMatchObject({ state: "dead", attempts: 5, last_error: "image.timeout" });
+    for (const id of [lapsed, failedBefore]) {
+      expect(await row(id)).toMatchObject({
+        state: "dead",
+        attempts: 5,
+        last_error: "lease_lapsed",
+        processed_at: T.toString(),
+      });
+    }
+  });
+
+  it("writes each line as soon as what it says is committed, before the next event, and keeps it when the pass then fails", async () => {
+    const mine = topic();
+    const spent = await event(mine, T.subtract({ minutes: 3 }), { attempts: MAX_ATTEMPTS });
+    const broken = await event(mine, T.subtract({ minutes: 2 }), {}, { what: "broken" });
+    const later = await event(mine, T.subtract({ minutes: 1 }), {}, { what: "later" });
+    const clock = fakeClock(T);
+    const err: string[] = [];
+    const seenLines: number[] = [];
+    const handler: Handler = (e) => {
+      seenLines.push(err.length);
+      return (e.payload as { what: string }).what === "broken"
+        ? Promise.reject(new FailedForGood("payload"))
+        : Promise.resolve();
+    };
+    const dead = [
+      `worker: an event is dead: ${mine} ${spent} after 5 attempts: lease_lapsed`,
+      `worker: an event is dead: ${mine} ${broken} after 1 attempts: payload`,
+    ];
+    // Transactions: the spent claim (1), the broken one's claim (2) and its record (3), then the later one's
+    // claim (4), which the connection loses.
+    await expect(
+      outboxPass(failingFrom(4), clock, { [mine]: handler }, { warn: (line) => err.push(line) }),
+    ).rejects.toThrow("connection lost");
+    expect(err).toEqual(dead);
+    // The spent event's line was out before the next event's work began, as it would be while events keep coming.
+    expect(seenLines).toEqual([1]);
+    expect(await row(later)).toMatchObject({ state: "pending", attempts: 0 });
   });
 
   it("writes a failure's code, never its message: Postgres's SQLSTATE, a system's code, else unknown (T52)", async () => {
@@ -302,7 +362,7 @@ describe("a pass (spec 34, T52, T54)", () => {
       const what = (e.payload as { what: string }).what;
       await (failures.find(([name]) => name === what)?.[1] ?? (() => Promise.resolve()))();
     };
-    const result = await outboxPass(worker, clock, { [mine]: handler });
+    const result = await pass(clock, { [mine]: handler });
     expect(result.handled).toBe(0);
     expect(result.err).toHaveLength(failures.length);
     expect(result.err.join("\n")).not.toContain(secret);
@@ -323,9 +383,40 @@ describe("a pass (spec 34, T52, T54)", () => {
       stop = true;
       return Promise.resolve();
     });
-    expect(await outboxPass(worker, clock, { [mine]: handler }, () => stop)).toEqual({ handled: 1, err: [] });
+    expect(await pass(clock, { [mine]: handler }, () => stop)).toEqual({ handled: 1, err: [] });
     expect((await row(first)).state).toBe("done");
     expect(await row(second)).toMatchObject({ state: "pending", attempts: 0 });
+  });
+
+  it("writes a failure only over its own claim: once the lease passed and another claim took the event, that one decides", async () => {
+    const mine = topic();
+    const id = await event(mine, T);
+    const clock = fakeClock(T);
+    // The first attempt outlives its lease, another worker claims the event, then the first fails.
+    const { seen, handler } = recording(async () => {
+      clock.set(T.add({ seconds: LEASE_SECONDS }));
+      expect(await claimNext(worker, clock, [mine])).toMatchObject({ kind: "work", event: { id, attempts: 2 } });
+      throw new StorageUnavailable("got no answer");
+    });
+    expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
+    expect(seen.map((e) => e.attempts)).toEqual([1]);
+    expect(await row(id)).toEqual({
+      state: "pending",
+      attempts: 2,
+      last_error: null,
+      available_at: T.add({ seconds: 2 * LEASE_SECONDS }).toString(),
+      processed_at: null,
+    });
+    // Nor does its failure for good kill the event under the newer claim.
+    const other = await event(mine, T);
+    clock.set(T);
+    const late = recording(async () => {
+      clock.set(T.add({ seconds: LEASE_SECONDS }));
+      expect(await claimNext(worker, clock, [mine])).toMatchObject({ kind: "work", event: { id: other, attempts: 2 } });
+      throw new FailedForGood("payload");
+    });
+    expect(await pass(clock, { [mine]: late.handler })).toEqual({ handled: 0, err: [] });
+    expect(await row(other)).toMatchObject({ state: "pending", attempts: 2, last_error: null });
   });
 
   it("writes nothing over an event its handler already ended, when the handler then fails", async () => {
@@ -337,7 +428,7 @@ describe("a pass (spec 34, T52, T54)", () => {
       await db.begin((tx) => finishEvent(tx, e.id, T));
       throw new StorageUnavailable("got no answer");
     });
-    expect(await outboxPass(worker, clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
+    expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, last_error: null, processed_at: T.toString() });
   });
 });

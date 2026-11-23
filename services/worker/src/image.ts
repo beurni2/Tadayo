@@ -9,7 +9,9 @@
 //    or hostile client.
 // 3. The header, with no pixel decoded: its format the signature's (else unsupported_type), and its width times
 //    height at most 64,000,000 pixels (D09), else too_many_pixels. A header that can't be read: unreadable.
-// 4. Each rendition, decoded with the pixel limit again, `failOn: "warning"` and a timeout: pixel data that won't
+// 4. What the decode would hold at once, from the header: at most 128 MiB for a decoder that can't stream (FQ138),
+//    else too_many_pixels.
+// 5. Each rendition, decoded with the pixel limit again, `failOn: "warning"` and a timeout: pixel data that won't
 //    decode is unreadable; the timeout is the worker's limit, not the photo's fault, so it throws ImageTimeout,
 //    which the outbox tries again.
 //
@@ -25,7 +27,7 @@
 
 import { createHmac } from "node:crypto";
 import { UPLOAD_MAX_BYTES, type UploadContentType, type UploadRejection } from "@tadayo/domain";
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 
 sharp.block({ operation: ["VipsForeignLoad"] });
 sharp.unblock({ operation: ["VipsForeignLoadJpegBuffer", "VipsForeignLoadPngBuffer", "VipsForeignLoadWebpBuffer"] });
@@ -34,6 +36,15 @@ sharp.concurrency(1);
 
 /** D09: 64 megapixels decoded. */
 export const MAX_PIXELS = 64_000_000;
+/**
+ * The most a decoder that can't stream may hold at once, in bytes (FQ138). Every decode here streams, a few rows at
+ * a time, except two, which hold the whole image before they give a row: a JPEG whose data comes in more than one
+ * scan (progressive, or each component in a scan of its own) keeps every coefficient until the last scan, and an
+ * interlaced PNG keeps every pixel until its last pass. Within 64 megapixels those reach 488 MiB, which the 512 MB
+ * Machine can't hold beside everything else. 128 MiB keeps their peak near the largest a streaming decode reaches
+ * (docs/plans/api-b2-spike-prepare.md section 4.4, measured), and takes any photo the app sends (ADR-014).
+ */
+export const MAX_HELD_BYTES = 128 * 1024 * 1024;
 /** The longest one rendition's decode may take, in seconds. */
 export const DECODE_SECONDS = 60;
 
@@ -95,6 +106,34 @@ const FORMATS: Readonly<Record<UploadContentType, string>> = {
   "image/webp": "webp",
 };
 
+/**
+ * The bytes the decoder will hold whole before it gives a row, from the header alone, or 0 when it streams.
+ * `isProgressive` is libvips' own reading of the header, the one its decoder acts on: a JPEG with more than one scan
+ * (libjpeg's `jpeg_has_multiple_scans`, whatever its frame marker says), or an Adam7 PNG.
+ * - JPEG: libjpeg keeps 64 two-byte coefficients for each 8-by-8 block of each component, its blocks padded to whole
+ *   MCUs of at most 32 pixels a side. Counting every component at full size is the most a subsampled one needs.
+ * - PNG: every pixel, each of its samples 1 byte, or 2 at 16 bits, which is a PNG's most.
+ * - WebP: libvips gives libwebp the scale it needs, so its buffer is the rendition's size (measured, section 4.4).
+ */
+export function heldBytes(header: {
+  readonly format: string;
+  readonly width: number;
+  readonly height: number;
+  readonly channels: number;
+  readonly depth: string;
+  readonly isProgressive: boolean;
+}): number {
+  if (!header.isProgressive) return 0;
+  if (header.format === "jpeg") {
+    const padded = (side: number) => Math.ceil(side / 32) * 32;
+    return padded(header.width) * padded(header.height) * header.channels * 2;
+  }
+  if (header.format === "png") {
+    return header.width * header.height * header.channels * (header.depth === "uchar" ? 1 : 2);
+  }
+  return 0;
+}
+
 /** `sharp`'s own words for its timeout: "timeout: 12% complete". */
 function timedOut(error: unknown): boolean {
   return error instanceof Error && error.message.startsWith("timeout:");
@@ -117,24 +156,23 @@ export async function prepareImage(
   // is an error and never a rejection of the photo; only what the decode itself says is the photo's.
   // The header alone: with the pixel limit on, metadata() itself refuses a large image by an error's words.
   const reader = sharp(bytes, { limitInputPixels: false });
-  let width: number;
-  let height: number;
+  let header: Metadata;
   try {
-    const header = await reader.metadata();
-    if (header.format !== FORMATS[type]) return { ok: false, rejection: "unsupported_type" };
-    width = header.width;
-    height = header.height;
+    header = await reader.metadata();
   } catch {
     return { ok: false, rejection: "unreadable" };
   }
-  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
+  if (header.format !== FORMATS[type]) return { ok: false, rejection: "unsupported_type" };
+  const { width, height, channels } = header;
+  if (![width, height, channels].every((n) => Number.isInteger(n) && n >= 1)) {
     return { ok: false, rejection: "unreadable" };
   }
   if (width * height > MAX_PIXELS) return { ok: false, rejection: "too_many_pixels" };
+  if (heldBytes(header) > MAX_HELD_BYTES) return { ok: false, rejection: "too_many_pixels" };
 
   const renditions: Rendition[] = [];
   for (const kind of RENDITION_KINDS) {
-    // Each its own pipeline from the bytes, so each streams the decode rather than holding the whole image.
+    // Each its own pipeline from the bytes, one after the other, so no two decodes are held at once.
     const pipeline = sharp(bytes, { limitInputPixels: MAX_PIXELS, failOn: "warning", autoOrient: true })
       .resize({ ...BOXES[kind], fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 80 })

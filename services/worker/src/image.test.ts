@@ -4,7 +4,16 @@
 
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { contentHash, ImageTimeout, MAX_PIXELS, prepareImage, signatureOf, type Rendition } from "./image.ts";
+import {
+  contentHash,
+  heldBytes,
+  ImageTimeout,
+  MAX_HELD_BYTES,
+  MAX_PIXELS,
+  prepareImage,
+  signatureOf,
+  type Rendition,
+} from "./image.ts";
 
 const MiB = 1024 * 1024;
 
@@ -145,6 +154,80 @@ describe("what is refused, and with which code (D09, spec 33)", () => {
   });
 });
 
+describe("a decode that can't stream (FQ138)", () => {
+  type Canvas = { width: number; height: number; channels: 3 | 4; background: string };
+  const canvas = (width: number, height: number, channels: 3 | 4 = 3): Canvas => ({
+    width,
+    height,
+    channels,
+    background: channels === 4 ? "#4a7a5c80" : "#4a7a5c",
+  });
+  const make = (create: Canvas) => sharp({ create, limitInputPixels: false });
+  const progressive = (create: Canvas, chromaSubsampling = "4:4:4") =>
+    make(create).jpeg({ progressive: true, chromaSubsampling }).toBuffer();
+  const interlaced = (create: Canvas, sixteen = false) =>
+    (sixteen ? make(create).toColourspace("rgb16") : make(create)).png({ progressive: true }).toBuffer();
+  const refused = { ok: false, rejection: "too_many_pixels" };
+
+  it("counts what libjpeg and libvips hold whole: every coefficient of a JPEG of more than one scan, every pixel of an interlaced PNG, and nothing for the rest", () => {
+    expect(MAX_HELD_BYTES).toBe(128 * MiB);
+    const header = { width: 4000, height: 3000, channels: 3, depth: "uchar", isProgressive: true };
+    // 64 two-byte coefficients for each 8-by-8 block of each component, padded to whole 32-pixel MCUs.
+    expect(heldBytes({ ...header, format: "jpeg" })).toBe(4000 * 3008 * 3 * 2);
+    expect(heldBytes({ ...header, format: "jpeg", width: 1, height: 1 })).toBe(32 * 32 * 3 * 2);
+    expect(heldBytes({ ...header, format: "jpeg", channels: 4 })).toBe(4000 * 3008 * 4 * 2);
+    expect(heldBytes({ ...header, format: "png" })).toBe(4000 * 3000 * 3);
+    expect(heldBytes({ ...header, format: "png", channels: 4, depth: "ushort" })).toBe(4000 * 3000 * 4 * 2);
+    expect(heldBytes({ ...header, format: "jpeg", isProgressive: false })).toBe(0);
+    expect(heldBytes({ ...header, format: "png", isProgressive: false })).toBe(0);
+    expect(heldBytes({ ...header, format: "webp" })).toBe(0);
+  });
+
+  it("refuses a progressive JPEG whose coefficients pass 128 MiB as too_many_pixels, subsampled or not, and takes one within it", async () => {
+    // 4736 x 4736 x 3 components x 2 bytes is 134,578,176; 4704 x 4704 x 3 x 2 is 132,765,696; the budget 134,217,728.
+    expect(await prepareImage(await progressive(canvas(4736, 4736)), "image/jpeg")).toEqual(refused);
+    expect(await prepareImage(await progressive(canvas(4736, 4736), "4:2:0"), "image/jpeg")).toEqual(refused);
+    expect((await prepareImage(await progressive(canvas(4704, 4704)), "image/jpeg")).ok).toBe(true);
+    // CMYK has four components: 4096 x 4096 x 4 x 2 is the budget exactly.
+    const cmyk = (width: number) =>
+      make(canvas(width, 4096)).toColourspace("cmyk").jpeg({ progressive: true }).toBuffer();
+    expect(await prepareImage(await cmyk(4128), "image/jpeg")).toEqual(refused);
+    expect((await prepareImage(await cmyk(4096), "image/jpeg")).ok).toBe(true);
+  }, 60_000);
+
+  it("refuses an interlaced PNG whose pixels pass 128 MiB as too_many_pixels, by its channels and its depth, and takes one within it", async () => {
+    // 5793 x 5793 x 4 is 134,235,396 and 5792 x 5792 x 4 is 134,189,056; at 16 bits, 4096 x 4096 x 8 is the budget.
+    expect(await prepareImage(await interlaced(canvas(5793, 5793, 4)), "image/png")).toEqual(refused);
+    expect((await prepareImage(await interlaced(canvas(5792, 5792, 4)), "image/png")).ok).toBe(true);
+    expect(await prepareImage(await interlaced(canvas(4097, 4096, 4), true), "image/png")).toEqual(refused);
+    expect((await prepareImage(await interlaced(canvas(4096, 4096, 4), true), "image/png")).ok).toBe(true);
+  }, 60_000);
+
+  it("takes the same sizes when their decode streams: a baseline JPEG, a PNG that isn't interlaced, a WebP", async () => {
+    expect((await prepareImage(await make(canvas(4736, 4736)).jpeg().toBuffer(), "image/jpeg")).ok).toBe(true);
+    expect(
+      (
+        await prepareImage(
+          await make(canvas(5793, 5793, 4))
+            .png()
+            .toBuffer(),
+          "image/png",
+        )
+      ).ok,
+    ).toBe(true);
+    expect(
+      (
+        await prepareImage(
+          await make(canvas(5793, 5793, 4))
+            .webp()
+            .toBuffer(),
+          "image/webp",
+        )
+      ).ok,
+    ).toBe(true);
+  }, 60_000);
+});
+
 describe("the renditions (TECH-DESIGN section 1, Images)", () => {
   it("makes full inside 2560 and display inside 1290 wide and 2560 tall, JPEG, for a landscape photo", async () => {
     const renditions = await ready(await noise(4032, 3024));
@@ -251,13 +334,14 @@ describe("the renditions (TECH-DESIGN section 1, Images)", () => {
 
 describe("a slow decode", () => {
   it("is the worker's limit, a failure to try again, never a rejection of the photo", async () => {
-    // 64 megapixels at 16 bits a channel with alpha, interlaced: small to make, seconds to decode.
+    // 64 megapixels at 16 bits a channel with alpha, not interlaced so its decode streams: small to make, and about
+    // two seconds to decode for `full` on one thread.
     const bytes = await sharp({
       create: { width: 8000, height: 8000, channels: 4, background: "#4a7a5c80" },
       limitInputPixels: false,
     })
       .toColourspace("rgb16")
-      .png({ progressive: true })
+      .png()
       .toBuffer();
     await expect(prepareImage(bytes, "image/png", { seconds: 1 })).rejects.toBeInstanceOf(ImageTimeout);
   }, 60_000);

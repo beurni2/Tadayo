@@ -11,9 +11,9 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { worldSql } from "./harness.ts";
-import { confirmedWeek, forgetCommittedDays, holding, waitingOn } from "./week-world.ts";
+import { confirmedWeek, forgetCommittedDays, holding, nothingToPrepare, waitingOn } from "./week-world.ts";
 
 const SERVICES = join(import.meta.dirname, "..", "..", "..", "services");
 const url = process.env.DATABASE_URL ?? "";
@@ -30,7 +30,16 @@ afterEach(() => {
 });
 
 // A started worker makes the days of whatever committed club another file left with a week, by the real
-// clock, and commits them: none may stay (week-world.ts, forgetCommittedDays).
+// clock, and commits them: none may stay (week-world.ts, forgetCommittedDays). It would also prepare an upload
+// another file left preparing and live by the real clock, from the stand-in project below: there may be none.
+beforeAll(async () => {
+  const db = worldSql();
+  try {
+    await nothingToPrepare(db);
+  } finally {
+    await db.end();
+  }
+});
 afterAll(forgetCommittedDays);
 
 function start(

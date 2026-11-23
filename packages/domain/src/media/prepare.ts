@@ -7,8 +7,9 @@
 // `uploadToPrepare` reads with no lock: the work that follows takes seconds of network and CPU, and holding the
 // upload's row across it would hold up nothing useful. `recordPreparation` then locks the row `FOR NO KEY UPDATE`,
 // as `markPreparing` does (./upload.ts): it changes no key column, so the renditions' foreign keys, whose checks
-// lock the upload `FOR KEY SHARE`, never wait on it. Under the lock it reads the state again: another run of the
-// same event may have recorded first, and then nothing is written.
+// lock the upload `FOR KEY SHARE`, never wait on it. Under the lock it reads the state and the expiry again: another
+// run of the same event may have recorded first, or the upload may have lapsed during the work, and then nothing is
+// written (its renditions, already stored, are found by its key: docs/plans/api-b2-spike-prepare.md section 4.5).
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
@@ -95,8 +96,9 @@ export async function uploadToPrepare(tx: QuerySql, id: string, at: ServerNow): 
 
 /**
  * Records `outcome` for the upload `id`, in `tx`: its row `FOR NO KEY UPDATE`, the clock after the lock (T1), and,
- * if it is still `preparing`, its renditions' rows and its new state, hash and version, or its rejection. Returns
- * the clock's sample and whether it wrote anything. An upload no longer `preparing` is left as it is.
+ * if it is still `preparing` and live, its renditions' rows and its new state, hash and version, or its rejection.
+ * Returns the clock's sample and whether it wrote anything. An upload no longer `preparing`, or lapsed, is left as
+ * it is.
  */
 export async function recordPreparation(
   tx: QuerySql & ClockSql,
@@ -105,9 +107,13 @@ export async function recordPreparation(
   outcome: Preparation,
 ): Promise<{ readonly at: ServerNow; readonly recorded: boolean }> {
   if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
-  const rows = await bound(tx)`SELECT state FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
+  const rows = await bound(tx)`SELECT state, expires_at FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
   const at = await clock.sample(tx);
-  if (rows[0]?.["state"] !== "preparing") return { at, recorded: false };
+  const row = rows[0];
+  if (row?.["state"] !== "preparing") return { at, recorded: false };
+  const expiresAt = row["expires_at"];
+  if (!(expiresAt instanceof Temporal.Instant)) throw new Error("media: an upload came back with no expiry");
+  if (Temporal.Instant.compare(expiresAt, at) <= 0) return { at, recorded: false };
   if (outcome.state === "rejected") {
     await bound(tx)`UPDATE app.uploads SET state = 'rejected', rejection = ${outcome.rejection} WHERE id = ${id}`;
     return { at, recorded: true };
