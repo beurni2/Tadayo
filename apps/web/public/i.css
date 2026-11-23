@@ -187,6 +187,8 @@ main {
   line-height: 1.375;
   font-weight: 700;
   cursor: pointer;
+  /* Safari on iOS lays its own grey over a tapped button; the pressed colour below is the token's. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .retry:not([aria-disabled="true"]):active {

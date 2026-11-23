@@ -31,8 +31,10 @@ function answering(status: number, body?: unknown): Response {
   } as unknown as Response;
 }
 
-/** Lets every answer already given run through the page. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+/** Lets every answer already given run through the page, and a frame asked for be drawn and waited out. */
+const settle = async () => {
+  for (let turn = 0; turn < 2; turn += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+};
 
 /**
  * A fake page with i.html's parts as the HTML has them: each `data-state` part and each failure's
@@ -63,10 +65,31 @@ function fakePage(api: string | null = API) {
   const name = { textContent: "" as string | null };
   const get = element("get", false, {}, HINT);
   const clicks: (() => void)[] = [];
+  const touches: unknown[] = [];
   const retry = Object.assign(element("retry", true, {}, { "aria-describedby": "retry-hint" }), {
-    addEventListener: (_type: string, listener: () => void) => void clicks.push(listener),
+    addEventListener: (type: string, listener: () => void, options?: unknown) => {
+      if (type === "click") clicks.push(listener);
+      if (type === "touchstart") touches.push(options);
+    },
   });
   const slot = element("slot", false);
+  // The status block: the height it is drawn at, and the least height the page holds it to.
+  // Its height is the drawn one, fractions of a pixel included (offsetHeight would round them away).
+  const held: { minHeight: string | null } = { minHeight: null };
+  const status = {
+    height: 132.5,
+    getBoundingClientRect() {
+      return { height: this.height };
+    },
+    style: {
+      set minHeight(value: string) {
+        held.minHeight = value;
+      },
+      removeProperty: (property: string) => {
+        if (property === "min-height") held.minHeight = null;
+      },
+    },
+  };
   const other = element("other", false);
   const meta = { getAttribute: (key: string) => (key === "content" ? api : null) };
   const page = {
@@ -82,6 +105,7 @@ function fakePage(api: string | null = API) {
           "[data-get]": get,
           "[data-retry]": retry,
           ".retry-slot": slot,
+          ".status": status,
           'meta[name="tadayo-api"]': meta,
         }) as Record<string, unknown>
       )[selector] ?? null,
@@ -94,7 +118,44 @@ function fakePage(api: string | null = API) {
     slot: !slot.hidden,
     get: Object.fromEntries(get.attrs),
   });
-  return { page, name, seen, clicks, focused, retry, other };
+  return { page, name, seen, clicks, touches, focused, retry, other, status, held };
+}
+
+/**
+ * The window `start` is given: the address's fragment, the page, the fetch, the listeners it adds, the reloads
+ * it asks for, and its frames, drawn soon after they are asked for, as a browser draws them, or, `byHand`,
+ * only when the test calls `draw`.
+ */
+function windowOf(
+  page: Page,
+  fetch: (url: string, init: RequestInit) => Promise<Response>,
+  hash = `#${LIVE}`,
+  byHand = false,
+) {
+  const listeners: [string, () => void][] = [];
+  const frames: (() => void)[] = [];
+  let reloads = 0;
+  const window = {
+    location: {
+      hash,
+      reload: () => {
+        reloads += 1;
+      },
+    },
+    document: page,
+    fetch,
+    addEventListener: (type: string, listener: () => void) => void listeners.push([type, listener]),
+    requestAnimationFrame: (callback: () => void) => {
+      if (byHand) frames.push(callback);
+      else queueMicrotask(callback);
+      return 0;
+    },
+  };
+  const draw = async () => {
+    for (const frame of frames.splice(0)) frame();
+    await settle();
+  };
+  return { window, listeners, draw, reloads: () => reloads, frames };
 }
 
 /** A fetch the test answers one request at a time, the oldest open request first. */
@@ -280,19 +341,13 @@ describe("the wait, on a Safari older than 16", () => {
 });
 
 describe("what the page shows", () => {
-  it("shows one part at a time, a failure's line by its reason, the name as text, and Get Tadayo's names by state", () => {
+  it("shows one part at a time, a failure's line by its reason, the name as text, and Get Tadayo the same in each", () => {
     const { page, name, seen } = fakePage();
     show(page, { state: "invited", name: "<b>Ben</b> & co" });
     expect(seen()).toEqual({ parts: ["invited"], line: [], retry: null, slot: false, get: HINT });
     expect(name.textContent).toBe("<b>Ben</b> & co");
     show(page, { state: "unavailable" });
-    expect(seen()).toEqual({
-      parts: ["unavailable"],
-      line: [],
-      retry: null,
-      slot: false,
-      get: { "aria-labelledby": "get-unavailable" },
-    });
+    expect(seen()).toEqual({ parts: ["unavailable"], line: [], retry: null, slot: false, get: HINT });
     expect(name.textContent).toBe("");
     show(page, { state: "checking" });
     expect(seen()).toEqual({ parts: ["checking"], line: [], retry: null, slot: true, get: HINT });
@@ -303,14 +358,14 @@ describe("what the page shows", () => {
     expect(seen()).toEqual({ parts: ["failed"], line: ["answered"], retry: idle, slot: true, get: HINT });
   });
 
-  it("keeps Retry in place and busy in the checking after it, and only there (frame 12)", () => {
+  it("keeps Retry in place and busy in the checking after it, its hint kept, and only there (frame 12)", () => {
     const { page, seen } = fakePage();
     show(page, { state: "failed", reason: "network" });
     show(page, { state: "checking" }, true);
     expect(seen()).toEqual({
       parts: ["checking"],
       line: [],
-      retry: { "aria-describedby": "retry-busy", "aria-disabled": "true" },
+      retry: { "aria-describedby": "retry-busy retry-hint", "aria-disabled": "true" },
       slot: true,
       get: HINT,
     });
@@ -351,7 +406,7 @@ describe("what the page shows", () => {
   it("checks at once with no Retry, then on Retry asks again in place, once at a time, and hands the focus on at the end", async () => {
     const { page, name, seen, clicks, focused, retry } = fakePage();
     const net = network();
-    const started = start({ location: { hash: `#${LIVE}` }, document: page, fetch: net.fetch });
+    const started = start(windowOf(page, net.fetch).window);
     await settle();
     // The first load: checking, Retry's slot kept for it, nothing focused.
     expect(seen()).toEqual({ parts: ["checking"], line: [], retry: null, slot: true, get: HINT });
@@ -361,7 +416,7 @@ describe("what the page shows", () => {
     await net.answer(answering(503));
     await started;
     const idle = { "aria-describedby": "retry-hint" };
-    const busy = { "aria-describedby": "retry-busy", "aria-disabled": "true" };
+    const busy = { "aria-describedby": "retry-busy retry-hint", "aria-disabled": "true" };
     expect(seen()).toEqual({ parts: ["failed"], line: ["answered"], retry: idle, slot: true, get: HINT });
     expect(focused).toEqual([]);
     // Retry, from the keyboard, so it has the focus: busy in place, and pressing it again asks nothing.
@@ -392,20 +447,88 @@ describe("what the page shows", () => {
   it("moves no focus after a Retry tapped without taking it, as Safari taps a button", async () => {
     const { page, seen, clicks, focused } = fakePage();
     const net = network();
-    const started = start({ location: { hash: `#${LIVE}` }, document: page, fetch: net.fetch });
+    const started = start(windowOf(page, net.fetch).window);
     await net.fail();
     await started;
     clicks[0]?.();
     await net.answer(answering(404));
-    expect(seen()).toEqual({
-      parts: ["unavailable"],
-      line: [],
-      retry: null,
-      slot: false,
-      get: { "aria-labelledby": "get-unavailable" },
-    });
+    expect(seen()).toEqual({ parts: ["unavailable"], line: [], retry: null, slot: false, get: HINT });
     expect(focused).toEqual([]);
     expect(page.activeElement).toBeNull();
+  });
+
+  it("draws the checking after Retry before an answer that comes at once replaces it, and waits for no frame on the first load", async () => {
+    const { page, seen, clicks } = fakePage();
+    const net = network();
+    const { window, draw, frames } = windowOf(page, net.fetch, `#${LIVE}`, true);
+    const started = start(window);
+    await net.fail();
+    await started;
+    // The first load's failure shows with no frame asked for (handoff 9's firstLoad: no wait of any kind).
+    expect(seen().parts).toEqual(["failed"]);
+    expect(frames).toHaveLength(0);
+    // Retry offline: the request fails at once, but the checking stays until a frame of it is drawn, so the
+    // screen changes and the status region has the failure to announce again.
+    clicks[0]?.();
+    await net.fail();
+    await settle();
+    expect(seen().parts).toEqual(["checking"]);
+    expect(frames).toHaveLength(1);
+    await draw();
+    expect(seen()).toEqual({
+      parts: ["failed"],
+      line: ["network"],
+      retry: { "aria-describedby": "retry-hint" },
+      slot: true,
+      get: HINT,
+    });
+    // An answer that takes longer than a frame shows as soon as it comes.
+    clicks[0]?.();
+    await draw();
+    expect(seen().parts).toEqual(["checking"]);
+    await net.answer(answering(200, { inviter_name: "Ben" }));
+    expect(seen().parts).toEqual(["invited"]);
+  });
+
+  it("holds the status block at its height from Retry to the answer, so neither control moves; the first load holds nothing", async () => {
+    const { page, seen, clicks, status, held } = fakePage();
+    const net = network();
+    const started = start(windowOf(page, net.fetch).window);
+    expect(held.minHeight).toBeNull();
+    await net.fail();
+    await started;
+    expect(held.minHeight).toBeNull();
+    // At 200% text the failure's block is taller than the checking's: Retry keeps it at the failure's height.
+    status.height = 478.33;
+    clicks[0]?.();
+    expect(seen().parts).toEqual(["checking"]);
+    expect(held.minHeight).toBe("478.33px");
+    await net.fail();
+    await settle();
+    expect(seen().parts).toEqual(["failed"]);
+    expect(held.minHeight).toBeNull();
+    clicks[0]?.();
+    expect(held.minHeight).toBe("478.33px");
+    await net.answer(answering(404));
+    expect(seen().parts).toEqual(["unavailable"]);
+    expect(held.minHeight).toBeNull();
+  });
+
+  it("reloads for another link opened in the same tab, and gives Retry the touch listener Safari's pressed look needs", async () => {
+    const { page, touches } = fakePage();
+    const net = network();
+    const { window, listeners, reloads } = windowOf(page, net.fetch);
+    const started = start(window);
+    await net.answer(answering(200, { inviter_name: "Ben" }));
+    await started;
+    expect(listeners.map(([type]) => type)).toEqual(["hashchange"]);
+    expect(reloads()).toBe(0);
+    for (const [, listener] of listeners) listener();
+    expect(reloads()).toBe(1);
+    expect(net.asked).toHaveLength(1);
+    expect(touches).toEqual([{ passive: true }]);
+    // And no grey tap highlight of Safari's over the pressed colour.
+    expect(read("i.css")).toMatch(/\n\.retry \{[^}]*-webkit-tap-highlight-color: transparent;[^}]*\}/);
   });
 
   it("can't check without the API's address: the server's kind of failure, never a link that's gone (handoff 4)", async () => {
@@ -416,7 +539,7 @@ describe("what the page shows", () => {
         asked += 1;
         return Promise.resolve(answering(200, { inviter_name: "Ben" }));
       };
-      await start({ location: { hash: `#${LIVE}` }, document: page, fetch });
+      await start(windowOf(page, fetch).window);
       const failed = {
         parts: ["failed"],
         line: ["answered"],
@@ -437,14 +560,11 @@ describe("what the page shows", () => {
     for (const hash of ["", "#", "#short", `#${LIVE}=`]) {
       const { page, seen } = fakePage();
       let asked = 0;
-      await start({
-        location: { hash },
-        document: page,
-        fetch: () => {
-          asked += 1;
-          return Promise.resolve(answering(200, { inviter_name: "Ben" }));
-        },
-      });
+      const fetch = () => {
+        asked += 1;
+        return Promise.resolve(answering(200, { inviter_name: "Ben" }));
+      };
+      await start(windowOf(page, fetch, hash).window);
       expect(seen().parts, hash).toEqual(["unavailable"]);
       expect(seen().retry, hash).toBeNull();
       expect(asked, hash).toBe(0);
@@ -532,19 +652,25 @@ describe("the files Pages serves", () => {
     );
   });
 
-  it("keeps the invited and unavailable pages' words, and puts the name in a bdi, so a right-to-left name can't reorder the sentence", () => {
+  it("keeps the invited and unavailable pages' words, but no App Store claim for TestFlight's link, and puts the name in a bdi", () => {
     expect(html).toContain('<h1 class="title"><bdi data-name></bdi> invited you to a club on Tadayo</h1>');
     const four = readFileSync(join(REPO, "design/reference/claude-design/handoff-4/copy-contracts.json"), "utf8");
     const eight = readFileSync(join(REPO, "design/reference/claude-design/handoff-8/copy-contracts.json"), "utf8");
     for (const [contract, key, text, markup] of [
       [four, "unavailable.title", "This invitation isn’t available.", '<h1 class="title neutral">'],
       [four, "unavailable.body", "Ask for a new invitation link.", '<p class="body">'],
-      [four, "unavailable.web.get.vo", "Get Tadayo from the App Store.", '<span id="get-unavailable" hidden>'],
       [eight, "handoff8.welcome.brand", "Your day. Your story. A thought from your friends.", '<p class="brand">'],
     ] as const) {
       expect(contract, key).toContain(`"${key}": "${text}"`);
       expect(html, key).toContain(`${markup}${text}<`);
     }
+    // Handoff 4 named Get Tadayo on the unavailable page "Get Tadayo from the App Store."; handoff 9's precedence
+    // map supersedes it (getHint: the trial's TestFlight link never claims Tadayo is in the App Store), so the
+    // unavailable page keeps the label and the TestFlight hint of every other state (FQ133).
+    expect(four).toContain('"unavailable.web.get.vo": "Get Tadayo from the App Store."');
+    expect(html).not.toContain("Get Tadayo from the App Store");
+    expect(html).not.toContain("aria-labelledby");
+    expect(strings["handoff9.web.get.trialTestFlight.hint"]).toBe("Open TestFlight in the App Store.");
   });
 
   it("draws Retry's spinner as the frame's eight ticks, hidden from VoiceOver, and still under reduced motion", () => {
