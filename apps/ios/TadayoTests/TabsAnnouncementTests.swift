@@ -5,8 +5,9 @@ import XCTest
 
 /// What VoiceOver says as what the selected tab shows changes (`TabsView.announcement`): one
 /// polite loading label, "Home updated." once on Home, and a failure's words, or a suspended
-/// club's denial, at once (handoff 3's `loadingAndCutoffFocus`). A hosted test can't hear
-/// VoiceOver, so the TestFlight notes ask for it on the iPhone too.
+/// club's denial, at once (handoff 3's `loadingAndCutoffFocus`); and across a screen pushed over
+/// the tab (`TabAnnouncer`), nothing while it shows and what changed under it once it closes. A
+/// hosted test can't hear VoiceOver, so the TestFlight notes ask for it on the iPhone too.
 @MainActor
 final class TabsAnnouncementTests: XCTestCase {
     /// The club list's states, with no club selected.
@@ -100,5 +101,95 @@ final class TabsAnnouncementTests: XCTestCase {
     func testChoosingAnotherClubSaysTheLoadingLabel() {
         XCTAssertEqual(
             heard(.awaiting(review: false), .loading, on: .home), ["Loading Home…", "politely"])
+    }
+
+    // MARK: Under a pushed screen
+
+    /// What `TabAnnouncer` says at each of `seen`, in order, from the tabs' first showing.
+    private func told(_ seen: [TabAnnouncer.Seen]) -> [[String]] {
+        var announcer = TabAnnouncer()
+        var old: TabAnnouncer.Seen?
+        return seen.map { new in
+            defer { old = new }
+            guard let said = announcer.saw(new, after: old) else { return [] }
+            return [said.words, said.politely ? "politely" : "at once"]
+        }
+    }
+
+    private func home(_ shown: TabShown, covered: Bool = false) -> TabAnnouncer.Seen {
+        TabAnnouncer.Seen(tab: .home, shown: shown, covered: covered)
+    }
+
+    func testAClubJoinedUnderAScreenIsSaidOnceTheScreenCloses() {
+        // Home with no club; G03-waiting pushed; the list read again under it, now with the
+        // club; Done.
+        XCTAssertEqual(
+            told([
+                home(.noClub), home(.noClub, covered: true), home(.loading, covered: true),
+                home(.awaiting(review: false), covered: true), home(.awaiting(review: false)),
+            ]),
+            [[], [], [], [], ["Home updated.", "politely"]])
+    }
+
+    func testAReadThatFailedUnderAScreenIsSaidAtOnceWhenItCloses() {
+        XCTAssertEqual(
+            told([
+                home(.noClub), home(.noClub, covered: true), home(.loading, covered: true),
+                home(.homeFailed(.network), covered: true), home(.homeFailed(.network)),
+            ]).last,
+            ["Couldn’t load Home. Check your connection and try again.", "at once"])
+    }
+
+    func testNothingIsSaidWhenHomeShowsWhatItShowedBefore() {
+        // The list read again under G03-waiting, still with no club: only the invitation's row,
+        // which no announcement names, is new.
+        XCTAssertEqual(
+            told([
+                home(.noClub), home(.noClub, covered: true), home(.loading, covered: true),
+                home(.noClub, covered: true), home(.noClub),
+            ]),
+            [[], [], [], [], []])
+    }
+
+    func testAListStillLoadingWhenTheScreenClosesSaysItsLabelThenWhatItLoads() {
+        XCTAssertEqual(
+            told([
+                home(.noClub), home(.noClub, covered: true), home(.loading, covered: true),
+                home(.loading), home(.awaiting(review: false)),
+            ]),
+            [[], [], [], ["Loading Home…", "politely"], ["Home updated.", "politely"]])
+    }
+
+    func testAPushOrACloseInTheSameUpdateAsAChangeIsReadOnce() {
+        // Pushed as the list is read again, and closed as it answers.
+        XCTAssertEqual(
+            told([home(.noClub), home(.loading, covered: true), home(.awaiting(review: false))]),
+            [[], [], ["Home updated.", "politely"]])
+        // A screen that closes as the list is read again: the tab is seen loading.
+        XCTAssertEqual(
+            told([home(.noClub), home(.noClub, covered: true), home(.loading)]),
+            [[], [], ["Loading Home…", "politely"]])
+    }
+
+    func testChangesWithNoScreenPushedAreSaidAsTheyCome() {
+        XCTAssertEqual(
+            told([home(.loading), home(.noClub), home(.loading), home(.failed(.network))]),
+            [
+                ["Loading Home…", "politely"], ["Home updated.", "politely"],
+                ["Loading Home…", "politely"],
+                ["Couldn’t load Home. Check your connection and try again.", "at once"],
+            ])
+    }
+
+    func testChangingTabSaysNothing() {
+        let friends = TabAnnouncer.Seen(tab: .friends, shown: .notInThisBuild, covered: false)
+        XCTAssertEqual(
+            told([home(.awaiting(review: false)), friends, home(.awaiting(review: false))]),
+            [[], [], []])
+    }
+
+    func testTheLabSaysNothingUnderAScreenEither() {
+        let lab = { (shown: TabShown) in TabAnnouncer.Seen(tab: nil, shown: shown, covered: false) }
+        XCTAssertEqual(told([lab(.loading), lab(.noClub), lab(.failed(.network))]), [[], [], []])
     }
 }

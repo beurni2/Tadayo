@@ -10,8 +10,10 @@ import XCTest
 /// and Home shows the club; and a link the server doesn't know shows `G02-revoked`, whose Close
 /// invitation returns to Home too. On `UITestLaunch.inviteChanged`, Home's row for an accepted
 /// invitation whose roster changed, with no link held, opens the paste step (FQ136), and Maya's
-/// link then shows the changed roster, which joins. The paste control, which the snapshots can't
-/// draw, is checked here.
+/// link then shows the changed roster, which joins; or Not now there leaves the row holding the
+/// link, so it no longer asks for it and opens the changed roster itself. With a club joined,
+/// the switcher's row for the invitation still waiting opens `G03-waiting`. The paste control,
+/// which the snapshots can't draw, is checked here.
 final class InvitationUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -107,6 +109,83 @@ final class InvitationUITests: XCTestCase {
             },
             "Home, with Kitchen table")
         XCTAssertFalse(row.exists)
+    }
+
+    @MainActor func testNotNowOnAChangedRosterLeavesItsRowHoldingTheLinkWhichOpensItAgain() {
+        let app = signedIn(as: "-TadayoUITestInviteChanged")
+        let asks = app.buttons[
+            "Kitchen table. Review updated members. Open the invitation link to continue."]
+        XCTAssertTrue(asks.waitForExistence(timeout: 10))
+        asks.tap()
+        let field = app.textFields["Invitation link"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(Self.mayasLink)
+        app.buttons["Check the invitation link."].tap()
+        XCTAssertTrue(app.staticTexts["Review the new roster"].waitForExistence(timeout: 10))
+
+        // Not now: Home, where the row, its link now held, no longer asks for it.
+        app.buttons["Not now"].tap()
+        let row = app.buttons["Kitchen table. Review updated members."]
+        XCTAssertTrue(
+            eventually(10) { shows(row) && tabBarShows(app) }, "Home, the row holding the link")
+        XCTAssertFalse(asks.exists)
+
+        // The row opens the changed roster from the link held, with no paste step, and Accept
+        // this roster joins.
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Review the new roster"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Have an invitation?"].exists, "no paste step")
+        XCTAssertTrue(eventually { !tabBarShows(app) }, "the tab bar hidden")
+        app.buttons["Accept this roster"].tap()
+        XCTAssertTrue(
+            eventually(10) {
+                shows(app.buttons["Switch club. Kitchen table selected."]) && tabBarShows(app)
+            },
+            "Home, with Kitchen table")
+        XCTAssertFalse(row.exists)
+    }
+
+    @MainActor func testTheSwitchersRowOpensAnInvitationStillWaitingOnceAClubIsJoined() {
+        let app = signedIn()
+        // Debby's invitation, accepted, waits on the members.
+        app.buttons["I have an invite"].tap()
+        let field = app.textFields["Invitation link"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(Self.debbysLink)
+        app.buttons["Check the invitation link."].tap()
+        XCTAssertTrue(app.staticTexts["Join Sunday people"].waitForExistence(timeout: 10))
+        app.buttons["Accept this roster"].tap()
+        XCTAssertTrue(app.staticTexts["Your acceptance is saved."].waitForExistence(timeout: 10))
+        app.buttons["Done"].tap()
+        let waiting = app.buttons["Sunday people. Waiting for members."]
+        XCTAssertTrue(
+            eventually(10) { shows(waiting) && tabBarShows(app) }, "Home, with the waiting row")
+
+        // Maya's joins Kitchen table, and Home shows the club.
+        app.buttons["I have an invite"].tap()
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(Self.mayasLink)
+        app.buttons["Check the invitation link."].tap()
+        XCTAssertTrue(app.staticTexts["Join Kitchen table"].waitForExistence(timeout: 10))
+        app.buttons["Accept this roster"].tap()
+        let selector = app.buttons["Switch club. Kitchen table selected."]
+        XCTAssertTrue(
+            eventually(10) { shows(selector) && tabBarShows(app) }, "Home, with Kitchen table")
+
+        // The switcher lists Debby's invitation, whose row opens G03-waiting on the tab once the
+        // sheet has closed; Done returns to Home with Kitchen table.
+        selector.tap()
+        XCTAssertTrue(waiting.waitForExistence(timeout: 5))
+        waiting.tap()
+        XCTAssertTrue(app.staticTexts["Your acceptance is saved."].waitForExistence(timeout: 10))
+        XCTAssertTrue(eventually { !tabBarShows(app) }, "the tab bar hidden")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(
+            eventually(10) { shows(selector) && tabBarShows(app) }, "Home, with Kitchen table")
+        XCTAssertFalse(app.staticTexts["Your acceptance is saved."].exists)
     }
 
     @MainActor func testBackFromThePasteStepAChangedRowOpenedReturnsToHomeAndItsRow() {

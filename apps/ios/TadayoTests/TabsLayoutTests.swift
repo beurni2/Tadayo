@@ -215,10 +215,11 @@ final class TabsLayoutTests: XCTestCase {
         XCTAssertEqual(drafts.frame.minY - invite.frame.maxY, 32, accuracy: 0.5, "\(drafts)")
     }
 
-    func testARowGrowsWithItsHelperLineAndKeepsItsSymbolsOnTheNamesFirstLine() throws {
+    func testARowGrowsWithItsHelperLineUpToFrame9sHeight() throws {
         // Frame 9: the helper line 8 under the state, the row 16 under it, so taller than 84;
-        // the lines take their fonts' own heights (`dynamicTypePolicy.lineHeight`), so less than
-        // the frame's 106.
+        // the lines take their fonts' own heights (`dynamicTypePolicy.lineHeight`), so no taller
+        // than the frame's 106. Where the symbols sit is read on the snapshots
+        // (`G06-no-club-invitation-changed`).
         let header = try measured(invitations: [Self.changed])
         let row = try XCTUnwrap(
             header.layout.elements.first {
@@ -226,7 +227,7 @@ final class TabsLayoutTests: XCTestCase {
                     == "Kitchen table. Review updated members. Open the invitation link to continue."
             }, "\(header.layout.elements)")
         XCTAssertGreaterThan(row.frame.height, 84 + 8, "\(row)")
-        XCTAssertLessThan(row.frame.height, 106, "\(row)")
+        XCTAssertLessThanOrEqual(row.frame.height, 106, "\(row)")
         XCTAssertEqual(row.frame.width, 353, accuracy: 0.5, "\(row)")
     }
 

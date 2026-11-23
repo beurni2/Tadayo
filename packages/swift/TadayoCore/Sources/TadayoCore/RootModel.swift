@@ -399,15 +399,16 @@ import Observation
     }
 
     /// An accepted invitation the club list holds: `G03-waiting` from the list's words, with no
-    /// call; `G03-declined`; or, for a changed roster, the kept token checked (`G02-changed`), or,
-    /// with none kept, the link opened again (FQ136).
+    /// call and no token, so a session that ends while it shows holds nothing of it to check again
+    /// (handoff 9's `states.waiting.token`); `G03-declined`; or, for a changed roster, the kept
+    /// token checked (`G02-changed`), or, with none kept, the link opened again (FQ136).
     public func openAccepted(_ accepted: MyInvitation) async {
         guard route == .tabs, let account else { return }
         let kept = links.received(invitation: accepted.invitationID, account: account.id)?.token
         switch accepted.state {
         case .waiting:
             setInvitation(
-                makeInvitation(kept, state: .waiting(clubName: accepted.clubName), for: account))
+                makeInvitation(nil, state: .waiting(clubName: accepted.clubName), for: account))
         case .didNotGoAhead:
             // The invitation has ended: its token goes (the contract's `MyInvitationState`).
             if let kept { links.dropReceived(kept, account: account.id) }
@@ -449,9 +450,10 @@ import Observation
             },
             released: { [weak self] model in
                 // Left (Back), replaced by the next Continue's, or done (the club opened): closed,
-                // and no longer set aside.
+                // and no longer set aside. Its check may have kept or dropped a link a row names.
                 model.close()
                 self?.pasted.removeAll { $0.model == nil || $0.model === model }
+                self?.rereadLinksHeld()
             })
     }
 
@@ -485,10 +487,24 @@ import Observation
     }
 
     /// The invitation shown, in place of the one before, which is closed: an answer still on its
-    /// way for it keeps nothing.
+    /// way for it keeps nothing. The one closed may have kept or dropped a link a row names.
     private func setInvitation(_ model: InvitationModel?) {
         invitation?.close()
         invitation = model
+        rereadLinksHeld()
+    }
+
+    /// Each accepted invitation's `linkHeld`, read again from the kept links: a check or a pasted
+    /// link keeps or drops a token after the list was read, and a changed roster's row says
+    /// whether the link is on this phone and opens accordingly (handoff 9's `roster_changed`
+    /// rows, T49). Nothing changes when every row reads as it did.
+    private func rereadLinksHeld() {
+        guard let account, !acceptedInvitations.isEmpty else { return }
+        let reread = acceptedInvitations.map { row in
+            let kept = links.received(invitation: row.invitation.invitationID, account: account.id)
+            return AcceptedInvitation(row.invitation, linkHeld: kept?.token != nil)
+        }
+        if reread != acceptedInvitations { acceptedInvitations = reread }
     }
 
     /// An invitation's model, for this session. Once the account has joined, the club is kept as

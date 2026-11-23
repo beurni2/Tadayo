@@ -18,7 +18,8 @@ import TadayoDesign
 /// club's Choose a club, open the switcher (`ClubSwitcher`) in the system's sheet. It takes
 /// values, not the root model, so the snapshot tests can draw it in any state. What VoiceOver
 /// says, without moving its focus, comes from what the selected tab shows as it changes
-/// (`announcement(from:to:on:)`).
+/// (`announcement(from:to:on:)`), and, once the screens pushed over it close, from what changed
+/// under them (`TabAnnouncer`).
 ///
 /// Each club tab holds its own navigation stack, its root's bar hidden, so the tab looks as it
 /// did without one. The switcher's Club details closes the sheet, then pushes Club details for
@@ -129,6 +130,8 @@ struct TabsView: View {
     @State private var acceptedOn: ClubTab?
     @State private var acceptedChosen: MyInvitation?
     @State private var shownAccepted: InvitationModel?
+    /// What VoiceOver has been told of the selected tab, across the screens pushed over it.
+    @State private var announcer = TabAnnouncer()
 
     init(
         clubs: RootModel.Clubs, selected: ClubSummary? = nil, home: RootModel.Home = .loading,
@@ -182,15 +185,8 @@ struct TabsView: View {
             #endif
         }
         .tint(Palette.action)
-        .onChange(of: state, initial: true) { old, new in
-            // Nothing is said of a tab while a screen is pushed over it: the list read again
-            // under G03-waiting, say, or under a club being made (6d).
-            guard let tab = selection.tab, paths[tab]?.isEmpty ?? true else { return }
-            let initial = old == new
-            guard
-                let said = Self.announcement(
-                    from: initial ? nil : old.shown(on: tab), to: new.shown(on: tab), on: tab)
-            else { return }
+        .onChange(of: seen, initial: true) { old, new in
+            guard let said = announcer.saw(new, after: old == new ? nil : old) else { return }
             Announcement.post(said.words, politely: said.politely)
         }
         .onChange(of: state.clubs) { _, now in
@@ -227,6 +223,14 @@ struct TabsView: View {
                 .fittedSheet()
             }
         }
+    }
+
+    /// What the selected tab shows, and whether a screen is pushed over it.
+    private var seen: TabAnnouncer.Seen {
+        let tab = selection.tab
+        return TabAnnouncer.Seen(
+            tab: tab, shown: state.shown(on: tab ?? .home),
+            covered: tab.map { !(paths[$0]?.isEmpty ?? true) } ?? false)
     }
 
     /// Club details for the selected club, or G01-create, on the selected tab, once the switcher
@@ -494,7 +498,8 @@ struct TabsView: View {
     ///   club's denial (handoff 6's `denied.group.vo`), as soon as it shows, as sign-in says its
     ///   failures.
     /// Changing tab says nothing more: each tab's words are on its screen. Nor does a change
-    /// while a screen is pushed over the tab, which the person isn't looking at.
+    /// while a screen is pushed over the tab, which the person isn't looking at; once the screen
+    /// closes, what changed under it is said (`returned(from:to:on:)`).
     static func announcement(
         from old: TabShown?, to new: TabShown, on tab: ClubTab?
     ) -> (words: String, politely: Bool)? {
@@ -512,6 +517,54 @@ struct TabsView: View {
         case .unavailable:
             return (ClubUnavailable.spoken, false)
         }
+    }
+
+    /// What VoiceOver says when the last screen pushed over the selected `tab` closes, if what
+    /// the tab shows changed under it from `before` to `now`: what `now` says when it has just
+    /// loaded, as the tab itself would have said it, or its loading label while it still loads.
+    /// So the list read again under G03-waiting says nothing while the screen shows, and once
+    /// Done shows Home, "Home updated." for the club just joined, or the read's failure at once;
+    /// and nothing when Home shows what it showed before.
+    static func returned(
+        from before: TabShown, to now: TabShown, on tab: ClubTab?
+    ) -> (words: String, politely: Bool)? {
+        guard before != now else { return nil }
+        return announcement(from: now == .loading ? nil : .loading, to: now, on: tab)
+    }
+}
+
+/// What VoiceOver is told as the selected tab changes (`TabsView.announcement(from:to:on:)`),
+/// and across the screens pushed over it: nothing while one is, and once the last closes, what
+/// changed under it since the first was pushed (`TabsView.returned(from:to:on:)`). One value
+/// carries the tab, what it shows and whether it's covered, so a push or a close in the same
+/// update as a change is read once, whatever order SwiftUI reports them in.
+struct TabAnnouncer {
+    /// What the selected tab (nil on the Lab) shows, and whether a screen is pushed over it.
+    struct Seen: Equatable {
+        var tab: ClubTab?
+        var shown: TabShown
+        var covered: Bool
+    }
+
+    /// What the selected tab showed when it was first covered, while it still is.
+    private var hidden: TabShown?
+
+    /// What to say as the tabs come to show `new`, from `old` (nil when they first show).
+    mutating func saw(_ new: Seen, after old: Seen?) -> (words: String, politely: Bool)? {
+        if let old, old.tab != new.tab {
+            // Changing tab says nothing: each tab's words are on its screen.
+            hidden = new.covered ? new.shown : nil
+            return nil
+        }
+        if new.covered {
+            if hidden == nil { hidden = old?.shown ?? new.shown }
+            return nil
+        }
+        if let before = hidden {
+            hidden = nil
+            return TabsView.returned(from: before, to: new.shown, on: new.tab)
+        }
+        return TabsView.announcement(from: old?.shown, to: new.shown, on: new.tab)
     }
 }
 
