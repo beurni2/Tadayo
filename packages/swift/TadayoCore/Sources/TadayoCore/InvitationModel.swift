@@ -92,14 +92,16 @@ extension InvitationRoster {
     let current: @MainActor () -> Bool
     let joined: @MainActor (ClubRef) async -> Void
     let joinedWhileClosed: @MainActor () async -> Void
+    let waited: @MainActor () async -> Void
     let signedOut: @MainActor () async -> Void
 
     /// `token` is the invitation's, or nil when the app doesn't hold it; `state` is where it starts:
     /// checking, for a token to check, or what the club list already says. `book` keeps the token
     /// for `accountID`; `current` says the session the model was made in goes on; `joined` opens
     /// the club; `joinedWhileClosed` is told when an Accept the server joined answers after the
-    /// model was closed (left with Back while it was on its way), which opens nothing; `signedOut`
-    /// ends the session.
+    /// model was closed (left with Back while it was on its way), which opens nothing; `waited` is
+    /// told when an Accept the server answered `waiting` (the club list then lists the invitation,
+    /// handoff 9's `acceptedInvitations`), closed or not; `signedOut` ends the session.
     public init(
         token: InvitationToken?, state: State = .checking, service: any ClubService,
         book: InvitationLinkBook, account accountID: String,
@@ -107,6 +109,7 @@ extension InvitationRoster {
         current: @escaping @MainActor () -> Bool,
         joined: @escaping @MainActor (ClubRef) async -> Void,
         joinedWhileClosed: @escaping @MainActor () async -> Void = {},
+        waited: @escaping @MainActor () async -> Void = {},
         signedOut: @escaping @MainActor () async -> Void
     ) {
         self.token = token
@@ -118,6 +121,7 @@ extension InvitationRoster {
         self.current = current
         self.joined = joined
         self.joinedWhileClosed = joinedWhileClosed
+        self.waited = waited
         self.signedOut = signedOut
     }
 
@@ -178,6 +182,8 @@ extension InvitationRoster {
         case open(ClubRef)
         /// The server joined, and the model was closed while the Accept was on its way.
         case joinedWhileClosed
+        /// The server accepted, and the invitation waits on the members.
+        case waited
         case endSession
     }
 
@@ -229,7 +235,7 @@ extension InvitationRoster {
             keep(token, invitation: roster.invitationID, nameChanged: false)
             earlierName = nil
             state = .waiting(clubName: roster.clubName)
-            then = .nothing
+            then = .waited
         case .success(.changed):
             // The server made a revision with the account's name (FQ66): the name on the roster
             // just shown is the earlier one, the only source for it (handoff 8).
@@ -277,6 +283,7 @@ extension InvitationRoster {
         case .check: await check()
         case .open(let club): if !isClosed { await joined(club) }
         case .joinedWhileClosed: await joinedWhileClosed()
+        case .waited: await waited()
         case .endSession: await signedOut()
         }
     }

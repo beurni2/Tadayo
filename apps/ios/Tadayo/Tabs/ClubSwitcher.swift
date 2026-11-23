@@ -30,10 +30,20 @@ import TadayoDesign
 /// it and opens the selected club's details (`TabsView`; for a suspended club, the same "Club
 /// unavailable" as Home, FQ80). Create a club closes it and pushes G01-create onto the selected
 /// tab. The content scrolls when it is taller than the sheet can be, at the largest text sizes.
+///
+/// The account's accepted invitations follow the clubs under "Invitations" (handoff 9's frame 11,
+/// `acceptedInvitations.hasClubs`), a heading in `fieldLabel` `secondaryText`, 16 under the last
+/// separator and Home's rows (`AcceptedInvitationRows`) 12 under it, the nearest steps to the 17
+/// and 14 the frame draws, so the heading sits with its rows: no member count, no checkmark,
+/// never selectable as a club. The text actions stay 16 under what's above them, as the frame's
+/// native controls are schematic (its own note). Choosing a row closes the sheet and opens the
+/// invitation on the selected tab, as Create a club does.
 struct ClubSwitcher: View {
     let clubs: [ClubSummary]
     let selectedID: String?
+    var invitations: [AcceptedInvitation] = []
     let select: (String) -> Void
+    var openAccepted: (MyInvitation) -> Void = { _ in }
     var openDetails: () -> Void = {}
     var createClub: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
@@ -53,6 +63,19 @@ struct ClubSwitcher: View {
                         select(club.id)
                         dismiss()
                     }
+                }
+                if !invitations.isEmpty {
+                    Text("accepted.heading")
+                        .textRole(.fieldLabel)
+                        .foregroundStyle(Palette.secondaryText)
+                        .accessibilityAddTraits(.isHeader)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, Spacing.l)
+                    AcceptedInvitationRows(invitations: invitations) { invitation in
+                        openAccepted(invitation)
+                        dismiss()
+                    }
+                    .padding(.top, Spacing.m)
                 }
                 VStack(spacing: Spacing.s) {
                     Button("switcher.clubDetails") {

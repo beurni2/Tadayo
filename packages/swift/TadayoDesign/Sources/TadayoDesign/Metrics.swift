@@ -85,6 +85,8 @@ public enum Size {
     /// The Private drafts row's least height, which grows with the text (handoff 2's
     /// `privateDraftsEntry.minimumHeight`).
     public static let draftsRowMinHeight: CGFloat = 76
+    /// An accepted invitation's row, at least (handoff 9's `acceptedInvitations.row.minimumHeight`).
+    public static let invitationRowMinHeight: CGFloat = 84
     /// The drafts row's folder: the 24-point box handoff 4's `G06-no-club` draws, holding SF Symbol
     /// `folder` at the size whose glyph matches the drawn one, 20 by 15.
     public static let draftsFolderBox: CGFloat = 24

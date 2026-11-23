@@ -48,15 +48,12 @@ import Observation
     public enum Clubs: Sendable, Equatable {
         /// Every tab's loading state: H01-loading-no-club on Home.
         case loading
-        /// G06-no-club, F01-no-club and M01-no-club.
+        /// G06-no-club, F01-no-club and M01-no-club, with Home's accepted invitations first when
+        /// the list holds any (`acceptedInvitations`; handoff 9's `acceptedInvitations.noClub`).
         case noClub
         /// The account's clubs, one of them selected (`selectedClubID`), with any invitations it
-        /// accepted.
+        /// accepted (`acceptedInvitations`, which the switcher shows after the clubs).
         case listed(ClubList)
-        /// The account has no club, only accepted invitations, which this build has no screen
-        /// for until `G03-waiting` comes (`docs/plans/ios-b1-clubs.md` section 4, PR 6): neither
-        /// empty nor a failure.
-        case notInThisBuild
         /// Every tab's failure state, with Retry: H01-error-no-club on Home.
         case failed(Failure)
     }
@@ -79,6 +76,11 @@ import Observation
 
     public private(set) var route = Route.starting
     public private(set) var clubs = Clubs.loading
+    /// The invitations the account accepted that haven't become a membership, as the last read of
+    /// the list gave them, in its order, each with whether this phone holds its link for the
+    /// account (handoff 9's `acceptedInvitations`). None while the list loads or failed, and none
+    /// once the account is left (`safeLifecycle`). Never a club: none is selected.
+    public private(set) var acceptedInvitations: [AcceptedInvitation] = []
     /// The club the tabs show, while the list holds clubs: the one this account kept, if the
     /// list still holds it, and otherwise the first in the server's order. A suspended club
     /// stays selected: no other club is put in its place (handoff 5's `deniedHeader.selectedId`).
@@ -263,6 +265,7 @@ import Observation
     private func loadClubs(relisting: Bool) async {
         let asked = epoch
         clubs = .loading
+        acceptedInvitations = []
         selectedClubID = nil
         home = .loading
         let stamp = links.beginRead()
@@ -275,6 +278,12 @@ import Observation
         guard epoch == asked else { return }
         if case .success(let list) = answer, let account {
             links.settle(list, stamp: stamp, account: account.id)
+            acceptedInvitations = list.invitations.map {
+                AcceptedInvitation(
+                    $0,
+                    linkHeld: links.received(invitation: $0.invitationID, account: account.id)?
+                        .token != nil)
+            }
         }
         switch answer {
         case .success(let list) where !list.clubs.isEmpty:
@@ -282,8 +291,8 @@ import Observation
             let kept = account.flatMap { selection.club(for: $0.id) }
             let chosen = list.clubs.first { $0.id == kept } ?? list.clubs[0]
             await choose(chosen.id, relisting: relisting)
-        case .success(let list):
-            clubs = list.isEmpty ? .noClub : .notInThisBuild
+        case .success:
+            clubs = .noClub
         case .failure(.profileIncomplete):
             // The account changed since it was read. If it still reads as complete, the two
             // answers disagree: a failure, not a loop. If the read says the session ended, the
@@ -390,15 +399,16 @@ import Observation
     }
 
     /// An accepted invitation the club list holds: `G03-waiting` from the list's words, with no
-    /// call; `G03-declined`; or, for a changed roster, the kept token checked (`G02-changed`), or,
-    /// with none kept, the link opened again (FQ136).
+    /// call and no token, so a session that ends while it shows holds nothing of it to check again
+    /// (handoff 9's `states.waiting.token`); `G03-declined`; or, for a changed roster, the kept
+    /// token checked (`G02-changed`), or, with none kept, the link opened again (FQ136).
     public func openAccepted(_ accepted: MyInvitation) async {
         guard route == .tabs, let account else { return }
         let kept = links.received(invitation: accepted.invitationID, account: account.id)?.token
         switch accepted.state {
         case .waiting:
             setInvitation(
-                makeInvitation(kept, state: .waiting(clubName: accepted.clubName), for: account))
+                makeInvitation(nil, state: .waiting(clubName: accepted.clubName), for: account))
         case .didNotGoAhead:
             // The invitation has ended: its token goes (the contract's `MyInvitationState`).
             if let kept { links.dropReceived(kept, account: account.id) }
@@ -440,9 +450,10 @@ import Observation
             },
             released: { [weak self] model in
                 // Left (Back), replaced by the next Continue's, or done (the club opened): closed,
-                // and no longer set aside.
+                // and no longer set aside. Its check may have kept or dropped a link a row names.
                 model.close()
                 self?.pasted.removeAll { $0.model == nil || $0.model === model }
+                self?.rereadLinksHeld()
             })
     }
 
@@ -476,10 +487,24 @@ import Observation
     }
 
     /// The invitation shown, in place of the one before, which is closed: an answer still on its
-    /// way for it keeps nothing.
+    /// way for it keeps nothing. The one closed may have kept or dropped a link a row names.
     private func setInvitation(_ model: InvitationModel?) {
         invitation?.close()
         invitation = model
+        rereadLinksHeld()
+    }
+
+    /// Each accepted invitation's `linkHeld`, read again from the kept links: a check or a pasted
+    /// link keeps or drops a token after the list was read, and a changed roster's row says
+    /// whether the link is on this phone and opens accordingly (handoff 9's `roster_changed`
+    /// rows, T49). Nothing changes when every row reads as it did.
+    private func rereadLinksHeld() {
+        guard let account, !acceptedInvitations.isEmpty else { return }
+        let reread = acceptedInvitations.map { row in
+            let kept = links.received(invitation: row.invitation.invitationID, account: account.id)
+            return AcceptedInvitation(row.invitation, linkHeld: kept?.token != nil)
+        }
+        if reread != acceptedInvitations { acceptedInvitations = reread }
     }
 
     /// An invitation's model, for this session. Once the account has joined, the club is kept as
@@ -507,6 +532,14 @@ import Observation
                 // An Accept the person left with Back, which the server joined all the same: the
                 // list is read again so Home shows the club, and nothing is selected or opened.
                 // Only while the tabs show the session the model was made in.
+                guard let self, self.epoch == made, self.route == .tabs else { return }
+                await self.loadClubs()
+            },
+            waited: { [weak self] in
+                // The server accepted and the invitation waits on the members: the list is read
+                // again, under G03-waiting, so its row is there when the person comes back to
+                // Home or the switcher (handoff 9's `acceptedInvitations`). Only while the tabs
+                // show the session the model was made in.
                 guard let self, self.epoch == made, self.route == .tabs else { return }
                 await self.loadClubs()
             },
@@ -600,6 +633,7 @@ import Observation
     /// Nothing of a club outlives the account that read it (T11).
     private func forgetClubs() {
         clubs = .loading
+        acceptedInvitations = []
         selectedClubID = nil
         home = .loading
         homeReads += 1

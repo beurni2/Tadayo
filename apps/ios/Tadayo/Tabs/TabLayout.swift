@@ -175,6 +175,22 @@ enum TabGap {
     /// From a primary action to the secondary one under it, target to target
     /// (`handoff6.spacing.primaryToSecondaryTargetGap`): Choose a club and Get help.
     static let primaryToSecondary = Spacing.s
+    /// Handoff 9's frames 7 to 10, Home with no club and accepted invitations
+    /// (`G06-no-club-invitation`), between line boxes, each line's top its baseline less 0.82 of
+    /// its size, as handoff 7's and 9's frames draw them (which puts everything on whole points:
+    /// "Invitations" 32 under the header, as G06-no-club's title): from "Invitations" to the
+    /// first row, 24 in the frame.
+    static let invitationRows = Spacing.xxl
+    /// From the last row to "Start your club.", 32 in the frame.
+    static let invitationsStart = Spacing.xxxl
+    /// From "Start your club." to its first line, 16 in the frame.
+    static let invitationsBody = Spacing.l
+    /// Between its two lines, 8 in the frame.
+    static let invitationsLines = Spacing.s
+    /// From its lines to Create a club, 24 in the frame.
+    static let invitationsActions = Spacing.xxl
+    /// From I have an invite to Private drafts, 32 in the frame.
+    static let invitationsDrafts = Spacing.xxxl
 }
 
 /// Where VoiceOver's focus is moved in a tab: the loading label, or the heading of what replaces
@@ -206,7 +222,6 @@ enum TabShown: Equatable {
         case .noClub: self = .noClub
         case .loading: self = .loading
         case .failed(let failure): self = .failed(failure)
-        case .notInThisBuild: self = .notInThisBuild
         case .listed:
             guard let selected else {
                 self = .loading
@@ -252,34 +267,40 @@ struct TabContent: View {
     let clubs: RootModel.Clubs
     let selected: ClubSummary?
     let home: RootModel.Home
+    /// The account's accepted invitations, which Home with no club shows first.
+    let invitations: [AcceptedInvitation]
     let name: String
     let retry: @MainActor () async -> Void
     let retryHome: @MainActor () async -> Void
     let switchClub: () -> Void
     let createClub: () -> Void
     let openInvite: () -> Void
+    let openAccepted: (MyInvitation) -> Void
     let goHome: () -> Void
     @AccessibilityFocusState private var focus: TabFocus?
     @State private var labelHadFocus = false
 
     init(
         tab: ClubTab, clubs: RootModel.Clubs, selected: ClubSummary? = nil,
-        home: RootModel.Home = .loading, name: String,
+        home: RootModel.Home = .loading, invitations: [AcceptedInvitation] = [], name: String,
         retry: @escaping @MainActor () async -> Void,
         retryHome: @escaping @MainActor () async -> Void = {},
         switchClub: @escaping () -> Void = {}, createClub: @escaping () -> Void = {},
-        openInvite: @escaping () -> Void = {}, goHome: @escaping () -> Void
+        openInvite: @escaping () -> Void = {},
+        openAccepted: @escaping (MyInvitation) -> Void = { _ in }, goHome: @escaping () -> Void
     ) {
         self.tab = tab
         self.clubs = clubs
         self.selected = selected
         self.home = home
+        self.invitations = invitations
         self.name = name
         self.retry = retry
         self.retryHome = retryHome
         self.switchClub = switchClub
         self.createClub = createClub
         self.openInvite = openInvite
+        self.openAccepted = openAccepted
         self.goHome = goHome
     }
 
@@ -362,7 +383,10 @@ struct TabContent: View {
         switch shown {
         case .noClub:
             switch tab {
-            case .home: HomeNoClub(heading: $focus, createClub: createClub, openInvite: openInvite)
+            case .home:
+                HomeNoClub(
+                    heading: $focus, invitations: invitations, openAccepted: openAccepted,
+                    createClub: createClub, openInvite: openInvite)
             case .friends:
                 FriendsNoClub(heading: $focus, createClub: createClub, openInvite: openInvite)
             case .memories: MemoriesNoClub(heading: $focus, goHome: goHome)
