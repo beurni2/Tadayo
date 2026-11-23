@@ -3,19 +3,19 @@
 The `ios` workflow's evidence for `4404ff18ffa9dbedc74f45880c37a083dfceb87b` (https://github.com/beurni2/Tadayo/actions/runs/45142323495).
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
-- iOS `27.2` on `iPhone 17`: tests `failed`, with the snapshot tests
-- iOS `26.5` on `iPhone 17`: tests `failed`, without the snapshot tests
+- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
+- iOS `26.5` on `iPhone 17`: tests `not run`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `failed`
+- Tests: `not run`
 - Odd draws: 5 in `logs/test-27.2.log`, below
 - Carries the states this branch touches; 403 snapshot(s) not carried
 
 Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
 
-- `warning: ScreenSnapshot G01-create-failed: settled after 3 draws, SHA-256 2a86d94a 69d91981 69d91981; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot G05-club-details-xl: settled after 3 draws, SHA-256 d80aa04a 9de1c9fe 9de1c9fe; against the last draw, draw 1: 1871 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot G02-invitation-failed-refused-xl: settled after 3 draws, SHA-256 2acf7643 da8f1d14 da8f1d14; against the last draw, draw 1: 1871 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A02-code-resend: settled after 3 draws, SHA-256 17b55557 da69c00b da69c00b; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
 - `warning: ScreenSnapshot A02-code-typed: settled after 3 draws, SHA-256 bf7bf8e6 b3168405 b3168405; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot F01-error-no-club: settled after 3 draws, SHA-256 8cec8ef7 9c836df3 9c836df3; against the last draw, draw 1: 9455 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
+- `warning: ScreenSnapshot A03-profile-failed-network-dark: settled after 4 draws, SHA-256 1a74dda8 f3d9b76f 1a74dda8 1a74dda8; against the last draw, draw 2: 12324 pixels in x 31 to 305, y 123 to 212, by at most 21/255`
 - `warning: ScreenSnapshot H01-awaiting-activation: settled after 3 draws, SHA-256 c4ac0d12 e74f0d32 e74f0d32; against the last draw, draw 1: 9038 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
@@ -36,4 +36,4 @@ Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapsho
 | `G06-no-club-invitation-declined-xl` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/TabsSnapshotTests/testG06NoClubInvitationDeclined.G06-no-club-invitation-declined-xl.png` | no render of its own: judged against book p26 (design/reference/INVENTORY.md) | [G06-no-club-invitation-declined-xl.jpg](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/sheets/G06-no-club-invitation-declined-xl.jpg) | [G06-no-club-invitation-declined-xl.png](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/snapshots/G06-no-club-invitation-declined-xl.png) |
 | `G06-no-club-invitation-declined` | committed | `apps/ios/TadayoSnapshotTests/__Snapshots__/TabsSnapshotTests/testG06NoClubInvitationDeclined.G06-no-club-invitation-declined.png` | design/reference/screens/G06-no-club-invitation-declined.png | [G06-no-club-invitation-declined.jpg](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/sheets/G06-no-club-invitation-declined.jpg) | [G06-no-club-invitation-declined.png](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/snapshots/G06-no-club-invitation-declined.png) |
 
-Logs: [attachments-manifest.json](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/attachments-manifest.json), [build.log](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/build.log), [runner.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/runner.txt), [simulators.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/simulators.txt), [test-26.5.log](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/test-26.5.log), [test-27.2.log](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/test-27.2.log), [test-summary-26.5.json](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/test-summary-26.5.json), [test-summary-27.2.json](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/test-summary-27.2.json), [toolchain.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/toolchain.txt), [xcodegen.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/xcodegen.txt)
+Logs: [attachments-manifest.json](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/attachments-manifest.json), [build.log](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/build.log), [runner.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/runner.txt), [simulators.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/simulators.txt), [test-26.5.log](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/test-26.5.log), [test-27.2.log](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/test-27.2.log), [test-summary-27.2.json](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/test-summary-27.2.json), [toolchain.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/toolchain.txt), [xcodegen.txt](https://github.com/beurni2/Tadayo/blob/evidence/main/4404ff1/ios/logs/xcodegen.txt)
