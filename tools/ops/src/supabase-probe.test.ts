@@ -68,13 +68,16 @@ describe("apiChecks on a closed project", () => {
     expect(count("control: ")).toBe(2 + 8 * 2);
     // And the one question about every bucket the project has, which is no control.
     expect(count("storage: ")).toBe(1);
+    // The worker's own write, a rendition put and put over, each read back.
+    expect(count("worker: ")).toBe(2);
     // Per caller: 3 tables and the root of REST, GraphQL, the buckets' list and create, and 8 for each bucket.
     expect(count("anon: ")).toBe(4 + 1 + 2 + 8 * 2);
     expect(count("user: ")).toBe(4 + 1 + 2 + 8 * 2);
     // And the Data API's root, asked once as the service key.
     expect(count("service: ")).toBe(1);
-    // Two probe objects and the probe user; nothing else was written, so nothing else is deleted.
-    expect(count("cleanup: ")).toBe(3);
+    // Two probe objects, the probe's rendition and the probe user; nothing else was written, so nothing else is
+    // deleted.
+    expect(count("cleanup: ")).toBe(4);
     expect(fake.objects.size).toBe(0);
     expect(fake.users.size).toBe(0);
     expect([...fake.buckets.keys()].sort()).toEqual(["renditions", "uploads"]);
@@ -278,6 +281,7 @@ describe("apiChecks on a project that leaks", () => {
     expect(checks.filter((check) => check.name.startsWith("cleanup: ")).map((check) => check.name)).toEqual([
       "cleanup: delete the probe object in uploads",
       "cleanup: delete the probe object in renditions",
+      "cleanup: delete the probe's rendition in renditions",
       "cleanup: delete the object user added to uploads",
       "cleanup: delete the object user added to renditions",
       "cleanup: delete the bucket user made",
@@ -810,6 +814,92 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
     }
   });
 
+  it("puts a rendition as the worker does, a POST to renditions with the service key, image/jpeg and x-upsert, then other bytes at the same key, each read back", async () => {
+    const fake = project();
+    const key = "/storage/v1/object/renditions/probe/id1/rendition-seen.png";
+    const puts: { type: string | null; upsert: string | null; service: boolean; size: number }[] = [];
+    const spy = (async (input: string | URL | Request, init?: RequestInit) => {
+      const request = new Request(input, init);
+      if (request.method === "POST" && new URL(request.url).pathname === key)
+        puts.push({
+          type: request.headers.get("content-type"),
+          upsert: request.headers.get("x-upsert"),
+          service: asService(request) && request.headers.get("authorization") === `Bearer ${FAKE_SECRET}`,
+          size: (await request.clone().arrayBuffer()).byteLength,
+        });
+      return fake.fetch(input, init);
+    }) as typeof fetch;
+    const checks = await probe(fake, spy);
+    expect(failed(checks)).toEqual([]);
+    expect(checks.filter((check) => check.name.startsWith("worker: ")).map((check) => check.name)).toEqual([
+      "worker: the service key puts a rendition in renditions, upsert on, and reads it back",
+      "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
+    ]);
+    // The second bytes are the first and one more, so the read back tells the two apart.
+    expect(puts).toEqual([
+      { type: "image/jpeg", upsert: "true", service: true, size: puts[0]?.size },
+      { type: "image/jpeg", upsert: "true", service: true, size: (puts[0]?.size ?? 0) + 1 },
+    ]);
+    expect(fake.calls.filter((call) => call.path === key.replace("/object/", "/object/authenticated/"))).toEqual([
+      { method: "GET", path: key.replace("/object/", "/object/authenticated/"), who: "service", status: 200 },
+      { method: "GET", path: key.replace("/object/", "/object/authenticated/"), who: "service", status: 200 },
+    ]);
+    expect(fake.calls.some((call) => call.method === "DELETE" && call.path === key)).toBe(true);
+    expect(fake.objects.size).toBe(0);
+  });
+
+  it("fails the worker's write when Storage refuses the put over, or answers it and keeps the first bytes, and the run goes on and cleans up", async () => {
+    const over = "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back";
+    const duplicate = () =>
+      new Response(JSON.stringify({ statusCode: "409", error: "Duplicate", message: "The resource already exists" }), {
+        status: 400,
+      });
+    for (const [what, answer] of [
+      ["refused with Storage's own 409, as with upsert off", duplicate],
+      ["answered 200 with Storage's status 409 in the body", () => ok({ statusCode: "409" })],
+      ["answered 200 and kept the first bytes", () => ok({ Key: "renditions/probe/id1/rendition-seen.png" })],
+    ] as const) {
+      const fake = project();
+      let posts = 0;
+      const checks = await probe(fake, async (input: string | URL | Request, init?: RequestInit) => {
+        const request = new Request(input, init);
+        // The second put at the rendition's key, the one over the first bytes.
+        if (request.method === "POST" && request.url.endsWith("/object/renditions/probe/id1/rendition-seen.png")) {
+          posts += 1;
+          if (posts === 2) return answer();
+        }
+        return fake.fetch(input, init);
+      });
+      expect(failed(checks), what).toEqual([over]);
+      // The refusals still ran, and the rendition was removed.
+      expect(
+        checks.some((check) => check.name.startsWith("anon: ")),
+        what,
+      ).toBe(true);
+      expect(fake.objects.size, what).toBe(0);
+    }
+  });
+
+  it("asks nothing more of the worker's write once its first put fails, and names that check alone", async () => {
+    const first = "worker: the service key puts a rendition in renditions, upsert on, and reads it back";
+    for (const answer of [status(403), status(500), () => ok({ statusCode: "413" })]) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        answering(fake, (request) =>
+          request.method === "POST" && request.url.includes("/rendition-seen.png") ? answer() : undefined,
+        ),
+      );
+      expect(failed(checks)).toEqual([first]);
+      expect(checks.filter((check) => check.name.startsWith("worker: ")).map((check) => check.name)).toEqual([first]);
+      // No read back of a put that failed, and no second put.
+      expect(
+        fake.calls.filter((call) => call.path.includes("/rendition-seen.png") && call.method !== "DELETE"),
+      ).toEqual([]);
+      expect(fake.objects.size).toBe(0);
+    }
+  });
+
   it("asks REST for the schema app by name, since it would otherwise be asked for the public one", async () => {
     const fake = project();
     const profiles: [string, string | null][] = [];
@@ -899,7 +989,7 @@ describe("apiChecks when the project can't be trusted to answer", () => {
     ).rejects.toThrow("a bug in the probe");
     expect(fake.objects.size).toBe(0);
     expect(fake.users.size).toBe(0);
-    expect(fake.calls.filter((call) => call.method === "DELETE").length).toBe(3);
+    expect(fake.calls.filter((call) => call.method === "DELETE").length).toBe(4);
   });
 
   it("reports a clean-up that fails, with what is left, so that no test user stays behind unseen", async () => {
@@ -1037,9 +1127,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up", async () => {
     const fake = project();
     const budget = new AbortController();
-    // The 26th call is the first refusal's; the 30th is anon's GraphQL.
+    // The 30th call is the first refusal's; the 34th is anon's GraphQL.
     const fetcher = counting(fake, (n) => {
-      if (n === 30) budget.abort();
+      if (n === 34) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     const cut = checks.findIndex((check) => check.name === "anon: GraphQL");
@@ -1048,8 +1138,8 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     // Every check of anon and user that wasn't asked, and the service key's root, which comes last.
     expect(later).toHaveLength(count(checks, "anon: ") + count(checks, "user: ") + count(checks, "service: ") - 5);
     expect(later.every((check) => !check.ok && check.note === OUT_OF_TIME)).toBe(true);
-    // 30 calls, then only the clean-up's: the two probe objects and the user.
-    expect(fake.calls.map((call) => call.method).slice(30)).toEqual(["DELETE", "DELETE", "DELETE"]);
+    // 34 calls, then only the clean-up's: the two probe objects, the probe's rendition and the user.
+    expect(fake.calls.map((call) => call.method).slice(34)).toEqual(["DELETE", "DELETE", "DELETE", "DELETE"]);
     expect(checks.filter((check) => check.name.startsWith("cleanup: ")).every((check) => check.ok)).toBe(true);
     expect(fake.objects.size).toBe(0);
     expect(fake.users.size).toBe(0);
@@ -1092,9 +1182,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("leaves no bucket to remove for a refusal it never asked", async () => {
     const fake = project();
     const budget = new AbortController();
-    // Spent after the controls (24 calls) and the bucket list (25): anon's REST is the next.
+    // Spent after the controls (24 calls), the worker's write (28) and the bucket list (29): anon's REST is the next.
     const fetcher = counting(fake, (n) => {
-      if (n === 26) budget.abort();
+      if (n === 30) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     expect(checks.some((check) => check.name === "anon: create a bucket" && check.note === OUT_OF_TIME)).toBe(true);
@@ -1107,18 +1197,19 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     const fake = project();
     const deadline = new AbortController();
     const fetcher = counting(fake, (n) => {
-      if (n === 26) deadline.abort();
+      if (n === 30) deadline.abort();
     });
     const checks = await probe(fake, fetcher, { deadline: deadline.signal });
-    // 26 calls were made, the 26th the first refusal's, and none after it: not even the clean-up's.
-    expect(fake.calls).toHaveLength(26);
+    // 30 calls were made, the 30th the first refusal's, and none after it: not even the clean-up's.
+    expect(fake.calls).toHaveLength(30);
     expect(checks.filter((check) => check.name.startsWith("cleanup: "))).toEqual([
       { name: "cleanup: delete the probe object in uploads", ok: false, note: OUT_OF_TIME },
       { name: "cleanup: delete the probe object in renditions", ok: false, note: OUT_OF_TIME },
+      { name: "cleanup: delete the probe's rendition in renditions", ok: false, note: OUT_OF_TIME },
       { name: "cleanup: delete the probe user", ok: false, note: OUT_OF_TIME },
     ]);
     expect(fake.users.size).toBe(1);
-    expect(fake.objects.size).toBe(2);
+    expect(fake.objects.size).toBe(3);
   });
 
   it("gives the checks BUDGET_MS and the whole run DEADLINE_MS when nobody gives it others, and DEADLINE_MS ends a minute before the runner may give up on the Machine's command", async () => {

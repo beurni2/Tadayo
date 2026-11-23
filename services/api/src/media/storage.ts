@@ -24,12 +24,15 @@
 //   like every instant the API gives (T1), since `dev`'s clock leads the wall clock Storage reads.
 // - `GET /storage/v1/object/info/<bucket>/<key>` answers an object's details, or Storage's not-found. Storage
 //   answers every error with HTTP 400 and the real status in the body's `statusCode` (tools/ops/src/supabase.ts),
-//   so the client reads that, never the HTTP status alone. An object is there only on a 200 whose body is a JSON
-//   object; its not-found is a 404 in the body or in the HTTP status; anything else is an error, never either.
+//   so the client reads that, never the HTTP status alone (`storageStatus`, shared with the worker's client). An
+//   object is there only on a 200 whose body is a JSON object; its not-found is a 404 in the body or in the HTTP
+//   status; anything else is an error, never either.
 // - A secret key goes in `apikey` and again as the bearer, as `supabase-js` does; no call sets a `User-Agent`.
 //
 // Nothing it is given or answers is logged: not the key, a token, a URL or an object's key (T52, T56). A failure
 // is a `StorageUnavailable` with a fixed message, which the route answers 503 with no body.
+
+import { storageProject, storageServiceKey, storageStatus } from "@tadayo/domain";
 
 /** The bucket of originals, private, with D09's limits (tools/ops/src/storage-setup.ts). */
 export const UPLOADS_BUCKET = "uploads";
@@ -68,27 +71,10 @@ export class StorageUnavailable extends Error {
   }
 }
 
-/** The project's URL, which must be `https://<twenty letters>.supabase.co`, as the sign-in verifier requires. */
-function projectBase(value: string): string {
-  const match = /^https:\/\/([a-z]{20})\.supabase\.co\/?$/.exec(value);
-  if (!match) throw new Error("api: SUPABASE_URL isn't a project's URL, https://<its 20 letters>.supabase.co");
-  return `https://${match[1] ?? ""}.supabase.co`;
-}
-
 /** An object key as the server makes it (packages/domain/src/media/object.ts), or a programming error. */
 function checkedKey(objectKey: string): string {
   if (!/^[A-Za-z0-9_-]{32}$/.test(objectKey)) throw new TypeError("storage: an object key is 32 base64url characters");
   return objectKey;
-}
-
-/** Storage's own status: the body's `statusCode` when it has one, else the HTTP status. */
-function logicalStatus(status: number, json: unknown): number {
-  if (typeof json === "object" && json !== null) {
-    const code = (json as Record<string, unknown>)["statusCode"];
-    if (typeof code === "string" && /^[0-9]{3}$/.test(code)) return Number(code);
-    if (typeof code === "number" && Number.isInteger(code)) return code;
-  }
-  return status;
 }
 
 /** A JWT's payload as JSON, or undefined: the token isn't verified here, only read for what Storage put in it. */
@@ -140,9 +126,8 @@ export interface SupabaseStorageOptions {
 
 /** The client against a hosted project. */
 export function supabaseStorage(options: SupabaseStorageOptions): UploadStorage {
-  const base = projectBase(options.projectUrl);
-  const key = options.serviceKey;
-  if (typeof key !== "string" || key === "" || /\s/.test(key)) throw new Error("api: SUPABASE_SERVICE_KEY isn't a key");
+  const base = storageProject(options.projectUrl, "api");
+  const key = storageServiceKey(options.serviceKey, "api");
   const send = options.fetch ?? fetch;
   const auth = { apikey: key, authorization: `Bearer ${key}` };
 
@@ -170,7 +155,7 @@ export function supabaseStorage(options: SupabaseStorageOptions): UploadStorage 
         { method: "POST", headers: { ...auth, "content-type": "application/json" }, body: "{}" },
         "signing an upload URL",
       );
-      const logical = logicalStatus(status, json);
+      const logical = storageStatus(status, json);
       // Storage's Duplicate: the object is there, so no URL may be given for it (T12).
       if (status !== 200 && logical === 409) return null;
       if (status !== 200 || logical !== 200) {
@@ -194,7 +179,7 @@ export function supabaseStorage(options: SupabaseStorageOptions): UploadStorage 
         { method: "GET", headers: auth },
         "asking for an object",
       );
-      const logical = logicalStatus(status, json);
+      const logical = storageStatus(status, json);
       if (status === 200 && logical === 200 && typeof json === "object" && json !== null && !Array.isArray(json)) {
         return true;
       }

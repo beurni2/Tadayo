@@ -33,6 +33,11 @@
 // closed only because their controls listed and signed the same object. REST and GraphQL are asked
 // for every table of `app` and for the root; an error, or no rows, is closed (T53's own words).
 //
+// The worker's own write. Two more checks, which no refusal needs, so a failure is recorded and the run goes on,
+// prove the call the worker makes to store a photo's renditions (services/worker/src/storage.ts, `putRendition`):
+// the service key puts an object in `renditions` with `x-upsert: true` and reads it back, then puts other bytes
+// at the same key and reads those back, as a retry after a failed attempt does (spec 33; T54).
+//
 // What it leaves behind: nothing. Everything it makes is named `probe/<run>/…` (the user's address
 // is `probe-<run>@probe.invalid`, which nothing can deliver to), and a `finally` deletes each object
 // a call may have written, each bucket a call may have made, and then the user, whatever failed
@@ -518,6 +523,40 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
       ) {
         return undefined;
       }
+    }
+
+    // The worker's own write (services/worker/src/storage.ts, `putRendition`): the service key puts a rendition in
+    // `renditions` with `x-upsert: true`, so a retry after a failed attempt writes over what that attempt stored, at
+    // the same key (spec 33; T54). A new key, read back; then other bytes at the same key, read back as those. Its
+    // read of an original is the control above, reading back from `uploads`. No refusal needs either, so a failure
+    // is recorded and the run goes on. The bytes are sent as the worker's type, `image/jpeg`: Storage looks at the
+    // declared type and the size, never into the bytes.
+    const rendition = `${folder}/rendition-${OBJECT}`;
+    const renditionAt = `renditions/${urlPath(rendition)}`;
+    // Tracked before the call: a put whose answer is lost may have stored the object.
+    left.objects.push({ bucket: "renditions", path: rendition, label: "the probe's rendition in renditions" });
+    for (const [bytes, name] of [
+      [PNG, "worker: the service key puts a rendition in renditions, upsert on, and reads it back"],
+      [OTHER_PNG, "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back"],
+    ] as const) {
+      const put = await ask(`/storage/v1/object/${renditionAt}`, {
+        method: "POST",
+        caller: service,
+        body: bytes,
+        contentType: "image/jpeg",
+        headers: { "x-upsert": "true" },
+      });
+      const stored = put?.status === 200 && storageStatus(put) === 200;
+      const back = stored
+        ? await ask(`/storage/v1/object/authenticated/${renditionAt}`, { caller: service })
+        : undefined;
+      if (
+        !record(
+          name,
+          settle(put, () => stored) ?? settle(back, (reply) => reply.status === 200 && sameBytes(reply.bytes, bytes)),
+        )
+      )
+        break;
     }
 
     // T53: every bucket is private, not only the two shown to work above. This isn't a control (no
