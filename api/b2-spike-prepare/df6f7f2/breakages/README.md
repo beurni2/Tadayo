@@ -18,7 +18,7 @@ is caught when the suite fails and a failing test's name holds the words registe
   `tests/src/db/worker-prepare.test.ts`. New in round 1: P08 doesn't see a lapse under the lock (R1-5); P09 reads
   the record's clock before its lock (R1-6).
 - I01 to I16, the checks and renditions (`services/worker/src/image.ts`): `services/worker/src/image.test.ts`.
-  New in round 1 (R1-1, FQ138): I11 checks nothing a decode would hold; I12 counts one JPEG component; I13 counts a
+  New in round 1 (R1-1, FQ138): I11 checks nothing a decode would hold; I12 counts every JPEG as three components, a CMYK one's fourth left out; I13 counts a
   16-bit PNG's samples as one byte; I14 counts nothing for an interlaced PNG; I15 leaves out a JPEG's padding to
   whole MCUs; I16 raises the budget to 512 MiB.
 - M01, the same check as I11 removed, caught by `services/worker/src/image-memory.test.ts` alone (each decoder's
