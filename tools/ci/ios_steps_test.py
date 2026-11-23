@@ -3514,8 +3514,8 @@ class WorkflowFileTest(unittest.TestCase):
     def test_each_step_has_its_timeout_and_the_job_its_backstop(self):
         # The values the change set: the simulator step downloads iOS 26.5 on every run, and the
         # test step runs a pass on each pinned runtime, so neither may be cut (the test step's 90
-        # minutes hold both passes on the runner as slow as it ran on 2026-11-23, in
-        # docs/LIMITATIONS.md); the job's own is the steps' sum and 10 for the checkout and the
+        # minutes are sized to hold both passes on the runner as slow as it ran on 2026-11-23,
+        # in docs/LIMITATIONS.md); the job's own is the steps' sum and 10 for the checkout and the
         # upload, and no more, or it would stop being a backstop for a hang the steps' timeouts
         # miss.
         expected = {"toolchain": 5, "xcodegen": 5, "simulator": 35, "build": 25, "test": 90, "collect": 5}
