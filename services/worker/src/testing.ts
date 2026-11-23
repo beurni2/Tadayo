@@ -350,6 +350,87 @@ export function manyScansJpeg(width: number, height: number, scans: number): Buf
   return Buffer.concat(parts);
 }
 
+/**
+ * A progressive JPEG of `width` by `height` whose scans after its first restart are hidden behind a reserved marker
+ * (0x05) met where that restart is due. A walk that passes over every marker segment by its length counts two scans;
+ * libjpeg's `jpeg_resync_to_restart` scans on past the marker as if it had no length, and reads the rest of the
+ * restarts, then `hidden` more AC scans, each a pass over every block of the first component. Ported from PR #111's
+ * fourth review (`hidescans.py`); `restart` is the restart interval in blocks.
+ */
+export function hiddenScansJpeg(width: number, height: number, hidden: number, restart: number): Buffer {
+  const blocks = Math.ceil(width / 8) * Math.ceil(height / 8);
+  const sof = Buffer.alloc(15);
+  sof.writeUInt8(8, 0);
+  sof.writeUInt16BE(height, 1);
+  sof.writeUInt16BE(width, 3);
+  sof.writeUInt8(3, 5);
+  for (let c = 0; c < 3; c += 1) sof.set([c + 1, 0x11, 0], 6 + c * 3);
+  const dc = Buffer.from([0x00, 1, ...Array<number>(15).fill(0), 0]);
+  const ac = Buffer.from([
+    0x10,
+    0,
+    0,
+    0,
+    15,
+    ...Array<number>(12).fill(0),
+    ...Array.from({ length: 15 }, (_, n) => n << 4),
+  ]);
+  const sos = (components: number[], ss: number, ah: number, al: number) =>
+    jpegSegment(
+      0xda,
+      Buffer.from([components.length, ...components.flatMap((c) => [c, 0x00]), ss, ss, (ah << 4) | al]),
+    );
+  const dri = (interval: number) => jpegSegment(0xdd, Buffer.from([interval >> 8, interval & 0xff]));
+  const eobRuns = (count: number) => {
+    const bits = new JpegBits();
+    for (let left = count; left > 0;) {
+      const run = Math.min(left, 32767);
+      const n = 31 - Math.clz32(run);
+      bits.put(n, 4);
+      if (n > 0) bits.put(run - (1 << n), n);
+      left -= run;
+    }
+    return bits.done();
+  };
+  // Seen by the walk: one interleaved DC scan, then restarts every `restart` blocks and an AC scan's first interval.
+  const dcBits = new JpegBits();
+  for (let i = 0; i < blocks * 3; i += 1) dcBits.put(0, 1);
+  const seen: Buffer[] = [sos([1, 2, 3], 0, 0, 13), dcBits.done(), dri(restart), sos([1], 1, 0, 13)];
+  const intervals: Buffer[] = [];
+  for (let left = blocks; left > 0; left -= restart) intervals.push(eobRuns(Math.min(left, restart)));
+  seen.push(intervals[0] ?? Buffer.alloc(0));
+  // Hidden from it: the other intervals, no more restarts, then the AC scans of the first component.
+  const unseen: Buffer[] = intervals.slice(1).flatMap((data, i) => [Buffer.from([0xff, 0xd0 + (i % 8)]), data]);
+  unseen.push(dri(0));
+  let made = 0;
+  const scan = (ss: number, ah: number, al: number) => {
+    if (made >= hidden) return;
+    unseen.push(sos([1], ss, ah, al), eobRuns(blocks));
+    made += 1;
+  };
+  for (let ah = 13; ah > 0; ah -= 1) scan(1, ah, ah - 1);
+  for (let k = 2; k <= 63; k += 1) {
+    scan(k, 0, 13);
+    for (let ah = 13; ah > 0; ah -= 1) scan(k, ah, ah - 1);
+  }
+  if (made < hidden) throw new Error(`testing: at most ${String(made)} scans can be hidden`);
+  // The reserved marker's "length" runs to the EOI, padded with zeros so that neither of its bytes is 0xFF.
+  let body = Buffer.concat(unseen);
+  while ((((body.length + 2) >> 8) & 0xff) === 0xff || ((body.length + 2) & 0xff) === 0xff) {
+    body = Buffer.concat([body, Buffer.from([0])]);
+  }
+  if (body.length + 2 > 0xffff) throw new Error("testing: the hidden scans don't fit in a segment's length");
+  return Buffer.concat([
+    Buffer.from([0xff, 0xd8]),
+    jpegSegment(0xdb, Buffer.from([0, ...Array<number>(64).fill(1)])),
+    jpegSegment(0xc2, sof),
+    jpegSegment(0xc4, Buffer.concat([dc, ac])),
+    ...seen,
+    jpegSegment(0x05, body),
+    Buffer.from([0xff, 0xd9]),
+  ]);
+}
+
 /** Bits written least significant first, as a lossless WebP's stream has them. */
 class WebpBits {
   readonly out: number[] = [];

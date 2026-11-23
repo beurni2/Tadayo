@@ -12,17 +12,23 @@
 //   (`oom_score_adj` 1000), should the Machine run out between two reads.
 // - Past its deadline, the child is killed and ImageTimeout thrown, as for a decode's own timeout, which libjpeg can
 //   outlast: it takes in every scan of a progressive JPEG in one step.
-// - A child that dies otherwise once it holds the photo (a decoder's crash, an allocation refused) refuses it as
-//   unreadable. A child that ends before it is ready for the photo, whose code throws or whose answer is malformed
-//   is a failure, tried again by the outbox: it says nothing about the photo.
-// - The child gets no environment, so none of the worker's secrets (T56) is in the process that parses a stranger's
-//   bytes, and no output, so nothing it writes reaches the worker's log (T52). It is given the declared type and the
-//   decode's limit as its arguments, and the photo's bytes on its standard input, which the worker writes without a
-//   copy; its answer comes back over Node's channel.
+// - A child that crashes once it holds the photo (a decoder that met what it couldn't read) refuses it as unreadable.
+//   A child that ends before it is ready for the photo, that ends of its own accord or by another signal without
+//   answering, whose code throws or whose answer isn't one the worker can record is a failure, tried again by the
+//   outbox: it says nothing about the photo.
+// - The worker reads only the child's own kinds of message, kills the child's whole process group (it is forked
+//   `detached`), and settles a child's end GRACE_MS after it ended even if something else holds its channel open
+//   (PR #111's round 4, R4-3): each a child whose decoder a stranger's bytes took over.
+// - The child gets no environment and no output, so nothing it writes reaches the worker's log (T52). It is given the
+//   declared type and the decode's limit as its arguments, and the photo's bytes on its standard input, which the
+//   worker writes without a copy; its answer comes back over Node's channel. It runs as the worker's user, so code
+//   that took over a decoder could still read the worker's own environment from /proc, and a frame on the channel
+//   that isn't Node's serialization ends the worker (R4-2; the fix is its own PR: docs/LIMITATIONS.md, 2026-11-23).
 
 import { fork } from "node:child_process";
 import { readFileSync } from "node:fs";
-import type { UploadContentType, UploadRejection } from "@tadayo/domain";
+import type { UploadContentType } from "@tadayo/domain";
+import { UPLOAD_REJECTIONS, type UploadRejection } from "@tadayo/domain/limits";
 import type { Prepared, Rendition } from "./image.ts";
 
 /** The longest one rendition's decode may take, in seconds (sharp's own timeout, in the child). */
@@ -40,6 +46,24 @@ export const DEADLINE_SECONDS = 2 * DECODE_SECONDS + 30;
 export const PEAK_BYTES = 352 * 1024 * 1024;
 /** How often the worker reads the child's peak. */
 const WATCH_MS = 10;
+/**
+ * How long the worker waits, once the child has ended or been killed, for its channel to close. Its last message is
+ * written before it exits, so the channel closes within milliseconds unless another process holds it open.
+ */
+export const GRACE_MS = 2000;
+
+/** A drop's photo's renditions (TECH-DESIGN section 1, "Images"): `widget` waits for widgets, `thumbnail` for B6. */
+export const RENDITION_KINDS = ["full", "display"] as const;
+export type RenditionKind = (typeof RENDITION_KINDS)[number];
+
+/**
+ * Each kind's box (./image.ts fits each rendition inside it, never enlarged): `display` is 1290 px wide, and never
+ * taller than `full`. Here, as the worker checks the child's answer against them without loading `sharp`.
+ */
+export const RENDITION_BOXES: Readonly<Record<RenditionKind, { readonly width: number; readonly height: number }>> = {
+  full: { width: 2560, height: 2560 },
+  display: { width: 1290, height: 2560 },
+};
 
 const CHILD = new URL("./image-child.ts", import.meta.url);
 
@@ -119,33 +143,56 @@ export interface ChildEnd {
   readonly mostBytes: number;
 }
 
-const KINDS = new Set(["full", "display"]);
+/** One rendition of `kind`: a JPEG's first bytes, and a size inside its box. */
+function wellFormedRendition(rendition: unknown, kind: RenditionKind): boolean {
+  if (typeof rendition !== "object" || rendition === null) return false;
+  const { kind: its, bytes, width, height } = rendition as Record<string, unknown>;
+  const box = RENDITION_BOXES[kind];
+  return (
+    its === kind &&
+    bytes instanceof Uint8Array &&
+    bytes.length > 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff &&
+    typeof width === "number" &&
+    typeof height === "number" &&
+    Number.isInteger(width) &&
+    Number.isInteger(height) &&
+    width >= 1 &&
+    height >= 1 &&
+    width <= box.width &&
+    height <= box.height
+  );
+}
 
-/** The child's answer has the shape the worker records, whatever a child parsing a stranger's bytes sent. */
+/**
+ * The child's answer is one the worker can record, whatever a child parsing a stranger's bytes sent: a rejection by
+ * one of its codes, or exactly one rendition of each kind (PR #111's round 4, R4-3).
+ */
 function wellFormed(prepared: unknown): prepared is SentPrepared {
   if (typeof prepared !== "object" || prepared === null) return false;
   const { ok, rejection, renditions } = prepared as Record<string, unknown>;
-  if (ok === false) return typeof rejection === "string";
+  if (ok === false) return UPLOAD_REJECTIONS.some((code) => code === rejection);
   return (
     ok === true &&
     Array.isArray(renditions) &&
-    renditions.every((rendition: unknown) => {
-      if (typeof rendition !== "object" || rendition === null) return false;
-      const { kind, bytes, width, height } = rendition as Record<string, unknown>;
-      return (
-        typeof kind === "string" &&
-        KINDS.has(kind) &&
-        bytes instanceof Uint8Array &&
-        typeof width === "number" &&
-        typeof height === "number" &&
-        Number.isInteger(width) &&
-        Number.isInteger(height) &&
-        width >= 1 &&
-        height >= 1
-      );
-    })
+    renditions.length === RENDITION_KINDS.length &&
+    RENDITION_KINDS.every((kind) => renditions.filter((rendition) => wellFormedRendition(rendition, kind)).length === 1)
   );
 }
+
+/** A message from the child, if it is one of the kinds it sends; anything else is ignored. */
+function messageOf(message: unknown): ChildMessage | undefined {
+  if (typeof message !== "object" || message === null) return undefined;
+  const { kind } = message as Record<string, unknown>;
+  return kind === "ready" || kind === "prepared" || kind === "timeout" || kind === "failed"
+    ? (message as ChildMessage)
+    : undefined;
+}
+
+/** The signals a process crashes by: a decoder that met what it couldn't read. */
+const CRASHES: ReadonlySet<NodeJS.Signals> = new Set(["SIGSEGV", "SIGBUS", "SIGABRT", "SIGILL", "SIGFPE"]);
 
 /** The answer a child's end comes to (the rules above): a preparation, or ImageTimeout or ImageProcessFailed thrown. */
 export function outcomeOf(end: ChildEnd): ProcessAnswer {
@@ -171,26 +218,36 @@ export function outcomeOf(end: ChildEnd): ProcessAnswer {
   if (answer?.kind === "timeout") throw new ImageTimeout();
   if (answer?.kind === "failed" || !end.ready) throw new ImageProcessFailed();
   if (end.signal === "SIGKILL") return { prepared: { ok: false, rejection: "too_many_pixels" }, peakBytes };
-  return { prepared: { ok: false, rejection: "unreadable" }, peakBytes };
+  if (end.signal !== null && CRASHES.has(end.signal))
+    return { prepared: { ok: false, rejection: "unreadable" }, peakBytes };
+  throw new ImageProcessFailed();
 }
 
 /**
  * prepareImage on `bytes` in a child process (the rules above). `seconds` is each decode's limit, `deadlineSeconds`
- * the child's and `peakBytes` its memory's; the tests make them small.
+ * the child's and `peakBytes` its memory's; the tests make them small, and give a `child` module of their own to
+ * play a child that misbehaves.
  */
 export function prepareIsolated(
   bytes: Uint8Array,
   declared: UploadContentType,
-  limits: { readonly seconds?: number; readonly deadlineSeconds?: number; readonly peakBytes?: number } = {},
+  limits: {
+    readonly seconds?: number;
+    readonly deadlineSeconds?: number;
+    readonly peakBytes?: number;
+    readonly child?: URL;
+  } = {},
 ): Promise<ProcessAnswer> {
   const seconds = limits.seconds ?? DECODE_SECONDS;
   const mostBytes = limits.peakBytes ?? PEAK_BYTES;
   return new Promise((resolve, reject) => {
-    const child = fork(CHILD, [declared, String(seconds)], {
+    // `detached`: the child leads a process group of its own, so that killing the group ends anything it started.
+    const child = fork(limits.child ?? CHILD, [declared, String(seconds)], {
       env: {},
       execArgv: [],
       serialization: "advanced",
       stdio: ["pipe", "ignore", "ignore", "ipc"],
+      detached: true,
     });
     // A child that ends before it has read everything closes the pipe under the write: its end says why.
     child.stdin?.on("error", () => undefined);
@@ -198,10 +255,27 @@ export function prepareIsolated(
     let killed: "memory" | "time" | undefined;
     let answer: ChildMessage | undefined;
     let seen = 0;
+    const killGroup = () => {
+      if (child.pid === undefined) return;
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch {
+        // The group has ended.
+      }
+    };
+    let grace: NodeJS.Timeout | undefined;
+    // Once the child has ended or been killed, its end is settled when its channel closes, or after GRACE_MS if
+    // something else holds the channel open: a process the child started, which the group's kill ends.
+    const allowGrace = () => {
+      grace ??= setTimeout(() => {
+        settle(child.signalCode, false);
+      }, GRACE_MS);
+    };
+    // A child that has answered keeps its answer, but is ended all the same: it may never exit of itself.
     const kill = (why: "memory" | "time") => {
-      if (killed !== undefined || answer !== undefined) return;
-      killed = why;
-      child.kill("SIGKILL");
+      if (killed === undefined && answer === undefined) killed = why;
+      killGroup();
+      allowGrace();
     };
     const look = () => {
       if (child.pid === undefined) return;
@@ -217,8 +291,12 @@ export function prepareIsolated(
       },
       (limits.deadlineSeconds ?? DEADLINE_SECONDS) * 1000,
     );
-    child.on("message", (message: ChildMessage) => {
-      if (message.kind === "ready" && !ready) {
+    // A message that isn't one of the child's kinds, a second `ready` and anything after the answer are ignored.
+    child.on("message", (sent: unknown) => {
+      const message = messageOf(sent);
+      if (message === undefined) return;
+      if (message.kind === "ready") {
+        if (ready) return;
         ready = true;
         child.stdin?.end(bytes);
       } else if (ready && answer === undefined) {
@@ -231,6 +309,10 @@ export function prepareIsolated(
       settled = true;
       clearInterval(watch);
       clearTimeout(deadline);
+      clearTimeout(grace);
+      killGroup();
+      child.stdin?.destroy();
+      if (child.connected) child.disconnect();
       if (failed) {
         reject(new ImageProcessFailed());
         return;
@@ -253,9 +335,9 @@ export function prepareIsolated(
     };
     // A child that can't be started gives `error` and may never give `exit`.
     child.on("error", () => {
-      if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
       settle(null, true);
     });
+    child.on("exit", allowGrace);
     // `close` comes once the process has ended and its channel has closed, so after its last message.
     child.on("close", (_code, signal) => {
       settle(signal, false);

@@ -16,11 +16,9 @@ export {
   MAX_PIXELS,
   MAX_WEBP_CHUNKS,
   prepareImage,
-  RENDITION_KINDS,
   signatureOf,
   type Prepared,
   type Rendition,
-  type RenditionKind,
 } from "./image.ts";
 export {
   DEADLINE_SECONDS,
@@ -29,7 +27,10 @@ export {
   ImageTimeout,
   PEAK_BYTES,
   prepareIsolated,
+  RENDITION_BOXES,
+  RENDITION_KINDS,
   type ProcessAnswer,
+  type RenditionKind,
 } from "./image-process.ts";
 export { runLoop, type Loop } from "./loop.ts";
 export {

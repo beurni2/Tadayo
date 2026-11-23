@@ -34,7 +34,7 @@
 import type { UploadContentType, UploadRejection } from "@tadayo/domain";
 import { UPLOAD_MAX_BYTES } from "@tadayo/domain/limits";
 import sharp, { type Metadata } from "sharp";
-import { DECODE_SECONDS, ImageTimeout } from "./image-process.ts";
+import { DECODE_SECONDS, ImageTimeout, RENDITION_BOXES, RENDITION_KINDS, type RenditionKind } from "./image-process.ts";
 
 sharp.block({ operation: ["VipsForeignLoad"] });
 sharp.unblock({ operation: ["VipsForeignLoadJpegBuffer", "VipsForeignLoadPngBuffer", "VipsForeignLoadWebpBuffer"] });
@@ -65,16 +65,6 @@ export const MAX_JPEG_SCANS = 100;
  * 20,000 frames took 4.6 seconds, a time that grows with the square of their number. 1,000 frames take about 10 ms.
  */
 export const MAX_WEBP_CHUNKS = 1000;
-
-/** A drop's photo's renditions (TECH-DESIGN section 1, "Images"): `widget` waits for widgets, `thumbnail` for B6. */
-export const RENDITION_KINDS = ["full", "display"] as const;
-export type RenditionKind = (typeof RENDITION_KINDS)[number];
-
-/** Each kind's box: `fit: "inside"`, never enlarged. `display` is 1290 px wide, and never taller than `full`. */
-const BOXES: Readonly<Record<RenditionKind, { readonly width: number; readonly height: number }>> = {
-  full: { width: 2560, height: 2560 },
-  display: { width: 1290, height: 2560 },
-};
 
 export interface Rendition {
   readonly kind: RenditionKind;
@@ -116,18 +106,22 @@ const FORMATS: Readonly<Record<UploadContentType, string>> = {
 };
 
 /**
- * The scans of a JPEG, its SOS markers, found as libjpeg finds its markers, up to the first EOI: a marker segment is
- * passed over by its length, so a thumbnail inside an EXIF block isn't counted; between segments and in a scan's
- * entropy-coded data, a marker is the next 0xFF followed by a byte that isn't 0x00 (a stuffed byte), 0xFF (fill), a
- * restart or TEM. A file that ends first gives the scans counted so far.
+ * The scans of a JPEG, its SOS markers, up to the first EOI, or undefined if a reserved marker (0x02 to 0xBF) comes
+ * first. A marker segment is passed over by its length, as libjpeg's `read_markers` passes it, so a thumbnail inside
+ * an EXIF block isn't counted; between segments and in a scan's entropy-coded data, a marker is the next 0xFF followed
+ * by a byte that isn't 0x00 (a stuffed byte) or 0xFF (fill), and a restart, TEM or SOI has no length. libjpeg refuses a
+ * reserved marker as unknown, except where a restart is due: there `jpeg_resync_to_restart` scans on past it as if it
+ * had no length, and so reads scans inside the length this walk would pass over (PR #111's round 4, R4-1). No encoder
+ * writes one, so the photo is refused. A file that ends first gives the scans counted so far.
  */
-export function jpegScans(bytes: Uint8Array): number {
+export function jpegScans(bytes: Uint8Array): number | undefined {
   let scans = 0;
   for (let at = 2; ;) {
     at = bytes.indexOf(0xff, at);
     if (at < 0 || at + 1 >= bytes.length) return scans;
     const marker = bytes[at + 1] ?? 0;
     if (marker === 0xd9) return scans;
+    if (marker >= 0x02 && marker <= 0xbf) return undefined;
     if (marker === 0xff) {
       at += 1;
     } else if (marker === 0x00 || marker === 0x01 || marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7)) {
@@ -250,7 +244,10 @@ export async function prepareImage(
   if (bytes.length > UPLOAD_MAX_BYTES) return { ok: false, rejection: "too_large" };
   const type = signatureOf(bytes);
   if (type === undefined || type !== declared) return { ok: false, rejection: "unsupported_type" };
-  if (type === "image/jpeg" && jpegScans(bytes) > MAX_JPEG_SCANS) return { ok: false, rejection: "unsupported_type" };
+  if (type === "image/jpeg") {
+    const scans = jpegScans(bytes);
+    if (scans === undefined || scans > MAX_JPEG_SCANS) return { ok: false, rejection: "unsupported_type" };
+  }
   if (type === "image/webp") {
     const chunks = webpChunks(bytes);
     if (chunks === undefined) return { ok: false, rejection: "unreadable" };
@@ -279,7 +276,7 @@ export async function prepareImage(
   for (const kind of RENDITION_KINDS) {
     // Each its own pipeline from the bytes, one after the other, so no two decodes are held at once.
     const pipeline = sharp(bytes, { limitInputPixels: MAX_PIXELS, failOn: "warning", autoOrient: true })
-      .resize({ ...BOXES[kind], fit: "inside", withoutEnlargement: true })
+      .resize({ ...RENDITION_BOXES[kind], fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 80 })
       .timeout({ seconds: limit.seconds });
     try {

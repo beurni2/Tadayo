@@ -423,6 +423,8 @@ describe("upload.prepare rejects what the checks refuse (D09, spec 33)", () => {
     declared: UploadContentType;
     bytes: () => Promise<Buffer> | null;
     rejection: string;
+    /** The photo's process's peak in the line: 0 when none was started. */
+    photo?: string;
   }[] = [
     {
       what: "a PNG declared as a JPEG",
@@ -431,11 +433,12 @@ describe("upload.prepare rejects what the checks refuse (D09, spec 33)", () => {
       rejection: "unsupported_type",
     },
     {
-      what: "more than 20 MiB",
+      what: "more than 20 MiB, starting no process for it",
       declared: "image/jpeg",
       bytes: () =>
         Promise.resolve(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(UPLOAD_MAX_BYTES - 2)])),
       rejection: "too_large",
+      photo: "0",
     },
     {
       what: "more than 64 million pixels",
@@ -444,7 +447,7 @@ describe("upload.prepare rejects what the checks refuse (D09, spec 33)", () => {
       rejection: "too_many_pixels",
     },
     { what: "a JPEG cut short", declared: "image/jpeg", bytes: truncated, rejection: "unreadable" },
-    { what: "no original in Storage", declared: "image/jpeg", bytes: () => null, rejection: "unreadable" },
+    { what: "no original in Storage", declared: "image/jpeg", bytes: () => null, rejection: "unreadable", photo: "0" },
   ];
 
   for (const c of cases) {
@@ -468,7 +471,7 @@ describe("upload.prepare rejects what the checks refuse (D09, spec 33)", () => {
         expect(r.storage.puts).toEqual([]);
         expect(await eventRow(tx, event.id)).toMatchObject({ state: "done", attempts: 1, last_error: null });
         expect(r.lines).toHaveLength(1);
-        expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejection}`, bytes === null ? "0" : undefined));
+        expect(r.lines[0]).toMatch(LINE(one.id, `rejected ${c.rejection}`, c.photo));
       });
     });
   }

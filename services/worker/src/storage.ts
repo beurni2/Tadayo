@@ -19,7 +19,7 @@
 // failure is a `StorageUnavailable`, whose code the outbox records, and the preparation is tried again.
 
 import { storageProject, storageServiceKey, storageStatus, UPLOAD_MAX_BYTES } from "@tadayo/domain";
-import type { RenditionKind } from "./image.ts";
+import type { RenditionKind } from "./image-process.ts";
 
 /** The bucket of originals, private (tools/ops/src/storage-setup.ts). */
 export const UPLOADS_BUCKET = "uploads";

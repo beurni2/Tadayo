@@ -11,7 +11,8 @@
 // 4. The original from `uploads`, to at most 20 MiB and a byte (./storage.ts). Not there: rejected `unreadable`, as
 //    `completeUpload` saw it there and it won't come back. Storage away: a failure, tried again.
 // 5. The checks and the renditions (./image.ts), in a process of the photo's own that the worker watches and ends
-//    (./image-process.ts), then the safety provider on a photo that passed (./safety.ts, FQ8), then each rendition
+//    (./image-process.ts), but an original past 20 MiB, which its size alone refuses as `too_large`; then the safety
+//    provider on a photo that passed (./safety.ts, FQ8), then each rendition
 //    stored in `renditions`, at its upload's key and its kind, before anything is recorded.
 // 6. One transaction (`recordPreparation`): the upload's row `FOR NO KEY UPDATE`, still `preparing`, then its
 //    renditions' rows and its state, scoped hash and version, or its rejection; and the event done, in the same
@@ -23,7 +24,14 @@
 // opaque id, never its owner, its key or anything of the photo (T52).
 
 import { createHmac } from "node:crypto";
-import { recordPreparation, stopwatch, uploadToPrepare, type Clock, type Preparation } from "@tadayo/domain";
+import {
+  recordPreparation,
+  stopwatch,
+  UPLOAD_MAX_BYTES,
+  uploadToPrepare,
+  type Clock,
+  type Preparation,
+} from "@tadayo/domain";
 import type { WorkerSql, WorkerTx } from "./connection.ts";
 import { LOCK_WAIT_MS, STATEMENT_MS } from "./generation.ts";
 import { prepareIsolated } from "./image-process.ts";
@@ -117,7 +125,10 @@ export async function prepareUpload(deps: PrepareDeps, event: OutboxEvent): Prom
   step = stopwatch();
   let prepared: Prepared = { ok: false, rejection: "unreadable" };
   let photoPeakBytes = 0;
-  if (original !== null) {
+  if (original !== null && original.length > UPLOAD_MAX_BYTES) {
+    // Its size alone refuses it (D09), as prepareImage would: no process is started for it (PR #111's round 4, R4-8).
+    prepared = { ok: false, rejection: "too_large" };
+  } else if (original !== null) {
     ({ prepared, peakBytes: photoPeakBytes } = await prepareIsolated(original, upload.contentType));
   }
   let outcome: Preparation;

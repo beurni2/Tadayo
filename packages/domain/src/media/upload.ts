@@ -44,7 +44,7 @@ import type { Json } from "../idempotency/request.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
-import { UPLOAD_MAX_BYTES } from "./limits.ts";
+import { UPLOAD_MAX_BYTES, UPLOAD_REJECTIONS, type UploadRejection } from "./limits.ts";
 import { newObjectKey, uploadExpiry } from "./object.ts";
 
 export const UPLOAD_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -53,9 +53,7 @@ export const UPLOAD_PURPOSES = ["drop_photo", "replacement", "avatar", "conversa
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 export const UPLOAD_STATES = ["pending", "preparing", "ready", "held", "rejected"] as const;
 export type UploadState = (typeof UPLOAD_STATES)[number];
-export const UPLOAD_REJECTIONS = ["unsupported_type", "too_large", "too_many_pixels", "unreadable"] as const;
-export type UploadRejection = (typeof UPLOAD_REJECTIONS)[number];
-export { UPLOAD_MAX_BYTES };
+export { UPLOAD_MAX_BYTES, UPLOAD_REJECTIONS, type UploadRejection };
 
 export interface CreateDropPhotoUploadInput {
   /** The account the gate loaded. */

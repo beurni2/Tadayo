@@ -244,23 +244,23 @@ afterAll(async () => {
 });
 
 describe("a photo's process's peak memory (FQ138)", () => {
-  it(`keeps each named photo's process under ${String(PEAK_BYTES / MiB)} MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget holding nothing`, async () => {
-    const results: { name: string; refused: boolean; ok: boolean; peakMiB: number }[] = [];
+  it(`keeps each named photo's process under ${String(PEAK_BYTES / MiB)} MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing`, async () => {
+    const results: { name: string; refused: boolean; answer: string; peakMiB: number }[] = [];
     for (const c of CASES) {
       const answer = await prepareIsolated(await c.bytes(), c.type as "image/jpeg");
       results.push({
         name: c.name,
         refused: c.refused === true,
-        ok: answer.prepared.ok,
+        answer: answer.prepared.ok ? "taken" : answer.prepared.rejection,
         peakMiB: Math.round(answer.peakBytes / MiB),
       });
     }
     console.info(results.map((r) => `${r.name}: ${String(r.peakMiB)} MiB at the peak`).join("\n"));
     for (const result of results) {
       const most = result.refused ? MAX_REFUSAL_PEAK_MIB : PEAK_BYTES / MiB;
-      expect({ name: result.name, ok: result.ok, within: result.peakMiB <= most }).toEqual({
+      expect({ name: result.name, answer: result.answer, within: result.peakMiB <= most }).toEqual({
         name: result.name,
-        ok: !result.refused,
+        answer: result.refused ? "too_many_pixels" : "taken",
         within: true,
       });
     }

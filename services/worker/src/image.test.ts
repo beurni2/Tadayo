@@ -20,7 +20,7 @@ import {
   webpCoding,
   type Rendition,
 } from "./image.ts";
-import { animatedWebp, junkWebp, losslessAlphaWebp, manyScansJpeg, pattern } from "./testing.ts";
+import { animatedWebp, hiddenScansJpeg, junkWebp, losslessAlphaWebp, manyScansJpeg, pattern } from "./testing.ts";
 
 const MiB = 1024 * 1024;
 
@@ -180,7 +180,7 @@ describe("the file's structure, walked before any decoder reads it (FQ138)", () 
   const sos = [0xff, 0xda, 0, 8, 1, 1, 0, 0, 63, 0];
   const trailer = Buffer.concat([Buffer.from("VP8 ", "latin1"), Buffer.alloc(4)]);
 
-  it("counts a JPEG's scans as libjpeg finds them: one for a baseline, each SOS for a progressive", async () => {
+  it("counts a JPEG's scans: one for a baseline, each SOS for a progressive", async () => {
     expect(jpegScans(await flat(64, 48))).toBe(1);
     expect(
       jpegScans(
@@ -204,6 +204,30 @@ describe("the file's structure, walked before any decoder reads it (FQ138)", () 
     expect(jpegScans(jpeg(sos, data))).toBe(1);
     expect(jpegScans(jpeg(sos.slice(0, 3)))).toBe(1);
     expect(jpegScans(jpeg())).toBe(0);
+  });
+
+  it("gives no count for a reserved marker before the EOI, which libjpeg passes over without its length at a restart", () => {
+    // Where a restart is due, libjpeg scans on past a marker of 0x02 to 0xBF as if it had no length (R4-1).
+    const data = [0x12, 0xff, 0x00, 0x34];
+    expect(jpegScans(jpeg(sos, data, [0xff, 0x05, 0, 12], sos, [0, 0], [0xff, 0xd9]))).toBeUndefined();
+    expect(jpegScans(jpeg(sos, data, [0xff, 0x02, 0, 2], [0xff, 0xd9]))).toBeUndefined();
+    expect(jpegScans(jpeg(sos, data, [0xff, 0xbf, 0, 2], [0xff, 0xd9]))).toBeUndefined();
+    expect(jpegScans(jpeg([0xff, 0x80, 0, 2], sos, [0xff, 0xd9]))).toBeUndefined();
+    // Not inside a segment, which is passed over by its length, nor after the EOI; TEM has no length; SOF0's length
+    // is passed over.
+    expect(jpegScans(jpeg([0xff, 0xe1, 0, 6, 0xff, 0x05, 0, 2], sos, data, [0xff, 0xd9, 0xff, 0x05]))).toBe(1);
+    expect(jpegScans(jpeg(sos, data, [0xff, 0x01], sos, [0xff, 0xd9]))).toBe(2);
+    expect(jpegScans(jpeg([0xff, 0xc0, 0, 4, 0xff, 0xda], sos, [0xff, 0xd9]))).toBe(1);
+    // Round 4's file, by its structure: two scans seen, the rest behind the reserved marker.
+    expect(jpegScans(hiddenScansJpeg(256, 256, 150, 256))).toBeUndefined();
+  });
+
+  it("refuses a JPEG that hides its scans behind a reserved marker as unsupported_type, before its decode", async () => {
+    // 881 scans hidden at 4704 by 4704: libjpeg would read each of them, for seconds, before a row (R4-1).
+    const hidden = hiddenScansJpeg(4704, 4704, 881, 32767);
+    const started = performance.now();
+    expect(await prepareImage(hidden, "image/jpeg")).toEqual({ ok: false, rejection: "unsupported_type" });
+    expect(performance.now() - started).toBeLessThan(1000);
   });
 
   it(`refuses a JPEG of more than ${String(MAX_JPEG_SCANS)} scans as unsupported_type, before its decode, and takes one of ${String(MAX_JPEG_SCANS)}`, async () => {
