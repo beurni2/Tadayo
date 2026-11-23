@@ -28,6 +28,8 @@ import Testing
         var signedOut = 0
         /// Joins the server made for an Accept answered after the model was closed.
         var joinedWhileClosed = 0
+        /// Accepts the server answered `waiting`.
+        var waited = 0
     }
 
     func model(
@@ -41,6 +43,7 @@ import Testing
             account: account, makeKey: { keys.next() }, current: { session.current },
             joined: { opened.clubs.append($0) },
             joinedWhileClosed: { opened.joinedWhileClosed += 1 },
+            waited: { opened.waited += 1 },
             signedOut: { opened.signedOut += 1 })
     }
 
@@ -184,6 +187,41 @@ import Testing
         #expect(service.calls == ["preview 01", "accept 01 rev_1 v3 \(Keys.key(1))"])
         #expect(invitation.state == .waiting(clubName: "Kitchen table"))
         #expect(!invitation.isAccepting)
+    }
+
+    @Test func onlyAnAcceptAnsweredWaitingSaysItWaits() async {
+        // The root reads the club list again then, so the invitation's row shows (6d).
+        let answers: [(Result<InvitationAcceptance, APIFailure>, Int)] = [
+            (.success(.waiting), 1), (.success(.joined(Kitchen.ref)), 0),
+            (.failure(.network), 0), (.failure(.clubFull), 0), (.failure(.refused), 0),
+        ]
+        for (answer, told) in answers {
+            let service = ScriptedClubs()
+            service.previewAnswers = [.success(.open(Kitchen.roster()))]
+            service.acceptAnswers = [answer]
+            let opened = Opened()
+            let invitation = model(service, opened: opened)
+            await invitation.check()
+            await invitation.accept()
+            #expect(opened.waited == told, "\(answer)")
+        }
+    }
+
+    @Test func anAcceptLeftWithBackThatTheServerLeftWaitingStillSaysSo() async {
+        let service = ScriptedClubs()
+        service.previewAnswers = [.success(.open(Kitchen.roster()))]
+        service.acceptAnswers = [.success(.waiting)]
+        let opened = Opened()
+        let invitation = model(service, opened: opened)
+        await invitation.check()
+        let gate = Gate()
+        service.duringAccept = { await gate.wait() }
+        async let accepted: Void = invitation.accept()
+        await gate.reached()
+        invitation.close()
+        gate.open()
+        await accepted
+        #expect(opened.waited == 1)
     }
 
     @Test func aRetryOfTheSameRevisionSendsTheSameKey() async {

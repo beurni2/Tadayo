@@ -7,7 +7,9 @@ import XCTest
 /// The club switcher (`ClubSwitcher`) in its three states (design/reference/INVENTORY.md): 2.1's
 /// `G06-switcher`, an active club with its day open and another with its next day; handoff 5's
 /// `G06-switcher-status`, a club that hasn't started and a paused one; and handoff 6's
-/// `G06-switcher-unavailable`, a suspended club, selected, beside an active one.
+/// `G06-switcher-unavailable`, a suspended club, selected, beside an active one; and handoff 9's
+/// `G06-switcher-invitation`, Sunday people with Debby's Friday open and Kitchen table's
+/// invitation, accepted and waiting on the members, under the clubs.
 ///
 /// Each draws the sheet's content on its own, from the sheet's top: `ScreenSnapshot` draws the
 /// host's own view, which a presented sheet isn't part of. So the dimmed tab behind the sheet,
@@ -27,6 +29,12 @@ final class ClubSwitcherSnapshotTests: XCTestCase {
         snap(
             [ClubFixtures.sundaySuspended, ClubFixtures.kitchen],
             named: "G06-switcher-unavailable")
+    }
+
+    func testG06SwitcherInvitation() {
+        snap(
+            [ClubFixtures.sundayOpen], invitations: [ClubFixtures.kitchenInvitation(.waiting)],
+            named: "G06-switcher-invitation")
     }
 
     // MARK: What VoiceOver finds
@@ -73,6 +81,45 @@ final class ClubSwitcherSnapshotTests: XCTestCase {
         XCTAssertTrue(elements.dropFirst().allSatisfy { $0.traits.contains(.button) })
     }
 
+    func testTheInvitationsFollowTheClubsUnderTheirHeadingAndNoneIsSelected() {
+        // `acceptedInvitations.hasClubs`: after the clubs, before Club details and Create a club;
+        // one button with the row's label and hint, no member count, never selected.
+        let elements = AccessibilityElements.of(
+            switcher(
+                [ClubFixtures.sundayOpen],
+                invitations: [ClubFixtures.kitchenInvitation(.waiting)]))
+        XCTAssertEqual(
+            elements.map(\.label),
+            [
+                "Your clubs", "Sunday people. 6 people. Debby’s Friday.", "Invitations",
+                "Kitchen table. Waiting for members.", "Club details", "Create a club", "Cancel",
+            ])
+        XCTAssertTrue(elements[2].isHeader, "\(elements)")
+        let row = elements[3]
+        XCTAssertTrue(row.traits.contains(.button), "\(row)")
+        XCTAssertFalse(row.traits.contains(.selected), "\(row)")
+        XCTAssertEqual(row.hint, "Open this invitation to see its current state.", "\(row)")
+    }
+
+    func testWithNoInvitationsThereIsNoSection() {
+        let elements = AccessibilityElements.of(switcher([ClubFixtures.sundayOpen]))
+        XCTAssertFalse(elements.contains { $0.label == "Invitations" }, "\(elements)")
+    }
+
+    func testChoosingAnInvitationOpensItAndSelectsNoClub() {
+        var chosen: [String] = []
+        var opened: [MyInvitation] = []
+        let invitation = ClubFixtures.kitchenInvitation(.waiting)
+        let view = ClubSwitcher(
+            clubs: [ClubFixtures.sundayOpen], selectedID: "club_sunday",
+            invitations: [invitation], select: { chosen.append($0) },
+            openAccepted: { opened.append($0) })
+        XCTAssertTrue(
+            AccessibilityElements.activate("Kitchen table. Waiting for members.", in: view))
+        XCTAssertEqual(opened, [invitation.invitation])
+        XCTAssertEqual(chosen, [])
+    }
+
     func testChoosingARowSelectsThatClub() {
         var chosen: [String] = []
         let view = ClubSwitcher(
@@ -84,14 +131,19 @@ final class ClubSwitcherSnapshotTests: XCTestCase {
 
     // MARK: Helpers
 
-    private func switcher(_ clubs: [ClubSummary]) -> some View {
-        ClubSwitcher(clubs: clubs, selectedID: clubs.first?.id, select: { _ in })
+    private func switcher(
+        _ clubs: [ClubSummary], invitations: [AcceptedInvitation] = []
+    ) -> some View {
+        ClubSwitcher(
+            clubs: clubs, selectedID: clubs.first?.id, invitations: invitations, select: { _ in })
     }
 
     private func snap(
-        _ clubs: [ClubSummary], named state: String, testName: String = #function,
-        line: UInt = #line
+        _ clubs: [ClubSummary], invitations: [AcceptedInvitation] = [], named state: String,
+        testName: String = #function, line: UInt = #line
     ) {
-        ScreenSnapshot.assert(switcher(clubs), named: state, testName: testName, line: line)
+        ScreenSnapshot.assert(
+            switcher(clubs, invitations: invitations), named: state, testName: testName,
+            line: line)
     }
 }

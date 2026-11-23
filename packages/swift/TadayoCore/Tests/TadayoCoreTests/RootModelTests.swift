@@ -168,15 +168,16 @@ import Testing
         #expect(history.routes == [.signInNotKept, .starting, .signIn])
     }
 
-    @Test func onlyAcceptedInvitationsAreNeitherEmptyNorAFailure() async {
-        // `G03-waiting` comes with `ios/b1-invitation`; until then the list is this build's to
-        // say it can't show. A list with a club is `.listed` (`RootModelClubsTests`).
+    @Test func onlyAcceptedInvitationsAreNoClubWithTheirRows() async {
+        // Handoff 9's `acceptedInvitations.noClub`: Home with no club, its invitations first. A
+        // list with a club is `.listed` (`RootModelClubsTests`).
         let root = root(
             FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: false))]),
             store: InMemorySessionStore(stored))
         await root.start()
-        #expect(root.clubs == .notInThisBuild)
+        #expect(root.clubs == .noClub)
         #expect(root.selectedClubID == nil)
+        #expect(root.acceptedInvitations.map(\.id) == ["inv_kt_leila"])
     }
 
     @Test func aListThatDidntComeIsTheFailureUntilRetried() async {

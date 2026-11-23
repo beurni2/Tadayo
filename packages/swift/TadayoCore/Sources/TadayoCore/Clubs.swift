@@ -141,6 +141,22 @@ public struct MyInvitation: Sendable, Equatable, Identifiable {
     }
 }
 
+/// An accepted invitation as the club list's rows show it (handoff 9's `acceptedInvitations`):
+/// the list's record, and whether this phone holds its link for the account, which a changed
+/// roster needs to be accepted again ("Open the invitation link to continue." when it doesn't,
+/// FQ136). Nothing of the link itself: only that it's held.
+public struct AcceptedInvitation: Sendable, Equatable, Identifiable {
+    public let invitation: MyInvitation
+    public let linkHeld: Bool
+
+    public var id: String { invitation.id }
+
+    public init(_ invitation: MyInvitation, linkHeld: Bool) {
+        self.invitation = invitation
+        self.linkHeld = linkHeld
+    }
+}
+
 /// The caller's clubs and the invitations they accepted that haven't become a membership yet, as
 /// `GET /v1/clubs` answers.
 public struct ClubList: Sendable, Equatable {
