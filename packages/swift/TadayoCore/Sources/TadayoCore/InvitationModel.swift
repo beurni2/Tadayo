@@ -53,10 +53,10 @@ extension InvitationRoster {
         case waiting(clubName: String)
         /// `G02-expired`: only who to ask.
         case expired(inviterName: String)
-        /// `G02-full`, naming the inviter only if this model showed the roster.
-        case full(inviterName: String?)
+        /// `G02-full`: only who to ask.
+        case full(inviterName: String)
         /// `G03-declined`, never who declined (book p30).
-        case didNotGoAhead(inviterName: String?)
+        case didNotGoAhead(inviterName: String)
         /// `G02-revoked`: the same for an unknown, revoked, replaced or used link (T14, FQ59).
         case unavailable
         /// The account is a member: the club opens ("Opening {clubName}…" while it waits,
@@ -82,8 +82,6 @@ extension InvitationRoster {
     private(set) var isClosed = false
     /// The viewer's name on the roster whose acceptance the server answered `changed`.
     private var earlierName: String?
-    /// The inviter this model has shown.
-    private var inviterName: String?
     /// The Accept on its way or failed, with its key, for a retry of the same revision.
     private var pending: (revisionID: String, version: Int, key: IdempotencyKey)?
 
@@ -93,18 +91,22 @@ extension InvitationRoster {
     let makeKey: @Sendable () -> IdempotencyKey
     let current: @MainActor () -> Bool
     let joined: @MainActor (ClubRef) async -> Void
+    let joinedWhileClosed: @MainActor () async -> Void
     let signedOut: @MainActor () async -> Void
 
     /// `token` is the invitation's, or nil when the app doesn't hold it; `state` is where it starts:
     /// checking, for a token to check, or what the club list already says. `book` keeps the token
     /// for `accountID`; `current` says the session the model was made in goes on; `joined` opens
-    /// the club; `signedOut` ends the session.
+    /// the club; `joinedWhileClosed` is told when an Accept the server joined answers after the
+    /// model was closed (left with Back while it was on its way), which opens nothing; `signedOut`
+    /// ends the session.
     public init(
         token: InvitationToken?, state: State = .checking, service: any ClubService,
         book: InvitationLinkBook, account accountID: String,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         current: @escaping @MainActor () -> Bool,
         joined: @escaping @MainActor (ClubRef) async -> Void,
+        joinedWhileClosed: @escaping @MainActor () async -> Void = {},
         signedOut: @escaping @MainActor () async -> Void
     ) {
         self.token = token
@@ -115,6 +117,7 @@ extension InvitationRoster {
         self.makeKey = makeKey
         self.current = current
         self.joined = joined
+        self.joinedWhileClosed = joinedWhileClosed
         self.signedOut = signedOut
     }
 
@@ -135,25 +138,22 @@ extension InvitationRoster {
         guard current() else { return }
         switch answer {
         case .success(.open(let roster)):
-            inviterName = roster.inviterName
             state =
                 earlierName == nil ? .open(roster) : .changed(roster, nameChange(roster, nil))
         case .success(.changed(let roster)):
-            inviterName = roster.inviterName
             let kept = keep(token, invitation: roster.invitationID)
             state = .changed(roster, nameChange(roster, kept))
         case .success(.waiting(let roster)):
-            inviterName = roster.inviterName
             keep(token, invitation: roster.invitationID)
             state = .waiting(clubName: roster.clubName)
         case .success(.expired(let name)):
             book.dropReceived(token, account: accountID)
             state = .expired(inviterName: name)
-        case .success(.full):
-            state = .full(inviterName: inviterName)
-        case .success(.didNotGoAhead):
+        case .success(.full(let name)):
+            state = .full(inviterName: name)
+        case .success(.didNotGoAhead(let name)):
             book.dropReceived(token, account: accountID)
-            state = .didNotGoAhead(inviterName: inviterName)
+            state = .didNotGoAhead(inviterName: name)
         case .success(.joined(let club)):
             book.dropReceived(token, account: accountID)
             state = .opening(club)
@@ -176,6 +176,8 @@ extension InvitationRoster {
         case nothing
         case check
         case open(ClubRef)
+        /// The server joined, and the model was closed while the Accept was on its way.
+        case joinedWhileClosed
         case endSession
     }
 
@@ -218,9 +220,9 @@ extension InvitationRoster {
             book.dropReceived(token, account: accountID)
             if let club {
                 state = .opening(club)
-                then = .open(club)
+                then = isClosed ? .joinedWhileClosed : .open(club)
             } else {
-                then = .check
+                then = isClosed ? .joinedWhileClosed : .check
             }
         case .success(.waiting):
             pending = nil
@@ -274,6 +276,7 @@ extension InvitationRoster {
         case .nothing: break
         case .check: await check()
         case .open(let club): if !isClosed { await joined(club) }
+        case .joinedWhileClosed: await joinedWhileClosed()
         case .endSession: await signedOut()
         }
     }

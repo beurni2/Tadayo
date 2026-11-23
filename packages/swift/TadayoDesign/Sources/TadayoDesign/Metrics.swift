@@ -172,6 +172,13 @@ public enum Size {
     /// and `F01-no-club`, and its sheet's Private drafts specimen: the box at 36 in a row that
     /// starts at 20).
     public static let draftsLeadingInset: CGFloat = 16
+    /// The Proposed tag's space above and below its word (handoff 8's `proposedMemberTag`,
+    /// `handoff4.opticalInsets.proposedTagBlock`).
+    public static let proposedTagBlock: CGFloat = 5
+    /// The Proposed tag's least height at the default text size (`proposedMemberTag`).
+    public static let proposedTagMinHeight: CGFloat = 28
+    /// The Proposed tag's corner radius (`proposedMemberTag`).
+    public static let proposedTagRadius: CGFloat = 6
 }
 
 /// The avatar's sizes (1.1: 68 on the profile, 36 in rows, 28 on cards, 18 on the rail).

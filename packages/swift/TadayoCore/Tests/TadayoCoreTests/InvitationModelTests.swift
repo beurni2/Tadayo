@@ -26,6 +26,8 @@ import Testing
     @MainActor final class Opened {
         var clubs: [ClubRef] = []
         var signedOut = 0
+        /// Joins the server made for an Accept answered after the model was closed.
+        var joinedWhileClosed = 0
     }
 
     func model(
@@ -37,7 +39,9 @@ import Testing
             token: token, state: state, service: service,
             book: book ?? InvitationLinkBook(vault: InMemoryInvitationLinkVault()),
             account: account, makeKey: { keys.next() }, current: { session.current },
-            joined: { opened.clubs.append($0) }, signedOut: { opened.signedOut += 1 })
+            joined: { opened.clubs.append($0) },
+            joinedWhileClosed: { opened.joinedWhileClosed += 1 },
+            signedOut: { opened.signedOut += 1 })
     }
 
     // MARK: Checking
@@ -49,8 +53,8 @@ import Testing
             (.success(.changed(roster)), .changed(roster, nil)),
             (.success(.waiting(roster)), .waiting(clubName: "Kitchen table")),
             (.success(.expired(inviterName: "Ben")), .expired(inviterName: "Ben")),
-            (.success(.full), .full(inviterName: nil)),
-            (.success(.didNotGoAhead), .didNotGoAhead(inviterName: nil)),
+            (.success(.full(inviterName: "Debby")), .full(inviterName: "Debby")),
+            (.success(.didNotGoAhead(inviterName: "Debby")), .didNotGoAhead(inviterName: "Debby")),
             (.success(.joined(Kitchen.ref)), .opening(Kitchen.ref)),
             (.failure(.network), .checkFailed(.network)),
             (.failure(.unavailable), .checkFailed(.other)),
@@ -294,11 +298,12 @@ import Testing
         #expect(opened.clubs == [Kitchen.ref])
     }
 
-    @Test func aFullClubNamesTheInviterOnlyOnceTheRosterWasShown() async {
+    /// The answer names the inviter (the contract's `InvitationFull`, since the api lane's #107),
+    /// so a full club names them even when this model never showed the roster.
+    @Test func aFullClubNamesTheInviterBeforeAnyRosterWasShown() async {
         let service = ScriptedClubs()
-        service.previewAnswers = [.success(.open(Kitchen.roster())), .success(.full)]
+        service.previewAnswers = [.success(.full(inviterName: "Ben"))]
         let invitation = model(service)
-        await invitation.check()
         await invitation.check()
         #expect(invitation.state == .full(inviterName: "Ben"))
     }
@@ -518,13 +523,37 @@ import Testing
             // The token still goes; the club isn't opened from a model the root no longer shows.
             #expect(book.received(token, account: account) == nil, "\(viaAccept)")
             #expect(opened.clubs.isEmpty, "\(viaAccept)")
+            // An Accept the server joined is told to the root, which reads the list again; a check
+            // that found the account already in the club is let go (`linkEntry.cancellation`).
+            #expect(opened.joinedWhileClosed == (viaAccept ? 1 : 0), "\(viaAccept)")
         }
+    }
+
+    @Test func aClosedModelsAcceptJoinedWithNoClubIsToldAndChecksNothing() async {
+        let service = ScriptedClubs()
+        service.previewAnswers = [.success(.open(Kitchen.roster()))]
+        service.acceptAnswers = [.success(.joined(nil))]
+        let opened = Opened()
+        let invitation = model(service, opened: opened)
+        await invitation.check()
+        let gate = Gate()
+        service.duringAccept = { await gate.wait() }
+        async let accepted: Void = invitation.accept()
+        await gate.reached()
+        invitation.close()
+        gate.open()
+        await accepted
+        #expect(opened.clubs.isEmpty)
+        #expect(opened.joinedWhileClosed == 1)
+        #expect(service.calls.filter { $0.hasPrefix("preview") } == ["preview 01"])
     }
 
     @Test func anOpenRosterKeepsNothing() async {
         let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
         let service = ScriptedClubs()
-        service.previewAnswers = [.success(.open(Kitchen.roster())), .success(.full)]
+        service.previewAnswers = [
+            .success(.open(Kitchen.roster())), .success(.full(inviterName: "Ben")),
+        ]
         let invitation = model(service, book: book)
         await invitation.check()
         #expect(book.received(token, account: account) == nil)
@@ -547,7 +576,7 @@ import Testing
 
     @Test func theTokenGoesWhenTheInvitationJoinsOrEndsOrNoLongerWorks() async {
         let previews: [Result<InvitationPreview, APIFailure>] = [
-            .success(.joined(Kitchen.ref)), .success(.didNotGoAhead),
+            .success(.joined(Kitchen.ref)), .success(.didNotGoAhead(inviterName: "Ben")),
             .success(.expired(inviterName: "Ben")), .failure(.notFound),
         ]
         for answer in previews {

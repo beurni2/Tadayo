@@ -27,6 +27,16 @@ enum ClubTab: Hashable, CaseIterable {
         }
     }
 
+    /// The tab's name, as its tab item says it: where Close invitation returns to (handoff 5's
+    /// `a11y.closeInvitation.hint`).
+    var title: LocalizedStringResource {
+        switch self {
+        case .home: "tabs.home"
+        case .friends: "tabs.friends"
+        case .memories: "tabs.memories"
+        }
+    }
+
     /// Retry's hint after a failure, naming the tab it loads again (handoff 7's
     /// `vo.retryHome.hint` and the other two; the label stays Retry).
     var retryHint: LocalizedStringResource {
@@ -247,6 +257,7 @@ struct TabContent: View {
     let retryHome: @MainActor () async -> Void
     let switchClub: () -> Void
     let createClub: () -> Void
+    let openInvite: () -> Void
     let goHome: () -> Void
     @AccessibilityFocusState private var focus: TabFocus?
     @State private var labelHadFocus = false
@@ -257,7 +268,7 @@ struct TabContent: View {
         retry: @escaping @MainActor () async -> Void,
         retryHome: @escaping @MainActor () async -> Void = {},
         switchClub: @escaping () -> Void = {}, createClub: @escaping () -> Void = {},
-        goHome: @escaping () -> Void
+        openInvite: @escaping () -> Void = {}, goHome: @escaping () -> Void
     ) {
         self.tab = tab
         self.clubs = clubs
@@ -268,6 +279,7 @@ struct TabContent: View {
         self.retryHome = retryHome
         self.switchClub = switchClub
         self.createClub = createClub
+        self.openInvite = openInvite
         self.goHome = goHome
     }
 
@@ -350,8 +362,9 @@ struct TabContent: View {
         switch shown {
         case .noClub:
             switch tab {
-            case .home: HomeNoClub(heading: $focus, createClub: createClub)
-            case .friends: FriendsNoClub(heading: $focus, createClub: createClub)
+            case .home: HomeNoClub(heading: $focus, createClub: createClub, openInvite: openInvite)
+            case .friends:
+                FriendsNoClub(heading: $focus, createClub: createClub, openInvite: openInvite)
             case .memories: MemoriesNoClub(heading: $focus, goHome: goHome)
             }
         case .loading:

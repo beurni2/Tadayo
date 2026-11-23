@@ -954,6 +954,99 @@ import Testing
         withExtendedLifetime(left) {}
     }
 
+    @Test func aPasteStepLeftWhileItsLinkIsCheckedLetsWhatItFindsGoAndHoldsNothing() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [.success(list()), .failure(.signedOut), .success(list())])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        let gate = Gate()
+        clubs.duringPreview = { await gate.wait() }
+        let root = root(accounts, clubs: clubs, auth: auth)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        async let proceeded: Void = entry.proceed()
+        await gate.reached()
+        // A second check, if one were sent, would answer at once rather than wait at the gate.
+        clubs.duringPreview = {}
+        // Back from the paste step while its link is checked.
+        entry.left()
+        gate.open()
+        await proceeded
+        #expect(entry.invitation == nil)
+        #expect(entry.opened == nil)
+        // Nothing more is checked from it.
+        await entry.proceed()
+        #expect(clubs.calls == ["preview 01"])
+        // The server ends the session: nothing found from the step left is held for the next.
+        await root.retry()
+        #expect(root.route == .signIn)
+        try await signIn(root, as: "leila@example.com")
+        #expect(root.route == .tabs)
+        #expect(root.invitation == nil)
+        #expect(clubs.calls == ["preview 01"])
+        withExtendedLifetime(entry) {}
+    }
+
+    /// Handoff 9's `linkEntry.cancellation`: Back cancels the read, so a club the link would have
+    /// opened isn't opened, selected or read again for a paste step the person left.
+    @Test func aPasteStepLeftWhileItsLinkIsCheckedOpensNoClub() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(leila)], clubs: [.success(list()), .success(list([kitchen]))])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.joined(Kitchen.ref))]
+        let gate = Gate()
+        clubs.duringPreview = { await gate.wait() }
+        let selection = InMemoryClubSelection()
+        let root = root(accounts, clubs: clubs, selection: selection)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        async let proceeded: Void = entry.proceed()
+        await gate.reached()
+        entry.left()
+        gate.open()
+        await proceeded
+        #expect(entry.opened == nil)
+        #expect(entry.invitation == nil)
+        #expect(!entry.isChecking)
+        #expect(root.selectedClubID == nil)
+        #expect(selection.club(for: leila.id) == nil)
+        #expect(accounts.calls == ["me", "clubs"])
+        withExtendedLifetime(entry) {}
+    }
+
+    /// Back while Accept is on its way: the invitation opens nothing, and when the server joined
+    /// all the same, the list is read again so Home shows the club.
+    @Test func anAcceptLeftWithBackThatTheServerJoinedReadsTheListAgain() async throws {
+        let accounts = FakeAccounts(
+            me: [.success(leila)], clubs: [.success(list()), .success(list([kitchen]))])
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.open(Kitchen.roster()))]
+        clubs.acceptAnswers = [.success(.joined(Kitchen.ref))]
+        let root = root(accounts, clubs: clubs)
+        await root.start()
+        let entry = try #require(root.linkEntry())
+        entry.text = link
+        await entry.proceed()
+        let invitation = try #require(entry.invitation)
+        let gate = Gate()
+        clubs.duringAccept = { await gate.wait() }
+        async let accepted: Void = invitation.accept()
+        await gate.reached()
+        // Back from the invitation.
+        entry.returned()
+        gate.open()
+        await accepted
+        #expect(entry.invitation == nil)
+        #expect(root.invitation == nil)
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        #expect(root.selectedClubID == "club_kitchen")
+        withExtendedLifetime(entry) {}
+    }
+
     @Test func theRootsInvitationIsHeldBeforeAPastedOne() async throws {
         let auth = FakeAuth(verify: [.success(stored)])
         let accounts = FakeAccounts(
@@ -1088,7 +1181,7 @@ import Testing
 
     @Test func anInvitationThatEndedIsntHeldAtTheServersEnding() async throws {
         let ended: [Result<InvitationPreview, APIFailure>] = [
-            .success(.expired(inviterName: "Ben")), .success(.didNotGoAhead),
+            .success(.expired(inviterName: "Ben")), .success(.didNotGoAhead(inviterName: "Ben")),
             .failure(.notFound),
         ]
         for answer in ended {

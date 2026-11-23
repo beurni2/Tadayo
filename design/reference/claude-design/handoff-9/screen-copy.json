@@ -1,0 +1,2342 @@
+{
+  "G02-checking-failed": {
+    "visible": [
+      "Invitation",
+      "Couldn’t check the invitation link.",
+      "Check your connection and try again.",
+      "Retry"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Retry",
+        "voiceOver": "Retry",
+        "hint": "Try checking this invitation link again.",
+        "target": [
+          20,
+          738,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          738,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Network failure shown. Refusal, rate limit and server error use Try again as the body. No club, inviter, roster or invalid-link claim is shown. Retry repeats the check of the retained invitation intent."
+    ]
+  },
+  "G02-opening": {
+    "visible": [
+      "Invitation",
+      "Opening Sunday people…"
+    ],
+    "controls": [],
+    "notes": [
+      "The server has confirmed joining or an existing membership. This is routing progress. The completed acceptance is not submitted again, and no further confirmation is required."
+    ]
+  },
+  "G02-link-entry-signed-in-checking": {
+    "visible": [
+      "Invitation",
+      "Have an invitation?",
+      "Paste the link, or open it where it was shared.",
+      "Invitation link",
+      "https://tadayo.app/i#…",
+      "Paste",
+      "We’ll check the link before showing the club or its people.",
+      "Continue"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Invitation link",
+        "voiceOver": "Invitation link",
+        "target": [
+          20,
+          293,
+          353,
+          54
+        ],
+        "kind": "native-text-field",
+        "value": "https://tadayo.app/i#…",
+        "readOnly": true,
+        "fixtureRedaction": true,
+        "viewportTarget": [
+          20,
+          293,
+          353,
+          54
+        ]
+      },
+      {
+        "label": "Paste",
+        "voiceOver": "Paste",
+        "target": [
+          20,
+          365,
+          102,
+          44
+        ],
+        "kind": "secondary",
+        "enabled": false,
+        "viewportTarget": [
+          20,
+          365,
+          102,
+          44
+        ]
+      },
+      {
+        "label": "Continue",
+        "voiceOver": "Continue",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "enabled": false,
+        "busy": true,
+        "voiceOverValue": "In progress",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Pasted value retained. The reference redacts the token only in the drawings; the native field stores the original user-entered value for editing and retry. Network failure does not mark the field invalid. Continue is busy while checking and unavailable for the malformed value. Keyboard dismissed in this reference."
+    ]
+  },
+  "G02-link-entry-signed-in-invalid": {
+    "visible": [
+      "Invitation",
+      "Have an invitation?",
+      "Paste the link, or open it where it was shared.",
+      "Invitation link",
+      "tadayo.app",
+      "That doesn’t look like a Tadayo invitation link. Check the link and try again.",
+      "Paste",
+      "We’ll check the link before showing the club or its people.",
+      "Continue"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Invitation link",
+        "voiceOver": "Invitation link",
+        "target": [
+          20,
+          293,
+          353,
+          54
+        ],
+        "kind": "native-text-field",
+        "value": "tadayo.app",
+        "readOnly": false,
+        "fixtureRedaction": false,
+        "viewportTarget": [
+          20,
+          293,
+          353,
+          54
+        ]
+      },
+      {
+        "label": "Paste",
+        "voiceOver": "Paste an invitation link.",
+        "target": [
+          20,
+          411,
+          102,
+          44
+        ],
+        "kind": "native-paste-control",
+        "viewportTarget": [
+          20,
+          411,
+          102,
+          44
+        ]
+      },
+      {
+        "label": "Continue",
+        "voiceOver": "Continue",
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "enabled": false,
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Pasted value retained. The reference redacts the token only in the drawings; the native field stores the original user-entered value for editing and retry. Network failure does not mark the field invalid. Continue is busy while checking and unavailable for the malformed value. Keyboard dismissed in this reference."
+    ]
+  },
+  "G02-link-entry-signed-in-cannot-check": {
+    "visible": [
+      "Invitation",
+      "Have an invitation?",
+      "Paste the link, or open it where it was shared.",
+      "Invitation link",
+      "https://tadayo.app/i#…",
+      "Couldn’t check the invitation link. Check your connection and try again.",
+      "Paste",
+      "We’ll check the link before showing the club or its people.",
+      "Continue"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Invitation link",
+        "voiceOver": "Invitation link",
+        "target": [
+          20,
+          293,
+          353,
+          54
+        ],
+        "kind": "native-text-field",
+        "value": "https://tadayo.app/i#…",
+        "readOnly": false,
+        "fixtureRedaction": true,
+        "viewportTarget": [
+          20,
+          293,
+          353,
+          54
+        ]
+      },
+      {
+        "label": "Paste",
+        "voiceOver": "Paste an invitation link.",
+        "target": [
+          20,
+          411,
+          102,
+          44
+        ],
+        "kind": "native-paste-control",
+        "viewportTarget": [
+          20,
+          411,
+          102,
+          44
+        ]
+      },
+      {
+        "label": "Continue",
+        "voiceOver": "Check the invitation link.",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Pasted value retained. The reference redacts the token only in the drawings; the native field stores the original user-entered value for editing and retry. Network failure does not mark the field invalid. Continue is busy while checking and unavailable for the malformed value. Keyboard dismissed in this reference."
+    ]
+  },
+  "G02-changed-name-relaunch": {
+    "visible": [
+      "Invitation",
+      "Review the updated roster",
+      "Ben invited you to Kitchen table.",
+      "The updated roster now shows your profile name. Review it before accepting again.",
+      "Kitchen table · 5 current members",
+      "Debby · You",
+      "Proposed by Ben",
+      "Proposed",
+      "Ben",
+      "Maya",
+      "Accept this exact roster to continue. You’ll see only drops shared after joining.",
+      "Accept this roster",
+      "Not now"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Accept this roster",
+        "voiceOver": "Accept this roster",
+        "hint": null,
+        "target": [
+          20,
+          704,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          704,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Not now",
+        "voiceOver": "Not now",
+        "hint": null,
+        "target": [
+          20,
+          766,
+          353,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          20,
+          766,
+          353,
+          44
+        ]
+      }
+    ],
+    "notes": [
+      "Debby is the viewer. The earlier candidate label is absent after relaunch. The viewport shows the supplied names and the candidate tag, with the other server-supplied roster names offscreen. The full exact roster is rendered by the app."
+    ]
+  },
+  "G06-no-club-invitation": {
+    "visible": [
+      "+ Add",
+      "Invitations",
+      "Kitchen table",
+      "Waiting for members",
+      "Start your club.",
+      "A private place for two to six people.",
+      "Create a club or open an invitation.",
+      "Create a club",
+      "I have an invite",
+      "Private drafts",
+      "Only you can see these.",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "controls": [
+      {
+        "label": "+ Add",
+        "voiceOver": "Add",
+        "target": [
+          241,
+          56,
+          80,
+          44
+        ],
+        "kind": "native-button",
+        "hint": "Save a private draft or open private drafts.",
+        "viewportTarget": [
+          241,
+          56,
+          80,
+          44
+        ]
+      },
+      {
+        "label": "Account",
+        "voiceOver": "Account",
+        "target": [
+          329,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-button",
+        "viewportTarget": [
+          329,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Kitchen table",
+        "voiceOver": "Kitchen table. Waiting for members.",
+        "hint": "Open this invitation to see its current state.",
+        "target": [
+          20,
+          191,
+          353,
+          84
+        ],
+        "kind": "invitation-row",
+        "invitationState": "waiting",
+        "route": "G03-waiting",
+        "viewportTarget": [
+          20,
+          191,
+          353,
+          84
+        ]
+      },
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "hint": null,
+        "target": [
+          20,
+          431,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          431,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "I have an invite",
+        "voiceOver": "I have an invite",
+        "hint": null,
+        "target": [
+          20,
+          497,
+          353,
+          50
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          497,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Private drafts",
+        "voiceOver": "Private drafts",
+        "hint": "Only you can see these.",
+        "target": [
+          20,
+          579,
+          353,
+          76
+        ],
+        "kind": "row",
+        "viewportTarget": [
+          20,
+          579,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Home",
+        "voiceOver": "Home",
+        "target": [
+          10,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": true,
+        "viewportTarget": [
+          10,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Friends",
+        "voiceOver": "Friends",
+        "target": [
+          141,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          141,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Memories",
+        "voiceOver": "Memories",
+        "target": [
+          272,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          272,
+          778,
+          110,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Leila’s account has no active club. Accepted invitations are account-owned rows on Home, ahead of the existing create/join actions. No member roster, approval counts, photos or dates are derived from this row. The largest-text frame shows the top of the same scrolling column. Missing-token changes open the existing signed-in link-entry route without accepting anything."
+    ]
+  },
+  "G06-no-club-invitation-xl": {
+    "visible": [
+      "+ Add",
+      "Invitations",
+      "Kitchen table",
+      "Waiting for members",
+      "Start your club.",
+      "A private place for two to six people.",
+      "Create a club or open an invitation.",
+      "Create a club",
+      "I have an invite",
+      "Private drafts",
+      "Only you can see these.",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "controls": [
+      {
+        "label": "+ Add",
+        "voiceOver": "Add",
+        "target": [
+          20,
+          104,
+          249,
+          76
+        ],
+        "kind": "native-button",
+        "hint": "Save a private draft or open private drafts.",
+        "viewportTarget": [
+          20,
+          104,
+          249,
+          76
+        ]
+      },
+      {
+        "label": "Account",
+        "voiceOver": "Account",
+        "target": [
+          329,
+          120,
+          44,
+          44
+        ],
+        "kind": "native-button",
+        "viewportTarget": [
+          329,
+          120,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Kitchen table",
+        "voiceOver": "Kitchen table. Waiting for members.",
+        "hint": "Open this invitation to see its current state.",
+        "target": [
+          20,
+          312,
+          353,
+          278
+        ],
+        "kind": "invitation-row",
+        "invitationState": "waiting",
+        "route": "G03-waiting",
+        "viewportTarget": [
+          20,
+          312,
+          353,
+          278
+        ]
+      },
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "hint": null,
+        "target": [
+          20,
+          1330,
+          353,
+          85
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          1330,
+          353,
+          85
+        ]
+      },
+      {
+        "label": "I have an invite",
+        "voiceOver": "I have an invite",
+        "hint": null,
+        "target": [
+          20,
+          1431,
+          353,
+          146
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          1431,
+          353,
+          146
+        ]
+      },
+      {
+        "label": "Private drafts",
+        "voiceOver": "Private drafts",
+        "hint": "Only you can see these.",
+        "target": [
+          20,
+          1609,
+          353,
+          278
+        ],
+        "kind": "row",
+        "viewportTarget": [
+          20,
+          1609,
+          353,
+          278
+        ]
+      },
+      {
+        "label": "Home",
+        "voiceOver": "Home",
+        "target": [
+          10,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": true,
+        "viewportTarget": [
+          10,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Friends",
+        "voiceOver": "Friends",
+        "target": [
+          141,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          141,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Memories",
+        "voiceOver": "Memories",
+        "target": [
+          272,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          272,
+          778,
+          110,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Leila’s account has no active club. Accepted invitations are account-owned rows on Home, ahead of the existing create/join actions. No member roster, approval counts, photos or dates are derived from this row. The largest-text frame shows the top of the same scrolling column. Missing-token changes open the existing signed-in link-entry route without accepting anything."
+    ]
+  },
+  "G06-no-club-invitation-changed": {
+    "visible": [
+      "+ Add",
+      "Invitations",
+      "Kitchen table",
+      "Review updated members",
+      "Open the invitation link to continue.",
+      "Start your club.",
+      "A private place for two to six people.",
+      "Create a club or open an invitation.",
+      "Create a club",
+      "I have an invite",
+      "Private drafts",
+      "Only you can see these.",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "controls": [
+      {
+        "label": "+ Add",
+        "voiceOver": "Add",
+        "target": [
+          241,
+          56,
+          80,
+          44
+        ],
+        "kind": "native-button",
+        "hint": "Save a private draft or open private drafts.",
+        "viewportTarget": [
+          241,
+          56,
+          80,
+          44
+        ]
+      },
+      {
+        "label": "Account",
+        "voiceOver": "Account",
+        "target": [
+          329,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-button",
+        "viewportTarget": [
+          329,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Kitchen table",
+        "voiceOver": "Kitchen table. Review updated members. Open the invitation link to continue.",
+        "hint": "Open or paste the invitation link to continue.",
+        "target": [
+          20,
+          191,
+          353,
+          106
+        ],
+        "kind": "invitation-row",
+        "invitationState": "changedMissing",
+        "route": "G02-link-entry-signed-in",
+        "viewportTarget": [
+          20,
+          191,
+          353,
+          106
+        ]
+      },
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "hint": null,
+        "target": [
+          20,
+          453,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          453,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "I have an invite",
+        "voiceOver": "I have an invite",
+        "hint": null,
+        "target": [
+          20,
+          519,
+          353,
+          50
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          519,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Private drafts",
+        "voiceOver": "Private drafts",
+        "hint": "Only you can see these.",
+        "target": [
+          20,
+          601,
+          353,
+          76
+        ],
+        "kind": "row",
+        "viewportTarget": [
+          20,
+          601,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Home",
+        "voiceOver": "Home",
+        "target": [
+          10,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": true,
+        "viewportTarget": [
+          10,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Friends",
+        "voiceOver": "Friends",
+        "target": [
+          141,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          141,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Memories",
+        "voiceOver": "Memories",
+        "target": [
+          272,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          272,
+          778,
+          110,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Leila’s account has no active club. Accepted invitations are account-owned rows on Home, ahead of the existing create/join actions. No member roster, approval counts, photos or dates are derived from this row. The largest-text frame shows the top of the same scrolling column. Missing-token changes open the existing signed-in link-entry route without accepting anything."
+    ]
+  },
+  "G06-no-club-invitation-declined": {
+    "visible": [
+      "+ Add",
+      "Invitations",
+      "Kitchen table",
+      "Invitation didn’t go ahead",
+      "Start your club.",
+      "A private place for two to six people.",
+      "Create a club or open an invitation.",
+      "Create a club",
+      "I have an invite",
+      "Private drafts",
+      "Only you can see these.",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "controls": [
+      {
+        "label": "+ Add",
+        "voiceOver": "Add",
+        "target": [
+          241,
+          56,
+          80,
+          44
+        ],
+        "kind": "native-button",
+        "hint": "Save a private draft or open private drafts.",
+        "viewportTarget": [
+          241,
+          56,
+          80,
+          44
+        ]
+      },
+      {
+        "label": "Account",
+        "voiceOver": "Account",
+        "target": [
+          329,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-button",
+        "viewportTarget": [
+          329,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Kitchen table",
+        "voiceOver": "Kitchen table. Invitation didn’t go ahead.",
+        "hint": "Open this invitation for details.",
+        "target": [
+          20,
+          191,
+          353,
+          84
+        ],
+        "kind": "invitation-row",
+        "invitationState": "ended",
+        "route": "G03-declined",
+        "viewportTarget": [
+          20,
+          191,
+          353,
+          84
+        ]
+      },
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "hint": null,
+        "target": [
+          20,
+          431,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          431,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "I have an invite",
+        "voiceOver": "I have an invite",
+        "hint": null,
+        "target": [
+          20,
+          497,
+          353,
+          50
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          497,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Private drafts",
+        "voiceOver": "Private drafts",
+        "hint": "Only you can see these.",
+        "target": [
+          20,
+          579,
+          353,
+          76
+        ],
+        "kind": "row",
+        "viewportTarget": [
+          20,
+          579,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Home",
+        "voiceOver": "Home",
+        "target": [
+          10,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": true,
+        "viewportTarget": [
+          10,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Friends",
+        "voiceOver": "Friends",
+        "target": [
+          141,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          141,
+          778,
+          110,
+          50
+        ]
+      },
+      {
+        "label": "Memories",
+        "voiceOver": "Memories",
+        "target": [
+          272,
+          778,
+          110,
+          50
+        ],
+        "kind": "native-tab",
+        "selected": false,
+        "viewportTarget": [
+          272,
+          778,
+          110,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Leila’s account has no active club. Accepted invitations are account-owned rows on Home, ahead of the existing create/join actions. No member roster, approval counts, photos or dates are derived from this row. The largest-text frame shows the top of the same scrolling column. Missing-token changes open the existing signed-in link-entry route without accepting anything."
+    ]
+  },
+  "G06-switcher-invitation": {
+    "visible": [
+      "Sunday people",
+      "+ Add",
+      "Debby’s Friday",
+      "Friday 6 November 2026",
+      "Debby’s pick",
+      "Ben",
+      "Maya",
+      "Debby",
+      "Your clubs",
+      "Sunday people",
+      "6 members",
+      "Invitations",
+      "Kitchen table",
+      "Waiting for members",
+      "Club details",
+      "Create a club",
+      "Cancel"
+    ],
+    "controls": [
+      {
+        "label": "Sunday people",
+        "voiceOver": "Switch club. Sunday people selected.",
+        "target": [
+          20,
+          56,
+          220,
+          44
+        ],
+        "kind": "native-button",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          20,
+          56,
+          220,
+          44
+        ]
+      },
+      {
+        "label": "+ Add",
+        "voiceOver": "Add",
+        "target": [
+          241,
+          56,
+          80,
+          44
+        ],
+        "kind": "native-button",
+        "hint": "Save a private draft or open private drafts.",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          241,
+          56,
+          80,
+          44
+        ]
+      },
+      {
+        "label": "Account",
+        "voiceOver": "Account",
+        "target": [
+          329,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-button",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          329,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Sunday people",
+        "voiceOver": "Sunday people. Selected. 6 members.",
+        "target": [
+          20,
+          473,
+          353,
+          68
+        ],
+        "kind": "club-selector",
+        "selected": true,
+        "viewportTarget": [
+          20,
+          473,
+          353,
+          68
+        ]
+      },
+      {
+        "label": "Kitchen table",
+        "voiceOver": "Kitchen table. Waiting for members.",
+        "hint": "Open this invitation to see its current state.",
+        "target": [
+          20,
+          598,
+          353,
+          84
+        ],
+        "kind": "invitation-row",
+        "invitationState": "waiting",
+        "route": "G03-waiting",
+        "viewportTarget": [
+          20,
+          598,
+          353,
+          84
+        ]
+      },
+      {
+        "label": "Club details",
+        "voiceOver": "Club details",
+        "target": [
+          20,
+          691,
+          353,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          20,
+          691,
+          353,
+          44
+        ]
+      },
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "target": [
+          20,
+          735,
+          353,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          20,
+          735,
+          353,
+          44
+        ]
+      },
+      {
+        "label": "Cancel",
+        "voiceOver": "Cancel",
+        "target": [
+          20,
+          785,
+          353,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          20,
+          785,
+          353,
+          44
+        ]
+      }
+    ],
+    "notes": [
+      "Ben is already in Sunday people. Accepted Kitchen table appears in an Invitations section of the native switcher and opens G03-waiting. It is not selectable as an active club and has no member count or checkmark. Modal scrim is presentation over an unmodified book photo."
+    ]
+  },
+  "G02-web-checking": {
+    "visible": [
+      "Checking invitation…",
+      "Retry",
+      "Get Tadayo"
+    ],
+    "controls": [
+      {
+        "label": "Retry",
+        "voiceOver": "Retry",
+        "hint": "Try checking this invitation link again.",
+        "target": [
+          20,
+          424,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "enabled": false,
+        "busy": true,
+        "voiceOverValue": "In progress",
+        "viewportTarget": [
+          20,
+          424,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Get Tadayo",
+        "voiceOver": "Get Tadayo",
+        "hint": "Open TestFlight in the App Store.",
+        "target": [
+          20,
+          490,
+          353,
+          50
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          20,
+          490,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Retry-in-progress variant. Retry stays focusable with aria-disabled=true and a guarded handler; live status announces the check. On first load the Retry slot is absent. The status area reserves134 points to keep these controls stable during retry. No inviter or club identity is known."
+    ]
+  },
+  "G02-web-failed": {
+    "visible": [
+      "Couldn’t check the invitation link.",
+      "Check your connection and try again.",
+      "Retry",
+      "Get Tadayo"
+    ],
+    "controls": [
+      {
+        "label": "Retry",
+        "voiceOver": "Retry",
+        "hint": "Try checking this invitation link again.",
+        "target": [
+          20,
+          424,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          424,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Get Tadayo",
+        "voiceOver": "Get Tadayo",
+        "hint": "Open TestFlight in the App Store.",
+        "target": [
+          20,
+          490,
+          353,
+          50
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          20,
+          490,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Network failure shown. An answered refusal, rate limit or server error uses Try again as the body. Retry is a primary50-point button. Get Tadayo remains an independent text link. Both states follow existing dark and 200% text-zoom rules."
+    ]
+  },
+  "G01-invite-people-empty": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Create an invitation",
+      "Only you can see this list.",
+      "Done for now"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Create an invitation",
+        "voiceOver": "Create an invitation",
+        "hint": null,
+        "target": [
+          20,
+          256,
+          353,
+          50
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          256,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "No empty-state illustration or additional sentence. The existing separate-link line explains the first step. Create an invitation sits32 below that line and opens the established person-name entry."
+    ]
+  },
+  "G01-invite-people-live-not-held": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Link not on this phone",
+      "A new link replaces the previous link.",
+      "Create new link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Done for now"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          261,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          261,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          261,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          261,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Create new link",
+        "voiceOver": "Create new link for Alex",
+        "target": [
+          209,
+          335,
+          124,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          209,
+          335,
+          124,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          335,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          335,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          447,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          447,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          447,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          447,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          237,
+          595,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          595,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          595,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          595,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Alex is the affected invitee. Live without a local token does not imply Not shared. The missing-link row explains replacement and retains Revoke link under More. The server-expired unused link has a clock and Create new link only. Actual status always follows the server and local token availability separately."
+    ]
+  },
+  "G01-invite-people-expired": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Link expired",
+      "Create new link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Done for now"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          261,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          261,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          261,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          261,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Create new link",
+        "voiceOver": "Create new link for Alex",
+        "target": [
+          209,
+          335,
+          124,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          209,
+          335,
+          124,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          409,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          409,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          409,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          409,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          237,
+          557,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          557,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          557,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          557,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Alex is the affected invitee. Live without a local token does not imply Not shared. The missing-link row explains replacement and retains Revoke link under More. The server-expired unused link has a clock and Create new link only. Actual status always follows the server and local token availability separately."
+    ]
+  },
+  "G01-invite-people-action-failed": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Link revoked",
+      "Create new link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Couldn’t confirm that Maya’s invitation link was revoked. Check your connection and try again.",
+      "Done for now"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          261,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          261,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          261,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          261,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Create new link",
+        "voiceOver": "Create new link for Alex",
+        "target": [
+          209,
+          335,
+          124,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          209,
+          335,
+          124,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          335,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          335,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          409,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          409,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          409,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          409,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          237,
+          557,
+          96,
+          44
+        ],
+        "kind": "text",
+        "viewportTarget": [
+          237,
+          557,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          557,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link"
+        ],
+        "viewportTarget": [
+          333,
+          557,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "notes": [
+      "Revoke Maya failed without confirmation. Last verified rows remain unchanged. The shared failure block ends24 points above Done for now; the scrollable list ends24 above the block. The message persists through scrolling, menus and canceled sharing until another link mutation starts, reconciliation resolves it, or navigation leaves this list."
+    ]
+  },
+  "A01-welcome": {
+    "visible": [
+      "Your day. Your story. A thought from your friends.",
+      "Take turns sharing what you’ve been up to. Friends can add something that reminded them of you.",
+      "An example · before and on the day",
+      "Debby’s Friday · 6 November 2026",
+      "Caption now",
+      "Photo on the day",
+      "Your future living room.",
+      "Maya",
+      "Create a club",
+      "I have an invite",
+      "Already here? Sign in"
+    ],
+    "controls": [
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "hint": null,
+        "target": [
+          20,
+          650,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          650,
+          353,
+          50
+        ],
+        "route": "A02-email → age/profile if needed → G01-create"
+      },
+      {
+        "label": "I have an invite",
+        "voiceOver": "I have an invite",
+        "hint": null,
+        "target": [
+          20,
+          716,
+          353,
+          50
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          716,
+          353,
+          50
+        ],
+        "route": "G02-link-entry → sign-in → verified roster review"
+      },
+      {
+        "label": "Already here? Sign in",
+        "voiceOver": "Already here? Sign in",
+        "hint": "Sign in to your existing account.",
+        "target": [
+          20,
+          774,
+          353,
+          44
+        ],
+        "kind": "text",
+        "route": "A02-email",
+        "viewportTarget": [
+          20,
+          774,
+          353,
+          44
+        ]
+      }
+    ],
+    "notes": [
+      "Restored Already here? Sign in below I have an invite. Both default-size frames show all three routes. The largest-text frame is scrolled to the actions so the restored link is visible. The brand line, explanation and labelled chair example remain in the same scroll above it."
+    ]
+  },
+  "A01-welcome-dark": {
+    "visible": [
+      "Your day. Your story. A thought from your friends.",
+      "Take turns sharing what you’ve been up to. Friends can add something that reminded them of you.",
+      "An example · before and on the day",
+      "Debby’s Friday · 6 November 2026",
+      "Caption now",
+      "Photo on the day",
+      "Your future living room.",
+      "Maya",
+      "Create a club",
+      "I have an invite",
+      "Already here? Sign in"
+    ],
+    "controls": [
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "hint": null,
+        "target": [
+          20,
+          650,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          650,
+          353,
+          50
+        ],
+        "route": "A02-email → age/profile if needed → G01-create"
+      },
+      {
+        "label": "I have an invite",
+        "voiceOver": "I have an invite",
+        "hint": null,
+        "target": [
+          20,
+          716,
+          353,
+          50
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          716,
+          353,
+          50
+        ],
+        "route": "G02-link-entry → sign-in → verified roster review"
+      },
+      {
+        "label": "Already here? Sign in",
+        "voiceOver": "Already here? Sign in",
+        "hint": "Sign in to your existing account.",
+        "target": [
+          20,
+          774,
+          353,
+          44
+        ],
+        "kind": "text",
+        "route": "A02-email",
+        "viewportTarget": [
+          20,
+          774,
+          353,
+          44
+        ]
+      }
+    ],
+    "notes": [
+      "Restored Already here? Sign in below I have an invite. Both default-size frames show all three routes. The largest-text frame is scrolled to the actions so the restored link is visible. The brand line, explanation and labelled chair example remain in the same scroll above it."
+    ]
+  },
+  "A01-welcome-xl": {
+    "visible": [
+      "Your day. Your story. A thought from your friends.",
+      "Take turns sharing what you’ve been up to. Friends can add something that reminded them of you.",
+      "An example · before and on the day",
+      "Debby’s Friday · 6 November 2026",
+      "Caption now",
+      "Your future living room.",
+      "Maya",
+      "Photo on the day",
+      "Create a club",
+      "I have an invite",
+      "Already here? Sign in"
+    ],
+    "controls": [
+      {
+        "label": "Create a club",
+        "voiceOver": "Create a club",
+        "hint": null,
+        "target": [
+          20,
+          2264,
+          353,
+          85
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          385.0,
+          353,
+          85
+        ],
+        "route": "A02-email → age/profile if needed → G01-create"
+      },
+      {
+        "label": "I have an invite",
+        "voiceOver": "I have an invite",
+        "hint": null,
+        "target": [
+          20,
+          2365,
+          353,
+          146
+        ],
+        "kind": "secondary",
+        "viewportTarget": [
+          20,
+          486.0,
+          353,
+          146
+        ],
+        "route": "G02-link-entry → sign-in → verified roster review"
+      },
+      {
+        "label": "Already here? Sign in",
+        "voiceOver": "Already here? Sign in",
+        "hint": "Sign in to your existing account.",
+        "target": [
+          20,
+          2527,
+          353,
+          146
+        ],
+        "kind": "text",
+        "route": "A02-email",
+        "viewportTarget": [
+          20,
+          648.0,
+          353,
+          146
+        ]
+      }
+    ],
+    "notes": [
+      "Reference scroll offset 1879 points. Full content remains above in the single scrolling column.",
+      "Restored Already here? Sign in below I have an invite. Both default-size frames show all three routes. The largest-text frame is scrolled to the actions so the restored link is visible. The brand line, explanation and labelled chair example remain in the same scroll above it."
+    ]
+  }
+}

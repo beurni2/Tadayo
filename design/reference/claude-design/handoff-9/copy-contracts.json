@@ -1,0 +1,3085 @@
+{
+  "codeVerificationFailure": "This code couldn’t be verified. Try again or send a new one.",
+  "failureStates": [
+    {
+      "action": "Send a code · network",
+      "message": "Couldn’t send a code. Check your connection and try again.",
+      "retainedState": "Keep the email; remain on A02-email. Retry uses the same address."
+    },
+    {
+      "action": "Send a code · server",
+      "message": "Couldn’t send a code. Try again.",
+      "retainedState": "Keep the email. Use handoff4.auth.firstSend.refused; the refusal supplies no wait time."
+    },
+    {
+      "action": "Verify code · network",
+      "message": "Couldn’t verify the code. Check your connection and try again.",
+      "retainedState": "Keep the email and all six digits. Do not label the code wrong or expired."
+    },
+    {
+      "action": "Resend · network",
+      "message": "Couldn’t send a new code. Check your connection and try again.",
+      "retainedState": "Keep the address, old challenge and typed digits. Do not reset the wait until a new send is confirmed."
+    },
+    {
+      "action": "Resend · server",
+      "message": "Couldn’t send a new code. Try again.",
+      "retainedState": "Keep the address, challenge and typed digits. Use handoff4.auth.resend.refused. Do not reset the known successful-send wait or invent an additional one."
+    },
+    {
+      "action": "Save profile",
+      "message": "Couldn’t save your profile. Try again.",
+      "retainedState": "Keep the name and selected photo. For a network failure use handoff4.auth.profile.networkFailure."
+    },
+    {
+      "action": "Upload profile photo",
+      "message": "Couldn’t upload your profile photo. Try again or continue without a photo.",
+      "retainedState": "Keep the name and selected image. Offer handoff4.auth.profile.retryPhoto. Continue works with the initial fallback."
+    },
+    {
+      "action": "Revoke link · server",
+      "message": "Couldn’t revoke Alex’s invitation link. Try again.",
+      "retainedState": "Keep Alex’s row, prepared link and all other invitation state. Do not show Link revoked."
+    },
+    {
+      "action": "Revoke link · uncertain network",
+      "message": "Couldn’t confirm that Alex’s invitation link was revoked. Check your connection and try again.",
+      "retainedState": "Keep the row and last known state. Recheck the token status; the request may have reached the server."
+    }
+  ],
+  "revokeLink": {
+    "confirmationTitle": "Revoke Alex’s invitation link?",
+    "confirmationBody": "Alex won’t be able to use this link. You can create a new link for Alex later.",
+    "confirm": "Revoke link",
+    "cancel": "Keep link",
+    "pending": "Revoking link…",
+    "success": "Alex’s invitation link was revoked.",
+    "rowStatus": "Link revoked",
+    "nextAction": "Create new link",
+    "knownFailure": "Couldn’t revoke Alex’s invitation link. Try again.",
+    "uncertainNetworkFailure": "Couldn’t confirm that Alex’s invitation link was revoked. Check your connection and try again.",
+    "scope": "Only an unaccepted invitation token is revoked. Do not remove an accepted member or silently change a roster. Hide the revoke action after Accepted."
+  },
+  "invitationControlAccessibilityLabels": {
+    "Maya": {
+      "shareLink": "Share link for Maya",
+      "shareAgain": "Share again for Maya",
+      "more": "More options for Maya’s invitation"
+    },
+    "Alex": {
+      "shareLink": "Share link for Alex",
+      "shareAgain": "Share again for Alex",
+      "more": "More options for Alex’s invitation"
+    },
+    "Sam": {
+      "shareLink": "Share link for Sam",
+      "shareAgain": "Share again for Sam",
+      "more": "More options for Sam’s invitation"
+    },
+    "Debby": {
+      "shareLink": "Share link for Debby",
+      "shareAgain": "Share again for Debby",
+      "more": "More options for Debby’s invitation"
+    },
+    "Nina": {
+      "shareLink": "Share link for Nina",
+      "shareAgain": "Share again for Nina",
+      "more": "More options for Nina’s invitation"
+    }
+  },
+  "createInvitation": {
+    "nameLabel": "Person’s name",
+    "typedFixture": "Sam",
+    "button": "Create link and share",
+    "createFailure": "Couldn’t create the invitation link for Sam. Try again.",
+    "retention": "Keep Sam and any prepared link; do not create a second token when returning from a canceled share sheet."
+  },
+  "linkEntry": {
+    "paste": "Paste",
+    "continue": "Continue",
+    "invalid": "That doesn’t look like a Tadayo invitation link. Check the link and try again.",
+    "clipboardEmpty": "There isn’t an invitation link to paste. Copy the link and try again.",
+    "cannotCheck": "Couldn’t check the invitation link. Check your connection and try again.",
+    "retention": "Keep the pasted URL and pending invitation through authentication. No club or roster is shown before sign-in."
+  },
+  "historyBoundary": {
+    "display": "Days shared after you join a club will appear here after they open.",
+    "enforcement": "Per-drop membership interval; exclude pre-join submissions even when they reveal after joining."
+  },
+  "approval": {
+    "viewer": "Maya",
+    "candidate": "Leila",
+    "body": "Leila must accept the exact roster. Every existing member must approve the same roster. Either can happen first.",
+    "boundary": "Leila will see only drops shared after joining.",
+    "privacy": "We don’t identify who declined. Nobody is asked to give a reason.",
+    "enforcement": "A pending candidate, whether accepted or not, can review only the permitted club name and exact proposed roster. No captions, photographs, membership activity or club upload destinations until the required approvals are complete and membership activates. Acceptance alone is not access."
+  },
+  "handoff3": {
+    "common.notNow": "Not now",
+    "common.done": "Done",
+    "common.retry": "Retry",
+    "common.close": "Close",
+    "common.back": "Back",
+    "common.newYork": "New York",
+    "common.add": "+ Add",
+    "common.account": "Account",
+    "common.switchClub": "Choose a club",
+    "drafts.title": "Private drafts",
+    "drafts.subtitle": "Only you can see these.",
+    "header.clubSelector.vo": "Choose a club. {clubName} is selected.",
+    "header.add.vo": "Add a drop or save a private draft.",
+    "header.addPrivate.vo": "Save a private draft or open private drafts.",
+    "header.account.vo": "Account",
+    "tabs.home.vo": "Home",
+    "tabs.friends.vo": "Friends",
+    "tabs.memories.vo": "Memories",
+    "drafts.vo": "Open private drafts. Only you can see these.",
+    "G04.conflict.nav": "Your day",
+    "G04.conflict.title": "Choose your day",
+    "G04.conflict.clubZone": "Sunday people · New York",
+    "G04.conflict.explanation": "Friday is chosen by Ben and Debby.",
+    "G04.conflict.help": "Either person can change a choice.",
+    "G04.conflict.monday": "Proposed for Ben · Available",
+    "G04.conflict.assigned": "{name} · Assigned",
+    "G04.conflict.fridayPeople": "Ben and Debby",
+    "G04.conflict.status": "Day conflict",
+    "G04.conflict.confirm": "Confirm Friday",
+    "G04.conflict.confirmMonday": "Confirm Monday",
+    "G04.conflict.confirmMonday.vo": "Confirm Monday as your day.",
+    "G04.conflict.confirm.vo": "Confirm Friday. Unavailable while Friday has a day choice conflict.",
+    "G04.conflict.notNow.vo": "Keep the current choice and return.",
+    "G04.conflict.friday.hint": "Choose another available weekday, or keep this choice and wait.",
+    "G04.conflict.confirmedSelf": "Your day is confirmed.",
+    "G04.conflict.confirmedBody": "Confirmed days will go ahead.",
+    "G04.conflict.otherFriday": "Day choice conflict: Ben and Debby. No reveal scheduled.",
+    "G04.conflict.otherMonday": "No reveal scheduled",
+    "G04.error.chooseTaken": "Couldn’t choose {weekday}. {weekday} is now {ownerName}’s day. Your other choices are unchanged.",
+    "G04.error.confirmTaken": "Couldn’t confirm {weekday}. {weekday} is now {ownerName}’s day. Your other choices are unchanged.",
+    "G04.error.chooseFridayExample": "Couldn’t choose Friday. Friday is now Debby’s day. Your other choices are unchanged.",
+    "G04.error.confirmFridayExample": "Couldn’t confirm Friday. Friday is now Debby’s day. Your other choices are unchanged.",
+    "G04.error.network": "Couldn’t confirm your days. Check your connection and try again. Your choices are still here.",
+    "G04.error.revision": "Couldn’t confirm these days because the proposed week changed. Review the updated week.",
+    "G04.error.pastStart": "Couldn’t confirm that start date. Review the new proposed date.",
+    "G04.error.unavailable": "No longer available",
+    "G04.change.nav": "Club days",
+    "G04.change.title": "Confirm the days",
+    "G04.change.unchanged": "Your weekdays stay the same.",
+    "G04.change.startLabel": "Proposed start",
+    "G04.change.startDate": "Monday, November 16, 2026",
+    "G04.change.reason": "A future start keeps announced days unchanged.",
+    "G04.change.before": "Through Sunday, November 15",
+    "G04.change.benBefore": "Monday, November 9 · Thursday, November 12",
+    "G04.change.debbyBefore": "Tuesday, November 10 · Friday, November 13",
+    "G04.change.after": "From Monday, November 16",
+    "G04.change.benAfter": "Monday and Thursday · Unchanged",
+    "G04.change.debbyAfter": "Tuesday and Friday · Unchanged",
+    "G04.change.mayaAfter": "Wednesday and Saturday",
+    "G04.change.pending": "Current days continue until the change is confirmed.",
+    "G04.change.confirm": "Confirm these days",
+    "G04.change.confirm.vo": "Confirm these days from Monday, November 16, 2026.",
+    "G04.change.saved.title": "Your confirmation is saved.",
+    "G04.change.saved.body": "The current days continue while this change is being confirmed.",
+    "G04.change.maya.title": "Confirm your days",
+    "G04.change.maya.subtitle": "Wednesday and Saturday",
+    "G04.change.maya.boundary": "You’ll see only drops shared after joining.",
+    "G04.change.reviewRow": "Review the club’s days",
+    "G04.change.reviewDate": "Proposed from {fullStartDate}",
+    "G04.change.detailsPending": "New days to review",
+    "G04.change.oneDay.title": "Confirm the club’s days",
+    "G04.change.oneDay.subtitle": "One reveal day each week",
+    "G04.change.oneDay.own": "From {fullStartDate}, your day is {weekday}.",
+    "G04.change.transition.title": "Transition week",
+    "G04.change.transition.body": "Announced dates stay the same.",
+    "G04.change.transition.steady": "One day each week from {fullSteadyStartDate}.",
+    "G04.change.oneDay.everyone": "The club changes from two days each week to one day each week for everyone.",
+    "G04.change.oneDay.preserved": "Your announced dates stay the same.",
+    "G04.change.currentThrough": "Current days through {fullLastDate}",
+    "G04.change.newFrom": "New week from {fullStartDate}",
+    "G05.schedule.nav": "Schedule",
+    "G05.schedule.title": "The club’s week",
+    "G05.schedule.hours": "7 AM to 1 AM the next morning",
+    "G05.schedule.hoursVO": "Each reveal opens at 7 AM and Home closes at 1 AM the next morning, in New York.",
+    "G05.schedule.unused": "No reveal scheduled",
+    "G05.schedule.sunday": "Revisit",
+    "G05.schedule.sundayDetail": "No reveal scheduled",
+    "G05.schedule.localAction": "View local times",
+    "G05.schedule.localAction.vo": "View scheduled opening and closing times in your time zone.",
+    "G05.schedule.localSheet.title": "Times in your time zone",
+    "G05.schedule.localSheet.club": "Club time",
+    "G05.schedule.localSheet.local": "Your time",
+    "G05.schedule.localSheet.clubValue": "{clubOpenFullDateTime} to {clubCloseFullDateTime} · {clubZoneName}",
+    "G05.schedule.localSheet.localValue": "{localOpenFullDateTime} to {localCloseFullDateTime} · {deviceZoneName}",
+    "G05.schedule.paused": "New days are paused.",
+    "G05.schedule.revealHoursZone": "New York · 7 AM to 1 AM the next morning",
+    "H01.awaiting.title": "Waiting for club confirmation",
+    "H01.awaiting.body": "The club starts when another person accepts the same roster.",
+    "H01.awaiting.private": "Drafts stay private when the club starts.",
+    "H01.awaiting.action": "Review members",
+    "H01.awaiting.action.vo": "Review Sunday people’s proposed members.",
+    "G05.proposed.title": "Proposed roster",
+    "G05.proposed.body": "These names are a proposal, not an active member list.",
+    "G05.proposed.manage": "Manage invitations",
+    "H01.paused.title": "This club is paused.",
+    "H01.paused.body": "Kitchen table needs another member for new days.",
+    "H01.paused.history": "Memories still shows the days you can access.",
+    "H01.paused.action": "View Memories",
+    "H01.paused.action.vo": "View accessible Memories in Kitchen table.",
+    "H01.paused.details": "Club details",
+    "H01.paused.details.vo": "Open Kitchen table’s club details.",
+    "H01.suspended.title": "Club unavailable",
+    "H01.suspended.body": "This club isn’t available right now.",
+    "H01.suspended.action": "Choose a club",
+    "H01.suspended.help": "Get help",
+    "H01.suspended.vo": "This club is unavailable. Friends and Memories can’t be opened for this club.",
+    "H01.loading.visible": "Loading Home…",
+    "H01.loading.vo": "Loading {clubName}.",
+    "H01.loading.sundayVO": "Loading Sunday people.",
+    "H01.loading.resolvedVO": "Home updated.",
+    "H01.error.network": "Couldn’t load Home. Check your connection and try again.",
+    "H01.error.retryVO": "Retry loading Home for {clubName}.",
+    "H01.offline.title": "Offline",
+    "H01.offline.checked": "Last checked {fullDateAndTime}",
+    "H01.offline.target": "Last known opening: {fullTargetDateAndTime} · {clubZoneName}",
+    "H01.offline.body": "Home couldn’t be checked. The date shown is from the last check.",
+    "H01.offline.retry": "Retry",
+    "H01.accessLost.title": "This club is no longer available.",
+    "H01.accessLost.action": "Choose a club",
+    "H01.accessLost.body": "Choose a club to continue.",
+    "H01.unavailable.choose.vo": "Choose another club explicitly.",
+    "H01.unavailable.help.vo": "Get help with club access.",
+    "switcher.awaiting": "Not started",
+    "switcher.paused": "Paused",
+    "switcher.awaiting.vo": "{clubName}. Not started.",
+    "switcher.paused.vo": "{clubName}. Paused.",
+    "switcher.unavailable.vo": "{clubName}. Unavailable.",
+    "F01.awaiting.title": "The club hasn’t started.",
+    "F01.awaiting.review": "Review members",
+    "M01.awaiting.body": "Memories will appear after the club starts and a day opens.",
+    "F01.paused.day": "New days are paused.",
+    "F01.title": "Friends",
+    "F01.subtitle": "Choose who it’s for.",
+    "F01.schedule": "See schedule",
+    "F01.schedule.vo": "See schedule for Sunday people.",
+    "F01.nextUp": "Next up",
+    "F01.you": " · You",
+    "weekday.Monday": "Monday",
+    "weekday.Tuesday": "Tuesday",
+    "weekday.Wednesday": "Wednesday",
+    "weekday.Thursday": "Thursday",
+    "weekday.Friday": "Friday",
+    "weekday.Saturday": "Saturday",
+    "weekday.Sunday": "Sunday",
+    "F01.date.Ben": "Monday, November 9 · 7 AM",
+    "F01.row.vo.Ben": "Ben, you. Monday, November 9, 2026, at 7 AM, New York. Open Ben’s upcoming day.",
+    "F01.date.Maya": "Tuesday, November 10 · 7 AM",
+    "F01.row.vo.Maya": "Maya. Tuesday, November 10, 2026, at 7 AM, New York. Open Maya’s upcoming day.",
+    "F01.date.Alex": "Wednesday, November 11 · 7 AM",
+    "F01.row.vo.Alex": "Alex. Wednesday, November 11, 2026, at 7 AM, New York. Open Alex’s upcoming day.",
+    "F01.date.Sam": "Thursday, November 12 · 7 AM",
+    "F01.row.vo.Sam": "Sam. Thursday, November 12, 2026, at 7 AM, New York. Open Sam’s upcoming day.",
+    "F01.date.Debby": "Friday, November 13 · 7 AM",
+    "F01.row.vo.Debby": "Debby. Friday, November 13, 2026, at 7 AM, New York. Open Debby’s upcoming day.",
+    "F01.date.Nina": "Saturday, November 7 · 7 AM",
+    "F01.row.vo.Nina": "Nina. Next up. Saturday, November 7, 2026, at 7 AM, New York. Open Nina’s upcoming day.",
+    "G05.schedule.vo.Monday": "Monday. Ben’s day. Opens at 7 AM and closes at 1 AM on Tuesday, New York.",
+    "G05.schedule.vo.Tuesday": "Tuesday. Maya’s day. Opens at 7 AM and closes at 1 AM on Wednesday, New York.",
+    "G05.schedule.vo.Wednesday": "Wednesday. Alex’s day. Opens at 7 AM and closes at 1 AM on Thursday, New York.",
+    "G05.schedule.vo.Thursday": "Thursday. Sam’s day. Opens at 7 AM and closes at 1 AM on Friday, New York.",
+    "G05.schedule.vo.Friday": "Friday. Debby’s day. Opens at 7 AM and closes at 1 AM on Saturday, New York.",
+    "G05.schedule.vo.Saturday": "Saturday. Nina’s day. Opens at 7 AM and closes at 1 AM on Sunday, New York.",
+    "G05.schedule.vo.Sunday": "Sunday. Revisit. No reveal scheduled.",
+    "G04.conflict.vo.Monday": "Monday. Proposed for Ben. Available. Not selected. Choose Monday.",
+    "G04.conflict.vo.Tuesday": "Tuesday. Maya’s day. Assigned and unavailable.",
+    "G04.conflict.vo.Wednesday": "Wednesday. Alex’s day. Assigned and unavailable.",
+    "G04.conflict.vo.Thursday": "Thursday. Sam’s day. Assigned and unavailable.",
+    "G04.conflict.vo.Saturday": "Saturday. Nina’s day. Assigned and unavailable.",
+    "G04.conflict.vo.Friday": "Friday. Chosen by Ben and Debby. Day conflict. Your current choice. Confirmation is unavailable.",
+    "G04.conflict.vo.Sunday": "Sunday. Revisit. Not a reveal day.",
+    "G04.change.vo.Monday": "Monday. Ben’s day in the proposed week from Monday, November 16, 2026.",
+    "G04.change.vo.Tuesday": "Tuesday. Debby’s day in the proposed week from Monday, November 16, 2026.",
+    "G04.change.vo.Wednesday": "Wednesday. Maya’s day in the proposed week from Monday, November 16, 2026.",
+    "G04.change.vo.Thursday": "Thursday. Ben’s day in the proposed week from Monday, November 16, 2026.",
+    "G04.change.vo.Friday": "Friday. Debby’s day in the proposed week from Monday, November 16, 2026.",
+    "G04.change.vo.Saturday": "Saturday. Maya’s day in the proposed week from Monday, November 16, 2026.",
+    "G04.change.vo.Sunday": "Sunday. Revisit. No reveal scheduled in the proposed week.",
+    "G04.change.preserved.vo.Monday": "Monday, November 9, 2026. Ben’s announced day. The date stays the same.",
+    "G04.change.preserved.vo.Thursday": "Thursday, November 12, 2026. Ben’s announced day. The date stays the same.",
+    "G04.change.preserved.vo.Tuesday": "Tuesday, November 10, 2026. Debby’s announced day. The date stays the same.",
+    "G04.change.preserved.vo.Friday": "Friday, November 13, 2026. Debby’s announced day. The date stays the same.",
+    "H01.awaiting.addPicker.private": "Private draft",
+    "H01.awaiting.addPicker.openDrafts": "Open my drafts",
+    "H01.paused.addPicker.private": "Private draft",
+    "H01.paused.addPicker.openDrafts": "Open my drafts",
+    "H01.loading.addPicker.private": "Private draft",
+    "H01.loading.addPicker.openDrafts": "Open my drafts"
+  },
+  "handoff4": {
+    "common.back": "Back",
+    "common.done": "Done for now",
+    "common.account": "Account",
+    "common.add": "+ Add",
+    "common.notNow": "Not now",
+    "common.home": "Home",
+    "common.friends": "Friends",
+    "common.memories": "Memories",
+    "common.cancel": "Cancel",
+    "common.retry": "Retry",
+    "drafts.title": "Private drafts",
+    "drafts.subtitle": "Only you can see these.",
+    "drafts.vo": "Open private drafts. Only you can see these.",
+    "noClub.add.vo": "Save a private draft or open private drafts.",
+    "approval.nav": "New member",
+    "approval.title": "Invite Leila?",
+    "approval.context": "To Kitchen table · 5 current members",
+    "approval.name": "Leila",
+    "approval.proposer": "Proposed by Ben",
+    "approval.body": "Leila must accept the exact roster. Every existing member must approve the same roster. Either can happen first.",
+    "approval.boundary": "Leila will see only drops shared after joining.",
+    "approval.note": "We don’t identify who declined. Nobody is asked to give a reason.",
+    "approval.primary": "Approve Leila",
+    "approval.decline": "Decline",
+    "approval.primary.vo": "Approve Leila joining Kitchen table.",
+    "approval.decline.vo": "Decline this invitation for Kitchen table. No reason is required.",
+    "pending.nav": "Sunday people",
+    "pending.title": "Waiting for club confirmation",
+    "pending.body": "The club starts when another person accepts the same roster.",
+    "pending.private": "Drafts stay private when the club starts.",
+    "pending.primary": "Review members",
+    "pending.primary.vo": "Review Sunday people’s proposed members.",
+    "pending.review.title": "Proposed roster",
+    "pending.review.body": "These names are a proposal, not an active member list.",
+    "pending.review.manage": "Manage invitations",
+    "legacy.pending.review": "Review invitations",
+    "legacy.pending.openDrafts": "Open Drafts",
+    "legacy.pending.prepare": "What you prepare stays only with you.",
+    "legacy.pending.waiting": "Nothing is shared while the club is waiting to start.",
+    "noClub.title": "Start your club.",
+    "noClub.body1": "A private place for two to six people.",
+    "noClub.body2": "Create a club or open an invitation.",
+    "noClub.primary": "Create a club",
+    "noClub.invite": "I have an invite",
+    "noClub.create.vo": "Create a club.",
+    "noClub.invite.vo": "Open an invitation link.",
+    "link.nav": "Invitation",
+    "link.title": "Have an invitation?",
+    "link.body": "Paste the link, or open it where it was shared.",
+    "link.label": "Invitation link",
+    "link.placeholder": "Paste invitation link",
+    "link.paste": "Paste",
+    "link.continue": "Continue",
+    "link.signedIn.helper": "We’ll check the link before showing the club or its people.",
+    "link.paste.vo": "Paste an invitation link.",
+    "link.field.vo": "Invitation link",
+    "link.continue.vo": "Check the invitation link.",
+    "link.checkFailure": "Couldn’t check the invitation link. Check your connection and try again.",
+    "invite.nav": "Create a club",
+    "invite.title": "Invite your people",
+    "invite.club": "Sunday people",
+    "invite.body": "Each person gets a separate link.",
+    "invite.private": "Only you can see this list.",
+    "invite.notShared": "Not shared",
+    "invite.shared": "Shared",
+    "invite.accepted": "Accepted",
+    "invite.revoked": "Link revoked",
+    "invite.shareLink": "Share link",
+    "invite.shareAgain": "Share again",
+    "invite.createNew": "Create new link",
+    "invite.createNew.Alex.vo": "Create new link for Alex",
+    "invite.createNew.Alex.failure": "Couldn’t create a new invitation link for Alex. Try again.",
+    "invite.createNew.Alex.success": "New invitation link created for Alex.",
+    "invite.done.vo": "Finish managing invitations for now.",
+    "unavailable.nav": "Invitation",
+    "unavailable.title": "This invitation isn’t available.",
+    "unavailable.body": "Ask for a new invitation link.",
+    "unavailable.primary": "Close invitation",
+    "unavailable.primary.vo": "Close this invitation and return to Home.",
+    "unavailable.web.get": "Get Tadayo",
+    "unavailable.web.get.vo": "Get Tadayo from the App Store.",
+    "members.footer.one": "1 member · {clubZoneName}",
+    "members.footer.other": "{memberCount} members · {clubZoneName}",
+    "members.footer.sundayPeople": "6 members · New York",
+    "members.footer.pair": "2 members · New York",
+    "members.footer.kitchenTable": "5 members · {clubZoneName}",
+    "members.footer.hours": "7 AM to 1 AM the next morning.",
+    "declined.disclosure": "We don’t identify who declined. Nobody is asked to give a reason.",
+    "auth.firstSend.refused": "Couldn’t send a code. Try again.",
+    "auth.resend.refused": "Couldn’t send a new code. Try again.",
+    "auth.profile.networkFailure": "Couldn’t save your profile. Check your connection and try again.",
+    "auth.legacy.firstSend.refused": "A code can’t be sent yet. Try again shortly.",
+    "auth.legacy.resend.refused": "A new code isn’t available yet. Try again shortly.",
+    "auth.profile.retryPhoto": "Retry photo upload",
+    "auth.changeEmail": "Change email address",
+    "highlight.label": "Highlight",
+    "highlight.expanded": "Deborah-Anne’s pick",
+    "sheet.card.status": "Opens Friday, November 13, 2026 at 7 AM",
+    "sheet.card.caption": "Your future living room.",
+    "sheet.card.author": "Maya",
+    "invite.row.Maya.vo": "Maya. Shared.",
+    "invite.more.Maya.vo": "More options for Maya’s invitation",
+    "invite.share.Maya.vo": "Share link for Maya",
+    "invite.shareAgain.Maya.vo": "Share again for Maya",
+    "invite.row.Alex.vo": "Alex. Link revoked.",
+    "invite.more.Alex.vo": "More options for Alex’s invitation",
+    "invite.share.Alex.vo": "Share link for Alex",
+    "invite.shareAgain.Alex.vo": "Share again for Alex",
+    "invite.row.Sam.vo": "Sam. Not shared.",
+    "invite.more.Sam.vo": "More options for Sam’s invitation",
+    "invite.share.Sam.vo": "Share link for Sam",
+    "invite.shareAgain.Sam.vo": "Share again for Sam",
+    "invite.row.Debby.vo": "Debby. Accepted.",
+    "invite.more.Debby.vo": "More options for Debby’s invitation",
+    "invite.share.Debby.vo": "Share link for Debby",
+    "invite.shareAgain.Debby.vo": "Share again for Debby",
+    "invite.row.Nina.vo": "Nina. Not shared.",
+    "invite.more.Nina.vo": "More options for Nina’s invitation",
+    "invite.share.Nina.vo": "Share link for Nina",
+    "invite.shareAgain.Nina.vo": "Share again for Nina",
+    "invite.row.Alex.newLink.vo": "Alex. Not shared."
+  },
+  "copyStatus": {
+    "retired": {
+      "handoff4.auth.legacy.firstSend.refused": "Reference only; never render. Replaced by handoff4.auth.firstSend.refused.",
+      "handoff4.auth.legacy.resend.refused": "Reference only; never render. Replaced by handoff4.auth.resend.refused.",
+      "handoff4.legacy.pending.review": "Reference only; superseded by Review members to agree with H3.",
+      "handoff4.legacy.pending.openDrafts": "Reference only; the Private drafts row is the entry.",
+      "handoff4.legacy.pending.prepare": "Reference only; use the row subtitle.",
+      "handoff4.legacy.pending.waiting": "Reference only; use the precise drafts-on-activation line."
+    },
+    "normalization": "All string values from earlier handoffs use ’. Semantic copy changes are limited to the explicit corrections above."
+  },
+  "handoff5": {
+    "common.back": "Back",
+    "common.done": "Done",
+    "common.notNow": "Not now",
+    "common.add": "+ Add",
+    "common.account": "Account",
+    "common.chooseClub": "Choose a club",
+    "common.clubDetails": "Club details",
+    "common.createClub": "Create a club",
+    "common.cancel": "Cancel",
+    "calendar.nav.one": "Your day",
+    "calendar.nav.many": "Your days",
+    "calendar.title.one": "Choose your day",
+    "calendar.title.many": "Choose your days",
+    "calendar.clubZone": "{clubName} · {clubZoneName}",
+    "calendar.peopleZone": "{memberNames} · {clubZoneName}",
+    "calendar.hours": "{openTime} to {closeTime} the next morning",
+    "calendar.hoursZone": "{clubZoneName} · {hoursText}",
+    "calendar.hours.vo": "Reveals open at {openTime} and Home closes at {closeTime} the next morning, in {clubZoneName}.",
+    "calendar.one.body": "Choose an available day, then confirm.",
+    "calendar.many.body": "Choose two days that work for you.",
+    "calendar.choice.help": "You can change your choice before confirming.",
+    "calendar.contested.explanation": "{chooserSentenceList} chose {weekday}.",
+    "calendar.contested.help": "You can choose another day, or keep your choice.",
+    "calendar.state.available": "Available",
+    "calendar.state.proposed": "Proposed",
+    "calendar.state.confirmed": "Confirmed",
+    "calendar.state.own": "Your choice",
+    "calendar.state.contested": "Contested",
+    "calendar.earlierSelfProposal": "Proposed for you",
+    "calendar.person.self": "{personName} · You",
+    "calendar.person.other": "{personName}",
+    "calendar.person.self.vo": "{personName}, you",
+    "calendar.person.other.vo": "{personName}",
+    "calendar.confirm": "Confirm {weekdayList}",
+    "calendar.confirm.hint": "Confirm your recurring day choices.",
+    "calendar.confirm.contested.hint": "{stateLabel}. Confirmation is unavailable.",
+    "calendar.notNow.hint": "Keep your current choices and return.",
+    "calendar.row.available.vo": "{weekday}. Available. Not selected.",
+    "calendar.row.earlierSelf.vo": "{weekday}. Available. Previously proposed for you. Not selected.",
+    "calendar.row.proposed.vo": "{weekday}. {personSpeech}. Proposed. Can be chosen.",
+    "calendar.row.confirmed.vo": "{weekday}. {personSpeech}. Confirmed. Unavailable.",
+    "calendar.row.own.vo": "{weekday}. {personSpeech}. Your choice.",
+    "calendar.row.contested.vo": "{weekday}. Contested. {chooserSpeech} Your choice.",
+    "calendar.row.choose.hint": "Choose {weekday}.",
+    "calendar.publicContested": "Contested · No reveal scheduled",
+    "calendar.publicContested.vo": "{weekday}. Contested. No reveal scheduled.",
+    "calendar.noReveal": "No reveal scheduled",
+    "calendar.emptyRow.vo": "{weekday}. No reveal scheduled.",
+    "calendar.sunday.title": "Revisit",
+    "calendar.sunday.detail": "No reveal scheduled",
+    "calendar.sunday.vo": "{weekday}. Revisit. No reveal scheduled.",
+    "calendar.confirmed.title": "Your day is confirmed.",
+    "calendar.confirmed.body": "Confirmed days will go ahead.",
+    "calendar.confirmed.title.many": "Your days are confirmed.",
+    "calendar.week.assigned.vo": "{weekday}. {personSpeech}.",
+    "schedule.row.vo": "{weekday}. {personSpeech}. Opens at {openTime}. Home closes at {closeTime} on {closingWeekday}, {clubZoneName}.",
+    "change.nav": "Club days",
+    "change.title": "Confirm the days",
+    "change.subtitle": "Your weekdays stay the same.",
+    "change.proposedStart": "Proposed start",
+    "change.startDate": "{fullStartDate}",
+    "change.reason": "A future start keeps announced days unchanged.",
+    "change.before": "Current days through {fullLastDate}",
+    "change.after": "From {fullStartDate}",
+    "change.keptDates": "{firstFullDate} · {secondFullDate}",
+    "change.unchangedDays": "{weekdayList} · Unchanged",
+    "change.newDays": "{weekdayList}",
+    "change.pending": "Current days continue until the change is confirmed.",
+    "change.confirm": "Confirm these days",
+    "change.confirm.hint": "Confirm this proposed week from {fullStartDate}.",
+    "change.preservedRow.vo": "{personSpeech}. {firstFullDate} and {secondFullDate}. Announced dates unchanged.",
+    "change.proposedRow.unchanged.vo": "{personSpeech}. {weekdayList}. Unchanged.",
+    "change.proposedRow.new.vo": "{personSpeech}. {weekdayList}. Proposed from {fullStartDate}.",
+    "schedule.nav": "Schedule",
+    "schedule.title": "The club’s week",
+    "schedule.review": "Review the club’s days",
+    "schedule.review.date": "Proposed from {fullStartDate}",
+    "schedule.review.hint": "Review the proposed week from {fullStartDate}.",
+    "schedule.chooseOwn": "Choose your day",
+    "schedule.chooseOwn.many": "Choose your days",
+    "schedule.localAction": "View local times",
+    "schedule.localAction.hint": "Show dated opening and closing times in {clubZoneName} and {deviceZoneName}.",
+    "local.title": "Times in your time zone",
+    "local.clubZone": "Club time · {clubZoneName}",
+    "local.deviceZone": "Your time · {deviceZoneName}",
+    "local.occasion": "{occasionTitle}",
+    "local.opens": "Opens {fullDate} · {time}",
+    "local.closes": "Closes {fullDate} · {time}",
+    "local.group.vo": "{occasionTitle}. {clubZoneName}: opens {clubOpenFullDateTime}; closes {clubCloseFullDateTime}. {deviceZoneName}: opens {localOpenFullDateTime}; closes {localCloseFullDateTime}.",
+    "proposed.nav": "Members",
+    "proposed.title": "Proposed roster",
+    "proposed.club": "{clubName}",
+    "proposed.body": "These names are a proposal, not an active member list.",
+    "proposed.manage": "Manage invitations",
+    "proposed.manage.hint": "Open your invitation list for {clubName}.",
+    "home.confirm.title": "The club’s days",
+    "home.confirm.body": "The club’s week will appear here after a day is confirmed.",
+    "home.confirm.action.one": "Choose your day",
+    "home.confirm.action.many": "Choose your days",
+    "home.confirm.action.hint": "Review your choices in the proposed week.",
+    "home.upNext": "Up next",
+    "home.occasion": "{occasionTitle}",
+    "home.date": "{fullDate}",
+    "occasion.self": "Your {weekday}",
+    "occasion.named": "{personName}’s {weekday}",
+    "home.localOpening": "Opens {openTime} · {deviceZoneName}",
+    "home.clubOpening": "{openTime} · {clubZoneName}",
+    "home.countdown": "{durationCompact}",
+    "home.countdown.suffix": "until opening",
+    "home.countdown.vo": "{durationSpoken} until opening.",
+    "home.addFor": "Add for {personName}",
+    "home.addFor.hint": "Add to {occasionTitle}, opening {fullDateTime} in {clubZoneName}.",
+    "home.captions": "See captions",
+    "home.captions.hint": "Open captions for {occasionTitle}.",
+    "home.pastTitle": "{occasionTitle} is in Memories",
+    "home.pastDate": "{fullDate}",
+    "home.revisit": "Revisit {occasionTitle}",
+    "home.unavailable.title": "Club unavailable",
+    "home.unavailable.body": "This club isn’t available right now.",
+    "home.help": "Get help",
+    "home.help.hint": "Contact Tadayo support.",
+    "home.lost.title": "This club is no longer available.",
+    "home.lost.body": "Choose a club to continue.",
+    "home.awaiting.title": "Waiting for club confirmation",
+    "home.awaiting.body": "The club starts when another person accepts the same roster.",
+    "home.awaiting.private": "Drafts stay private when the club starts.",
+    "drafts.title": "Private drafts",
+    "drafts.subtitle": "Only you can see these.",
+    "switcher.title": "Your clubs",
+    "switcher.notStarted": "Not started",
+    "switcher.paused": "Paused",
+    "switcher.unavailable": "Unavailable",
+    "switcher.row.vo": "{clubName}. {stateLabel}.",
+    "switcher.row.selected.vo": "{clubName}. {stateLabel}. Selected.",
+    "header.club.vo": "{clubName}",
+    "header.club.hint": "Choose a club.",
+    "a11y.notNow": "Not now",
+    "a11y.localTimes": "View local times",
+    "a11y.addPrivate": "+ Add",
+    "a11y.add": "+ Add",
+    "a11y.add.hint": "Choose a person and day, or save a private draft.",
+    "a11y.addPrivate.hint": "Save a private draft or open private drafts.",
+    "a11y.reviewMembers": "Review members",
+    "a11y.reviewMembers.hint": "Review the proposed roster for {clubName}.",
+    "a11y.viewMemories": "View Memories",
+    "a11y.viewMemories.hint": "Show accessible days in {clubName}.",
+    "a11y.haveInvite": "I have an invite",
+    "a11y.haveInvite.hint": "Open an invitation link.",
+    "a11y.continue": "Continue",
+    "a11y.continue.hint": "Check the invitation link.",
+    "a11y.doneForNow": "Done for now",
+    "a11y.doneForNow.hint": "Leave invitation management.",
+    "a11y.closeInvitation": "Close invitation",
+    "a11y.closeInvitation.hint": "Return to {destinationName}.",
+    "a11y.decline": "Decline {candidateName} joining {clubName}.",
+    "a11y.decline.hint": "No reason is required.",
+    "a11y.approve": "Approve {candidateName} joining {clubName}.",
+    "a11y.drafts": "Private drafts",
+    "a11y.drafts.hint": "Only you can see these.",
+    "loading.label": "Loading Home…",
+    "loading.hint": "For {clubName}.",
+    "friends.date": "{fullDate} · {openTime}",
+    "friends.date.travelling": "{fullDate} · {localOpenTime} · {deviceZoneName}",
+    "friends.date.club": "{clubOpenTime} · {clubZoneName}",
+    "friends.row.vo": "{personSpeech}. {nextUpText}{fullDateTime}, {clubZoneName}.",
+    "friends.row.travelling.vo": "{personSpeech}. {nextUpText}{localFullDateTime}, {deviceZoneName}; {clubFullDateTime}, {clubZoneName}.",
+    "friends.nextUp.vo": "Next up. ",
+    "friends.row.hint": "Open {occasionTitle}.",
+    "upcoming.title": "{occasionTitle}",
+    "upcoming.local": "Opens {fullDate} · {localOpenTime} · {deviceZoneName}",
+    "upcoming.club": "{clubOpenFullDate} · {clubOpenTime} · {clubZoneName}",
+    "members.footer.hours": "{openTime} to {closeTime} the next morning.",
+    "card.status": "Opens {fullDate} · {openTime}",
+    "card.status.vo": "Opens {fullDateTime}, {clubZoneName}. Hidden content.",
+    "card.status.travelling": "Opens {localFullDate} · {localOpenTime} · {deviceZoneName}",
+    "card.status.club": "{clubFullDate} · {clubOpenTime} · {clubZoneName}",
+    "card.status.travelling.vo": "Opens {localFullDateTime}, {deviceZoneName}; {clubFullDateTime}, {clubZoneName}. Hidden content.",
+    "card.caption.example": "Your future living room.",
+    "paused.body": "{clubName} needs another member for new days.",
+    "paused.details.invite": "Invite someone",
+    "paused.details.invite.hint": "Propose a new member for {clubName}.",
+    "paused.private": "Private draft",
+    "paused.openDrafts": "Open my drafts",
+    "examples": {
+      "calendar.clubZone": {
+        "parameters": {
+          "clubName": "Sunday people",
+          "clubZoneName": "New York"
+        },
+        "text": "Sunday people · New York"
+      },
+      "calendar.hours": {
+        "parameters": {
+          "openTime": "7 AM",
+          "closeTime": "1 AM"
+        },
+        "text": "7 AM to 1 AM the next morning"
+      },
+      "calendar.contested.explanation": {
+        "parameters": {
+          "chooserSentenceList": "You and Debby",
+          "weekday": "Friday"
+        },
+        "text": "You and Debby chose Friday."
+      },
+      "calendar.row.contested.vo": {
+        "parameters": {
+          "weekday": "Friday",
+          "chooserSpeech": "Ben, you. Debby."
+        },
+        "text": "Friday. Contested. Ben, you. Debby. Your choice."
+      },
+      "calendar.publicContested.vo": {
+        "parameters": {
+          "weekday": "Friday"
+        },
+        "text": "Friday. Contested. No reveal scheduled."
+      },
+      "change.startDate": {
+        "parameters": {
+          "fullStartDate": "Monday, November 16, 2026"
+        },
+        "text": "Monday, November 16, 2026"
+      },
+      "friends.date": {
+        "parameters": {
+          "fullDate": "Monday, November 9",
+          "openTime": "7 AM"
+        },
+        "text": "Monday, November 9 · 7 AM"
+      },
+      "card.status": {
+        "parameters": {
+          "fullDate": "Friday, November 13, 2026",
+          "openTime": "7 AM"
+        },
+        "text": "Opens Friday, November 13, 2026 · 7 AM"
+      },
+      "a11y.decline": {
+        "parameters": {
+          "candidateName": "Leila",
+          "clubName": "Kitchen table"
+        },
+        "text": "Decline Leila joining Kitchen table."
+      },
+      "calendar.person.self": {
+        "parameters": {
+          "personName": "Ben"
+        },
+        "text": "Ben · You"
+      },
+      "home.localOpening": {
+        "parameters": {
+          "openTime": "12 PM",
+          "deviceZoneName": "London"
+        },
+        "text": "Opens 12 PM · London"
+      },
+      "home.clubOpening": {
+        "parameters": {
+          "openTime": "7 AM",
+          "clubZoneName": "New York"
+        },
+        "text": "7 AM · New York"
+      },
+      "friends.date.travelling": {
+        "parameters": {
+          "fullDate": "Saturday, November 7",
+          "localOpenTime": "12 PM",
+          "deviceZoneName": "London"
+        },
+        "text": "Saturday, November 7 · 12 PM · London"
+      },
+      "friends.date.club": {
+        "parameters": {
+          "clubOpenTime": "7 AM",
+          "clubZoneName": "New York"
+        },
+        "text": "7 AM · New York"
+      },
+      "upcoming.local": {
+        "parameters": {
+          "fullDate": "Saturday, November 7, 2026",
+          "localOpenTime": "12 PM",
+          "deviceZoneName": "London"
+        },
+        "text": "Opens Saturday, November 7, 2026 · 12 PM · London"
+      },
+      "upcoming.club": {
+        "parameters": {
+          "clubOpenFullDate": "Saturday, November 7, 2026",
+          "clubOpenTime": "7 AM",
+          "clubZoneName": "New York"
+        },
+        "text": "Saturday, November 7, 2026 · 7 AM · New York"
+      }
+    },
+    "replaces": {
+      "handoff3.G04.conflict.clubZone": "handoff5.calendar.clubZone",
+      "handoff3.G05.schedule.hours": "handoff5.calendar.hours",
+      "handoff3.G05.schedule.revealHoursZone": "handoff5.calendar.hoursZone",
+      "handoff3.G05.schedule.hoursVO": "handoff5.calendar.hours.vo",
+      "handoff3.G04.conflict.status": "handoff5.calendar.state.contested",
+      "handoff3.G04.conflict.explanation": "handoff5.calendar.contested.explanation",
+      "handoff3.G04.conflict.help": "handoff5.calendar.contested.help",
+      "handoff3.G04.conflict.monday": "handoff5.calendar.earlierSelfProposal",
+      "handoff3.G04.conflict.otherFriday": "handoff5.calendar.publicContested",
+      "handoff3.G05.schedule.sunday": "handoff5.calendar.sunday.title",
+      "handoff3.G05.schedule.sundayDetail": "handoff5.calendar.sunday.detail",
+      "handoff3.G04.conflict.notNow.vo": "handoff5.a11y.notNow",
+      "handoff3.G05.schedule.localAction.vo": "handoff5.a11y.localTimes",
+      "handoff3.header.addPrivate.vo": "handoff5.a11y.addPrivate",
+      "handoff4.noClub.add.vo": "handoff5.a11y.addPrivate",
+      "handoff3.header.add.vo": "handoff5.a11y.add",
+      "handoff3.H01.awaiting.action.vo": "handoff5.a11y.reviewMembers",
+      "handoff4.pending.primary.vo": "handoff5.a11y.reviewMembers",
+      "handoff3.H01.paused.action.vo": "handoff5.a11y.viewMemories",
+      "handoff4.noClub.invite.vo": "handoff5.a11y.haveInvite",
+      "handoff4.link.continue.vo": "handoff5.a11y.continue",
+      "handoff4.invite.done.vo": "handoff5.a11y.doneForNow",
+      "handoff4.unavailable.primary.vo": "handoff5.a11y.closeInvitation",
+      "handoff4.approval.decline.vo": "handoff5.a11y.decline",
+      "handoff4.approval.primary.vo": "handoff5.a11y.approve",
+      "handoff3.drafts.vo": "handoff5.a11y.drafts",
+      "handoff4.drafts.vo": "handoff5.a11y.drafts",
+      "handoff3.header.clubSelector.vo": "handoff5.header.club.vo",
+      "handoff3.H01.loading.vo": "handoff5.loading.label",
+      "handoff3.H01.loading.visible": "handoff5.loading.label",
+      "handoff3.H01.loading.sundayVO": "handoff5.loading.label",
+      "handoff4.members.footer.hours": "handoff5.members.footer.hours",
+      "handoff4.sheet.card.status": "handoff5.card.status",
+      "handoff3.H01.paused.body": "handoff5.paused.body",
+      "handoff3.G05.schedule.vo.Monday": "handoff5.schedule.row.vo",
+      "handoff3.G04.change.vo.Monday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Monday": "handoff5.calendar.row.earlierSelf.vo",
+      "handoff3.G05.schedule.vo.Tuesday": "handoff5.schedule.row.vo",
+      "handoff3.G04.change.vo.Tuesday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Tuesday": "handoff5.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Wednesday": "handoff5.schedule.row.vo",
+      "handoff3.G04.change.vo.Wednesday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Wednesday": "handoff5.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Thursday": "handoff5.schedule.row.vo",
+      "handoff3.G04.change.vo.Thursday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Thursday": "handoff5.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Friday": "handoff5.schedule.row.vo",
+      "handoff3.G04.change.vo.Friday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Friday": "handoff5.calendar.row.contested.vo",
+      "handoff3.G05.schedule.vo.Saturday": "handoff5.schedule.row.vo",
+      "handoff3.G04.change.vo.Saturday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Saturday": "handoff5.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Sunday": "handoff5.calendar.sunday.vo",
+      "handoff3.G04.change.vo.Sunday": "handoff5.calendar.sunday.vo",
+      "handoff3.G04.conflict.vo.Sunday": "handoff5.calendar.sunday.vo",
+      "handoff3.F01.date.Ben": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Ben": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Maya": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Maya": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Alex": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Alex": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Sam": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Sam": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Debby": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Debby": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Nina": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Nina": "handoff5.friends.row.vo",
+      "handoff3.G04.change.preserved.vo.Monday": "handoff5.change.preservedRow.vo",
+      "handoff3.G04.change.preserved.vo.Thursday": "handoff5.change.preservedRow.vo",
+      "handoff3.G04.change.preserved.vo.Tuesday": "handoff5.change.preservedRow.vo",
+      "handoff3.G04.change.preserved.vo.Friday": "handoff5.change.preservedRow.vo"
+    },
+    "provenance": {
+      "common.back": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.done": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.notNow": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.add": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.account": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.chooseClub": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.clubDetails": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.createClub": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "common.cancel": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.nav.one": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.nav.many": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.title.one": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.title.many": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.clubZone": {
+        "replaces": [
+          "handoff3.G04.conflict.clubZone"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.peopleZone": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.hours": {
+        "replaces": [
+          "handoff3.G05.schedule.hours"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.hoursZone": {
+        "replaces": [
+          "handoff3.G05.schedule.revealHoursZone"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.hours.vo": {
+        "replaces": [
+          "handoff3.G05.schedule.hoursVO"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.one.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.many.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.choice.help": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.contested.explanation": {
+        "replaces": [
+          "handoff3.G04.conflict.explanation"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.contested.help": {
+        "replaces": [
+          "handoff3.G04.conflict.help"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.state.available": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.state.proposed": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.state.confirmed": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.state.own": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.state.contested": {
+        "replaces": [
+          "handoff3.G04.conflict.status"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.earlierSelfProposal": {
+        "replaces": [
+          "handoff3.G04.conflict.monday"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.person.self": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.person.other": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.person.self.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.person.other.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.confirm": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.confirm.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.confirm.contested.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.notNow.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.row.available.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.row.earlierSelf.vo": {
+        "replaces": [
+          "handoff3.G04.conflict.vo.Monday"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.row.proposed.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.row.confirmed.vo": {
+        "replaces": [
+          "handoff3.G04.conflict.vo.Tuesday",
+          "handoff3.G04.conflict.vo.Wednesday",
+          "handoff3.G04.conflict.vo.Thursday",
+          "handoff3.G04.conflict.vo.Saturday"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.row.own.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.row.contested.vo": {
+        "replaces": [
+          "handoff3.G04.conflict.vo.Friday"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.row.choose.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.publicContested": {
+        "replaces": [
+          "handoff3.G04.conflict.otherFriday"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.publicContested.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.noReveal": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.emptyRow.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.sunday.title": {
+        "replaces": [
+          "handoff3.G05.schedule.sunday"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.sunday.detail": {
+        "replaces": [
+          "handoff3.G05.schedule.sundayDetail"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.sunday.vo": {
+        "replaces": [
+          "handoff3.G05.schedule.vo.Sunday",
+          "handoff3.G04.change.vo.Sunday",
+          "handoff3.G04.conflict.vo.Sunday"
+        ],
+        "kind": "replacement"
+      },
+      "calendar.confirmed.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.confirmed.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.confirmed.title.many": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "calendar.week.assigned.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.row.vo": {
+        "replaces": [
+          "handoff3.G05.schedule.vo.Monday",
+          "handoff3.G05.schedule.vo.Tuesday",
+          "handoff3.G05.schedule.vo.Wednesday",
+          "handoff3.G05.schedule.vo.Thursday",
+          "handoff3.G05.schedule.vo.Friday",
+          "handoff3.G05.schedule.vo.Saturday"
+        ],
+        "kind": "replacement"
+      },
+      "change.nav": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.subtitle": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.proposedStart": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.startDate": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.reason": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.before": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.after": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.keptDates": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.unchangedDays": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.newDays": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.pending": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.confirm": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.confirm.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "change.preservedRow.vo": {
+        "replaces": [
+          "handoff3.G04.change.preserved.vo.Monday",
+          "handoff3.G04.change.preserved.vo.Thursday",
+          "handoff3.G04.change.preserved.vo.Tuesday",
+          "handoff3.G04.change.preserved.vo.Friday"
+        ],
+        "kind": "replacement"
+      },
+      "change.proposedRow.unchanged.vo": {
+        "replaces": [
+          "handoff3.G04.change.vo.Monday",
+          "handoff3.G04.change.vo.Tuesday",
+          "handoff3.G04.change.vo.Wednesday",
+          "handoff3.G04.change.vo.Thursday",
+          "handoff3.G04.change.vo.Friday",
+          "handoff3.G04.change.vo.Saturday"
+        ],
+        "kind": "replacement"
+      },
+      "change.proposedRow.new.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.nav": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.review": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.review.date": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.review.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.chooseOwn": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.chooseOwn.many": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.localAction": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "schedule.localAction.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "local.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "local.clubZone": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "local.deviceZone": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "local.occasion": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "local.opens": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "local.closes": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "local.group.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "proposed.nav": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "proposed.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "proposed.club": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "proposed.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "proposed.manage": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "proposed.manage.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.confirm.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.confirm.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.confirm.action.one": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.confirm.action.many": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.confirm.action.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.upNext": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.occasion": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.date": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "occasion.self": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "occasion.named": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.localOpening": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.clubOpening": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.countdown": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.countdown.suffix": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.countdown.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.addFor": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.addFor.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.captions": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.captions.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.pastTitle": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.pastDate": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.revisit": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.unavailable.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.unavailable.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.help": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.help.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.lost.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.lost.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.awaiting.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.awaiting.body": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "home.awaiting.private": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "drafts.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "drafts.subtitle": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "switcher.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "switcher.notStarted": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "switcher.paused": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "switcher.unavailable": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "switcher.row.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "switcher.row.selected.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "header.club.vo": {
+        "replaces": [
+          "handoff3.header.clubSelector.vo"
+        ],
+        "kind": "replacement"
+      },
+      "header.club.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.notNow": {
+        "replaces": [
+          "handoff3.G04.conflict.notNow.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.localTimes": {
+        "replaces": [
+          "handoff3.G05.schedule.localAction.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.addPrivate": {
+        "replaces": [
+          "handoff3.header.addPrivate.vo",
+          "handoff4.noClub.add.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.add": {
+        "replaces": [
+          "handoff3.header.add.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.add.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.addPrivate.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.reviewMembers": {
+        "replaces": [
+          "handoff3.H01.awaiting.action.vo",
+          "handoff4.pending.primary.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.reviewMembers.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.viewMemories": {
+        "replaces": [
+          "handoff3.H01.paused.action.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.viewMemories.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.haveInvite": {
+        "replaces": [
+          "handoff4.noClub.invite.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.haveInvite.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.continue": {
+        "replaces": [
+          "handoff4.link.continue.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.continue.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.doneForNow": {
+        "replaces": [
+          "handoff4.invite.done.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.doneForNow.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.closeInvitation": {
+        "replaces": [
+          "handoff4.unavailable.primary.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.closeInvitation.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.decline": {
+        "replaces": [
+          "handoff4.approval.decline.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.decline.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "a11y.approve": {
+        "replaces": [
+          "handoff4.approval.primary.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.drafts": {
+        "replaces": [
+          "handoff3.drafts.vo",
+          "handoff4.drafts.vo"
+        ],
+        "kind": "replacement"
+      },
+      "a11y.drafts.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "loading.label": {
+        "replaces": [
+          "handoff3.H01.loading.vo",
+          "handoff3.H01.loading.visible",
+          "handoff3.H01.loading.sundayVO"
+        ],
+        "kind": "replacement"
+      },
+      "loading.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "friends.date": {
+        "replaces": [
+          "handoff3.F01.date.Ben",
+          "handoff3.F01.date.Maya",
+          "handoff3.F01.date.Alex",
+          "handoff3.F01.date.Sam",
+          "handoff3.F01.date.Debby",
+          "handoff3.F01.date.Nina"
+        ],
+        "kind": "replacement"
+      },
+      "friends.date.travelling": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "friends.date.club": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "friends.row.vo": {
+        "replaces": [
+          "handoff3.F01.row.vo.Ben",
+          "handoff3.F01.row.vo.Maya",
+          "handoff3.F01.row.vo.Alex",
+          "handoff3.F01.row.vo.Sam",
+          "handoff3.F01.row.vo.Debby",
+          "handoff3.F01.row.vo.Nina"
+        ],
+        "kind": "replacement"
+      },
+      "friends.row.travelling.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "friends.nextUp.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "friends.row.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "upcoming.title": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "upcoming.local": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "upcoming.club": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "members.footer.hours": {
+        "replaces": [
+          "handoff4.members.footer.hours"
+        ],
+        "kind": "replacement"
+      },
+      "card.status": {
+        "replaces": [
+          "handoff4.sheet.card.status"
+        ],
+        "kind": "replacement"
+      },
+      "card.status.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "card.status.travelling": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "card.status.club": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "card.status.travelling.vo": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "card.caption.example": {
+        "replaces": [],
+        "kind": "example"
+      },
+      "paused.body": {
+        "replaces": [
+          "handoff3.H01.paused.body"
+        ],
+        "kind": "replacement"
+      },
+      "paused.details.invite": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "paused.details.invite.hint": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "paused.private": {
+        "replaces": [],
+        "kind": "new"
+      },
+      "paused.openDrafts": {
+        "replaces": [],
+        "kind": "new"
+      }
+    }
+  },
+  "handoff6": {
+    "home.confirm.body": "Your club’s next scheduled day will appear here.",
+    "home.upNext": "Next up",
+    "occasion.self.inSentence": "your {weekday}",
+    "calendar.context.zoneOnly": "{clubZoneName}",
+    "calendar.one.body": "Choose a day that works for you, then confirm.",
+    "calendar.earlierSelfProposal": "Proposed for you",
+    "calendar.row.earlierSelf.vo": "{weekday}. Available. Proposed for you.",
+    "calendar.row.available.vo": "{weekday}. Available.",
+    "calendar.row.confirmed.vo": "{weekday}. {personSpeech}. Confirmed. Taken.",
+    "calendar.row.ownConfirmed.vo": "{weekday}. {personSpeech}. Confirmed.",
+    "calendar.row.own.hint": "Remove {weekday} from your choices.",
+    "calendar.row.own.one.hint": "Your current choice. Choose another day to change it.",
+    "calendar.row.contested.hint": "Your current choice is contested. Choose another day to change it.",
+    "calendar.row.contestedOther.vo": "{weekday}. Contested. No reveal scheduled. Can be chosen.",
+    "calendar.row.contestedOther.hint": "Choose {weekday}. You’ll then see the people in this contested choice.",
+    "calendar.contested.explanation": "The proposed days overlap on {weekday}.",
+    "calendar.contested.people": "{chooserNameList}",
+    "calendar.contested.refused": "Couldn’t confirm {weekday}. This day is contested. Your choice is kept.",
+    "calendar.confirm.contested.hint": "This day is contested. Confirmation is not possible yet.",
+    "calendar.confirm.incomplete": "Confirm two days",
+    "calendar.confirm.incomplete.hint": "Choose two days before confirming.",
+    "calendar.confirmed.own.title": "Your days are confirmed.",
+    "calendar.week.assigned.vo": "{weekday}. {personSpeech}. Confirmed.",
+    "calendar.publicContested": "Contested\nNo reveal scheduled",
+    "change.notNow.hint": "Leave this proposal without confirming it.",
+    "change.keptDates": "{dateList}",
+    "change.preservedRow.vo": "{personSpeech}. {spokenDateList}. Announced dates unchanged.",
+    "change.review.confirmed": "Your confirmation is saved.",
+    "schedule.localAction.hint": "Show dated opening and closing times in {zoneList}.",
+    "schedule.localAction.sameZone.hint": "Show dated opening and closing times in {clubZoneName}.",
+    "local.sameZone": "Club and your time · {clubZoneName}",
+    "local.group.sameZone.vo": "{occasionTitle}. {clubZoneName}. Opens {openFullDateTime}. Closes {closeFullDateTime}.",
+    "local.open": "Open now",
+    "friends.title": "Friends",
+    "friends.subtitle": "Choose who it’s for.",
+    "friends.schedule": "See schedule",
+    "friends.schedule.hint": "Open the club’s week.",
+    "friends.row.noDate.vo": "{personSpeech}.",
+    "friends.row.noDate.hint": "",
+    "friends.date.club.dated": "{clubFullDate} · {clubOpenTime} · {clubZoneName}",
+    "home.localOpening.dated": "Opens {localFullDate} · {localOpenTime} · {deviceZoneName}",
+    "home.clubOpening.dated": "{clubFullDate} · {clubOpenTime} · {clubZoneName}",
+    "home.countdown.vo": "Opens {fullDateTime}, {clubZoneName}.",
+    "home.countdown.travelling.vo": "Opens {localFullDateTime}, {deviceZoneName}; {clubFullDateTime}, {clubZoneName}.",
+    "home.waiting.group.vo": "{occasionTitle}. Opens {fullDateTime}, {clubZoneName}.",
+    "home.waiting.travelling.group.vo": "{occasionTitle}. Opens {localFullDateTime}, {deviceZoneName}; {clubFullDateTime}, {clubZoneName}.",
+    "home.addFor.travelling.hint": "Add to {occasionInSentence}, opening {localFullDateTime} in {deviceZoneName}; {clubFullDateTime} in {clubZoneName}.",
+    "home.addFor.hint": "Add to {occasionInSentence}, opening {fullDateTime} in {clubZoneName}.",
+    "home.captions.hint": "Open captions for {occasionInSentence}.",
+    "home.revisit": "Revisit {occasionInSentence}",
+    "friends.row.hint": "Open {occasionInSentence}.",
+    "switcher.row.selected.vo": "{clubName}. {stateLabel}.",
+    "switcher.active.row": "{memberCountText} · Next: {personName}",
+    "switcher.active.row.vo": "{clubName}. {memberCountText}. Next: {personName}.",
+    "a11y.viewMemories.hint": "Show past days you can view in {clubName}.",
+    "paused.details.vo": "Club details",
+    "paused.details.hint": "Open details for {clubName}.",
+    "denied.group.vo": "{titleText}. {bodyText}",
+    "details.members.subtitle": "New members need everyone’s approval",
+    "details.notifications.subtitle": "Preferences for this club",
+    "details.widget.subtitle": "Preview and setup",
+    "local.openStatus.vo": "{openStatus}. {occurrenceDetails}",
+    "details.title": "Club details",
+    "details.members": "Members",
+    "details.schedule": "Schedule",
+    "details.notifications": "Notifications",
+    "details.widget": "Widget",
+    "details.drafts": "Private drafts",
+    "details.leave": "Leave club",
+    "details.footer": "{memberCountText} · {clubZoneName}",
+    "details.footer.zoneOmitted": "{memberCountText}",
+    "details.memberCount.one": "{memberCount} member",
+    "details.memberCount.other": "{memberCount} members",
+    "details.row.hint": "Open {sectionName} for {clubName}.",
+    "details.drafts.hint": "Only you can see these.",
+    "details.leave.hint": "Review leaving {clubName}.",
+    "summary.done.hint": "Return to the screen where you opened day confirmation.",
+    "calendar.confirm.vo": "Confirm {weekdayList}",
+    "calendar.confirmedTaken.hint": "This day is already confirmed and can’t be chosen.",
+    "change.before": "Current days through {fullLastDate}",
+    "calendar.assigned": "{personName} · Confirmed",
+    "header.denied.brand": "Tadayo",
+    "home.countdown.long": "{dayCount}d {hourCount}h {minuteCount}m",
+    "replaces": {
+      "handoff5.home.confirm.body": "handoff6.home.confirm.body",
+      "handoff5.home.upNext": "handoff6.home.upNext",
+      "handoff5.calendar.one.body": "handoff6.calendar.one.body",
+      "handoff5.calendar.earlierSelfProposal": "handoff6.calendar.earlierSelfProposal",
+      "handoff5.calendar.row.earlierSelf.vo": "handoff6.calendar.row.earlierSelf.vo",
+      "handoff5.calendar.row.available.vo": "handoff6.calendar.row.available.vo",
+      "handoff5.calendar.row.confirmed.vo": "handoff6.calendar.row.confirmed.vo",
+      "handoff5.calendar.contested.explanation": "handoff6.calendar.contested.explanation",
+      "handoff5.calendar.confirm.contested.hint": "handoff6.calendar.confirm.contested.hint",
+      "handoff5.calendar.week.assigned.vo": "handoff6.calendar.week.assigned.vo",
+      "handoff5.calendar.publicContested": "handoff6.calendar.publicContested",
+      "handoff5.change.keptDates": "handoff6.change.keptDates",
+      "handoff5.change.preservedRow.vo": "handoff6.change.preservedRow.vo",
+      "handoff5.schedule.localAction.hint": "handoff6.schedule.localAction.hint",
+      "handoff5.home.countdown.vo": "handoff6.home.countdown.vo",
+      "handoff5.home.addFor.hint": "handoff6.home.addFor.hint",
+      "handoff5.home.captions.hint": "handoff6.home.captions.hint",
+      "handoff5.home.revisit": "handoff6.home.revisit",
+      "handoff5.friends.row.hint": "handoff6.friends.row.hint",
+      "handoff5.switcher.row.selected.vo": "handoff6.switcher.row.selected.vo",
+      "handoff5.a11y.viewMemories.hint": "handoff6.a11y.viewMemories.hint",
+      "handoff5.change.before": "handoff6.change.before",
+      "handoff5.calendar.peopleZone": "handoff5.calendar.clubZone",
+      "handoff5.schedule.row.vo": "handoff6.calendar.week.assigned.vo",
+      "handoff3.G04.conflict.clubZone": "handoff5.calendar.clubZone",
+      "handoff3.G05.schedule.hours": "handoff5.calendar.hours",
+      "handoff3.G05.schedule.revealHoursZone": "handoff5.calendar.hoursZone",
+      "handoff3.G05.schedule.hoursVO": "handoff5.calendar.hours.vo",
+      "handoff3.G04.conflict.status": "handoff5.calendar.state.contested",
+      "handoff3.G04.conflict.explanation": "handoff6.calendar.contested.explanation",
+      "handoff3.G04.conflict.help": "handoff5.calendar.contested.help",
+      "handoff3.G04.conflict.monday": "handoff6.calendar.earlierSelfProposal",
+      "handoff3.G04.conflict.otherFriday": "handoff6.calendar.publicContested",
+      "handoff3.G05.schedule.sunday": "handoff5.calendar.sunday.title",
+      "handoff3.G05.schedule.sundayDetail": "handoff5.calendar.sunday.detail",
+      "handoff3.G04.conflict.notNow.vo": "handoff5.a11y.notNow",
+      "handoff3.G05.schedule.localAction.vo": "handoff5.a11y.localTimes",
+      "handoff3.header.addPrivate.vo": "handoff5.a11y.addPrivate",
+      "handoff4.noClub.add.vo": "handoff5.a11y.addPrivate",
+      "handoff3.header.add.vo": "handoff5.a11y.add",
+      "handoff3.H01.awaiting.action.vo": "handoff5.a11y.reviewMembers",
+      "handoff4.pending.primary.vo": "handoff5.a11y.reviewMembers",
+      "handoff3.H01.paused.action.vo": "handoff5.a11y.viewMemories",
+      "handoff4.noClub.invite.vo": "handoff5.a11y.haveInvite",
+      "handoff4.link.continue.vo": "handoff5.a11y.continue",
+      "handoff4.invite.done.vo": "handoff5.a11y.doneForNow",
+      "handoff4.unavailable.primary.vo": "handoff5.a11y.closeInvitation",
+      "handoff4.approval.decline.vo": "handoff5.a11y.decline",
+      "handoff4.approval.primary.vo": "handoff5.a11y.approve",
+      "handoff3.drafts.vo": "handoff5.a11y.drafts",
+      "handoff4.drafts.vo": "handoff5.a11y.drafts",
+      "handoff3.header.clubSelector.vo": "handoff5.header.club.vo",
+      "handoff3.H01.loading.vo": "handoff5.loading.label",
+      "handoff3.H01.loading.visible": "handoff5.loading.label",
+      "handoff3.H01.loading.sundayVO": "handoff5.loading.label",
+      "handoff4.members.footer.hours": "handoff5.members.footer.hours",
+      "handoff4.sheet.card.status": "handoff5.card.status",
+      "handoff3.H01.paused.body": "handoff5.paused.body",
+      "handoff3.G05.schedule.vo.Monday": "handoff6.calendar.week.assigned.vo",
+      "handoff3.G04.change.vo.Monday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Monday": "handoff6.calendar.row.earlierSelf.vo",
+      "handoff3.G05.schedule.vo.Tuesday": "handoff6.calendar.week.assigned.vo",
+      "handoff3.G04.change.vo.Tuesday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Tuesday": "handoff6.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Wednesday": "handoff6.calendar.week.assigned.vo",
+      "handoff3.G04.change.vo.Wednesday": "handoff5.change.proposedRow.new.vo",
+      "handoff3.G04.conflict.vo.Wednesday": "handoff6.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Thursday": "handoff6.calendar.week.assigned.vo",
+      "handoff3.G04.change.vo.Thursday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Thursday": "handoff6.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Friday": "handoff6.calendar.week.assigned.vo",
+      "handoff3.G04.change.vo.Friday": "handoff5.change.proposedRow.unchanged.vo",
+      "handoff3.G04.conflict.vo.Friday": "handoff5.calendar.row.contested.vo",
+      "handoff3.G05.schedule.vo.Saturday": "handoff6.calendar.week.assigned.vo",
+      "handoff3.G04.change.vo.Saturday": "handoff5.change.proposedRow.new.vo",
+      "handoff3.G04.conflict.vo.Saturday": "handoff6.calendar.row.confirmed.vo",
+      "handoff3.G05.schedule.vo.Sunday": "handoff5.calendar.sunday.vo",
+      "handoff3.G04.change.vo.Sunday": "handoff5.calendar.sunday.vo",
+      "handoff3.G04.conflict.vo.Sunday": "handoff5.calendar.sunday.vo",
+      "handoff3.F01.date.Ben": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Ben": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Maya": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Maya": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Alex": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Alex": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Sam": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Sam": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Debby": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Debby": "handoff5.friends.row.vo",
+      "handoff3.F01.date.Nina": "handoff5.friends.date",
+      "handoff3.F01.row.vo.Nina": "handoff5.friends.row.vo",
+      "handoff3.G04.change.preserved.vo.Monday": "handoff6.change.preservedRow.vo",
+      "handoff3.G04.change.preserved.vo.Thursday": "handoff6.change.preservedRow.vo",
+      "handoff3.G04.change.preserved.vo.Tuesday": "handoff6.change.preservedRow.vo",
+      "handoff3.G04.change.preserved.vo.Friday": "handoff6.change.preservedRow.vo",
+      "handoff3.G04.conflict.confirm.vo": "handoff6.calendar.confirm.vo",
+      "handoff3.G04.conflict.friday.hint": "handoff6.calendar.row.contested.hint",
+      "handoff3.G04.conflict.assigned": "handoff6.calendar.assigned",
+      "handoff3.G04.conflict.fridayPeople": "handoff6.calendar.contested.people",
+      "handoff3.G04.conflict.nav": "handoff5.calendar.nav.one",
+      "handoff3.G04.conflict.title": "handoff5.calendar.title.one",
+      "handoff3.G04.conflict.confirm": "handoff5.calendar.confirm",
+      "handoff3.G04.conflict.confirmMonday": "handoff5.calendar.confirm",
+      "handoff3.G04.conflict.confirmMonday.vo": "handoff6.calendar.confirm.vo",
+      "handoff3.G04.conflict.confirmedSelf": "handoff5.calendar.confirmed.title",
+      "handoff3.G04.conflict.confirmedBody": "handoff5.calendar.confirmed.body",
+      "handoff3.G04.conflict.otherMonday": "handoff5.calendar.noReveal",
+      "handoff3.G04.change.nav": "handoff5.change.nav",
+      "handoff3.G04.change.title": "handoff5.change.title",
+      "handoff3.G04.change.unchanged": "handoff5.change.subtitle",
+      "handoff3.G04.change.startLabel": "handoff5.change.proposedStart",
+      "handoff3.G04.change.startDate": "handoff5.change.startDate",
+      "handoff3.G04.change.reason": "handoff5.change.reason",
+      "handoff3.G04.change.before": "handoff6.change.before",
+      "handoff3.G04.change.after": "handoff5.change.after",
+      "handoff3.G04.change.pending": "handoff5.change.pending",
+      "handoff3.G04.change.confirm": "handoff5.change.confirm",
+      "handoff3.G04.change.confirm.vo": "handoff5.change.confirm",
+      "handoff3.G04.change.benBefore": "handoff6.change.keptDates",
+      "handoff3.G04.change.debbyBefore": "handoff6.change.keptDates",
+      "handoff3.G04.change.benAfter": "handoff5.change.unchangedDays",
+      "handoff3.G04.change.debbyAfter": "handoff5.change.unchangedDays",
+      "handoff3.G04.change.mayaAfter": "handoff5.change.newDays",
+      "handoff3.G04.change.reviewRow": "handoff5.schedule.review",
+      "handoff3.G04.change.reviewDate": "handoff5.schedule.review.date",
+      "handoff3.G05.proposed.title": "handoff5.proposed.title",
+      "handoff3.G05.proposed.body": "handoff5.proposed.body",
+      "handoff3.G05.proposed.manage": "handoff5.proposed.manage",
+      "handoff3.H01.unavailable.choose.vo": "handoff5.common.chooseClub",
+      "handoff3.H01.paused.details.vo": "handoff6.paused.details.vo",
+      "handoff3.H01.suspended.title": "handoff5.home.unavailable.title",
+      "handoff3.H01.suspended.body": "handoff5.home.unavailable.body",
+      "handoff3.H01.suspended.action": "handoff5.common.chooseClub",
+      "handoff3.H01.suspended.help": "handoff5.home.help",
+      "handoff3.H01.suspended.vo": "handoff6.denied.group.vo",
+      "handoff3.H01.accessLost.title": "handoff5.home.lost.title",
+      "handoff3.H01.accessLost.body": "handoff5.home.lost.body",
+      "handoff3.H01.accessLost.action": "handoff5.common.chooseClub",
+      "handoff3.switcher.awaiting": "handoff5.switcher.notStarted",
+      "handoff3.switcher.paused": "handoff5.switcher.paused",
+      "handoff3.switcher.awaiting.vo": "handoff5.switcher.row.vo",
+      "handoff3.switcher.paused.vo": "handoff5.switcher.row.vo",
+      "handoff3.switcher.unavailable.vo": "handoff5.switcher.row.vo"
+    },
+    "examples": {
+      "threeWay": {
+        "template": "handoff6.calendar.contested.people",
+        "parameters": {
+          "chooserNameList": "Ben · You, Alex and Debby"
+        },
+        "value": "Ben · You, Alex and Debby"
+      },
+      "keptDates": {
+        "template": "handoff6.change.keptDates",
+        "parameters": {
+          "dateList": "Monday, November 9 · Thursday, November 12"
+        },
+        "value": "Monday, November 9 · Thursday, November 12"
+      },
+      "midSentenceSelf": {
+        "template": "handoff6.home.revisit",
+        "parameters": {
+          "occasionInSentence": "your Monday"
+        },
+        "value": "Revisit your Monday"
+      },
+      "longCountdown": {
+        "template": "handoff6.home.countdown.long",
+        "parameters": {
+          "dayCount": 1,
+          "hourCount": 5,
+          "minuteCount": 59
+        },
+        "value": "1d 5h 59m"
+      }
+    },
+    "precedence": "Resolve handoff6.replaces before handoff5.replaces; retain every historical key unchanged. A target string may be the label while its separate hint is selected by the component contract.",
+    "provenance": {
+      "home.confirm.body": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.home.confirm.body"
+        ]
+      },
+      "home.upNext": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.home.upNext"
+        ]
+      },
+      "occasion.self.inSentence": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.context.zoneOnly": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.one.body": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.one.body"
+        ]
+      },
+      "calendar.earlierSelfProposal": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.earlierSelfProposal",
+          "handoff3.G04.conflict.monday"
+        ]
+      },
+      "calendar.row.earlierSelf.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.row.earlierSelf.vo",
+          "handoff3.G04.conflict.vo.Monday"
+        ]
+      },
+      "calendar.row.available.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.row.available.vo"
+        ]
+      },
+      "calendar.row.confirmed.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.row.confirmed.vo",
+          "handoff3.G04.conflict.vo.Tuesday",
+          "handoff3.G04.conflict.vo.Wednesday",
+          "handoff3.G04.conflict.vo.Thursday",
+          "handoff3.G04.conflict.vo.Saturday"
+        ]
+      },
+      "calendar.row.ownConfirmed.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.row.own.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.row.own.one.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.row.contested.hint": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff3.G04.conflict.friday.hint"
+        ]
+      },
+      "calendar.row.contestedOther.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.row.contestedOther.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.contested.explanation": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.contested.explanation",
+          "handoff3.G04.conflict.explanation"
+        ]
+      },
+      "calendar.contested.people": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff3.G04.conflict.fridayPeople"
+        ]
+      },
+      "calendar.contested.refused": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.confirm.contested.hint": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.confirm.contested.hint"
+        ]
+      },
+      "calendar.confirm.incomplete": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.confirm.incomplete.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.confirmed.own.title": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.week.assigned.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.week.assigned.vo",
+          "handoff5.schedule.row.vo",
+          "handoff3.G05.schedule.vo.Monday",
+          "handoff3.G05.schedule.vo.Tuesday",
+          "handoff3.G05.schedule.vo.Wednesday",
+          "handoff3.G05.schedule.vo.Thursday",
+          "handoff3.G05.schedule.vo.Friday",
+          "handoff3.G05.schedule.vo.Saturday"
+        ]
+      },
+      "calendar.publicContested": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.calendar.publicContested",
+          "handoff3.G04.conflict.otherFriday"
+        ]
+      },
+      "change.notNow.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "change.keptDates": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.change.keptDates",
+          "handoff3.G04.change.benBefore",
+          "handoff3.G04.change.debbyBefore"
+        ]
+      },
+      "change.preservedRow.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.change.preservedRow.vo",
+          "handoff3.G04.change.preserved.vo.Monday",
+          "handoff3.G04.change.preserved.vo.Thursday",
+          "handoff3.G04.change.preserved.vo.Tuesday",
+          "handoff3.G04.change.preserved.vo.Friday"
+        ]
+      },
+      "change.review.confirmed": {
+        "kind": "new",
+        "replaces": []
+      },
+      "schedule.localAction.hint": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.schedule.localAction.hint"
+        ]
+      },
+      "schedule.localAction.sameZone.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "local.sameZone": {
+        "kind": "new",
+        "replaces": []
+      },
+      "local.group.sameZone.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "local.open": {
+        "kind": "new",
+        "replaces": []
+      },
+      "friends.title": {
+        "kind": "new",
+        "replaces": []
+      },
+      "friends.subtitle": {
+        "kind": "new",
+        "replaces": []
+      },
+      "friends.schedule": {
+        "kind": "new",
+        "replaces": []
+      },
+      "friends.schedule.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "friends.row.noDate.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "friends.row.noDate.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "friends.date.club.dated": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.localOpening.dated": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.clubOpening.dated": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.countdown.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.home.countdown.vo"
+        ]
+      },
+      "home.countdown.travelling.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.waiting.group.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.waiting.travelling.group.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.addFor.travelling.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.addFor.hint": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.home.addFor.hint"
+        ]
+      },
+      "home.captions.hint": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.home.captions.hint"
+        ]
+      },
+      "home.revisit": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.home.revisit"
+        ]
+      },
+      "friends.row.hint": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.friends.row.hint"
+        ]
+      },
+      "switcher.row.selected.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.switcher.row.selected.vo"
+        ]
+      },
+      "switcher.active.row": {
+        "kind": "new",
+        "replaces": []
+      },
+      "switcher.active.row.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "a11y.viewMemories.hint": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.a11y.viewMemories.hint"
+        ]
+      },
+      "paused.details.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff3.H01.paused.details.vo"
+        ]
+      },
+      "paused.details.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "denied.group.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff3.H01.suspended.vo"
+        ]
+      },
+      "details.members.subtitle": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.notifications.subtitle": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.widget.subtitle": {
+        "kind": "new",
+        "replaces": []
+      },
+      "local.openStatus.vo": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.title": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.members": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.schedule": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.notifications": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.widget": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.drafts": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.leave": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.footer": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.footer.zoneOmitted": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.memberCount.one": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.memberCount.other": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.row.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.drafts.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "details.leave.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "summary.done.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "calendar.confirm.vo": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff3.G04.conflict.confirm.vo",
+          "handoff3.G04.conflict.confirmMonday.vo"
+        ]
+      },
+      "calendar.confirmedTaken.hint": {
+        "kind": "new",
+        "replaces": []
+      },
+      "change.before": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff5.change.before",
+          "handoff3.G04.change.before"
+        ]
+      },
+      "calendar.assigned": {
+        "kind": "replacement",
+        "replaces": [
+          "handoff3.G04.conflict.assigned"
+        ]
+      },
+      "header.denied.brand": {
+        "kind": "new",
+        "replaces": []
+      },
+      "home.countdown.long": {
+        "kind": "new",
+        "replaces": []
+      }
+    }
+  },
+  "handoff7": {
+    "auth.nav": "Sign in",
+    "auth.email.title": "What’s your email?",
+    "auth.email.body": "We’ll send a six-digit code to sign in.",
+    "auth.email.label": "Email address",
+    "auth.email.placeholder": "Email address",
+    "auth.email.primary": "Send a code",
+    "auth.email.helper": "Use the same email whenever you sign in.",
+    "auth.email.network": "Couldn’t send a code. Check your connection and try again.",
+    "auth.email.refused": "Couldn’t send a code. Try again.",
+    "auth.email.invalid": "Enter a valid email address.",
+    "auth.email.signedOut": "Your sign-in ended. Enter your email to sign in again.",
+    "auth.code.title": "Enter your code",
+    "auth.code.destination": "Sent to {email}",
+    "auth.code.label": "Six-digit code",
+    "auth.code.placeholder": "Enter code",
+    "auth.code.primary": "Verify code",
+    "auth.code.wait": "You can send a new code after one minute.",
+    "auth.code.resend": "Send a new code",
+    "auth.code.resending": "Sending a new code…",
+    "auth.code.changeEmail": "Change email address",
+    "auth.code.network": "Couldn’t verify the code. Check your connection and try again.",
+    "auth.code.unavailable": "Couldn’t verify the code. Try again.",
+    "auth.code.invalid": "This code couldn’t be verified. Try again or send a new one.",
+    "auth.code.resendNetwork": "Couldn’t send a new code. Check your connection and try again.",
+    "auth.code.resendRefused": "Couldn’t send a new code. Try again.",
+    "auth.age.title": "Before you continue",
+    "auth.age.body": "Tadayo is for people aged 18 and older.",
+    "auth.age.primary": "I’m 18 or older",
+    "auth.age.leave": "Leave sign-in",
+    "auth.age.network": "Couldn’t save your age confirmation. Check your connection and try again.",
+    "auth.age.refused": "Couldn’t save your age confirmation. Try again.",
+    "auth.profile.nav": "Your profile",
+    "auth.profile.title": "What should we call you?",
+    "auth.profile.body": "A name your friends know.",
+    "auth.profile.photo": "Add photo",
+    "auth.profile.optional": "Optional",
+    "auth.profile.label": "Your name",
+    "auth.profile.placeholder": "Your name",
+    "auth.profile.primary": "Continue",
+    "auth.profile.network": "Couldn’t save your profile. Check your connection and try again.",
+    "auth.profile.refused": "Couldn’t save your profile. Try again.",
+    "auth.profile.tooLong": "Use 40 characters or fewer for your name.",
+    "auth.profile.nameRefused": "Choose a name with visible characters and no line breaks or hidden formatting.",
+    "auth.profile.photoNetwork": "Couldn’t upload your profile photo. Check your connection and try again, or continue without a photo.",
+    "auth.profile.photoRefused": "Couldn’t upload your profile photo. Try again or continue without a photo.",
+    "auth.profile.retryPhoto": "Retry photo upload",
+    "root.account.title": "Couldn’t load your account.",
+    "root.network": "Check your connection and try again.",
+    "root.refused": "Try again.",
+    "root.leave.title": "Couldn’t remove your sign-in from this iPhone.",
+    "root.keep.title": "Couldn’t keep you signed in.",
+    "root.loading": "Loading your account…",
+    "root.leaving": "Leaving sign-in…",
+    "root.retry": "Retry",
+    "home.loading": "Loading Home…",
+    "friends.loading": "Loading Friends…",
+    "memories.loading": "Loading Memories…",
+    "home.error.title": "Couldn’t load Home.",
+    "friends.error.title": "Couldn’t load Friends.",
+    "memories.error.title": "Couldn’t load Memories.",
+    "tabs.error.network": "Check your connection and try again.",
+    "tabs.error.refused": "Try again.",
+    "tabs.notInBuild": "This version of Tadayo can’t show clubs yet.",
+    "home.resolvedVO": "Home updated.",
+    "header.brand": "Tadayo",
+    "header.add": "+ Add",
+    "header.account": "Account",
+    "header.addHint": "Save a private draft or open private drafts.",
+    "header.accountHint": "Open your account.",
+    "drafts.title": "Private drafts",
+    "drafts.subtitle": "Only you can see these.",
+    "noClub.title": "Start your club.",
+    "noClub.body1": "A private place for two to six people.",
+    "noClub.body2": "Create a club or open an invitation.",
+    "noClub.create": "Create a club",
+    "noClub.invite": "I have an invite",
+    "noClub.friends.title": "Friends",
+    "noClub.friends.empty": "Your friends will appear here.",
+    "noClub.friends.body": "Create a club or open an invitation to choose your people.",
+    "noClub.memories.title": "Memories",
+    "noClub.memories.empty": "Your shared days, kept together.",
+    "noClub.memories.body": "Days shared after you joined will appear here after they open.",
+    "noClub.memories.home": "Go to Home",
+    "tabs.home": "Home",
+    "tabs.friends": "Friends",
+    "tabs.memories": "Memories",
+    "common.back": "Back",
+    "drop.draft.title": "Choose a friend later",
+    "drop.draft.privacy": "Not shared with anyone",
+    "drop.target": "For {person}’s {weekday}",
+    "drop.opening": "{monthDay} · Opens at {time}",
+    "drop.caption": "{caption}",
+    "drop.pending": "Pending on this iPhone · Not added yet",
+    "drop.uploading": "Uploading · Not added yet",
+    "drop.processing": "Processing · Not added yet",
+    "drop.failed": "Not added",
+    "drop.retry": "Retry",
+    "drop.collecting.opening": "Opens {weekday}, {monthDay} · {time}",
+    "drop.collecting.authorSelf": "{author} · You",
+    "drop.collecting.author": "{author}",
+    "drop.highlight": "Highlight",
+    "drop.revealed.more": "More options",
+    "drop.revealed.react": "React",
+    "drop.revealed.comment": "Comment",
+    "drop.revealed.save": "Save to Favourites",
+    "drop.removed": "This drop is no longer available",
+    "drop.backToClub": "Back to club",
+    "highlight.pick": "{person}’s pick",
+    "highlight.own": "Your pick",
+    "highlight.contributor": "{person}",
+    "receipt.title": "Added for {person}’s {weekday}",
+    "receipt.opening": "{monthDay} · Opens at {time}",
+    "receipt.highlight": "Make my highlight",
+    "vo.email.busy": "Sending a code.",
+    "vo.code.busy": "Verifying code.",
+    "vo.age.busy": "Saving your age confirmation.",
+    "vo.profile.busy": "Saving your profile.",
+    "vo.resend.busy": "Sending a new code…",
+    "vo.resend.available": "Send a new code is available.",
+    "vo.resend.success": "Check {email} for a new code. You can send a new code after one minute.",
+    "vo.busy.value": "In progress",
+    "vo.resend.wait": "You can send a new code after one minute.",
+    "vo.retryHome.hint": "Load Home again.",
+    "vo.retryFriends.hint": "Load Friends again.",
+    "vo.retryMemories.hint": "Load Memories again.",
+    "vo.retryAccount.hint": "Load your account again.",
+    "vo.retryLeave.hint": "Remove the sign-in from this iPhone again.",
+    "vo.retryKeep.hint": "Return to email sign-in. Your email address is kept.",
+    "vo.profile.emptyAvatar": "No profile photo",
+    "vo.drop.draft": "{targetLine}. {caption}. Not shared with anyone.",
+    "vo.drop.pending": "For {person}’s {weekday}. Opens {fullDateTime}, {clubZoneName}. {caption}. Pending on this iPhone. Not added yet.",
+    "vo.drop.uploading": "For {person}’s {weekday}. Opens {fullDateTime}, {clubZoneName}. {caption}. Uploading. Not added yet.",
+    "vo.drop.processing": "For {person}’s {weekday}. Opens {fullDateTime}, {clubZoneName}. {caption}. Processing. Not added yet.",
+    "vo.drop.failed": "For {person}’s {weekday}. Opens {fullDateTime}, {clubZoneName}. {caption}. Not added.",
+    "vo.drop.progress": "{percentage} percent",
+    "vo.drop.collecting.other": "{author}. {caption}. Opens {fullDateTime}, {clubZoneName}. Hidden content.",
+    "vo.drop.collecting.ownHighlight": "{author}, you. {caption}. Highlight. Opens {fullDateTime}, {clubZoneName}. Hidden content.",
+    "vo.drop.collecting.own": "{author}, you. {caption}. Opens {fullDateTime}, {clubZoneName}. Hidden content.",
+    "vo.drop.photo": "Photo.",
+    "vo.drop.photoHighlight": "Photo. Highlight.",
+    "vo.drop.moreHint": "Open options for this drop.",
+    "vo.drop.captionCopy": "Copy caption",
+    "vo.drop.saveHint": "Save or remove this drop from your Favourites.",
+    "vo.receipt": "Added for {person}’s {weekday}. Opens {fullDateTime}, {clubZoneName}.",
+    "vo.receipt.highlightHint": "Choose this drop as your highlight for {person}’s {weekday}.",
+    "vo.highlight.pick": "{person}’s pick",
+    "vo.highlight.own": "Your pick",
+    "vo.failure.auth.email.network": "Couldn’t send a code. Check your connection and try again.",
+    "vo.failure.auth.email.refused": "Couldn’t send a code. Try again.",
+    "vo.failure.auth.email.invalid": "Enter a valid email address.",
+    "vo.failure.auth.code.network": "Couldn’t verify the code. Check your connection and try again.",
+    "vo.failure.auth.code.unavailable": "Couldn’t verify the code. Try again.",
+    "vo.failure.auth.code.invalid": "This code couldn’t be verified. Try again or send a new one.",
+    "vo.failure.auth.code.resendNetwork": "Couldn’t send a new code. Check your connection and try again.",
+    "vo.failure.auth.code.resendRefused": "Couldn’t send a new code. Try again.",
+    "vo.failure.auth.age.network": "Couldn’t save your age confirmation. Check your connection and try again.",
+    "vo.failure.auth.age.refused": "Couldn’t save your age confirmation. Try again.",
+    "vo.failure.auth.profile.network": "Couldn’t save your profile. Check your connection and try again.",
+    "vo.failure.auth.profile.refused": "Couldn’t save your profile. Try again.",
+    "vo.failure.auth.profile.tooLong": "Use 40 characters or fewer for your name.",
+    "vo.failure.auth.profile.nameRefused": "Choose a name with visible characters and no line breaks or hidden formatting.",
+    "vo.failure.auth.profile.photoNetwork": "Couldn’t upload your profile photo. Check your connection and try again, or continue without a photo.",
+    "vo.failure.auth.profile.photoRefused": "Couldn’t upload your profile photo. Try again or continue without a photo.",
+    "vo.failure.root.network": "Check your connection and try again.",
+    "vo.failure.root.refused": "Try again.",
+    "vo.failure.tabs.error.network": "Check your connection and try again.",
+    "vo.failure.tabs.error.refused": "Try again.",
+    "vo.root.account.network": "Couldn’t load your account. Check your connection and try again.",
+    "vo.root.account.refused": "Couldn’t load your account. Try again.",
+    "vo.root.leave.refused": "Couldn’t remove your sign-in from this iPhone. Try again.",
+    "vo.root.keep.refused": "Couldn’t keep you signed in. Try again.",
+    "vo.home.error.network": "Couldn’t load Home. Check your connection and try again.",
+    "vo.home.error.refused": "Couldn’t load Home. Try again.",
+    "vo.friends.error.network": "Couldn’t load Friends. Check your connection and try again.",
+    "vo.friends.error.refused": "Couldn’t load Friends. Try again.",
+    "vo.memories.error.network": "Couldn’t load Memories. Check your connection and try again.",
+    "vo.memories.error.refused": "Couldn’t load Memories. Try again.",
+    "replaces": {
+      "auth.email.network": "failureStates[action=Send a code · network].message",
+      "auth.email.refused": "handoff4.auth.firstSend.refused",
+      "auth.code.changeEmail": "handoff4.auth.changeEmail",
+      "auth.code.network": "failureStates[action=Verify code · network].message",
+      "auth.code.invalid": "codeVerificationFailure",
+      "auth.code.resendNetwork": "failureStates[action=Resend · network].message",
+      "auth.code.resendRefused": "handoff4.auth.resend.refused",
+      "auth.profile.network": "handoff4.auth.profile.networkFailure",
+      "auth.profile.refused": "failureStates[action=Save profile].message",
+      "auth.profile.photoRefused": "failureStates[action=Upload profile photo].message",
+      "auth.profile.retryPhoto": "handoff4.auth.profile.retryPhoto",
+      "home.loading": "handoff5.loading.label",
+      "home.resolvedVO": "handoff3.H01.loading.resolvedVO",
+      "header.brand": "handoff6.header.denied.brand",
+      "header.addHint": "handoff5.a11y.addPrivate.hint",
+      "drafts.title": "handoff4.drafts.title",
+      "drafts.subtitle": "handoff4.drafts.subtitle",
+      "noClub.title": "handoff4.noClub.title",
+      "noClub.body1": "handoff4.noClub.body1",
+      "noClub.body2": "handoff4.noClub.body2",
+      "noClub.create": "handoff4.noClub.primary",
+      "noClub.invite": "handoff4.noClub.invite",
+      "drop.collecting.opening": "handoff5.card.status",
+      "drop.highlight": "photoHighlightLabel.word",
+      "vo.drop.collecting.other": "handoff5.card.status.vo",
+      "auth.nav": "handoff1.screen-copy.json[A02-email][1]",
+      "auth.email.title": "handoff1.screen-copy.json[A02-email][2]",
+      "auth.email.body": "handoff1.screen-copy.json[A02-email][3]",
+      "auth.email.label": "handoff1.screen-copy.json[A02-email][4]",
+      "auth.email.placeholder": "handoff1.screen-copy.json[A02-email][4]",
+      "auth.email.primary": "handoff1.screen-copy.json[A02-email][6]",
+      "auth.email.helper": "handoff1.screen-copy.json[A02-email][7]",
+      "auth.code.title": "handoff1.screen-copy.json[A02-code][2]",
+      "auth.code.label": "handoff1.screen-copy.json[A02-code][4]",
+      "auth.code.placeholder": "handoff1.screen-copy.json[A02-code][5]",
+      "auth.code.primary": "handoff1.screen-copy.json[A02-code][6]",
+      "auth.code.wait": "handoff1.screen-copy.json[A02-code][7]",
+      "auth.code.resend": "handoff1.screen-copy.json[A02-code-error][8]",
+      "auth.age.body": "handoff1.screen-copy.json[A02-age][4]",
+      "auth.age.primary": "handoff1.screen-copy.json[A02-age][5]",
+      "auth.age.leave": "handoff1.screen-copy.json[A02-age][6]",
+      "auth.profile.nav": "handoff1.screen-copy.json[A03-profile][1]",
+      "auth.profile.body": "handoff1.screen-copy.json[A03-profile][4]",
+      "auth.profile.photo": "handoff1.screen-copy.json[A03-profile][6]",
+      "auth.profile.optional": "handoff1.screen-copy.json[A03-profile][7]",
+      "auth.profile.label": "handoff1.screen-copy.json[A03-profile][8]",
+      "auth.profile.placeholder": "handoff1.screen-copy.json[A03-profile][8]",
+      "auth.profile.primary": "handoff1.screen-copy.json[A03-profile][10]",
+      "auth.code.destination": "handoff1.screen-copy.json[A02-code][3]",
+      "auth.age.title": "handoff1.screen-copy.json[A02-age][2:4]",
+      "auth.profile.title": "handoff1.screen-copy.json[A03-profile][2:4]"
+    },
+    "announcementPolicy": {
+      "busy": "Announce the action once, keep focus; button label stable, value vo.busy.value. Do not repeat on renders.",
+      "failures": "Announce the exact visible failure once, without stealing focus. Full keys begin vo.failure.",
+      "resend": "Use vo.resend.busy; success uses vo.resend.success once (includes waiting state); availability uses vo.resend.available once. Failed resend uses its exact failure announcement and restores resend action without a second availability announcement.",
+      "loading": "One polite announcement on state entry; no timer announcements. Home resolved announces home.resolvedVO even when empty. Friends/Memories resolve silently.",
+      "localRootFailures": "Use vo.root.leave.refused and vo.root.keep.refused; these are phone failures, never network claims."
+    },
+    "stageScope": "B0 product screens. No guest invitations, SMS, gifts or reward features are added by this handoff."
+  },
+  "handoff8": {
+    "strings": {
+      "handoff8.welcome.brand": "Your day. Your story. A thought from your friends.",
+      "handoff8.welcome.explanation": "Take turns sharing what you’ve been up to. Friends can add something that reminded them of you.",
+      "handoff8.welcome.example": "An example · before and on the day",
+      "handoff8.welcome.example.target": "{name}’s {weekday} · {date}",
+      "handoff8.welcome.example.captionNow": "Caption now",
+      "handoff8.welcome.example.photoOnDay": "Photo on the day",
+      "handoff8.welcome.create": "Create a club",
+      "handoff8.welcome.invite": "I have an invite",
+      "handoff8.web.invited": "{inviterName} invited you to a club on Tadayo",
+      "handoff8.web.get": "Get Tadayo",
+      "handoff8.web.get.hint": "Open Tadayo in the App Store.",
+      "handoff8.create.title": "Name your club",
+      "handoff8.create.explanation": "A private place for your people.",
+      "handoff8.create.field": "Club name",
+      "handoff8.create.continue": "Continue to invitations",
+      "handoff8.create.failed.network": "Couldn’t create the club. Check your connection and try again.",
+      "handoff8.create.failed.refused": "Couldn’t create the club. Try again.",
+      "handoff8.accept.failed.network": "Couldn’t accept this roster. Check your connection and try again.",
+      "handoff8.accept.failed.refused": "Couldn’t accept this roster. Try again.",
+      "handoff8.approve.failed.network": "Couldn’t approve {candidateName}. Check your connection and try again.",
+      "handoff8.approve.failed.refused": "Couldn’t approve {candidateName}. Try again.",
+      "handoff8.decline.failed.network": "Couldn’t decline this invitation. Check your connection and try again.",
+      "handoff8.decline.failed.refused": "Couldn’t decline this invitation. Try again.",
+      "handoff8.invitation.checking": "Checking invitation…",
+      "handoff8.invitation.checking.explanation": "We’ll check the link before showing the club or its people.",
+      "handoff8.invitation.title": "Join {clubName}",
+      "handoff8.invitation.inviter": "{inviterName} invited you.",
+      "handoff8.invitation.boundary": "You’ll see only drops shared after joining.",
+      "handoff8.invitation.accept": "Accept this roster",
+      "handoff8.invitation.notNow": "Not now",
+      "handoff8.approve.label": "Approve {candidateName}",
+      "handoff8.approve.vo": "Approve {candidateName} joining {clubName}.",
+      "handoff8.decline.label": "Decline",
+      "handoff8.decline.vo": "Decline this invitation for {clubName}. No reason is required.",
+      "handoff8.approval.changed.title": "Review the updated roster",
+      "handoff8.approve.changed.body": "The members have changed. Review the updated roster before approving.",
+      "handoff8.decline.changed.body": "The members have changed. Review the updated roster before declining.",
+      "handoff8.approval.changed.action": "Review members",
+      "handoff8.approval.changed.action.vo": "Review the updated members of {clubName}.",
+      "handoff8.approval.full.title": "{clubName} is full.",
+      "handoff8.approval.full.body": "{clubName} already has six members.",
+      "handoff8.approval.full.action": "See members",
+      "handoff8.approval.full.action.vo": "See members of {clubName}.",
+      "handoff8.approval.unavailable": "This invitation is no longer available.",
+      "handoff8.load.details.loading": "Loading club details…",
+      "handoff8.load.details.title": "Couldn’t load club details.",
+      "handoff8.load.details.network": "Check your connection and try again.",
+      "handoff8.load.details.refused": "Try again.",
+      "handoff8.load.details.retry": "Retry",
+      "handoff8.load.details.retryHint": "Try loading club details again.",
+      "handoff8.load.members.loading": "Loading members…",
+      "handoff8.load.members.title": "Couldn’t load members.",
+      "handoff8.load.members.network": "Check your connection and try again.",
+      "handoff8.load.members.refused": "Try again.",
+      "handoff8.load.members.retry": "Retry",
+      "handoff8.load.members.retryHint": "Try loading members again.",
+      "handoff8.load.proposed.loading": "Loading proposed members…",
+      "handoff8.load.proposed.title": "Couldn’t load proposed members.",
+      "handoff8.load.proposed.network": "Check your connection and try again.",
+      "handoff8.load.proposed.refused": "Try again.",
+      "handoff8.load.proposed.retry": "Retry",
+      "handoff8.load.proposed.retryHint": "Try loading proposed members again.",
+      "handoff8.load.approval.loading": "Loading invitation…",
+      "handoff8.load.approval.title": "Couldn’t load this invitation.",
+      "handoff8.load.approval.network": "Check your connection and try again.",
+      "handoff8.load.approval.refused": "Try again.",
+      "handoff8.load.approval.retry": "Retry",
+      "handoff8.load.approval.retryHint": "Try loading this invitation again.",
+      "handoff8.load.invitations.loading": "Loading invitations…",
+      "handoff8.load.invitations.title": "Couldn’t load invitations.",
+      "handoff8.load.invitations.network": "Check your connection and try again.",
+      "handoff8.load.invitations.refused": "Try again.",
+      "handoff8.load.invitations.retry": "Retry",
+      "handoff8.load.invitations.retryHint": "Try loading invitations again.",
+      "handoff8.links.used.status": "Needs to accept again",
+      "handoff8.links.used.row.vo": "{name}. Needs to accept again.",
+      "handoff8.links.shareAgain": "Share again",
+      "handoff8.links.shareAgain.vo": "Share again for {name}",
+      "handoff8.links.share.vo": "Share link for {name}",
+      "handoff8.links.more.vo": "More options for {name}’s invitation",
+      "handoff8.links.new.vo": "Create new link for {name}",
+      "handoff8.links.revoke.vo": "Revoke link for {name}",
+      "handoff8.links.private": "Only you can see this list.",
+      "handoff8.links.used.missing": "This invitation link isn’t saved on this device.",
+      "handoff8.links.used.reopen": "{name} can reopen the invitation already received.",
+      "handoff8.proposed.by": "Proposed by {name}",
+      "handoff8.proposed.tag": "Proposed",
+      "handoff8.proposed.row.vo": "{name}. Proposed by {proposerName}. Proposed.",
+      "handoff8.pending.review.title": "Review the updated members",
+      "handoff8.pending.review.body": "Review and approve the updated roster before {clubName} can start.",
+      "handoff8.pending.review.action": "Review members",
+      "handoff8.pending.review.action.vo": "Review {clubName}’s updated members.",
+      "handoff8.later.invitation.title": "{name}’s invitation",
+      "handoff8.later.invitation.count.one": "1 current member",
+      "handoff8.later.invitation.count.other": "{count} current members",
+      "handoff8.later.invitation.body": "New members need everyone’s approval. {name} will see only drops shared after joining.",
+      "handoff8.later.invitation.more": "More options",
+      "handoff8.nameChanged.title": "Review the updated roster",
+      "handoff8.nameChanged.inviter": "{inviterName} invited you to {clubName}.",
+      "handoff8.nameChanged.explanation": "The invitation was made for {previousName}. The updated roster now shows your name.",
+      "handoff8.nameChanged.explanationAfterRelaunch": "The updated roster now shows your profile name. Review it before accepting again.",
+      "handoff8.nameChanged.footer": "Accept this exact roster to continue. You’ll see only drops shared after joining.",
+      "handoff8.joined.loading": "Opening {clubName}…",
+      "handoff8.header.club.vo": "Switch club. {clubName} selected.",
+      "handoff8.header.add": "Add",
+      "handoff8.header.account": "Account"
+    },
+    "failureStates": {
+      "create.network": {
+        "frame": "G01-create-failed",
+        "visibleKey": "handoff8.create.failed.network",
+        "voiceOverKey": "handoff8.create.failed.network",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "create.refused": {
+        "frame": "G01-create-failed",
+        "visibleKey": "handoff8.create.failed.refused",
+        "voiceOverKey": "handoff8.create.failed.refused",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "accept.network": {
+        "frame": "G02-invitation-failed",
+        "visibleKey": "handoff8.accept.failed.network",
+        "voiceOverKey": "handoff8.accept.failed.network",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "accept.refused": {
+        "frame": "G02-invitation-failed",
+        "visibleKey": "handoff8.accept.failed.refused",
+        "voiceOverKey": "handoff8.accept.failed.refused",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "approve.network": {
+        "frame": "G03-approve-failed",
+        "visibleKey": "handoff8.approve.failed.network",
+        "voiceOverKey": "handoff8.approve.failed.network",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "approve.refused": {
+        "frame": "G03-approve-failed",
+        "visibleKey": "handoff8.approve.failed.refused",
+        "voiceOverKey": "handoff8.approve.failed.refused",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "decline.network": {
+        "frame": "G03-approve-failed",
+        "visibleKey": "handoff8.decline.failed.network",
+        "voiceOverKey": "handoff8.decline.failed.network",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "decline.refused": {
+        "frame": "G03-approve-failed",
+        "visibleKey": "handoff8.decline.failed.refused",
+        "voiceOverKey": "handoff8.decline.failed.refused",
+        "announcement": "One polite announcement after the action returns failure. Keep focus on the initiating control. The inline message remains reachable.",
+        "fieldBorder": "normal inputBorder for network/server failure",
+        "retained": "Typed name or exact reviewed roster, all existing form values and idle controls.",
+        "retry": "Use the same operation key and revision/body for a retry after reconciling uncertain delivery; new data is reviewed explicitly."
+      },
+      "approve.rosterChanged": {
+        "frame": "G03-approve-failed",
+        "titleKey": "handoff8.approval.changed.title",
+        "visibleKey": "handoff8.approve.changed.body",
+        "voiceOverKeys": [
+          "handoff8.approval.changed.title",
+          "handoff8.approve.changed.body"
+        ],
+        "actionKey": "handoff8.approval.changed.action",
+        "actionVOKey": "handoff8.approval.changed.action.vo",
+        "presentation": "Native alert. Review members fetches the latest exact roster; neither prior decision is replayed. On the refreshed review, decisions use that revision and its expected version.",
+        "loadingScope": "load.proposed",
+        "noApprovalCount": true
+      },
+      "decline.rosterChanged": {
+        "frame": "G03-approve-failed",
+        "titleKey": "handoff8.approval.changed.title",
+        "visibleKey": "handoff8.decline.changed.body",
+        "voiceOverKeys": [
+          "handoff8.approval.changed.title",
+          "handoff8.decline.changed.body"
+        ],
+        "actionKey": "handoff8.approval.changed.action",
+        "actionVOKey": "handoff8.approval.changed.action.vo",
+        "presentation": "Native alert. Review members fetches the latest exact roster; neither prior decision is replayed. On the refreshed review, decisions use that revision and its expected version.",
+        "loadingScope": "load.proposed",
+        "noApprovalCount": true
+      },
+      "approve.clubFull": {
+        "titleKey": "handoff8.approval.full.title",
+        "visibleKey": "handoff8.approval.full.body",
+        "voiceOverKeys": [
+          "handoff8.approval.full.title",
+          "handoff8.approval.full.body"
+        ],
+        "actionKey": "handoff8.approval.full.action",
+        "actionVOKey": "handoff8.approval.full.action.vo",
+        "presentation": "Native alert with See members. Reload authoritative membership; do not claim approval or remove any member."
+      }
+    },
+    "loadStates": {
+      "details": {
+        "loadingKey": "handoff8.load.details.loading",
+        "failureTitleKey": "handoff8.load.details.title",
+        "networkBodyKey": "handoff8.load.details.network",
+        "refusalBodyKey": "handoff8.load.details.refused",
+        "retryKey": "handoff8.load.details.retry",
+        "retryHintKey": "handoff8.load.details.retryHint"
+      },
+      "members": {
+        "loadingKey": "handoff8.load.members.loading",
+        "failureTitleKey": "handoff8.load.members.title",
+        "networkBodyKey": "handoff8.load.members.network",
+        "refusalBodyKey": "handoff8.load.members.refused",
+        "retryKey": "handoff8.load.members.retry",
+        "retryHintKey": "handoff8.load.members.retryHint"
+      },
+      "proposed": {
+        "loadingKey": "handoff8.load.proposed.loading",
+        "failureTitleKey": "handoff8.load.proposed.title",
+        "networkBodyKey": "handoff8.load.proposed.network",
+        "refusalBodyKey": "handoff8.load.proposed.refused",
+        "retryKey": "handoff8.load.proposed.retry",
+        "retryHintKey": "handoff8.load.proposed.retryHint"
+      },
+      "approval": {
+        "loadingKey": "handoff8.load.approval.loading",
+        "failureTitleKey": "handoff8.load.approval.title",
+        "networkBodyKey": "handoff8.load.approval.network",
+        "refusalBodyKey": "handoff8.load.approval.refused",
+        "retryKey": "handoff8.load.approval.retry",
+        "retryHintKey": "handoff8.load.approval.retryHint"
+      },
+      "invitations": {
+        "loadingKey": "handoff8.load.invitations.loading",
+        "failureTitleKey": "handoff8.load.invitations.title",
+        "networkBodyKey": "handoff8.load.invitations.network",
+        "refusalBodyKey": "handoff8.load.invitations.refused",
+        "retryKey": "handoff8.load.invitations.retry",
+        "retryHintKey": "handoff8.load.invitations.retryHint"
+      }
+    },
+    "readPatterns": {
+      "loading": "One label is the accessible progress description. Native indicator is decorative, indeterminate and uncounted. Announce once, not on a timer.",
+      "failure": "Read title, then body, then Retry as separate reachable elements. Announce title plus body once on failure.",
+      "formFailure": "Read the inline failure message. A warning glyph adds a visual signal and is hidden from VoiceOver. Never reread the whole roster or announce that a membership exists before the server answers."
+    },
+    "replaces": {
+      "A01WelcomeHeadlineAndExplanation": [
+        "handoff8.welcome.brand",
+        "handoff8.welcome.explanation"
+      ],
+      "G02WebIntroduction": [
+        "handoff8.web.invited",
+        "handoff8.welcome.brand"
+      ],
+      "pendingCreatorApprovalRequired": [
+        "handoff8.pending.review.title",
+        "handoff8.pending.review.body",
+        "handoff8.pending.review.action"
+      ],
+      "changedOwnPlace": [
+        "handoff8.nameChanged.title",
+        "handoff8.nameChanged.explanation"
+      ],
+      "otherwise": "Earlier copy remains scoped as previously adopted. The new conditional pending sentence does not replace the ordinary initial waiting sentence."
+    }
+  },
+  "handoff9": {
+    "strings": {
+      "handoff9.common.retry": "Retry",
+      "handoff9.check.title": "Couldn’t check the invitation link.",
+      "handoff9.check.network": "Check your connection and try again.",
+      "handoff9.check.answeredFailure": "Try again.",
+      "handoff9.check.network.vo": "Couldn’t check the invitation link. Check your connection and try again.",
+      "handoff9.check.answeredFailure.vo": "Couldn’t check the invitation link. Try again.",
+      "handoff9.check.retry.hint": "Try checking this invitation link again.",
+      "handoff9.check.busy.value": "In progress",
+      "handoff9.entry.invalid": "That doesn’t look like a Tadayo invitation link. Check the link and try again.",
+      "handoff9.entry.network": "Couldn’t check the invitation link. Check your connection and try again.",
+      "handoff9.entry.answeredFailure": "Couldn’t check the invitation link. Try again.",
+      "handoff9.entry.paste.vo": "Paste an invitation link.",
+      "handoff9.entry.continue.vo": "Check the invitation link.",
+      "handoff9.entry.helper": "We’ll check the link before showing the club or its people.",
+      "handoff9.entry.title": "Have an invitation?",
+      "handoff9.entry.explanation": "Paste the link, or open it where it was shared.",
+      "handoff9.entry.field": "Invitation link",
+      "handoff9.entry.paste": "Paste",
+      "handoff9.entry.continue": "Continue",
+      "handoff9.joined.loading": "Opening {clubName}…",
+      "handoff9.changed.relaunch": "The updated roster now shows your profile name. Review it before accepting again.",
+      "handoff9.invitations.heading": "Invitations",
+      "handoff9.invitation.waiting": "Waiting for members",
+      "handoff9.invitation.changed": "Review updated members",
+      "handoff9.invitation.changed.missing": "Open the invitation link to continue.",
+      "handoff9.invitation.ended": "Invitation didn’t go ahead",
+      "handoff9.invitation.waiting.vo": "{clubName}. Waiting for members.",
+      "handoff9.invitation.changed.vo": "{clubName}. Review updated members.",
+      "handoff9.invitation.changed.missing.vo": "{clubName}. Review updated members. Open the invitation link to continue.",
+      "handoff9.invitation.ended.vo": "{clubName}. Invitation didn’t go ahead.",
+      "handoff9.invitation.waiting.hint": "Open this invitation to see its current state.",
+      "handoff9.invitation.changed.hint": "Review and accept the updated roster.",
+      "handoff9.invitation.changed.missing.hint": "Open or paste the invitation link to continue.",
+      "handoff9.invitation.ended.hint": "Open this invitation for details.",
+      "handoff9.invitation.ended.close": "You can close this invitation.",
+      "handoff9.home.start": "Start your club.",
+      "handoff9.home.explanation": "A private place for two to six people.",
+      "handoff9.home.routes": "Create a club or open an invitation.",
+      "handoff9.web.checking": "Checking invitation…",
+      "handoff9.web.noJavaScript": "Turn on JavaScript to check this invitation.",
+      "handoff9.web.get": "Get Tadayo",
+      "handoff9.web.get.production.hint": "Open Tadayo in the App Store.",
+      "handoff9.web.get.trialTestFlight.hint": "Open TestFlight in the App Store.",
+      "handoff9.links.title": "Invite your people",
+      "handoff9.links.explanation": "Each person gets a separate link.",
+      "handoff9.links.createInvitation": "Create an invitation",
+      "handoff9.links.private": "Only you can see this list.",
+      "handoff9.links.done": "Done for now",
+      "handoff9.links.missing": "Link not on this phone",
+      "handoff9.links.missing.vo": "{name}. Link not on this phone.",
+      "handoff9.links.missing.replacement": "A new link replaces the previous link.",
+      "handoff9.links.expired": "Link expired",
+      "handoff9.links.expired.vo": "{name}. Link expired.",
+      "handoff9.links.new": "Create new link",
+      "handoff9.links.new.vo": "Create new link for {name}",
+      "handoff9.links.more.vo": "More options for {name}’s invitation",
+      "handoff9.links.revoke.vo": "Revoke link for {name}",
+      "handoff9.links.share.vo": "Share link for {name}",
+      "handoff9.links.shareAgain.vo": "Share again for {name}",
+      "handoff9.links.new.failed.network": "Couldn’t create a new invitation link for {name}. Check your connection and try again.",
+      "handoff9.links.new.failed.refused": "Couldn’t create a new invitation link for {name}. Try again.",
+      "handoff9.links.revoke.failed.network": "Couldn’t confirm that {name}’s invitation link was revoked. Check your connection and try again.",
+      "handoff9.links.revoke.failed.refused": "Couldn’t revoke {name}’s invitation link. Try again.",
+      "handoff9.create.title": "Your people, together.",
+      "handoff9.create.explanation": "Start a private club with two to six people.",
+      "handoff9.create.rosterExplanation": "Invite the people you want here. Everyone agrees to the same roster before the club starts.",
+      "handoff9.create.draftsNote": "Before activation, anything you prepare stays in your private Drafts.",
+      "handoff9.create.tooLong": "Use 40 characters or fewer for the club name.",
+      "handoff9.inviteName.tooLong": "Use 40 characters or fewer for this person’s name.",
+      "handoff9.welcome.signIn": "Already here? Sign in",
+      "handoff9.welcome.signIn.hint": "Sign in to your existing account.",
+      "handoff9.proposed.tag": "Proposed",
+      "handoff9.proposed.by": "Proposed by {name}",
+      "handoff9.proposed.row.vo": "{name}. Proposed by {proposerName}. Proposed.",
+      "handoff9.proposed.ownRow.vo": "{name}. You. Proposed by {proposerName}. Proposed."
+    },
+    "failureStates": {
+      "check.network": {
+        "frame": "G02-checking-failed",
+        "class": "No usable answer: connection/timeout/transport failure",
+        "visibleKeys": [
+          "handoff9.check.title",
+          "handoff9.check.network"
+        ],
+        "voiceOverKey": "handoff9.check.network.vo",
+        "retryKey": "handoff9.common.retry",
+        "retryHintKey": "handoff9.check.retry.hint",
+        "retained": "Same account-bound invitation intent or full pasted value; never invent validity, inviter, club or roster.",
+        "announcement": "One polite status announcement of the failure text. Preserve initiating focus. Heading/body remain reachable individually.",
+        "field": null
+      },
+      "check.answeredFailure": {
+        "frame": "G02-checking-failed",
+        "class": "Answered nonterminal refusal, rate limit or server error; not authoritative invalidity",
+        "visibleKeys": [
+          "handoff9.check.title",
+          "handoff9.check.answeredFailure"
+        ],
+        "voiceOverKey": "handoff9.check.answeredFailure.vo",
+        "retryKey": "handoff9.common.retry",
+        "retryHintKey": "handoff9.check.retry.hint",
+        "retained": "Same account-bound invitation intent or full pasted value; never invent validity, inviter, club or roster.",
+        "announcement": "One polite status announcement of the failure text. Preserve initiating focus. Heading/body remain reachable individually.",
+        "field": null
+      },
+      "entry.network": {
+        "frame": "G02-link-entry-signed-in-cannot-check",
+        "class": "No usable answer: connection/timeout/transport failure",
+        "visibleKeys": [
+          "handoff9.entry.network"
+        ],
+        "voiceOverKey": "handoff9.entry.network",
+        "retryKey": "handoff9.entry.continue",
+        "retryHintKey": null,
+        "retained": "Same account-bound invitation intent or full pasted value; never invent validity, inviter, club or roster.",
+        "announcement": "One polite status announcement of the failure text. Preserve initiating focus. Heading/body remain reachable individually.",
+        "field": "Only malformed input uses an invalid border. This failure keeps normal inputBorder."
+      },
+      "entry.answeredFailure": {
+        "frame": "G02-link-entry-signed-in-cannot-check",
+        "class": "Answered nonterminal refusal, rate limit or server error; not authoritative invalidity",
+        "visibleKeys": [
+          "handoff9.entry.answeredFailure"
+        ],
+        "voiceOverKey": "handoff9.entry.answeredFailure",
+        "retryKey": "handoff9.entry.continue",
+        "retryHintKey": null,
+        "retained": "Same account-bound invitation intent or full pasted value; never invent validity, inviter, club or roster.",
+        "announcement": "One polite status announcement of the failure text. Preserve initiating focus. Heading/body remain reachable individually.",
+        "field": "Only malformed input uses an invalid border. This failure keeps normal inputBorder."
+      },
+      "web.network": {
+        "frame": "G02-web-failed",
+        "class": "No usable answer: connection/timeout/transport failure",
+        "visibleKeys": [
+          "handoff9.check.title",
+          "handoff9.check.network"
+        ],
+        "voiceOverKey": "handoff9.check.network.vo",
+        "retryKey": "handoff9.common.retry",
+        "retryHintKey": "handoff9.check.retry.hint",
+        "retained": "Same account-bound invitation intent or full pasted value; never invent validity, inviter, club or roster.",
+        "announcement": "One polite status announcement of the failure text. Preserve initiating focus. Heading/body remain reachable individually.",
+        "field": null
+      },
+      "web.answeredFailure": {
+        "frame": "G02-web-failed",
+        "class": "Answered nonterminal refusal, rate limit or server error; not authoritative invalidity",
+        "visibleKeys": [
+          "handoff9.check.title",
+          "handoff9.check.answeredFailure"
+        ],
+        "voiceOverKey": "handoff9.check.answeredFailure.vo",
+        "retryKey": "handoff9.common.retry",
+        "retryHintKey": "handoff9.check.retry.hint",
+        "retained": "Same account-bound invitation intent or full pasted value; never invent validity, inviter, club or roster.",
+        "announcement": "One polite status announcement of the failure text. Preserve initiating focus. Heading/body remain reachable individually.",
+        "field": null
+      },
+      "links.new.network": {
+        "frame": "G01-invite-people-action-failed",
+        "visibleKey": "handoff9.links.new.failed.network",
+        "voiceOverKey": "handoff9.links.new.failed.network",
+        "retained": "Last verified rows, names and row actions; typed invitation name if it is still in the preceding name step.",
+        "announcement": "One polite announcement on a newly returned failure; no reannouncement on scroll or rerender.",
+        "focus": "Keep the initiating row action focused, or restore its More control after the native menu closes."
+      },
+      "links.new.refused": {
+        "frame": "G01-invite-people-action-failed",
+        "visibleKey": "handoff9.links.new.failed.refused",
+        "voiceOverKey": "handoff9.links.new.failed.refused",
+        "retained": "Last verified rows, names and row actions; typed invitation name if it is still in the preceding name step.",
+        "announcement": "One polite announcement on a newly returned failure; no reannouncement on scroll or rerender.",
+        "focus": "Keep the initiating row action focused, or restore its More control after the native menu closes."
+      },
+      "links.revoke.network": {
+        "frame": "G01-invite-people-action-failed",
+        "visibleKey": "handoff9.links.revoke.failed.network",
+        "voiceOverKey": "handoff9.links.revoke.failed.network",
+        "retained": "Last verified rows, names and row actions; typed invitation name if it is still in the preceding name step.",
+        "announcement": "One polite announcement on a newly returned failure; no reannouncement on scroll or rerender.",
+        "focus": "Keep the initiating row action focused, or restore its More control after the native menu closes."
+      },
+      "links.revoke.refused": {
+        "frame": "G01-invite-people-action-failed",
+        "visibleKey": "handoff9.links.revoke.failed.refused",
+        "voiceOverKey": "handoff9.links.revoke.failed.refused",
+        "retained": "Last verified rows, names and row actions; typed invitation name if it is still in the preceding name step.",
+        "announcement": "One polite announcement on a newly returned failure; no reannouncement on scroll or rerender.",
+        "focus": "Keep the initiating row action focused, or restore its More control after the native menu closes."
+      }
+    },
+    "reuses": {
+      "brandLine": "handoff8.welcome.brand",
+      "welcomeExplanation": "handoff8.welcome.explanation",
+      "changedTitle": "handoff8.nameChanged.title",
+      "changedFooter": "handoff8.nameChanged.footer",
+      "createNetworkFailure": "handoff8.create.failed.network",
+      "createRefusal": "handoff8.create.failed.refused",
+      "normalWaitingScreen": "G03-waiting keeps handoff2’s second-person copy.",
+      "endedScreen": "G03-declined retains neutral title/privacy note. Body becomes handoff9.invitation.ended.close per current FQ137; no claim Ben can create another invitation."
+    },
+    "precedence": {
+      "rule": "Earlier entries are retained for audit. Only this explicit scope map supersedes conflicting earlier guidance.",
+      "create": "Use handoff9.create title/explanation/rosterExplanation/draftsNote. Supersedes the shorter H8 frame7 introduction only; keep H8 failure strings and H7 field error pattern.",
+      "entryCannotCheck": "handoff9.entry.answeredFailure adds the server/refusal branch to existing network copy.",
+      "webFailure": "Use split title/body keys; do not instruct a connection check for an answered nonnetwork failure.",
+      "welcome": "Restores existing-account route; H8 brand/example/other routes unchanged.",
+      "expiredAndMissing": "Differentiate missing payload and authoritative expired status from Not shared and Link revoked.",
+      "getHint": "Select hint from actual configured destination; FQ133 trial TestFlight link never uses a Tadayo App Store claim."
+    }
+  }
+}

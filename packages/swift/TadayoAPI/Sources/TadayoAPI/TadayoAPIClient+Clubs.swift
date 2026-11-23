@@ -472,8 +472,8 @@ extension InvitationPreview {
                     revisionVersion: waiting.revisionVersion,
                     roster: waiting.roster.map(InvitationRosterEntry.init), expiresAt: nil))
         case .expired(let expired): self = .expired(inviterName: expired.inviterName)
-        case .full: self = .full
-        case .didNotGoAhead: self = .didNotGoAhead
+        case .full(let full): self = .full(inviterName: full.inviterName)
+        case .didNotGoAhead(let ended): self = .didNotGoAhead(inviterName: ended.inviterName)
         case .joined(let joined): self = .joined(ClubRef(joined.club))
         }
     }
