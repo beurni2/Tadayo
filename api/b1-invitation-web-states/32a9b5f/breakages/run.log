@@ -1,0 +1,34 @@
+== Y01 Retry waits for no drawn frame: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × draws the checking after Retry before an answer that comes at once replaces it, and waits for no frame on the first load 16ms
+== Y02 the first load waits for a frame too: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × draws the checking after Retry before an answer that comes at once replaces it, and waits for no frame on the first load 5007ms
+== Y03 a frame is a microtask, not requestAnimationFrame: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × draws the checking after Retry before an answer that comes at once replaces it, and waits for no frame on the first load 16ms
+== Y04 no hold of the status block after Retry: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × holds the status block at its height from Retry to the answer, so neither control moves; the first load holds nothing 11ms
+== Y05 the hold outlives the answer: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × holds the status block at its height from Retry to the answer, so neither control moves; the first load holds nothing 19ms
+== Y06 the first load holds the block too: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × holds the status block at its height from Retry to the answer, so neither control moves; the first load holds nothing 8ms
+== Y07 the hold rounds the drawn height: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × holds the status block at its height from Retry to the answer, so neither control moves; the first load holds nothing 10ms
+== Y08 another link in the same tab isn't looked at: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × reloads for another link opened in the same tab, and gives Retry the touch listener Safari's pressed look needs 10ms
+== Y09 another link is asked about in place, not reloaded: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × reloads for another link opened in the same tab, and gives Retry the touch listener Safari's pressed look needs 13ms
+== Y10 no touchstart listener for Safari's pressed look: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × reloads for another link opened in the same tab, and gives Retry the touch listener Safari's pressed look needs 14ms
+== Y11 the touchstart listener isn't passive: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × reloads for another link opened in the same tab, and gives Retry the touch listener Safari's pressed look needs 12ms
+== Y12 busy, Retry loses its hint: CAUGHT; exit 1 ['Tests  2 failed | 45 passed (47)']
+    × keeps Retry in place and busy in the checking after it, its hint kept, and only there (frame 12) 15ms
+    × checks at once with no Retry, then on Retry asks again in place, once at a time, and hands the focus on at the end 9ms
+== Y13 the unavailable page's App Store name comes back: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × keeps the invited and unavailable pages' words, but no App Store claim for TestFlight's link, and puts the name in a bdi 12ms
+== Y14 Safari's tap highlight stays over the pressed colour: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × reloads for another link opened in the same tab, and gives Retry the touch listener Safari's pressed look needs 10ms
+== Y15 the hint names Tadayo in the App Store again: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × says each of handoff 9's words for the page as its copy contracts give them 11ms
+== Y16 the hold measures the block after the checking is shown, holding nothing: CAUGHT; exit 1 ['Tests  1 failed | 46 passed (47)']
+    × holds the status block at its height from Retry to the answer, so neither control moves; the first load holds nothing 13ms
+16 caught
