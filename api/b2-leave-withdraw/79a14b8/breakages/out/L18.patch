@@ -1,0 +1,17 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -175,12 +175,12 @@
+     INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
+     SELECT d.id, 'leave', ${interval}, ${at}::pg_catalog.timestamptz
+       FROM app.drops d
+-     WHERE d.author_interval_id = ${interval} AND d.state IN ('active', 'held')`;
++     WHERE d.author_interval_id = ${interval} AND d.state IN ('active', 'held') AND NOT EXISTS (SELECT FROM app.occurrences oo WHERE oo.id = d.occurrence_id AND oo.star_interval_id = ${interval})`;
+   await bound(tx)`
+     UPDATE app.drops
+        SET state = 'withdrawn', ended_at = ${at}::pg_catalog.timestamptz,
+            updated_at = ${at}::pg_catalog.timestamptz, pending_upload_id = NULL
+-     WHERE author_interval_id = ${interval} AND state IN ('active', 'held')`;
++     WHERE author_interval_id = ${interval} AND state IN ('active', 'held') AND NOT EXISTS (SELECT FROM app.occurrences oo WHERE oo.id = app.drops.occurrence_id AND oo.star_interval_id = ${interval})`;
+   // The drops this leave withdrew are the interval's with a `leave` removal at its instant (an interval leaves
+   // once), found from the interval's drops (`drops_by_author`) and their highlights (`highlights_by_drop`). The
+   // leaver's highlight on one is cleared after the drop's end, as the highlights' guard asks from the reveal on

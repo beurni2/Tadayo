@@ -1,0 +1,26 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -176,11 +176,6 @@
+     SELECT d.id, 'leave', ${interval}, ${at}::pg_catalog.timestamptz
+       FROM app.drops d
+      WHERE d.author_interval_id = ${interval} AND d.state IN ('active', 'held')`;
+-  await bound(tx)`
+-    UPDATE app.drops
+-       SET state = 'withdrawn', ended_at = ${at}::pg_catalog.timestamptz,
+-           updated_at = ${at}::pg_catalog.timestamptz, pending_upload_id = NULL
+-     WHERE author_interval_id = ${interval} AND state IN ('active', 'held')`;
+   // The drops this leave withdrew are the interval's with a `leave` removal at its instant (an interval leaves
+   // once), found from the interval's drops (`drops_by_author`) and their highlights (`highlights_by_drop`). The
+   // leaver's highlight on one is cleared after the drop's end, as the highlights' guard asks from the reveal on
+@@ -192,6 +187,11 @@
+       JOIN app.drop_removals r ON r.drop_id = d.id
+      WHERE d.author_interval_id = ${interval} AND h.drop_id = d.id AND h.interval_id = ${interval}
+        AND r.reason = 'leave' AND r.actor_interval_id = ${interval} AND r.removed_at = ${at}::pg_catalog.timestamptz`;
++  await bound(tx)`
++    UPDATE app.drops
++       SET state = 'withdrawn', ended_at = ${at}::pg_catalog.timestamptz,
++           updated_at = ${at}::pg_catalog.timestamptz, pending_upload_id = NULL
++     WHERE author_interval_id = ${interval} AND state IN ('active', 'held')`;
+   // Before its day's reveal, its slot given back; from the reveal on, none reopens (T3, T18; spec 22).
+   await bound(tx)`
+     UPDATE app.contribution_counters c

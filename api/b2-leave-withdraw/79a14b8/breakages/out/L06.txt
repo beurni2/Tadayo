@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 1 failed) 1760ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 83ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  14:38:01
+   Duration  4.07s (tests 55%, transform 32%, import 13%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29)
+AssertionError: expected { state: 'held', ended_at: null, …(5) } to deeply equal { state: 'withdrawn', …(6) }
+
+- Expected
++ Received
+
+  {
+-   "actor": "mem_yShK32degazylTbvwnPvPg",
+-   "ended_at": "2026-11-06T21:00:00.123456Z",
++   "actor": null,
++   "ended_at": null,
+    "pending_upload_id": null,
+-   "reason": "leave",
+-   "removed_at": "2026-11-06T21:00:00.123456Z",
+-   "state": "withdrawn",
+-   "updated_at": "2026-11-06T21:00:00.123456Z",
++   "reason": null,
++   "removed_at": null,
++   "state": "held",
++   "updated_at": "2026-11-06T20:10:00Z",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:329:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:309:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

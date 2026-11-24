@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -179,7 +179,7 @@
+   await bound(tx)`
+     UPDATE app.drops
+        SET state = 'withdrawn', ended_at = ${at}::pg_catalog.timestamptz,
+-           updated_at = ${at}::pg_catalog.timestamptz, pending_upload_id = NULL
++           updated_at = ${at}::pg_catalog.timestamptz
+      WHERE author_interval_id = ${interval} AND state IN ('active', 'held')`;
+   // The drops this leave withdrew are the interval's with a `leave` removal at its instant (an interval leaves
+   // once), found from the interval's drops (`drops_by_author`) and their highlights (`highlights_by_drop`). The

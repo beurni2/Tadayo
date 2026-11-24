@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -163,7 +163,7 @@
+        ORDER BY id COLLATE "C"`;
+     for (const slot of live) await freeSlot(tx, day, text(slot["id"]), at);
+   }
+-  if (contributions !== "withdraw") return;
++  return;
+   // The drops, all at once, whatever their number. Each `FOR UPDATE`, in id order, after its counter.
+   await bound(tx)`
+     SELECT d.id FROM app.drops d

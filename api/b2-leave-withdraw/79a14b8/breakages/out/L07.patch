@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -173,7 +173,7 @@
+   // Each its one removal, then withdrawn: the database matches the two at the commit (drops_removal_matches).
+   await bound(tx)`
+     INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
+-    SELECT d.id, 'leave', ${interval}, ${at}::pg_catalog.timestamptz
++    SELECT d.id, 'withdraw', ${interval}, ${at}::pg_catalog.timestamptz
+       FROM app.drops d
+      WHERE d.author_interval_id = ${interval} AND d.state IN ('active', 'held')`;
+   await bound(tx)`

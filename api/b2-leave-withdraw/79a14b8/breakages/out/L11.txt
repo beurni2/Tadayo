@@ -1,0 +1,52 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 2 failed) 2008ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 185ms
+     × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 77ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  14:38:26
+   Duration  4.15s (tests 61%, transform 29%, import 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22)
+PostgresError: app.drops: drop drp_Bzt-gtx188n__6i0c-pwxQ ended with a highlight still on it (T22)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:324:11
+    322| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    323| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    324|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    325|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    326| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29)
+PostgresError: app.drops: drop drp_TSY-5TSsL5uhmgnp2Nbe4A ended with a highlight still on it (T22)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:324:11
+    322| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    323| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    324|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    325|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    326| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

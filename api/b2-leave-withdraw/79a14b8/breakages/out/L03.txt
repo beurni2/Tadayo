@@ -1,0 +1,182 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 5 failed) 2040ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × keeps Ben's drops for those who stay when Ben chooses keep, as before 94ms
+     × leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default) 84ms
+   ❯ every leave gives back the leaver's live reservations (T18: no phantom slots) (2)
+     × releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one 62ms
+   ❯ the receipt, and a refused leave (T14, T19) (3)
+     × withdraws nothing for a leave refused: someone who was never in the club, or a former member asking again 81ms
+     × takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so 75ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 9 passed (14)
+   Start at  14:37:45
+   Duration  4.62s (tests 56%, transform 32%, import 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > keeps Ben's drops for those who stay when Ben chooses keep, as before
+AssertionError: expected { state: 'withdrawn', …(2) } to deeply equal { state: 'active', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "ended_at": null,
+-   "reason": null,
+-   "state": "active",
++   "ended_at": "2026-11-06T21:00:00.123456Z",
++   "reason": "leave",
++   "state": "withdrawn",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:301:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:295:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default)
+AssertionError: expected { state: 'withdrawn', …(2) } to deeply equal { state: 'active', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "ended_at": null,
+-   "reason": null,
+-   "state": "active",
++   "ended_at": "2026-11-06T20:10:00Z",
++   "reason": "leave",
++   "state": "withdrawn",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:401:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:383:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > every leave gives back the leaver's live reservations (T18: no phantom slots) > releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one
+AssertionError: expected { committed_total: +0, …(3) } to deeply equal ObjectContaining{…}
+
+- Expected
++ Received
+
+- ObjectContaining {
+-   "committed_total": 1,
++ {
++   "committed_external": 0,
++   "committed_total": 0,
++   "reserved_external": 0,
+    "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:440:58
+    438|         expect(await slotRow(tx, consumed?.id ?? "")).toEqual(expect.o…
+    439|         expect(await slotRow(tx, cleos)).toEqual({ state: "live", ende…
+    440|         expect(await counter(tx, w.day, w.ben.interval)).toEqual(
+       |                                                          ^
+    441|           expect.objectContaining({ reserved_total: 0, committed_total…
+    442|         );
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:409:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > the receipt, and a refused leave (T14, T19) > withdraws nothing for a leave refused: someone who was never in the club, or a former member asking again
+AssertionError: expected AssertionError: expected { state: 'withdr… { …(4) } to be Error: the refused leave's savepoint, rol… // Object.is equality
+
+- Expected
++ Received
+
+- Error {
+-   "message": "the refused leave's savepoint, rolled back",
++ AssertionError {
++   "message": "expected { state: 'withdrawn', …(2) } to deeply equal { state: 'active', …(2) }",
++   "actual": {
++     "ended_at": "2026-11-06T21:00:00.123456Z",
++     "reason": "leave",
++     "state": "withdrawn",
++   },
++   "expected": {
++     "ended_at": null,
++     "reason": null,
++     "state": "active",
++   },
++   "showDiff": true,
++   "operator": "deepStrictEqual",
+  }
+
+ ❯ refusedLeave src/db/leave-withdraw.test.ts:80:4
+     78|       throw undo;
+     79|     }),
+     80|   ).rejects.toBe(undo);
+       |    ^
+     81| }
+     82|
+ ❯ src/db/leave-withdraw.test.ts:483:13
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > the receipt, and a refused leave (T14, T19) > takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so
+AssertionError: expected { state: 'withdrawn', …(2) } to deeply equal { state: 'active', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "ended_at": null,
+-   "reason": null,
+-   "state": "active",
++   "ended_at": "2026-11-06T21:01:00.123456Z",
++   "reason": "leave",
++   "state": "withdrawn",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:499:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:488:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

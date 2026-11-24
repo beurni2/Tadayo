@@ -1,0 +1,74 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 04b79c44..56783771 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -12507,7 +12507,7 @@ components:
+       required:
+         - contributions
+       additionalProperties: false
+-      description: "Leave a club (G05-leave), choosing explicitly for the caller's drops (spec 22). Leaving pushes to nobody (T36: spec 21 has no such event); a drop withdrawn by it is an authored withdrawal, whose notice to its day's star (spec 21) comes with the notifications, in B7. Withdrawing can't be undone. The caller's own days that haven't opened are held, neither opened nor deleted, and the drops added for them stay hidden, with their authors (FQ63); a held day gets its shape with leaving, in B6."
++      description: "Leave a club (G05-leave), choosing explicitly for the caller's drops (spec 22). Leaving pushes to nobody (T36: spec 21 has no such event); a drop withdrawn by it is an authored withdrawal, whose notice to its day's star (spec 21) comes with the notifications, in B8. Withdrawing can't be undone. The caller's own days that haven't opened are held, neither opened nor deleted, and the drops added for them stay hidden, with their authors (FQ63); a held day gets its shape with leaving, in B6."
+     LeftClub:
+       type: object
+       properties:
+diff --git a/packages/contracts/src/schemas/clubs.ts b/packages/contracts/src/schemas/clubs.ts
+index 56e254e3..b7b96039 100644
+--- a/packages/contracts/src/schemas/clubs.ts
++++ b/packages/contracts/src/schemas/clubs.ts
+@@ -669,7 +669,7 @@ export const LeaveClubRequest = named(
+   "LeaveClubRequest",
+   "Leave a club (G05-leave), choosing explicitly for the caller's drops (spec 22). Leaving pushes to nobody " +
+     "(T36: spec 21 has no such event); a drop withdrawn by it is an authored withdrawal, whose notice to its " +
+-    "day's star (spec 21) comes with the notifications, in B7. Withdrawing can't be undone. The caller's own " +
++    "day's star (spec 21) comes with the notifications, in B8. Withdrawing can't be undone. The caller's own " +
+     "days that haven't opened are held, neither " +
+     "opened nor deleted, and the drops added for them stay hidden, with their authors (FQ63); a held day " +
+     "gets its shape with leaving, in B6.",
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index bc319dce..c7e5e441 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -51,7 +51,7 @@
+ // spec 21 has no such event). A withdrawn drop's caption and media are purged, and its tombstone written, by B6's
+ // purge, as for every withdrawal (T27, T28); until then the media route, which reads the predicate, serves nothing
+ // of it (T12). A withdrawn drop is an authored withdrawal, whose notice to its day's star (spec 21) comes with the
+-// notifications (B7), from its removal row.
++// notifications (B8), from its removal row.
+ 
+ import { activeMember } from "../authorization/member.ts";
+ import type { QuerySql } from "../authorization/read-sql.ts";
+@@ -182,13 +182,15 @@ async function settleContributions(
+            updated_at = ${at}::pg_catalog.timestamptz, pending_upload_id = NULL
+      WHERE author_interval_id = ${interval} AND state IN ('active', 'held')`;
+   // The drops this leave withdrew are the interval's with a `leave` removal at its instant (an interval leaves
+-  // once). The leaver's highlight on one is cleared after the drop's end, as the highlights' guard asks from the
+-  // reveal on (T22).
++  // once), found from the interval's drops (`drops_by_author`) and their highlights (`highlights_by_drop`). The
++  // leaver's highlight on one is cleared after the drop's end, as the highlights' guard asks from the reveal on
++  // (T22).
+   await bound(tx)`
+     UPDATE app.highlights h
+        SET drop_id = NULL, version = h.version + 1, updated_at = ${at}::pg_catalog.timestamptz
+-      FROM app.drop_removals r
+-     WHERE h.interval_id = ${interval} AND r.drop_id = h.drop_id
++      FROM app.drops d
++      JOIN app.drop_removals r ON r.drop_id = d.id
++     WHERE d.author_interval_id = ${interval} AND h.drop_id = d.id AND h.interval_id = ${interval}
+        AND r.reason = 'leave' AND r.actor_interval_id = ${interval} AND r.removed_at = ${at}::pg_catalog.timestamptz`;
+   // Before its day's reveal, its slot given back; from the reveal on, none reopens (T3, T18; spec 22).
+   await bound(tx)`
+diff --git a/packages/domain/src/drops/counter.ts b/packages/domain/src/drops/counter.ts
+index 7bd980a0..5055635e 100644
+--- a/packages/domain/src/drops/counter.ts
++++ b/packages/domain/src/drops/counter.ts
+@@ -14,7 +14,9 @@
+ // that has lapsed counts as none"). A job that purges lapsed uploads (B3) settles through it too.
+ //
+ // Every writer of a counter, a reservation, a drop or a highlight takes the club's row `FOR SHARE` first
+-// (./reserve.ts `lockDay`), and so must any later one, that job included. A leave (../clubs/leave-club.ts) holds
++// (./reserve.ts `lockDay`), and so must any later one, that job included, and any later writer of a row whose
++// foreign key names a drop (a comment, a reaction, a favourite, a replacement upload: B5), whose check waits on
++// the leave's lock of that drop. A leave (../clubs/leave-club.ts) holds
+ // that row `FOR UPDATE` and samples its clock under it, before it takes the leaver's counters, so its instant is
+ // right only while nothing else can reach them without the club's row.
+ //

@@ -1,0 +1,74 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 3 failed) 1851ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 90ms
+   ❯ every leave gives back the leaver's live reservations (T18: no phantom slots) (2)
+     × releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one 55ms
+     × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 42ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 11 passed (14)
+   Start at  14:40:33
+   Duration  4.19s (tests 60%, transform 28%, import 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22)
+AssertionError: expected { state: 'released', …(1) } to deeply equal { state: 'expired', …(1) }
+
+- Expected
++ Received
+
+  {
+    "ended_at": "2026-11-07T07:00:00Z",
+-   "state": "expired",
++   "state": "released",
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:262:39
+    260|         SELECT drop_id, version, updated_at FROM app.highlights WHERE …
+    261|       expect(highlight).toEqual({ drop_id: null, version: 2, updated_a…
+    262|       expect(await slotRow(tx, slot)).toEqual({ state: "expired", ende…
+       |                                       ^
+    263|       expect(await counter(tx, w.day, w.ben.interval)).toEqual({
+    264|         committed_total: 2,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:246:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > every leave gives back the leaver's live reservations (T18: no phantom slots) > releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one
+ FAIL  src/db/leave-withdraw.test.ts > every leave gives back the leaver's live reservations (T18: no phantom slots) > releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one
+AssertionError: expected { state: 'released', …(1) } to deeply equal { state: 'expired', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "ended_at": "2026-11-06T20:30:00Z",
+-   "state": "expired",
++   "ended_at": "2026-11-06T21:00:00.123456Z",
++   "state": "released",
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:437:43
+    435|         expect(await slotRow(tx, live)).toEqual({ state: "released", e…
+    436|         expect(await slotRow(tx, liveFriday)).toEqual({ state: "releas…
+    437|         expect(await slotRow(tx, lapsed)).toEqual({ state: "expired", …
+       |                                           ^
+    438|         expect(await slotRow(tx, consumed?.id ?? "")).toEqual(expect.o…
+    439|         expect(await slotRow(tx, cleos)).toEqual({ state: "live", ende…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:409:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+

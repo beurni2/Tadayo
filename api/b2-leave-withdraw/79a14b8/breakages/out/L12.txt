@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 1 failed) 1775ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 73ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  14:38:31
+   Duration  3.93s (tests 57%, transform 31%, import 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29)
+PostgresError: new row for relation "drops" violates check constraint "drops_check3"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleContributions ../packages/domain/src/clubs/leave-club.ts:179:18
+    177|       FROM app.drops d
+    178|      WHERE d.author_interval_id = ${interval} AND d.state IN ('active'…
+    179|   await bound(tx)`
+       |                  ^
+    180|     UPDATE app.drops
+    181|        SET state = 'withdrawn', ended_at = ${at}::pg_catalog.timestamp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

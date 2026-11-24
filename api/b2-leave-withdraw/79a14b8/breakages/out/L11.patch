@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -190,7 +190,7 @@
+        SET drop_id = NULL, version = h.version + 1, updated_at = ${at}::pg_catalog.timestamptz
+       FROM app.drops d
+       JOIN app.drop_removals r ON r.drop_id = d.id
+-     WHERE d.author_interval_id = ${interval} AND h.drop_id = d.id AND h.interval_id = ${interval}
++     WHERE false AND d.author_interval_id = ${interval} AND h.drop_id = d.id AND h.interval_id = ${interval}
+        AND r.reason = 'leave' AND r.actor_interval_id = ${interval} AND r.removed_at = ${at}::pg_catalog.timestamptz`;
+   // Before its day's reveal, its slot given back; from the reveal on, none reopens (T3, T18; spec 22).
+   await bound(tx)`

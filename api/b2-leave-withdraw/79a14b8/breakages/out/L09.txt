@@ -1,0 +1,203 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 6 failed) 1658ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws Ben's photo and link before the reveal: one leave removal each, the slots given back, and no read shows them 263ms
+     × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 65ms
+     × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 61ms
+     × withdraws Ben's drops in every day of the club, and nobody else's, nor Ben's in another club 109ms
+   ❯ every leave gives back the leaver's live reservations (T18: no phantom slots) (2)
+     × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 58ms
+   ❯ the receipt, and a refused leave (T14, T19) (3)
+     × answers the same leave again under its key with its first answer, and withdraws nothing more 50ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 8 passed (14)
+   Start at  14:38:15
+   Duration  5.11s (tests 45%, transform 39%, import 15%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws Ben's photo and link before the reveal: one leave removal each, the slots given back, and no read shows them
+AssertionError: expected { committed_total: 2, …(3) } to deeply equal ObjectContaining{…}
+
+- Expected
++ Received
+
+- ObjectContaining {
+-   "committed_external": 0,
+-   "committed_total": 0,
++ {
++   "committed_external": 1,
++   "committed_total": 2,
++   "reserved_external": 0,
++   "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:208:56
+    206|       await expectDrop(tx, cleos, untouched);
+    207|       // Before the reveal each withdrawal gives its slot back (T18).
+    208|       expect(await counter(tx, w.day, w.ben.interval)).toEqual(
+       |                                                        ^
+    209|         expect.objectContaining({ committed_total: 0, committed_extern…
+    210|       );
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:192:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it
+AssertionError: expected { committed_total: 2, …(3) } to deeply equal { committed_total: +0, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "committed_external": 0,
+-   "committed_total": 0,
++   "committed_external": 1,
++   "committed_total": 2,
+    "reserved_external": 0,
+    "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:285:56
+    283|       await expectDrop(tx, link, withdrawnBy(w.ben, justBefore));
+    284|       expect(await slotRow(tx, slot)).toEqual({ state: "released", end…
+    285|       expect(await counter(tx, w.day, w.ben.interval)).toEqual({
+       |                                                        ^
+    286|         committed_total: 0,
+    287|         committed_external: 0,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:273:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29)
+AssertionError: expected { committed_total: 2, …(3) } to deeply equal ObjectContaining {"committed_total": 0}
+
+- Expected
++ Received
+
+- ObjectContaining {
+-   "committed_total": 0,
++ {
++   "committed_external": 0,
++   "committed_total": 2,
++   "reserved_external": 0,
++   "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:334:56
+    332|         SELECT drop_id, version, updated_at FROM app.highlights WHERE …
+    333|       expect(highlight).toEqual({ drop_id: null, version: 2, updated_a…
+    334|       expect(await counter(tx, w.day, w.ben.interval)).toEqual(expect.…
+       |                                                        ^
+    335|     });
+    336|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:309:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws Ben's drops in every day of the club, and nobody else's, nor Ben's in another club
+AssertionError: expected { committed_total: 1, …(3) } to deeply equal ObjectContaining {"committed_total": 0}
+
+- Expected
++ Received
+
+- ObjectContaining {
+-   "committed_total": 0,
++ {
++   "committed_external": 0,
++   "committed_total": 1,
++   "reserved_external": 0,
++   "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:376:57
+    374|       await expectDrop(tx, saturday, withdrawnBy(w.ben, EVENING));
+    375|       await expectDrop(tx, ownDay, withdrawnBy(w.ben, EVENING));
+    376|       expect(await counter(tx, friday, w.ben.interval)).toEqual(expect…
+       |                                                         ^
+    377|       for (const kept of [anas, cleosForBen, theirs]) await expectDrop…
+    378|       expect(await counter(tx, friday, w.cleo.interval)).toEqual(expec…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:353:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > every leave gives back the leaver's live reservations (T18: no phantom slots) > releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one
+AssertionError: expected { committed_total: 1, …(3) } to deeply equal ObjectContaining{…}
+
+- Expected
++ Received
+
+- ObjectContaining {
+-   "committed_total": 0,
++ {
++   "committed_external": 0,
++   "committed_total": 1,
++   "reserved_external": 0,
+    "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:440:58
+    438|         expect(await slotRow(tx, consumed?.id ?? "")).toEqual(expect.o…
+    439|         expect(await slotRow(tx, cleos)).toEqual({ state: "live", ende…
+    440|         expect(await counter(tx, w.day, w.ben.interval)).toEqual(
+       |                                                          ^
+    441|           expect.objectContaining({ reserved_total: 0, committed_total…
+    442|         );
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:409:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > the receipt, and a refused leave (T14, T19) > answers the same leave again under its key with its first answer, and withdraws nothing more
+AssertionError: expected { committed_total: 1, …(3) } to deeply equal ObjectContaining {"committed_total": 0}
+
+- Expected
++ Received
+
+- ObjectContaining {
+-   "committed_total": 0,
++ {
++   "committed_external": 0,
++   "committed_total": 1,
++   "reserved_external": 0,
++   "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:461:56
+    459|       expect(again).toEqual(first);
+    460|       expect(await dropRow(tx, photo)).toEqual(before);
+    461|       expect(await counter(tx, w.day, w.ben.interval)).toEqual(expect.…
+       |                                                        ^
+    462|     });
+    463|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:452:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

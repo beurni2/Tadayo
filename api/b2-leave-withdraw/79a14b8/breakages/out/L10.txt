@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 2 failed) 1621ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws Ben's photo and link before the reveal: one leave removal each, the slots given back, and no read shows them 183ms
+     × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 58ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  14:38:21
+   Duration  4.25s (tests 51%, transform 36%, import 13%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws Ben's photo and link before the reveal: one leave removal each, the slots given back, and no read shows them
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it
+PostgresError: new row for relation "contribution_counters" violates check constraint "contribution_counters_check"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleContributions ../packages/domain/src/clubs/leave-club.ts:196:18
+    194|        AND r.reason = 'leave' AND r.actor_interval_id = ${interval} AN…
+    195|   // Before its day's reveal, its slot given back; from the reveal on,…
+    196|   await bound(tx)`
+       |                  ^
+    197|     UPDATE app.contribution_counters c
+    198|        SET committed_total = c.committed_total - f.total, committed_ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

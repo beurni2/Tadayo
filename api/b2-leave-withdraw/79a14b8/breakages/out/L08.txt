@@ -1,0 +1,76 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 2 failed) 2088ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws a drop in the opened day too, and gives back no slot after the reveal (T3, T18) 263ms
+     × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 107ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  14:38:10
+   Duration  4.45s (tests 60%, transform 27%, import 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws a drop in the opened day too, and gives back no slot after the reveal (T3, T18)
+AssertionError: expected { committed_total: +0, …(3) } to deeply equal ObjectContaining {"committed_total": 1}
+
+- Expected
++ Received
+
+- ObjectContaining {
+-   "committed_total": 1,
++ {
++   "committed_external": 0,
++   "committed_total": 0,
++   "reserved_external": 0,
++   "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:236:56
+    234|
+    235|       await expectDrop(tx, photo, withdrawnBy(w.ben, MORNING));
+    236|       expect(await counter(tx, w.day, w.ben.interval)).toEqual(expect.…
+       |                                                        ^
+    237|       const later = MORNING.add({ minutes: 5 });
+    238|       for (const reader of [w.ana, w.cleo]) {
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:227:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22)
+AssertionError: expected { committed_total: +0, …(3) } to deeply equal { committed_total: 2, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "committed_external": 1,
+-   "committed_total": 2,
++   "committed_external": 0,
++   "committed_total": 0,
+    "reserved_external": 0,
+    "reserved_total": 0,
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:263:56
+    261|       expect(highlight).toEqual({ drop_id: null, version: 2, updated_a…
+    262|       expect(await slotRow(tx, slot)).toEqual({ state: "expired", ende…
+    263|       expect(await counter(tx, w.day, w.ben.interval)).toEqual({
+       |                                                        ^
+    264|         committed_total: 2,
+    265|         committed_external: 1,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:246:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

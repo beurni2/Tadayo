@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 1 failed) 1968ms
+   ❯ every leave gives back the leaver's live reservations (T18: no phantom slots) (2)
+     × releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one 68ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  14:38:36
+   Duration  4.06s (tests 62%, transform 27%, import 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > every leave gives back the leaver's live reservations (T18: no phantom slots) > releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one
+AssertionError: expected { state: 'live', ended_at: null } to deeply equal { state: 'released', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "ended_at": "2026-11-06T21:00:00.123456Z",
+-   "state": "released",
++   "ended_at": null,
++   "state": "live",
+  }
+
+ ❯ src/db/leave-withdraw.test.ts:435:41
+    433|         await leaving(tx, w, w.ben, EVENING, choice);
+    434|
+    435|         expect(await slotRow(tx, live)).toEqual({ state: "released", e…
+       |                                         ^
+    436|         expect(await slotRow(tx, liveFriday)).toEqual({ state: "releas…
+    437|         expect(await slotRow(tx, lapsed)).toEqual({ state: "expired", …
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:409:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
