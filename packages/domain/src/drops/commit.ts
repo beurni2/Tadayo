@@ -20,7 +20,8 @@
 //    cancellation until this commits, so the audience written below is the club's as it stands; the counter
 //    `FOR NO KEY UPDATE` (./counter.ts); then the caller's upload `FOR SHARE`, which waits for a preparation in
 //    flight (../media/prepare.ts, `FOR NO KEY UPDATE`) and then reads it as it left it, and the upload's
-//    reservation `FOR NO KEY UPDATE`, as a release takes it after the same counter (./release.ts).
+//    reservation `FOR NO KEY UPDATE` when `ownsReservation` gives it to the caller, as a release takes it after the
+//    same counter (./release.ts).
 // 4. The clock, sampled after the locks (T1, T3): a commit that waited across 07:00 reads the time after it.
 // 5. The rule again, on the facts read under the locks, in this order: NOT_FOUND (a leave, a suspension or a
 //    rejoin came in between); MEMBERSHIP_CHANGED for a held day (FQ63); from the reveal on, OCCURRENCE_CLOSED
@@ -274,12 +275,12 @@ export async function createDrop(
                  FOR SHARE`
           )[0],
         );
-  // The slot's day and interval never change, so they are read before its lock, and it is locked only when it is
-  // this counter's: a slot of another counter is never locked without that counter's lock.
+  // The slot's day and interval never change, so they are read before its lock, and it is locked only when the
+  // authorization module gives it to the caller (`ownsReservation`, as at step 1's facts and time): then it is
+  // this counter's, and a slot of another counter is never locked without that counter's lock. Step 5 asks again.
   const slotId = upload?.reservation ?? null;
   const slotSeen = slotId === null ? null : await readSlot(tx, slotId);
-  const ours = slotSeen !== null && slotSeen.day === key.day && slotSeen.interval === key.interval;
-  if (ours && slotId !== null) {
+  if (slotId !== null && slotSeen !== null && ownsReservation(seen, slotSeen, first)) {
     await bound(tx)`SELECT id FROM app.reservations WHERE id = ${slotId} FOR NO KEY UPDATE`;
   }
 

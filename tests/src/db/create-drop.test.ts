@@ -1111,10 +1111,6 @@ describe("a slot that ended before its photo was added (T17, T18; spec 11)", () 
   });
 });
 
-/**
- * Another connection holding `interval`'s counter row in `day` `FOR NO KEY UPDATE`, the command's own lock on it,
- * writing nothing, until released.
- */
 /** Another connection holding Ana's Saturday's own row, as a write to the day would, until released. */
 async function holdingDay(day: string): Promise<{ pid: number; release: () => Promise<void> }> {
   let release = (): void => undefined;
@@ -1137,6 +1133,10 @@ async function holdingDay(day: string): Promise<{ pid: number; release: () => Pr
   };
 }
 
+/**
+ * Another connection holding `interval`'s counter row in `day` `FOR NO KEY UPDATE`, the command's own lock on it,
+ * writing nothing, until released.
+ */
 async function holdingCounter(day: string, interval: string): Promise<{ pid: number; release: () => Promise<void> }> {
   let release = (): void => undefined;
   const released = new Promise<void>((resolve) => (release = resolve));

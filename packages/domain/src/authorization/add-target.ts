@@ -1,8 +1,8 @@
 /// <reference lib="esnext.temporal" />
 // Who may add to a day, and what the day is to them at the server's time (spec 06, 07, 11, 32; T1, T3, T4,
-// T9, T14, T17; FQ50, FQ63): the authorization module's rule for every command that targets a day, a
-// reservation now (packages/domain/src/drops/reserve.ts), the commit and a highlight later (B3, B4). A handler
-// never states it again (T9).
+// T9, T14, T17; FQ50, FQ63): the authorization module's rule for every command that targets a day: a
+// reservation (packages/domain/src/drops/reserve.ts), a photo's commit (packages/domain/src/drops/commit.ts),
+// and a video link's commit and a highlight later (B4). A handler never states it again (T9).
 //
 // - Nothing for anyone but a member: the caller's account is active, they have an active interval in the
 //   day's club, the club isn't suspended (spec 22), and the day is scheduled, neither suspended nor cancelled
