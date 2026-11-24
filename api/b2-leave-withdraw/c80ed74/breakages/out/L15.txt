@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 2016 cells run, 38004 answers scanned
+member in the audience, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (25 tests | 1 failed | 24 skipped) 74754ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 74352ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 skipped (25)
+   Start at  13:52:56
+   Duration  76.49s (tests 98%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 2, first: [ …(2) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 2,
++   "first": [
++     "its day suspended, past, a year on: leaveClub: the leaver's lapsed reservation rsv_nkv_FuauvFWEi844DhiRkQ isn't expired at its own expires_at (T18) (the viewer's own leave)",
++     "its day cancelled, past, a year on: leaveClub: the leaver's lapsed reservation rsv_veLZkyB_pQYg2s17FV4uqQ isn't expired at its own expires_at (T18) (the viewer's own leave)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2864:66
+    2862|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2863|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2864|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2865|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2866|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

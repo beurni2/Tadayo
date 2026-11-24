@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -201,7 +201,7 @@
+               JOIN app.drop_removals r ON r.drop_id = d.id
+               JOIN app.occurrences o ON o.id = d.occurrence_id
+              WHERE d.author_interval_id = ${interval} AND r.reason = 'leave' AND r.actor_interval_id = ${interval}
+-               AND r.removed_at = ${at}::pg_catalog.timestamptz AND o.reveal_at > ${at}::pg_catalog.timestamptz
++               AND r.removed_at = ${at}::pg_catalog.timestamptz AND o.reveal_at >= ${at}::pg_catalog.timestamptz
+              GROUP BY d.occurrence_id) f
+      WHERE c.occurrence_id = f.occurrence_id AND c.interval_id = ${interval}`;
+ }

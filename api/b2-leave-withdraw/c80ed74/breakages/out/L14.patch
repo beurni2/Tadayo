@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -161,7 +161,7 @@
+       SELECT id FROM app.reservations
+        WHERE occurrence_id = ${day.day} AND interval_id = ${interval} AND state = 'live'
+        ORDER BY id COLLATE "C"`;
+-    for (const slot of live) await freeSlot(tx, day, text(slot["id"]), at);
++    if (contributions === "keep") for (const slot of live) await freeSlot(tx, day, text(slot["id"]), at);
+   }
+   if (contributions !== "withdraw") return;
+   // The drops, all at once, whatever their number. Each `FOR UPDATE`, in id order, after its counter.

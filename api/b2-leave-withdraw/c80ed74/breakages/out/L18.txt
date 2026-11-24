@@ -1,0 +1,92 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 2 failed) 1680ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws Ana's own drops on her Saturday, which her leave holds, and leaves Ben's drop for that day as it was (FQ63) 70ms
+     × withdraws Ben's drops in every day of the club, and nobody else's, nor Ben's in another club 109ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  13:54:20
+   Duration  2.86s (tests 73%, import 15%, transform 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws Ana's own drops on her Saturday, which her leave holds, and leaves Ben's drop for that day as it was (FQ63)
+AssertionError: expected { state: 'active', …(6) } to deeply equal { state: 'withdrawn', …(6) }
+
+- Expected
++ Received
+
+  {
+-   "actor": "mem_lZyrpJZjxd0ph3C4Qaq-VA",
+-   "ended_at": "2026-11-06T21:00:00.123456Z",
++   "actor": null,
++   "ended_at": null,
+    "pending_upload_id": null,
+-   "reason": "leave",
+-   "removed_at": "2026-11-06T21:00:00.123456Z",
+-   "state": "withdrawn",
+-   "updated_at": "2026-11-06T21:00:00.123456Z",
++   "reason": null,
++   "removed_at": null,
++   "state": "active",
++   "updated_at": "2026-11-06T20:00:00Z",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:346:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:339:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws Ben's drops in every day of the club, and nobody else's, nor Ben's in another club
+AssertionError: expected { state: 'active', …(6) } to deeply equal { state: 'withdrawn', …(6) }
+
+- Expected
++ Received
+
+  {
+-   "actor": "mem_6rM3o3m5WiTZfsh34BXj9w",
+-   "ended_at": "2026-11-06T21:00:00.123456Z",
++   "actor": null,
++   "ended_at": null,
+    "pending_upload_id": null,
+-   "reason": "leave",
+-   "removed_at": "2026-11-06T21:00:00.123456Z",
+-   "state": "withdrawn",
+-   "updated_at": "2026-11-06T21:00:00.123456Z",
++   "reason": null,
++   "removed_at": null,
++   "state": "active",
++   "updated_at": "2026-11-06T20:00:00Z",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:375:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:353:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,92 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a3-brk/tests
+
+ ❯ src/db/leave-withdraw.test.ts (14 tests | 2 failed) 1697ms
+   ❯ leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) (9)
+     × withdraws a drop in the opened day too, and gives back no slot after the reveal (T3, T18) 192ms
+     × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 112ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  13:52:21
+   Duration  2.71s (tests 75%, import 15%, transform 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws a drop in the opened day too, and gives back no slot after the reveal (T3, T18)
+AssertionError: expected { state: 'active', …(6) } to deeply equal { state: 'withdrawn', …(6) }
+
+- Expected
++ Received
+
+  {
+-   "actor": "mem_RSYDC_I_YHHnlSa5B6xVgw",
+-   "ended_at": "2026-11-07T09:00:00.654321Z",
++   "actor": null,
++   "ended_at": null,
+    "pending_upload_id": null,
+-   "reason": "leave",
+-   "removed_at": "2026-11-07T09:00:00.654321Z",
+-   "state": "withdrawn",
+-   "updated_at": "2026-11-07T09:00:00.654321Z",
++   "reason": null,
++   "removed_at": null,
++   "state": "active",
++   "updated_at": "2026-11-06T20:00:00Z",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:235:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:227:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/leave-withdraw.test.ts > leaving with withdraw takes the leaver's drops out of every view (spec 22, T23, T24, T26; the audit's A3) > withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22)
+AssertionError: expected { state: 'active', …(6) } to deeply equal { state: 'withdrawn', …(6) }
+
+- Expected
++ Received
+
+  {
+-   "actor": "mem_k4iAXp0WEdDWqpoRKKRUig",
+-   "ended_at": "2026-11-07T07:00:00Z",
++   "actor": null,
++   "ended_at": null,
+    "pending_upload_id": null,
+-   "reason": "leave",
+-   "removed_at": "2026-11-07T07:00:00Z",
+-   "state": "withdrawn",
+-   "updated_at": "2026-11-07T07:00:00Z",
++   "reason": null,
++   "removed_at": null,
++   "state": "active",
++   "updated_at": "2026-11-06T20:00:00Z",
+  }
+
+ ❯ expectDrop src/db/leave-withdraw.test.ts:120:96
+    118| async function expectDrop(tx: WorldTx, id: string, want: Partial<DropR…
+    119|   const row = await dropRow(tx, id);
+    120|   expect(Object.fromEntries(Object.keys(want).map((key) => [key, row[k…
+       |                                                                                                ^
+    121| }
+    122|
+ ❯ src/db/leave-withdraw.test.ts:257:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/leave-withdraw.test.ts:246:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

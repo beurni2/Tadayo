@@ -1,0 +1,80 @@
+== L01 the withdrawal skipped [lw]: CAUGHT; exit 1 ['Tests  11 failed | 3 passed (14)']
+    × answers the same leave again under its key with its first answer, and withdraws nothing more 47ms
+    × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 45ms
+    × leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default) 45ms
+    × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 42ms
+    × takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so 45ms
+    × withdraws Ana's own drops on her Saturday, which her leave holds, and leaves Ben's drop for that day as it was (FQ63) 47ms
+== L02 the withdrawal skipped, seen by the matrix's judge [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 24 skipped (25)']
+    × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 73337ms
+== L03 withdraw on keep too [lw]: CAUGHT; exit 1 ['Tests  5 failed | 9 passed (14)']
+    × keeps Ben's drops for those who stay when Ben chooses keep, as before 95ms
+    × leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default) 87ms
+    × releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one 74ms
+    × takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so 65ms
+    × withdraws nothing for a leave refused: someone who was never in the club, or a former member asking again 74ms
+== L04 only revealed drops withdrawn [lw]: CAUGHT; exit 1 ['Tests  9 failed | 5 passed (14)']
+    × answers the same leave again under its key with its first answer, and withdraws nothing more 44ms
+    × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 88ms
+    × leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default) 93ms
+    × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 68ms
+    × takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so 60ms
+    × withdraws Ana's own drops on her Saturday, which her leave holds, and leaves Ben's drop for that day as it was (FQ63) 118ms
+== L05 only unrevealed drops withdrawn [lw]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × withdraws a drop in the opened day too, and gives back no slot after the reveal (T3, T18) 192ms
+    × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 112ms
+== L06 a held drop left [lw]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 100ms
+== L07 the removal's reason another [lw]: CAUGHT; exit 1 ['Tests  11 failed | 3 passed (14)']
+    × answers the same leave again under its key with its first answer, and withdraws nothing more 41ms
+    × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 69ms
+    × leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default) 75ms
+    × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 51ms
+    × takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so 79ms
+    × withdraws Ana's own drops on her Saturday, which her leave holds, and leaves Ben's drop for that day as it was (FQ63) 52ms
+== L08 the slot given back after the reveal too [lw]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × withdraws a drop in the opened day too, and gives back no slot after the reveal (T3, T18) 211ms
+    × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 84ms
+== L09 the slot not given back before the reveal [lw]: CAUGHT; exit 1 ['Tests  6 failed | 8 passed (14)']
+    × answers the same leave again under its key with its first answer, and withdraws nothing more 44ms
+    × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 57ms
+    × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 80ms
+    × withdraws Ben's drops in every day of the club, and nobody else's, nor Ben's in another club 101ms
+    × withdraws Ben's photo and link before the reveal: one leave removal each, the slots given back, and no read shows them 184ms
+    × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 60ms
+== L10 a link's slot not given back as a link's [lw]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 91ms
+    × withdraws Ben's photo and link before the reveal: one leave removal each, the slots given back, and no read shows them 198ms
+== L11 the highlight left on the withdrawn drop [lw]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 67ms
+    × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 73ms
+== L12 the pending replacement kept [lw]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × withdraws a held drop as well, clears Ben's highlight on a withdrawn one, and lets its pending replacement go (T22, T29) 51ms
+== L13 reservations left live on keep [lw]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one 62ms
+== L14 reservations left live on withdraw [lw]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it 111ms
+    × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 90ms
+== L15 a lapsed reservation released instead of expired, seen by the matrix's judge [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 24 skipped (25)']
+    × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 74352ms
+== L16 a lapsed reservation released instead of expired [lw]: CAUGHT; exit 1 ['Tests  3 failed | 11 passed (14)']
+    × releases Ben's live slots at the leave with keep, settles a lapsed one as expired, and leaves a used one 39ms
+    × releases Ben's live slots at the leave with withdraw, settles a lapsed one as expired, and leaves a used one 37ms
+    × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 113ms
+== L17 every drop of the club withdrawn [lw]: CAUGHT; exit 1 ['Tests  6 failed | 8 passed (14)']
+    × leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default) 78ms
+    × takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so 37ms
+    × withdraws Ana's own drops on her Saturday, which her leave holds, and leaves Ben's drop for that day as it was (FQ63) 69ms
+    × withdraws Ben's drops in every day of the club, and nobody else's, nor Ben's in another club 117ms
+    × withdraws Ben's photo and link before the reveal: one leave removal each, the slots given back, and no read shows them 191ms
+    × withdraws a drop in the opened day too, and gives back no slot after the reveal (T3, T18) 352ms
+== L18 the leaver's own held day left [lw]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × withdraws Ana's own drops on her Saturday, which her leave holds, and leaves Ben's drop for that day as it was (FQ63) 70ms
+    × withdraws Ben's drops in every day of the club, and nobody else's, nor Ben's in another club 109ms
+== L19 the earlier interval's kept drops withdrawn too [lw]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × leaves a drop Ben kept under an earlier membership of the club as it was (FQ142's default) 65ms
+== L20 the highlight cleared before the drop's end [lw]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 76ms
+== L21 the slot given back at the reveal's very instant [lw]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22) 93ms
+restored: ''

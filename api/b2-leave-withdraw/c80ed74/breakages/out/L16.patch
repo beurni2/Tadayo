@@ -1,0 +1,10 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -156,7 +156,6 @@
+   const days = new Set(held.map((row) => text(row["occurrence_id"])));
+   for (const occurrence of days) {
+     const day: CounterKey = { day: occurrence, interval, club };
+-    await settleLapsed(tx, day, at);
+     const live = await bound(tx)`
+       SELECT id FROM app.reservations
+        WHERE occurrence_id = ${day.day} AND interval_id = ${interval} AND state = 'live'
