@@ -2,15 +2,20 @@
 // the worker's modules, takes the worker's mode itself as fly.toml's command leaves it (real uid 0; groups, effective
 // group and effective uid an unused id, 64998), and prepares photos with fake children as an unused photo user
 // (64999). It writes one line of JSON a case to standard output, and asserts nothing: the test says what each must be.
-// With `sweep-timeout`, it gives the sweep a millisecond, and the worker's stop ends it (exit status 1).
+// With `sweep-timeout`, it gives the sweep a millisecond, and the worker's stop ends it (exit status 1). It sends a
+// sweep SIGUSR1, as a process left behind could, and starts the worker's own start (./start.ts) with a process of the
+// photo user running, against a database nothing answers for (PR #118's review).
 //
 // The fake children are written to a fresh folder under the system's temporary folder, which the photo user can
 // read: on CI's runner the checkout is under a home folder only its user may enter. Each says it is ready, reads the
 // photo, then does as its name says; what it saw it writes to `out/`, a folder of the photo user's, as JSON.
 
+import { execFileSync, spawn } from "node:child_process";
 import {
   chmodSync,
   chownSync,
+  existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -18,11 +23,13 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { prepareIsolated } from "./image-process.ts";
 import { asRoot, sweep, SweepFailed } from "./privileges.ts";
+import { startWorker } from "./start.ts";
 
 const MiB = 1024 * 1024;
 const WORKER = 64998;
@@ -43,8 +50,17 @@ const frame = (header, bodies = []) => {
   return Buffer.concat([length, json, ...bodies]);
 };
 const send = (header, bodies) => new Promise((resolve) => worker.write(frame(header, bodies), () => resolve()));
-const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
-const renditions = [{ kind: "full", width: 2, height: 1, length: 4 }, { kind: "display", width: 2, height: 1, length: 4 }];
+// The smallest baseline JPEG of 2 by 1 the worker takes (./image-process.ts, baselineJpeg).
+const segment = (marker, body) => [0xff, marker, (body.length + 2) >> 8, (body.length + 2) & 0xff, ...body];
+const jpeg = Buffer.from([
+  0xff, 0xd8,
+  ...segment(0xdb, new Array(65).fill(1)),
+  ...segment(0xc0, [8, 0, 1, 0, 2, 3, 1, 0x11, 0, 2, 0x11, 1, 3, 0x11, 1]),
+  ...segment(0xc4, new Array(29).fill(0)),
+  ...segment(0xda, [3, 1, 0, 2, 0x11, 3, 0x11, 0, 0x3f, 0]),
+  0x12, 0xff, 0xd9,
+]);
+const renditions = [{ kind: "full", width: 2, height: 1, length: jpeg.length }, { kind: "display", width: 2, height: 1, length: jpeg.length }];
 const answer = () =>
   send({ kind: "prepared", prepared: { ok: true, renditions }, peakBytes: 1, oomScoreAdj: 0, environment: 0 }, [jpeg, jpeg]);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -99,6 +115,16 @@ const tick = () => {
 tick();
 `;
 
+/**
+ * Perl that makes a System V shared memory segment and gives it to the uid it is passed, so its maker and its owner
+ * differ (Node has no shmctl: `IPC_STAT` is 2, `IPC_SET` 1, and the owner is 4 bytes into the structure).
+ */
+const GIVE_SEGMENT = [
+  'my $id = shmget(0, 65536, 0600 | 01000); defined $id or die "shmget: $!";',
+  'my $ds = ""; shmctl($id, 2, $ds) or die "stat: $!";',
+  'substr($ds, 4, 4) = pack("L", $ARGV[0]); shmctl($id, 1, $ds) or die "set: $!";',
+].join(" ");
+
 const CHILDREN: Record<string, string> = {
   // What it can reach of the worker, its parent: its environment, its memory, its standard output, a signal.
   probe: String.raw`
@@ -120,6 +146,8 @@ writeFileSync(out + "probe.json", JSON.stringify({
   groups: process.getgroups(),
   capEff: /^CapEff:\s+(\S+)/m.exec(status)?.[1],
   capPrm: /^CapPrm:\s+(\S+)/m.exec(status)?.[1],
+  // Whether SIGUSR1 is caught, which is Node opening its inspector (bit 10, from 1).
+  usr1Caught: (BigInt("0x" + (/^SigCgt:\s+(\S+)/m.exec(status)?.[1] ?? "0")) & 0x200n) !== 0n,
   environ: attempt(() => readFileSync("/proc/" + parent + "/environ")),
   mem: attempt(() => closeSync(openSync("/proc/" + parent + "/mem", "r"))),
   stdout: attempt(() => closeSync(openSync("/proc/" + parent + "/fd/1", "w"))),
@@ -183,6 +211,27 @@ setInterval(() => {}, 1000);
   deadline: String.raw`
 setInterval(() => {}, 1000);
 `,
+  // What a process of the photo's user can leave once it has gone, holding the Machine's memory or disk: a file, and a
+  // folder it made read-only with a folder and a file in it, in /tmp and /dev/shm; and System V shared memory, a
+  // semaphore and a message queue (PR #118's review), and a segment it made and gave to another user, so the photo user
+  // is only its maker (GIVE_SEGMENT).
+  hoards: String.raw`
+import { chmodSync, mkdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+for (const dir of ["/tmp", "/dev/shm"]) {
+  writeFileSync(dir + "/tadayo-hoard", Buffer.alloc(1024 * 1024, 1));
+  mkdirSync(dir + "/tadayo-hoard-folder/inner", { recursive: true });
+  writeFileSync(dir + "/tadayo-hoard-folder/inner/file", "x");
+  chmodSync(dir + "/tadayo-hoard-folder/inner", 0o500);
+  chmodSync(dir + "/tadayo-hoard-folder", 0o500);
+}
+execFileSync("/usr/bin/ipcmk", ["-M", "65536"], { stdio: "ignore" });
+execFileSync("/usr/bin/ipcmk", ["-S", "1"], { stdio: "ignore" });
+execFileSync("/usr/bin/ipcmk", ["-Q"], { stdio: "ignore" });
+execFileSync("/usr/bin/perl", ["-e", ${JSON.stringify(GIVE_SEGMENT)}, "65534"], { stdio: "ignore" });
+writeFileSync(out + "hoards.json", JSON.stringify({ made: true }));
+await answer();
+`,
   quick: String.raw`
 await answer();
 `,
@@ -212,6 +261,60 @@ function ended(pid: number): boolean {
   } catch {
     return true;
   }
+}
+
+/** What `uid` owns where any user may write, by name, and its System V objects, as `kind:id`. */
+function leftOf(uid: number): { files: string[]; ipc: string[] } {
+  const files: string[] = [];
+  for (const dir of ["/tmp", "/var/tmp", "/dev/shm"]) {
+    let names: string[] = [];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      // Not on this machine.
+    }
+    for (const name of names) {
+      try {
+        if (lstatSync(join(dir, name)).uid === uid) files.push(join(dir, name));
+      } catch {
+        // Removed as it was listed.
+      }
+    }
+  }
+  const ipc: string[] = [];
+  for (const kind of ["shm", "sem", "msg"]) {
+    let rows: string[][] = [];
+    try {
+      rows = readFileSync(`/proc/sysvipc/${kind}`, "latin1")
+        .trim()
+        .split("\n")
+        .map((line) => line.trim().split(/\s+/));
+    } catch {
+      // No System V objects here.
+    }
+    const [head = [], ...body] = rows;
+    const id = head.indexOf(kind === "msg" ? "msqid" : `${kind}id`);
+    for (const row of body) {
+      if (row[head.indexOf("uid")] === String(uid) || row[head.indexOf("cuid")] === String(uid)) {
+        ipc.push(`${kind}:${row[id] ?? ""}`);
+      }
+    }
+  }
+  return { files, ipc };
+}
+
+/** Whether something on this machine accepts a connection on 127.0.0.1's `port`. */
+function accepts(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = connect(port, "127.0.0.1");
+    socket.once("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once("error", () => {
+      resolve(false);
+    });
+  });
 }
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -279,6 +382,17 @@ function cleanUp() {
     }
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
   }
+  const left = leftOf(PHOTO.uid);
+  for (const file of left.files) rmSync(file, { recursive: true, force: true });
+  const flags: Record<string, string> = { shm: "-m", sem: "-s", msg: "-q" };
+  for (const object of left.ipc) {
+    const [kind = "", id = ""] = object.split(":");
+    try {
+      execFileSync("/usr/bin/ipcrm", [flags[kind] ?? "", id], { stdio: "ignore" });
+    } catch {
+      // Removed already.
+    }
+  }
   rmSync(folder, { recursive: true, force: true });
 }
 process.on("exit", cleanUp);
@@ -328,7 +442,13 @@ if (process.argv[2] === "sweep-timeout") {
   process.exit(0);
 }
 
-say({ case: "start", uid: getuid(), euid: geteuid(), photoUserFree: liveOf(PHOTO.uid).length === 0 });
+say({
+  case: "start",
+  uid: getuid(),
+  euid: geteuid(),
+  photoUserFree: liveOf(PHOTO.uid).length === 0,
+  photoUserLeft: leftOf(PHOTO.uid),
+});
 
 let asRootAsPlainRoot = "ran";
 try {
@@ -365,6 +485,128 @@ say({
   euid: geteuid(),
 });
 
+// A sweep sent SIGUSR1, as a process left behind may send it: with --disable-sigusr1, Node keeps the signal blocked in
+// every thread and never catches it, so it stays pending, no inspector opens on 127.0.0.1:9229 for that process to take
+// the sweep over with, and the sweep carries on to its own end (PR #118's review).
+{
+  const ready = join(out, "sweep.ready");
+  const swept = why(
+    PHOTO,
+    `require("node:fs").writeFileSync(${JSON.stringify(ready)}, ""); setTimeout(() => process.exit(0), 3000);`,
+  );
+  let usr1Caught: boolean | null = null;
+  let usr1Blocked: boolean | null = null;
+  let inspector = false;
+  if (await within(3000, () => existsSync(ready))) {
+    const pid = liveOf(PHOTO.uid).find((each) =>
+      readFileSync(`/proc/${String(each)}/cmdline`, "latin1").includes("sweep.ready"),
+    );
+    if (pid !== undefined) {
+      const status = readFileSync(`/proc/${String(pid)}/status`, "latin1");
+      const bit = (field: string) =>
+        (BigInt(`0x${new RegExp(`^${field}:\\s+([0-9a-f]+)`, "m").exec(status)?.[1] ?? "0"}`) & 0x200n) !== 0n;
+      usr1Caught = bit("SigCgt");
+      usr1Blocked = bit("SigBlk");
+      asRoot(() => process.kill(pid, "SIGUSR1"));
+      for (let i = 0; i < 20 && !inspector; i += 1) {
+        inspector = await accepts(9229);
+        await pause(25);
+      }
+    }
+  }
+  say({ case: "sweep-usr1", usr1Caught, usr1Blocked, inspector, status: await swept, euid: geteuid() });
+}
+
+// The worker's start, with a process a photo left before a restart still running: it ends that process before it
+// connects to the database, which nothing answers for here (./start.ts).
+{
+  const left = asRoot(() =>
+    spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
+      uid: PHOTO.uid,
+      gid: PHOTO.gid,
+      detached: true,
+      stdio: "ignore",
+      env: {},
+    }),
+  );
+  left.unref();
+  const pid = left.pid ?? -1;
+  const wasRunning = await within(2000, () => liveOf(PHOTO.uid).includes(pid));
+  let failedAt = "nowhere";
+  try {
+    await startWorker(
+      {
+        DATABASE_URL: "postgres://tadayo_app:password@127.0.0.1:1/tadayo",
+        SUPABASE_URL: "https://tadayotestprojectref.supabase.co",
+        SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
+        TADAYO_ENVIRONMENT: "dev",
+        TADAYO_PHOTO_USER: "harness-photo",
+      },
+      () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
+    );
+  } catch (error) {
+    failedAt = error instanceof Error && error.message.includes("as it started") ? "the sweep" : "the database";
+  }
+  const endedBy = (await within(200, () => ended(pid))) ? "start" : "never";
+  say({ case: "start-sweep", wasRunning, endedBy, failedAt, euid: geteuid() });
+}
+
+// The worker's start, when its sweep can't finish: it stops before it connects (./start.ts). A folder of the photo
+// user's holding one of root's, which the sweep can neither empty nor remove, makes its program throw; nothing the
+// photo user does can make that, so the folder is made by root here.
+{
+  const stuck = join("/tmp", `harness-stuck-${String(process.pid)}`);
+  asRoot(() => {
+    mkdirSync(join(stuck, "roots"), { recursive: true });
+    writeFileSync(join(stuck, "roots", "file"), "");
+    chownSync(stuck, PHOTO.uid, PHOTO.gid);
+  });
+  let failedAt = "nowhere";
+  try {
+    await startWorker(
+      {
+        DATABASE_URL: "postgres://tadayo_app:password@127.0.0.1:1/tadayo",
+        SUPABASE_URL: "https://tadayotestprojectref.supabase.co",
+        SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
+        TADAYO_ENVIRONMENT: "dev",
+        TADAYO_PHOTO_USER: "harness-photo",
+      },
+      () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
+    );
+  } catch (error) {
+    failedAt = error instanceof Error && error.message.includes("as it started") ? "the sweep" : "the database";
+  }
+  asRoot(() => {
+    rmSync(stuck, { recursive: true, force: true });
+  });
+  say({ case: "start-sweep-fails", failedAt, euid: geteuid() });
+}
+
+// The group's kill as root, never once Node has reaped the photo's process: its group's number may then be reused
+// (./image-process.ts, killGroup). Every SIGKILL to a group is noted with whether the group's leader was still there
+// (alive, or a zombie not yet reaped, both of which keep /proc/<pid>).
+{
+  const kill = process.kill.bind(process);
+  const kills: { leaderThere: boolean }[] = [];
+  process.kill = (pid: number, signal?: string | number) => {
+    if (pid < 0 && signal === "SIGKILL") kills.push({ leaderThere: existsSync(`/proc/${String(-pid)}`) });
+    return kill(pid, signal);
+  };
+  let outcome: string;
+  try {
+    ({ outcome } = await photo("probe", {}));
+  } finally {
+    process.kill = kill;
+  }
+  say({
+    case: "reaped",
+    outcome,
+    groupKills: kills.length,
+    afterReap: kills.filter((each) => !each.leaderThere).length,
+    euid: geteuid(),
+  });
+}
+
 {
   const { outcome, euid, egid } = await photo("probe", {});
   say({ case: "probe", outcome, child: outOf("probe.json"), euid, egid });
@@ -395,6 +637,16 @@ say({
   const { most } = (outOf("forks.json") ?? { most: 0 }) as { most: number };
   await within(200, () => liveOf(PHOTO.uid).length === 0);
   say({ case: "forks", outcome, most, left: liveOf(PHOTO.uid).length, euid });
+}
+
+{
+  // And a segment root made and gave to the photo user, so the photo user is only its owner: the sweep removes what the
+  // user owns or made.
+  asRoot(() => {
+    execFileSync("/usr/bin/perl", ["-e", GIVE_SEGMENT, String(PHOTO.uid)], { stdio: "ignore" });
+  });
+  const { outcome, euid } = await photo("hoards", {});
+  say({ case: "hoards", outcome, made: outOf("hoards.json") !== null, left: leftOf(PHOTO.uid), euid });
 }
 
 {

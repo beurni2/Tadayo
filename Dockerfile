@@ -10,8 +10,8 @@
 # `# syntax=` line: it would pull a floating frontend image at every build, and nothing here needs one.
 #
 # The image starts as root only to drop (docs/plans/api-b2-worker-hardening.md section 2; ADR-038): it has no
-# `USER`, and each process group's command in fly.toml begins with `setpriv`, which turns it to `node` before any
-# Node code runs. The API keeps no way back. The worker keeps root as its real user, which makes it non-dumpable,
+# `USER`, and each process group's command in fly.toml begins with `setpriv` (the worker's after `prlimit`, which
+# sets its limits as root), which turns it to `node` before any Node code runs. The API keeps no way back. The worker keeps root as its real user, which makes it non-dumpable,
 # and starts each photo's process as `tadayo-image`, a user with no home, no shell and no password, so code that took
 # over a decoder runs as neither the worker's user nor root (services/worker/src/privileges.ts).
 ARG NODE_IMAGE=node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc
@@ -47,4 +47,4 @@ COPY services/worker/src services/worker/src
 COPY tools/ops/src tools/ops/src
 # fly.toml's [processes] give each group its command in place of this one; run bare, the image starts the API, as
 # fly.toml's `api` does.
-CMD ["setpriv", "--reuid=node", "--regid=node", "--init-groups", "--inh-caps=-all", "--bounding-set=-all", "--no-new-privs", "--", "node", "services/api/src/main.ts"]
+CMD ["setpriv", "--reuid=node", "--regid=node", "--init-groups", "--inh-caps=-all", "--bounding-set=-all", "--no-new-privs", "--", "node", "--disable-sigusr1", "services/api/src/main.ts"]

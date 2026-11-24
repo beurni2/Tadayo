@@ -10,13 +10,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import sharp from "sharp";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
+  baselineJpeg,
   DEADLINE_SECONDS,
   DECODE_SECONDS,
   GRACE_MS,
   ImageProcessFailed,
   ImageTimeout,
+  killGroupOf,
   outcomeOf,
   PEAK_BYTES,
   peakOf,
@@ -27,6 +29,57 @@ import { prepareImage } from "./image.ts";
 import { pattern, testImage, textBombPng } from "./testing.ts";
 
 const MiB = 1024 * 1024;
+
+/** A marker segment: the marker, its length, its body. */
+const segment = (marker: number, body: readonly number[]): number[] => [
+  0xff,
+  marker,
+  (body.length + 2) >> 8,
+  (body.length + 2) & 0xff,
+  ...body,
+];
+
+/**
+ * The smallest baseline JPEG of `width` by `height` that baselineJpeg takes, as `prepareImage` lays one out: its
+ * start, a quantization table, its frame, a Huffman table, one scan of one byte, its end. `before` goes before the
+ * table, `scan` replaces the scan's data, and `after` follows the end.
+ */
+function baselineOf(
+  width: number,
+  height: number,
+  parts: { before?: number[]; frame?: number[]; scan?: number[]; after?: number[] } = {},
+): Uint8Array {
+  const frame = parts.frame ?? [
+    8,
+    height >> 8,
+    height & 0xff,
+    width >> 8,
+    width & 0xff,
+    3,
+    1,
+    0x11,
+    0,
+    2,
+    0x11,
+    1,
+    3,
+    0x11,
+    1,
+  ];
+  return new Uint8Array([
+    0xff,
+    0xd8,
+    ...(parts.before ?? []),
+    ...segment(0xdb, new Array<number>(65).fill(1)),
+    ...segment(0xc0, frame),
+    ...segment(0xc4, new Array<number>(29).fill(0)),
+    ...segment(0xda, [3, 1, 0, 2, 0x11, 3, 0x11, 0, 0x3f, 0]),
+    ...(parts.scan ?? [0x12]),
+    0xff,
+    0xd9,
+    ...(parts.after ?? []),
+  ]);
+}
 
 const PROCESS_MODULE = new URL("./image-process.ts", import.meta.url).pathname;
 
@@ -218,8 +271,9 @@ describe("a photo's own process", () => {
 /**
  * Children that misbehave, as one could whose decoder a stranger's bytes took over (PR #111's round 4, R4-3; the check
  * of its fifth commit, C5-1): each writes its messages to fd 3 as ./image-frames.ts frames them, with a framing of its
- * own here, says it is ready, reads the photo, then does as its name says. A well-formed answer's renditions end with
- * the byte given, so the test can tell two answers apart.
+ * own here, says it is ready, reads the photo, then does as its name says. A well-formed answer's renditions are the
+ * smallest baseline JPEGs of 2 by 1 the worker takes (baselineJpeg), whose one byte of scan data is the byte given,
+ * so the test can tell two answers apart.
  */
 const PRELUDE = `
 import { spawn } from "node:child_process";
@@ -234,21 +288,30 @@ const frame = (header, bodies = []) => {
   return Buffer.concat([length, json, ...bodies]);
 };
 const send = (header, bodies) => write(frame(header, bodies));
+const segment = (marker, body) => [0xff, marker, (body.length + 2) >> 8, (body.length + 2) & 0xff, ...body];
+const baseline = (tag) => Buffer.from([
+  0xff, 0xd8,
+  ...segment(0xdb, new Array(65).fill(1)),
+  ...segment(0xc0, [8, 0, 1, 0, 2, 3, 1, 0x11, 0, 2, 0x11, 1, 3, 0x11, 1]),
+  ...segment(0xc4, new Array(29).fill(0)),
+  ...segment(0xda, [3, 1, 0, 2, 0x11, 3, 0x11, 0, 0x3f, 0]),
+  tag, 0xff, 0xd9,
+]);
 const answer = (tag) => frame(
   {
     kind: "prepared",
     prepared: {
       ok: true,
       renditions: [
-        { kind: "full", width: 2, height: 1, length: 4 },
-        { kind: "display", width: 2, height: 1, length: 4 },
+        { kind: "full", width: 2, height: 1, length: baseline(tag).length },
+        { kind: "display", width: 2, height: 1, length: baseline(tag).length },
       ],
     },
     peakBytes: 1,
     oomScoreAdj: 0,
     environment: 0,
   },
-  [Buffer.from([0xff, 0xd8, 0xff, tag]), Buffer.from([0xff, 0xd8, 0xff, tag])],
+  [baseline(tag), baseline(tag)],
 );
 await send({ kind: "ready" });
 for await (const chunk of process.stdin) void chunk;
@@ -350,7 +413,7 @@ describe("a photo's process that misbehaves (R4-3, C5-1)", () => {
   const tagOf = (answer: { readonly prepared: { readonly ok: boolean } }) =>
     answer.prepared.ok && "renditions" in answer.prepared
       ? (answer.prepared as { readonly renditions: readonly { readonly bytes: Uint8Array }[] }).renditions.map(
-          (rendition) => rendition.bytes[3],
+          (rendition) => rendition.bytes.at(-3),
         )
       : [];
   const photo = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
@@ -455,14 +518,13 @@ describe("a photo's process that misbehaves (R4-3, C5-1)", () => {
 });
 
 describe("what a child's end comes to", () => {
-  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
   const prepared = {
     kind: "prepared" as const,
     prepared: {
       ok: true as const,
       renditions: [
-        { kind: "full" as const, bytes: jpeg, width: 2560, height: 2560 },
-        { kind: "display" as const, bytes: jpeg, width: 1290, height: 1290 },
+        { kind: "full" as const, bytes: baselineOf(2560, 2560), width: 2560, height: 2560 },
+        { kind: "display" as const, bytes: baselineOf(1290, 1290), width: 1290, height: 1290 },
       ],
     },
     peakBytes: 90 * MiB,
@@ -483,7 +545,7 @@ describe("what a child's end comes to", () => {
     expect(answer.prepared.ok).toBe(true);
     if (!answer.prepared.ok) return;
     expect(Buffer.isBuffer(answer.prepared.renditions[0]?.bytes)).toBe(true);
-    expect([...(answer.prepared.renditions[0]?.bytes ?? [])]).toEqual([0xff, 0xd8, 0xff, 0xe0]);
+    expect([...(answer.prepared.renditions[0]?.bytes ?? [])]).toEqual([...baselineOf(2560, 2560)]);
     expect(outcomeOf(end({ answer: { ...prepared, prepared: refused("unreadable") } })).prepared).toEqual(
       refused("unreadable"),
     );
@@ -522,8 +584,8 @@ describe("what a child's end comes to", () => {
   });
 
   it("throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code", () => {
-    const full = { kind: "full", bytes: jpeg, width: 2560, height: 2560 };
-    const display = { kind: "display", bytes: jpeg, width: 1290, height: 2560 };
+    const full = { kind: "full", bytes: baselineOf(2560, 2560), width: 2560, height: 2560 };
+    const display = { kind: "display", bytes: baselineOf(1290, 2560), width: 1290, height: 2560 };
     for (const renditions of [
       [],
       [full],
@@ -534,6 +596,9 @@ describe("what a child's end comes to", () => {
       [full, { ...display, bytes: "not bytes" }],
       [full, { ...display, bytes: new Uint8Array(0) }],
       [full, { ...display, bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]) }],
+      [full, { ...display, bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0]) }],
+      // A JPEG whose frame is another size than the one stated (PR #118's review: a decode bomb recorded as small).
+      [full, { ...display, bytes: baselineOf(65500, 65500) }],
       [full, { ...display, width: 0 }],
       [full, { ...display, width: 1.5 }],
       [full, { ...display, width: 1291 }],
@@ -550,6 +615,136 @@ describe("what a child's end comes to", () => {
     for (const rejection of ["no_such_code", 42, undefined]) {
       const malformed = { ...prepared, prepared: { ok: false, rejection } } as unknown as typeof prepared;
       expect(() => outcomeOf(end({ answer: malformed }))).toThrow(ImageProcessFailed);
+    }
+  });
+});
+
+describe("a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review)", () => {
+  it("takes prepareImage's own renditions, and the baseline JPEG they are laid out as, restarts and stuffed bytes in its scan", async () => {
+    for (const [image, type] of [
+      [await testImage(64, 48), "image/jpeg"],
+      [await testImage(3000, 2000, "webp"), "image/webp"],
+      [await pattern(640, 480, 4).png().toBuffer(), "image/png"],
+    ] as const) {
+      const prepared = await prepareImage(image, type);
+      expect(prepared.ok).toBe(true);
+      if (!prepared.ok) continue;
+      for (const rendition of prepared.renditions) {
+        expect(baselineJpeg(rendition.bytes, rendition.width, rendition.height)).toBe(true);
+      }
+    }
+    expect(baselineJpeg(baselineOf(2, 1), 2, 1)).toBe(true);
+    expect(baselineJpeg(baselineOf(2, 1, { scan: [0x12, 0xff, 0x00, 0x34, 0xff, 0xd0, 0x56, 0xff, 0xd7] }), 2, 1)).toBe(
+      true,
+    );
+    const gray = [8, 0, 1, 0, 2, 1, 1, 0x11, 0];
+    expect(baselineJpeg(baselineOf(2, 1, { frame: gray }), 2, 1)).toBe(true);
+  }, 30_000);
+
+  it("refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end", () => {
+    const exif = segment(0xe1, [...Buffer.from("Exif\0\0"), 0x4d, 0x4d, 0, 0x2a]);
+    const progressive = [0xff, 0xd8, ...segment(0xc2, [8, 0, 1, 0, 2, 1, 1, 0x11, 0])];
+    for (const [why, bytes] of [
+      ["EXIF", baselineOf(2, 1, { before: exif })],
+      [
+        "JFIF, which can hold a thumbnail",
+        baselineOf(2, 1, { before: segment(0xe0, [...Buffer.from("JFIF\0"), 1, 1, 0, 0, 1, 0, 1, 0, 0]) }),
+      ],
+      ["an ICC profile", baselineOf(2, 1, { before: segment(0xe2, [...Buffer.from("ICC_PROFILE\0"), 1, 1]) })],
+      ["a comment", baselineOf(2, 1, { before: segment(0xfe, [...Buffer.from("hello")]) })],
+      ["a restart interval", baselineOf(2, 1, { before: segment(0xdd, [0, 1]) })],
+      ["a progressive frame first", new Uint8Array([...progressive, ...baselineOf(2, 1).subarray(2)])],
+      ["a second frame", baselineOf(2, 1, { before: segment(0xc0, [8, 0, 1, 0, 2, 1, 1, 0x11, 0]) })],
+      ["12-bit samples", baselineOf(2, 1, { frame: [12, 0, 1, 0, 2, 1, 1, 0x11, 0] })],
+      [
+        "four components",
+        baselineOf(2, 1, { frame: [8, 0, 1, 0, 2, 4, 1, 0x11, 0, 2, 0x11, 1, 3, 0x11, 1, 4, 0x11, 1] }),
+      ],
+      ["a frame whose length isn't its components'", baselineOf(2, 1, { frame: [8, 0, 1, 0, 2, 1, 1, 0x11, 0, 0] })],
+      ["a scan before its frame", baselineOf(2, 1, { before: [...segment(0xda, [1, 1, 0, 0, 0x3f, 0]), 0x12] })],
+      [
+        "a second scan",
+        baselineOf(2, 1, { scan: [0x12, ...segment(0xc4, [0]), ...segment(0xda, [1, 1, 0, 0, 0x3f, 0]), 0x34] }),
+      ],
+      ["a fill byte before its end", baselineOf(2, 1, { scan: [0x12, 0xff] })],
+      ["bytes after its end", baselineOf(2, 1, { after: [0] })],
+      ["another JPEG after its end", baselineOf(2, 1, { after: [...baselineOf(2, 1)] })],
+      ["no end", baselineOf(2, 1).subarray(0, -2)],
+      ["a segment longer than the bytes", new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x40, 0x00, 1, 1])],
+      [
+        "a segment shorter than its length's own bytes",
+        new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x01, 0xff, 0xd9]),
+      ],
+      [
+        "a scan's length shorter than its length's own bytes",
+        new Uint8Array([
+          0xff,
+          0xd8,
+          ...segment(0xdb, new Array<number>(65).fill(1)),
+          ...segment(0xc0, [8, 0, 1, 0, 2, 1, 1, 0x11, 0]),
+          ...segment(0xc4, new Array<number>(29).fill(0)),
+          0xff,
+          0xda,
+          0x00,
+          0x01,
+          0x12,
+          0xff,
+          0xd9,
+        ]),
+      ],
+      ["no start", baselineOf(2, 1).subarray(2)],
+      ["a start without its 0xFF", new Uint8Array([0x00, 0xd8, ...baselineOf(2, 1).subarray(2)])],
+      ["another marker for its start", new Uint8Array([0xff, 0xd9, ...baselineOf(2, 1).subarray(2)])],
+      [
+        "no frame",
+        new Uint8Array([
+          0xff,
+          0xd8,
+          ...segment(0xdb, new Array<number>(65).fill(1)),
+          ...segment(0xc4, new Array<number>(29).fill(0)),
+          ...segment(0xda, [1, 1, 0, 0, 0x3f, 0]),
+          0x12,
+          0xff,
+          0xd9,
+        ]),
+      ],
+    ] as const) {
+      expect(baselineJpeg(bytes, 2, 1), why).toBe(false);
+    }
+    // The size the header states, and no other.
+    expect(baselineJpeg(baselineOf(2, 1), 1, 2)).toBe(false);
+    expect(baselineJpeg(baselineOf(65500, 65500), 1, 1)).toBe(false);
+  });
+});
+
+describe("a photo's process group, ended (killGroupOf; PR #118's review)", () => {
+  it("is done when the group has ended, and stops the worker when the kill is refused, as the processes may still run", () => {
+    const kill = vi.spyOn(process, "kill");
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("the worker stopped");
+    });
+    const written = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      kill.mockImplementation(() => {
+        throw Object.assign(new Error("no such process"), { code: "ESRCH" });
+      });
+      killGroupOf(4242, (fn) => fn());
+      expect(kill).toHaveBeenCalledWith(-4242, "SIGKILL");
+      expect(exit).not.toHaveBeenCalled();
+      kill.mockImplementation(() => {
+        throw Object.assign(new Error("not permitted"), { code: "EPERM" });
+      });
+      expect(() => {
+        killGroupOf(4242, (fn) => fn());
+      }).toThrow("the worker stopped");
+      expect(exit).toHaveBeenCalledWith(1);
+      expect(written).toHaveBeenCalledWith(
+        "worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it\n",
+      );
+    } finally {
+      kill.mockRestore();
+      exit.mockRestore();
+      written.mockRestore();
     }
   });
 });

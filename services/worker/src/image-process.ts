@@ -42,7 +42,7 @@ import type { UploadContentType } from "@tadayo/domain";
 import { UPLOAD_REJECTIONS } from "@tadayo/domain/limits";
 import { MessageReader, type ChildMessage, type SentPrepared } from "./image-frames.ts";
 import type { Prepared } from "./image.ts";
-import { asRoot, stopWorker, sweep, type PhotoUser } from "./privileges.ts";
+import { asRoot, NO_INSPECTOR, stopWorker, sweep, type PhotoUser } from "./privileges.ts";
 
 /** The longest one rendition's decode may take, in seconds (sharp's own timeout, in the child). */
 export const DECODE_SECONDS = 60;
@@ -119,6 +119,22 @@ export interface ProcessAnswer {
   readonly environment?: number;
 }
 
+const UNKILLABLE_LINE =
+  "worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it";
+
+/**
+ * SIGKILL to the process group `pid` leads, through `privileged`. A group that has ended (ESRCH) is done. Any other
+ * refusal (EPERM: the worker can't use its kill) would leave the photo's processes running past their memory or
+ * deadline, so the worker stops (PR #118's review).
+ */
+export function killGroupOf(pid: number, privileged: <T>(fn: () => T) => T): void {
+  try {
+    privileged(() => process.kill(-pid, "SIGKILL"));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ESRCH") stopWorker(UNKILLABLE_LINE);
+  }
+}
+
 /** How a child ended, as the worker saw it. */
 export interface ChildEnd {
   /** It said it was ready for the photo, and was given it. */
@@ -133,7 +149,52 @@ export interface ChildEnd {
   readonly mostBytes: number;
 }
 
-/** One rendition of `kind`: a JPEG's first bytes, and a size inside its box. */
+/**
+ * A rendition as `prepareImage` writes it, whatever a child parsing a stranger's bytes sent (PR #118's review): a
+ * baseline JPEG holding its start, its quantization and Huffman tables, one frame of exactly `width` by `height`, one
+ * scan, and its end as its last two bytes. So no EXIF, XMP, ICC profile, comment or thumbnail reaches a member
+ * (spec 33), no progressive scans, no frame larger than its box whatever the header says, and nothing after the end.
+ * A marker segment is passed over by its length, which must end inside the bytes; in the scan's entropy-coded data,
+ * a 0xFF is followed by a stuffed 0x00 or a restart, else it is the end.
+ */
+export function baselineJpeg(bytes: Uint8Array, width: number, height: number): boolean {
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return false;
+  let frames = 0;
+  for (let at = 2; at + 4 <= bytes.length;) {
+    const marker = bytes[at + 1] ?? 0;
+    const length = ((bytes[at + 2] ?? 0) << 8) | (bytes[at + 3] ?? 0);
+    if (bytes[at] !== 0xff || length < 2 || at + 2 + length > bytes.length) return false;
+    if (marker === 0xc0) {
+      const components = bytes[at + 9] ?? 0;
+      const sized =
+        bytes[at + 4] === 8 &&
+        (((bytes[at + 5] ?? 0) << 8) | (bytes[at + 6] ?? 0)) === height &&
+        (((bytes[at + 7] ?? 0) << 8) | (bytes[at + 8] ?? 0)) === width;
+      frames += 1;
+      if (frames > 1 || !sized || (components !== 1 && components !== 3) || length !== 8 + 3 * components) {
+        return false;
+      }
+    } else if (marker === 0xda) {
+      if (frames !== 1) return false;
+      for (let next = at + 2 + length; ;) {
+        next = bytes.indexOf(0xff, next);
+        if (next < 0 || next + 1 >= bytes.length) return false;
+        const after = bytes[next + 1] ?? 0;
+        if (after === 0x00 || (after >= 0xd0 && after <= 0xd7)) {
+          next += 2;
+          continue;
+        }
+        return after === 0xd9 && next + 2 === bytes.length;
+      }
+    } else if (marker !== 0xdb && marker !== 0xc4) {
+      return false;
+    }
+    at += 2 + length;
+  }
+  return false;
+}
+
+/** One rendition of `kind`: a size inside its box, and a baseline JPEG of that size (baselineJpeg). */
 function wellFormedRendition(rendition: unknown, kind: RenditionKind): boolean {
   if (typeof rendition !== "object" || rendition === null) return false;
   const { kind: its, bytes, width, height } = rendition as Record<string, unknown>;
@@ -141,10 +202,6 @@ function wellFormedRendition(rendition: unknown, kind: RenditionKind): boolean {
   return (
     its === kind &&
     bytes instanceof Uint8Array &&
-    bytes.length > 3 &&
-    bytes[0] === 0xff &&
-    bytes[1] === 0xd8 &&
-    bytes[2] === 0xff &&
     typeof width === "number" &&
     typeof height === "number" &&
     Number.isInteger(width) &&
@@ -152,7 +209,8 @@ function wellFormedRendition(rendition: unknown, kind: RenditionKind): boolean {
     width >= 1 &&
     height >= 1 &&
     width <= box.width &&
-    height <= box.height
+    height <= box.height &&
+    baselineJpeg(bytes, width, height)
   );
 }
 
@@ -232,11 +290,12 @@ export function prepareIsolated(
     // `detached`: the child leads a process group of its own, so that killing the group ends what it started in that
     // group (a process it starts in a session of its own escapes it, which the sweep ends: ./privileges.ts). Its fd 3
     // is the worker's pipe for its messages (./image-frames.ts), and its environment is empty: no Node channel, no
-    // variable at all.
+    // variable at all. Node's inspector is off (NO_INSPECTOR), so no process of the photo's user can open it with
+    // SIGUSR1.
     let child: ReturnType<typeof spawn>;
     try {
       child = privileged(() =>
-        spawn(process.execPath, [fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
+        spawn(process.execPath, [NO_INSPECTOR, fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
           env: {},
           stdio: ["pipe", "ignore", "ignore", "pipe"],
           detached: true,
@@ -259,13 +318,10 @@ export function prepareIsolated(
     const killGroup = () => {
       const { pid } = child;
       if (pid === undefined) return;
-      privileged(() => {
-        try {
-          process.kill(-pid, "SIGKILL");
-        } catch {
-          // The group has ended.
-        }
-      });
+      // As the photo's user, once the child is reaped its number may be another group's when its own group is empty,
+      // and the kill is root's: what is left of its group is the sweep's (./privileges.ts).
+      if (user !== undefined && (child.exitCode !== null || child.signalCode !== null)) return;
+      killGroupOf(pid, privileged);
     };
     let grace: NodeJS.Timeout | undefined;
     // Once the child has ended or been killed, its end is settled when its pipes close, or after GRACE_MS if

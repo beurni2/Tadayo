@@ -5,11 +5,13 @@
 // give both process groups. Its jobs run in the loops main.ts starts (loop.ts): the days each club's week makes
 // (generation.ts), and the outbox's events (outbox.ts), of which the first is a photo's preparation (prepare.ts).
 // Before it connects it reads, too, whether each photo is prepared under a user of its own (./privileges.ts): with
-// TADAYO_PHOTO_USER and the start fly.toml gives it, or neither; either alone stops it.
+// TADAYO_PHOTO_USER and the start fly.toml gives it, or neither; either alone stops it. With one, it sweeps that user
+// once before anything else, so nothing a photo left before a restart is alive beside the first photo it prepares; a
+// sweep that fails stops it.
 
 import { prepareClock, type Clock } from "@tadayo/domain";
 import { connect, type WorkerSql } from "./connection.ts";
-import { photoUserFor, type PhotoUser } from "./privileges.ts";
+import { idsOf, photoUserFor, sweep, type PhotoUser } from "./privileges.ts";
 import { workerStorage, type WorkerStorage } from "./storage.ts";
 
 export interface Started {
@@ -20,8 +22,14 @@ export interface Started {
   photoUser: PhotoUser | undefined;
 }
 
-/** Reads Storage's settings, connects and prepares the clock of `TADAYO_ENVIRONMENT`, or throws. */
-export async function startWorker(env: Readonly<Record<string, string | undefined>>): Promise<Started> {
+/**
+ * Reads Storage's settings, sweeps the photo user if there is one, connects and prepares the clock of
+ * `TADAYO_ENVIRONMENT`, or throws. `passwd` is /etc/passwd's text but in the root harness, whose photo user has no name.
+ */
+export async function startWorker(
+  env: Readonly<Record<string, string | undefined>>,
+  passwd?: () => string,
+): Promise<Started> {
   const url = env.DATABASE_URL;
   if (url === undefined || url === "") throw new Error("worker: DATABASE_URL isn't set");
   const project = env.SUPABASE_URL;
@@ -29,7 +37,14 @@ export async function startWorker(env: Readonly<Record<string, string | undefine
   const serviceKey = env.SUPABASE_SERVICE_KEY;
   if (serviceKey === undefined || serviceKey === "") throw new Error("worker: SUPABASE_SERVICE_KEY isn't set");
   const storage = workerStorage({ projectUrl: project, serviceKey });
-  const photoUser = photoUserFor(env);
+  const photoUser = photoUserFor(env, idsOf(), passwd);
+  if (photoUser !== undefined) {
+    try {
+      await sweep(photoUser);
+    } catch {
+      throw new Error("worker: the photo user's processes couldn't all be ended as it started");
+    }
+  }
   const sql = connect(url);
   try {
     return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql), storage, photoUser };

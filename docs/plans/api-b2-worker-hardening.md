@@ -18,8 +18,10 @@ decoder can:
    huge length, which Node buffers outside any code of the worker's (R4-3, C5-1);
 4. start a process in a session of its own, outside the group the worker kills, which outlives the photo (C5-1). While
    it holds the channel mid-frame, Node keeps reading (C5-1). And it stays as the worker's user after the photo, so
-   it can open the next photo's process's pipes through `/proc` (the next person's photo on its way in, its
-   renditions on their way out) or stop the worker with `SIGSTOP`. Neither was in the records before this plan.
+   it can attach to the next photo's process, or take its pipes with `pidfd_getfd`, where Yama allows (the next
+   person's photo on its way in, its renditions on their way out), or stop the worker with `SIGSTOP`. Neither was in
+   the records before this plan. (This plan first said it could open those pipes through `/proc`; they are socket
+   pairs, which `/proc/<pid>/fd` won't reopen (`ENXIO`), as round 1's review of PR #118 found.)
 
 This PR closes all four, in two parts:
 
@@ -85,29 +87,46 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
   `setpriv`, so no Node code runs as root.
 - **The API** (`fly.toml`'s `api`, and the Dockerfile's `CMD`, which a bare run starts):
   `setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node
-  services/api/src/main.ts`. It runs as `node` with no capability and no way back, as it does today.
-- **The worker** (`fly.toml`'s `worker`): `setpriv --euid=node --egid=node --groups=node
-  --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node services/worker/src/main.ts`. It works as `node`;
-  its real uid stays 0, which makes it non-dumpable, so its `/proc` files are the kernel's and no process of another
-  user can read its environment or memory, open its pipes, attach to it or signal it. It keeps three capabilities,
-  usable only for an instant at a time.
+  --disable-sigusr1 services/api/src/main.ts`. It runs as `node` with no capability and no way back, as it does today.
+- **The worker** (`fly.toml`'s `worker`): `prlimit --core=0 --nproc=256 -- setpriv --euid=node --egid=node
+  --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1
+  services/worker/src/main.ts`. It works as `node`; its real uid stays 0, which makes it non-dumpable, so its `/proc`
+  files are the kernel's and no process of another user can read its environment or memory, open its pipes, attach to
+  it or signal it. It keeps three capabilities, usable only for an instant at a time. `prlimit` gives it, and every
+  process it starts, no core file and at most 256 processes per real user: the kernel doesn't hold root's processes to
+  that, so it holds only `tadayo-image`'s (a photo's process can't fill the Machine's process table).
+- **No inspector on a signal.** Every Node process of the image (the API, the worker, the photo's process and the
+  sweep) runs with `--disable-sigusr1`. Without it, `SIGUSR1` opens Node's inspector on `127.0.0.1:9229`, with no
+  password, to anyone on the Machine. A process of `tadayo-image` may signal the photo's process and the sweep, which
+  run as that user; round 1's review of PR #118 showed a process left behind doing so to the sweep, then telling it,
+  through the inspector, to skip its `kill` and exit 0, which the worker took as done (both reviewers, independently:
+  the blocking finding). With the flag, Node keeps `SIGUSR1` blocked in every thread: sent, it stays pending and does
+  nothing. The API and the worker can't be signalled by that user, but nothing of them needs it.
 - **`fly.toml`'s `[env]`** gains `TADAYO_PHOTO_USER = "tadayo-image"` (public, like the rest of `[env]`).
 - **`services/worker/src/privileges.ts`** (new) knows the worker's mode. With `TADAYO_PHOTO_USER` set, the worker
   must have been started as above (real uid 0, effective uid not 0), finds the user's uid and gid in `/etc/passwd`,
   refuses one that is 0 or its own, and prepares photos isolated: `asRoot(fn)` takes effective uid 0 for `fn` alone
-  and returns to `node`, and is used three times, nowhere else: to start the photo's process with the user's uid and
-  gid (Node's `spawn` then clears its groups and sets both ids before the child's program runs), to kill its process
-  group, and to start the sweep below. Without `TADAYO_PHOTO_USER` (the tests, CI's runner, the session), it prepares
+  and returns to `node`, and is called from three places, nowhere else: to start the photo's process with the user's
+  uid and gid (Node's `spawn` then clears its groups and sets both ids before the child's program runs), to kill its
+  process group (once the answer is in, and again as its end settles, unless the child has been reaped by then), and to
+  start the sweep below. So it is taken at least four times for each photo, each for one system call. Without `TADAYO_PHOTO_USER` (the tests, CI's runner, the session), it prepares
   photos as it does today, in the worker's own user, and its start line says so. Either without the other (the
   variable but not the start, or the start but not the variable) stops the worker as it starts: neither half alone
   isolates anything.
+- **The group's kill, refused.** The worker kills the group as root, so the kernel can refuse it only if something
+  is badly wrong; a refusal (anything but `ESRCH`, the group already gone) stops the worker (`killGroupOf`). Once Node
+  has reaped the child, the worker doesn't kill the group at all: Linux keeps a pid's number while any process still
+  uses it as its group, so the number can't have been reused while one of the group is alive, but once the group is
+  empty it may be, and a kill as root then could reach some other process. The sweep reaches what is left.
 - **The sweep.** As the child's end settles, after the group's kill, the worker starts one more process as
-  `tadayo-image`, which calls `kill(-1, SIGKILL)`: Linux sends it to every process that user may signal, which is every
+  `tadayo-image`, which calls `kill(-1, SIGKILL)` until no process of that user is left but itself and zombies (it reads
+  `/proc`, each process's `Uid` and `State`): Linux sends it to every process that user may signal, which is every
   process of `tadayo-image` but the sweep itself, in one pass under the kernel's task list lock, so a process forking as
   fast as it can is caught too, and a process with that signal pending never runs another instruction of its own. It
   runs `node -e`, the one program the image is sure to have, with an empty environment. It runs with the worker's own
   group, not `tadayo-image`'s: Linux lets a process attach to another (ptrace, `/proc/<pid>/mem`) only when every user
-  and group id of the two match, so a process the photo's process left behind can't take the sweep over. It can still
+  and group id of the two match, so a process the photo's process left behind can't take the sweep over that way, and
+  with `--disable-sigusr1` it can't open Node's inspector in it either (above). It can still
   stop or kill the sweep, as it may signal any process of its user; so a sweep that fails to start, exits other than 0
   or doesn't exit within 5 s (`SWEEP_SECONDS`) stops the worker (`stopWorker`: one line on standard error, exit 1).
   Fly's `[[restart]]` policy `on-failure` restarts the Machine, and every process on it ends with it; the photo in hand
@@ -118,8 +137,29 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
   every process on the Machine (the breakage run found it: with the refusal removed, the harness, run as root, ended
   every process of the session's container, twice; that breakage and one that starts the photo's process as root now
   run in a container of the image, with a process limit of its own).
+- **What the sweep leaves.** Once no process of the user is left, the sweep removes what the user owns in `/tmp`,
+  `/var/tmp`, `/dev/shm`, `/dev/mqueue` and `/run/lock` (each folder made writable first, so a folder left read-only
+  can't keep its files), and every System V shared memory segment, semaphore set and message queue it owns or made
+  (`/proc/sysvipc`, then `ipcrm`). Round 1's security review found a process left behind could otherwise pin hundreds
+  of MiB in `/dev/shm` or a shared memory segment, so later photos would end past their memory and be refused as
+  `too_many_pixels`, with the worker running on.
+- **The sweep at start.** The worker sweeps once as it starts, before it connects to the database: a Machine restarted
+  by a stop above, or a process left from a run before, has none of that user's processes left before the first photo.
+  If that sweep fails, the worker doesn't start.
+- **What a photo's process sends back is checked, not trusted.** A rendition is the child's work, so code that took it
+  over can send any bytes. The worker keeps a rendition only if it is a baseline JPEG and nothing else
+  (`baselineJpeg`): its start, only quantization and Huffman tables besides one 8-bit frame of 1 or 3 components whose
+  size is the size the answer states (inside the kind's box), one scan after it whose data holds no marker but stuffed
+  bytes and restarts, and its end as the last two bytes. No EXIF, no ICC profile, no comment, no second picture.
+  `image.ts` writes exactly that (sharp's `jpeg` with metadata dropped). The picture inside is still the child's: a
+  taken-over child could send another picture than the one screened. B3's media route and the iOS app treat
+  renditions as untrusted input, and FQ8's screening, when it is built, screens the renditions as stored.
 - **What a taken-over decoder can still do:** use the network (no namespace of its own: nothing it can reach is the
-  worker's, as it holds no key), write to `/tmp` and use the CPU until its deadline. Each is noted in
+  worker's, as it holds no key), write to `/tmp` until the sweep removes it, and use the CPU until its deadline. It can
+  also stop or slow the sweep, which stops the worker: the Machine restarts, up to five times for one photo before the
+  outbox gives it up, and the day's generation, which runs in the same worker, waits meanwhile. Fly retries a Machine
+  that fails a set number of times (`[[restart]]`'s `max_retries`, read on `dev`); past it, the worker stays down until
+  someone starts it. Each is noted in
   `docs/LIMITATIONS.md`'s row, which this PR closes for the four points of section 0.
 
 ## 3. Tests first
@@ -133,11 +173,17 @@ answer never read.
 
 - The existing tests, the fake children rewritten for the new pipe. "ignores a message that isn't one of the child's,
   and a second ready" becomes "fails, to be tried again, when the child sends anything but ready and its answer".
-- New: a child that sends a frame declaring 4 GiB fails the photo within a second, the worker's peak (`VmHWM` of
+- New: a child that sends a frame declaring 4 GiB fails the photo within `GRACE_MS` (2 s), the worker's peak (`VmHWM` of
   `self`) unmoved within 8 MiB; a child that sends a header that isn't JSON fails it, and the worker keeps running; a
   process the child started in a session of its own that holds fd 3 and writes a frame slowly after the child's end is
   read no more once the end settles (the worker's end of fd 3 closed, as C5-2's test checks for stdin).
-- "starts with an empty environment" expects 0 variables, not at most 1.
+- "starts with an empty environment" expects one variable, `VIPSHOME`, which `sharp` sets in its own process as it
+  loads, and none of the worker's (this plan first said 0).
+- A rendition as `prepareImage` writes it is accepted, of each kind and from JPEG, WebP and PNG; and each way out of a
+  baseline JPEG is refused: EXIF, JFIF, an ICC profile, a comment, a restart interval, a progressive frame, a second
+  frame or scan, 12-bit or four components, a frame of the wrong length or size, a scan before the frame, a fill byte,
+  bytes after the end, a second JPEG, no end, a segment longer or shorter than its bytes, no start.
+- `killGroupOf`: `ESRCH` is done; any other error stops the worker with its line.
 
 `services/worker/src/privileges.test.ts` (new), and a harness that must run as root: the test file starts it as root
 directly when it is root (the session), and through `sudo -n` when it isn't (CI's runner has password-less sudo); a
@@ -160,7 +206,28 @@ back as one line of JSON:
   and one that exits 0 is done (the harness gives `sweep` a program of its own for this: the breakage run found that a
   sweep taking any exit as done passed every other test);
 - the sweep runs with the worker's group: a process left behind, watching for it, sees the photo user's uid and the
-  worker's gid, and can't open its `/proc/<pid>/mem` (`EACCES`).
+  worker's gid, and can't open its `/proc/<pid>/mem` (`EACCES`);
+- the sweep and the photo's process don't catch `SIGUSR1` (its bit, `0x200`, of `SigCgt` clear); with
+  `--disable-sigusr1` Node keeps it blocked in every thread (the bit set in `SigBlk`), so a `SIGUSR1` sent to a sweep
+  that waits 3 s stays pending, opens nothing on port 9229, and the sweep exits 0 on its own;
+- a child that leaves 1 MiB files and read-only folders in `/tmp` and `/dev/shm`, a shared memory segment, a
+  semaphore set and a message queue, and a second segment it gave to another user (the photo user only its maker), is
+  prepared, and none of them is left once its end settles, nor a segment root gave to the photo user before the photo
+  (the photo user only its owner);
+- `startWorker` with the photo user set ends a process of that user left from before, as it starts, before it reaches
+  the database; and when its sweep can't finish (a folder of the user's holding a file of root's, which it can neither
+  empty nor remove), it stops there, before it connects;
+- under a photo user, no group kill once Node has reaped the photo's process: every group `SIGKILL` sent as root is noted
+  with whether the group's leader still had its `/proc` entry (alive, or a zombie not yet reaped), and none is sent
+  after the reap.
+
+`image-process.test.ts`, with no root: `killGroupOf` is done on `ESRCH` and stops the worker on `EPERM`; `baselineJpeg`
+takes `prepareImage`'s own renditions from JPEG, WebP and PNG inputs, restarts and stuffed bytes, and refuses 23
+malformed JPEGs (metadata, a thumbnail or a comment, a restart interval, a progressive frame, a second frame or scan,
+12-bit samples, four components, a frame's length not its components', a scan before its frame, no frame, a fill byte,
+bytes or another JPEG after the end, no end, no start, a start without its `0xFF` or with another marker, a segment
+longer than the bytes or shorter than its length, a scan's among them), and two frames of another size than the one
+stated; an answer whose rendition isn't one fails.
 
 `photoUserFor`'s rules, with no process: neither half gives none; either half alone throws; a name matches whole
 `/etc/passwd` entries only; root, root's group, the worker's own user or group, and ids that aren't numbers are
@@ -181,8 +248,14 @@ Dockerfile's `CMD` is fly's `api` command.
 - CI: the same tests (the harness through `sudo -n`).
 - `dev`, once its worker runs (`ops` `worker-scale`, on the founder's yes): the worker's start line saying it isolates
   photos, a preparation's line, and an `ops` check (`flyctl ssh console` as root) of the worker's `/proc` owner and
-  uids. Fly's kernel may differ from the session's: Yama, `suid_dumpable`, the `/.fly/api` socket's mode (a socket a
-  photo's user could open would be a way to Fly's API) are read there and recorded.
+  uids. Fly's kernel may differ from the session's, so these are read there, as `tadayo-image` where it matters
+  (`setpriv` from a root shell), and recorded, file names and modes only: Yama's `ptrace_scope`, `suid_dumpable`,
+  `core_pattern`; whether that user can open `/.fly/api` (a way to Fly's API), read `/.fly` or `/fly`, reach an
+  abstract socket or a listener on the loopback, open a console device, make a user namespace or use `io_uring`; the
+  worker's limits (`core` 0, `nproc` 256); that a worker that exits takes every process of `tadayo-image` with it (the
+  Machine restarts); and Fly's restart policy's retry cap. Round 1's security review gave the commands; what it finds
+  open is closed in the image (a folder's mode, `kernel.shm_rmid_forced`, `user.max_user_namespaces`) or recorded,
+  before Gate A.
 
 ## 5. Records and review
 

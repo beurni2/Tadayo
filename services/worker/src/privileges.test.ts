@@ -9,7 +9,7 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { GRACE_MS } from "./image-process.ts";
-import { asRoot, photoUserFor, sweep, SweepFailed, SWEEP_PROGRAM, SWEEP_SECONDS } from "./privileges.ts";
+import { asRoot, NO_INSPECTOR, photoUserFor, sweep, SweepFailed, SWEEP_PROGRAM, SWEEP_SECONDS } from "./privileges.ts";
 
 const HARNESS = join(import.meta.dirname, "privileges-harness.ts");
 
@@ -114,10 +114,16 @@ describe("outside the worker's mode", () => {
 
   it("the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done", () => {
     // Never run here: as root (the session), a program without its first check would end every process on the machine.
-    expect(SWEEP_PROGRAM).toBe(
-      'if (process.getuid() === 0) process.exit(2); try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
+    // What it does is seen in the root harness below.
+    const lines = SWEEP_PROGRAM.split("\n");
+    expect(lines[0]).toBe("if (process.getuid() === 0) process.exit(2);");
+    expect(lines).toContain(
+      '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
     );
+    expect(SWEEP_PROGRAM.indexOf("process.kill(-1")).toBeLessThan(SWEEP_PROGRAM.indexOf("unlinkSync"));
     expect(SWEEP_SECONDS).toBe(5);
+    // The sweep's and each photo's process's: SIGUSR1 opens no inspector (PR #118's review).
+    expect(NO_INSPECTOR).toBe("--disable-sigusr1");
   });
 });
 
@@ -169,7 +175,12 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
   it("ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left", () => {
     expect(run.stderr).toBe("");
     expect(run.code).toBe(0);
-    expect(fact("start")).toMatchObject({ uid: 0, euid: 0, photoUserFree: true });
+    expect(fact("start")).toMatchObject({
+      uid: 0,
+      euid: 0,
+      photoUserFree: true,
+      photoUserLeft: { files: [], ipc: [] },
+    });
     expect(fact("end")).toMatchObject({ left: 0 });
   });
 
@@ -207,6 +218,8 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
       groups: [64999],
       capEff: "0000000000000000",
       capPrm: "0000000000000000",
+      // Node's inspector, which SIGUSR1 would open for any process of its user: off (PR #118's review).
+      usr1Caught: false,
       // The worker's environment (the database's URL, Storage's key: T56), its memory, its standard output (T52),
       // and a signal: none of them.
       environ: "EACCES",
@@ -226,6 +239,49 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     expect(fact("watcher")).toMatchObject({
       outcome: "prepared",
       seen: { uid: 64999, gid: 64998, mem: "EACCES" },
+      euid: 64998,
+    });
+  });
+
+  it("a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end", () => {
+    // PR #118's review: with the inspector on, a leftover sent SIGUSR1, ran code in the sweep and outlived it. With
+    // --disable-sigusr1, Node blocks the signal in every thread and never catches it: it stays pending and does nothing.
+    expect(fact("sweep-usr1")).toEqual({
+      case: "sweep-usr1",
+      usr1Caught: false,
+      usr1Blocked: true,
+      inspector: false,
+      status: "swept",
+      euid: 64998,
+    });
+  });
+
+  it("the worker's start ends a process of the photo's user before anything else, so none waits from before a restart", () => {
+    expect(fact("start-sweep")).toEqual({
+      case: "start-sweep",
+      wasRunning: true,
+      endedBy: "start",
+      failedAt: "the database",
+      euid: 64998,
+    });
+  });
+
+  it("a sweep that can't finish as the worker starts stops it there, before it connects to the database", () => {
+    expect(fact("start-sweep-fails")).toEqual({ case: "start-sweep-fails", failedAt: "the sweep", euid: 64998 });
+  });
+
+  it("sends no group kill once Node has reaped the photo's process, when its group's number may be another's", () => {
+    // PR #118's review (S6): the kill once the answer is in reaches the group; the one as its end settles is skipped.
+    expect(fact("reaped")).toEqual({ case: "reaped", outcome: "prepared", groupKills: 1, afterReap: 0, euid: 64998 });
+  });
+
+  it("what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects", () => {
+    // PR #118's review: left there, they held the Machine's memory, and every later photo was refused for its size.
+    expect(fact("hoards")).toEqual({
+      case: "hoards",
+      outcome: "prepared",
+      made: true,
+      left: { files: [], ipc: [] },
       euid: 64998,
     });
   });

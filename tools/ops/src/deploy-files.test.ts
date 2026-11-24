@@ -100,10 +100,12 @@ const copies = (stage: "deps" | "runtime") => {
 };
 
 // How each group drops root (fly.toml's [processes]; ADR-038): the API for good, the worker in effect only, keeping
-// setuid, setgid and kill to start and end each photo's process as TADAYO_PHOTO_USER.
+// setuid, setgid and kill to start and end each photo's process as TADAYO_PHOTO_USER, with no core file and the photo
+// user's processes capped first. Node runs with its inspector off in both (PR #118's review).
 const API_DROP = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs";
 const WORKER_DROP =
-  "setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
+  "prlimit --core=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
+const NODE = "node --disable-sigusr1";
 
 // ---- The Dockerfile.
 
@@ -130,8 +132,8 @@ describe("Dockerfile", () => {
     const packages = workspace();
     const commands = table(table(flyToml()["processes"], "[processes]"), "[processes]");
     const running = Object.values(commands).map((command) => {
-      // Each command drops root first (fly.toml; ADR-038), then runs `node <file>`.
-      const file = /^setpriv .*? -- node (\S+)$/.exec(String(command))?.[1] ?? "";
+      // Each command drops root first (fly.toml; ADR-038), the worker's after its limits, then runs `node` on a file.
+      const file = /^(?:prlimit .*? -- )?setpriv .*? -- node --disable-sigusr1 (\S+)$/.exec(String(command))?.[1] ?? "";
       const dir = [...packages.keys()].find((candidate) => file.startsWith(`${candidate}/`));
       expect(dir, String(command)).toBeDefined();
       return packages.get(dir ?? "")?.name ?? "";
@@ -193,8 +195,8 @@ describe("Dockerfile", () => {
     // No USER: each group's command drops with setpriv before any Node code runs (fly.toml; ADR-038).
     expect(image.filter((instruction) => instruction.name === "USER")).toEqual([]);
     const processes = table(flyToml()["processes"], "[processes]");
-    expect(String(processes["api"]).startsWith(`${API_DROP} -- node `)).toBe(true);
-    expect(String(processes["worker"]).startsWith(`${WORKER_DROP} -- node `)).toBe(true);
+    expect(String(processes["api"]).startsWith(`${API_DROP} -- ${NODE} `)).toBe(true);
+    expect(String(processes["worker"]).startsWith(`${WORKER_DROP} -- ${NODE} `)).toBe(true);
     expect(image.filter((instruction) => instruction.name === "ENV").map((instruction) => instruction.args)).toContain(
       "NODE_ENV=production",
     );
@@ -312,8 +314,8 @@ describe("fly.toml", () => {
   it("has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other", () => {
     const processes = table(flyToml()["processes"], "[processes]");
     expect(processes).toEqual({
-      api: `${API_DROP} -- node services/api/src/main.ts`,
-      worker: `${WORKER_DROP} -- node services/worker/src/main.ts`,
+      api: `${API_DROP} -- ${NODE} services/api/src/main.ts`,
+      worker: `${WORKER_DROP} -- ${NODE} services/worker/src/main.ts`,
     });
     for (const command of Object.values(processes)) {
       expect(existsSync(join(ROOT, String(command).split(" ").at(-1) ?? "")), String(command)).toBe(true);

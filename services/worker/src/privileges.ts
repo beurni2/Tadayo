@@ -10,21 +10,32 @@
 // - The worker's mode: real uid 0, effective uid not 0. photoUserFor reads it at the start, with the variable: both
 //   isolate each photo; neither prepares photos in the worker's own user, as the tests, CI's runner and the session
 //   do; either alone stops the worker, as neither half isolates anything without the other.
-// - asRoot(fn) takes effective uid 0 for `fn` alone and returns to the worker's user. It is used three times, nowhere
-//   else: to start a photo's process (Node's `spawn` clears the child's groups and sets its group and user before the
-//   child's program runs), to kill its process group, and to start the sweep. For that instant every thread of the
-//   worker has uid 0 (glibc's `seteuid` sets it for all of them), and `fn` returns before any other code of the
-//   worker's runs, since all three are synchronous.
+// - asRoot(fn) takes effective uid 0 for `fn` alone and returns to the worker's user. It is called from three places,
+//   nowhere else: to start a photo's process (Node's `spawn` clears the child's groups and sets its group and user
+//   before the child's program runs), to kill its process group (once the photo is answered or ends, and when its
+//   memory or deadline is passed), and to start a sweep (as each photo settles, and once as the worker starts). For
+//   that instant every thread of the worker has uid 0 (glibc's `seteuid` sets it for all of them), and `fn` returns
+//   before any other code of the worker's runs, since each is synchronous.
 // - The sweep. Once a photo's end settles, the worker starts one more process as the photo's user, which sends SIGKILL
 //   to every process that user may signal (`kill(-1, SIGKILL)`): every process of that user but the sweep itself, in
 //   one pass under the kernel's task list lock, so a process forking as fast as it can is caught too, and a process
 //   with that signal pending never runs another instruction of its own. It runs with the worker's own group, not the
-//   photo user's: Linux lets a process attach to another (ptrace, /proc/<pid>/mem) only when all its user and group ids
-//   match, so a process the photo's process left behind can't take the sweep over. It can still stop or kill it, as
-//   it may signal any process of its user; then the sweep doesn't exit 0 within SWEEP_SECONDS, and the worker stops:
-//   its Machine restarts (fly.toml's `[[restart]]` policy `on-failure`), and every process on it ends with it. The
-//   photo in hand comes back once its lease has passed, its attempt counted (./outbox.ts). Photos are prepared one at
-//   a time, so no other photo's process is alive while the sweep runs.
+//   photo user's: Linux lets a process attach to another (ptrace, /proc/<pid>/mem, process_vm_writev) only when all
+//   its user and group ids match, so a process the photo's process left behind can't attach to the sweep. It may
+//   still signal it, as it may signal any process of its user, and Node opens an inspector anyone on the Machine can
+//   reach (127.0.0.1:9229, with no password) when it is sent SIGUSR1: so the sweep runs with `--disable-sigusr1`, with
+//   which Node keeps SIGUSR1 blocked in every thread and never catches it, so it stays pending and does nothing (PR
+//   #118's review: a leftover took the sweep over that way, and read the next photo). A leftover that stops, kills or starves the sweep keeps it from exiting 0 within
+//   SWEEP_SECONDS, and the worker stops: its Machine restarts (fly.toml's `[[restart]]` policy `on-failure`), and
+//   every process on it ends with it. The photo in hand comes back once its lease has passed, its attempt counted, at
+//   most five times (./outbox.ts). Photos are prepared one at a time, so no other photo's process is alive then.
+// - What the sweep leaves. Once no process of the photo's user is left, the sweep removes what that user left in
+//   memory or on disk where it may write: its files and folders in /tmp, /var/tmp, /dev/shm, /dev/mqueue and
+//   /run/lock, and its System V shared memory, semaphores and message queues (with `ipcrm`). Left there, they would
+//   hold the Machine's memory, and every later photo would be refused for its size (PR #118's review). A removal that
+//   fails is an exit other than 0, and the worker stops.
+// - At its start, before it claims a photo, the worker sweeps once, so nothing a photo left before a restart can wait
+//   for the next one, whether or not the Machine's restart ended it (./start.ts).
 
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -45,14 +56,61 @@ export interface Ids {
 /** How long the sweep may take, from its start to its exit, before the worker stops. */
 export const SWEEP_SECONDS = 5;
 
+/** Node's flag that keeps SIGUSR1 from opening its inspector (the rules above): the sweep's and each photo's process's. */
+export const NO_INSPECTOR = "--disable-sigusr1";
+
 /**
- * The sweep's program: SIGKILL to every process its user may signal, but itself (kill(2) with pid -1). Finding none
- * (`ESRCH`) is the usual case, as the photo's process group was killed already, and is done too. As root, kill(-1)
- * would end every process on the Machine, so the program first checks its own user and exits 2 if it is root,
- * whatever the refusal before its start let through: a sweep that doesn't exit 0 stops the worker.
+ * The sweep's program (the rules above). As root, kill(-1) would end every process on the Machine, so it first checks
+ * its own user and exits 2 if it is root, whatever the refusal before its start let through: a sweep that doesn't
+ * exit 0 stops the worker. Then SIGKILL to every process its user may signal but itself (kill(2) with pid -1), again
+ * until none of that user's is left but as a zombie: finding none (`ESRCH`) is the usual case, as the photo's process
+ * group was killed already. Then what the user left: in each folder, every entry the user owns, a folder's own
+ * entries first (made writable to it first, as the user may have made them read-only); and each System V object the
+ * user owns or made, by its id, from /proc/sysvipc. A folder that isn't there, or can't be read, is passed over.
  */
-export const SWEEP_PROGRAM =
-  'if (process.getuid() === 0) process.exit(2); try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }';
+export const SWEEP_PROGRAM = [
+  "if (process.getuid() === 0) process.exit(2);",
+  'const fs = require("node:fs");',
+  "const uid = String(process.getuid());",
+  "const self = String(process.pid);",
+  'const alive = () => fs.readdirSync("/proc").some((pid) => {',
+  "  if (!/^\\d+$/.test(pid) || pid === self) return false;",
+  "  let status;",
+  '  try { status = fs.readFileSync("/proc/" + pid + "/status", "latin1"); } catch { return false; }',
+  "  return /^Uid:\\s+(\\d+)/m.exec(status)?.[1] === uid && !/^State:\\s+[ZX]/m.test(status);",
+  "});",
+  "do {",
+  '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
+  "  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1);",
+  "} while (alive());",
+  "const remove = (path) => {",
+  "  if (fs.lstatSync(path).isDirectory()) {",
+  "    fs.chmodSync(path, 0o700);",
+  '    for (const name of fs.readdirSync(path)) remove(path + "/" + name);',
+  "    fs.rmdirSync(path);",
+  "  } else fs.unlinkSync(path);",
+  "};",
+  'for (const dir of ["/tmp", "/var/tmp", "/dev/shm", "/dev/mqueue", "/run/lock"]) {',
+  "  let names;",
+  '  try { names = fs.readdirSync(dir); } catch (error) { if (error.code === "ENOENT" || error.code === "EACCES") continue; throw error; }',
+  "  for (const name of names) {",
+  "    let stat;",
+  '    try { stat = fs.lstatSync(dir + "/" + name); } catch (error) { if (error.code === "ENOENT") continue; throw error; }',
+  '    if (String(stat.uid) === uid) remove(dir + "/" + name);',
+  "  }",
+  "}",
+  "const objects = [];",
+  'for (const [kind, flag] of [["shm", "-m"], ["sem", "-s"], ["msg", "-q"]]) {',
+  "  let text;",
+  '  try { text = fs.readFileSync("/proc/sysvipc/" + kind, "latin1"); } catch (error) { if (error.code === "ENOENT") continue; throw error; }',
+  '  const [head, ...rows] = text.trim().split("\\n").map((line) => line.trim().split(/\\s+/));',
+  '  const id = head.indexOf(kind === "msg" ? "msqid" : kind + "id");',
+  '  const owner = head.indexOf("uid");',
+  '  const maker = head.indexOf("cuid");',
+  "  for (const row of rows) if (row[owner] === uid || row[maker] === uid) objects.push(flag, row[id]);",
+  "}",
+  'if (objects.length > 0) require("node:child_process").execFileSync("/usr/bin/ipcrm", objects, { stdio: "ignore" });',
+].join("\n");
 
 const STOP_LINE =
   "worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them";
@@ -189,7 +247,7 @@ export function sweep(
     let started;
     try {
       started = asRoot(() =>
-        spawn(process.execPath, ["-e", program], {
+        spawn(process.execPath, [NO_INSPECTOR, "-e", program], {
           uid: user.uid,
           gid: own.egid,
           env: {},
