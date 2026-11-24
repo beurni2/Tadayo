@@ -1,0 +1,71 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (88 tests | 2 failed) 1524ms
+   ❯ the requests a cell makes, from the contract's parameters (5)
+     × names each drop once as Ben's photo and once as Cleo's video link (the outside audit's A4) 10ms
+     × makes one request for each value of a required enum, and gives each idempotent one a key 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 86 passed (88)
+   Start at  21:28:35
+   Duration  3.04s (tests 52%, transform 28%, import 20%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > names each drop once as Ben's photo and once as Cleo's video link (the outside audit's A4)
+AssertionError: expected [ { drop_id: 'drp_here' } ] to deeply equal [ { drop_id: 'drp_here' }, …(1) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "drop_id": "drp_here",
+    },
+-   {
+-     "drop_id": "drp_video_here",
+-   },
+  ]
+
+ ❯ src/privacy/harness.test.ts:214:93
+    212|
+    213|   it("names each drop once as Ben's photo and once as Cleo's video lin…
+    214|     expect(specsFor(operation("getDrop"), here, "Bearer planted").map(…
+       |                                                                                             ^
+    215|       { drop_id: "drp_here" },
+    216|       { drop_id: "drp_video_here" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > makes one request for each value of a required enum, and gives each idempotent one a key
+AssertionError: expected [ { rendition: 'display' }, …(1) ] to deeply equal [ { rendition: 'display' }, …(3) ]
+
+- Expected
++ Received
+
+@@ -3,12 +3,6 @@
+      "rendition": "display",
+    },
+    {
+      "rendition": "full",
+    },
+-   {
+-     "rendition": "display",
+-   },
+-   {
+-     "rendition": "full",
+-   },
+  ]
+
+ ❯ src/privacy/harness.test.ts:249:99
+    247|
+    248|   it("makes one request for each value of a required enum, and gives e…
+    249|     expect(specsFor(operation("getDropMedia"), here, "Bearer planted")…
+       |                                                                                                   ^
+    250|       { rendition: "display" },
+    251|       { rendition: "full" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

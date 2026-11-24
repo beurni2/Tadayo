@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/bindings.ts
++++ b/tests/src/privacy/bindings.ts
+@@ -58,7 +58,7 @@
+   star: (targets) => targets.star,
+   comment_id: "missing",
+   reservation_id: (targets) => targets.reservation,
+-  upload_id: (targets) => targets.upload,
++  upload_id: "missing",
+ };
+ 
+ /** Every value of Id parameter `name` in a cell whose world is `targets`, the first being `bind`'s. */

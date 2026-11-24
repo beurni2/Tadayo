@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/harness.ts
++++ b/tests/src/privacy/harness.ts
+@@ -252,7 +252,7 @@
+   for (const parameter of operation.parameters) {
+     if (parameter.in === "path") {
+       if (!isId(parameter)) throw new Error(`${operation.id}: path parameter ${parameter.name} isn't an Id`);
+-      const values = bindAll(parameter.name, targets);
++      const values = [bind(parameter.name, targets)];
+       paths = paths.flatMap((path) => values.map((value) => ({ ...path, [parameter.name]: value })));
+     } else if (!parameter.required) {
+       if (parameter.in === "query" && isId(parameter)) optional.push(parameter.name);

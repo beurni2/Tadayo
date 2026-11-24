@@ -1,0 +1,296 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-main/tests
+
+ ❯ src/privacy/harness.test.ts (88 tests | 8 failed) 1645ms
+   ❯ a route with no row fails (TECH-DESIGN section 8) (4)
+     × gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes' 18ms
+     × reports a route added to the contract without a row 2ms
+     × reports a row whose operation is gone, a row that isn't NONE and that nothing judges, and a judged operation's NONE 2ms
+     × ties the built routes to the judged rows both ways (the outside audit's A4) 2ms
+   ❯ a built route names objects of the world (the outside audit's A4) (2)
+     × binds every Id parameter of every built route to an object of the world 1ms
+     × refuses a built route that takes a parameter still marked missing, and lets an unbuilt one keep it 1ms
+   ❯ the requests a cell makes, from the contract's parameters (5)
+     × names each drop once as Ben's photo and once as Cleo's video link (the outside audit's A4) 2ms
+     × makes one request for each value of a required enum, and gives each idempotent one a key 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes'
+AssertionError: expected [ …(28) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "acceptInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "approveRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "chooseScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "completeUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "confirmScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createDrop's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "declineRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getHome's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getRosterRevision's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getSchedule's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "leaveClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listClubs's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listMembers's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitationWeb's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "proposeRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "registerDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "releaseReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "removeDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "revokeInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "updateMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++ ]
+
+ ❯ src/privacy/harness.test.ts:127:50
+    125|   it("gives every operation of the contract its row, and every row an …
+    126|     expect(operations).toHaveLength(67);
+    127|     expect(rowProblems(operations, ROWS, built)).toEqual([]);
+       |                                                  ^
+    128|   });
+    129|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a route added to the contract without a row
+AssertionError: expected [ …(29) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "getDropTwice has no row in the privacy matrix",
++   "acceptInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "approveRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "chooseScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "completeUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "confirmScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createDrop's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "declineRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getHome's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getRosterRevision's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getSchedule's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "leaveClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listClubs's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listMembers's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitationWeb's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "proposeRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "registerDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "releaseReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "removeDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "revokeInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "updateMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
+  ]
+
+ ❯ src/privacy/harness.test.ts:132:45
+    130|   it("reports a route added to the contract without a row", () => {
+    131|     const added = [...operations, { ...operation("getDrop"), id: "getD…
+    132|     expect(rowProblems(added, ROWS, built)).toEqual(["getDropTwice has…
+       |                                             ^
+    133|   });
+    134|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a row whose operation is gone, a row that isn't NONE and that nothing judges, and a judged operation's NONE
+AssertionError: expected [ …(29) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "getDropTwice has a row but no operation in the contract",
++   "acceptInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "approveRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "chooseScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "completeUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "confirmScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createDrop's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "declineRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getHome's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getRosterRevision's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getSchedule's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "leaveClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listClubs's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listMembers's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitationWeb's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "proposeRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "registerDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "releaseReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "removeDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "revokeInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "updateMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
+  ]
+
+ ❯ src/privacy/harness.test.ts:136:77
+    134|
+    135|   it("reports a row whose operation is gone, a row that isn't NONE and…
+    136|     expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE }, bu…
+       |                                                                             ^
+    137|       "getDropTwice has a row but no operation in the contract",
+    138|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > ties the built routes to the judged rows both ways (the outside audit's A4)
+AssertionError: expected [ …(29) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+-   "deleteComment is built but its row is NONE: a built route's row is judged, never the skeleton's",
++   "acceptInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "approveRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "chooseScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "completeUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "confirmScheduleDays's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createDrop's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "createUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "declineRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getHome's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getRosterRevision's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getSchedule's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "getUpload's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "leaveClub's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listClubs's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "listMembers's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "previewInvitationWeb's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "proposeRoster's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "registerDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "releaseReservation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "removeDevice's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "revokeInvitation's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "updateMe's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
++   "deleteComment is judged but its row is NONE",
+  ]
+
+ ❯ src/privacy/harness.test.ts:156:81
+    154|   it("ties the built routes to the judged rows both ways (the outside …
+    155|     // The audit's leaking handler: built, and its row left the skelet…
+    156|     expect(rowProblems(operations, ROWS, new Set([...built, "deleteCom…
+       |                                                                                 ^
+    157|       "deleteComment is built but its row is NONE: a built route's row…
+    158|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > binds every Id parameter of every built route to an object of the world
+TypeError: bindingProblems is not a function
+ ❯ src/privacy/harness.test.ts:174:12
+    172| describe("a built route names objects of the world (the outside audit'…
+    173|   it("binds every Id parameter of every built route to an object of th…
+    174|     expect(bindingProblems(operations, built)).toEqual([]);
+       |            ^
+    175|     // The one still missing, until B6's first comment route puts a co…
+    176|     expect(Object.entries(BINDINGS).filter(([, binding]) => binding ==…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > refuses a built route that takes a parameter still marked missing, and lets an unbuilt one keep it
+TypeError: bindingProblems is not a function
+ ❯ src/privacy/harness.test.ts:183:12
+    181|   it("refuses a built route that takes a parameter still marked missin…
+    182|     // The audit's deleteComment, built while comment_id names nothing.
+    183|     expect(bindingProblems(operations, new Set([...built, "deleteComme…
+       |            ^
+    184|       "deleteComment is built and takes comment_id, which names no obj…
+    185|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > names each drop once as Ben's photo and once as Cleo's video link (the outside audit's A4)
+AssertionError: expected [ { drop_id: 'drp_here' } ] to deeply equal [ { drop_id: 'drp_here' }, …(1) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "drop_id": "drp_here",
+    },
+-   {
+-     "drop_id": "drp_video_here",
+-   },
+  ]
+
+ ❯ src/privacy/harness.test.ts:214:93
+    212|
+    213|   it("names each drop once as Ben's photo and once as Cleo's video lin…
+    214|     expect(specsFor(operation("getDrop"), here, "Bearer planted").map(…
+       |                                                                                             ^
+    215|       { drop_id: "drp_here" },
+    216|       { drop_id: "drp_video_here" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > makes one request for each value of a required enum, and gives each idempotent one a key
+AssertionError: expected [ { rendition: 'display' }, …(1) ] to deeply equal [ { rendition: 'display' }, …(3) ]
+
+- Expected
++ Received
+
+@@ -3,12 +3,6 @@
+      "rendition": "display",
+    },
+    {
+      "rendition": "full",
+    },
+-   {
+-     "rendition": "display",
+-   },
+-   {
+-     "rendition": "full",
+-   },
+  ]
+
+ ❯ src/privacy/harness.test.ts:249:99
+    247|
+    248|   it("makes one request for each value of a required enum, and gives e…
+    249|     expect(specsFor(operation("getDropMedia"), here, "Bearer planted")…
+       |                                                                                                   ^
+    250|       { rendition: "display" },
+    251|       { rendition: "full" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 80 passed (88)
+   Start at  20:53:27
+   Duration  3.49s (tests 49%, transform 29%, import 22%)
+

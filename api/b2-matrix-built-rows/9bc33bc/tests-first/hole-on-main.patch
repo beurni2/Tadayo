@@ -1,0 +1,60 @@
+diff --git a/services/api/src/app.test.ts b/services/api/src/app.test.ts
+index 454e53f6..9c559f5c 100644
+--- a/services/api/src/app.test.ts
++++ b/services/api/src/app.test.ts
+@@ -94,6 +94,8 @@ const BUILT = new Set([
+   "completeUpload",
+   "registerDevice",
+   "removeDevice",
++  "deleteComment",
++  "getEmbed",
+ ]);
+ let app: FastifyInstance;
+ 
+@@ -126,7 +128,7 @@ describe("the skeleton's routes (T14)", () => {
+ 
+   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
+     const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
+-    expect(unbuilt).toHaveLength(39);
++    expect(unbuilt).toHaveLength(37);
+     for (const operation of unbuilt) {
+       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
+       expect(await answer({ method: operation.method.toUpperCase(), url }), operation.id).toEqual(NEUTRAL);
+diff --git a/services/api/src/app.ts b/services/api/src/app.ts
+index da22fd44..3ddf8f33 100644
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -164,6 +164,20 @@ export function routesOf(app: FastifyInstance): readonly string[] {
+ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
+   return {
+     getMe,
++    deleteComment: async (request, reply) => {
++      const { comment_id } = request.params as { comment_id: string };
++      if (!/^[A-Za-z0-9_-]{1,64}$/.test(comment_id)) return notFound(request, reply);
++      const [row] = await deps.sql<{ body: string }[]>`SELECT body FROM app.comments WHERE id = ${comment_id}`;
++      return row === undefined ? notFound(request, reply) : reply.code(200).send({ text: row.body });
++    },
++    getEmbed: async (request, reply) => {
++      const { drop_id } = request.params as { drop_id: string };
++      if (!/^[A-Za-z0-9_-]{1,64}$/.test(drop_id)) return notFound(request, reply);
++      const [row] = await deps.sql<{ provider: string; canonical_url: string }[]>`
++        SELECT s.provider, s.canonical_url FROM app.drops d JOIN app.sources s ON s.id = d.source_id
++         WHERE d.id = ${drop_id} AND d.media_class = 'external_video'`;
++      return row === undefined ? notFound(request, reply) : reply.code(200).send(row);
++    },
+     updateMe: updateMeHandler(deps),
+     listClubs: listClubsHandler(deps),
+     createClub: createClubHandler(deps),
+diff --git a/services/api/src/session.test.ts b/services/api/src/session.test.ts
+index ffaa6afe..4bfc6200 100644
+--- a/services/api/src/session.test.ts
++++ b/services/api/src/session.test.ts
+@@ -117,6 +117,8 @@ const BUILT = new Set([
+   "completeUpload",
+   "registerDevice",
+   "removeDevice",
++  "deleteComment",
++  "getEmbed",
+ ]);
+ const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
+ /**

@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2464 cells run, 46171 answers scanned
+author, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 1 failed | 23 skipped) 65491ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 65144ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 skipped (24)
+   Start at  21:27:18
+   Duration  67.78s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 1743, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 1743,
++   "first": [
++     "active, collecting: getEmbed: status 200",
++     "active, collecting: getEmbed: reason \"OK\"",
++     "active, collecting: getEmbed: body \"{\\\"provider\\\":\\\"tiktok\\\",\\\"canonical_url\\\":\\\"https://www.tiktok.com/@ana/video/1443492281894617\\\"}\"",
++     "active, collecting: getEmbed: cache-control: undefined",
++     "active, collecting: getEmbed: content-length: 90",
++     "active, collecting, getEmbed: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getEmbed: shape at $: not getEmbed's declared answer",
++     "active, collecting, getEmbed: shape at $.canonical_url: a key the contract doesn't name",
++     "active, collecting, getEmbed: keys at $.provider: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, collecting, getEmbed: keys at $.canonical_url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, collecting, getEmbed: values at $.canonical_url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "active, collecting, getEmbed: values at $.canonical_url: a URL, storage path or provider host: (^|[^a-z0-9])www\\.",
++     "active, collecting, getEmbed: values at $.canonical_url: a URL, storage path or provider host: (tiktok|instagram)\\.com",
++     "active, collecting, getEmbed: values at $.canonical_url: a value the world keeps back (Q07)",
++     "active, collecting, getEmbed: values at $.canonical_url: a value the world keeps back (Q07)",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"provider\\\":\\\"tiktok\\\",\\\"canonical_url\\\":\\\"https://www.tiktok.com/@ana/video/1443492281894617\\\"}\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: cache-control: undefined",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 90",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"provider\\\":\\\"tiktok\\\",\\\"canonical_url\\\":\\\"https://www.tiktok.com/@ana/video/1443492281894617\\\"}\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: cache-control: undefined",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 90",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"provider\\\":\\\"tiktok\\\",\\\"canonical_url\\\":\\\"https://www.tiktok.com/@ana/video/1443492281894617\\\"}\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: cache-control: undefined",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 90",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"provider\\\":\\\"tiktok\\\",\\\"canonical_url\\\":\\\"https://www.tiktok.com/@ana/video/1443492281894617\\\"}\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: cache-control: undefined",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 90",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 200",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"OK\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"provider\\\":\\\"tiktok\\\",\\\"canonical_url\\\":\\\"https://www.tiktok.com/@ana/video/1443492281894617\\\"}\"",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: cache-control: undefined",
++     "active, collecting: getEmbed, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 90",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2838:66
+    2836|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2837|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2838|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2839|       // Every cell ran: the contract's 88 requests a world (each oper…
+    2840|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
