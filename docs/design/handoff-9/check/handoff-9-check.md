@@ -61,13 +61,15 @@
 | 13 | G02-web-failed | The title over "Check your connection and try again.", Retry as a primary button, Get Tadayo. |
 | 14 | G01-invite-people-empty | As built: the title, Sunday people, "Each person gets a separate link.", Create an invitation, "Only you can see this list.", Done for now. |
 | 15 | G01-invite-people-live-not-held | Alex's row: "Link not on this phone" with `iphone.slash`, Create new link, More, and "A new link replaces the previous link." under it. |
-| 16 | G01-invite-people-expired | Alex's row: "Link expired" with `clock`, Create new link, More. |
+| 16 | G01-invite-people-expired | Alex's row: "Link expired" with `clock` and Create new link, its target from 209 to 333, where the other rows' actions end, and no More (corrected by `ios/b1-create-handoff-9`: this row first said More). |
 | 17 | G01-invite-people-action-failed | Maya's Revoke not confirmed: "Couldn’t confirm that Maya’s invitation link was revoked. Check your connection and try again." 24 above Done for now; the rows as they were. |
 | 18 | A01-welcome | Handoff 8's frame 1 with "Already here? Sign in" under I have an invite. |
 | 19 | A01-welcome-dark | The same in dark. |
 | 20 | A01-welcome-xl | The one column, scrolled to its three routes. |
 
 Frame 16 draws a More button on Alex's expired row, where the written answer and `setupLinks.expiredUnused` say "omit More/Revoke for that already expired link". The written rule wins: no More on an expired row.
+
+Corrected by `ios/b1-create-handoff-9` (its review): frame 16 draws no More on Alex's row. Its manifest lists no More control for Alex (`frame-manifest.json`, `G01-invite-people-expired`'s `controls`), and the image's More column is empty there; the paragraph above misread it. The frame and the written answer agree. The frame keeps Create new link in the action column, its target ending at 333 where More's would start.
 
 ## 3. The written answers
 

@@ -82,10 +82,12 @@ struct SetupHeading: View {
 
 /// A primary action pinned above the bottom edge, or the keyboard, while the content scrolls
 /// under it (handoff 1, PDF p30: "keeping the primary action reachable"). `spacing` is the gap
-/// between what it holds, such as a failure line and the button it names.
+/// between what it holds, such as a failure line and the button it names; `top` is how far above
+/// what it holds the content scrolling under it is hidden.
 struct SetupFooter<Content: View>: View {
     let bottom: CGFloat
     var spacing: CGFloat = Spacing.s
+    var top: CGFloat = Spacing.s
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -93,7 +95,7 @@ struct SetupFooter<Content: View>: View {
             content
         }
         .padding(.horizontal, Spacing.inset)
-        .padding(.top, Spacing.s)
+        .padding(.top, top)
         .padding(.bottom, bottom)
         .background(Palette.canvas)
     }

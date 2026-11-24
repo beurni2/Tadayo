@@ -865,6 +865,18 @@
         }
       }
     },
+    "create.tooLong" : {
+      "comment" : "handoff 9 copy-contracts handoff9.create.tooLong: G01-create's line under the club's name while it is longer than 40 characters (nameLimits; FQ70), the name kept as typed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use 40 characters or fewer for the club name."
+          }
+        }
+      }
+    },
     "details.footer" : {
       "comment" : "handoff 6 details.footer ({memberCountText} · {clubZoneName}), never the zone-omitted form; the members list's first footer line too (handoff 4 members.footer.one and .other); %1$@ is details.memberCount, %2$@ the club's zone; the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
       "extractionState" : "manual",
@@ -1850,7 +1862,7 @@
       }
     },
     "invite.expired" : {
-      "comment" : "Built from spec, made as handoff 4's Link revoked is (docs/plans/ios-b1-create.md section 2; ios-lane-needs item 65)",
+      "comment" : "handoff 9 copy-contracts handoff9.links.expired: an expired, unused link (setupLinks.expiredUnused, frame 16; FQ71)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -1869,6 +1881,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More options for %@’s invitation"
+          }
+        }
+      }
+    },
+    "invite.notOnThisPhone" : {
+      "comment" : "handoff 9 copy-contracts handoff9.links.missing: a live link this phone doesn't hold (setupLinks.missingLive, frame 15)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link not on this phone"
+          }
+        }
+      }
+    },
+    "invite.notOnThisPhone.replacement" : {
+      "comment" : "handoff 9 copy-contracts handoff9.links.missing.replacement: under a link not on this phone, before Create new link (setupLinks.missingLive, frame 15)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A new link replaces the previous link."
           }
         }
       }
@@ -2145,6 +2181,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Who is it for?"
+          }
+        }
+      }
+    },
+    "inviteName.tooLong" : {
+      "comment" : "handoff 9 copy-contracts handoff9.inviteName.tooLong: G01-invite-name's line under the person's name while it is longer than 40 characters (nameLimits; FQ70), the name kept as typed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use 40 characters or fewer for this person’s name."
           }
         }
       }
