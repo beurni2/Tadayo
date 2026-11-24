@@ -1,0 +1,11 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -34,7 +34,7 @@
+   let probe: Promise<Outcome> | undefined;
+   const ask = (): Promise<Outcome> => {
+     if (probe !== undefined) return probe;
+-    const sent: Promise<Outcome> = deps.sql`SELECT 1`
++    const sent: Promise<Outcome> = Promise.resolve()
+       .then(
+         (): Outcome => "answered",
+         (error: unknown): Outcome => ({ error }),

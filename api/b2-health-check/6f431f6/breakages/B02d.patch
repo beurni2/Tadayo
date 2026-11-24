@@ -1,0 +1,11 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -55,7 +55,7 @@
+     const asked = ask();
+     let outcome: Outcome | "late";
+     try {
+-      outcome = await Promise.race([asked, late]);
++      outcome = await asked;
+     } finally {
+       clearTimeout(timer);
+     }

@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (10 tests | 1 failed) 5163ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (6)
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5006ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  19:47:13
+   Duration  6.17s (tests 86%, transform 10%, import 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:219:3
+    217|   });
+    218|
+    219|   it("sends a new query once the checks gave up on the one that is out…
+       |   ^
+    220|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    221|     let fail: (error: Error) => void = () => undefined;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

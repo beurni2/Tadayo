@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (10 tests | 1 failed) 255ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (6)
+     × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 21ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  19:44:22
+   Duration  1.38s (transform 54%, import 25%, tests 21%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52)
+AssertionError: expected '{"level":40,"time":1795549463817,"req…' not to contain 'ana@example.com'
+
+- Expected
++ Received
+
+- ana@example.com
++ {"level":40,"time":1795549463817,"reqId":"k2eOyd7kfAgpiCpC","err":{"type":"PostgresError","code":"08006"},"detail":"PostgresError: connection for ana@example.com was refused","msg":"database unreachable"}
++ {"level":30,"time":1795549463818,"reqId":"k2eOyd7kfAgpiCpC","op":"getHealth","status":503,"ms":1,"msg":"request"}
++
+
+ ❯ src/health.test.ts:152:32
+    150|     });
+    151|     expect(Object.keys(logged[0]?.["err"] as object).sort()).toEqual([…
+    152|     expect(lines.join("")).not.toContain(PERSONAL);
+       |                                ^
+    153|     expect(lines.join("")).not.toContain("refused");
+    154|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

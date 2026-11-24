@@ -1,0 +1,11 @@
+--- a/packages/contracts/src/operation.ts
++++ b/packages/contracts/src/operation.ts
+@@ -50,7 +50,7 @@
+   const codes: ErrorCodeName[] = ["INVALID_REQUEST"];
+   if (!op.public) codes.push("UNAUTHENTICATED");
+   if (!op.public && !op.beforeProfile) codes.push("PROFILE_INCOMPLETE");
+-  if (op.path.includes("{") || (op.public && op.body)) codes.push("NOT_FOUND");
++  if (op.path.includes("{") || op.public) codes.push("NOT_FOUND");
+   if (op.idempotent) codes.push("IDEMPOTENCY_CONFLICT");
+   codes.push("RATE_LIMITED");
+   return codes;

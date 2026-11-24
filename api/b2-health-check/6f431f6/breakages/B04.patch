@@ -1,0 +1,10 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -63,6 +63,6 @@
+     if (outcome === "answered") return noContent(reply);
+     if (outcome === "late") request.log.warn("database slow");
+     else request.log.warn({ err: outcome.error }, "database unreachable");
+-    return unavailable(reply);
++    return reply.code(503).header("cache-control", "private, no-store").send({ code: "UNAVAILABLE" });
+   };
+ }

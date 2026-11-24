@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -1177,7 +1177,7 @@
+                                           : gate === undefined && id === "registerDevice"
+                                             ? DEVICE_NO_BODY
+                                             : gate === undefined && id === "getHealth"
+-                                              ? healthExpected
++                                              ? NEUTRAL
+                                               : gate === undefined && id === "getUpload"
+                                                 ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
+                                                 : gate === undefined && id === "completeUpload"

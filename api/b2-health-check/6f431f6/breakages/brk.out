@@ -1,0 +1,65 @@
+== B01 204 without asking the database [health]: CAUGHT; exit 1 ['Tests  6 failed | 4 passed (10)']
+    × answers the bare 503 at its bound when the query never comes back, and logs that it was slow 5003ms
+    × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 10ms
+    × asks the database `SELECT 1` once, with nothing else: no table, no value, no transaction 21ms
+    × logs nothing more when a query it gave up on fails later 5003ms
+    × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5002ms
+    × shares one query among the checks that come while it is out, and sends a new one once it has come back 5006ms
+== B01d 204 without asking the database, on Postgres [health-db]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed (2)']
+    × answers the bare 503 within its bound while every connection of the pool is held, and 204 once they're free 59ms
+== B02 no bound [health]: CAUGHT; exit 1 ['Tests  3 failed | 7 passed (10)']
+    × answers the bare 503 at its bound when the query never comes back, and logs that it was slow 5004ms
+    × logs nothing more when a query it gave up on fails later 5002ms
+    × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5001ms
+== B02d no bound, on Postgres [health-db]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed (2)']
+    × answers the bare 503 within its bound while every connection of the pool is held, and 204 once they're free 5006ms
+== B03 a failed query answered with the 500 [health]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 20ms
+== B04 the 503 with a body [health]: CAUGHT; exit 1 ['Tests  4 failed | 6 passed (10)']
+    × answers the bare 503 at its bound when the query never comes back, and logs that it was slow 9ms
+    × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 23ms
+    × logs nothing more when a query it gave up on fails later 10ms
+    × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 16ms
+== B05 the warning carries the error's message [health]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 21ms
+== B06 the bound longer than Fly's timeout [health]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × gives up before Fly's own check timeout, so the API's answer is the one Fly reads 3ms
+== B07 getHealth behind the gate [contract]: CAUGHT; exit 1 ['Tests  3 failed | 218 passed (221)']
+    × documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7) 1ms
+    × is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 146ms
+    × needs no session for exactly the signed-out page, a logged-out device's removal and the health check 3ms
+== B07m getHealth behind the gate, seen by the matrix [matrix-signed-out]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find 34917ms
+== B08 getHealth's 503 left out of the document [contract]: CAUGHT; exit 1 ['Tests  2 failed | 219 passed (221)']
+    × documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7) 3ms
+    × is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 169ms
+== B09 NOT_FOUND back on every public operation [contract]: CAUGHT; exit 1 ['Tests  2 failed | 219 passed (221)']
+    × documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7) 3ms
+    × is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 189ms
+== B10 the handler queries a table [health]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × asks the database `SELECT 1` once, with nothing else: no table, no value, no transaction 16ms
+== B11 fly.toml keeps the TCP check [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and asks the health route, not the port 38ms
+== B12 fly.toml's check on another path [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and asks the health route, not the port 50ms
+== B13 fly.toml's method in lower case [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and asks the health route, not the port 51ms
+== B14 the warning logged where the query fails, not by each check [health]: CAUGHT; exit 1 ['Tests  2 failed | 8 passed (10)']
+    × logs nothing more when a query it gave up on fails later 18ms
+    × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 9ms
+== B15 the timer left running after a 204 [health]: CAUGHT; exit 1 ['Tests  2 failed | 8 passed (10)']
+    × leaves no timer behind once it has answered 21ms
+    × shares one query among the checks that come while it is out, and sends a new one once it has come back 13ms
+== B16 the signed-out callers' row judged as the neutral not-found [matrix-signed-out]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find 36964ms
+== B16r a role's row judged as the neutral not-found [matrix-author]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 65855ms
+== B17 every check sends its own query [health]: CAUGHT; exit 1 ['Tests  2 failed | 8 passed (10)']
+    × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 6ms
+    × shares one query among the checks that come while it is out, and sends a new one once it has come back 16ms
+== B19 a check that gives up keeps the probe [health]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5006ms
+== B18 removeDevice reads the database before it refuses a body [session]: CAUGHT; exit 1 ['Tests  2 failed | 32 passed (34)']
+    × answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out 21ms
+    × never ask who is calling, whatever the header says, and make no account 22ms
+restored: ''

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (10 tests | 1 failed) 163ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (6)
+     × gives up before Fly's own check timeout, so the API's answer is the one Fly reads 3ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  19:44:24
+   Duration  1.24s (transform 57%, import 28%, tests 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > gives up before Fly's own check timeout, so the API's answer is the one Fly reads
+AssertionError: expected 5000 to be less than 3000
+ ❯ src/health.test.ts:250:23
+    248|   it("gives up before Fly's own check timeout, so the API's answer is …
+    249|     expect(HEALTH_MS).toBeGreaterThan(0);
+    250|     expect(HEALTH_MS).toBeLessThan(FLY_CHECK_TIMEOUT_MS);
+       |                       ^
+    251|   });
+    252| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

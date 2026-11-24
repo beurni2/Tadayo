@@ -1,0 +1,10 @@
+--- a/services/api/src/identity/devices.ts
++++ b/services/api/src/identity/devices.ts
+@@ -81,6 +81,7 @@
+ 
+ export function removeDeviceHandler(deps: Deps): Handler {
+   return async (request, reply) => {
++    await deps.sql`SELECT 1 FROM app.device_registrations LIMIT 1`;
+     const parsed = RemoveDeviceRequest.safeParse(request.body);
+     if (!parsed.success) {
+       const field = firstBadField(parsed.error.issues, REMOVE_FIELDS);

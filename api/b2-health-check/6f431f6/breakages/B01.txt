@@ -1,0 +1,125 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (10 tests | 6 failed) 20222ms
+   ❯ the health check when the database answers (the outside audit's A7) (4)
+     × asks the database `SELECT 1` once, with nothing else: no table, no value, no transaction 21ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (6)
+     × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 10ms
+     × answers the bare 503 at its bound when the query never comes back, and logs that it was slow 5003ms
+     × logs nothing more when a query it gave up on fails later 5003ms
+     × shares one query among the checks that come while it is out, and sends a new one once it has come back 5006ms
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5002ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 4 passed (10)
+   Start at  19:43:26
+   Duration  21.35s (tests 96%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database answers (the outside audit's A7) > asks the database `SELECT 1` once, with nothing else: no table, no value, no transaction
+AssertionError: expected [] to deeply equal [ { strings: [ 'SELECT 1' ], …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "strings": [
+-       "SELECT 1",
+-     ],
+-     "values": [],
+-   },
+- ]
++ []
+
+ ❯ src/health.test.ts:125:21
+    123|     const { send, queries } = await appWith(() => Promise.resolve([{ "…
+    124|     await send(health());
+    125|     expect(queries).toEqual([{ strings: ["SELECT 1"], values: [] }]);
+       |                     ^
+    126|   });
+    127|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52)
+AssertionError: expected { status: 204, body: '', …(1) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+    "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "0",
+    },
+-   "status": 503,
++   "status": 204,
+  }
+
+ ❯ src/health.test.ts:143:34
+    141|     });
+    142|     const { send, warnings, lines } = await appWith(() => Promise.reje…
+    143|     expect(await send(health())).toEqual(UNAVAILABLE);
+       |                                  ^
+    144|     const logged = warnings();
+    145|     expect(logged).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > answers the bare 503 at its bound when the query never comes back, and logs that it was slow
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:156:3
+    154|   });
+    155|
+    156|   it("answers the bare 503 at its bound when the query never comes bac…
+       |   ^
+    157|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    158|     const { send, queried, warnings } = await appWith(() => new Promis…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > logs nothing more when a query it gave up on fails later
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:176:3
+    174|   });
+    175|
+    176|   it("logs nothing more when a query it gave up on fails later", async…
+       |   ^
+    177|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    178|     let fail: (error: Error) => void = () => undefined;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > shares one query among the checks that come while it is out, and sends a new one once it has come back
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:194:3
+    192|   });
+    193|
+    194|   it("shares one query among the checks that come while it is out, and…
+       |   ^
+    195|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    196|     let release: (rows: unknown) => void = () => undefined;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:219:3
+    217|   });
+    218|
+    219|   it("sends a new query once the checks gave up on the one that is out…
+       |   ^
+    220|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    221|     let fail: (error: Error) => void = () => undefined;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

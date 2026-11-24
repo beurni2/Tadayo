@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2044 cells run, 38086 answers scanned
+author, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 1 failed | 23 skipped) 66193ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 65855ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 skipped (24)
+   Start at  19:46:02
+   Duration  68.62s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 595, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 595,
++   "first": [
++     "active, collecting: getHealth: status 204",
++     "active, collecting: getHealth: reason \"No Content\"",
++     "active, collecting: getHealth: body \"\"",
++     "active, collecting: getHealth: content-type: undefined",
++     "active, collecting: getHealth: content-length: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 204",
++     "active, collecting: getHealth, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"No Content\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 204",
++     "active, collecting: getHealth, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"No Content\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 204",
++     "active, collecting: getHealth, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"No Content\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 204",
++     "active, collecting: getHealth, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"No Content\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 204",
++     "active, collecting: getHealth, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"No Content\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 204",
++     "active, collecting: getHealth, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"No Content\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 204",
++     "active, collecting: getHealth, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"No Content\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"\"",
++     "active, collecting: getHealth, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: getHealth, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: undefined",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2821:66
+    2819|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2820|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2821|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2822|       // Every cell ran: the contract's 73 requests a world (each oper…
+    2823|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

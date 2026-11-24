@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/tests
+
+ ❯ src/db/health.test.ts (2 tests | 1 failed) 8149ms
+   ❯ the health check on Postgres (the outside audit's A7) (2)
+     × answers the bare 503 within its bound while every connection of the pool is held, and 204 once they're free 5006ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  19:44:08
+   Duration  9.74s (tests 91%, transform 6%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/health.test.ts > the health check on Postgres (the outside audit's A7) > answers the bare 503 within its bound while every connection of the pool is held, and 204 once they're free
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/health.test.ts:55:3
+     53|   });
+     54|
+     55|   it("answers the bare 503 within its bound while every connection of …
+       |   ^
+     56|     const size = api.options.max;
+     57|     expect(size).toBeGreaterThan(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

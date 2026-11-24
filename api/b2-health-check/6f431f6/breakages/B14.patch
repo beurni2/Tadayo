@@ -1,0 +1,20 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -55,6 +55,9 @@
+     const asked = ask();
+     let outcome: Outcome | "late";
+     try {
++      void asked.then((settled) => {
++        if (settled !== "answered") request.log.warn({ err: settled.error }, "database unreachable");
++      });
+       outcome = await Promise.race([asked, late]);
+     } finally {
+       clearTimeout(timer);
+@@ -62,7 +65,6 @@
+     if (outcome === "late" && probe === asked) probe = undefined;
+     if (outcome === "answered") return noContent(reply);
+     if (outcome === "late") request.log.warn("database slow");
+-    else request.log.warn({ err: outcome.error }, "database unreachable");
+     return unavailable(reply);
+   };
+ }

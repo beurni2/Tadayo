@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/tools/ops
+
+ ❯ src/deploy-files.test.ts (18 tests | 1 failed) 416ms
+   ❯ fly.toml (8)
+     × serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and asks the health route, not the port 51ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  19:45:16
+   Duration  1.13s (transform 48%, tests 42%, import 9%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > fly.toml > serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and asks the health route, not the port
+AssertionError: expected [ { grace_period: '20s', …(5) } ] to deeply equal [ { grace_period: '20s', …(5) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "grace_period": "20s",
+      "interval": "15s",
+-     "method": "GET",
++     "method": "get",
+      "path": "/v1/health",
+      "protocol": "http",
+      "timeout": "3s",
+    },
+  ]
+
+ ❯ src/deploy-files.test.ts:331:20
+    329|     expect(service["tcp_checks"]).toBeUndefined();
+    330|     const checks = list(service["http_checks"], "[[services.http_check…
+    331|     expect(checks).toEqual([
+       |                    ^
+    332|       { grace_period: "20s", interval: "15s", timeout: "3s", method: "…
+    333|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

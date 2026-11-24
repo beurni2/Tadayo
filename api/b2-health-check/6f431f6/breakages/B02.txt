@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (10 tests | 3 failed) 15161ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (6)
+     × answers the bare 503 at its bound when the query never comes back, and logs that it was slow 5004ms
+     × logs nothing more when a query it gave up on fails later 5002ms
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5001ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+   Start at  19:43:51
+   Duration  16.25s (tests 94%, transform 4%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > answers the bare 503 at its bound when the query never comes back, and logs that it was slow
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:156:3
+    154|   });
+    155|
+    156|   it("answers the bare 503 at its bound when the query never comes bac…
+       |   ^
+    157|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    158|     const { send, queried, warnings } = await appWith(() => new Promis…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > logs nothing more when a query it gave up on fails later
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:176:3
+    174|   });
+    175|
+    176|   it("logs nothing more when a query it gave up on fails later", async…
+       |   ^
+    177|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    178|     let fail: (error: Error) => void = () => undefined;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:219:3
+    217|   });
+    218|
+    219|   it("sends a new query once the checks gave up on the one that is out…
+       |   ^
+    220|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    221|     let fail: (error: Error) => void = () => undefined;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
