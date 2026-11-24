@@ -83,6 +83,29 @@
 //   a slot that ended before the commit (a free place taken, or QUOTA_FULL and PHOTO_LIMIT), the cutoff under the
 //   lock and the races for the last place, a join that waits behind the commit, a held or rejected upload, and a
 //   link's commit, which answers the neutral NOT_FOUND until `resolveSource` is built;
+// - for the devices' two routes (spike S4's server part: registerDevice and removeDevice;
+//   docs/plans/api-b2-spike-push.md, section 1): in every cell, registerDevice with no body (the contract refuses
+//   it) and removeDevice with a removal secret nobody registered, the neutral NOT_FOUND to every caller, the route
+//   being public. Then, in every phase, a table judged by device.ts from the rows before each request and held to
+//   its answer in the rows after it: two new sign-ins of the viewer's, the first registering a token sent in
+//   uppercase, and the same again; the second taking that token in the sandbox with a zone in another case, so the
+//   first has no registration and has ended at the instant ((a), (e)); the first, ended, refused a new token; the
+//   other club's author's secret, registered through the app before any cell, refused to the viewer; a third
+//   sign-in of the viewer's taking the token of a new sign-in the other club's author registered through the app
+//   in that cell, so one account's request ends another account's sign-in ((a), the move); the second removed by
+//   its secret, with the role's header and again with none (204 with nothing in it, then the neutral NOT_FOUND,
+//   T14), and refused when it registers again. A role the gate stops gets its answer to every registration, which
+//   changes nothing. Each registration's 200 is the registration as stored, never the token or the secret, and
+//   the scanner keeps back from every answer each secret and token of the table, the other club's author's among
+//   them (T52, T55). One test counts what each role registered, moved, refused, removed and found nothing for,
+//   worked out by hand (matrix.test.ts, "the devices' table ran"). What passes through no cell, and is held on
+//   Postgres (tests/src/db/devices.test.ts), by the route tests (services/api/src/identity/devices.test.ts) and by
+//   device.test.ts's judge tests: the races, each proved to overlap (twenty sign-ins taking one token, two
+//   sign-ins crossing tokens, a registration racing its removal in each order, a deletion that begins while a
+//   registration waits, a removal meeting another command's purge held open), two purges at once laid out in
+//   the order that deadlocked, the purge of ended
+//   sign-ins after eight days, an unresolvable zone, the app's order of sign-ins, and the schema's own guards,
+//   their race among them;
 // - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
@@ -221,6 +244,7 @@
 
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";
+import { DEVICE_JUDGED } from "./device.ts";
 import { DROP_JUDGED } from "./drop.ts";
 import { HOME_JUDGED } from "./home.ts";
 import { INVITATION_JUDGED } from "./invitation.ts";
@@ -236,7 +260,7 @@ import { UPLOAD_JUDGED } from "./upload.ts";
  * the roster (B2's generation slice), the club's two routes (B1's first slice), the roster's four (B1's
  * second slice) and its two decisions and the invitation's three (B1's third slice), Home (B2's Home slice),
  * the leave (B1's fourth slice), the reservations' two (B2's reservations slice), the uploads' three (spike
- * S1's server part) and the commit (step (w), for a photo).
+ * S1's server part), the commit (step (w), for a photo) and the devices' two (spike S4's server part).
  */
 export const JUDGED: ReadonlySet<string> = new Set([
   ...ACCOUNT_JUDGED,
@@ -250,6 +274,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...RESERVATION_JUDGED,
   ...UPLOAD_JUDGED,
   ...DROP_JUDGED,
+  ...DEVICE_JUDGED,
 ]);
 
 const GATE =
@@ -488,6 +513,23 @@ export const COMPLETE_UPLOAD = Object.freeze({
     `one past pending; the neutral NOT_FOUND for anyone else's, a lapsed one, or an id nobody has (${GATE})`,
 });
 
+/** registerDevice (spike S4's server part): device.ts's registerOutcome, registerExpected and registeredProblems. */
+export const REGISTER_DEVICE = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; the neutral NOT_FOUND, changing nothing, for a secret whose " +
+    "sign-in has ended or whose registration is another account's; otherwise 200 with the registration as stored, " +
+    "never the token or the secret, the token moved from any other sign-in, which ends " +
+    `(TECH-DESIGN section 6 (a) to (e); ${GATE})`,
+});
+
+/** removeDevice (spike S4's server part): device.ts's removeOutcome, removeExpected and removedProblems. */
+export const REMOVE_DEVICE = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; 204 with nothing in it when the secret's sign-in had a " +
+    "registration, the neutral NOT_FOUND when it had none, and the sign-in ended either way, to every caller: the " +
+    "route is public, so the gate reads no session for it (TECH-DESIGN section 6 (a), (c) to (e))",
+});
+
 export const ROWS: Readonly<Record<string, unknown>> = {
   acceptInvitation: INVITATION_ACCEPT,
   approveRoster: ROSTER_DECISION,
@@ -538,9 +580,9 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   previewInvitation: INVITATION_PREVIEW,
   previewInvitationWeb: INVITATION_WEB,
   proposeRoster: PROPOSE_ROSTER,
-  registerDevice: NONE,
+  registerDevice: REGISTER_DEVICE,
   releaseReservation: RELEASE_RESERVATION,
-  removeDevice: NONE,
+  removeDevice: REMOVE_DEVICE,
   removeDrop: NONE,
   removeFavourite: NONE,
   resolveSource: NONE,

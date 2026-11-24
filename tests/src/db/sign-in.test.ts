@@ -241,11 +241,12 @@ describe("a token that is no session (T14, T53)", () => {
   it("isn't asked for on a public route: no header is read there, so a good token makes no account and a bad one changes nothing", async () => {
     const subject = randomUUID();
     const good = await signer.token(subject);
-    // One route that isn't built yet, and the web preview with a token nobody made: each is the neutral
-    // not-found, the same for a good session token, a bad one and none (never the gate's 401).
+    // The two public routes, a device's removal with a secret nobody made and the web preview with a token nobody
+    // made: each is the neutral not-found, the same for a good session token, a bad one and none (never the gate's
+    // 401).
     const unmade = randomBytes(32).toString("base64url");
     for (const [url, payload] of [
-      ["/v1/device-removals", {}],
+      ["/v1/device-removals", { removal_secret: unmade }],
       ["/v1/invitations/web-preview", { token: unmade }],
     ] as const) {
       const answers = await Promise.all(

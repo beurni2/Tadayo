@@ -105,8 +105,7 @@ export const RemovalSecret = named(
 export const RegisterDeviceRequest = named(
   "RegisterDeviceRequest",
   "This sign-in's one device registration, replaced by each new token from iOS; registering a token " +
-    "moves it from any earlier sign-in (TECH-DESIGN section 6). The zone sets quiet hours (T37). The " +
-    "mechanism is finished in B8, in its own contract PR, with a privacy and security review.",
+    "moves it from any earlier sign-in, which ends (TECH-DESIGN section 6). The zone sets quiet hours (T37).",
   z.strictObject({
     apns_token: z
       .string()
