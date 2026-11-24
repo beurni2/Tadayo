@@ -3190,6 +3190,18 @@ class SheetsTest(StepsTest):
         # In its own folder, so a push's touched set of the same commit can't replace it.
         self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios-full"})
 
+    def test_a_pass_s_crash_reports_go_up_with_its_logs(self):
+        # The test step's crashes-<v>.txt is a log it writes, not a stray that fails the
+        # evidence job (the first run with it, 45380960480, failed so).
+        for name in ("test-27.2.log", "crashes-27.2.txt", "crashes-26.5.txt"):
+            with open(os.path.join(self.repo.out, "logs", name), "w") as f:
+                f.write("{}\n")
+        code, out, montaged, _ = self.run_sheets([self.entry("A02-email", "new")], shell=FakeShell())
+        self.assertEqual((code, montaged), (0, ["A02-email.jpg"]), out)
+        self.assertNotIn("that no step writes", out)
+        staged = os.listdir(os.path.join(self.stage(), "logs"))
+        self.assertTrue({"crashes-26.5.txt", "crashes-27.2.txt", "test-27.2.log"} <= set(staged))
+
     def test_every_runtime_s_logs_go_up_in_the_run_s_one_folder(self):
         # A stray IOS_VERSION makes no ios-<version>/ folder and drops no sheet.
         for name in ("test-27.2.log", "test-summary-27.2.json", "test-summary-26.5.json"):

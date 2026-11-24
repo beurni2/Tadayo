@@ -349,7 +349,8 @@ def cache_log(minutes):
 LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log",
              "attachments-manifest.json", "runner.txt") + tuple(
     name for version in toolchain.IOS_RUNTIMES
-    for name in (f"test-{version}.log", f"test-summary-{version}.json"))
+    for name in (f"test-{version}.log", f"test-summary-{version}.json",
+                 f"crashes-{version}.txt"))
 # Xcode adds "_<n>_<UUID>" to an attachment's suggested name when it exports it: at the end of a
 # name without a dot ("Launch Screen_0_<UUID>.png", Xcode 26.2), and before the last dot of a
 # dotted one ("a.b_0_<UUID>.png", Xcode 27.1). It is stripped wherever it is.
