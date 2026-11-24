@@ -21,7 +21,7 @@
 // itself are values the world keeps back.
 //
 // Each role's test prints the cells it ran and the answers it scanned, and asserts both: the cells
-// against the contract's 72 requests a world, the answers against what each step says it sends.
+// against the contract's 73 requests a world, the answers against what each step says it sends.
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
@@ -106,6 +106,7 @@ import {
   type Choice,
   type MembershipRow,
 } from "./leave.ts";
+import { HEALTH_JUDGED, healthExpected } from "./health.ts";
 import { homeExpected, homeRowsOf, type HomeSeen } from "./home.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
 import {
@@ -209,7 +210,7 @@ const plain = (tx: WorldTx) => tx as unknown as Tx;
 const CLAIMED = PHASES.collecting.add({ hours: 24 });
 
 /** The requests each world gets from the contract's operations (specsFor), pinned. */
-const REQUESTS_PER_WORLD = 72;
+const REQUESTS_PER_WORLD = 73;
 /** What the roster's table did for each role (the role's test fills it; the last test reads it). */
 const ROSTER_TABLES = new Map<
   string,
@@ -1175,37 +1176,39 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                                           ? DROP_NO_BODY
                                           : gate === undefined && id === "registerDevice"
                                             ? DEVICE_NO_BODY
-                                            : gate === undefined && id === "getUpload"
-                                              ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
-                                              : gate === undefined && id === "completeUpload"
-                                                ? completeExpected(
-                                                    completeOutcome(
-                                                      facts.world,
-                                                      cell.viewer,
-                                                      cell.targets.upload,
-                                                      now,
-                                                      storage.objects,
-                                                    ),
-                                                  )
-                                                : gate === undefined && id === "releaseReservation"
-                                                  ? releaseExpected(
-                                                      releaseOutcome(
+                                            : gate === undefined && id === "getHealth"
+                                              ? healthExpected
+                                              : gate === undefined && id === "getUpload"
+                                                ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
+                                                : gate === undefined && id === "completeUpload"
+                                                  ? completeExpected(
+                                                      completeOutcome(
                                                         facts.world,
                                                         cell.viewer,
-                                                        cell.targets.reservation,
+                                                        cell.targets.upload,
                                                         now,
+                                                        storage.objects,
                                                       ),
                                                     )
-                                                  : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                                                    ? cellExpected(session, spec.operation, seen)
-                                                    : id === "getSchedule"
-                                                      ? weekExpected(scheduleSeen, cell.w.club)
-                                                      : commandExpected(
-                                                          scheduleSeen,
-                                                          id as ScheduleCommand,
-                                                          cell.targets.proposal,
-                                                          startVersion,
-                                                        );
+                                                  : gate === undefined && id === "releaseReservation"
+                                                    ? releaseExpected(
+                                                        releaseOutcome(
+                                                          facts.world,
+                                                          cell.viewer,
+                                                          cell.targets.reservation,
+                                                          now,
+                                                        ),
+                                                      )
+                                                    : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                                      ? cellExpected(session, spec.operation, seen)
+                                                      : id === "getSchedule"
+                                                        ? weekExpected(scheduleSeen, cell.w.club)
+                                                        : commandExpected(
+                                                            scheduleSeen,
+                                                            id as ScheduleCommand,
+                                                            cell.targets.proposal,
+                                                            startVersion,
+                                                          );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -2816,7 +2819,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       console.log(`${role.name}: ${String(counted.cells)} cells run, ${String(counted.answers)} answers scanned`);
       console.log(`${role.name}, the roster's table: ${JSON.stringify(roster)}`);
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-      // Every cell ran: the contract's 72 requests a world (each operation with each value of a
+      // Every cell ran: the contract's 73 requests a world (each operation with each value of a
       // required enum, and again with its optional ids), in each of the 7 states and each phase the
       // role has. And every answer was scanned, with the manipulated and guessed requests and the bodies.
       const specsPerWorld = operations.reduce(
@@ -3814,7 +3817,7 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
 });
 
 describe("callers without a session, in each state of the drop and phase of the day (T14, T27, T53)", () => {
-  it("answers each the same whatever the ids name, the gate's one 401 or the neutral not-found for a public route, and leaks nothing the scanner can find", async () => {
+  it("answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find", async () => {
     const wrong: string[] = [];
     const counted = { answers: 0, expected: 0 };
     // Each way a token fails to be a session, signed by real keys and naming an account that exists, beside
@@ -3858,7 +3861,11 @@ describe("callers without a session, in each state of the drop and phase of the 
         clock.set(now);
         const record = scanner(wrong, `${state.name}, ${phase}`, () => facts, now, counted);
         for (const spec of specs) {
-          const expected = PUBLIC.has(spec.operation.id) ? NEUTRAL : UNAUTHENTICATED;
+          const expected: Expected = HEALTH_JUDGED.has(spec.operation.id)
+            ? healthExpected
+            : PUBLIC.has(spec.operation.id)
+              ? NEUTRAL
+              : UNAUTHENTICATED;
           counted.expected += signedOutCount(spec, callers);
           record(await signedOutStep(app, spec, elsewhere, expected, callers));
         }

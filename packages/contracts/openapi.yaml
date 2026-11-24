@@ -5935,6 +5935,52 @@ paths:
                   value:
                     code: RATE_LIMITED
                     retry_after_seconds: 30
+  /v1/health:
+    get:
+      operationId: getHealth
+      summary: Whether the API can reach its database
+      description: "Fly's health check (fly.toml), not the app's: one round trip to the database through the API's own pool, reading no table and naming nothing, so every caller gets the same answer (T14). 204 when the database answers within two seconds; the 503, with nothing in it, when it fails or doesn't (the outside audit's A7)."
+      security: []
+      parameters: []
+      responses:
+        "204":
+          description: Done.
+        "400":
+          description: INVALID_REQUEST
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                INVALID_REQUEST:
+                  summary: The request doesn't match the contract. `field` names the first bad field, never its value.
+                  value:
+                    code: INVALID_REQUEST
+        "429":
+          description: RATE_LIMITED
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                RATE_LIMITED:
+                  summary: "Too many requests: try again after `retry_after_seconds`."
+                  value:
+                    code: RATE_LIMITED
+                    retry_after_seconds: 30
+        "503":
+          description: The database can't be reached, or didn't answer in time. Nothing in it.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
   /v1/invitations/accept:
     post:
       operationId: acceptInvitation

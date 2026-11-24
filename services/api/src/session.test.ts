@@ -55,7 +55,10 @@ const NEUTRAL = {
 const UNAVAILABLE = { status: 503, body: "", headers: { "cache-control": "private, no-store", "content-length": "0" } };
 const TRANSPORT = new Set(["date", "connection", "keep-alive"]);
 
-const sql = { end: () => Promise.resolve() } as unknown as ApiSql;
+/** A pool that answers the health check's `SELECT 1`, the one query a route here reaches. */
+const sql = Object.assign(() => Promise.resolve([{ "?column?": 1 }]), {
+  end: () => Promise.resolve(),
+}) as unknown as ApiSql;
 const open: FastifyInstance[] = [];
 afterEach(async () => {
   await Promise.all(open.splice(0).map((app) => app.close()));
@@ -117,20 +120,28 @@ const BUILT = new Set([
   "completeUpload",
   "registerDevice",
   "removeDevice",
+  "getHealth",
 ]);
 const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
 /**
- * The public operations, all built: each is sent `{}`, which its handler refuses by its first field before it opens
- * a transaction, so the answer is the route's own and never the gate's.
+ * The public operations, all built: each that reads a body is sent `{}`, which its handler refuses by its first
+ * field before it opens a transaction, and the health check, which reads none, is asked as Fly asks it and answers
+ * the 204 of the pool's `SELECT 1`. Either way the answer is the route's own and never the gate's.
  */
 const PUBLIC = OPERATIONS.filter((operation) => operation.public === true);
 const FIRST_FIELD: Readonly<Record<string, string>> = { previewInvitationWeb: "token", removeDevice: "removal_secret" };
-const emptyBody = (operation: (typeof OPERATIONS)[number]): InjectOptions => ({
-  method: operation.method.toUpperCase(),
-  url: urlOf(operation.path),
-  headers: { "content-type": "application/json" },
-  payload: "{}",
-});
+const DONE = { status: 204, body: "", headers: { "cache-control": "private, no-store" } };
+const publicRequest = (operation: (typeof OPERATIONS)[number]): InjectOptions =>
+  operation.body === undefined
+    ? { method: operation.method.toUpperCase(), url: urlOf(operation.path) }
+    : {
+        method: operation.method.toUpperCase(),
+        url: urlOf(operation.path),
+        headers: { "content-type": "application/json" },
+        payload: "{}",
+      };
+const publicAnswer = (operation: (typeof OPERATIONS)[number]) =>
+  operation.body === undefined ? DONE : invalidField(FIRST_FIELD[operation.id] ?? "");
 /** Pinned byte for byte: the route's INVALID_REQUEST naming `field`. */
 const invalidField = (field: string) => {
   const body = `{"code":"INVALID_REQUEST","field":"${field}"}`;
@@ -156,13 +167,18 @@ describe("the route classes the gate tells apart (the contract's public and befo
       unbuiltBeforeProfile.length > 0,
       unbuiltOther.length > 0,
     ]).toEqual([false, true, true]);
-    expect(PUBLIC.every((operation) => BUILT.has(operation.id) && FIRST_FIELD[operation.id] !== undefined)).toBe(true);
-    // The contract's seven flagged operations beside the two public ones.
+    expect(
+      PUBLIC.every(
+        (operation) =>
+          BUILT.has(operation.id) && (operation.body === undefined) === (FIRST_FIELD[operation.id] === undefined),
+      ),
+    ).toBe(true);
+    // The contract's three public operations: two that read a body, and the health check, which reads none.
     expect(
       OPERATIONS.filter((operation) => operation.public === true)
         .map((operation) => operation.id)
         .sort(),
-    ).toEqual(["previewInvitationWeb", "removeDevice"]);
+    ).toEqual(["getHealth", "previewInvitationWeb", "removeDevice"]);
   });
 });
 
@@ -255,9 +271,9 @@ describe("the public routes", () => {
     const { answer, asked } = await appWith(() => Promise.reject(new Error("asked")));
     for (const operation of PUBLIC) {
       for (const authorization of [undefined, "Bearer a.b.c", "garbage"]) {
-        const request = emptyBody(operation);
+        const request = publicRequest(operation);
         if (authorization !== undefined) request.headers = { ...request.headers, authorization };
-        expect(await answer(request), operation.id).toEqual(invalidField(FIRST_FIELD[operation.id] ?? ""));
+        expect(await answer(request), operation.id).toEqual(publicAnswer(operation));
       }
     }
     expect(asked.count).toBe(0);
@@ -303,7 +319,7 @@ describe("when the keys that check tokens can't be read (FQ89)", () => {
       }
       // The public routes need no keys.
       for (const operation of PUBLIC) {
-        expect(await answer(emptyBody(operation)), operation.id).toEqual(invalidField(FIRST_FIELD[operation.id] ?? ""));
+        expect(await answer(publicRequest(operation)), operation.id).toEqual(publicAnswer(operation));
       }
     }
   });

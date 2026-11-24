@@ -28,6 +28,12 @@ export interface Operation {
   idempotent?: true;
   /** Works before the profile is complete (no PROFILE_INCOMPLETE). */
   beforeProfile?: true;
+  /**
+   * Its 503, with no body, is part of what it says: the health check's answer when the database doesn't answer
+   * (the outside audit's A7). Another operation's 503, when a service it needs can't be reached, stays out of the
+   * document.
+   */
+  unavailable?: true;
   query?: z.ZodObject;
   body?: z.ZodType;
   ok: Success;
@@ -35,12 +41,16 @@ export interface Operation {
   errors?: ErrorCodeName[];
 }
 
-/** The errors every endpoint of a kind can return. */
+/**
+ * The errors every endpoint of a kind can return. The neutral NOT_FOUND belongs to an endpoint that names something
+ * that may be missing or not the caller's: by a path parameter, or, for a public one, by a token or a secret in its
+ * body. A public endpoint with neither names nothing (the health check).
+ */
 export function standardErrors(op: Operation): ErrorCodeName[] {
   const codes: ErrorCodeName[] = ["INVALID_REQUEST"];
   if (!op.public) codes.push("UNAUTHENTICATED");
   if (!op.public && !op.beforeProfile) codes.push("PROFILE_INCOMPLETE");
-  if (op.path.includes("{") || op.public) codes.push("NOT_FOUND");
+  if (op.path.includes("{") || (op.public && op.body)) codes.push("NOT_FOUND");
   if (op.idempotent) codes.push("IDEMPOTENCY_CONFLICT");
   codes.push("RATE_LIMITED");
   return codes;

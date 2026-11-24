@@ -40,6 +40,7 @@ import { leaveClubHandler } from "./clubs/leave.ts";
 import type { Deps, Handler } from "./deps.ts";
 import { createDropHandler } from "./drops/drops.ts";
 import { createReservationHandler, releaseReservationHandler } from "./drops/reservations.ts";
+import { getHealthHandler } from "./health.ts";
 import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./media/uploads.ts";
 import { registerDeviceHandler, removeDeviceHandler } from "./identity/devices.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
@@ -191,6 +192,7 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     completeUpload: completeUploadHandler(deps),
     registerDevice: registerDeviceHandler(deps),
     removeDevice: removeDeviceHandler(deps),
+    getHealth: getHealthHandler(deps),
   };
 }
 
