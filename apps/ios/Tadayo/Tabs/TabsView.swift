@@ -322,9 +322,7 @@ struct TabsView: View {
     /// taken off every tab; a row chosen meanwhile still waits for its own.
     private func rootInvitationChanged() {
         guard let model = invitation else {
-            for tab in Array(paths.keys) where paths[tab]?.contains(.accepted) == true {
-                paths[tab]?.removeAll { $0 == .accepted }
-            }
+            removeAccepted()
             return
         }
         guard let tab = acceptedOn else { return }
@@ -336,6 +334,32 @@ struct TabsView: View {
         }
         shownAccepted = model
         paths[tab] = [.accepted]
+    }
+
+    /// After Accept or Retry on an accepted invitation has answered: a club joined (`opening`)
+    /// takes the invitation off its tab here, in the same action that joined, while the root
+    /// closes it and reads the list again. Left to `rootInvitationChanged` alone, the pop came
+    /// from an `onChange` in the very update that turned the stack's root from the club list to
+    /// the club's Home, and SwiftUI sometimes dropped it, leaving "Opening…" up for good
+    /// (`docs/plans/ios-b1-accepted-join-pop.md`). An Accept answered after its screen was left,
+    /// or under another invitation's screen, takes nothing off.
+    private func acceptedAnswered(_ model: InvitationModel) {
+        guard shownAccepted === model, case .opening = model.state else { return }
+        removeAccepted()
+    }
+
+    /// Not now, Done and Close invitation on an accepted invitation: it comes off its tab here,
+    /// and the root closes it.
+    private func leaveAccepted() {
+        removeAccepted()
+        closeInvitation()
+    }
+
+    /// An accepted invitation's screen comes off every tab that shows it.
+    private func removeAccepted() {
+        for tab in Array(paths.keys) where paths[tab]?.contains(.accepted) == true {
+            paths[tab]?.removeAll { $0 == .accepted }
+        }
     }
 
     /// Once no tab shows I have an invite's screens and theirs have slid away, what they held
@@ -454,10 +478,11 @@ struct TabsView: View {
             }
         case .accepted:
             if let shownAccepted {
-                // A join closes it through the root, once the list has been read again.
+                // A join or Not now takes it off in the button's own action, not only once the
+                // root's invitation has gone (`acceptedAnswered`).
                 InvitationDestination(
-                    model: shownAccepted, returnsTo: tab.title, answered: { _ in },
-                    leave: { closeInvitation() }
+                    model: shownAccepted, returnsTo: tab.title,
+                    answered: { acceptedAnswered($0) }, leave: { leaveAccepted() }
                 )
                 .onDisappear { forgetInvitationScreensIfGone() }
             }
