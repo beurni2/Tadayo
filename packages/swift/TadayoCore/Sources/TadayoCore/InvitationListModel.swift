@@ -18,8 +18,13 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
         case needsToAcceptAgain
         /// "Link revoked" (handoff 4).
         case revoked
-        /// It expired before anyone used it (FQ71): built from spec, with no frame yet.
+        /// "Link expired": it expired before anyone used it (FQ71; handoff 9's
+        /// `setupLinks.expiredUnused`, frame 16).
         case expired
+        /// "Link not on this phone": the link is live, but this phone doesn't hold it (a
+        /// reinstall, another phone), and "A new link replaces the previous link." under the row
+        /// (handoff 9's `setupLinks.missingLive`, frame 15).
+        case notOnThisPhone
     }
 
     public enum Action: Sendable, Equatable {
@@ -66,8 +71,8 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
                 (status, action) = held.shared ? (.shared, .shareAgain) : (.notShared, .shareLink)
             } else {
                 // The app doesn't hold this live link (a reinstall, another phone): a new link
-                // in its place (the contract's `InvitationLink`; built from spec).
-                (status, action) = (.notShared, .createNewLink)
+                // in its place (the contract's `InvitationLink`; handoff 9's `missingLive`).
+                (status, action) = (.notOnThisPhone, .createNewLink)
             }
             (menu, linkNotSaved) = ([.revokeLink], false)
         case .accepted:
@@ -82,9 +87,8 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
                 .revoked, .createNewLink, [.createNewLink], false
             )
         case .expired:
-            (status, action, menu, linkNotSaved) = (
-                .expired, .createNewLink, [.createNewLink], false
-            )
+            // Its action is the only one: no More (handoff 9's `expiredUnused`).
+            (status, action, menu, linkNotSaved) = (.expired, .createNewLink, [], false)
         }
     }
 }
@@ -143,7 +147,11 @@ public struct InvitationList: Sendable, Equatable {
         case failed(Failure)
     }
 
-    /// An action that failed, with the row kept as it was.
+    /// An action that failed, with the row kept as it was. The line stays through scrolling, the
+    /// system's menus and a share sheet; another link action starting clears it, as does a read
+    /// whose answer shows the action no longer applies, and a new failure takes its place
+    /// (handoff 9's `setupLinks.mutationFailure.lifetime`). Each visit makes a new list, so
+    /// leaving clears it too.
     public enum ActionFailure: Sendable, Equatable {
         /// "Couldn’t create the invitation link for {name}." with the network's or a refusal's
         /// line (`createInvitation.createFailure`): the candidate's first link.
@@ -166,6 +174,14 @@ public struct InvitationList: Sendable, Equatable {
     /// The candidates whose action is on its way: their row's controls wait.
     public private(set) var busy: Set<String> = []
     public private(set) var actionFailure: ActionFailure?
+
+    /// What failed, for whom: what a read checks the failure line against.
+    private enum FailedAction {
+        case firstLink
+        case newLink
+        case revoke
+    }
+    private var failedFor: (candidateID: String, action: FailedAction)?
 
     private var answer: (detail: ClubDetail, members: MemberList)?
     private var reads = 0
@@ -227,10 +243,10 @@ public struct InvitationList: Sendable, Equatable {
             await refresh()
             return nil
         }
+        // A share changes no link, so the failure line stays (handoff 9's `lifetime`).
         if let kept = book.link(for: candidateID, club: club.id, account: accountID),
             candidate.invitation == nil || candidate.invitation?.id == kept.invitationID
         {
-            actionFailure = nil
             return kept.url
         }
         guard candidate.invitation == nil else { return nil }
@@ -274,7 +290,7 @@ public struct InvitationList: Sendable, Equatable {
             let invitation = candidate.invitation, invitation.state == .live
         else { return }
         busy.insert(candidateID)
-        actionFailure = nil
+        fail(nil)
         defer { busy.remove(candidateID) }
         do {
             try await service.revokeInvitation(invitation.id)
@@ -290,7 +306,7 @@ public struct InvitationList: Sendable, Equatable {
             return
         } catch {
             guard current() else { return }
-            actionFailure = .revoke(name: candidate.name, uncertain: error == .network)
+            fail(.revoke(name: candidate.name, uncertain: error == .network), candidateID, .revoke)
         }
         guard current() else { return }
         await refresh()
@@ -299,6 +315,8 @@ public struct InvitationList: Sendable, Equatable {
     /// The name step for one more person (`G01-invite-name`), while a place is free.
     public func makeInvite() -> InviteNameModel? {
         guard let answer, answer.detail.canPropose, current() else { return nil }
+        // The name step makes a link: another link action (handoff 9's `lifetime`).
+        fail(nil)
         return InviteNameModel(
             club: club, accountID: accountID, rosterVersion: answer.detail.rosterVersion,
             known: Set(answer.members.openRevision?.candidates.map(\.id) ?? []),
@@ -339,6 +357,7 @@ public struct InvitationList: Sendable, Equatable {
             answer = (detail, list)
             learned = learned.filter { $0.value.at >= asked }
             relist()
+            settleFailure()
         case (.failure(let failure), _), (_, .failure(let failure)):
             let worst = Self.decisive(answers.0.failure, answers.1.failure) ?? failure
             if let failed = await settle(worst), !quiet {
@@ -415,7 +434,7 @@ public struct InvitationList: Sendable, Equatable {
     /// place of the one the row shows: a retry of the same action sends the same key, and another
     /// action a new one. The caller holds the row busy.
     private func make(for candidate: Candidate) async -> KeptInvitationLink? {
-        actionFailure = nil
+        fail(nil)
         let replacing = candidate.invitation?.id
         let key =
             linkKeys[candidate.id].flatMap { $0.replacing == replacing ? $0.key : nil }
@@ -436,7 +455,7 @@ public struct InvitationList: Sendable, Equatable {
             }
             linkKeys[candidate.id] = nil
             guard let kept = book.keep(answer, club: club.id, account: accountID) else {
-                actionFailure = linkFailure(candidate, replacing: replacing, network: false)
+                failLink(candidate, replacing: replacing, network: false)
                 return nil
             }
             learn(
@@ -446,10 +465,10 @@ public struct InvitationList: Sendable, Equatable {
             return kept
         } catch .network {
             guard current() else { return nil }
-            actionFailure = linkFailure(candidate, replacing: replacing, network: true)
+            failLink(candidate, replacing: replacing, network: true)
         } catch .unavailable {
             guard current() else { return nil }
-            actionFailure = linkFailure(candidate, replacing: replacing, network: false)
+            failLink(candidate, replacing: replacing, network: false)
         } catch .signedOut {
             linkKeys[candidate.id] = nil
             guard current() else { return nil }
@@ -457,20 +476,49 @@ public struct InvitationList: Sendable, Equatable {
         } catch {
             linkKeys[candidate.id] = nil
             guard current() else { return nil }
-            actionFailure = linkFailure(candidate, replacing: replacing, network: false)
+            failLink(candidate, replacing: replacing, network: false)
             await refresh()
         }
         return nil
     }
 
-    /// The words for a link that couldn't be made: the first link's, or a new link's in place of
-    /// the one the row shows.
-    private func linkFailure(_ candidate: Candidate, replacing: String?, network: Bool)
-        -> ActionFailure
-    {
-        replacing == nil
-            ? .createLink(name: candidate.name, network: network)
-            : .createNewLink(name: candidate.name, network: network)
+    /// A link that couldn't be made, in the first link's words or a new link's in place of the
+    /// one the row shows.
+    private func failLink(_ candidate: Candidate, replacing: String?, network: Bool) {
+        if replacing == nil {
+            fail(.createLink(name: candidate.name, network: network), candidate.id, .firstLink)
+        } else {
+            fail(.createNewLink(name: candidate.name, network: network), candidate.id, .newLink)
+        }
+    }
+
+    // MARK: The failure line
+
+    /// Shows `failure` for that person's action in place of any line before, or clears the line.
+    private func fail(
+        _ failure: ActionFailure?, _ candidateID: String? = nil, _ action: FailedAction? = nil
+    ) {
+        actionFailure = failure
+        failedFor = candidateID.flatMap { id in action.map { (id, $0) } }
+    }
+
+    /// A read answered: the line goes once that person's row no longer offers the action that
+    /// failed, since its Try again has nothing left to try and the row shows where things stand
+    /// (handoff 9's `lifetime`, "authoritative reconciliation resolves it"). Their row gone;
+    /// Revoke link no longer in More; Create new link neither the action nor in More; a first
+    /// link, once they have one.
+    private func settleFailure() {
+        guard let failedFor else { return }
+        let candidate = mine(failedFor.candidateID)
+        let stillOffered: Bool =
+            switch (failedFor.action, candidate.flatMap(row(for:))) {
+            case (_, nil): false
+            case (.revoke, let row?): row.menu.contains(.revokeLink)
+            case (.newLink, let row?):
+                row.action == .createNewLink || row.menu.contains(.createNewLink)
+            case (.firstLink, _): candidate?.invitation == nil
+            }
+        if !stillOffered { fail(nil) }
     }
 
     private static func decisive(_ first: APIFailure?, _ second: APIFailure?) -> APIFailure? {

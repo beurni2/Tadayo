@@ -133,3 +133,82 @@ New keys for 2.1's create words, handoff 2's name step, handoff 4's list, status
 ### Records
 
 INVENTORY's eight new rows, built from spec (`G01-invite-name-failed`, `G01-invite-people-empty`, `-used-missing`, `-live-not-held`, `-expired`, `-loading`, `-failed` and `-action-failed`), the known differences found when the snapshots are read, and the handoff 9 items for what has no render: items 64 to 67 already name the live link not held, the expired link, `G01-create`'s words and the 40-character names; items 68 (the empty list) and 69 (where an action's failure shows) are added in `docs/design/handoff-7/ios-lane-needs.md`.
+
+## 8. The setup list adopts handoff 9 (`ios/b1-create-handoff-9`, from `main` at `4404ff1`, 23 November 2026)
+
+Handoff 9's check, section 6, gives this PR: frames 15 to 17, the action labels that name the person, the failure words for each operation and the line's lifetime, no More on an expired row, and the two name-length lines. Frame 14 and `G01-create`'s words stay as built. The sources are handoff 9's `setupLinks` (`design/reference/claude-design/handoff-9/component-contracts.json`), its `handoff9.links.*`, `handoff9.create.tooLong` and `handoff9.inviteName.tooLong` words and its `failureStates.links.*` (`copy-contracts.json`), and frames 15 to 17 (`frame-manifest.json`).
+
+### The rows (`InvitationRow`, section 2's table)
+
+| Server | The app holds the link | Status (glyph) | Action | More | Source |
+|---|---|---|---|---|---|
+| `live` | no | Link not on this phone (`iphone.slash`), and "A new link replaces the previous link." under the row | Create new link | Revoke link | `setupLinks.missingLive`, frame 15 |
+| `expired` | purged | Link expired (`clock`) | Create new link | – | `setupLinks.expiredUnused`, frame 16 |
+
+The other rows stay as section 2 says. A revoked link keeps `xmark.circle` (`statusGlyphs`) and handoff 4's More with Create new link (`revokedMoreMenu`): frame 17's manifest lists Revoke link in Alex's revoked menu, which the server refuses for a link already revoked, so INVENTORY records it as a known difference. The missing link's row is at least 112 high (`missingLive.minimumHeight`), its replacement line in `metadata` `secondaryText` from the name's inset (49) to the trailing margin, under the status and the action, as frame 15 draws it at [69, 399, 304, 18]. At the accessibility sizes the line goes under the status, before the full-width action, as the used row's two lines do.
+
+### The labels
+
+The action labels already name the person, from handoff 8's words, which handoff 9 repeats (`actionA11yKeys`): "Create new link for Alex", "More options for Alex’s invitation", "Revoke link for Alex", "Share link for Alex", "Share again for Alex". The readings test them on the new rows too. The new rows read "Alex. Link not on this phone." (`handoff9.links.missing.vo`) and "Alex. Link expired." (`handoff9.links.expired.vo`).
+
+### The failure line (`InvitationListModel.actionFailure`)
+
+- **Words:** handoff 9's `links.new.failed.*` and `links.revoke.failed.*` are handoff 4's, as built. A first link made by Share link keeps handoff 8's `createInvitation.createFailure` words; handoff 9 gives none of its own for it.
+- **Place:** as built, 24 above Done for now; the scroll body ending 24 above it (fixed by the third commit: "Reading the snapshots" below, read at `b91724b`); the rows as they were (`mutationFailure.placement`, `.row`). It is said once, politely, as it shows (`failureStates.links.*.announcement`); it was said assertively.
+- **Lifetime** (`mutationFailure.lifetime`): it stays through scrolling, the system's menus and a share sheet, cancelled or completed. A share of a kept link changes no link, so Share link and Share again no longer clear it. It clears:
+    - when another link action starts: a first link made by Share link, Create new link, Revoke link (each as built), and Create an invitation, whose name step makes a link (new);
+    - when a read of the list answers and that person's row no longer offers the action that failed, which settles it (`authoritative reconciliation resolves it`): their row is gone; or, for Revoke link, More no longer holds Revoke link; for Create new link, neither the row nor More offers it; for a first link, the person now has a link. A row that still offers the action keeps the line, since the failure still holds;
+    - when the person leaves the list: each visit makes a new list.
+- **Retry:** the row's own action, no Retry in the footer (`mutationFailure.retry`), as built. Its key rules stay as section 1 says.
+
+### The name-length lines
+
+While the name has more than 40 characters, counted in grapheme clusters as the profile's are (Swift's `String.count` of the trimmed name), the field keeps it as typed, the primary action waits (as built), and the line under the field says "Use 40 characters or fewer for the club name." (`G01-create`, `handoff9.create.tooLong`) or "Use 40 characters or fewer for this person’s name." (`G01-invite-name`, `handoff9.inviteName.tooLong`), in the failure line's place, 12 under the field, with the field's border `destructive` (`nameLimits.placement`: "destructive border for invalid length", where A03-profile's line keeps the border) and the line as the field's VoiceOver hint (`LabelledField`). It is said once, politely, each time the name goes over, as A03-profile's is (`auth.profile.tooLong`; `nameLimits`: "One polite announcement when the invalid condition first arises"). Over a failure's line, the length line wins, as on A03-profile, and a failure isn't said again when it shows once more under a name back at 40 characters or fewer. Two states built from spec: `G01-create-name-too-long` (the fixture: the frames' club name three times, 41 characters, since no source draws a long club name) and `G01-invite-name-too-long` (book p27's two long names together, 45 characters, as A03-profile-name-too-long's).
+
+### Tests first
+
+- Linux (`TadayoCore`): `InvitationRowTests` gives the live link not held its status, action and menu, and the expired link no menu. `InvitationListModelTests`: the line kept through Share link of a kept link, a cancelled share and a completed one; cleared when Create new link, Revoke link, a first link or Create an invitation starts; cleared by a read that shows the action no longer applies (a revoke without an answer that the server did make; the person accepted meanwhile), and kept by a read that shows it still does. `CreateClubModel` already counts the name in grapheme clusters and waits over 40 (`CreateClubModelTests.aNameNeedsSomethingVisibleAndAtMostFortyCharacters`); `InviteNameModelTests.overFortyCharactersWaits` gains the same check, 40 family emoji clusters passing and 41 waiting.
+- Snapshots (`ClubCreateSnapshotTests`), each light, dark and at the largest text: `G01-invite-people-live-not-held`, `-expired` and `-action-failed` on frames 15 to 17's five (Maya shared, Alex in the frame's state, Sam and Nina not shared, Debby accepted; frame 17's line is Maya's revoke with no answer), replacing the references taken from the earlier fixtures; `G01-create-name-too-long` and `G01-invite-name-too-long`, new.
+- Readings (`AccessibilityElements`): the missing row's label, its replacement line, Create new link for Alex and More; the expired row's label, Create new link for Alex and no More; frame 17's line read before Done for now; each length line read under its field, as its field's hint, with the primary action unavailable.
+
+### Records
+
+INVENTORY's rows `G01-invite-people-live-not-held`, `-expired` and `-action-failed` (built as handoff 9 draws them), two new rows built from spec (`G01-create-name-too-long`, `G01-invite-name-too-long`), and the known differences found when the snapshots are read beside frames 15 to 17 (frame 17's revoked menu among them). Needs items 64, 65, 67 and 69 were marked answered by handoff 9's check; this PR builds them.
+
+### The expired row's action
+
+Frame 16 keeps Create new link in the action column, its target from 209 to 333 where the other rows' actions end, with More's column empty; handoff 8's frame 12 puts a used row's Share again, which has no More either, at the trailing margin. Each is built as its frame draws it (`InvitationRowView.keepsMoreColumn`). Handoff 9's check first said frame 16 draws More; it doesn't (the review of the first commit), and the check, INVENTORY and the needs list are corrected.
+
+### The first review (one fresh reviewer of the first commit, `28342f3`)
+
+No must-fix. Fixed: the expired row's action and the frame 16 records (above); the name step said its failure again at each keystroke, since its words name the person as typed (`InviteNameScreen` now says a failure when the failure itself changes); `InvitationFailureLineTests.anotherLinkActionClearsItAsItStarts` checks the line while each action is held on its way; `aRefusedLinkSaysSoAndReadsTheListAgain`'s read again shows the link revoked, so its answer is seen to reach the row; INVENTORY's description of `G01-invite-people-live-not-held`, and the claim that the new row's controls sit "where a 74 row puts them" (by the arithmetic the avatar and action are centred 34 under the row's top, as the frame's avatar; the frame's action is at 38). Answered, not changed:
+
+- **No read again after Create new link or a first link with no answer.** A read would list the link the server may have made, which this phone doesn't hold, and the row would then offer Create new link under a new key, a second replacement; without it, Retry sends the same key (T19), which `mutationFailure.retry` asks for ("preserve operation idempotency; no duplicate link replacement"). The line stays until the next link action or until the person leaves the list, which `mutationFailure.lifetime` allows; no read comes meanwhile, since the list is read again only when it shows again, a new visit with a new list (corrected by the second review).
+- **VoiceOver reaches Create new link before the replacement line** at the default sizes, since the line is drawn under the row (frame 15); handoff 9 asks that it be separately reachable, and at the accessibility sizes it comes first, before the full-width action.
+- **An uncertain revoke the read again confirms** shows the line while the read is out, then clears it, and the list says the link was revoked: what happened, in order.
+
+### Reading the snapshots (`ios` run 45150202042 at `3a76bdc`)
+
+The 15 images, read beside frames 15 to 17 and measured at 2x (`design/reference/INVENTORY.md`'s five rows):
+
+- **The list showed under the failure line.** "Place" above said the scroll body ended 24 above the line as built; it ended 8 above it, where the footer's canvas starts (`SetupFooter`), so the tops of "Only you can see this list." peeked out above the line, where frame 17 leaves 24 clear. `SetupFooter` takes a `top`, 8 as before for every other footer, and the setup list gives it 24 while a failure line shows (`mutationFailure.placement`: "scroll body ends24 above block"). Its references come from the next run.
+- **The rows** keep the frames' pitch (74, and 112 for Alex's missing link), separators, actions and More. The frames draw the name, status and avatar about 4.5 higher in the row than the action and More; the app centres them, as `INVENTORY.md`'s known differences say.
+- **Frame 16's action** ends its words at 326.5, where the frame centres them in its 209 to 333 target (321.5): every row's action words end 5 before More's column (`shareRightEdge`).
+- The other 12 images (`-live-not-held`, `-expired` and the two name-length states, light, dark and at the largest text) are taken as references from that run; the footer's change doesn't touch them.
+
+### The second review (one fresh reviewer of the whole PR at `b91724b`, the last round)
+
+No must-fix; the 58 Linux tests and the journal check pass, the failure line's races and T19's keys hold, and every new test but two (named in the journal) fails without its fix. Fixed or answered:
+
+- **`-action-failed`'s references** were still `main`'s at `b91724b`: taken from that commit's run in the fourth commit, as planned, after reading them beside frame 17.
+- **The focus rule** (`mutationFailure.a11y`: "keep/restore initiating action focus"; `failureStates.links.*.focus`: "Keep the initiating row action focused, or restore its More control after the native menu closes") is left to the system, and recorded: each control stays where it is while its action is on its way (disabled, not removed), so VoiceOver's cursor stays on the action tapped, and the system returns the cursor to the menu's button when its menu and the revoke alert close. Code can't check that on CI; it is a device step below.
+- **The plan's claim** that a read settles the line after a new or first link with no answer: corrected above; none comes while the line shows.
+- **A polite failure spoken after it's settled**: an uncertain revoke whose read again comes back at once, showing the link revoked, clears the line and says the link was revoked; the failure's polite announcement, queued behind "Revoking link…", might still be spoken after it. It depends on how iOS queues a polite announcement: a device step below.
+- **"Explain inline before action"** (`missingLive.behavior`): at the default sizes VoiceOver reaches Create new link before the line under the row, so Create new link on that row now carries "A new link replaces the previous link." as its hint, the line staying its own text (`InvitationRowView.actionButton`; `testALinkNotOnThisPhoneSaysSoAndThatANewLinkReplacesIt` reads the hint, and no hint on Sam's Share link).
+- **Frame 15's status wrap**: the frame breaks "Link not on this / phone", the status 122 wide up to the action's target at 209; the app breaks "Link not on / this phone", 8 narrower, for the 8-point gap the app keeps between the status column and the action's target on every row (`InvitationRowView`'s `.padding(.leading, Spacing.s)`). Recorded in INVENTORY's row, kept as built.
+
+Device steps for the TestFlight build after this merges, with VoiceOver on and the network off: Revoke link from Alex's More and confirm, then where the cursor is once the alert closes (Alex's More, as handoff 9 asks) and that the failure is said once; Create new link from a row, then that the cursor stays on it; and, with a slow network, an uncertain revoke that the list then shows revoked, that "Couldn't confirm…" isn't said after "Alex's invitation link was revoked."
+
+### Changed tests
+
+Two Linux tests change because handoff 9 changes what they check, not to make them pass: `InvitationListModelTests.aRevokeThatFailsKeepsTheRowAndSaysWhetherItsUncertain` reads Alex's live link, which the app doesn't hold, as Link not on this phone, no longer Not shared; and `aRefusedLinkSaysSoAndReadsTheListAgain`'s read again showed the person's link used, which now settles the line (the new `InvitationFailureLineTests.aRefusedNewLinkIsSettledWhenTheReadAgainOffersNone` keeps that case, with its new answer), so its read again shows the link revoked meanwhile, a changed row that still offers Create new link, and the line staying (the first review: a read again showing the row unchanged couldn't show that the read reached it).

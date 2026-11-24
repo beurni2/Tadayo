@@ -10,13 +10,17 @@ import TadayoDesign
 ///   name's field (`LabelledField`);
 /// - a failure's line 12 under the field, said once as it shows: "Couldn’t create the invitation
 ///   link for {name}." with the network's or a refusal's line (`createInvitation.createFailure`);
+///   while the name is longer than 40 characters, "Use 40 characters or fewer for this person’s
+///   name." in its place, with the field's `destructive` border (handoff 9's `nameLimits`), said
+///   politely once each time the name goes over;
 /// - 32 under the field, or the line, Create link and share, in the column as the frame draws it,
 ///   and "No contacts access needed." 20 under it in `metadata` `secondaryText` (spec 04).
 ///
 /// The field takes the focus on arrival, as the frame draws the keyboard up, unless VoiceOver
 /// runs, whose focus is left to the system (A03's rule, `authForm.profileArrivalFocus`). Create
 /// link and share waits for a name with something in it besides spaces and no longer than 40
-/// characters (FQ70; over 40 there are no words yet, item 67). It proposes the person and makes
+/// characters, counted as a person sees them (FQ70; handoff 9's `nameLimits`), the name kept as
+/// typed and never cut. It proposes the person and makes
 /// their link, kept before the share sheet opens (`InviteNameModel`); while it goes, the name is
 /// read-only and the button busy. Once the share sheet closes, shared or not, the screen returns
 /// to the list, where the person's row now is (`finished`): a cancelled share leaves their link
@@ -39,7 +43,10 @@ struct InviteNameScreen: View {
         SetupScroll {
             ClubSetupHeading(
                 title: "inviteName.title", club: model.club.name, line: "inviteName.body")
-            LabelledField(Text("inviteName.nameLabel"), isFocused: focus ?? focused) {
+            LabelledField(
+                Text("inviteName.nameLabel"), isFocused: focus ?? focused,
+                isInvalid: model.nameIsTooLong, error: Text(verbatim: Self.tooLong)
+            ) {
                 ModelText(held: { model.name }, offer: { model.name = $0 }) { text in
                     TextField(String(), text: text)
                         .textInputAutocapitalization(.words)
@@ -78,13 +85,26 @@ struct InviteNameScreen: View {
             if !now, model.isCreating { focused = true }
         }
         .task { await takeFocusOnArrival() }
-        .announcing(line)
+        // A failure is said once, as it comes, by the failure itself, not by its words, which name
+        // the person as typed and so change with each keystroke after it; the length line
+        // politely, after the character VoiceOver echoes as it is typed, each time the name goes
+        // over (handoff 9's `nameLimits`, as A03-profile's).
+        .onChange(of: model.failure) { _, failure in
+            guard let failure else { return }
+            Announcement.post(failure.words(for: model.failureName))
+        }
+        .announcing(model.nameIsTooLong ? Self.tooLong : nil, politely: true)
     }
 
-    /// The failure's line, naming the person.
-    private var line: String? {
+    /// The length line while the name is longer than 40 characters, or the failure's line, naming
+    /// the person.
+    private var line: String? { model.nameIsTooLong ? Self.tooLong : failureLine }
+
+    private var failureLine: String? {
         model.failure.map { $0.words(for: model.failureName) }
     }
+
+    private static var tooLong: String { String(localized: "inviteName.tooLong") }
 
     /// Create link and share: the link, then the share sheet, then back to the list.
     private func createAndShare() async {
