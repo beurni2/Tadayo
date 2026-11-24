@@ -1,0 +1,12 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -209,8 +209,7 @@
+     width >= 1 &&
+     height >= 1 &&
+     width <= box.width &&
+-    height <= box.height &&
+-    baselineJpeg(bytes, width, height)
++    height <= box.height
+   );
+ }
+ 

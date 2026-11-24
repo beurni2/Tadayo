@@ -1,0 +1,371 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 14 failed) 3813ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 6ms
+     × a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it 3ms
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+     × a process the photo's process started in a session of its own has ended once the photo's end settles 0ms
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 0ms
+     × a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end 1ms
+     × the worker's start ends a process of the photo's user before anything else, so none waits from before a restart 0ms
+     × a sweep that can't finish as the worker starts stops it there, before it connects to the database 0ms
+     × sends no group kill once Node has reaped the photo's process, when its group's number may be another's 0ms
+     × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 0ms
+     × so has every process of a forking loop, caught mid-fork 0ms
+     × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+     × a process past its deadline is still killed by the worker at once 0ms
+     × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 311ms
+
+ Test Files  1 failed (1)
+      Tests  14 failed | 9 passed (23)
+   Start at  00:38:56
+   Duration  4.03s (tests 98%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left
+AssertionError: expected 'file:///home/user/tadayo-share/servic…' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
++     throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
++           ^
++
++ Error: worker: asRoot is only for a worker started as root with its own user effective
++     at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
++     at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
++
++ Node.js v26.13.0
++
+
+ ❯ src/privileges.test.ts:176:24
+    174|
+    175|   it("ran as root, with the photo's user and the worker's unused, and …
+    176|     expect(run.stderr).toBe("");
+       |                        ^
+    177|     expect(run.code).toBe(0);
+    178|     expect(fact("start")).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it
+AssertionError: expected { case: 'sweep-fails', …(4) } to deeply equal { case: 'sweep-fails', …(4) }
+
+- Expected
++ Received
+
+  {
+    "case": "sweep-fails",
+-   "done": "swept",
+-   "euid": 64998,
+-   "signal": "exit",
++   "done": "start",
++   "euid": 0,
++   "signal": "start",
+    "status": "exit",
+  }
+
+ ❯ src/privileges.test.ts:201:33
+    199|
+    200|   it("a sweep that exits other than 0, or is killed by a signal, is ne…
+    201|     expect(fact("sweep-fails")).toEqual({
+       |                                 ^
+    202|       case: "sweep-fails",
+    203|       status: "exit",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+Error: the harness didn't report probe: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:211:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process the photo's process started in a session of its own has ended once the photo's end settles
+Error: the harness didn't report escapes: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:234:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+Error: the harness didn't report watcher: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:239:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end
+AssertionError: expected { case: 'sweep-usr1', …(5) } to deeply equal { case: 'sweep-usr1', …(5) }
+
+- Expected
++ Received
+
+  {
+    "case": "sweep-usr1",
+-   "euid": 64998,
++   "euid": 0,
+    "inspector": false,
+-   "status": "swept",
+-   "usr1Blocked": true,
+-   "usr1Caught": false,
++   "status": "start",
++   "usr1Blocked": null,
++   "usr1Caught": null,
+  }
+
+ ❯ src/privileges.test.ts:249:32
+    247|     // PR #118's review: with the inspector on, a leftover sent SIGUSR…
+    248|     // --disable-sigusr1, Node blocks the signal in every thread and n…
+    249|     expect(fact("sweep-usr1")).toEqual({
+       |                                ^
+    250|       case: "sweep-usr1",
+    251|       usr1Caught: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the worker's start ends a process of the photo's user before anything else, so none waits from before a restart
+Error: the harness didn't report start-sweep: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:260:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that can't finish as the worker starts stops it there, before it connects to the database
+Error: the harness didn't report start-sweep-fails: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:270:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > sends no group kill once Node has reaped the photo's process, when its group's number may be another's
+Error: the harness didn't report reaped: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:275:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects
+Error: the harness didn't report hoards: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:280:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > so has every process of a forking loop, caught mid-fork
+Error: the harness didn't report forks: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:290:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS
+Error: the harness didn't report memory: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:296:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its deadline is still killed by the worker at once
+Error: the harness didn't report deadline: file:///home/user/tadayo-share/services/worker/src/privileges.ts:210
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///home/user/tadayo-share/services/worker/src/privileges.ts:210:11)
+    at file:///home/user/tadayo-share/services/worker/src/privileges-harness.ts:511:16
+
+Node.js v26.13.0
+
+ ❯ asRoot src/privileges.ts:210:11
+    208|   const before = idsOf();
+    209|   if (!inWorkerMode(before)) {
+    210|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    211|   }
+    212|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:511:16
+ ❯ fact src/privileges.test.ts:167:36
+ ❯ src/privileges.test.ts:302:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive
+AssertionError: expected 'worker: a photo\'s process group coul…' to be 'worker: a photo\'s processes weren\'t…' // Object.is equality
+
+- Expected
++ Received
+
+- worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
++ worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+
+
+ ❯ src/privileges.test.ts:311:28
+    309|     const stopped = await harness(["sweep-timeout"], 60);
+    310|     expect(stopped.code).toBe(1);
+    311|     expect(stopped.stderr).toBe(
+       |                            ^
+    312|       "worker: a photo's processes weren't all ended, so the worker st…
+    313|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+

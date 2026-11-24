@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5727ms
+   ❯ the photo user (photoUserFor) (5)
+     × stops the worker when only one half is there: the variable without the start, or the start without it 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:37:50
+   Duration  5.91s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > stops the worker when only one half is there: the variable without the start, or the start without it
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:58:76
+     56|       { uid: 1000, euid: 0, egid: 0 },
+     57|     ]) {
+     58|       expect(() => photoUserFor(named("tadayo-image"), ids, () => PASS…
+       |                                                                            ^
+     59|         /TADAYO_PHOTO_USER is set, but the worker wasn't started as ro…
+     60|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

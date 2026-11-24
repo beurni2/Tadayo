@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -186,8 +186,6 @@
+         }
+         return after === 0xd9 && next + 2 === bytes.length;
+       }
+-    } else if (marker !== 0xdb && marker !== 0xc4) {
+-      return false;
+     }
+     at += 2 + length;
+   }

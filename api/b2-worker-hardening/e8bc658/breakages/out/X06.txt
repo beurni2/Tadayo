@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5749ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 341ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:40:45
+   Duration  5.95s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privileges.test.ts:310:26
+    308|   it("a sweep that doesn't finish in time stops the worker: a process …
+    309|     const stopped = await harness(["sweep-timeout"], 60);
+    310|     expect(stopped.code).toBe(1);
+       |                          ^
+    311|     expect(stopped.stderr).toBe(
+    312|       "worker: a photo's processes weren't all ended, so the worker st…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

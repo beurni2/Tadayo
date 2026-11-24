@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 2 failed) 5804ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it 9ms
+     × a sweep that can't finish as the worker starts stops it there, before it connects to the database 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 21 passed (23)
+   Start at  00:39:46
+   Duration  5.97s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it
+AssertionError: expected { case: 'sweep-fails', …(4) } to deeply equal { case: 'sweep-fails', …(4) }
+
+- Expected
++ Received
+
+  {
+    "case": "sweep-fails",
+    "done": "swept",
+    "euid": 64998,
+-   "signal": "exit",
+-   "status": "exit",
++   "signal": "swept",
++   "status": "swept",
+  }
+
+ ❯ src/privileges.test.ts:201:33
+    199|
+    200|   it("a sweep that exits other than 0, or is killed by a signal, is ne…
+    201|     expect(fact("sweep-fails")).toEqual({
+       |                                 ^
+    202|       case: "sweep-fails",
+    203|       status: "exit",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that can't finish as the worker starts stops it there, before it connects to the database
+AssertionError: expected { case: 'start-sweep-fails', …(2) } to deeply equal { case: 'start-sweep-fails', …(2) }
+
+- Expected
++ Received
+
+  {
+    "case": "start-sweep-fails",
+    "euid": 64998,
+-   "failedAt": "the sweep",
++   "failedAt": "the database",
+  }
+
+ ❯ src/privileges.test.ts:270:39
+    268|
+    269|   it("a sweep that can't finish as the worker starts stops it there, b…
+    270|     expect(fact("start-sweep-fails")).toEqual({ case: "start-sweep-fai…
+       |                                       ^
+    271|   });
+    272|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

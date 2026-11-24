@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -193,7 +193,7 @@
+   if (!isId(uid) || !isId(gid)) throw new Error("worker: TADAYO_PHOTO_USER's entry isn't a user's id and group");
+   const user = { uid: Number(uid), gid: Number(gid) };
+   if (user.uid === 0 || user.gid === 0) throw new Error("worker: TADAYO_PHOTO_USER is root, or in root's group");
+-  if (user.uid === ids.euid || user.gid === ids.egid) {
++  if (user.gid === ids.egid) {
+     throw new Error("worker: TADAYO_PHOTO_USER is the worker's own user or group");
+   }
+   return user;

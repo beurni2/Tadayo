@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (27 tests | 1 failed) 12444ms
+   ❯ a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) (2)
+     × refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  00:54:09
+   Duration  12.85s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) > refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end
+AssertionError: a frame whose length isn't its components': expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/image-process.test.ts:680:46
+    678|       ["no start", baselineOf(2, 1).subarray(2)],
+    679|     ] as const) {
+    680|       expect(baselineJpeg(bytes, 2, 1), why).toBe(false);
+       |                                              ^
+    681|     }
+    682|     // The size the header states, and no other.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

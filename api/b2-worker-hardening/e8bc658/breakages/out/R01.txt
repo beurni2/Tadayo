@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tests
+
+ ❯ src/db/worker-prepare.test.ts (18 tests | 1 failed) 5239ms
+   ❯ upload.prepare as the photo user it is given (ADR-038) (1)
+     × prepares the photo as that user: a worker not started as root can take none, so the photo fails, to be tried again 200ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  00:40:54
+   Duration  6.06s (tests 92%, import 5%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-prepare.test.ts > upload.prepare as the photo user it is given (ADR-038) > prepares the photo as that user: a worker not started as root can take none, so the photo fails, to be tried again
+AssertionError: expected { handled: 1, err: [] } to deeply equal { handled: +0, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "err": [
+-     "worker: an event failed: upload.prepare evt_JtO1RVp4OkwIhxK9Juixdw, attempt 1: image.process_failed",
+-   ],
+-   "handled": 0,
++   "err": [],
++   "handled": 1,
+  }
+
+ ❯ src/db/worker-prepare.test.ts:617:85
+    615|       // These tests run in the worker's own user (or as plain root), …
+    616|       // to start the photo's process as the user given (services/work…
+    617|       expect(await pass(tx, r.deps(tx, { photoUser: { uid: 64999, gid:…
+       |                                                                                     ^
+    618|         handled: 0,
+    619|         err: [`worker: an event failed: upload.prepare ${event.id}, at…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/worker-prepare.test.ts:608:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

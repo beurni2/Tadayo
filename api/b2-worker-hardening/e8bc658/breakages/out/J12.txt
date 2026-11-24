@@ -1,0 +1,51 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (27 tests | 2 failed) 11555ms
+   ❯ a photo's own process (10)
+     × answers as prepareImage does in this process, rendition for rendition, byte for byte 503ms
+   ❯ a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) (2)
+     × takes prepareImage's own renditions, and the baseline JPEG they are laid out as, restarts and stuffed bytes in its scan 545ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+   Start at  00:54:22
+   Duration  11.95s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > answers as prepareImage does in this process, rendition for rendition, byte for byte
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:246:45
+    244|   const { answer } = end;
+    245|   if (answer?.kind === "prepared") {
+    246|     if (!wellFormed(answer.prepared)) throw new ImageProcessFailed();
+       |                                             ^
+    247|     const prepared: Prepared = answer.prepared.ok
+    248|       ? {
+ ❯ finish src/image-process.ts:396:13
+ ❯ settle src/image-process.ts:411:31
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-process.test.ts > a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) > takes prepareImage's own renditions, and the baseline JPEG they are laid out as, restarts and stuffed bytes in its scan
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/image-process.test.ts:633:82
+    631|       if (!prepared.ok) continue;
+    632|       for (const rendition of prepared.renditions) {
+    633|         expect(baselineJpeg(rendition.bytes, rendition.width, renditio…
+       |                                                                                  ^
+    634|       }
+    635|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

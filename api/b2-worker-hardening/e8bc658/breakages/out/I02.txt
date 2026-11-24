@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5721ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:41:49
+   Duration  5.91s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+AssertionError: expected { uid: 64999, euid: 64999, …(10) } to deeply equal { uid: 64999, euid: 64999, …(10) }
+
+- Expected
++ Received
+
+@@ -10,7 +10,7 @@
+    ],
+    "mem": "EACCES",
+    "signal": "EPERM",
+    "stdout": "EACCES",
+    "uid": 64999,
+-   "usr1Caught": false,
++   "usr1Caught": true,
+  }
+
+ ❯ src/privileges.test.ts:213:28
+    211|     const probe = fact("probe");
+    212|     expect(probe["outcome"]).toBe("prepared");
+    213|     expect(probe["child"]).toEqual({
+       |                            ^
+    214|       uid: 64999,
+    215|       euid: 64999,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

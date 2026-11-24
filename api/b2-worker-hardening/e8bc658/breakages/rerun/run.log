@@ -1,0 +1,14 @@
+== W12 the sweep sends one SIGKILL to all and doesn't look again [privbox]: NOT CAUGHT; exit 0 ['Tests  23 passed (23)']
+== W16 a System V object matched by its owner only, not its maker [privbox]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 12ms
+== W17 a System V object matched by its maker only, not its owner [privbox]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 11ms
+== J05 a second frame taken [process]: NOT CAUGHT; exit 0 ['Tests  27 passed (27)']
+== J06 a scan before the frame taken [process]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end 11ms
+== J07 no start of image needed [process]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end 10ms
+== J08 a segment past the bytes taken [process]: NOT CAUGHT; exit 0 ['Tests  27 passed (27)']
+== J09 a length shorter than its own bytes taken [process]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end 12ms
+restored: ' M Dockerfile\n M docs/DECISIONS.md\n M docs/LIMITATIONS.md\n M docs/PROGRESS.md\n M docs/plans/api-b2-worker-hardening.md\n M fly.toml\n M services/worker/src/image-process.test.ts\n M services/worker/src/image-process.ts\n M services/worker/src/privileges-harness.ts\n M services/worker/src/privileges.test.ts\n M services/worker/src/privileges.ts\n M services/worker/src/start.ts\n M tools/ops/src/deploy-files.test.ts\n'

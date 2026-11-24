@@ -1,0 +1,84 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 3 failed) 5759ms
+   ❯ outside the worker's mode (3)
+     × asRoot refuses, and runs nothing 8ms
+     × the sweep refuses root, root's group, and this process's own user and group, before it starts anything 90ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 3ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 20 passed (23)
+   Start at  00:38:48
+   Duration  5.94s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > asRoot refuses, and runs nothing
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:95:8
+     93|         ran = true;
+     94|       });
+     95|     }).toThrow(/only for a worker started as root/);
+       |        ^
+     96|     expect(ran).toBe(false);
+     97|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > the sweep refuses root, root's group, and this process's own user and group, before it starts anything
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:111:26
+    109|     // A user it would sweep, but this process isn't in the worker's m…
+    110|     const refused = sweep({ uid: 64999, gid: 64999 });
+    111|     await expect(refused).rejects.toBeInstanceOf(SweepFailed);
+       |                          ^
+    112|     await expect(refused).rejects.toMatchObject({ why: "start" });
+    113|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group
+AssertionError: expected { case: 'refusals', …(7) } to deeply equal { case: 'refusals', …(7) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "asRootAsPlainRoot": "refused",
++   "asRootAsPlainRoot": "ran",
+    "case": "refusals",
+    "egid": 64998,
+    "euid": 64998,
+    "sweepRoot": "refused",
+    "sweepRootsGroup": "refused",
+
+ ❯ src/privileges.test.ts:188:30
+    186|
+    187|   it("asRoot refuses a process that is only root, and the sweep refuse…
+    188|     expect(fact("refusals")).toEqual({
+       |                              ^
+    189|       case: "refusals",
+    190|       asRootAsPlainRoot: "refused",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5861ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:39:07
+   Duration  6.05s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group
+AssertionError: expected { case: 'refusals', …(7) } to deeply equal { case: 'refusals', …(7) }
+
+- Expected
++ Received
+
+@@ -2,9 +2,9 @@
+    "asRootAsPlainRoot": "refused",
+    "case": "refusals",
+    "egid": 64998,
+    "euid": 64998,
+    "sweepRoot": "refused",
+-   "sweepRootsGroup": "refused",
++   "sweepRootsGroup": "swept",
+    "sweepWorkersGroup": "refused",
+    "sweepWorkersUser": "refused",
+  }
+
+ ❯ src/privileges.test.ts:188:30
+    186|
+    187|   it("asRoot refuses a process that is only root, and the sweep refuse…
+    188|     expect(fact("refusals")).toEqual({
+       |                              ^
+    189|       case: "refusals",
+    190|       asRootAsPlainRoot: "refused",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,70 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 2 failed) 5684ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 16ms
+     × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 21 passed (23)
+   Start at  00:42:15
+   Duration  5.87s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left
+AssertionError: expected { case: 'end', left: 1 } to match object { left: +0 }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "left": 0,
++   "left": 1,
+  }
+
+ ❯ src/privileges.test.ts:184:25
+    182|       photoUserLeft: { files: [], ipc: [] },
+    183|     });
+    184|     expect(fact("end")).toMatchObject({ left: 0 });
+       |                         ^
+    185|   });
+    186|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects
+AssertionError: expected { case: 'hoards', …(4) } to deeply equal { case: 'hoards', …(4) }
+
+- Expected
++ Received
+
+  {
+    "case": "hoards",
+    "euid": 64998,
+    "left": {
+      "files": [],
+-     "ipc": [],
++     "ipc": [
++       "shm:32769",
++       "sem:34",
++       "msg:34",
++     ],
+    },
+    "made": true,
+    "outcome": "prepared",
+  }
+
+ ❯ src/privileges.test.ts:280:28
+    278|   it("what a photo's process left in memory or on disk is gone once it…
+    279|     // PR #118's review: left there, they held the Machine's memory, a…
+    280|     expect(fact("hoards")).toEqual({
+       |                            ^
+    281|       case: "hoards",
+    282|       outcome: "prepared",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

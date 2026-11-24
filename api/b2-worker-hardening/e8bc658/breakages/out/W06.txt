@@ -1,0 +1,195 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 11 failed) 4086ms
+   ❯ outside the worker's mode (3)
+     × the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 5ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 3ms
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+     × a process the photo's process started in a session of its own has ended once the photo's end settles 0ms
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 0ms
+     × the worker's start ends a process of the photo's user before anything else, so none waits from before a restart 3ms
+     × sends no group kill once Node has reaped the photo's process, when its group's number may be another's 0ms
+     × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 0ms
+     × so has every process of a forking loop, caught mid-fork 0ms
+     × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+     × a process past its deadline is still killed by the worker at once 0ms
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 12 passed (23)
+   Start at  00:39:58
+   Duration  4.33s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done
+AssertionError: expected [ …(41) ] to include '  try { process.kill(-1, "SIGKILL"); …'
+ ❯ src/privileges.test.ts:120:19
+    118|     const lines = SWEEP_PROGRAM.split("\n");
+    119|     expect(lines[0]).toBe("if (process.getuid() === 0) process.exit(2)…
+    120|     expect(lines).toContain(
+       |                   ^
+    121|       '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (erro…
+    122|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left
+AssertionError: expected 'worker: a photo\'s processes weren\'t…' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
++
+
+ ❯ src/privileges.test.ts:176:24
+    174|
+    175|   it("ran as root, with the photo's user and the worker's unused, and …
+    176|     expect(run.stderr).toBe("");
+       |                        ^
+    177|     expect(run.code).toBe(0);
+    178|     expect(fact("start")).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+Error: the harness didn't report probe: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:211:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process the photo's process started in a session of its own has ended once the photo's end settles
+Error: the harness didn't report escapes: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:234:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+Error: the harness didn't report watcher: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:239:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the worker's start ends a process of the photo's user before anything else, so none waits from before a restart
+AssertionError: expected { case: 'start-sweep', …(4) } to deeply equal { case: 'start-sweep', …(4) }
+
+- Expected
++ Received
+
+  {
+    "case": "start-sweep",
+-   "endedBy": "start",
++   "endedBy": "never",
+    "euid": 64998,
+-   "failedAt": "the database",
++   "failedAt": "the sweep",
+    "wasRunning": true,
+  }
+
+ ❯ src/privileges.test.ts:260:33
+    258|
+    259|   it("the worker's start ends a process of the photo's user before any…
+    260|     expect(fact("start-sweep")).toEqual({
+       |                                 ^
+    261|       case: "start-sweep",
+    262|       wasRunning: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > sends no group kill once Node has reaped the photo's process, when its group's number may be another's
+Error: the harness didn't report reaped: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:275:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects
+Error: the harness didn't report hoards: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:280:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > so has every process of a forking loop, caught mid-fork
+Error: the harness didn't report forks: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:290:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS
+Error: the harness didn't report memory: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:296:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/11]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its deadline is still killed by the worker at once
+Error: the harness didn't report deadline: worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
+
+ ❯ fact src/privileges.test.ts:167:36
+    165|   const fact = (name: string): Record<string, unknown> => {
+    166|     const found = run.cases.get(name);
+    167|     if (found === undefined) throw new Error(`the harness didn't repor…
+       |                                    ^
+    168|     return found;
+    169|   };
+ ❯ src/privileges.test.ts:302:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/11]⎯
+

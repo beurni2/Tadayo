@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5664ms
+   ❯ the photo user (photoUserFor) (5)
+     × refuses root, root's group, the worker's own user and the worker's own group 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:38:16
+   Duration  5.83s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > refuses root, root's group, the worker's own user and the worker's own group
+AssertionError: image:x:10001:0::/:/usr/sbin/nologin: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:83:92
+     81|       ["image:x:10001::/:/usr/sbin/nologin", /names no user/],
+     82|     ] as const) {
+     83|       expect(() => photoUserFor(named("image"), WORKER, () => `${PASSW…
+       |                                                                                            ^
+     84|     }
+     85|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

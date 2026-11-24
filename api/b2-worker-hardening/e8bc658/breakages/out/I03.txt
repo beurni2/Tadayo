@@ -1,0 +1,88 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 3 failed) 5715ms
+   ❯ outside the worker's mode (3)
+     × the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 7ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 4ms
+     × a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 20 passed (23)
+   Start at  00:41:56
+   Duration  5.89s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done
+AssertionError: expected '--no-warnings' to be '--disable-sigusr1' // Object.is equality
+
+Expected: "--disable-sigusr1"
+Received: "--no-warnings"
+
+ ❯ src/privileges.test.ts:126:26
+    124|     expect(SWEEP_SECONDS).toBe(5);
+    125|     // The sweep's and each photo's process's: SIGUSR1 opens no inspec…
+    126|     expect(NO_INSPECTOR).toBe("--disable-sigusr1");
+       |                          ^
+    127|   });
+    128| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+AssertionError: expected { uid: 64999, euid: 64999, …(10) } to deeply equal { uid: 64999, euid: 64999, …(10) }
+
+- Expected
++ Received
+
+@@ -10,7 +10,7 @@
+    ],
+    "mem": "EACCES",
+    "signal": "EPERM",
+    "stdout": "EACCES",
+    "uid": 64999,
+-   "usr1Caught": false,
++   "usr1Caught": true,
+  }
+
+ ❯ src/privileges.test.ts:213:28
+    211|     const probe = fact("probe");
+    212|     expect(probe["outcome"]).toBe("prepared");
+    213|     expect(probe["child"]).toEqual({
+       |                            ^
+    214|       uid: 64999,
+    215|       euid: 64999,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end
+AssertionError: expected { case: 'sweep-usr1', …(5) } to deeply equal { case: 'sweep-usr1', …(5) }
+
+- Expected
++ Received
+
+  {
+    "case": "sweep-usr1",
+    "euid": 64998,
+-   "inspector": false,
++   "inspector": true,
+    "status": "swept",
+-   "usr1Blocked": true,
+-   "usr1Caught": false,
++   "usr1Blocked": false,
++   "usr1Caught": true,
+  }
+
+ ❯ src/privileges.test.ts:249:32
+    247|     // PR #118's review: with the inspector on, a leftover sent SIGUSR…
+    248|     // --disable-sigusr1, Node blocks the signal in every thread and n…
+    249|     expect(fact("sweep-usr1")).toEqual({
+       |                                ^
+    250|       case: "sweep-usr1",
+    251|       usr1Caught: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

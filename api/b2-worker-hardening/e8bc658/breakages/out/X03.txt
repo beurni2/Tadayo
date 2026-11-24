@@ -1,0 +1,238 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 9 failed) 3910ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 6ms
+     × a process the photo's process started in a session of its own has ended once the photo's end settles 4ms
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 1ms
+     × sends no group kill once Node has reaped the photo's process, when its group's number may be another's 1ms
+     × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 1ms
+     × so has every process of a forking loop, caught mid-fork 1ms
+     × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 1ms
+     × a process past its deadline is still killed by the worker at once 1ms
+     × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 249ms
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 14 passed (23)
+   Start at  00:40:25
+   Duration  4.10s (tests 98%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+AssertionError: expected 'ImageProcessFailed' to be 'prepared' // Object.is equality
+
+Expected: "prepared"
+Received: "ImageProcessFailed"
+
+ ❯ src/privileges.test.ts:212:30
+    210|   it("a photo's process is the photo's user alone, with no capability,…
+    211|     const probe = fact("probe");
+    212|     expect(probe["outcome"]).toBe("prepared");
+       |                              ^
+    213|     expect(probe["child"]).toEqual({
+    214|       uid: 64999,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process the photo's process started in a session of its own has ended once the photo's end settles
+AssertionError: expected { case: 'escapes', …(4) } to match object { outcome: 'prepared', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "endedBy": "settle",
++   "endedBy": "none",
+    "euid": 64998,
+-   "outcome": "prepared",
+-   "wasRunning": true,
++   "outcome": "ImageProcessFailed",
++   "wasRunning": false,
+  }
+
+ ❯ src/privileges.test.ts:234:29
+    232|
+    233|   it("a process the photo's process started in a session of its own ha…
+    234|     expect(fact("escapes")).toMatchObject({ outcome: "prepared", wasRu…
+       |                             ^
+    235|   });
+    236|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+AssertionError: expected { case: 'watcher', …(3) } to match object { outcome: 'prepared', …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+-   "outcome": "prepared",
+-   "seen": {
+-     "gid": 64998,
+-     "mem": "EACCES",
+-     "uid": 64999,
+-   },
++   "outcome": "ImageProcessFailed",
++   "seen": null,
+  }
+
+ ❯ src/privileges.test.ts:239:29
+    237|   it("the sweep runs with the worker's group, not the photo user's, so…
+    238|     // Attaching (ptrace, /proc/<pid>/mem) needs every user and group …
+    239|     expect(fact("watcher")).toMatchObject({
+       |                             ^
+    240|       outcome: "prepared",
+    241|       seen: { uid: 64999, gid: 64998, mem: "EACCES" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > sends no group kill once Node has reaped the photo's process, when its group's number may be another's
+AssertionError: expected { case: 'reaped', …(4) } to deeply equal { case: 'reaped', …(4) }
+
+- Expected
++ Received
+
+  {
+    "afterReap": 0,
+    "case": "reaped",
+    "euid": 64998,
+-   "groupKills": 1,
+-   "outcome": "prepared",
++   "groupKills": 0,
++   "outcome": "ImageProcessFailed",
+  }
+
+ ❯ src/privileges.test.ts:275:28
+    273|   it("sends no group kill once Node has reaped the photo's process, wh…
+    274|     // PR #118's review (S6): the kill once the answer is in reaches t…
+    275|     expect(fact("reaped")).toEqual({ case: "reaped", outcome: "prepare…
+       |                            ^
+    276|   });
+    277|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects
+AssertionError: expected { case: 'hoards', …(4) } to deeply equal { case: 'hoards', …(4) }
+
+- Expected
++ Received
+
+@@ -3,8 +3,8 @@
+    "euid": 64998,
+    "left": {
+      "files": [],
+      "ipc": [],
+    },
+-   "made": true,
+-   "outcome": "prepared",
++   "made": false,
++   "outcome": "ImageProcessFailed",
+  }
+
+ ❯ src/privileges.test.ts:280:28
+    278|   it("what a photo's process left in memory or on disk is gone once it…
+    279|     // PR #118's review: left there, they held the Machine's memory, a…
+    280|     expect(fact("hoards")).toEqual({
+       |                            ^
+    281|       case: "hoards",
+    282|       outcome: "prepared",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > so has every process of a forking loop, caught mid-fork
+AssertionError: expected { case: 'forks', …(4) } to match object { outcome: 'prepared', left: +0, …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+    "left": 0,
+-   "outcome": "prepared",
++   "outcome": "ImageProcessFailed",
+  }
+
+ ❯ src/privileges.test.ts:291:19
+    289|   it("so has every process of a forking loop, caught mid-fork", () => {
+    290|     const forks = fact("forks");
+    291|     expect(forks).toMatchObject({ outcome: "prepared", left: 0, euid: …
+       |                   ^
+    292|     expect(forks["most"]).toBeGreaterThanOrEqual(64);
+    293|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS
+AssertionError: expected { case: 'memory', …(3) } to match object { outcome: 'too_many_pixels', …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+-   "outcome": "too_many_pixels",
++   "outcome": "ImageProcessFailed",
+  }
+
+ ❯ src/privileges.test.ts:297:20
+    295|   it("a process past its memory is still killed by the worker at once,…
+    296|     const memory = fact("memory");
+    297|     expect(memory).toMatchObject({ outcome: "too_many_pixels", euid: 6…
+       |                    ^
+    298|     expect(memory["msAfterCrossing"]).toBeLessThan(GRACE_MS / 2);
+    299|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its deadline is still killed by the worker at once
+AssertionError: expected { case: 'deadline', …(3) } to match object { Object (outcome, euid) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+-   "outcome": "ImageTimeout",
++   "outcome": "ImageProcessFailed",
+  }
+
+ ❯ src/privileges.test.ts:303:22
+    301|   it("a process past its deadline is still killed by the worker at onc…
+    302|     const deadline = fact("deadline");
+    303|     expect(deadline).toMatchObject({ outcome: "ImageTimeout", euid: 64…
+       |                      ^
+    304|     // Its deadline is 0.5 s; a kill the worker couldn't send would le…
+    305|     expect(deadline["ms"]).toBeLessThan(500 + GRACE_MS / 2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privileges.test.ts:310:26
+    308|   it("a sweep that doesn't finish in time stops the worker: a process …
+    309|     const stopped = await harness(["sweep-timeout"], 60);
+    310|     expect(stopped.code).toBe(1);
+       |                          ^
+    311|     expect(stopped.stderr).toBe(
+    312|       "worker: a photo's processes weren't all ended, so the worker st…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+

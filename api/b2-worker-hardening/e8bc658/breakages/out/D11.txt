@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/deploy-files.test.ts (19 tests | 2 failed) 407ms
+   ❯ Dockerfile (8)
+     × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 41ms
+   ❯ fly.toml (8)
+     × has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other 31ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  00:54:49
+   Duration  744ms (tests 72%, transform 15%, import 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/deploy-files.test.ts:199:82
+    197|     const processes = table(flyToml()["processes"], "[processes]");
+    198|     expect(String(processes["api"]).startsWith(`${API_DROP} -- ${NODE}…
+    199|     expect(String(processes["worker"]).startsWith(`${WORKER_DROP} -- $…
+       |                                                                                  ^
+    200|     expect(image.filter((instruction) => instruction.name === "ENV").m…
+    201|       "NODE_ENV=production",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/deploy-files.test.ts > fly.toml > has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+    "api": "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node --disable-sigusr1 services/api/src/main.ts",
+-   "worker": "prlimit --core=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1 services/worker/src/main.ts",
++   "worker": "setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1 services/worker/src/main.ts",
+  }
+
+ ❯ src/deploy-files.test.ts:316:23
+    314|   it("has the two process groups, each dropping root with its setpriv …
+    315|     const processes = table(flyToml()["processes"], "[processes]");
+    316|     expect(processes).toEqual({
+       |                       ^
+    317|       api: `${API_DROP} -- ${NODE} services/api/src/main.ts`,
+    318|       worker: `${WORKER_DROP} -- ${NODE} services/worker/src/main.ts`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

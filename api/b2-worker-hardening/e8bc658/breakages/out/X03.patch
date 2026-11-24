@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -294,7 +294,7 @@
+     // SIGUSR1.
+     let child: ReturnType<typeof spawn>;
+     try {
+-      child = privileged(() =>
++      child = ((fn) => fn())(() =>
+         spawn(process.execPath, [NO_INSPECTOR, fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
+           env: {},
+           stdio: ["pipe", "ignore", "ignore", "pipe"],

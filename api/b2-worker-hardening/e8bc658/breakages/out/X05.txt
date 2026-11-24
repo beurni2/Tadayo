@@ -1,0 +1,176 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 6 failed) 8829ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 8ms
+     × a process the photo's process started in a session of its own has ended once the photo's end settles 1ms
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 1ms
+     × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 1ms
+     × so has every process of a forking loop, caught mid-fork 1ms
+     × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 292ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 17 passed (23)
+   Start at  00:40:35
+   Duration  9.09s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left
+AssertionError: expected { case: 'end', left: 243 } to match object { left: +0 }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "left": 0,
++   "left": 243,
+  }
+
+ ❯ src/privileges.test.ts:184:25
+    182|       photoUserLeft: { files: [], ipc: [] },
+    183|     });
+    184|     expect(fact("end")).toMatchObject({ left: 0 });
+       |                         ^
+    185|   });
+    186|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process the photo's process started in a session of its own has ended once the photo's end settles
+AssertionError: expected { case: 'escapes', …(4) } to match object { outcome: 'prepared', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "endedBy": "settle",
++   "endedBy": "never",
+    "euid": 64998,
+    "outcome": "prepared",
+    "wasRunning": true,
+  }
+
+ ❯ src/privileges.test.ts:234:29
+    232|
+    233|   it("a process the photo's process started in a session of its own ha…
+    234|     expect(fact("escapes")).toMatchObject({ outcome: "prepared", wasRu…
+       |                             ^
+    235|   });
+    236|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+AssertionError: expected { case: 'watcher', …(3) } to match object { outcome: 'prepared', …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+    "outcome": "prepared",
+-   "seen": {
+-     "gid": 64998,
+-     "mem": "EACCES",
+-     "uid": 64999,
+-   },
++   "seen": null,
+  }
+
+ ❯ src/privileges.test.ts:239:29
+    237|   it("the sweep runs with the worker's group, not the photo user's, so…
+    238|     // Attaching (ptrace, /proc/<pid>/mem) needs every user and group …
+    239|     expect(fact("watcher")).toMatchObject({
+       |                             ^
+    240|       outcome: "prepared",
+    241|       seen: { uid: 64999, gid: 64998, mem: "EACCES" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects
+AssertionError: expected { case: 'hoards', …(4) } to deeply equal { case: 'hoards', …(4) }
+
+- Expected
++ Received
+
+  {
+    "case": "hoards",
+    "euid": 64998,
+    "left": {
+-     "files": [],
+-     "ipc": [],
++     "files": [
++       "/tmp/tadayo-hoard",
++       "/tmp/tadayo-hoard-folder",
++       "/dev/shm/tadayo-hoard",
++       "/dev/shm/tadayo-hoard-folder",
++     ],
++     "ipc": [
++       "shm:58",
++       "sem:27",
++       "msg:27",
++     ],
+    },
+    "made": true,
+    "outcome": "prepared",
+  }
+
+ ❯ src/privileges.test.ts:280:28
+    278|   it("what a photo's process left in memory or on disk is gone once it…
+    279|     // PR #118's review: left there, they held the Machine's memory, a…
+    280|     expect(fact("hoards")).toEqual({
+       |                            ^
+    281|       case: "hoards",
+    282|       outcome: "prepared",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > so has every process of a forking loop, caught mid-fork
+AssertionError: expected { case: 'forks', …(4) } to match object { outcome: 'prepared', left: +0, …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+-   "left": 0,
++   "left": 243,
+    "outcome": "prepared",
+  }
+
+ ❯ src/privileges.test.ts:291:19
+    289|   it("so has every process of a forking loop, caught mid-fork", () => {
+    290|     const forks = fact("forks");
+    291|     expect(forks).toMatchObject({ outcome: "prepared", left: 0, euid: …
+       |                   ^
+    292|     expect(forks["most"]).toBeGreaterThanOrEqual(64);
+    293|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privileges.test.ts:310:26
+    308|   it("a sweep that doesn't finish in time stops the worker: a process …
+    309|     const stopped = await harness(["sweep-timeout"], 60);
+    310|     expect(stopped.code).toBe(1);
+       |                          ^
+    311|     expect(stopped.stderr).toBe(
+    312|       "worker: a photo's processes weren't all ended, so the worker st…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

@@ -1,0 +1,67 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5010ms
+   ✓ the photo user (photoUserFor) (5)
+     ✓ is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one 2ms
+     ✓ is the user the variable names, from /etc/passwd, when the worker was started as fly.toml starts it 1ms
+     ✓ stops the worker when only one half is there: the variable without the start, or the start without it 1ms
+     ✓ refuses a name that isn't a user's, matching whole names only 1ms
+     ✓ refuses root, root's group, the worker's own user and the worker's own group 1ms
+   ✓ outside the worker's mode (3)
+     ✓ asRoot refuses, and runs nothing 1ms
+     ✓ the sweep refuses root, root's group, and this process's own user and group, before it starts anything 2ms
+     ✓ the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 1ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     ✓ ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 1ms
+     × asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 8ms
+     ✓ a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it 0ms
+     ✓ a photo's process is the photo's user alone, with no capability, and can't reach the worker 0ms
+     ✓ a process the photo's process started in a session of its own has ended once the photo's end settles 0ms
+     ✓ the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 0ms
+     ✓ a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end 0ms
+     ✓ the worker's start ends a process of the photo's user before anything else, so none waits from before a restart 0ms
+     ✓ a sweep that can't finish as the worker starts stops it there, before it connects to the database 0ms
+     ✓ sends no group kill once Node has reaped the photo's process, when its group's number may be another's 0ms
+     ✓ what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 0ms
+     ✓ so has every process of a forking loop, caught mid-fork 0ms
+     ✓ a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+     ✓ a process past its deadline is still killed by the worker at once 0ms
+     ✓ a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 240ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:39:01
+   Duration  5.22s (tests 98%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group
+AssertionError: expected { case: 'refusals', …(7) } to deeply equal { case: 'refusals', …(7) }
+
+- Expected
++ Received
+
+  {
+    "asRootAsPlainRoot": "refused",
+    "case": "refusals",
+    "egid": 64998,
+    "euid": 64998,
+-   "sweepRoot": "refused",
++   "sweepRoot": "exit",
+    "sweepRootsGroup": "refused",
+    "sweepWorkersGroup": "refused",
+    "sweepWorkersUser": "refused",
+  }
+
+ ❯ src/privileges.test.ts:188:30
+    186|
+    187|   it("asRoot refuses a process that is only root, and the sweep refuse…
+    188|     expect(fact("refusals")).toEqual({
+       |                              ^
+    189|       case: "refusals",
+    190|       asRootAsPlainRoot: "refused",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

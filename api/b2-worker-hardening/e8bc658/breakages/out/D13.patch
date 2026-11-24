@@ -1,0 +1,11 @@
+--- a/fly.toml
++++ b/fly.toml
+@@ -46,7 +46,7 @@
+ # in both (`--disable-sigusr1`): SIGUSR1 would open it, with no password, to anyone on the Machine (PR #118's review).
+ [processes]
+   api = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node --disable-sigusr1 services/api/src/main.ts"
+-  worker = "prlimit --core=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1 services/worker/src/main.ts"
++  worker = "prlimit --core=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node services/worker/src/main.ts"
+ 
+ # The API's service. It listens only after the database and the clock are ready, so an open port is a
+ # started API. The check is on the port and not on a route: a route to ask would be one outside the

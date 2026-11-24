@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (27 tests | 1 failed) 12363ms
+   ❯ a photo's process group, ended (killGroupOf; PR #118's review) (1)
+     × is done when the group has ended, and stops the worker when the kill is refused, as the processes may still run 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  00:42:53
+   Duration  12.77s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's process group, ended (killGroupOf; PR #118's review) > is done when the group has ended, and stops the worker when the kill is refused, as the processes may still run
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/image-process.test.ts:707:10
+    705|       expect(() => {
+    706|         killGroupOf(4242, (fn) => fn());
+    707|       }).toThrow("the worker stopped");
+       |          ^
+    708|       expect(exit).toHaveBeenCalledWith(1);
+    709|       expect(written).toHaveBeenCalledWith(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -180,7 +180,7 @@
+         next = bytes.indexOf(0xff, next);
+         if (next < 0 || next + 1 >= bytes.length) return false;
+         const after = bytes[next + 1] ?? 0;
+-        if (after === 0x00 || (after >= 0xd0 && after <= 0xd7)) {
++        if (after >= 0xd0 && after <= 0xd7) {
+           next += 2;
+           continue;
+         }

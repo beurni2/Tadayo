@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5688ms
+   ❯ outside the worker's mode (3)
+     × the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:39:33
+   Duration  5.86s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done
+AssertionError: expected [ …(41) ] to include '  try { process.kill(-1, "SIGKILL"); …'
+ ❯ src/privileges.test.ts:120:19
+    118|     const lines = SWEEP_PROGRAM.split("\n");
+    119|     expect(lines[0]).toBe("if (process.getuid() === 0) process.exit(2)…
+    120|     expect(lines).toContain(
+       |                   ^
+    121|       '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (erro…
+    122|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

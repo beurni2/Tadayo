@@ -1,0 +1,608 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/image-process.test.ts (27 tests | 16 failed) 522134ms
+   ❯ a photo's own process (10)
+     × answers as prepareImage does in this process, rendition for rendition, byte for byte 60014ms
+     × passes a rejection on as it is 20021ms
+     × goes first to the kernel's out-of-memory killer, and starts with an empty environment 20021ms
+     × is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 60052ms
+     × refuses a PNG whose compressed text would take the worker past its Machine, the worker holding none of it (R3-1) 60004ms
+     × is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout) 60007ms
+     × passes a decode's own timeout on as ImageTimeout 60004ms
+     × fails, to be tried again, when its code throws, never refusing the photo 20006ms
+   ❯ a photo's process that misbehaves (R4-3, C5-1) (8)
+     × fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once 30005ms
+     × fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1) 30002ms
+     × keeps the first answer, and reads nothing after it 20006ms
+     × closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them mid-message 20002ms
+     × ends a child that answered at once, though it would never exit, and keeps its answer 20021ms
+     × fails, to be tried again, when the child exits with a code of its own without answering (R4-5) 20012ms
+     × refuses the photo as unreadable when the child crashes once it holds it 20011ms
+   ❯ a photo's process group, ended (killGroupOf; PR #118's review) (1)
+     × is done when the group has ended, and stops the worker when the kill is refused, as the processes may still run 2ms
+
+ Test Files  1 failed (1)
+      Tests  16 failed | 11 passed (27)
+     Errors  15 errors
+   Start at  00:43:07
+   Duration  522.49s (tests 100%)
+
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > answers as prepareImage does in this process, rendition for rendition, byte for byte
+Error: Test timed out in 60000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:154:3
+    152|
+    153| describe("a photo's own process", () => {
+    154|   it("answers as prepareImage does in this process, rendition for rend…
+       |   ^
+    155|     const photo = await pattern(3000, 2000).jpeg().toBuffer();
+    156|     const here = await prepareImage(photo, "image/jpeg");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > passes a rejection on as it is
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:165:3
+    163|   }, 60_000);
+    164|
+    165|   it("passes a rejection on as it is", async () => {
+       |   ^
+    166|     expect((await prepareIsolated(await testImage(64, 48, "png"), "ima…
+    167|       ok: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > goes first to the kernel's out-of-memory killer, and starts with an empty environment
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:172:3
+    170|   }, 20_000);
+    171|
+    172|   it("goes first to the kernel's out-of-memory killer, and starts with…
+       |   ^
+    173|     process.env["TADAYO_TEST_SECRET"] = "not for the child";
+    174|     try {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels
+Error: Test timed out in 60000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:186:3
+    184|   }, 20_000);
+    185|
+    186|   it("is killed past its peak memory, before it can answer, and the ph…
+       |   ^
+    187|     // A 16-bit PNG of 64 megapixels streams, its process peaking near…
+    188|     // (image-memory.test.ts): one that answered would report that pea…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > refuses a PNG whose compressed text would take the worker past its Machine, the worker holding none of it (R3-1)
+Error: Test timed out in 60000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:197:3
+    195|   }, 60_000);
+    196|
+    197|   it("refuses a PNG whose compressed text would take the worker past i…
+       |   ^
+    198|     // One `zTXt` of 49 MiB in a file of 50 KB took the process to 398…
+    199|     const bombs = [textBombPng(1, 49), textBombPng(4, 40)];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout)
+Error: Test timed out in 60000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:210:3
+    208|   }, 60_000);
+    209|
+    210|   it("is killed past its deadline, whatever it is doing, and the decod…
+       |   ^
+    211|     // A 16-bit PNG of 64 megapixels takes about two seconds to decode…
+    212|     const slow = await pattern(8000, 8000, 4).toColourspace("rgb16").p…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > passes a decode's own timeout on as ImageTimeout
+Error: Test timed out in 60000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:218:3
+    216|   }, 60_000);
+    217|
+    218|   it("passes a decode's own timeout on as ImageTimeout", async () => {
+       |   ^
+    219|     const slow = await sharp({
+    220|       create: { width: 8000, height: 8000, channels: 4, background: "#…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > fails, to be tried again, when its code throws, never refusing the photo
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:229:3
+    227|   }, 60_000);
+    228|
+    229|   it("fails, to be tried again, when its code throws, never refusing t…
+       |   ^
+    230|     // `sharp` refuses a timeout that isn't a whole number of seconds …
+    231|     await expect(prepareIsolated(await testImage(16, 16), "image/jpeg"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:438:3
+    436|   });
+    437|
+    438|   it("fails, to be tried again, when the child sends anything but read…
+       |   ^
+    439|     for (const name of ["bogus", "twice", "garbled", "early"] as const…
+    440|       const from = performance.now();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1)
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:449:3
+    447|   }, 30_000);
+    448|
+    449|   it("fails at once on a length past its cap, the worker holding none …
+       |   ^
+    450|     const before = peakOf("self") ?? 0;
+    451|     for (const name of ["huge", "overlong"] as const) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > keeps the first answer, and reads nothing after it
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:462:3
+    460|   }, 30_000);
+    461|
+    462|   it("keeps the first answer, and reads nothing after it", async () =>…
+       |   ^
+    463|     const from = performance.now();
+    464|     expect(tagOf(await prepareIsolated(photo, "image/jpeg", { child: f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them mid-message
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:481:3
+    479|   }, 20_000);
+    480|
+    481|   it("closes its ends of the child's pipes as it settles, though a pro…
+       |   ^
+    482|     const before = pipesHeld();
+    483|     // A megabyte, more than a pipe holds: the worker's write waits on…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > ends a child that answered at once, though it would never exit, and keeps its answer
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:498:3
+    496|   }, 20_000);
+    497|
+    498|   it("ends a child that answered at once, though it would never exit, …
+       |   ^
+    499|     const from = performance.now();
+    500|     expect(tagOf(await prepareIsolated(photo, "image/jpeg", { child: f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > fails, to be tried again, when the child exits with a code of its own without answering (R4-5)
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:506:3
+    504|   }, 20_000);
+    505|
+    506|   it("fails, to be tried again, when the child exits with a code of it…
+       |   ^
+    507|     await expect(prepareIsolated(photo, "image/jpeg", { child: fake("e…
+    508|       ImageProcessFailed,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process that misbehaves (R4-3, C5-1) > refuses the photo as unreadable when the child crashes once it holds it
+Error: Test timed out in 20000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/image-process.test.ts:512:3
+    510|   }, 20_000);
+    511|
+    512|   it("refuses the photo as unreadable when the child crashes once it h…
+       |   ^
+    513|     expect((await prepareIsolated(photo, "image/jpeg", { child: fake("…
+    514|       ok: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/16]⎯
+
+ FAIL  src/image-process.test.ts > a photo's process group, ended (killGroupOf; PR #118's review) > is done when the group has ended, and stops the worker when the kill is refused, as the processes may still run
+Error: the worker stopped
+ ❯ process.<anonymous> src/image-process.test.ts:692:13
+    690|     const kill = vi.spyOn(process, "kill");
+    691|     const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+    692|       throw new Error("the worker stopped");
+       |             ^
+    693|     });
+    694|     const written = vi.spyOn(process.stderr, "write").mockImplementati…
+ ❯ stopWorker src/privileges.ts:160:11
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ src/image-process.test.ts:699:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/16]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 15 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "answers as prepareImage does in this process, rendition for rendition, byte for byte". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "passes a rejection on as it is". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "goes first to the kernel's out-of-memory killer, and starts with an empty environment". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "refuses a PNG whose compressed text would take the worker past its Machine, the worker holding none of it (R3-1)". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout)". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "passes a decode's own timeout on as ImageTimeout". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "fails, to be tried again, when its code throws, never refusing the photo". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1)". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "keeps the first answer, and reads nothing after it". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ Timeout.<anonymous> src/image-process.ts:332:9
+ ❯ listOnTimeout node:internal/timers:685:17
+ ❯ process.processTimers node:internal/timers:618:7
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them mid-message". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "ends a child that answered at once, though it would never exit, and keeps its answer". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "fails, to be tried again, when the child exits with a code of its own without answering (R4-5)". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: process.exit unexpectedly called with "1" (test file: /home/user/tadayo-share/services/worker/src/image-process.test.ts)
+ ❯ process.exit ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/base.CzXt2BO_.js:122:9
+ ❯ stopWorker src/privileges.ts:160:11
+    158| export function stopWorker(line: string = STOP_LINE): never {
+    159|   process.stderr.write(`${line}\n`);
+    160|   process.exit(1);
+       |           ^
+    161| }
+    162|
+ ❯ killGroupOf src/image-process.ts:134:66
+ ❯ killGroup src/image-process.ts:324:7
+ ❯ settle src/image-process.ts:385:7
+ ❯ ChildProcess.<anonymous> src/image-process.ts:424:7
+ ❯ ChildProcess.emit node:events:514:20
+ ❯ maybeClose node:internal/child_process:1156:16
+ ❯ ChildProcess._handle.onexit node:internal/child_process:334:5
+
+This error originated in "src/image-process.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "refuses the photo as unreadable when the child crashes once it holds it". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+

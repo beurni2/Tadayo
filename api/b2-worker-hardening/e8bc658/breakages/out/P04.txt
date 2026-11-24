@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5708ms
+   ❯ the photo user (photoUserFor) (5)
+     × refuses a name that isn't a user's, matching whole names only 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:37:57
+   Duration  5.89s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > refuses a name that isn't a user's, matching whole names only
+AssertionError: tadayo: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:69:75
+     67|   it("refuses a name that isn't a user's, matching whole names only", …
+     68|     for (const name of ["tadayo", "tadayo-imag", "nobody", "tadayo-ima…
+     69|       expect(() => photoUserFor(named(name), WORKER, () => PASSWD), na…
+       |                                                                           ^
+     70|     }
+     71|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

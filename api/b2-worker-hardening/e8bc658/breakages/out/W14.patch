@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -109,7 +109,7 @@
+   '  const maker = head.indexOf("cuid");',
+   "  for (const row of rows) if (row[owner] === uid || row[maker] === uid) objects.push(flag, row[id]);",
+   "}",
+-  'if (objects.length > 0) require("node:child_process").execFileSync("/usr/bin/ipcrm", objects, { stdio: "ignore" });',
++
+ ].join("\n");
+ 
+ const STOP_LINE =

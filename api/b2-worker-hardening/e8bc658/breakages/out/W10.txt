@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5843ms
+   ❯ outside the worker's mode (3)
+     × the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:40:03
+   Duration  6.01s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > outside the worker's mode > the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done
+AssertionError: expected 'const fs = require("node:fs");' to be 'if (process.getuid() === 0) process.e…' // Object.is equality
+
+Expected: "if (process.getuid() === 0) process.exit(2);"
+Received: "const fs = require("node:fs");"
+
+ ❯ src/privileges.test.ts:119:22
+    117|     // What it does is seen in the root harness below.
+    118|     const lines = SWEEP_PROGRAM.split("\n");
+    119|     expect(lines[0]).toBe("if (process.getuid() === 0) process.exit(2)…
+       |                      ^
+    120|     expect(lines).toContain(
+    121|       '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (erro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

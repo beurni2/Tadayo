@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/tools/ops
+
+ ❯ src/deploy-files.test.ts (19 tests | 1 failed) 412ms
+   ❯ Dockerfile (8)
+     × puts the ops entry where the runner starts it, and the API's command where a bare run starts it 39ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  00:54:54
+   Duration  684ms (tests 73%, transform 15%, import 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > puts the ops entry where the runner starts it, and the API's command where a bare run starts it
+AssertionError: expected [ 'setpriv', '--reuid=node', …(8) ] to deeply equal [ 'setpriv', '--reuid=node', …(9) ]
+
+- Expected
++ Received
+
+@@ -6,8 +6,7 @@
+    "--inh-caps=-all",
+    "--bounding-set=-all",
+    "--no-new-privs",
+    "--",
+    "node",
+-   "--disable-sigusr1",
+    "services/api/src/main.ts",
+  ]
+
+ ❯ src/deploy-files.test.ts:188:43
+    186|     const api = String(table(flyToml()["processes"], "[processes]")["a…
+    187|     const cmd = dockerfile().find((instruction) => instruction.name ==…
+    188|     expect(JSON.parse(cmd?.args ?? "[]")).toEqual(api);
+       |                                           ^
+    189|   });
+    190|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

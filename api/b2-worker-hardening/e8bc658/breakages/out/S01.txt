@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/start.test.ts (5 tests | 1 failed) 2638ms
+   ❯ the worker's entry (ADR-013) (5)
+     × stops before it connects when TADAYO_PHOTO_USER is set but it wasn't started as root with its own user effective 176ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  00:40:51
+   Duration  2.77s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/start.test.ts > the worker's entry (ADR-013) > stops before it connects when TADAYO_PHOTO_USER is set but it wasn't started as root with its own user effective
+AssertionError: expected 'connect ECONNREFUSED 127.0.0.1:1\n' to be 'worker: TADAYO_PHOTO_USER is set, but…' // Object.is equality
+
+- Expected
++ Received
+
+- worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root with its own user effective (fly.toml's worker command)
++ connect ECONNREFUSED 127.0.0.1:1
+
+
+ ❯ src/start.test.ts:86:27
+     84|     });
+     85|     expect(result.code).toBe(1);
+     86|     expect(result.stderr).toBe(
+       |                           ^
+     87|       "worker: TADAYO_PHOTO_USER is set, but the worker wasn't started…
+     88|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5606ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:39:26
+   Duration  5.80s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+AssertionError: expected { case: 'watcher', …(3) } to match object { outcome: 'prepared', …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "euid": 64998,
+    "outcome": "prepared",
+    "seen": {
+-     "gid": 64998,
+-     "mem": "EACCES",
++     "gid": 64999,
++     "mem": "opened",
+      "uid": 64999,
+    },
+  }
+
+ ❯ src/privileges.test.ts:239:29
+    237|   it("the sweep runs with the worker's group, not the photo user's, so…
+    238|     // Attaching (ptrace, /proc/<pid>/mem) needs every user and group …
+    239|     expect(fact("watcher")).toMatchObject({
+       |                             ^
+    240|       outcome: "prepared",
+    241|       seen: { uid: 64999, gid: 64998, mem: "EACCES" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

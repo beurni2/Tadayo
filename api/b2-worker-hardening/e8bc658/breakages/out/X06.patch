@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -411,7 +411,7 @@
+       if (user === undefined) finish();
+       else
+         sweep(user, limits.sweepSeconds).then(finish, () => {
+-          stopWorker();
++          finish();
+         });
+     };
+     // A child that can't be started gives `error` and may never give `exit`.

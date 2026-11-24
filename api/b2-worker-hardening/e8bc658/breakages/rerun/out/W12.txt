@@ -1,0 +1,12 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ✓ src/privileges.test.ts (23 tests) 5151ms
+   ✓ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     ✓ a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 314ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  01:06:26
+   Duration  5.35s (tests 99%)
+

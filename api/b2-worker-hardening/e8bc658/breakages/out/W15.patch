@@ -1,0 +1,10 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -85,7 +85,6 @@
+   "} while (alive());",
+   "const remove = (path) => {",
+   "  if (fs.lstatSync(path).isDirectory()) {",
+-  "    fs.chmodSync(path, 0o700);",
+   '    for (const name of fs.readdirSync(path)) remove(path + "/" + name);',
+   "    fs.rmdirSync(path);",
+   "  } else fs.unlinkSync(path);",

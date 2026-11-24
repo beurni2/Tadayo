@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-share/services/worker
+
+ ❯ src/privileges.test.ts (23 tests | 1 failed) 5818ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (15)
+     × a sweep that can't finish as the worker starts stops it there, before it connects to the database 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:42:47
+   Duration  5.97s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that can't finish as the worker starts stops it there, before it connects to the database
+AssertionError: expected { case: 'start-sweep-fails', …(2) } to deeply equal { case: 'start-sweep-fails', …(2) }
+
+- Expected
++ Received
+
+  {
+    "case": "start-sweep-fails",
+    "euid": 64998,
+-   "failedAt": "the sweep",
++   "failedAt": "the database",
+  }
+
+ ❯ src/privileges.test.ts:270:39
+    268|
+    269|   it("a sweep that can't finish as the worker starts stops it there, b…
+    270|     expect(fact("start-sweep-fails")).toEqual({ case: "start-sweep-fai…
+       |                                       ^
+    271|   });
+    272|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

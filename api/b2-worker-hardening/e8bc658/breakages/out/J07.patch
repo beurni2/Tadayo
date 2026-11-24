@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -158,7 +158,7 @@
+  * a 0xFF is followed by a stuffed 0x00 or a restart, else it is the end.
+  */
+ export function baselineJpeg(bytes: Uint8Array, width: number, height: number): boolean {
+-  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return false;
++  if (bytes.length < 4) return false;
+   let frames = 0;
+   for (let at = 2; at + 4 <= bytes.length;) {
+     const marker = bytes[at + 1] ?? 0;

@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -107,7 +107,7 @@
+   '  const id = head.indexOf(kind === "msg" ? "msqid" : kind + "id");',
+   '  const owner = head.indexOf("uid");',
+   '  const maker = head.indexOf("cuid");',
+-  "  for (const row of rows) if (row[owner] === uid || row[maker] === uid) objects.push(flag, row[id]);",
++  "  for (const row of rows) if (row[maker] === uid) objects.push(flag, row[id]);",
+   "}",
+   'if (objects.length > 0) require("node:child_process").execFileSync("/usr/bin/ipcrm", objects, { stdio: "ignore" });',
+ ].join("\n");

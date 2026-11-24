@@ -1,0 +1,10 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -69,7 +69,6 @@
+  * user owns or made, by its id, from /proc/sysvipc. A folder that isn't there, or can't be read, is passed over.
+  */
+ export const SWEEP_PROGRAM = [
+-  "if (process.getuid() === 0) process.exit(2);",
+   'const fs = require("node:fs");',
+   "const uid = String(process.getuid());",
+   "const self = String(process.pid);",

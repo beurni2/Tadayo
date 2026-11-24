@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -175,7 +175,6 @@
+         return false;
+       }
+     } else if (marker === 0xda) {
+-      if (frames !== 1) return false;
+       for (let next = at + 2 + length; ;) {
+         next = bytes.indexOf(0xff, next);
+         if (next < 0 || next + 1 >= bytes.length) return false;

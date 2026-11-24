@@ -1,0 +1,15 @@
+import { readFileSync, readdirSync, lstatSync } from "node:fs";
+import { status } from "./status.mjs";
+import { idsOf, inWorkerMode, photoUserFor } from "/app/services/worker/src/privileges.ts";
+import { prepareIsolated } from "/app/services/worker/src/image-process.ts";
+const ids = idsOf();
+const user = photoUserFor(process.env);
+const ofUser = () => { const found = {}; for (const d of readdirSync("/proc")) { if (!/^\d+$/.test(d)) continue; try { const s = status(d); if (s.Uid.split(" ")[0] === String(user.uid)) found[d] = { ...s, cmd: readFileSync(`/proc/${d}/cmdline`, "utf8").split("\0").slice(1, 3).join(" ").replace(/\/app\/services\/worker\/src\//, "") }; } catch {} } return found; };
+const seen = {};
+const scan = setInterval(() => { for (const [pid, s] of Object.entries(ofUser())) if (!seen[pid] || (!seen[pid].cmd && s.cmd)) seen[pid] = s; }, 2);
+const started = Date.now();
+const answer = await prepareIsolated(readFileSync(process.argv[2]), "image/jpeg", { user });
+const ms = Date.now() - started;
+clearInterval(scan);
+const p = answer.prepared;
+console.log(JSON.stringify({ worker: status("self"), ids, workerMode: inWorkerMode(ids), user, ms, peakMiB: Math.round(answer.peakBytes / 1048576), outcome: p.ok ? { ok: true, renditions: p.renditions.map((r) => `${r.kind} ${r.width}x${r.height} ${r.contentType ?? ""}`) } : p, processesOfPhotoUser: Object.values(seen), leftAfter: Object.keys(ofUser()).length, filesLeft: ["/tmp", "/var/tmp", "/dev/shm", "/dev/mqueue", "/run/lock"].flatMap((d) => { try { return readdirSync(d).filter((n) => lstatSync(`${d}/${n}`).uid === user.uid).map((n) => `${d}/${n}`); } catch { return []; } }) }, null, 1));
