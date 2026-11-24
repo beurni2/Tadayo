@@ -304,6 +304,26 @@ struct TabsView: View {
         closeInvitationScreens()
     }
 
+    /// PROBE FIX: an accepted invitation's join takes its screen off here, in the same change as
+    /// the root's, not from the root's change a draw later.
+    private func acceptedAnswered(_ model: InvitationModel) {
+        guard case .opening = model.state else { return }
+        removeAccepted()
+    }
+
+    /// PROBE FIX: Not now, Done and Close invitation take the screen off here, and the root
+    /// closes the invitation.
+    private func leaveAccepted() {
+        removeAccepted()
+        closeInvitation()
+    }
+
+    private func removeAccepted() {
+        for tab in Array(paths.keys) where paths[tab]?.contains(.accepted) == true {
+            paths[tab]?.removeAll { $0 == .accepted }
+        }
+    }
+
     /// I have an invite's screens close, and the paste step and the invitation shown are done
     /// with.
     private func closeInvitationScreens() {
@@ -470,8 +490,9 @@ struct TabsView: View {
                         Probe.note(
                             "tabs acceptedAnswered \(Probe.id(model)) \(Probe.short(model.state, 14)) closed=\(model.isClosed) root=\(Probe.id(invitation)) paths=\(paths)"
                         )
+                        acceptedAnswered(model)
                     },
-                    leave: { closeInvitation() }
+                    leave: { leaveAccepted() }
                 )
                 .onDisappear { forgetInvitationScreensIfGone() }
             }
