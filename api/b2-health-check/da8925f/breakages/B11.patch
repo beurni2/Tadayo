@@ -1,0 +1,17 @@
+--- a/fly.toml
++++ b/fly.toml
+@@ -64,13 +64,10 @@
+     port = 443
+     handlers = ["tls", "http"]
+ 
+-  [[services.http_checks]]
++  [[services.tcp_checks]]
+     grace_period = "20s"
+     interval = "15s"
+     timeout = "3s"
+-    method = "GET"
+-    path = "/v1/health"
+-    protocol = "http"
+ 
+ # A group is restarted only when it failed: a clean exit, which is what a stop is, leaves it stopped, so
+ # the worker stays down across deploys until `ops` worker-scale starts it.

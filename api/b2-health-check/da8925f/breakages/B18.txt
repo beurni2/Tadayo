@@ -1,0 +1,75 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/session.test.ts (34 tests | 2 failed) 346ms
+   ❯ the public routes (1)
+     × never ask who is calling, whatever the header says, and make no account 25ms
+   ❯ when the keys that check tokens can't be read (FQ89) (1)
+     × answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out 28ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 32 passed (34)
+   Start at  20:24:36
+   Duration  1.44s (transform 50%, tests 26%, import 23%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/session.test.ts > the public routes > never ask who is calling, whatever the header says, and make no account
+AssertionError: removeDevice: expected { status: 500, body: '', …(1) } to deeply equal { status: 400, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"removal_secret\"}",
++   "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "51",
+-     "content-type": "application/json; charset=utf-8",
++     "content-length": "0",
+    },
+-   "status": 400,
++   "status": 500,
+  }
+
+ ❯ src/session.test.ts:283:53
+    281|         const request = publicRequest(operation);
+    282|         if (authorization !== undefined) request.headers = { ...reques…
+    283|         expect(await answer(request), operation.id).toEqual(publicAnsw…
+       |                                                     ^
+    284|       }
+    285|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/session.test.ts > when the keys that check tokens can't be read (FQ89) > answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out
+AssertionError: removeDevice: expected { status: 500, body: '', …(1) } to deeply equal { status: 400, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"removal_secret\"}",
++   "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "51",
+-     "content-type": "application/json; charset=utf-8",
++     "content-length": "0",
+    },
+-   "status": 400,
++   "status": 500,
+  }
+
+ ❯ src/session.test.ts:329:70
+    327|       // The public routes need no keys.
+    328|       for (const operation of PUBLIC) {
+    329|         expect(await answer(publicRequest(operation)), operation.id).t…
+       |                                                                      ^
+    330|       }
+    331|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,55 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 2 failed) 201ms
+   ❯ the health check when the database answers (the outside audit's A7) (4)
+     × leaves no timer behind once it has answered 20ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (7)
+     × shares one query among the checks that come while it is out, and sends a new one once it has come back 12ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  20:22:43
+   Duration  1.27s (transform 57%, import 25%, tests 18%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database answers (the outside audit's A7) > leaves no timer behind once it has answered
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/health.test.ts:132:32
+    130|     const { send } = await appWith(() => Promise.resolve([{ "?column?"…
+    131|     expect(await send(health())).toEqual(DONE);
+    132|     expect(vi.getTimerCount()).toBe(0);
+       |                                ^
+    133|   });
+    134| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > shares one query among the checks that come while it is out, and sends a new one once it has come back
+AssertionError: expected 3 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 3
+
+ ❯ src/health.test.ts:216:32
+    214|     expect(await send(health())).toEqual(DONE);
+    215|     expect(queries).toHaveLength(2);
+    216|     expect(vi.getTimerCount()).toBe(0);
+       |                                ^
+    217|   });
+    218|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

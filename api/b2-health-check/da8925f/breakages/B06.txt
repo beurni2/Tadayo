@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 2 failed) 5184ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (7)
+     × lets go of a probe only for the check that gave up on the current one, or as it settles itself 5005ms
+     × gives up before Fly's own check timeout, so the API's answer is the one Fly reads 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  20:21:39
+   Duration  6.23s (tests 85%, transform 10%, import 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > lets go of a probe only for the check that gave up on the current one, or as it settles itself
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:248:3
+    246|   });
+    247|
+    248|   it("lets go of a probe only for the check that gave up on the curren…
+       |   ^
+    249|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    250|     const releases: ((rows: unknown) => void)[] = [];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > gives up before Fly's own check timeout, so the API's answer is the one Fly reads
+AssertionError: expected 5000 to be less than 3000
+ ❯ src/health.test.ts:287:23
+    285|   it("gives up before Fly's own check timeout, so the API's answer is …
+    286|     expect(HEALTH_MS).toBeGreaterThan(0);
+    287|     expect(HEALTH_MS).toBeLessThan(FLY_CHECK_TIMEOUT_MS);
+       |                       ^
+    288|   });
+    289| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

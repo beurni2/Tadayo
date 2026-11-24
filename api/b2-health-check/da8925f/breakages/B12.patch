@@ -1,0 +1,11 @@
+--- a/fly.toml
++++ b/fly.toml
+@@ -69,7 +69,7 @@
+     interval = "15s"
+     timeout = "3s"
+     method = "GET"
+-    path = "/v1/health"
++    path = "/health"
+     protocol = "http"
+ 
+ # A group is restarted only when it failed: a clean exit, which is what a stop is, leaves it stopped, so

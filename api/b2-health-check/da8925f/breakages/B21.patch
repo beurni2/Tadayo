@@ -1,0 +1,11 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -42,7 +42,7 @@
+         (error: unknown): Outcome => ({ error }),
+       )
+       .finally(() => {
+-        if (probe === sent) probe = undefined;
++        probe = undefined;
+       });
+     probe = sent;
+     return sent;

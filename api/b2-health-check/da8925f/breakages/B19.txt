@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 2 failed) 5217ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (7)
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5007ms
+     × lets go of a probe only for the check that gave up on the current one, or as it settles itself 15ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  20:24:26
+   Duration  6.18s (tests 86%, transform 9%, import 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/health.test.ts:219:3
+    217|   });
+    218|
+    219|   it("sends a new query once the checks gave up on the one that is out…
+       |   ^
+    220|     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    221|     let fail: (error: Error) => void = () => undefined;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > lets go of a probe only for the check that gave up on the current one, or as it settles itself
+AssertionError: expected [ { strings: [ 'SELECT 1' ], …(1) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/health.test.ts:268:21
+    266|     const c = send(health());
+    267|     await waiting(2);
+    268|     expect(queries).toHaveLength(2);
+       |                     ^
+    269|     await vi.advanceTimersByTimeAsync(1_000);
+    270|     expect(await b).toEqual(UNAVAILABLE);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

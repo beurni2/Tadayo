@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/packages/contracts
+
+ ❯ src/contract.test.ts (221 tests | 2 failed) 828ms
+   ❯ openapi.yaml (2)
+     × is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 189ms
+   ❯ the document (18)
+     × documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7) 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 219 passed (221)
+   Start at  20:22:32
+   Duration  1.57s (tests 60%, transform 22%, import 18%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/contract.test.ts > openapi.yaml > is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`)
+AssertionError: expected '# Generated from packages/contracts/s…' to be '# Generated from packages/contracts/s…' // Object.is equality
+
+- Expected
++ Received
+
+@@ -5957,24 +5957,10 @@
+                examples:
+                  INVALID_REQUEST:
+                    summary: The request doesn't match the contract. `field` names the first bad field, never its value.
+                    value:
+                      code: INVALID_REQUEST
+-         "404":
+-           description: NOT_FOUND
+-           headers:
+-             Cache-Control:
+-               $ref: "#/components/headers/CacheControl"
+-           content:
+-             application/json:
+-               schema:
+-                 $ref: "#/components/schemas/Error"
+-               examples:
+-                 NOT_FOUND:
+-                   summary: "Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14)."
+-                   value:
+-                     code: NOT_FOUND
+          "429":
+            description: RATE_LIMITED
+            headers:
+              Cache-Control:
+                $ref: "#/components/headers/CacheControl"
+
+ ❯ src/contract.test.ts:91:18
+     89|   it("is what the zod schemas generate (run `pnpm --filter @tadayo/con…
+     90|     const file = readFileSync(new URL("../openapi.yaml", import.meta.u…
+     91|     expect(file).toBe(renderOpenApi());
+       |                  ^
+     92|   });
+     93|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/contract.test.ts > the document > documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7)
+AssertionError: expected [ '204', '400', '404', '429', '503' ] to deeply equal [ '204', '400', '429', '503' ]
+
+- Expected
++ Received
+
+  [
+    "204",
+    "400",
++   "404",
+    "429",
+    "503",
+  ]
+
+ ❯ src/contract.test.ts:304:43
+    302|     expect(health.operationId).toBe("getHealth");
+    303|     const responses = health.responses as JsonObject;
+    304|     expect(Object.keys(responses).sort()).toEqual(["204", "400", "429"…
+       |                                           ^
+    305|     const unavailable = responses["503"] as JsonObject;
+    306|     expect(unavailable.content).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

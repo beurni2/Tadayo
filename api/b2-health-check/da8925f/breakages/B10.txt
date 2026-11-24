@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 1 failed) 180ms
+   ❯ the health check when the database answers (the outside audit's A7) (4)
+     × asks the database `SELECT 1` once, with nothing else: no table, no value, no transaction 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  20:22:34
+   Duration  1.13s (transform 55%, import 27%, tests 18%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database answers (the outside audit's A7) > asks the database `SELECT 1` once, with nothing else: no table, no value, no transaction
+AssertionError: expected [ { …(2) } ] to deeply equal [ { strings: [ 'SELECT 1' ], …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "strings": [
+-       "SELECT 1",
++       "SELECT 1 FROM app.users LIMIT 1",
+      ],
+      "values": [],
+    },
+  ]
+
+ ❯ src/health.test.ts:125:21
+    123|     const { send, queries } = await appWith(() => Promise.resolve([{ "…
+    124|     await send(health());
+    125|     expect(queries).toEqual([{ strings: ["SELECT 1"], values: [] }]);
+       |                     ^
+    126|   });
+    127|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

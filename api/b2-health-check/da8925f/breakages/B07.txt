@@ -1,0 +1,133 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/packages/contracts
+
+ ❯ src/contract.test.ts (221 tests | 3 failed) 782ms
+   ❯ openapi.yaml (2)
+     × is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 155ms
+   ❯ the document (18)
+     × needs no session for exactly the signed-out page, a logged-out device's removal and the health check 4ms
+     × documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7) 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 218 passed (221)
+   Start at  20:21:46
+   Duration  1.54s (tests 59%, transform 23%, import 18%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/contract.test.ts > openapi.yaml > is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`)
+AssertionError: expected '# Generated from packages/contracts/s…' to be '# Generated from packages/contracts/s…' // Object.is equality
+
+- Expected
++ Received
+
+@@ -5938,10 +5938,11 @@
+    /v1/health:
+      get:
+        operationId: getHealth
+        summary: Whether the API can reach its database
+        description: "Fly's health check (fly.toml), not the app's: one round trip to the database through the API's own pool, reading no table and naming nothing, so every caller gets the same answer (T14). 204 when the database answers within two seconds; the 503, with nothing in it, when it fails or doesn't (the outside audit's A7)."
++       security: []
+        parameters: []
+        responses:
+          "204":
+            description: Done.
+          "400":
+@@ -5956,38 +5957,10 @@
+                examples:
+                  INVALID_REQUEST:
+                    summary: The request doesn't match the contract. `field` names the first bad field, never its value.
+                    value:
+                      code: INVALID_REQUEST
+-         "401":
+-           description: UNAUTHENTICATED
+-           headers:
+-             Cache-Control:
+-               $ref: "#/components/headers/CacheControl"
+-           content:
+-             application/json:
+-               schema:
+-                 $ref: "#/components/schemas/Error"
+-               examples:
+-                 UNAUTHENTICATED:
+-                   summary: "No valid session: sign in again."
+-                   value:
+-                     code: UNAUTHENTICATED
+-         "403":
+-           description: PROFILE_INCOMPLETE
+-           headers:
+-             Cache-Control:
+-               $ref: "#/components/headers/CacheControl"
+-           content:
+-             application/json:
+-               schema:
+-                 $ref: "#/components/schemas/Error"
+-               examples:
+-                 PROFILE_INCOMPLETE:
+-                   summary: "The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first. Until then it can only finish setup or leave (FQ69)."
+-                   value:
+-                     code: PROFILE_INCOMPLETE
+          "429":
+            description: RATE_LIMITED
+            headers:
+              Cache-Control:
+                $ref: "#/components/headers/CacheControl"
+
+ ❯ src/contract.test.ts:91:18
+     89|   it("is what the zod schemas generate (run `pnpm --filter @tadayo/con…
+     90|     const file = readFileSync(new URL("../openapi.yaml", import.meta.u…
+     91|     expect(file).toBe(renderOpenApi());
+       |                  ^
+     92|   });
+     93|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/contract.test.ts > the document > needs no session for exactly the signed-out page, a logged-out device's removal and the health check
+AssertionError: expected [ 'previewInvitationWeb', …(1) ] to deeply equal [ 'getHealth', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "getHealth",
+    "previewInvitationWeb",
+    "removeDevice",
+  ]
+
+ ❯ src/contract.test.ts:293:7
+    291|         .map((op) => op.id)
+    292|         .sort(),
+    293|     ).toEqual(["getHealth", "previewInvitationWeb", "removeDevice"]);
+       |       ^
+    294|     for (const op of OPERATIONS) {
+    295|       const operation = ((document.paths as JsonObject)[op.path] as Js…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/contract.test.ts > the document > documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7)
+AssertionError: expected [ '204', '400', '401', '403', …(2) ] to deeply equal [ '204', '400', '429', '503' ]
+
+- Expected
++ Received
+
+  [
+    "204",
+    "400",
++   "401",
++   "403",
+    "429",
+    "503",
+  ]
+
+ ❯ src/contract.test.ts:304:43
+    302|     expect(health.operationId).toBe("getHealth");
+    303|     const responses = health.responses as JsonObject;
+    304|     expect(Object.keys(responses).sort()).toEqual(["204", "400", "429"…
+       |                                           ^
+    305|     const unavailable = responses["503"] as JsonObject;
+    306|     expect(unavailable.content).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

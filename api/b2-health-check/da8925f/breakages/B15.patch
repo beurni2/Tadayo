@@ -1,0 +1,10 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -59,7 +59,6 @@
+     try {
+       outcome = await Promise.race([asked, late]);
+     } finally {
+-      clearTimeout(timer);
+     }
+     if (outcome === "late" && probe === asked) probe = undefined;
+     if (outcome === "answered") return noContent(reply);

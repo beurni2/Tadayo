@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/tests
+
+ ❯ src/db/health.test.ts (2 tests | 1 failed) 193ms
+   ❯ the health check on Postgres (the outside audit's A7) (2)
+     × answers the bare 503 within its bound while every connection of the pool is held, and 204 once they're free 61ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  20:20:58
+   Duration  2.25s (transform 54%, import 27%, tests 19%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/health.test.ts > the health check on Postgres (the outside audit's A7) > answers the bare 503 within its bound while every connection of the pool is held, and 204 once they're free
+AssertionError: expected { status: 204, body: '', …(2) } to match object { status: 503, body: '', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "body": "",
+    "cache": "private, no-store",
+-   "status": 503,
++   "status": 204,
+  }
+
+ ❯ src/db/health.test.ts:79:23
+     77|     try {
+     78|       const stalled = await health();
+     79|       expect(stalled).toMatchObject({ status: 503, body: "", cache: "p…
+       |                       ^
+     80|       expect(stalled.ms).toBeGreaterThanOrEqual(HEALTH_MS - 50);
+     81|       expect(stalled.ms).toBeLessThan(HEALTH_MS + MARGIN_MS);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

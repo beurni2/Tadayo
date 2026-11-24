@@ -1,0 +1,159 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 5 failed) 242ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (7)
+     × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 22ms
+     × answers the bare 503 at its bound when the query never comes back, and logs that it was slow 16ms
+     × logs nothing more when a query it gave up on fails later 11ms
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 10ms
+     × lets go of a probe only for the check that gave up on the current one, or as it settles itself 9ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 6 passed (11)
+   Start at  20:21:35
+   Duration  1.31s (transform 55%, import 23%, tests 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52)
+AssertionError: expected { status: 503, …(2) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "body": "",
++   "body": "{\"code\":\"UNAVAILABLE\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "0",
++     "content-length": "22",
++     "content-type": "application/json; charset=utf-8",
+    },
+    "status": 503,
+  }
+
+ ❯ src/health.test.ts:143:34
+    141|     });
+    142|     const { send, warnings, lines } = await appWith(() => Promise.reje…
+    143|     expect(await send(health())).toEqual(UNAVAILABLE);
+       |                                  ^
+    144|     const logged = warnings();
+    145|     expect(logged).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > answers the bare 503 at its bound when the query never comes back, and logs that it was slow
+AssertionError: expected { status: 503, …(2) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "body": "",
++   "body": "{\"code\":\"UNAVAILABLE\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "0",
++     "content-length": "22",
++     "content-type": "application/json; charset=utf-8",
+    },
+    "status": 503,
+  }
+
+ ❯ src/health.test.ts:168:27
+    166|     expect(answered).toBeUndefined();
+    167|     await vi.advanceTimersByTimeAsync(1);
+    168|     expect(await pending).toEqual(UNAVAILABLE);
+       |                           ^
+    169|     const logged = warnings();
+    170|     expect(logged).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > logs nothing more when a query it gave up on fails later
+AssertionError: expected { status: 503, …(2) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "body": "",
++   "body": "{\"code\":\"UNAVAILABLE\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "0",
++     "content-length": "22",
++     "content-type": "application/json; charset=utf-8",
+    },
+    "status": 503,
+  }
+
+ ❯ src/health.test.ts:188:27
+    186|     await queried;
+    187|     await vi.advanceTimersByTimeAsync(HEALTH_MS);
+    188|     expect(await pending).toEqual(UNAVAILABLE);
+       |                           ^
+    189|     fail(Object.assign(new Error(`late, for ${PERSONAL}`), { name: "Po…
+    190|     await vi.advanceTimersByTimeAsync(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them
+AssertionError: expected { status: 503, …(2) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "body": "",
++   "body": "{\"code\":\"UNAVAILABLE\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "0",
++     "content-length": "22",
++     "content-type": "application/json; charset=utf-8",
+    },
+    "status": 503,
+  }
+
+ ❯ src/health.test.ts:236:25
+    234|     await waiting(2);
+    235|     await vi.advanceTimersByTimeAsync(HEALTH_MS);
+    236|     expect(await first).toEqual(UNAVAILABLE);
+       |                         ^
+    237|     expect(await second).toEqual(UNAVAILABLE);
+    238|     expect(queries).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > lets go of a probe only for the check that gave up on the current one, or as it settles itself
+AssertionError: expected { status: 503, …(2) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "body": "",
++   "body": "{\"code\":\"UNAVAILABLE\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-length": "0",
++     "content-length": "22",
++     "content-type": "application/json; charset=utf-8",
+    },
+    "status": 503,
+  }
+
+ ❯ src/health.test.ts:264:21
+    262|     await waiting(2);
+    263|     await vi.advanceTimersByTimeAsync(1_000);
+    264|     expect(await a).toEqual(UNAVAILABLE);
+       |                     ^
+    265|     // C at 2 s sends the second; B gives up at 3 s on the first, whic…
+    266|     const c = send(health());
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

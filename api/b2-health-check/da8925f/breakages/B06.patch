@@ -1,0 +1,11 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -27,7 +27,7 @@
+  * How long the check waits for the database, in milliseconds: under Fly's 3 s check timeout (fly.toml), so the
+  * API's own answer is the one Fly reads; a `SELECT 1` on a free connection takes about a millisecond.
+  */
+-export const HEALTH_MS = 2_000;
++export const HEALTH_MS = 5_000;
+ 
+ /** A probe's outcome as a value, never a rejection, so any number of checks can wait on the one probe. */
+ type Outcome = "answered" | { readonly error: unknown };

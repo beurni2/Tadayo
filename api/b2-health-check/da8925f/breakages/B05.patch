@@ -1,0 +1,11 @@
+--- a/services/api/src/health.ts
++++ b/services/api/src/health.ts
+@@ -64,7 +64,7 @@
+     if (outcome === "late" && probe === asked) probe = undefined;
+     if (outcome === "answered") return noContent(reply);
+     if (outcome === "late") request.log.warn("database slow");
+-    else request.log.warn({ err: outcome.error }, "database unreachable");
++    else request.log.warn({ err: outcome.error, detail: String(outcome.error) }, "database unreachable");
+     return unavailable(reply);
+   };
+ }

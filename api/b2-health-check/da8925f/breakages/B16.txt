@@ -1,0 +1,82 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/tests
+
+stdout | src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14, T27, T53) > answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find
+callers without a session: 101080 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 1 failed | 23 skipped) 35765ms
+   ❯ callers without a session, in each state of the drop and phase of the day (T14, T27, T53) (1)
+     × answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find 35430ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 skipped (24)
+   Start at  20:22:45
+   Duration  38.27s (tests 95%, transform 3%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14, T27, T53) > answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find
+AssertionError: expected { count: 2660, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 2660,
++   "first": [
++     "active, collecting: getHealth, no session, the cell's ids: status 204",
++     "active, collecting: getHealth, no session, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, no session, the cell's ids: body \"\"",
++     "active, collecting: getHealth, no session, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, no session, the cell's ids: content-length: undefined",
++     "active, collecting: getHealth, a token that isn't one, the cell's ids: status 204",
++     "active, collecting: getHealth, a token that isn't one, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, a token that isn't one, the cell's ids: body \"\"",
++     "active, collecting: getHealth, a token that isn't one, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, a token that isn't one, the cell's ids: content-length: undefined",
++     "active, collecting: getHealth, another scheme, the cell's ids: status 204",
++     "active, collecting: getHealth, another scheme, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, another scheme, the cell's ids: body \"\"",
++     "active, collecting: getHealth, another scheme, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, another scheme, the cell's ids: content-length: undefined",
++     "active, collecting: getHealth, an expired token, the cell's ids: status 204",
++     "active, collecting: getHealth, an expired token, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, an expired token, the cell's ids: body \"\"",
++     "active, collecting: getHealth, an expired token, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, an expired token, the cell's ids: content-length: undefined",
++     "active, collecting: getHealth, a token that isn't valid yet, the cell's ids: status 204",
++     "active, collecting: getHealth, a token that isn't valid yet, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, a token that isn't valid yet, the cell's ids: body \"\"",
++     "active, collecting: getHealth, a token that isn't valid yet, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, a token that isn't valid yet, the cell's ids: content-length: undefined",
++     "active, collecting: getHealth, a token with no expiry, the cell's ids: status 204",
++     "active, collecting: getHealth, a token with no expiry, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, a token with no expiry, the cell's ids: body \"\"",
++     "active, collecting: getHealth, a token with no expiry, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, a token with no expiry, the cell's ids: content-length: undefined",
++     "active, collecting: getHealth, a token signed by another key under this key's id, the cell's ids: status 204",
++     "active, collecting: getHealth, a token signed by another key under this key's id, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, a token signed by another key under this key's id, the cell's ids: body \"\"",
++     "active, collecting: getHealth, a token signed by another key under this key's id, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, a token signed by another key under this key's id, the cell's ids: content-length: undefined",
++     "active, collecting: getHealth, a token of another project: its own key and id, the cell's ids: status 204",
++     "active, collecting: getHealth, a token of another project: its own key and id, the cell's ids: reason \"No Content\"",
++     "active, collecting: getHealth, a token of another project: its own key and id, the cell's ids: body \"\"",
++     "active, collecting: getHealth, a token of another project: its own key and id, the cell's ids: content-type: undefined",
++     "active, collecting: getHealth, a token of another project: its own key and id, the cell's ids: content-length: undefined",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3898:64
+    3896|     }
+    3897|     console.log(`callers without a session: ${String(counted.answers)}…
+    3898|     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual…
+       |                                                                ^
+    3899|     expect(counted.answers).toBe(counted.expected);
+    3900|     expect(counted.answers).toBeGreaterThan(STATES.length * Object.key…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/fly.toml
++++ b/fly.toml
+@@ -68,7 +68,7 @@
+     grace_period = "20s"
+     interval = "15s"
+     timeout = "3s"
+-    method = "GET"
++    method = "get"
+     path = "/v1/health"
+     protocol = "http"
+ 

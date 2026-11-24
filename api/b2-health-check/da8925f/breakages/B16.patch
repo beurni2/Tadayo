@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -3862,7 +3862,7 @@
+         const record = scanner(wrong, `${state.name}, ${phase}`, () => facts, now, counted);
+         for (const spec of specs) {
+           const expected: Expected = HEALTH_JUDGED.has(spec.operation.id)
+-            ? healthExpected
++            ? NEUTRAL
+             : PUBLIC.has(spec.operation.id)
+               ? NEUTRAL
+               : UNAUTHENTICATED;

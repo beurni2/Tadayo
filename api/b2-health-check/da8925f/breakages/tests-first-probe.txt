@@ -1,0 +1,9 @@
+== handler of 4657b290
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 5007ms
+      Tests  1 failed | 9 passed (10)
+== handler of 82695087
+     × shares one query among the checks that come while it is out, and sends a new one once it has come back 17ms
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 9ms
+AssertionError: expected 1 to be 2 // Object.is equality
+AssertionError: expected 1 to be 2 // Object.is equality
+      Tests  2 failed | 8 passed (10)

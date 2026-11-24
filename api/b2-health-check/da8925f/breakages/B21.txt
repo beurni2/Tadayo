@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 1 failed) 177ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (7)
+     × lets go of a probe only for the check that gave up on the current one, or as it settles itself 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  20:24:34
+   Duration  1.19s (transform 55%, import 28%, tests 17%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > lets go of a probe only for the check that gave up on the current one, or as it settles itself
+AssertionError: expected [ …(3) ] to have a length of 2 but got 3
+
+- Expected
++ Received
+
+- 2
++ 3
+
+ ❯ src/health.test.ts:279:21
+    277|     const e = send(health());
+    278|     await waiting(3);
+    279|     expect(queries).toHaveLength(2);
+       |                     ^
+    280|     releases[1]?.([{ "?column?": 1 }]);
+    281|     expect([await c, await d, await e]).toEqual([DONE, DONE, DONE]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,60 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 2 failed) 198ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (7)
+     × logs nothing more when a query it gave up on fails later 20ms
+     × sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them 9ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  20:22:41
+   Duration  1.29s (transform 55%, import 28%, tests 17%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > logs nothing more when a query it gave up on fails later
+AssertionError: expected [ 'database slow', …(1) ] to deeply equal [ 'database slow' ]
+
+- Expected
++ Received
+
+  [
+    "database slow",
++   "database unreachable",
+  ]
+
+ ❯ src/health.test.ts:191:51
+    189|     fail(Object.assign(new Error(`late, for ${PERSONAL}`), { name: "Po…
+    190|     await vi.advanceTimersByTimeAsync(0);
+    191|     expect(warnings().map((line) => line["msg"])).toEqual(["database s…
+       |                                                   ^
+    192|   });
+    193|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > sends a new query once the checks gave up on the one that is out, so one stuck query fails no check after them
+AssertionError: expected [ 'database slow', …(3) ] to deeply equal [ 'database slow', 'database slow' ]
+
+- Expected
++ Received
+
+  [
+    "database slow",
+    "database slow",
++   "database unreachable",
++   "database unreachable",
+  ]
+
+ ❯ src/health.test.ts:245:51
+    243|     expect(await send(health())).toEqual(DONE);
+    244|     expect(queries).toHaveLength(3);
+    245|     expect(warnings().map((line) => line["msg"])).toEqual(["database s…
+       |                                                   ^
+    246|   });
+    247|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

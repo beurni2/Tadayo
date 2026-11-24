@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7h-brk/services/api
+
+ ❯ src/health.test.ts (11 tests | 1 failed) 238ms
+   ❯ the health check when the database doesn't answer (the outside audit's A7; spec 34) (7)
+     × answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52) 21ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  20:21:33
+   Duration  1.27s (transform 54%, import 25%, tests 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/health.test.ts > the health check when the database doesn't answer (the outside audit's A7; spec 34) > answers the bare 503 when the query fails, and logs one warning by the error's class and code (T52)
+AssertionError: expected { status: 500, body: '', …(1) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+@@ -2,7 +2,7 @@
+    "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+      "content-length": "0",
+    },
+-   "status": 503,
++   "status": 500,
+  }
+
+ ❯ src/health.test.ts:143:34
+    141|     });
+    142|     const { send, warnings, lines } = await appWith(() => Promise.reje…
+    143|     expect(await send(health())).toEqual(UNAVAILABLE);
+       |                                  ^
+    144|     const logged = warnings();
+    145|     expect(logged).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
