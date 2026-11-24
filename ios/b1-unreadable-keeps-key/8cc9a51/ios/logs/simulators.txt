@@ -2,8 +2,8 @@
 == Runtimes ==
 iOS 27.0 (27.0 - 24A434) - com.apple.CoreSimulator.SimRuntime.iOS-27-0
 iOS 27.1 (27.1 - 24A94425) - com.apple.CoreSimulator.SimRuntime.iOS-27-1
-iOS 27.2 (27.2 - 24B8117) - com.apple.CoreSimulator.SimRuntime.iOS-27-2
 iOS 27.2 (27.2 - 24B91016s) - com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4
+iOS 27.2 (27.2 - 24B8117) - com.apple.CoreSimulator.SimRuntime.iOS-27-2
 tvOS 27.0 (27.0 - 24J360) - com.apple.CoreSimulator.SimRuntime.tvOS-27-0
 tvOS 27.2 (27.2 - 24K150) - com.apple.CoreSimulator.SimRuntime.tvOS-27-2
 watchOS 27.0 (27.0 - 24R362) - com.apple.CoreSimulator.SimRuntime.watchOS-27-0
@@ -27,6 +27,8 @@ visionOS 27.2 (27.2 - 24N120) - com.apple.CoreSimulator.SimRuntime.xrOS-27-2
 -- iOS 27.1 --
     iPhone Duo (09693AE6-5842-4CF5-B801-D905E896271E) (Shutdown) 
 -- iOS 27.2 --
+    iPhone Duo (C898E3E4-5033-4085-B886-963EE2D0C478) (Shutdown) 
+-- iOS 27.2 --
     iPhone 18 Pro (A8CE73D2-F54C-4FB2-B688-BC6BD7612FA8) (Shutdown) 
     iPhone 18 Pro Max (CAD4F983-CE4C-41E7-84A5-DFFD6F0CF3CA) (Shutdown) 
     iPhone 17e (CD90C719-F4A8-40D6-9AC3-51BE522C2705) (Shutdown) 
@@ -38,8 +40,6 @@ visionOS 27.2 (27.2 - 24N120) - com.apple.CoreSimulator.SimRuntime.xrOS-27-2
     iPad Air 13-inch (M4) (9BD82FC8-9E98-42CA-B1F2-620B52BA9646) (Shutdown) 
     iPad Air 11-inch (M4) (E3CC0D75-9911-40E7-8F16-FD5D98ADF2CA) (Shutdown) 
     iPad (A16) (1606AE1D-D9DA-4E44-A5D2-FD7DDE1C8DE0) (Shutdown) 
--- iOS 27.2 --
-    iPhone Duo (C898E3E4-5033-4085-B886-963EE2D0C478) (Shutdown) 
 -- tvOS 27.0 --
     Apple TV 4K (3rd generation) (AA1A4436-9426-4301-8D39-5E909CAF9C42) (Shutdown) 
     Apple TV 4K (3rd generation) (at 1080p) (B9E4D366-604B-4F2F-8C77-5D95AD648816) (Shutdown) 
@@ -68,209 +68,188 @@ iOS 27.2: runtime com.apple.CoreSimulator.SimRuntime.iOS-27-2, build 24B8117, ve
 + xcodebuild -downloadPlatform iOS -buildVersion 26.5 -exportPath /Users/runner/work/_temp/ios-evidence/runtime-export
 Finding content...
 
-Downloading iOS 26.5 Simulator (23F73) (arm64): 
-Downloading iOS 26.5 Simulator (23F73) (arm64): Preparing to download...
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB) 
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.0% (66 kB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 0.8% (69.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 2.8% (240.7 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 2.8% (240.7 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 2.8% (240.7 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 5.0% (426.2 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 5.0% (426.2 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 7.0% (600.7 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 7.0% (600.7 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 8.9% (756.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 8.9% (756.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 10.6% (901.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 10.6% (901.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 10.8% (916.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 10.8% (916.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 10.8% (916.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 10.8% (916.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 10.8% (916.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 11.2% (958.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 11.2% (958.3 MB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 11.9% (1.01 GB of 8.52 GB) 
-Downloading iOS 26.5 Simulator (23F73) (arm64): 11.9% (1.01 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 11.9% (1.01 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 11.9% (1.01 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 12.8% (1.09 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 12.8% (1.09 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 14.3% (1.22 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 14.3% (1.22 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 16.1% (1.37 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 16.1% (1.37 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 18.2% (1.55 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 18.2% (1.55 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 20.0% (1.7 GB of 8.52 GB) 
-Downloading iOS 26.5 Simulator (23F73) (arm64): 20.0% (1.7 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 22.1% (1.88 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 22.1% (1.88 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 22.1% (1.88 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 22.1% (1.88 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 23.9% (2.04 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 23.9% (2.04 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 25.9% (2.21 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 25.9% (2.21 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 28.0% (2.39 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 28.0% (2.39 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 30.0% (2.56 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 30.0% (2.56 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 32.1% (2.73 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 32.1% (2.73 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 33.7% (2.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 33.7% (2.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 33.7% (2.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 33.7% (2.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 33.7% (2.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 33.7% (2.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 33.7% (2.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 35.0% (2.98 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 35.0% (2.98 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 36.7% (3.12 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 36.7% (3.12 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 38.5% (3.28 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 38.5% (3.28 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 40.9% (3.49 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 40.9% (3.49 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 43.1% (3.68 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 43.1% (3.68 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 45.0% (3.84 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 45.0% (3.84 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 46.8% (3.99 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 46.8% (3.99 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 48.8% (4.16 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 48.8% (4.16 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 50.9% (4.34 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 50.9% (4.34 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 52.9% (4.51 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 52.9% (4.51 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 55.0% (4.69 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 55.0% (4.69 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 57.2% (4.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 57.2% (4.87 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 59.3% (5.06 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 59.3% (5.06 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 61.0% (5.2 GB of 8.52 GB) 
-Downloading iOS 26.5 Simulator (23F73) (arm64): 61.0% (5.2 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 63.1% (5.38 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 63.1% (5.38 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 65.0% (5.54 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 65.0% (5.54 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 66.7% (5.68 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 66.7% (5.68 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 68.8% (5.86 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 68.8% (5.86 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 71.0% (6.05 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 71.0% (6.05 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 73.0% (6.22 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 73.0% (6.22 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 74.8% (6.37 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 74.8% (6.37 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 76.1% (6.48 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 76.1% (6.48 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 78.1% (6.66 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 78.1% (6.66 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 80.0% (6.82 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 80.0% (6.82 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 82.2% (7.01 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 82.2% (7.01 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 85.0% (7.25 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 85.0% (7.25 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 87.2% (7.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 87.2% (7.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 89.2% (7.6 GB of 8.52 GB) 
-Downloading iOS 26.5 Simulator (23F73) (arm64): 89.2% (7.6 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 91.0% (7.76 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 91.0% (7.76 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 93.1% (7.93 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 93.1% (7.93 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 95.0% (8.1 GB of 8.52 GB) 
-Downloading iOS 26.5 Simulator (23F73) (arm64): 95.0% (8.1 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 97.0% (8.27 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 97.0% (8.27 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.0% (8.43 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): 99.2% (8.46 GB of 8.52 GB)
-Downloading iOS 26.5 Simulator (23F73) (arm64): Installing...             
-Downloading iOS 26.5 Simulator (23F73) (arm64): Done.        
-Exported 'com.apple.CoreSimulator.SimRuntime.iOS-26-5' to /Users/runner/work/_temp/ios-evidence/runtime-export/iphonesimulator_26.5_23F73.exportedBundle
-iOS 26.5 (23F73) - F9A43A3A-07F1-47B4-8FB0-540159047952
+Downloading iOS 26.5 Simulator (23F77) (arm64): 
+Downloading iOS 26.5 Simulator (23F77) (arm64): Preparing to download...
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB) 
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 0.0% (66 kB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 1.3% (107.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 1.3% (107.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 1.3% (107.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 1.3% (107.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 1.3% (107.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 3.6% (308.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 5.0% (426.3 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 5.0% (426.3 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 7.1% (608.5 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 7.1% (608.5 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 9.1% (779.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 9.1% (779.2 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.0% (852.5 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.0% (852.5 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.5% (892.9 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.5% (892.9 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.5% (892.9 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.5% (892.9 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.5% (892.9 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.5% (892.9 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.7% (916 MB of 8.52 GB)  
+Downloading iOS 26.5 Simulator (23F77) (arm64): 10.7% (916 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 11.5% (978.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 11.5% (978.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 11.5% (978.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 11.5% (978.8 MB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 13.1% (1.12 GB of 8.52 GB) 
+Downloading iOS 26.5 Simulator (23F77) (arm64): 13.1% (1.12 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 14.3% (1.22 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 14.3% (1.22 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 16.1% (1.37 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 16.1% (1.37 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 18.2% (1.55 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 18.2% (1.55 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 20.0% (1.7 GB of 8.52 GB) 
+Downloading iOS 26.5 Simulator (23F77) (arm64): 20.0% (1.7 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 20.0% (1.7 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 20.0% (1.7 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 22.2% (1.9 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 22.2% (1.9 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 25.0% (2.13 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 25.0% (2.13 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 27.1% (2.31 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 27.1% (2.31 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 29.4% (2.5 GB of 8.52 GB) 
+Downloading iOS 26.5 Simulator (23F77) (arm64): 29.4% (2.5 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 31.0% (2.64 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 31.0% (2.64 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 33.1% (2.82 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 33.1% (2.82 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 33.1% (2.82 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 33.1% (2.82 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 35.0% (2.98 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 35.0% (2.98 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 35.0% (2.98 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 35.0% (2.98 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 35.0% (2.98 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 37.1% (3.17 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 37.1% (3.17 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 39.5% (3.36 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 39.5% (3.36 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 41.2% (3.51 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 41.2% (3.51 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 43.6% (3.71 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 43.6% (3.71 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 46.1% (3.93 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 46.1% (3.93 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 48.2% (4.11 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 48.2% (4.11 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 50.0% (4.26 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 50.0% (4.26 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 51.9% (4.42 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 51.9% (4.42 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 53.9% (4.6 GB of 8.52 GB) 
+Downloading iOS 26.5 Simulator (23F77) (arm64): 53.9% (4.6 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 56.2% (4.79 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 56.2% (4.79 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 58.4% (4.98 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 58.4% (4.98 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 60.9% (5.19 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 60.9% (5.19 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 63.1% (5.38 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 63.1% (5.38 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 65.0% (5.54 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 65.0% (5.54 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 66.6% (5.68 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 66.6% (5.68 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 68.5% (5.83 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 68.5% (5.83 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 71.2% (6.06 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 71.2% (6.06 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 73.3% (6.25 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 73.3% (6.25 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 75.0% (6.39 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 75.0% (6.39 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 77.3% (6.59 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 77.3% (6.59 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 79.3% (6.76 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 79.3% (6.76 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 81.2% (6.92 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 81.2% (6.92 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 83.5% (7.12 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 83.5% (7.12 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 86.1% (7.34 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 86.1% (7.34 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 88.4% (7.54 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 88.4% (7.54 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 90.0% (7.67 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 90.0% (7.67 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 92.2% (7.85 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 92.2% (7.85 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 94.3% (8.04 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 94.3% (8.04 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 96.0% (8.18 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 96.0% (8.18 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 98.2% (8.37 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 98.2% (8.37 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): 99.1% (8.45 GB of 8.52 GB)
+Downloading iOS 26.5 Simulator (23F77) (arm64): Installing...             
+Downloading iOS 26.5 Simulator (23F77) (arm64): Done.        
+Exported 'com.apple.CoreSimulator.SimRuntime.iOS-26-5' to /Users/runner/work/_temp/ios-evidence/runtime-export/iphonesimulator_26.5_23F77.exportedBundle
+iOS 26.5 (23F77) - BAE96629-98FF-4452-8023-C3E599EF2B7F
 (exit 0)
-exported: iphonesimulator_26.5_23F73.exportedBundle
-+ xcodebuild -importPlatform /Users/runner/work/_temp/ios-evidence/runtime-export/iphonesimulator_26.5_23F73.exportedBundle
-importing /Users/runner/work/_temp/ios-evidence/runtime-export/iphonesimulator_26.5_23F73.exportedBundle
-Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
+exported: iphonesimulator_26.5_23F77.exportedBundle
++ xcodebuild -importPlatform /Users/runner/work/_temp/ios-evidence/runtime-export/iphonesimulator_26.5_23F77.exportedBundle
+importing /Users/runner/work/_temp/ios-evidence/runtime-export/iphonesimulator_26.5_23F77.exportedBundle
+Registered as 43AB1C82-D89A-4539-9D80-48C7FAA042B2.
 (exit 0)
 + xcrun simctl runtime list -j
 {
-  "0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C" : {
-    "build" : "23F73",
-    "deletable" : true,
-    "identifier" : "0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73_1",
-    "parentMountPath" : "\/var\/folders\/5n\/5t77mfb93jd7q8v9s6f0dn0m0000gn\/T\/iphonesimulator_26.5_23F73.exportedBundle",
-    "path" : "\/Library\/Developer\/CoreSimulator\/Cryptex\/Images\/0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73_1\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8492535162,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "26.5"
-  },
   "4E2A8325-62E2-427F-A198-FFEE1E5EF15A" : {
     "build" : "24R362",
     "deletable" : true,
@@ -293,10 +272,29 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     "unusableSubstate" : "Cryptex Mount Preferred",
     "version" : "27.0"
   },
-  "7FE50F0D-FA7E-4003-BC59-007BF65EA020" : {
+  "8C332506-AC55-48C9-9E8A-90D659EE0E05" : {
+    "build" : "24N120",
+    "deletable" : true,
+    "identifier" : "8C332506-AC55-48C9-9E8A-90D659EE0E05",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.AxLBSO",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.xrsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.AxLBSO\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 7605175796,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "32D7D387-E9FD-4401-92D7-54B57E4287EA" : {
     "build" : "24J360",
     "deletable" : true,
-    "identifier" : "7FE50F0D-FA7E-4003-BC59-007BF65EA020",
+    "identifier" : "32D7D387-E9FD-4401-92D7-54B57E4287EA",
     "kind" : "Patchable Cryptex Disk Image",
     "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/tvOS_24J360",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/f6a3a9321156c52c0d245f50953d9867b2b139ab.asset\/AssetData",
@@ -312,24 +310,24 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     ],
     "version" : "27.0"
   },
-  "8C332506-AC55-48C9-9E8A-90D659EE0E05" : {
-    "build" : "24N120",
+  "43AB1C82-D89A-4539-9D80-48C7FAA042B2" : {
+    "build" : "23F77",
     "deletable" : true,
-    "identifier" : "8C332506-AC55-48C9-9E8A-90D659EE0E05",
+    "identifier" : "43AB1C82-D89A-4539-9D80-48C7FAA042B2",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.wSzm2Z",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.xrsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.wSzm2Z\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-2",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77_1",
+    "parentMountPath" : "\/var\/folders\/5n\/5t77mfb93jd7q8v9s6f0dn0m0000gn\/T\/iphonesimulator_26.5_23F77.exportedBundle",
+    "path" : "\/Library\/Developer\/CoreSimulator\/Cryptex\/Images\/43AB1C82-D89A-4539-9D80-48C7FAA042B2",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77_1\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
     "signatureState" : "Unknown",
-    "sizeBytes" : 7605175796,
+    "sizeBytes" : 8494282293,
     "state" : "Ready",
     "supportedArchitectures" : [
       "arm64"
     ],
-    "version" : "27.2"
+    "version" : "26.5"
   },
   "54D35026-7325-4069-BF3A-FDFEA26D5885" : {
     "build" : "24J360",
@@ -380,11 +378,11 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     "deletable" : true,
     "identifier" : "0782D57F-4E23-4768-AB30-E89A9DECE79A",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.nKcE8r",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.V7aKyx",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/870e651c5b56773428623ecc15e770d0886a390b.asset\/AssetData",
     "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/870e651c5b56773428623ecc15e770d0886a390b.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.xrsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.nKcE8r\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.0.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.V7aKyx\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.0.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-0",
     "signatureState" : "Unknown",
     "sizeBytes" : 7480076129,
@@ -394,105 +392,10 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     ],
     "version" : "27.0"
   },
-  "AD96431F-C55F-40A3-A333-07491E62421A" : {
-    "build" : "24S118",
-    "deletable" : true,
-    "identifier" : "AD96431F-C55F-40A3-A333-07491E62421A",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.zOGTWK",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.watchsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.zOGTWK\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/watchOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.watchOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 3856669156,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "CC62278A-C0A4-4303-A2D6-045610F10010" : {
-    "build" : "24K150",
-    "deletable" : true,
-    "identifier" : "CC62278A-C0A4-4303-A2D6-045610F10010",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.hJLXSn",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.appletvsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.hJLXSn\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/tvOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.tvOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 3753865700,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F" : {
-    "build" : "24A434",
-    "deletable" : true,
-    "identifier" : "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.3vqs5h",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.3vqs5h\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.0.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8067000161,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.0"
-  },
-  "D66DFD74-1994-4EEA-973E-6B92DE9ACC88" : {
-    "build" : "24B91016s",
-    "deletable" : true,
-    "identifier" : "D66DFD74-1994-4EEA-973E-6B92DE9ACC88",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.8EXMUX",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.8EXMUX\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8338867041,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A" : {
-    "build" : "24B8117",
-    "deletable" : true,
-    "identifier" : "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.wVYMOP",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.wVYMOP\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8315434484,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "E1F6ED92-8C1D-4024-B0CB-43F1D5C69CD1" : {
+  "A6AAD713-3414-4C35-8C12-2307F06CAAB3" : {
     "build" : "24R362",
     "deletable" : true,
-    "identifier" : "E1F6ED92-8C1D-4024-B0CB-43F1D5C69CD1",
+    "identifier" : "A6AAD713-3414-4C35-8C12-2307F06CAAB3",
     "kind" : "Patchable Cryptex Disk Image",
     "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/watchOS_24R362",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3f39f470a745ea5cc62fc1967054b0dcf8fb0875.asset\/AssetData",
@@ -508,19 +411,38 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     ],
     "version" : "27.0"
   },
-  "F9A43A3A-07F1-47B4-8FB0-540159047952" : {
-    "build" : "23F73",
+  "AD96431F-C55F-40A3-A333-07491E62421A" : {
+    "build" : "24S118",
     "deletable" : true,
-    "identifier" : "F9A43A3A-07F1-47B4-8FB0-540159047952",
+    "identifier" : "AD96431F-C55F-40A3-A333-07491E62421A",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/8a133948aedc0b965321b70c57a1e0bf17d3185b.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/8a133948aedc0b965321b70c57a1e0bf17d3185b.asset\/AssetData",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.t7dD4D",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.watchsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.t7dD4D\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/watchOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.watchOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 3856669156,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "BAE96629-98FF-4452-8023-C3E599EF2B7F" : {
+    "build" : "23F77",
+    "deletable" : true,
+    "identifier" : "BAE96629-98FF-4452-8023-C3E599EF2B7F",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/26c9174130fa5962f3e60f2a49963194dadbae4c.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/26c9174130fa5962f3e60f2a49963194dadbae4c.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
     "signatureState" : "Unknown",
-    "sizeBytes" : 8492535162,
+    "sizeBytes" : 8494282293,
     "state" : "Unusable",
     "supportedArchitectures" : [
       "arm64"
@@ -530,16 +452,92 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     "unusableSubstate" : "Cryptex Mount Preferred",
     "version" : "26.5"
   },
+  "CC62278A-C0A4-4303-A2D6-045610F10010" : {
+    "build" : "24K150",
+    "deletable" : true,
+    "identifier" : "CC62278A-C0A4-4303-A2D6-045610F10010",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.SfAC7w",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.appletvsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.SfAC7w\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/tvOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.tvOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 3753865700,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F" : {
+    "build" : "24A434",
+    "deletable" : true,
+    "identifier" : "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.4nfTlB",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.4nfTlB\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.0.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8067000161,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.0"
+  },
+  "D66DFD74-1994-4EEA-973E-6B92DE9ACC88" : {
+    "build" : "24B91016s",
+    "deletable" : true,
+    "identifier" : "D66DFD74-1994-4EEA-973E-6B92DE9ACC88",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.YbwkZl",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.YbwkZl\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8338867041,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A" : {
+    "build" : "24B8117",
+    "deletable" : true,
+    "identifier" : "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.08DOe9",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.08DOe9\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8315434484,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
   "FF96D4CD-6BF6-4173-B581-97E30990263E" : {
     "build" : "24A94425",
     "deletable" : true,
     "identifier" : "FF96D4CD-6BF6-4173-B581-97E30990263E",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.kVjrhF",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.wzzFzb",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/1d40f14271d1b0588751a983be44d71887c32527.asset\/AssetData",
     "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/1d40f14271d1b0588751a983be44d71887c32527.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.kVjrhF\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.1.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.wzzFzb\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.1.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-1",
     "signatureState" : "Unknown",
     "sizeBytes" : 7874743137,
@@ -552,25 +550,6 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
 }
 + xcrun simctl runtime list -j
 {
-  "0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C" : {
-    "build" : "23F73",
-    "deletable" : true,
-    "identifier" : "0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73_1",
-    "parentMountPath" : "\/var\/folders\/5n\/5t77mfb93jd7q8v9s6f0dn0m0000gn\/T\/iphonesimulator_26.5_23F73.exportedBundle",
-    "path" : "\/Library\/Developer\/CoreSimulator\/Cryptex\/Images\/0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73_1\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8492535162,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "26.5"
-  },
   "4E2A8325-62E2-427F-A198-FFEE1E5EF15A" : {
     "build" : "24R362",
     "deletable" : true,
@@ -593,10 +572,29 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     "unusableSubstate" : "Cryptex Mount Preferred",
     "version" : "27.0"
   },
-  "7FE50F0D-FA7E-4003-BC59-007BF65EA020" : {
+  "8C332506-AC55-48C9-9E8A-90D659EE0E05" : {
+    "build" : "24N120",
+    "deletable" : true,
+    "identifier" : "8C332506-AC55-48C9-9E8A-90D659EE0E05",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.AxLBSO",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.xrsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.AxLBSO\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 7605175796,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "32D7D387-E9FD-4401-92D7-54B57E4287EA" : {
     "build" : "24J360",
     "deletable" : true,
-    "identifier" : "7FE50F0D-FA7E-4003-BC59-007BF65EA020",
+    "identifier" : "32D7D387-E9FD-4401-92D7-54B57E4287EA",
     "kind" : "Patchable Cryptex Disk Image",
     "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/tvOS_24J360",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/f6a3a9321156c52c0d245f50953d9867b2b139ab.asset\/AssetData",
@@ -612,24 +610,24 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     ],
     "version" : "27.0"
   },
-  "8C332506-AC55-48C9-9E8A-90D659EE0E05" : {
-    "build" : "24N120",
+  "43AB1C82-D89A-4539-9D80-48C7FAA042B2" : {
+    "build" : "23F77",
     "deletable" : true,
-    "identifier" : "8C332506-AC55-48C9-9E8A-90D659EE0E05",
+    "identifier" : "43AB1C82-D89A-4539-9D80-48C7FAA042B2",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.wSzm2Z",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.xrsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.wSzm2Z\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-2",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77_1",
+    "parentMountPath" : "\/var\/folders\/5n\/5t77mfb93jd7q8v9s6f0dn0m0000gn\/T\/iphonesimulator_26.5_23F77.exportedBundle",
+    "path" : "\/Library\/Developer\/CoreSimulator\/Cryptex\/Images\/43AB1C82-D89A-4539-9D80-48C7FAA042B2",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77_1\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
     "signatureState" : "Unknown",
-    "sizeBytes" : 7605175796,
+    "sizeBytes" : 8494282293,
     "state" : "Ready",
     "supportedArchitectures" : [
       "arm64"
     ],
-    "version" : "27.2"
+    "version" : "26.5"
   },
   "54D35026-7325-4069-BF3A-FDFEA26D5885" : {
     "build" : "24J360",
@@ -680,11 +678,11 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     "deletable" : true,
     "identifier" : "0782D57F-4E23-4768-AB30-E89A9DECE79A",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.nKcE8r",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.V7aKyx",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/870e651c5b56773428623ecc15e770d0886a390b.asset\/AssetData",
     "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/870e651c5b56773428623ecc15e770d0886a390b.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.xrsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.nKcE8r\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.0.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.V7aKyx\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.0.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-0",
     "signatureState" : "Unknown",
     "sizeBytes" : 7480076129,
@@ -694,105 +692,10 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     ],
     "version" : "27.0"
   },
-  "AD96431F-C55F-40A3-A333-07491E62421A" : {
-    "build" : "24S118",
-    "deletable" : true,
-    "identifier" : "AD96431F-C55F-40A3-A333-07491E62421A",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.zOGTWK",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.watchsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.zOGTWK\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/watchOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.watchOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 3856669156,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "CC62278A-C0A4-4303-A2D6-045610F10010" : {
-    "build" : "24K150",
-    "deletable" : true,
-    "identifier" : "CC62278A-C0A4-4303-A2D6-045610F10010",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.hJLXSn",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.appletvsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.hJLXSn\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/tvOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.tvOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 3753865700,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F" : {
-    "build" : "24A434",
-    "deletable" : true,
-    "identifier" : "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.3vqs5h",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.3vqs5h\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.0.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8067000161,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.0"
-  },
-  "D66DFD74-1994-4EEA-973E-6B92DE9ACC88" : {
-    "build" : "24B91016s",
-    "deletable" : true,
-    "identifier" : "D66DFD74-1994-4EEA-973E-6B92DE9ACC88",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.8EXMUX",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.8EXMUX\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8338867041,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A" : {
-    "build" : "24B8117",
-    "deletable" : true,
-    "identifier" : "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.wVYMOP",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.wVYMOP\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8315434484,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "E1F6ED92-8C1D-4024-B0CB-43F1D5C69CD1" : {
+  "A6AAD713-3414-4C35-8C12-2307F06CAAB3" : {
     "build" : "24R362",
     "deletable" : true,
-    "identifier" : "E1F6ED92-8C1D-4024-B0CB-43F1D5C69CD1",
+    "identifier" : "A6AAD713-3414-4C35-8C12-2307F06CAAB3",
     "kind" : "Patchable Cryptex Disk Image",
     "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/watchOS_24R362",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3f39f470a745ea5cc62fc1967054b0dcf8fb0875.asset\/AssetData",
@@ -808,19 +711,38 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     ],
     "version" : "27.0"
   },
-  "F9A43A3A-07F1-47B4-8FB0-540159047952" : {
-    "build" : "23F73",
+  "AD96431F-C55F-40A3-A333-07491E62421A" : {
+    "build" : "24S118",
     "deletable" : true,
-    "identifier" : "F9A43A3A-07F1-47B4-8FB0-540159047952",
+    "identifier" : "AD96431F-C55F-40A3-A333-07491E62421A",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/8a133948aedc0b965321b70c57a1e0bf17d3185b.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/8a133948aedc0b965321b70c57a1e0bf17d3185b.asset\/AssetData",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.t7dD4D",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.watchsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.t7dD4D\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/watchOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.watchOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 3856669156,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "BAE96629-98FF-4452-8023-C3E599EF2B7F" : {
+    "build" : "23F77",
+    "deletable" : true,
+    "identifier" : "BAE96629-98FF-4452-8023-C3E599EF2B7F",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/26c9174130fa5962f3e60f2a49963194dadbae4c.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/26c9174130fa5962f3e60f2a49963194dadbae4c.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
     "signatureState" : "Unknown",
-    "sizeBytes" : 8492535162,
+    "sizeBytes" : 8494282293,
     "state" : "Unusable",
     "supportedArchitectures" : [
       "arm64"
@@ -830,16 +752,92 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     "unusableSubstate" : "Cryptex Mount Preferred",
     "version" : "26.5"
   },
+  "CC62278A-C0A4-4303-A2D6-045610F10010" : {
+    "build" : "24K150",
+    "deletable" : true,
+    "identifier" : "CC62278A-C0A4-4303-A2D6-045610F10010",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.SfAC7w",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.appletvsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.SfAC7w\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/tvOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.tvOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 3753865700,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F" : {
+    "build" : "24A434",
+    "deletable" : true,
+    "identifier" : "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.4nfTlB",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.4nfTlB\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.0.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8067000161,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.0"
+  },
+  "D66DFD74-1994-4EEA-973E-6B92DE9ACC88" : {
+    "build" : "24B91016s",
+    "deletable" : true,
+    "identifier" : "D66DFD74-1994-4EEA-973E-6B92DE9ACC88",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.YbwkZl",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.YbwkZl\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8338867041,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A" : {
+    "build" : "24B8117",
+    "deletable" : true,
+    "identifier" : "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.08DOe9",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.08DOe9\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8315434484,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
   "FF96D4CD-6BF6-4173-B581-97E30990263E" : {
     "build" : "24A94425",
     "deletable" : true,
     "identifier" : "FF96D4CD-6BF6-4173-B581-97E30990263E",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.kVjrhF",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.wzzFzb",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/1d40f14271d1b0588751a983be44d71887c32527.asset\/AssetData",
     "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/1d40f14271d1b0588751a983be44d71887c32527.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.kVjrhF\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.1.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.wzzFzb\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.1.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-1",
     "signatureState" : "Unknown",
     "sizeBytes" : 7874743137,
@@ -850,32 +848,13 @@ Registered as 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C.
     "version" : "27.1"
   }
 }
-+ xcrun simctl runtime delete F9A43A3A-07F1-47B4-8FB0-540159047952
++ xcrun simctl runtime delete BAE96629-98FF-4452-8023-C3E599EF2B7F
 An error was encountered processing the command (domain=com.apple.CoreSimulator.simdiskimaged.SimDiskImageError, code=30):
-Removed the runtime, but did not reclaim its MobileAsset: /System/Library/AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime/8a133948aedc0b965321b70c57a1e0bf17d3185b.asset/AssetData/
+Removed the runtime, but did not reclaim its MobileAsset: /System/Library/AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime/26c9174130fa5962f3e60f2a49963194dadbae4c.asset/AssetData/
 Run 'xcrun simctl runtime scan-and-mount' to re-register the runtime, then delete it again.
 (exit 30)
 + xcrun simctl runtime list -j
 {
-  "0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C" : {
-    "build" : "23F73",
-    "deletable" : true,
-    "identifier" : "0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73_1",
-    "parentMountPath" : "\/var\/folders\/5n\/5t77mfb93jd7q8v9s6f0dn0m0000gn\/T\/iphonesimulator_26.5_23F73.exportedBundle",
-    "path" : "\/Library\/Developer\/CoreSimulator\/Cryptex\/Images\/0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F73_1\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8492535162,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "26.5"
-  },
   "4E2A8325-62E2-427F-A198-FFEE1E5EF15A" : {
     "build" : "24R362",
     "deletable" : true,
@@ -898,10 +877,29 @@ Run 'xcrun simctl runtime scan-and-mount' to re-register the runtime, then delet
     "unusableSubstate" : "Cryptex Mount Preferred",
     "version" : "27.0"
   },
-  "7FE50F0D-FA7E-4003-BC59-007BF65EA020" : {
+  "8C332506-AC55-48C9-9E8A-90D659EE0E05" : {
+    "build" : "24N120",
+    "deletable" : true,
+    "identifier" : "8C332506-AC55-48C9-9E8A-90D659EE0E05",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.AxLBSO",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.xrsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.AxLBSO\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 7605175796,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "32D7D387-E9FD-4401-92D7-54B57E4287EA" : {
     "build" : "24J360",
     "deletable" : true,
-    "identifier" : "7FE50F0D-FA7E-4003-BC59-007BF65EA020",
+    "identifier" : "32D7D387-E9FD-4401-92D7-54B57E4287EA",
     "kind" : "Patchable Cryptex Disk Image",
     "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/tvOS_24J360",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/f6a3a9321156c52c0d245f50953d9867b2b139ab.asset\/AssetData",
@@ -917,24 +915,24 @@ Run 'xcrun simctl runtime scan-and-mount' to re-register the runtime, then delet
     ],
     "version" : "27.0"
   },
-  "8C332506-AC55-48C9-9E8A-90D659EE0E05" : {
-    "build" : "24N120",
+  "43AB1C82-D89A-4539-9D80-48C7FAA042B2" : {
+    "build" : "23F77",
     "deletable" : true,
-    "identifier" : "8C332506-AC55-48C9-9E8A-90D659EE0E05",
+    "identifier" : "43AB1C82-D89A-4539-9D80-48C7FAA042B2",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.wSzm2Z",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/c7808306262ca3d8a618e83435315e1e0c1730ac.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.xrsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.14.120.0.wSzm2Z\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-2",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77_1",
+    "parentMountPath" : "\/var\/folders\/5n\/5t77mfb93jd7q8v9s6f0dn0m0000gn\/T\/iphonesimulator_26.5_23F77.exportedBundle",
+    "path" : "\/Library\/Developer\/CoreSimulator\/Cryptex\/Images\/43AB1C82-D89A-4539-9D80-48C7FAA042B2",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/iOS_23F77_1\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
     "signatureState" : "Unknown",
-    "sizeBytes" : 7605175796,
+    "sizeBytes" : 8494282293,
     "state" : "Ready",
     "supportedArchitectures" : [
       "arm64"
     ],
-    "version" : "27.2"
+    "version" : "26.5"
   },
   "54D35026-7325-4069-BF3A-FDFEA26D5885" : {
     "build" : "24J360",
@@ -985,11 +983,11 @@ Run 'xcrun simctl runtime scan-and-mount' to re-register the runtime, then delet
     "deletable" : true,
     "identifier" : "0782D57F-4E23-4768-AB30-E89A9DECE79A",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.nKcE8r",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.V7aKyx",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/870e651c5b56773428623ecc15e770d0886a390b.asset\/AssetData",
     "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_xrOSSimulatorRuntime\/870e651c5b56773428623ecc15e770d0886a390b.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.xrsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.nKcE8r\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.0.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.XROS.SimulatorRuntime-v24.13.362.0.V7aKyx\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/xrOS 27.0.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.xrOS-27-0",
     "signatureState" : "Unknown",
     "sizeBytes" : 7480076129,
@@ -999,105 +997,10 @@ Run 'xcrun simctl runtime scan-and-mount' to re-register the runtime, then delet
     ],
     "version" : "27.0"
   },
-  "AD96431F-C55F-40A3-A333-07491E62421A" : {
-    "build" : "24S118",
-    "deletable" : true,
-    "identifier" : "AD96431F-C55F-40A3-A333-07491E62421A",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.zOGTWK",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.watchsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.zOGTWK\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/watchOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.watchOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 3856669156,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "CC62278A-C0A4-4303-A2D6-045610F10010" : {
-    "build" : "24K150",
-    "deletable" : true,
-    "identifier" : "CC62278A-C0A4-4303-A2D6-045610F10010",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.hJLXSn",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.appletvsimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.hJLXSn\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/tvOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.tvOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 3753865700,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F" : {
-    "build" : "24A434",
-    "deletable" : true,
-    "identifier" : "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.3vqs5h",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.3vqs5h\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.0.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8067000161,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.0"
-  },
-  "D66DFD74-1994-4EEA-973E-6B92DE9ACC88" : {
-    "build" : "24B91016s",
-    "deletable" : true,
-    "identifier" : "D66DFD74-1994-4EEA-973E-6B92DE9ACC88",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.8EXMUX",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.8EXMUX\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8338867041,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A" : {
-    "build" : "24B8117",
-    "deletable" : true,
-    "identifier" : "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A",
-    "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.wVYMOP",
-    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
-    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
-    "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.wVYMOP\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
-    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
-    "signatureState" : "Unknown",
-    "sizeBytes" : 8315434484,
-    "state" : "Ready",
-    "supportedArchitectures" : [
-      "arm64"
-    ],
-    "version" : "27.2"
-  },
-  "E1F6ED92-8C1D-4024-B0CB-43F1D5C69CD1" : {
+  "A6AAD713-3414-4C35-8C12-2307F06CAAB3" : {
     "build" : "24R362",
     "deletable" : true,
-    "identifier" : "E1F6ED92-8C1D-4024-B0CB-43F1D5C69CD1",
+    "identifier" : "A6AAD713-3414-4C35-8C12-2307F06CAAB3",
     "kind" : "Patchable Cryptex Disk Image",
     "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/watchOS_24R362",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3f39f470a745ea5cc62fc1967054b0dcf8fb0875.asset\/AssetData",
@@ -1113,16 +1016,111 @@ Run 'xcrun simctl runtime scan-and-mount' to re-register the runtime, then delet
     ],
     "version" : "27.0"
   },
+  "AD96431F-C55F-40A3-A333-07491E62421A" : {
+    "build" : "24S118",
+    "deletable" : true,
+    "identifier" : "AD96431F-C55F-40A3-A333-07491E62421A",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.t7dD4D",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_watchOSSimulatorRuntime\/3aff592da3c35d0a31902be45adcec78a043cc14.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.watchsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.WatchOS.SimulatorRuntime-v24.19.118.0.t7dD4D\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/watchOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.watchOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 3856669156,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "CC62278A-C0A4-4303-A2D6-045610F10010" : {
+    "build" : "24K150",
+    "deletable" : true,
+    "identifier" : "CC62278A-C0A4-4303-A2D6-045610F10010",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.SfAC7w",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_appleTVOSSimulatorRuntime\/26e058a7e71f6667cf062c33c3b3d95705b35641.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.appletvsimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.AppleTVOS.SimulatorRuntime-v24.11.150.0.SfAC7w\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/tvOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.tvOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 3753865700,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F" : {
+    "build" : "24A434",
+    "deletable" : true,
+    "identifier" : "CCB02CE5-F3D8-4937-AEA4-C56E0C73443F",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.4nfTlB",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/3e800c38767f9f2c5fc86acdad7adf44565e051a.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.4nfTlB\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.0.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8067000161,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.0"
+  },
+  "D66DFD74-1994-4EEA-973E-6B92DE9ACC88" : {
+    "build" : "24B91016s",
+    "deletable" : true,
+    "identifier" : "D66DFD74-1994-4EEA-973E-6B92DE9ACC88",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.YbwkZl",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/246a2ca14728178a0982606799e2019b401aeace.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.91016.19.YbwkZl\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8338867041,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
+  "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A" : {
+    "build" : "24B8117",
+    "deletable" : true,
+    "identifier" : "E1DD20F7-3587-45DF-BBC1-4A9AD795D88A",
+    "kind" : "Patchable Cryptex Disk Image",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.08DOe9",
+    "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
+    "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/7a0695c167683c7fbc650e5913eca65d628b525d.asset\/AssetData",
+    "platformIdentifier" : "com.apple.platform.iphonesimulator",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.08DOe9\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.2.simruntime",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+    "signatureState" : "Unknown",
+    "sizeBytes" : 8315434484,
+    "state" : "Ready",
+    "supportedArchitectures" : [
+      "arm64"
+    ],
+    "version" : "27.2"
+  },
   "FF96D4CD-6BF6-4173-B581-97E30990263E" : {
     "build" : "24A94425",
     "deletable" : true,
     "identifier" : "FF96D4CD-6BF6-4173-B581-97E30990263E",
     "kind" : "Patchable Cryptex Disk Image",
-    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.kVjrhF",
+    "mountPath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.wzzFzb",
     "parentMountPath" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/1d40f14271d1b0588751a983be44d71887c32527.asset\/AssetData",
     "path" : "\/System\/Library\/AssetsV2\/com_apple_MobileAsset_iOSSimulatorRuntime\/1d40f14271d1b0588751a983be44d71887c32527.asset\/AssetData",
     "platformIdentifier" : "com.apple.platform.iphonesimulator",
-    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.kVjrhF\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.1.simruntime",
+    "runtimeBundlePath" : "\/private\/var\/run\/com.apple.security.cryptexd\/mnt\/com.apple.iPhoneOS.SimulatorRuntime-v24.1.94425.0.wzzFzb\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 27.1.simruntime",
     "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-27-1",
     "signatureState" : "Unknown",
     "sizeBytes" : 7874743137,
@@ -1133,10 +1131,10 @@ Run 'xcrun simctl runtime scan-and-mount' to re-register the runtime, then delet
     "version" : "27.1"
   }
 }
-iOS 26.5: imported image 0AC7CEEB-8EFA-4D5C-B058-E87425AAE93C (23F73): Ready on /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F73_1; the runtime: /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F73/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime; volumes: /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F73, /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F73_1
+iOS 26.5: imported image 43AB1C82-D89A-4539-9D80-48C7FAA042B2 (23F77): Ready on /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F77_1; the runtime: /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime; volumes: /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F77, /private/var/run/com.apple.security.cryptexd/mnt/iOS_23F77_1
 + xcrun simctl runtime dyld_shared_cache update com.apple.CoreSimulator.SimRuntime.iOS-26-5
-Updating dyld shared cache if needed for runtime: iOS 26.5 (26.5 - 23F73) - com.apple.CoreSimulator.SimRuntime.iOS-26-5.
-dyld shared cache is usable at path: '/Library/Developer/CoreSimulator/Caches/dyld/26A434/com.apple.CoreSimulator.SimRuntime.iOS-26-5.23F73/'.
+Updating dyld shared cache if needed for runtime: iOS 26.5 (26.5 - 23F77) - com.apple.CoreSimulator.SimRuntime.iOS-26-5.
+dyld shared cache is usable at path: '/Library/Developer/CoreSimulator/Caches/dyld/26A434/com.apple.CoreSimulator.SimRuntime.iOS-26-5.23F77/'.
 (exit 0)
-iOS 26.5: runtime com.apple.CoreSimulator.SimRuntime.iOS-26-5, build 23F73, version 26.5; iPhone 17 13942E3F-085D-4826-9C2C-1A7D0E182F44
+iOS 26.5: runtime com.apple.CoreSimulator.SimRuntime.iOS-26-5, build 23F77, version 26.5; iPhone 17 DDB835BA-4193-4A21-9AE1-1B237C4C7513
 The snapshot tests run on iOS 27.2 (the ios-version file).
