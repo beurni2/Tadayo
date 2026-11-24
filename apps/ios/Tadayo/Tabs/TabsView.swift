@@ -50,9 +50,12 @@ import TadayoDesign
 /// An accepted invitation's row, on Home with no club or in the switcher (which closes first),
 /// asks the root to open it (`openAccepted`), and the invitation the root then shows is pushed
 /// onto that tab (`.accepted`), with the tab bar hidden; one whose link this phone doesn't hold
-/// (`reopenLink`, FQ136) opens the paste step instead. Done, Not now, Close invitation and Back
-/// close it through the root, and the root closing it (a join, once the list has been read
-/// again) takes it off the tab (`docs/plans/ios-b1-invitation.md` section 6).
+/// (`reopenLink`, FQ136) opens the paste step instead. Done, Not now and Close invitation take it
+/// off the tab and close it through the root; Back closes it through the root. A join, by Accept,
+/// Retry or the check of a kept link as the row opens it, takes it off the tab in that same
+/// action, once the root has read the list again and let it go (`acceptedAnswered`); the root
+/// letting it go any other way takes it off too (`rootInvitationChanged`;
+/// `docs/plans/ios-b1-invitation.md` section 6, `docs/plans/ios-b1-accepted-join-pop.md`).
 struct TabsView: View {
     enum Selection: Hashable {
         case home, friends, memories, lab
@@ -102,7 +105,7 @@ struct TabsView: View {
     /// The invitation the root shows, from an accepted invitation's row, and how to open and close
     /// one.
     let invitation: InvitationModel?
-    let openAccepted: @MainActor (MyInvitation) async -> Void
+    let openAccepted: @MainActor (MyInvitation) async -> InvitationModel?
     let closeInvitation: @MainActor () -> Void
     @State private var selection: Selection
     @State private var switching = false
@@ -145,7 +148,7 @@ struct TabsView: View {
         invitations: @escaping @MainActor (ClubRef) -> InvitationListModel? = { _ in nil },
         linkEntry: @escaping @MainActor () -> InvitationLinkEntryModel? = { nil },
         invitation: InvitationModel? = nil,
-        openAccepted: @escaping @MainActor (MyInvitation) async -> Void = { _ in },
+        openAccepted: @escaping @MainActor (MyInvitation) async -> InvitationModel? = { _ in nil },
         closeInvitation: @escaping @MainActor () -> Void = {},
         logOut: @escaping @MainActor () async -> Void
     ) {
@@ -310,11 +313,15 @@ struct TabsView: View {
     }
 
     /// An accepted invitation's row on `tab`: the root opens it, and `rootInvitationChanged`
-    /// pushes what it shows. Any I have an invite screens close first.
+    /// pushes what it shows. Any I have an invite screens close first. A kept link whose check
+    /// answers that the account has joined (an Accept with no answer that the server made) takes
+    /// the screen off as an Accept that joins does (`acceptedAnswered`).
     private func open(_ accepted: MyInvitation, on tab: ClubTab) {
         closeInvitationScreens()
         acceptedOn = tab
-        Task { await openAccepted(accepted) }
+        Task {
+            if let model = await openAccepted(accepted) { acceptedAnswered(model) }
+        }
     }
 
     /// The root's invitation came or went. One a row asked for is pushed onto the row's tab, or,
@@ -322,9 +329,7 @@ struct TabsView: View {
     /// taken off every tab; a row chosen meanwhile still waits for its own.
     private func rootInvitationChanged() {
         guard let model = invitation else {
-            for tab in Array(paths.keys) where paths[tab]?.contains(.accepted) == true {
-                paths[tab]?.removeAll { $0 == .accepted }
-            }
+            removeAccepted()
             return
         }
         guard let tab = acceptedOn else { return }
@@ -336,6 +341,34 @@ struct TabsView: View {
         }
         shownAccepted = model
         paths[tab] = [.accepted]
+    }
+
+    /// After Accept, Retry or the row's check of a kept link has answered on an accepted
+    /// invitation: a club joined (`opening`) takes the invitation off its tab here, after the
+    /// root's `joined` has read the list again and let the invitation go, in the same main-actor
+    /// job and so before SwiftUI's next update. Left to `rootInvitationChanged` alone, the pop
+    /// came from an `onChange` in the update where Home's root turned to the club's Home, and
+    /// about 1 time in 20 the stack kept "Opening…" up for good
+    /// (`docs/plans/ios-b1-accepted-join-pop.md`). An answer that comes after its screen was left
+    /// with Back, or once another accepted invitation's screen has taken its place, takes nothing
+    /// off.
+    private func acceptedAnswered(_ model: InvitationModel) {
+        guard shownAccepted === model, case .opening = model.state else { return }
+        removeAccepted()
+    }
+
+    /// Not now, Done and Close invitation on an accepted invitation: it comes off its tab here,
+    /// and the root closes it.
+    private func leaveAccepted() {
+        removeAccepted()
+        closeInvitation()
+    }
+
+    /// An accepted invitation's screen comes off every tab that shows it.
+    private func removeAccepted() {
+        for tab in Array(paths.keys) where paths[tab]?.contains(.accepted) == true {
+            paths[tab]?.removeAll { $0 == .accepted }
+        }
     }
 
     /// Once no tab shows I have an invite's screens and theirs have slid away, what they held
@@ -454,10 +487,12 @@ struct TabsView: View {
             }
         case .accepted:
             if let shownAccepted {
-                // A join closes it through the root, once the list has been read again.
+                // A join (`acceptedAnswered`), or Done, Not now and Close invitation
+                // (`leaveAccepted`), takes it off in the button's own action, not only once the
+                // root's invitation has gone (`rootInvitationChanged`).
                 InvitationDestination(
-                    model: shownAccepted, returnsTo: tab.title, answered: { _ in },
-                    leave: { closeInvitation() }
+                    model: shownAccepted, returnsTo: tab.title,
+                    answered: { acceptedAnswered($0) }, leave: { leaveAccepted() }
                 )
                 .onDisappear { forgetInvitationScreensIfGone() }
             }
