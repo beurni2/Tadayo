@@ -8,7 +8,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { ApiError } from "@tadayo/contracts";
-import { bind, bindAll, freshId, type Targets } from "./bindings.ts";
+import { bindAll, freshId, type Targets } from "./bindings.ts";
 import { isObject, type ContractOperation, type Parameter } from "./operations.ts";
 import { transportProblem, type Answer } from "./scanner.ts";
 
@@ -214,6 +214,12 @@ export interface Spec {
   headers: Readonly<Record<string, string>>;
   /** The body, as the raw string sent; none for the requests `specsFor` makes. */
   body?: string;
+  /**
+   * For each Id parameter `specsFor` filled, which of its binding's values it holds (bindings.ts `bindAll`): 1 for
+   * Ben's video link. The guessed-id and signed-out steps send another club's object of the same place, so the
+   * video's request guesses another club's video (`elsewhereOf`). The first value where absent.
+   */
+  which?: Readonly<Record<string, number>>;
 }
 
 function isId(parameter: Parameter): boolean {
@@ -235,45 +241,77 @@ export function freshCursor(): string {
   return randomBytes(24).toString("base64url");
 }
 
+/** Some of a request's parameters, and which value of its binding each Id parameter among them holds. */
+interface Part {
+  values: Record<string, string>;
+  which: Record<string, number>;
+}
+
+/** Each of `parts` once for each value `name` binds to in `targets`, in a request of its own. */
+function eachValue(parts: Part[], name: string, targets: Targets): Part[] {
+  const values = bindAll(name, targets);
+  return parts.flatMap((part) =>
+    values.map((value, index) => ({
+      values: { ...part.values, [name]: value },
+      which: { ...part.which, [name]: index },
+    })),
+  );
+}
+
 /**
  * The requests a cell makes to `operation`, with `authorization` as the caller's header (the role's
  * signed token; a stand-in where no app checks it), naming the cell's world: one for each object an Id
- * parameter names (`drop_id` names two: bindings.ts), each with one for each value of a required enum query
- * parameter, then each of those again with each optional Id query parameter filled, so it is sent and
- * guessed like the required ones. A required parameter it can't fill, or an Id parameter with no binding,
- * stops the harness. The other optional parameters are left out: the cursor has its own step (guessStep),
- * and the rest name nothing (`month`, `q`, `limit`).
+ * parameter names (`drop_id` names two: bindings.ts), in the path and the query alike, each with one for each value
+ * of a required enum query parameter, then each of those again with each optional Id query parameter filled, once
+ * for each object it names, so it is sent and guessed like the required ones. A required parameter it can't fill,
+ * or an Id parameter with no binding, stops the harness. The other optional parameters are left out: the cursor
+ * has its own step (guessStep), and the rest name nothing (`month`, `q`, `limit`).
  */
 export function specsFor(operation: ContractOperation, targets: Targets, authorization: string): Spec[] {
-  let paths: Record<string, string>[] = [{}];
+  let paths: Part[] = [{ values: {}, which: {} }];
   const headers: Record<string, string> = { authorization };
-  let queries: Record<string, string>[] = [{}];
+  let queries: Part[] = [{ values: {}, which: {} }];
   const optional: string[] = [];
   for (const parameter of operation.parameters) {
     if (parameter.in === "path") {
       if (!isId(parameter)) throw new Error(`${operation.id}: path parameter ${parameter.name} isn't an Id`);
-      const values = bindAll(parameter.name, targets);
-      paths = paths.flatMap((path) => values.map((value) => ({ ...path, [parameter.name]: value })));
+      paths = eachValue(paths, parameter.name, targets);
     } else if (!parameter.required) {
       if (parameter.in === "query" && isId(parameter)) optional.push(parameter.name);
     } else if (parameter.in === "header") {
       if (parameter.name !== "Idempotency-Key") throw new Error(`${operation.id}: can't fill header ${parameter.name}`);
       headers["idempotency-key"] = randomUUID();
     } else if (isId(parameter)) {
-      const value = bind(parameter.name, targets);
-      queries = queries.map((query) => ({ ...query, [parameter.name]: value }));
+      queries = eachValue(queries, parameter.name, targets);
     } else if (parameter.values !== null) {
       const values = parameter.values;
-      queries = queries.flatMap((query) => values.map((value) => ({ ...query, [parameter.name]: value })));
+      queries = queries.flatMap((query) =>
+        values.map((value) => ({ ...query, values: { ...query.values, [parameter.name]: value } })),
+      );
     } else {
       throw new Error(`${operation.id}: can't fill the required query parameter ${parameter.name}`);
     }
   }
-  const filled = optional.flatMap((name) => {
-    const value = bind(name, targets);
-    return queries.map((query) => ({ ...query, [name]: value }));
-  });
-  return paths.flatMap((path) => [...queries, ...filled].map((query) => ({ operation, path, query, headers })));
+  const filled = optional.flatMap((name) => eachValue(queries, name, targets));
+  return paths.flatMap((path) =>
+    [...queries, ...filled].map((query) => ({
+      operation,
+      path: path.values,
+      query: query.values,
+      headers,
+      which: { ...path.which, ...query.which },
+    })),
+  );
+}
+
+/**
+ * Another club's object for Id parameter `name` of `spec`: of the same place among its binding's values as the one
+ * `spec` holds (`Spec.which`), so the request for the cell's video link guesses another club's video link, which a
+ * route of one media class can't refuse for its class alone (the outside audit's A4).
+ */
+export function elsewhereOf(spec: Spec, name: string, elsewhere: Targets): string {
+  const values = bindAll(name, elsewhere);
+  return values[spec.which?.[name] ?? 0] ?? values[0];
 }
 
 /** `spec` written out: the path's values as they are, the query encoded. */
@@ -513,7 +551,7 @@ export async function guessStep(
   const step = { problems: [] as string[], answers: [] as Step["answers"], malformed: new Map<string, string>() };
   const ids = idParameters(spec);
   for (const parameter of ids) {
-    const guesses = [freshId(), bind(parameter.name, elsewhere)];
+    const guesses = [freshId(), elsewhereOf(spec, parameter.name, elsewhere)];
     for (const guess of guesses) {
       const guessed = withId(spec, parameter, { raw: guess, decoded: guess });
       const answer = await answerOf(app, render(guessed));
@@ -533,7 +571,7 @@ export async function guessStep(
       if (others.length === 0) continue;
       for (const [names, id] of [
         ["nothing", () => freshId()],
-        ["another club's object", (other: { name: string }) => bind(other.name, elsewhere)],
+        ["another club's object", (other: { name: string }) => elsewhereOf(spec, other.name, elsewhere)],
       ] as const) {
         const beside = withId(
           withIds(spec, (other) => (other.name === parameter.name ? "" : id(other))),
@@ -561,7 +599,7 @@ export async function guessStep(
       if (ids.length === 0) continue;
       for (const [names, id] of [
         ["nothing", () => freshId()],
-        ["another club's object", (other: { name: string }) => bind(other.name, elsewhere)],
+        ["another club's object", (other: { name: string }) => elsewhereOf(spec, other.name, elsewhere)],
       ] as const) {
         const beside = withIds(paged, (other) => id(other));
         const besideAnswer = await answerOf(app, render(beside));
@@ -622,7 +660,7 @@ export async function signedOutStep(
   if (idParameters(spec).length > 0) {
     variants.push(
       ["fresh", withIds(spec, () => freshId())],
-      ["another club's", withIds(spec, (parameter) => bind(parameter.name, elsewhere))],
+      ["another club's", withIds(spec, (parameter) => elsewhereOf(spec, parameter.name, elsewhere))],
     );
   }
   if (pages(spec.operation)) {

@@ -24,12 +24,15 @@
 //   a deleting account, a block) are the row's to judge: the leak scanner knows only the audience,
 //   the author and the reveal. getHome (B2) is the first, for the revealed form (below); the caption and
 //   own forms come with the first routes that answer them (B3, B4);
-// - a body, with its Id fields bound through bindings.ts and replaced in the guessed-id step;
+// - a body, with its Id fields bound through bindings.ts and replaced in the guessed-id step, by the slice that
+//   builds each branch that reads one (bindings.ts, its header, lists them);
 // - an object in the world for each binding still marked `missing`, the last being `comment_id`, which comes with
-//   B6's first comment route (bindings.ts). Since the outside audit's A4, a built route may take no `missing`
-//   binding (bindings.ts `bindingProblems`), the routes the app builds are exactly the rows that aren't NONE
-//   (`rowProblems`, against the API's BUILT_OPERATIONS), so a built route can't keep the skeleton's row, and
-//   `drop_id` names Ben's photo and Cleo's video link, each in a request of its own;
+//   B6's first comment route (bindings.ts). Since the outside audit's A4, a built route may neither take a `missing`
+//   binding nor act on its objects, as the thread routes act on comments (bindings.ts `bindingProblems`, ACTS_ON);
+//   every value a cell binds is a row of its table (matrix.test.ts `checkBoundRows`); the routes the app builds are
+//   exactly the rows that aren't NONE (`rowProblems`, against the API's BUILT_OPERATIONS), so a built route can't
+//   keep the skeleton's row; and `drop_id` names Ben's photo and Ben's video link, each in a request of its own,
+//   the video put in every state the photo is;
 // - for the first route that pages (getOccurrence, B2; listComments, listFavourites, listMemories and
 //   listMyDrops, B6), a cursor issued to another role and one issued before a removal, each answered
 //   as the row says (T14), beside the forged and malformed cursors the harness sends now, and a
@@ -606,21 +609,24 @@ export const ROWS: Readonly<Record<string, unknown>> = {
 
 /**
  * What's wrong with `rows` for `operations`: an operation with no row, a row with no operation, a row that
- * isn't NONE and that nothing judges (JUDGED: the operations account.ts and the others answer), an operation it
- * judges whose row is NONE, which would leave its judge unasked, and a route the app builds (`built`: the API's
- * BUILT_OPERATIONS) whose row is NONE, or a row of its own for a route the app doesn't build. The built routes and
- * the rows that aren't NONE are the same set (the outside audit's A4): a built route with the skeleton's row would
- * be asked only for the neutral not-found its own request may well get from a handler that leaks.
+ * isn't NONE and that nothing judges (`judged`: JUDGED, the operations account.ts and the others answer), an
+ * operation it judges whose row is NONE, which would leave its judge unasked, a route the app builds (`built`: the
+ * API's BUILT_OPERATIONS) that the contract doesn't have or whose row is NONE, and a row of its own for a route the app
+ * doesn't build. The built routes and the rows that aren't NONE are the same set (the outside audit's A4): a built
+ * route with the skeleton's row would be asked only for the neutral not-found its own request may well get from a
+ * handler that leaks. The two sets are named, so a call can't swap them.
  */
 export function rowProblems(
   operations: readonly { id: string }[],
   rows: Readonly<Record<string, unknown>>,
-  built: ReadonlySet<string>,
-  judged: ReadonlySet<string> = JUDGED,
+  { built, judged = JUDGED }: { built: ReadonlySet<string>; judged?: ReadonlySet<string> },
 ): string[] {
   const ids = new Set(operations.map((operation) => operation.id));
   return [
     ...[...ids].filter((id) => !Object.hasOwn(rows, id)).map((id) => `${id} has no row in the privacy matrix`),
+    ...[...built]
+      .filter((id) => !ids.has(id))
+      .map((id) => `${id} is built but isn't an operation of the contract: buildApp never routes it`),
     ...Object.keys(rows)
       .filter((id) => !ids.has(id))
       .map((id) => `${id} has a row but no operation in the contract`),

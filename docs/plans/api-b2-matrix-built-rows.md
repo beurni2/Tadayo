@@ -33,8 +33,14 @@ expects answers the neutral 404 would contradict, already failing in its cells, 
 
 0.3. **"missing".** A binding marked `"missing"` gives a fresh id, so a request names nothing and any handler, leaking
 or not, answers it the neutral not-found. Refused for a built operation: every Id parameter a built route takes must
-name an object of the world. `comment_id` is the one still missing (0.4); the refusal makes the slice that builds the
-first comment route put the comment in the world, and guards the next Id parameter the contract adds.
+name an object of the world. A route can act on comments without taking `comment_id`: `listComments` and
+`createComment` take a drop, `createReport` a body whose target may be a comment. A thread asked only while it's
+empty passes a handler that shows a removed comment or a blocked author's message, so `bindings.ts` `ACTS_ON` names
+the objects those three act on, and the refusal covers them too (review round 1, P2 and E1). `comment_id` is the one
+still missing (0.4); the refusal makes the slice that builds the first comment route, whichever it is, put the comment
+in the world, and guards the next Id parameter the contract adds. And a binding that's a function but names nothing,
+or an object of another kind, is caught in every cell: each value a cell binds must be a row of its binding's table
+(`bindings.ts` `TABLES`, `matrix.test.ts` `checkBoundRows`; round 1, P4).
 
 0.4. **The comment: not in this slice.** Tried first: Ana's comment on Cleo's video link, written a minute after the
 reveal (the comments' guard, `db/migrations/0007_after_the_reveal.sql`, refuses one written before it), in every
@@ -43,16 +49,43 @@ Home refuses its open page while a drop of the open day has a reaction, a commen
 B6's fields show (`packages/domain/src/clubs/home.ts`: "a page that left out one would be false"). A comment on
 another day would need a revealed day of its own in every world, which changes what Home, the club and the schedule
 answer, for no route that reads comments yet. So the comment comes with B6's first comment route, as Home's fields
-for it do; 0.3's refusal means that route can't be built without it. A departure from the audit's literal fix, raised
-in the PR; the audit's `deleteComment` is still caught twice, by the row check and by the binding check (section 3).
+for it do; 0.3's refusal means none of the six comment routes (the three that take `comment_id` and the three in
+`ACTS_ON`) can be built without it. A departure from the audit's literal fix, raised in the PR; the audit's
+`deleteComment` is still caught twice, by the row check and by the binding check, and a thread route built before the
+comment by the binding check (section 3, B9).
 
-0.5. **Both drops.** `drop_id` binds to Ben's photo and to Cleo's video link, already in every world, so each request
-that takes a drop is sent once for each: the photo's and the video's routes (`getDropMedia` against `getEmbed`) can't
-hide behind a drop of the other class. `Targets` gains `video`; a binding may give several values, and `specsFor`
-sends one request for each value of each path Id parameter. The guessed-id steps keep one value (the first), as they
-guess one object of the other club. The requests a world gets go from 72 to 88.
+0.5. **Both drops.** `drop_id` binds to Ben's photo and to Ben's video link, so each request that takes a drop is sent
+once for each: the photo's and the video's routes (`getDropMedia` against `getEmbed`) can't hide behind a drop of the
+other class. `Targets` gains `video`; a binding may give several values, and `specsFor` sends one request for each value
+of each Id parameter, in the path and the query alike (round 1, P5 and E3). The requests a world gets go from 72 to 88:
+14 operations take a drop, and two of them (`getDropMedia`, `removeDrop`) are sent once for each value of a required
+enum, so the video adds 16 requests.
 
-0.6. **The lists in the API's tests.** `app.test.ts` and `session.test.ts` take the exported set rather than their
+The video is Ben's, committed with the photo, and every state is made on it as on the photo
+(`matrix.test.ts` `putInState`, which checks that the two end in one drop state, not active where the state ends the
+drop). The first head used Cleo's video link, which no state ended and whose author was the viewer in six roles,
+both block roles among them: a video route that skipped T9's per-drop denials (`d.state = 'active'`, the block) passed
+every suite (round 1, P1; B8 shows it on the first head and caught now). With Ben's, every role, phase and state
+meets the video as it meets the photo, so a row that holds for the photo's request holds for the video's, but for a
+route's own media class. Cleo's video link stays the day's second contributor.
+
+The guessed-id and signed-out steps send another club's object of the same place among the binding's values: the
+video's request guesses another club's video, which a video route can't refuse for its class alone (round 1, P5 and
+E2). Each specsFor request says which value it holds (`Spec.which`; `harness.ts` `elsewhereOf`).
+
+0.6. **Ids in request bodies (round 1, P3): not in this slice.** `bindingProblems` reads parameters; the audit's A4 is
+about them. The matrix's tables send each built route's bodies themselves, and the body ids of branches still to be
+built are each bound to an object of the world by the slice that builds the branch, in its table:
+- `createDrop`'s `source_id`: its link branch answers every source `NOT_FOUND` until B3 builds `resolveSource`
+  (`packages/domain/src/drops/commit.ts`), and the commit table sends a fresh one;
+- `createUpload`'s `drop_id` for its `replacement` and `conversation_photo` purposes, which answer `NOT_FOUND` today
+  (`services/api/src/media/uploads.ts`);
+- `createComment`'s `reply_to_id`, `createReport`'s target, and `blockMember`'s, `setHighlight`'s, `updateDrop`'s and
+  `searchMemories`' ids, whose routes aren't built.
+`createInvitation`'s cell request sends a fresh `candidate_id` on purpose (a candidate nobody has, never a link).
+`bindings.ts`'s header and `rows.ts`'s header list the same.
+
+0.7. **The lists in the API's tests.** `app.test.ts` and `session.test.ts` take the exported set rather than their
 copies; `app.test.ts` keeps its pin of how many operations are unbuilt, so a new route still changes that test on
 purpose. The matrix is where a built route meets its row.
 
@@ -60,14 +93,21 @@ purpose. The matrix is where a built route meets its row.
 
 1. `services/api/src/app.ts`: `handlersOf` becomes a table of handler makers, `HANDLERS`, from which `buildApp` makes
    the handlers; `BUILT_OPERATIONS`, the table's keys, exported (and from `services/api/src/index.ts`).
-2. `tests/src/privacy/rows.ts`: `rowProblems(operations, rows, judged, built)`: a built operation whose row is `NONE`,
-   and a row that isn't `NONE` for an operation that isn't built, each a problem.
+2. `tests/src/privacy/rows.ts`: `rowProblems(operations, rows, { built, judged = JUDGED })` (named since round 1, so a
+   call can't swap them; the first head's signature was `(operations, rows, built, judged = JUDGED)`): a built
+   operation whose row is `NONE`, a built id that isn't an operation of the contract (round 1, P6 and E4), and a row
+   that isn't `NONE` for an operation that isn't built, each a problem.
 3. `tests/src/privacy/bindings.ts`: `Targets.video`; `drop_id` bound to both drops; `bindAll`, every value of a
-   binding; `bindingProblems(operations, built)`, a built operation that takes an Id parameter whose binding is
-   `"missing"`.
-4. `tests/src/privacy/harness.ts` `specsFor`: one request for each value of each path Id parameter.
-5. `tests/src/privacy/matrix.test.ts`: the video in each world's targets (`cleosVideo`), the row check with the built
-   set and the binding check; `REQUESTS_PER_WORLD` 88, for the requests the drop's second value adds.
+   binding; `bindingProblems(operations, built, bindings, actsOn)`, a built operation that takes an Id parameter whose
+   binding is `"missing"` or acts on its objects (`ACTS_ON`); `TABLES`, each binding's table; `boundNames`, the
+   bindings the built routes name or act on.
+4. `tests/src/privacy/harness.ts` `specsFor`: one request for each value of each Id parameter, path and query, each
+   saying which value it holds (`Spec.which`); the guessed-id and signed-out steps guess another club's object of the
+   same place (`elsewhereOf`).
+5. `tests/src/privacy/matrix.test.ts`: Ben's video link in each world (`twoContributors`), put in every state with the
+   photo (`putInState`); every bound value checked as a row of its table (`checkBoundRows`) in every world; the row
+   check with the built set and the binding check; `REQUESTS_PER_WORLD` 88, for the requests the drop's second value
+   adds. `tests/src/matrix.ts` `STATES`: `endsTheDrop` on the three states that change the drop's own row.
 6. `services/api/src/app.test.ts`, `session.test.ts`: the exported set.
 7. `rows.ts`'s header: the tie to the built set, the refusal and the video.
 
@@ -87,6 +127,13 @@ request per drop operation), and the audit's hole reproduced: its two leaking ha
 the two lists with the unbuilt pin moved to 37, pass `app.test.ts`, `session.test.ts`, `harness.test.ts` and the whole
 matrix (each answering the neutral not-found for an id of the wrong shape, as a built handler does). On this branch the same handlers are B1 to B4 (section 3).
 
+2.4. Round 1 (`harness.test.ts`): a built `listComments`, `createComment` or `createReport` is refused while
+`comment_id` is missing, and every operation about comments takes `comment_id` or is in `ACTS_ON`; `TABLES` has every
+binding; `boundNames` for the built routes; a required and an optional Id query parameter each sent once for each
+value, with `which`; the video's request guesses another club's video and the photo's another club's photo, in the
+guessed-id and signed-out steps, and a video route that leaks another club's video is caught on the video's request
+only; a built id that isn't an operation is named.
+
 ## 3. Breakages
 
 At the PR's last head, each caught by the test it names:
@@ -101,6 +148,42 @@ At the PR's last head, each caught by the test it names:
 - B6: `upload_id`, which two built routes take, back to `"missing"` (harness.test.ts's binding test);
 - B7: `specsFor` sends the first value only (harness.test.ts's two requests).
 
+Round 1 adds, at the PR's last head:
+- B8: the read predicate lets a video link through in any drop state (`packages/domain/src/authorization/read-sql.ts`
+  `readableDrops`: `d.state = 'active'` becomes `(d.state = 'active' OR d.media_class = 'external_video')`): the
+  matrix's cells (Home in the open phase, for a withdrawn, removed or held video). Run on the first head too, where it
+  passes the author's cells (P1);
+- B9: a `listComments` that leaks comments, built with its row left `NONE` and the row check undone: the matrix's
+  binding check (`ACTS_ON`). Run on the first head too, where it passes the matrix's row check and the author's cells
+  (P2, E1);
+- B10: `upload_id` bound to the cell's slot, a function that names an object of another kind: the matrix's cells
+  (`checkBoundRows`, P4);
+- B11: `comment_id` bound to Ben's photo, the review's probe: the matrix's cells (`checkBoundRows`, P4);
+- B12: `elsewhereOf` always gives the first value (harness.test.ts's guess of another club's video, P5);
+- B13: `putInState` leaves the video out (the matrix's cells: its own check);
+- B14: `rowProblems` without the built id that isn't an operation (harness.test.ts's tie both ways, P6);
+- B15: `bindingProblems` without `ACTS_ON` (harness.test.ts's thread routes refused, P2 and E1);
+- B16: `TABLES` without `star` (harness.test.ts's table for every binding, P4).
+
 ## 4. After the merge
 
 Nothing on `dev`: the change is in the API's test of its routes and the matrix; `app.ts`'s routes are the same.
+
+## 5. Review round 1
+
+Two fresh reviewers of the first head (`9bc33bc`), privacy and engineering. Each finding fixed or answered in the second
+commit:
+- P1 (high): the video never met the drop-ending states, and its author was the viewer in six roles. Fixed: the video
+  is Ben's and every state is made on it (0.5; B8). The reservations' table's hand count for the author follows the
+  world: with a photo and a link already in the day, the author holds one slot where the day takes them and three once
+  both are withdrawn, 6 held and 2 given back, from 9 and 5.
+- P2, E1 (medium, high): the thread routes could be built with no comment in the world, and seven records said they
+  couldn't. Fixed: `ACTS_ON` (0.3; B9, B15); the records now say what holds.
+- P3 (medium): ids in bodies are outside the checks. Answered: outside A4, listed with the slice that binds each (0.6).
+- P4 (low): a binding that's a function but names nothing passed. Fixed: `checkBoundRows` (0.3; B10, B11, B16).
+- P5, E2, E3 (low): queries and guesses sent the first value only. Fixed (0.5; B12, and B7 at its new anchor).
+- P6, E4 (nit): a built id that isn't an operation, and swappable sets. Fixed (section 1, item 2; B14).
+- R1 to R7 (records): the 16 operations were 14 operations and 16 requests; the plan's signature; the PR body's
+  breakages; the order of the B items (B1, B7, B8 and B6, in block 1.2 and PROGRESS alike); T59's "no request" is "no
+  Id parameter"; table 4.1's "every suite that could see them"; the video's "no state ends it". Each corrected in the
+  second commit's records, the log entry of the first head left as written (append-only).

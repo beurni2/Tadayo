@@ -15,7 +15,8 @@
 // Each role's world is committed, with random ids, so the app's own connection reads it as a request
 // would, and every name in it ends in the world's own random suffix: its people's, its club's, its
 // roster's labels and its captions, so no other world has them. Ana's Saturday holds Ben's photo, the
-// drop the states act on, and Cleo's video link, so the day has two contributors. The scanner's facts
+// drop the states act on, Ben's video link, which each state puts as it puts the photo, and Cleo's video link, so
+// the day has two contributors. The scanner's facts
 // come from the world's rows, never from the authorization module it tests. Nothing the sign-in token
 // carries may reach an answer: the person's address, the sign-in subject of each account, and the token
 // itself are values the world keeps back.
@@ -58,7 +59,7 @@ import {
   type Own,
   type Session,
 } from "./account.ts";
-import { bindingProblems, freshId, type Targets } from "./bindings.ts";
+import { BINDINGS, bindAll, bindingProblems, boundNames, freshId, TABLES, type Targets } from "./bindings.ts";
 import {
   SIGNED_OUT,
   UNAUTHENTICATED,
@@ -349,14 +350,21 @@ async function prepared(id: string): Promise<Prepping> {
 }
 
 /**
- * Ben's photo "From Ben" and Cleo's video link "Cleo's pick" to Ana's Saturday, each caption ending
- * in the world's suffix, so no other world has it; committed at 20:00 on Friday 6 November, each with
- * its audience of Ana, Ben and Cleo, sealed. Ben's photo is Ben's highlight, pointed as it is committed,
- * so the open day's rail has an entry for whoever may see it (getHome's row, home.ts), and a state that
- * ends the drop clears it (../matrix.ts). Returns Ben's drop.
+ * Ben's photo "From Ben", Ben's video link "Ben's pick" and Cleo's video link "Cleo's pick" to Ana's Saturday, each
+ * caption ending in the world's suffix, so no other world has it; committed at 20:00 on Friday 6 November, each with
+ * its audience of Ana, Ben and Cleo, sealed. Ben's photo is Ben's highlight, pointed as it is committed, so the open
+ * day's rail has an entry for whoever may see it (getHome's row, home.ts), and a state that ends the drop clears it
+ * (../matrix.ts). Returns Ben's two: the photo, the drop the states act on, and the video link, which every cell's drop
+ * routes name besides it and which every state puts as it puts the photo (`putInState`), so a route of one class of
+ * drop can't hide behind the other's id in any role, phase or state (bindings.ts; the outside audit's A4).
  */
-async function twoContributors(tx: WorldTx, w: World): Promise<string> {
+async function twoContributors(tx: WorldTx, w: World): Promise<{ drop: string; video: string }> {
   const drop = await commitDrop(plain(tx), w, w.ben, { caption: named(w, "From Ben"), at: AT.added });
+  const video = await commitDrop(plain(tx), w, w.ben, {
+    media: "external_video",
+    caption: named(w, "Ben's pick"),
+    at: AT.added,
+  });
   await commitDrop(plain(tx), w, w.cleo, { media: "external_video", caption: named(w, "Cleo's pick"), at: AT.added });
   await tx`
     INSERT INTO app.highlights (occurrence_id, interval_id, drop_id, version, updated_at)
@@ -366,20 +374,65 @@ async function twoContributors(tx: WorldTx, w: World): Promise<string> {
     SELECT count(DISTINCT author_interval_id)::int AS authors FROM app.drops WHERE occurrence_id = ${w.day} AND state = 'active'`;
   if (row?.authors !== 2)
     throw new Error(`the matrix's day holds drops from ${String(row?.authors)} contributors, not two`);
-  return drop;
+  return { drop, video };
 }
 
 /**
- * Cleo's video link to Ana's Saturday (twoContributors), which every cell's drop routes name besides Ben's photo
- * (bindings.ts; the outside audit's A4), so a route of one class of drop can't hide behind the other's id. No state
- * ends it.
+ * Puts Ben's photo and Ben's video link in `state` alike, the photo first, so neither class of drop meets a state the
+ * other doesn't (the outside audit's A4). A state of the day or the club is made once for each, which changes nothing
+ * the second time. Throws unless the two end in the same state, and in a drop state that isn't active when the state
+ * ends the drop itself.
  */
-async function cleosVideo(tx: WorldTx, w: World): Promise<{ video: string }> {
-  const [video] = await tx<{ id: string }[]>`
-    SELECT id FROM app.drops
-     WHERE occurrence_id = ${w.day} AND author_interval_id = ${w.cleo.interval} AND media_class = 'external_video'`;
-  if (video === undefined) throw new Error("the matrix's day has no video link of Cleo's");
-  return { video: video.id };
+async function putInState(
+  tx: WorldTx,
+  w: World,
+  state: (typeof STATES)[number],
+  ben: { drop: string; video: string },
+): Promise<void> {
+  await state.make(tx, w, ben.drop);
+  await state.make(tx, w, ben.video);
+  const rows = await tx<{ state: string }[]>`
+    SELECT DISTINCT state FROM app.drops WHERE id IN (${ben.drop}, ${ben.video})`;
+  if (rows.length !== 1)
+    throw new Error(`Ben's photo and video link are in ${String(rows.length)} drop states in "${state.name}", not one`);
+  if (state.endsTheDrop && rows[0]?.state === "active") throw new Error(`"${state.name}" left Ben's drops active`);
+}
+
+/**
+ * Throws unless every value the cell binds is a row of its binding's table in the cell's world (bindings.ts TABLES):
+ * each binding not marked "missing", and each a built route names or acts on (`boundNames`), whose "missing" one is a
+ * fresh id that names nothing. And unless `drop_id` names Ben's photo and then Ben's video link. A binding that names
+ * a fresh id, or an object of another kind, passes `bindingProblems` but would be asked only for the neutral
+ * not-found (the outside audit's A4).
+ */
+async function checkBoundRows(tx: WorldTx, targets: Targets): Promise<void> {
+  const names = new Set([
+    ...Object.keys(BINDINGS).filter((name) => BINDINGS[name] !== "missing"),
+    ...boundNames(operations, new Set(BUILT_OPERATIONS)),
+  ]);
+  const problems: string[] = [];
+  for (const name of names) {
+    const where = TABLES[name];
+    if (where === undefined) throw new Error(`the binding ${name} has no table (bindings.ts TABLES)`);
+    for (const value of bindAll(name, targets)) {
+      const [found] = await tx<{ n: number }[]>`
+        SELECT count(*)::int AS n FROM ${tx(where.table)} WHERE ${tx(where.column)} = ${value}`;
+      if (found?.n !== 1) problems.push(`${name}'s value ${value} is no row of ${where.table}`);
+    }
+  }
+  const drops = bindAll("drop_id", targets);
+  const kinds = await tx<{ id: string; media_class: string; author_interval_id: string }[]>`
+    SELECT id, media_class, author_interval_id FROM app.drops WHERE id IN ${tx(drops)}`;
+  const kindOf = (id: string | undefined) => kinds.find((row) => row.id === id);
+  if (
+    drops.length !== 2 ||
+    kindOf(drops[0])?.media_class !== "photo" ||
+    kindOf(drops[1])?.media_class !== "external_video" ||
+    kindOf(drops[0])?.author_interval_id !== targets.author ||
+    kindOf(drops[1])?.author_interval_id !== targets.author
+  )
+    problems.push("drop_id doesn't name Ben's photo and then Ben's video link");
+  if (problems.length > 0) throw new Error(`the cell's bindings name nothing of its world: ${problems.join("; ")}`);
 }
 
 /**
@@ -498,15 +551,14 @@ beforeAll(async () => {
   await app.ready();
   elsewhere = await db.begin(async (tx) => {
     const w = await newWorld(plain(tx), suffix());
-    const drop = await twoContributors(tx, w);
-    const { video } = await cleosVideo(tx, w);
+    const { drop, video } = await twoContributors(tx, w);
     const proposal = await addFirstDays(tx, w);
     const avatar = await newAvatar(plain(tx), w.ben.user, "ready");
     const [subject] = await tx<{ auth_subject: string | null; display_name: string | null }[]>`
       SELECT auth_subject, display_name FROM app.users WHERE id = ${w.ben.user}`;
     if (subject === undefined || subject.auth_subject === null || subject.display_name === null)
       throw new Error("the other club's author has no sign-in subject or no name");
-    return {
+    const made = {
       club: w.club,
       drop,
       video,
@@ -521,6 +573,8 @@ beforeAll(async () => {
       account: w.ben.user,
       name: subject.display_name,
     };
+    await checkBoundRows(tx, made);
+    return made;
   });
   elsewhereDevice = { secret: randomBytes(32).toString("base64url"), token: randomBytes(32).toString("hex") };
   const registered = await answerOf(app, {
@@ -914,7 +968,7 @@ async function changeDatesAt(
 
 describe("a route with no row fails, and no route is outside the contract but the preflight (TECH-DESIGN section 8)", () => {
   it("gives every operation of the contract a row, and the app a route for each, the preflight, and no other", () => {
-    expect(rowProblems(operations, ROWS, new Set(BUILT_OPERATIONS))).toEqual([]);
+    expect(rowProblems(operations, ROWS, { built: new Set(BUILT_OPERATIONS) })).toEqual([]);
     // Every Id parameter of every built route names an object of the world, so a leaking handler can't hide behind
     // the neutral not-found a request that names nothing gets (the outside audit's A4).
     expect(bindingProblems(operations, new Set(BUILT_OPERATIONS))).toEqual([]);
@@ -983,15 +1037,14 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         const cell = await db.begin(async (tx) => {
           const w = await newWorld(plain(tx), suffix());
           await anaNextSaturday(tx, w);
-          const drop = await twoContributors(tx, w);
-          const { video } = await cleosVideo(tx, w);
+          const { drop, video } = await twoContributors(tx, w);
           const { reservation, upload } = await releasedSlot(tx, w);
           const cleos = await cleosLapsedSlot(tx, w);
           // The club's first days, before the role changes the club, as a leave or a join would meet them.
           const proposal = await addFirstDays(tx, w);
           const viewer = await role.make(tx, w);
           const othersLive = await othersLiveSlot(tx, w, viewer);
-          await state.make(tx, w, drop);
+          await putInState(tx, w, state, { drop, video });
           // The viewer's own avatars, one not ready and one ready, and the drop's photo, which is no avatar.
           const pending = await newAvatar(plain(tx), viewer, "pending");
           const ready = await newAvatar(plain(tx), viewer, "ready");
@@ -1009,6 +1062,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             upload,
             ...(await rosterTargets(tx, w)),
           };
+          await checkBoundRows(tx, targets);
           return {
             w,
             targets,
@@ -2921,17 +2975,17 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
     // Counted by hand from the world (../matrix.ts), apart from the judge. Slots are held only while the day
     // is collecting, in the four states whose day takes them (not a suspended day or club, or a cancelled
-    // day). The author has a photo in the day (none when it was withdrawn), the member in the audience a
-    // link, and the star and the two who joined afresh nothing; so the table holds the author two (a photo,
-    // then a link; three when the photo was withdrawn), the star six (two photos, two links, then photos to
-    // six), the member in the audience two photos, and each of the two who joined three (two photos and a
-    // link). Every slot but the first is given back live. The first holds the upload the commit's table adds
+    // day). The author has a photo and a link in the day (neither when both were withdrawn), the member in
+    // the audience a link, and the star and the two who joined afresh nothing; so the table holds the author
+    // one (a photo, which fills the friend's three; three when both were withdrawn: two photos and a link),
+    // the star six (two photos, two links, then photos to six), the member in the audience two photos, and
+    // each of the two who joined three (two photos and a link). Every slot but the first is given back live. The first holds the upload the commit's table adds
     // in the same phase, so it is consumed by that drop and given back after the reveal as consumed, naming it
     // (T20), in each of the four states; until the commit was built it lapsed at the reveal and came back
     // expired. A lapsed slot coming back expired is still asked in every cell: Cleo's, below.
     expect(SLOTS.size).toBe(ROLES.length);
     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
-      ["author", { held: 9, released: 5, expired: 0, consumed: 4 }],
+      ["author", { held: 6, released: 2, expired: 0, consumed: 4 }],
       ["star", { held: 24, released: 20, expired: 0, consumed: 4 }],
       ["member in the audience", { held: 8, released: 4, expired: 0, consumed: 4 }],
       ["member who joined after the commit (T8)", { held: 12, released: 8, expired: 0, consumed: 4 }],
@@ -3847,27 +3901,25 @@ describe("callers without a session, in each state of the drop and phase of the 
     for (const state of STATES) {
       const cell = await db.begin(async (tx) => {
         const w = await newWorld(plain(tx), suffix());
-        const drop = await twoContributors(tx, w);
-        const { video } = await cleosVideo(tx, w);
+        const { drop, video } = await twoContributors(tx, w);
         const { reservation, upload } = await releasedSlot(tx, w);
         const proposal = await addFirstDays(tx, w);
-        await state.make(tx, w, drop);
+        await putInState(tx, w, state, { drop, video });
         await checkAsAtCommit(plain(tx));
-        return {
-          w,
-          targets: {
-            club: w.club,
-            drop,
-            video,
-            day: w.day,
-            author: w.ben.interval,
-            star: w.ana.interval,
-            proposal,
-            reservation,
-            upload,
-            ...(await rosterTargets(tx, w)),
-          },
+        const targets: Targets = {
+          club: w.club,
+          drop,
+          video,
+          day: w.day,
+          author: w.ben.interval,
+          star: w.ana.interval,
+          proposal,
+          reservation,
+          upload,
+          ...(await rosterTargets(tx, w)),
         };
+        await checkBoundRows(tx, targets);
+        return { w, targets };
       });
       const facts = await factsOf([cell.w.club, elsewhere.club], null, { accounts: [cell.w.dan.user], secrets });
       // The signed-out page's route reads a body: a token nobody made, so it names nothing (T14).
