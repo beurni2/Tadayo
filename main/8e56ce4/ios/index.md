@@ -3,17 +3,20 @@
 The `ios` workflow's evidence for `8e56ce4befc8dba04dbdd40b54304be524331a4b` (https://github.com/beurni2/Tadayo/actions/runs/45294750495).
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
-- iOS `27.2` on `iPhone 17`: tests `failed`, with the snapshot tests
+- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
 - iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `failed`
-- Odd draws: 2 in `logs/test-27.2.log`, below
+- Tests: `passed`
+- Odd draws: 5 in `logs/test-27.2.log`, below
 - Carries the states this branch touches; 409 snapshot(s) not carried
 
 Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
 
-- `warning: ScreenSnapshot G05-club-details-unavailable-xl: settled after 3 draws, SHA-256 e8c084b4 dd21326b dd21326b; against the last draw, draw 1: 1871 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot A02-age-saving: settled after 4 draws, SHA-256 a7288b47 1a4e4347 a7288b47 a7288b47; against the last draw, draw 2: 5730 pixels in x 30 to 305, y 123 to 214, by at most 2/255`
+- `warning: ScreenSnapshot G01-create: settled after 3 draws, SHA-256 34d2aeaf e363b9a9 e363b9a9; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot G02-changed: settled after 3 draws, SHA-256 0ed19adc 3a0c1976 3a0c1976; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot G02-link-entry-signed-in-cannot-check-refused: settled after 3 draws, SHA-256 a298c408 fba62ed2 fba62ed2; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot G02-link-entry-signed-in-invalid: settled after 3 draws, SHA-256 04607f32 f2c1d4ba f2c1d4ba; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A03-profile-saving: settled after 3 draws, SHA-256 44108711 4e7737c3 4e7737c3; against the last draw, draw 1: 6670 pixels in x 30 to 305, y 123 to 214, by at most 18/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
 |---|---|---|---|---|---|
