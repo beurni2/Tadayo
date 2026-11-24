@@ -51,7 +51,7 @@
 // spec 21 has no such event). A withdrawn drop's caption and media are purged, and its tombstone written, by B6's
 // purge, as for every withdrawal (T27, T28); until then the media route, which reads the predicate, serves nothing
 // of it (T12). A withdrawn drop is an authored withdrawal, whose notice to its day's star (spec 21) comes with the
-// notifications (B7), from its removal row.
+// notifications (B8), from its removal row.
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
@@ -182,13 +182,15 @@ async function settleContributions(
            updated_at = ${at}::pg_catalog.timestamptz, pending_upload_id = NULL
      WHERE author_interval_id = ${interval} AND state IN ('active', 'held')`;
   // The drops this leave withdrew are the interval's with a `leave` removal at its instant (an interval leaves
-  // once). The leaver's highlight on one is cleared after the drop's end, as the highlights' guard asks from the
-  // reveal on (T22).
+  // once), found from the interval's drops (`drops_by_author`) and their highlights (`highlights_by_drop`). The
+  // leaver's highlight on one is cleared after the drop's end, as the highlights' guard asks from the reveal on
+  // (T22).
   await bound(tx)`
     UPDATE app.highlights h
        SET drop_id = NULL, version = h.version + 1, updated_at = ${at}::pg_catalog.timestamptz
-      FROM app.drop_removals r
-     WHERE h.interval_id = ${interval} AND r.drop_id = h.drop_id
+      FROM app.drops d
+      JOIN app.drop_removals r ON r.drop_id = d.id
+     WHERE d.author_interval_id = ${interval} AND h.drop_id = d.id AND h.interval_id = ${interval}
        AND r.reason = 'leave' AND r.actor_interval_id = ${interval} AND r.removed_at = ${at}::pg_catalog.timestamptz`;
   // Before its day's reveal, its slot given back; from the reveal on, none reopens (T3, T18; spec 22).
   await bound(tx)`

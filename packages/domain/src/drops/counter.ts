@@ -14,7 +14,9 @@
 // that has lapsed counts as none"). A job that purges lapsed uploads (B3) settles through it too.
 //
 // Every writer of a counter, a reservation, a drop or a highlight takes the club's row `FOR SHARE` first
-// (./reserve.ts `lockDay`), and so must any later one, that job included. A leave (../clubs/leave-club.ts) holds
+// (./reserve.ts `lockDay`), and so must any later one, that job included, and any later writer of a row whose
+// foreign key names a drop (a comment, a reaction, a favourite, a replacement upload: B5), whose check waits on
+// the leave's lock of that drop. A leave (../clubs/leave-club.ts) holds
 // that row `FOR UPDATE` and samples its clock under it, before it takes the leaver's counters, so its instant is
 // right only while nothing else can reach them without the club's row.
 //
