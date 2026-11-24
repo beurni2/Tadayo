@@ -368,9 +368,11 @@
             /// How long Kitchen table's details take to answer not found: long enough for a UI
             /// test on a loaded runner to see the screen pushed and loading, and the tab bar
             /// hidden under it, before the answer closes it. It was 3 seconds, and in `ios`
-            /// 45375105985, where the queries took up to 4 seconds each, the test's first look at
-            /// the tab bar came 9.4 seconds after the push, once the screen had closed (audit
-            /// A9's item 9, `docs/plans/ios-b1-intermittents.md`).
+            /// 45375105985's first attempt, where the queries took up to 4 seconds each, the
+            /// test's first look at the tab bar came 9.8 seconds after the push, once the screen
+            /// had closed (the record's item 9, `docs/plans/ios-b1-intermittents.md`).
+            /// `ClubDetailsUITests.testAClubNoLongerTheCallersClosesItsDetails` waits 30 seconds
+            /// for the tab to come back, which must stay longer than this.
             static let notFoundAfter = Duration.seconds(20)
 
             private let none = NoClubs()
