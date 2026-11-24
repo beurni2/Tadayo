@@ -92,6 +92,8 @@ const BUILT = new Set([
   "createUpload",
   "getUpload",
   "completeUpload",
+  "registerDevice",
+  "removeDevice",
 ]);
 let app: FastifyInstance;
 
@@ -124,7 +126,7 @@ describe("the skeleton's routes (T14)", () => {
 
   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
     const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
-    expect(unbuilt).toHaveLength(41);
+    expect(unbuilt).toHaveLength(39);
     for (const operation of unbuilt) {
       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
       expect(await answer({ method: operation.method.toUpperCase(), url }), operation.id).toEqual(NEUTRAL);

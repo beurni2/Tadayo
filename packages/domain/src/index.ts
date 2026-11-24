@@ -162,6 +162,17 @@ export { lintString, type CopyFinding, type CopyRule } from "./copy/rules.ts";
 export { replayOutcome, requestHash, type IdempotentRequest, type Json } from "./idempotency/request.ts";
 export { accountById, createAccount, findAccount, type Account } from "./identity/account.ts";
 export { updateMe, type ProfileEdit, type UpdateMeInput } from "./identity/update-me.ts";
+export {
+  apnsTokenOf,
+  ENDED_KEEP,
+  PURGE_BATCH,
+  registerDevice,
+  removeDevice,
+  signInOf,
+  type ApnsEnvironment,
+  type DeviceRegistration,
+  type RegisterDeviceInput,
+} from "./identity/devices.ts";
 export { newId } from "./ids.ts";
 export { chooseScheduleDays } from "./schedule/choose-days.ts";
 export type { ScheduleCommandInput } from "./schedule/command.ts";

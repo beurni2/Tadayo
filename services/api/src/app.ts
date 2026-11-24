@@ -41,6 +41,7 @@ import type { Deps, Handler } from "./deps.ts";
 import { createDropHandler } from "./drops/drops.ts";
 import { createReservationHandler, releaseReservationHandler } from "./drops/reservations.ts";
 import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./media/uploads.ts";
+import { registerDeviceHandler, removeDeviceHandler } from "./identity/devices.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
 import { fastifyLogging, logEachRequest } from "./logging.ts";
@@ -85,7 +86,9 @@ export const BODY_LIMIT = 128 * 1024;
  * characters, a type and a size, under 850 bytes with every key and character written as an escape, so 2 KiB
  * (`media/uploads.test.ts`). A drop's commit is two ids of 64 characters, the longest kind and a caption of 140
  * grapheme clusters, which `Caption` lets hold 2,240 UTF-16 units, under 14,600 bytes written the same way, so
- * 29 KiB (`drops/drops.test.ts`).
+ * 29 KiB (`drops/drops.test.ts`). A device's registration is a token of 512 characters, a secret of 128, a zone
+ * of 64 and an environment, under 4,800 bytes written the same way, so 10 KiB; a removal is the secret alone,
+ * under 900 bytes, so 2 KiB (`identity/devices.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
@@ -103,6 +106,8 @@ const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   createDrop: 29 * 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
+  registerDevice: 10 * 1024,
+  removeDevice: 2 * 1024,
 };
 
 /** The most `operation`'s request body may hold, in bytes. */
@@ -184,6 +189,8 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     createUpload: createUploadHandler(deps),
     getUpload: getUploadHandler(deps),
     completeUpload: completeUploadHandler(deps),
+    registerDevice: registerDeviceHandler(deps),
+    removeDevice: removeDeviceHandler(deps),
   };
 }
 

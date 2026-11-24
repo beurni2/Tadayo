@@ -115,17 +115,48 @@ const BUILT = new Set([
   "createUpload",
   "getUpload",
   "completeUpload",
+  "registerDevice",
+  "removeDevice",
 ]);
 const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
-const unbuiltPublic = unbuilt.filter((operation) => operation.public === true);
+/**
+ * The public operations, all built: each is sent `{}`, which its handler refuses by its first field before it opens
+ * a transaction, so the answer is the route's own and never the gate's.
+ */
+const PUBLIC = OPERATIONS.filter((operation) => operation.public === true);
+const FIRST_FIELD: Readonly<Record<string, string>> = { previewInvitationWeb: "token", removeDevice: "removal_secret" };
+const emptyBody = (operation: (typeof OPERATIONS)[number]): InjectOptions => ({
+  method: operation.method.toUpperCase(),
+  url: urlOf(operation.path),
+  headers: { "content-type": "application/json" },
+  payload: "{}",
+});
+/** Pinned byte for byte: the route's INVALID_REQUEST naming `field`. */
+const invalidField = (field: string) => {
+  const body = `{"code":"INVALID_REQUEST","field":"${field}"}`;
+  return {
+    status: 400,
+    body,
+    headers: {
+      "cache-control": "private, no-store",
+      "content-type": "application/json; charset=utf-8",
+      "content-length": String(body.length),
+    },
+  };
+};
 const unbuiltBeforeProfile = unbuilt.filter(
   (operation) => operation.public !== true && operation.beforeProfile === true,
 );
 const unbuiltOther = unbuilt.filter((operation) => operation.public !== true && operation.beforeProfile !== true);
 
 describe("the route classes the gate tells apart (the contract's public and beforeProfile)", () => {
-  it("has each class among the operations nobody has built, so each is tried below", () => {
-    expect([unbuiltPublic.length, unbuiltBeforeProfile.length > 0, unbuiltOther.length > 0]).toEqual([1, true, true]);
+  it("has the two gated classes among the operations nobody has built, and every public one built, so each is tried below", () => {
+    expect([
+      unbuilt.some((op) => op.public === true),
+      unbuiltBeforeProfile.length > 0,
+      unbuiltOther.length > 0,
+    ]).toEqual([false, true, true]);
+    expect(PUBLIC.every((operation) => BUILT.has(operation.id) && FIRST_FIELD[operation.id] !== undefined)).toBe(true);
     // The contract's seven flagged operations beside the two public ones.
     expect(
       OPERATIONS.filter((operation) => operation.public === true)
@@ -222,11 +253,11 @@ describe("a signed-in caller", () => {
 describe("the public routes", () => {
   it("never ask who is calling, whatever the header says, and make no account", async () => {
     const { answer, asked } = await appWith(() => Promise.reject(new Error("asked")));
-    for (const operation of unbuiltPublic) {
+    for (const operation of PUBLIC) {
       for (const authorization of [undefined, "Bearer a.b.c", "garbage"]) {
-        const request: InjectOptions = { method: operation.method.toUpperCase(), url: urlOf(operation.path) };
-        if (authorization !== undefined) request.headers = { authorization };
-        expect(await answer(request), operation.id).toEqual(NEUTRAL);
+        const request = emptyBody(operation);
+        if (authorization !== undefined) request.headers = { ...request.headers, authorization };
+        expect(await answer(request), operation.id).toEqual(invalidField(FIRST_FIELD[operation.id] ?? ""));
       }
     }
     expect(asked.count).toBe(0);
@@ -271,11 +302,8 @@ describe("when the keys that check tokens can't be read (FQ89)", () => {
         ).toEqual(UNAVAILABLE);
       }
       // The public routes need no keys.
-      for (const operation of unbuiltPublic) {
-        expect(
-          await answer({ method: operation.method.toUpperCase(), url: urlOf(operation.path) }),
-          operation.id,
-        ).toEqual(NEUTRAL);
+      for (const operation of PUBLIC) {
+        expect(await answer(emptyBody(operation)), operation.id).toEqual(invalidField(FIRST_FIELD[operation.id] ?? ""));
       }
     }
   });
