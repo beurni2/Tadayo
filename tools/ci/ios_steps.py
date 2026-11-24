@@ -293,7 +293,7 @@ CACHE_LOG_TIMEOUT = 60
 # every failure of `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age` on iOS 27.2 whose
 # own log the evidence branch holds (12 from 2026-11-22 to 2026-11-24), the host lost its XPC
 # connection to the simulator's keyboard service during the test, and the field's editing ended
-# with it; the logs never said which process ended, or why (docs/plans/ios-b1-intermittents.md).
+# with it; the logs never said which process ended, or why (docs/LIMITATIONS.md, 2026-11-24).
 # A report names the process, how it ended (a crash's exception and signal, a kill's namespace
 # and reason, the processes a jetsam event killed) and nothing of the app's data. CRASH_REPORTS
 # reports at most, each read from at most CRASH_BYTES bytes, and each field cut to CRASH_FIELD
