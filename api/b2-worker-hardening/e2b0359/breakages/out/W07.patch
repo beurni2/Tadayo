@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -275,7 +275,7 @@
+   } catch {
+     return Promise.reject(new SweepFailed("start"));
+   }
+-  if (user.uid === 0 || user.gid === 0 || user.uid === own.euid || user.gid === own.egid) {
++  if (user.uid === 0 || user.uid === own.euid || user.gid === own.egid) {
+     return Promise.reject(new SweepFailed("refused"));
+   }
+   return new Promise((resolve, reject) => {

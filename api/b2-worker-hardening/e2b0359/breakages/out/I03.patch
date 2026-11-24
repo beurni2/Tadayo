@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -63,7 +63,7 @@
+ export const SWEEP_SECONDS = 5;
+ 
+ /** Node's flag that keeps SIGUSR1 from opening its inspector (the rules above): the sweep's and each photo's process's. */
+-export const NO_INSPECTOR = "--disable-sigusr1";
++export const NO_INSPECTOR = "--no-warnings";
+ 
+ /**
+  * The sweep's program (the rules above). As root, kill(-1) would end every process on the Machine, so it first checks

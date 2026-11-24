@@ -1,0 +1,27 @@
+== image: tadayo-api-dev:hardening7, built from the working tree of api/b2-worker-hardening (round 2's fixes), 2026-11-24T02:39:59Z
+== the image's CMD: ["setpriv","--reuid=node","--regid=node","--init-groups","--inh-caps=-all","--bounding-set=-all","--no-new-privs","--","node","--disable-sigusr1","services/api/src/main.ts"]  USER: ''
+== fly.toml api, its node script swapped for status.mjs:
+{"Uid":"1000 1000 1000 1000","Gid":"1000 1000 1000 1000","Groups":"1000","SigBlk":"0000000000000200","SigCgt":"0000000100004402","CapInh":"0000000000000000","CapPrm":"0000000000000000","CapEff":"0000000000000000","CapBnd":"0000000000000000","CapAmb":"0000000000000000","NoNewPrivs":"1","usr1Blocked":true,"usr1Caught":false,"limits":{"Max core file size":"0 unlimited bytes","Max processes":"64272 64272 processes","Max msgqueue size":"819200 819200 bytes"},"environSelf":"environ readable","argv":["--disable-sigusr1"]}
+== fly.toml worker, its node script swapped for status.mjs:
+{"Uid":"0 1000 1000 1000","Gid":"0 1000 1000 1000","Groups":"1000","SigBlk":"0000000000000200","SigCgt":"0000000100004402","CapInh":"0000000000000000","CapPrm":"00000000000000e0","CapEff":"0000000000000000","CapBnd":"00000000000000e0","CapAmb":"0000000000000000","NoNewPrivs":"1","usr1Blocked":true,"usr1Caught":false,"limits":{"Max core file size":"1 1 bytes","Max processes":"256 256 processes","Max msgqueue size":"0 0 bytes"},"environSelf":"EACCES","argv":["--disable-sigusr1"]}
+== under the worker's command, a POSIX message queue (RLIMIT_MSGQUEUE 0):
+{"mqueue":"EMFILE","cwd":"/app","filesBefore":["apps","node_modules","package.json","packages","pnpm-lock.yaml","pnpm-workspace.yaml","services","tests","tools"]}
+== a crash of a process of tadayo-image that would dump core to a file (the container's core_pattern on the next line), at each core limit:
+core_pattern: core
+--core=unlimited: files left: core 
+--core=1: files left: 
+--core=0: files left: 
+== tadayo-image:
+/etc/passwd:tadayo-image:x:10001:10001::/nonexistent:/usr/sbin/nologin
+/etc/group:tadayo-image:x:10001:
+-rwxr-xr-x 1 root root  72136 Jun  4  2025 /usr/bin/chmod
+-rwxr-xr-x 1 root root 233040 Aug 10  2024 /usr/bin/find
+-rwxr-xr-x 1 root root  80264 Jul 31 15:34 /usr/bin/ipcrm
+-rwxr-xr-x 1 root root  43928 Jul 31 15:34 /usr/bin/prlimit
+-rwxr-xr-x 1 root root  76232 Jun  4  2025 /usr/bin/rm
+-rwxr-xr-x 1 root root  92560 Jul 31 15:34 /usr/bin/setpriv
+drwxrwxrwt 2 root root   40 Nov 24 02:40 /dev/mqueue
+drwxrwxrwt 2 root root   40 Nov 24 02:40 /dev/shm
+drwxrwxrwt 2 root root 4096 Nov  4 21:23 /run/lock
+drwxrwxrwt 2 root root 4096 Nov  4 21:23 /tmp
+drwxrwxrwt 2 root root 4096 Jul 17 17:05 /var/tmp

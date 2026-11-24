@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -100,7 +100,7 @@
+   "  return /^Uid:\\s+(\\d+)/m.exec(status)?.[1] === uid && running(pid);",
+   "});",
+   "do {",
+-  '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
++  '  try { process.kill(0, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
+   "  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1);",
+   "} while (alive());",
+   "try {",

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -171,7 +171,7 @@
+     if (marker === 0xc0) {
+       const components = bytes[at + 9] ?? 0;
+       const sized =
+-        bytes[at + 4] === 8 &&
++        (bytes[at + 4] === 8 || bytes[at + 4] === 12) &&
+         (((bytes[at + 5] ?? 0) << 8) | (bytes[at + 6] ?? 0)) === height &&
+         (((bytes[at + 7] ?? 0) << 8) | (bytes[at + 8] ?? 0)) === width;
+       frames += 1;

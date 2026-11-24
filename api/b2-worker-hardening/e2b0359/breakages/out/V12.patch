@@ -1,0 +1,10 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -130,7 +130,6 @@
+   "}",
+   "for (let at = 0; at < objects.length; at += 1000) {",
+   '  const done = spawnSync("/usr/bin/ipcrm", objects.slice(at, at + 1000), { stdio: "ignore" });',
+-  '  if (done.status !== 0) throw new Error("the sweep: ipcrm failed");',
+   "}",
+   "} catch { process.exit(3); }",
+ ].join("\n");

@@ -1,0 +1,15 @@
+{"case":"start","uid":0,"euid":0,"photoUserFree":true,"photoUserLeft":{"files":[],"ipc":[]}}
+{"case":"refusals","asRootAsPlainRoot":"refused","sweepRoot":"refused","sweepRootsGroup":"refused","sweepWorkersUser":"refused","sweepWorkersGroup":"refused","euid":64998,"egid":64998}
+{"case":"sweep-fails","status":"exit","left":"left","signal":"exit","done":"swept","euid":64998}
+{"case":"sweep-usr1","usr1Caught":false,"usr1Blocked":true,"inspector":false,"status":"swept","euid":64998}
+{"case":"start-sweep","wasRunning":true,"endedBy":"start","failedAt":"the database","euid":64998}
+{"case":"start-sweep-fails","failedAt":"the sweep, left","euid":64998}
+{"case":"reaped","outcome":"prepared","groupKills":1,"afterReap":0,"euid":64998}
+{"case":"probe","outcome":"prepared","child":{"uid":64999,"euid":64999,"gid":64999,"egid":64999,"groups":[64999],"capEff":"0000000000000000","capPrm":"0000000000000000","usr1Caught":false,"environ":"EACCES","mem":"EACCES","stdout":"EACCES","signal":"EPERM"},"euid":64998,"egid":64998}
+{"case":"escapes","outcome":"prepared","wasRunning":true,"endedBy":"settle","euid":64998}
+{"case":"watcher","outcome":"prepared","seen":{"uid":64999,"gid":64998,"mem":"EACCES","autogroup":"set"},"group":{"before":"nice 0","after":"nice 0"},"euid":64998}
+{"case":"forks","outcome":"prepared","most":74,"left":0,"euid":64998}
+{"case":"hoards","outcome":"prepared","made":true,"left":{"files":[],"ipc":[]},"euid":64998}
+{"case":"memory","outcome":"too_many_pixels","msAfterCrossing":79,"euid":64998}
+{"case":"deadline","outcome":"ImageTimeout","ms":556,"euid":64998}
+{"case":"end","left":0}

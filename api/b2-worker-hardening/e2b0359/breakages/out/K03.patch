@@ -1,0 +1,10 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -324,7 +324,6 @@
+       if (pid === undefined) return;
+       // As the photo's user, once the child is reaped its number may be another group's when its own group is empty,
+       // and the kill is root's: what is left of its group is the sweep's (./privileges.ts).
+-      if (user !== undefined && (child.exitCode !== null || child.signalCode !== null)) return;
+       killGroupOf(pid, privileged);
+     };
+     let grace: NodeJS.Timeout | undefined;

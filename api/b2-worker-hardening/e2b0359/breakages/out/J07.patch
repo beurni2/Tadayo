@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -162,7 +162,7 @@
+  * reads, or bytes aimed at one, so renditions stay untrusted downstream (PR #118's round 2; ADR-038).
+  */
+ export function baselineJpeg(bytes: Uint8Array, width: number, height: number): boolean {
+-  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return false;
++  if (bytes.length < 4) return false;
+   let frames = 0;
+   for (let at = 2; at + 4 <= bytes.length;) {
+     const marker = bytes[at + 1] ?? 0;

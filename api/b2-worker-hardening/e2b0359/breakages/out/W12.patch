@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -102,7 +102,7 @@
+   "do {",
+   '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
+   "  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1);",
+-  "} while (alive());",
++  "} while (false);",
+   "try {",
+   "const owned = (dir) => {",
+   "  let names;",

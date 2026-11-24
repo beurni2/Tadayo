@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -299,7 +299,7 @@
+     let child: ReturnType<typeof spawn>;
+     try {
+       child = privileged(() =>
+-        spawn(process.execPath, [NO_INSPECTOR, fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
++        spawn(process.execPath, [fileURLToPath(limits.child ?? CHILD), declared, String(seconds)], {
+           env: {},
+           stdio: ["pipe", "ignore", "ignore", "pipe"],
+           detached: true,

@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -88,7 +88,7 @@
+   "const self = String(process.pid);",
+   "const running = (pid) => {",
+   "  let tasks;",
+-  '  try { tasks = fs.readdirSync("/proc/" + pid + "/task"); } catch { return false; }',
++  '  try { tasks = [String(pid)]; fs.readdirSync("/proc/" + pid + "/task"); } catch { return false; }',
+   "  return tasks.some((task) => {",
+   '    try { return !/^State:\\s+[ZX]/m.test(fs.readFileSync("/proc/" + pid + "/task/" + task + "/status", "latin1")); } catch { return false; }',
+   "  });",

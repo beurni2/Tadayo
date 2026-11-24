@@ -1,0 +1,13 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -210,9 +210,7 @@
+   const named = name !== undefined && name !== "";
+   const started = inWorkerMode(ids);
+   if (!named && !started) return undefined;
+-  if (!named) {
+-    throw new Error("worker: started to prepare each photo under a user of its own, but TADAYO_PHOTO_USER isn't set");
+-  }
++  if (!named) return undefined;
+   if (!started) {
+     throw new Error(
+       "worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root with its own user effective (fly.toml's worker command)",

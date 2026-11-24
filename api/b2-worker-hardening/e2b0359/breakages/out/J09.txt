@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker
+
+ ❯ src/image-process.test.ts (27 tests | 1 failed) 12580ms
+   ❯ a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) (2)
+     × refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  02:34:32
+   Duration  12.97s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) > refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end
+AssertionError: a scan's length shorter than its length's own bytes: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/image-process.test.ts:712:46
+    710|       ],
+    711|     ] as const) {
+    712|       expect(baselineJpeg(bytes, 2, 1), why).toBe(false);
+       |                                              ^
+    713|     }
+    714|     // The size the header states, and no other.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

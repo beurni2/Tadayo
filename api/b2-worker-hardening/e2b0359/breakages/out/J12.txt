@@ -1,0 +1,51 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker
+
+ ❯ src/image-process.test.ts (27 tests | 2 failed) 10999ms
+   ❯ a photo's own process (10)
+     × answers as prepareImage does in this process, rendition for rendition, byte for byte 457ms
+   ❯ a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) (2)
+     × takes prepareImage's own renditions, and the baseline JPEG they are laid out as, restarts and stuffed bytes in its scan 553ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+   Start at  02:35:13
+   Duration  11.37s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/image-process.test.ts > a photo's own process > answers as prepareImage does in this process, rendition for rendition, byte for byte
+ImageProcessFailed: image: the photo's process failed
+ ❯ outcomeOf src/image-process.ts:250:45
+    248|   const { answer } = end;
+    249|   if (answer?.kind === "prepared") {
+    250|     if (!wellFormed(answer.prepared)) throw new ImageProcessFailed();
+       |                                             ^
+    251|     const prepared: Prepared = answer.prepared.ok
+    252|       ? {
+ ❯ finish src/image-process.ts:400:13
+ ❯ settle src/image-process.ts:415:31
+ ❯ ChildProcess.<anonymous> src/image-process.ts:428:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/image-process.test.ts > a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) > takes prepareImage's own renditions, and the baseline JPEG they are laid out as, restarts and stuffed bytes in its scan
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/image-process.test.ts:633:82
+    631|       if (!prepared.ok) continue;
+    632|       for (const rendition of prepared.renditions) {
+    633|         expect(baselineJpeg(rendition.bytes, rendition.width, renditio…
+       |                                                                                  ^
+    634|       }
+    635|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

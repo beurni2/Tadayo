@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -111,7 +111,7 @@
+   '    try { return String(fs.lstatSync(Buffer.concat([Buffer.from(dir + "/"), name])).uid) === uid; } catch (error) { if (error.code === "ENOENT") return false; throw error; }',
+   "  }).length;",
+   "};",
+-  'for (const dir of ["/tmp", "/var/tmp", "/dev/shm", "/dev/mqueue", "/run/lock"]) {',
++  'for (const dir of ["/tmp", "/dev/shm", "/dev/mqueue", "/run/lock"]) {',
+   "  if (owned(dir) === 0) continue;",
+   '  const mine = ["-xdev", "-mindepth", "1", "-maxdepth", "1", "-user", uid];',
+   '  spawnSync("/usr/bin/find", [dir, ...mine, "-type", "d", "-exec", "/usr/bin/chmod", "-R", "u+rwx", "--", "{}", "+"], { stdio: "ignore" });',

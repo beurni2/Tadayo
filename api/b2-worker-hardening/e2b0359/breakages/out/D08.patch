@@ -1,0 +1,11 @@
+--- a/fly.toml
++++ b/fly.toml
+@@ -48,7 +48,7 @@
+ # most (the worker's real user, root, is exempt). Node's inspector is off in both (`--disable-sigusr1`): SIGUSR1 would
+ # open it, with no password, to anyone on the Machine (PR #118's review).
+ [processes]
+-  api = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node --disable-sigusr1 services/api/src/main.ts"
++  api = "setpriv --euid=node --egid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node --disable-sigusr1 services/api/src/main.ts"
+   worker = "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1 services/worker/src/main.ts"
+ 
+ # The API's service. It listens only after the database and the clock are ready, so an open port is a

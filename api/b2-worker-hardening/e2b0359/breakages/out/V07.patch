@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -304,7 +304,7 @@
+     started.on("exit", (code) => {
+       clearTimeout(timer);
+       if (code === 0) resolve();
+-      else reject(new SweepFailed(code === 3 ? "left" : "exit"));
++      else reject(new SweepFailed("exit"));
+     });
+   });
+ }

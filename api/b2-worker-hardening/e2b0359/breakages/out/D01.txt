@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/tools/ops
+
+ ❯ src/deploy-files.test.ts (19 tests | 1 failed) 394ms
+   ❯ Dockerfile (8)
+     × starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  02:21:32
+   Duration  711ms (tests 68%, transform 16%, import 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them
+AssertionError: expected [ { name: 'USER', args: 'node' } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "args": "node",
++     "name": "USER",
++   },
++ ]
+
+ ❯ src/deploy-files.test.ts:197:72
+    195|     const image = stages().at(-1) ?? [];
+    196|     // No USER: each group's command drops with setpriv before any Nod…
+    197|     expect(image.filter((instruction) => instruction.name === "USER"))…
+       |                                                                        ^
+    198|     const processes = table(flyToml()["processes"], "[processes]");
+    199|     expect(String(processes["api"]).startsWith(`${API_DROP} -- ${NODE}…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

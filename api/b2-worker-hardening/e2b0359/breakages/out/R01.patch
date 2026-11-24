@@ -1,0 +1,11 @@
+--- a/services/worker/src/prepare.ts
++++ b/services/worker/src/prepare.ts
+@@ -133,7 +133,7 @@
+     prepared = { ok: false, rejection: "too_large" };
+   } else if (original !== null) {
+     ({ prepared, peakBytes: photoPeakBytes } = await prepareIsolated(original, upload.contentType, {
+-      user: deps.photoUser,
++      user: undefined,
+     }));
+   }
+   let outcome: Preparation;

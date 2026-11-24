@@ -1,0 +1,89 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker
+
+ ✓ src/privileges.test.ts (25 tests) 6193ms
+   ✓ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (17)
+     ✓ a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 362ms
+     ✓ a sweep that ends every process but can't remove what the photo's user left stops the worker, saying so 395ms
+ ✓ src/image-process.test.ts (27 tests) 13757ms
+   ✓ a photo's own process (10)
+     ✓ answers as prepareImage does in this process, rendition for rendition, byte for byte 1873ms
+     ✓ is killed past its peak memory, before it can answer, and the photo refused as too_many_pixels 717ms
+     ✓ refuses a PNG whose compressed text would take the worker past its Machine, the worker holding none of it (R3-1) 1833ms
+     ✓ is killed past its deadline, whatever it is doing, and the decode is tried again (ImageTimeout) 1330ms
+     ✓ passes a decode's own timeout on as ImageTimeout 2332ms
+     ✓ ends with the worker: a worker killed while its photo is decoded leaves no process behind 1209ms
+   ✓ a photo's process that misbehaves (R4-3, C5-1) (8)
+     ✓ settles when the child ends though a process it started holds its pipes, and ends that process 388ms
+     ✓ closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them mid-message 2374ms
+   ✓ a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review) (2)
+     ✓ takes prepareImage's own renditions, and the baseline JPEG they are laid out as, restarts and stuffed bytes in its scan 605ms
+ ✓ src/storage.test.ts (12 tests) 135ms
+ ✓ src/image-frames.test.ts (7 tests) 24ms
+ ✓ src/start.test.ts (5 tests) 3658ms
+   ✓ the worker's entry (ADR-013) (5)
+     ✓ stops when TADAYO_ENVIRONMENT is missing, empty or neither dev nor prod 1086ms
+     ✓ stops before it connects when a Supabase setting is missing or isn't one, naming neither value 1030ms
+     ✓ writes the failure's message alone, never the database URL's password (T52, T56) 1026ms
+ ✓ src/loop.test.ts (8 tests) 355ms
+ ✓ src/outbox.test.ts (7 tests) 6ms
+ ✓ src/connection.test.ts (3 tests) 14ms
+ ✓ src/generation.test.ts (6 tests) 8ms
+ ✓ src/prepare.test.ts (4 tests) 21ms
+ ✓ src/image.test.ts (34 tests) 72533ms
+   ✓ what is refused, and with which code (D09, spec 33) (8)
+     ✓ refuses more than 64 megapixels by the header as too_many_pixels, and takes exactly 64,000,000 5683ms
+   ✓ a decode that can't stream (FQ138) (6)
+     ✓ refuses a progressive JPEG whose coefficients pass 128 MiB as too_many_pixels, subsampled or not, and takes one within it 15051ms
+     ✓ refuses an interlaced PNG whose pixels pass 128 MiB as too_many_pixels, by its channels and its depth, and takes one within it 5769ms
+     ✓ refuses a WebP that holds the whole image past 128 MiB as too_many_pixels, lossless, lossy with alpha or animated, and takes one within it 34804ms
+     ✓ takes the same sizes when their decode streams: a baseline JPEG, a PNG that isn't interlaced, a lossy WebP with no alpha 5346ms
+   ✓ the renditions (TECH-DESIGN section 1, Images) (8)
+     ✓ makes full inside 2560 and display inside 1290 wide and 2560 tall, JPEG, for a landscape photo 2582ms
+     ✓ gives the same renditions for the same bytes, so a second try writes the same objects 540ms
+   ✓ a slow decode (2)
+     ✓ is the worker's limit, a failure to try again, never a rejection of the photo 1902ms
+stdout | src/image-memory.test.ts > a photo's process's peak memory (FQ138) > keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing
+a progressive JPEG at the budget: 283 MiB at the peak
+a progressive CMYK JPEG at the budget: 288 MiB at the peak
+an interlaced PNG at the budget: 326 MiB at the peak
+an interlaced 16-bit PNG at the budget: 314 MiB at the peak
+a greyscale progressive JPEG of 64 megapixels: 265 MiB at the peak
+an interlaced 16-bit greyscale PNG of 64 megapixels: 280 MiB at the peak
+an interlaced greyscale PNG with alpha of 64 megapixels: 300 MiB at the peak
+a lossless WebP at the budget: 253 MiB at the peak
+a lossy WebP with a lossless alpha at the budget: 253 MiB at the peak
+an animated WebP at the budget: 289 MiB at the peak
+a 16-bit PNG of 64 megapixels: 307 MiB at the peak
+a baseline JPEG of 64 megapixels to turn upright: 174 MiB at the peak
+a lossy WebP of 64 megapixels: 184 MiB at the peak
+a progressive JPEG of 64 megapixels: 102 MiB at the peak
+an interlaced 16-bit PNG of 64 megapixels: 120 MiB at the peak
+a lossless WebP of 64 megapixels: 93 MiB at the peak
+a lossy WebP with a lossless alpha of 64 megapixels: 94 MiB at the peak
+an animated WebP of 64 megapixels, its frames small: 94 MiB at the peak
+
+stdout | src/image-memory.test.ts > a photo's process's peak memory (FQ138) > refuses every file built to hold what no header shows, by its structure or by the cap
+a 50 KB PNG whose compressed text inflates to 49 MiB (R3-1): too_many_pixels, 362 MiB at the peak
+a 164 KB PNG of four compressed texts of 40 MiB (R3-1): too_many_pixels, 368 MiB at the peak
+a lossless WebP of 1 megapixel and 65,536 Huffman groups (R3-4): too_many_pixels, 355 MiB at the peak
+a lossless WebP at the budget with 30,000 Huffman groups (R3-4): too_many_pixels, 356 MiB at the peak
+one lossless frame on 64 megapixels, with a trailer past its RIFF (R3-2): unreadable, 94 MiB at the peak
+one small frame on 64 megapixels, no trailer (R3-2): too_many_pixels, 94 MiB at the peak
+a 20 MiB WebP of 2.6 million empty chunks: unsupported_type, 132 MiB at the peak
+a progressive JPEG at the budget of 2,688 scans (R3-6): unsupported_type, 96 MiB at the peak
+
+stdout | src/image-memory.test.ts > a photo's process's peak memory (FQ138) > leaves the worker's own memory within 128 MiB of where it started, the largest photos sent back to back, twice
+the worker: 78 MiB at the start, 160 MiB at its peak after 26 photos, each process's peak at most 327 MiB
+
+ ✓ src/image-memory.test.ts (3 tests) 196160ms
+   ✓ a photo's process's peak memory (FQ138) (3)
+     ✓ keeps each named photo's process under 352 MiB, of each kind the largest at the budget or at 64 megapixels, and refuses those past the budget as too_many_pixels, holding nothing 94107ms
+     ✓ refuses every file built to hold what no header shows, by its structure or by the cap 22270ms
+     ✓ leaves the worker's own memory within 128 MiB of where it started, the largest photos sent back to back, twice 79730ms
+
+ Test Files  12 passed (12)
+      Tests  141 passed (141)
+   Start at  02:13:37
+   Duration  202.91s (tests 99%)
+

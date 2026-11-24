@@ -1,0 +1,11 @@
+--- a/services/worker/src/main.ts
++++ b/services/worker/src/main.ts
+@@ -52,7 +52,7 @@
+     }),
+   };
+   process.stdout.write(
+-    `worker: started, making days every minute and preparing uploads, ${photoUser === undefined ? "each photo in the worker's own user" : "each photo under a user of its own"}\n`,
++    `worker: started, making days every minute and preparing uploads, ${"each photo under a user of its own"}\n`,
+   );
+   await Promise.all([
+     runLoop({

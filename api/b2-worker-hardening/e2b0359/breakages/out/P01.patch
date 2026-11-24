@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -171,7 +171,7 @@
+ 
+ /** Started as root and turned to a user of its own, as fly.toml starts the worker. */
+ export function inWorkerMode(ids: Ids): boolean {
+-  return ids.uid === 0 && ids.euid !== 0;
++  return ids.uid === 0;
+ }
+ 
+ /** What a failed sweep may have left (SweepFailed), for the worker's stop line, its log's only clue. */

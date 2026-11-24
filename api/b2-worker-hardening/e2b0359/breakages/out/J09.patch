@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -167,7 +167,7 @@
+   for (let at = 2; at + 4 <= bytes.length;) {
+     const marker = bytes[at + 1] ?? 0;
+     const length = ((bytes[at + 2] ?? 0) << 8) | (bytes[at + 3] ?? 0);
+-    if (bytes[at] !== 0xff || length < 2 || at + 2 + length > bytes.length) return false;
++    if (bytes[at] !== 0xff || at + 2 + length > bytes.length) return false;
+     if (marker === 0xc0) {
+       const components = bytes[at + 9] ?? 0;
+       const sized =

@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -126,7 +126,7 @@
+   '  const id = head.indexOf(kind === "msg" ? "msqid" : kind + "id");',
+   '  const owner = head.indexOf("uid");',
+   '  const maker = head.indexOf("cuid");',
+-  "  for (const row of rows) if (row[owner] === uid || row[maker] === uid) objects.push(flag, row[id]);",
++  "  for (const row of rows) if (row[owner] === uid) objects.push(flag, row[id]);",
+   "}",
+   "for (let at = 0; at < objects.length; at += 1000) {",
+   '  const done = spawnSync("/usr/bin/ipcrm", objects.slice(at, at + 1000), { stdio: "ignore" });',

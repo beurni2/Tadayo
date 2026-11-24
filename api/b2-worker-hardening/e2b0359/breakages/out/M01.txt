@@ -1,0 +1,92 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/tests
+
+ ❯ src/db/startup.test.ts (15 tests | 3 failed) 28834ms
+   ❯ the worker's entry against the test database (7)
+     × starts with prod and stays up, making days, until it is told to stop 20051ms
+     × stops cleanly on a SIGTERM that comes as it writes its started line: its handlers are in place first 219ms
+     × stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first 253ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 12 passed (15)
+   Start at  02:21:02
+   Duration  29.36s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/startup.test.ts [ src/db/startup.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:236:15
+    234|     await admin.begin(async (tx) => {
+    235|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    236|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    237|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    238|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > starts with prod and stays up, making days, until it is told to stop
+AssertionError: expected null not to be null
+ ❯ src/db/startup.test.ts:233:11
+    231|       ),
+    232|       worker.output.stderr,
+    233|     ).not.toBeNull();
+       |           ^
+    234|     // Nothing ends it: a worker that exited would leave its Machine s…
+    235|     await new Promise((done) => setTimeout(done, 1_500));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops cleanly on a SIGTERM that comes as it writes its started line: its handlers are in place first
+AssertionError: expected 'worker: started, making days every mi…' to match /^worker: started, making days every m…/
+
+- Expected:
+/^worker: started, making days every minute and preparing uploads, each photo in the worker's own user\n(worker: made \d+ days?\n)?worker: stopped on SIGTERM\n$/
+
++ Received:
+"worker: started, making days every minute and preparing uploads, each photo under a user of its own
+worker: stopped on SIGTERM
+"
+
+ ❯ src/db/startup.test.ts:260:36
+    258|       // Its first pass still runs, and makes whatever days a club ano…
+    259|       // may come between the two, and nothing else may.
+    260|       expect(worker.output.stdout).toMatch(
+       |                                    ^
+    261|         new RegExp(
+    262|           `^worker: started, making days every minute and preparing up…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first
+AssertionError: expected 'worker: started, making days every mi…' to match /^worker: started, making days every m…/
+
+- Expected:
+/^worker: started, making days every minute and preparing uploads, each photo in the worker's own user\n(worker: made \d+ days?\n)?worker: stopped on SIGINT\n$/
+
++ Received:
+"worker: started, making days every minute and preparing uploads, each photo under a user of its own
+worker: stopped on SIGINT
+"
+
+ ❯ src/db/startup.test.ts:260:36
+    258|       // Its first pass still runs, and makes whatever days a club ano…
+    259|       // may come between the two, and nothing else may.
+    260|       expect(worker.output.stdout).toMatch(
+       |                                    ^
+    261|         new RegExp(
+    262|           `^worker: started, making days every minute and preparing up…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

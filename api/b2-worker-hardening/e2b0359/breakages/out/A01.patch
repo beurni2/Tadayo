@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -240,7 +240,7 @@
+ export function asRoot<T>(fn: () => T): T {
+   const calls = posix();
+   const before = idsOf();
+-  if (!inWorkerMode(before)) {
++  if (false) {
+     throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+   }
+   calls.seteuid(0);

@@ -1,0 +1,10 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -287,7 +287,6 @@
+           gid: own.egid,
+           env: {},
+           stdio: "ignore",
+-          detached: true,
+         }),
+       );
+     } catch {

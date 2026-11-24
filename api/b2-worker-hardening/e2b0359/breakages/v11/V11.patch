@@ -1,0 +1,13 @@
+--- /home/user/tadayo-share/services/worker/src/privileges.ts	2026-11-24 02:11:15.226903317 +0000
++++ /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/v11/privileges-v11.ts	2026-11-24 02:40:19.814512966 +0000
+@@ -128,8 +128,8 @@
+   '  const maker = head.indexOf("cuid");',
+   "  for (const row of rows) if (row[owner] === uid || row[maker] === uid) objects.push(flag, row[id]);",
+   "}",
+-  "for (let at = 0; at < objects.length; at += 1000) {",
+-  '  const done = spawnSync("/usr/bin/ipcrm", objects.slice(at, at + 1000), { stdio: "ignore" });',
++  "for (let at = 0; at < objects.length; at += objects.length) {",
++  '  const done = spawnSync("/usr/bin/ipcrm", objects.slice(at), { stdio: "ignore" });',
+   '  if (done.status !== 0) throw new Error("the sweep: ipcrm failed");',
+   "}",
+   "} catch { process.exit(3); }",

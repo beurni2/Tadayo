@@ -1,0 +1,5 @@
+before the worker: live processes of uid 10001: 1, files of tadayo-image in /tmp and /var/tmp: 2
+the worker, as fly.toml starts it, with a database that refuses:
+connect ECONNREFUSED 127.0.0.1:1
+worker exit 1
+after the worker: live processes of uid 10001: 0, files of tadayo-image in /tmp and /var/tmp: 0

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -175,7 +175,7 @@
+         (((bytes[at + 5] ?? 0) << 8) | (bytes[at + 6] ?? 0)) === height &&
+         (((bytes[at + 7] ?? 0) << 8) | (bytes[at + 8] ?? 0)) === width;
+       frames += 1;
+-      if (frames > 1 || !sized || (components !== 1 && components !== 3) || length !== 8 + 3 * components) {
++      if (frames > 1 || (components !== 1 && components !== 3) || length !== 8 + 3 * components) {
+         return false;
+       }
+     } else if (marker === 0xda) {

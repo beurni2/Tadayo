@@ -1,0 +1,429 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker
+
+ ❯ src/privileges.test.ts (25 tests | 16 failed) 3926ms
+   ✓ the photo user (photoUserFor) (5)
+     ✓ is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one 2ms
+     ✓ is the user the variable names, from /etc/passwd, when the worker was started as fly.toml starts it 1ms
+     ✓ stops the worker when only one half is there: the variable without the start, or the start without it 1ms
+     ✓ refuses a name that isn't a user's, matching whole names only 1ms
+     ✓ refuses root, root's group, the worker's own user and the worker's own group 1ms
+   ✓ outside the worker's mode (3)
+     ✓ asRoot refuses, and runs nothing 1ms
+     ✓ the sweep refuses root, root's group, and this process's own user and group, before it starts anything 2ms
+     ✓ the sweep's program sends SIGKILL to every process its user may signal, never as root, and counts finding none as done 1ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (17)
+     × ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left 6ms
+     ✓ asRoot refuses a process that is only root, and the sweep refuses root, the worker's user and its group 0ms
+     × a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it 3ms
+     × a photo's process is the photo's user alone, with no capability, and can't reach the worker 1ms
+     × a process the photo's process started in a session of its own has ended once the photo's end settles 0ms
+     × the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it 0ms
+     × a process left behind may lower the sweep's scheduling group, but it is the sweep's own: the worker's stays as it was 0ms
+     × a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end 1ms
+     × the worker's start ends a process of the photo's user before anything else, so none waits from before a restart 0ms
+     × a sweep that can't finish as the worker starts stops it there, before it connects to the database 0ms
+     × sends no group kill once Node has reaped the photo's process, when its group's number may be another's 0ms
+     × what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects 0ms
+     × so has every process of a forking loop, caught mid-fork 0ms
+     × a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS 0ms
+     × a process past its deadline is still killed by the worker at once 0ms
+     × a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive 322ms
+     × a sweep that ends every process but can't remove what the photo's user left stops the worker, saying so 198ms
+
+ Test Files  1 failed (1)
+      Tests  16 failed | 9 passed (25)
+   Start at  02:18:30
+   Duration  4.11s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > ran as root, with the photo's user and the worker's unused, and ended with nothing of the photo's user left
+AssertionError: expected 'file:///tmp/claude-0/-home-user/9ca8d…' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
++     throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
++           ^
++
++ Error: worker: asRoot is only for a worker started as root with its own user effective
++     at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
++     at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
++
++ Node.js v26.13.1
++
+
+ ❯ src/privileges.test.ts:179:24
+    177|
+    178|   it("ran as root, with the photo's user and the worker's unused, and …
+    179|     expect(run.stderr).toBe("");
+       |                        ^
+    180|     expect(run.code).toBe(0);
+    181|     expect(fact("start")).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that exits other than 0, or is killed by a signal, is never done: a process left behind may have killed it
+AssertionError: expected { case: 'sweep-fails', …(5) } to deeply equal { case: 'sweep-fails', …(5) }
+
+- Expected
++ Received
+
+  {
+    "case": "sweep-fails",
+-   "done": "swept",
+-   "euid": 64998,
+-   "left": "left",
+-   "signal": "exit",
++   "done": "start",
++   "euid": 0,
++   "left": "start",
++   "signal": "start",
+    "status": "exit",
+  }
+
+ ❯ src/privileges.test.ts:204:33
+    202|
+    203|   it("a sweep that exits other than 0, or is killed by a signal, is ne…
+    204|     expect(fact("sweep-fails")).toEqual({
+       |                                 ^
+    205|       case: "sweep-fails",
+    206|       status: "exit",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a photo's process is the photo's user alone, with no capability, and can't reach the worker
+Error: the harness didn't report probe: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:215:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process the photo's process started in a session of its own has ended once the photo's end settles
+Error: the harness didn't report escapes: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:238:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the sweep runs with the worker's group, not the photo user's, so a process left behind can't attach to it
+Error: the harness didn't report watcher: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:243:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process left behind may lower the sweep's scheduling group, but it is the sweep's own: the worker's stays as it was
+Error: the harness didn't report watcher: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:253:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end
+AssertionError: expected { case: 'sweep-usr1', …(5) } to deeply equal { case: 'sweep-usr1', …(5) }
+
+- Expected
++ Received
+
+  {
+    "case": "sweep-usr1",
+-   "euid": 64998,
++   "euid": 0,
+    "inspector": false,
+-   "status": "swept",
+-   "usr1Blocked": true,
+-   "usr1Caught": false,
++   "status": "start",
++   "usr1Blocked": null,
++   "usr1Caught": null,
+  }
+
+ ❯ src/privileges.test.ts:265:32
+    263|     // PR #118's review: with the inspector on, a leftover sent SIGUSR…
+    264|     // --disable-sigusr1, Node blocks the signal in every thread and n…
+    265|     expect(fact("sweep-usr1")).toEqual({
+       |                                ^
+    266|       case: "sweep-usr1",
+    267|       usr1Caught: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the worker's start ends a process of the photo's user before anything else, so none waits from before a restart
+Error: the harness didn't report start-sweep: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:276:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that can't finish as the worker starts stops it there, before it connects to the database
+Error: the harness didn't report start-sweep-fails: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:287:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > sends no group kill once Node has reaped the photo's process, when its group's number may be another's
+Error: the harness didn't report reaped: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:292:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > what a photo's process left in memory or on disk is gone once its end settles: files, read-only folders, System V objects
+Error: the harness didn't report hoards: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:297:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > so has every process of a forking loop, caught mid-fork
+Error: the harness didn't report forks: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:307:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its memory is still killed by the worker at once, not left to the sweep after GRACE_MS
+Error: the harness didn't report memory: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:313:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a process past its deadline is still killed by the worker at once
+Error: the harness didn't report deadline: file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244
+    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+          ^
+
+Error: worker: asRoot is only for a worker started as root with its own user effective
+    at asRoot (file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges.ts:244:11)
+    at file:///tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/services/worker/src/privileges-harness.ts:568:16
+
+Node.js v26.13.1
+
+ ❯ asRoot src/privileges.ts:244:11
+    242|   const before = idsOf();
+    243|   if (!inWorkerMode(before)) {
+    244|     throw new Error("worker: asRoot is only for a worker started as ro…
+       |           ^
+    245|   }
+    246|   calls.seteuid(0);
+ ❯ src/privileges-harness.ts:568:16
+ ❯ fact src/privileges.test.ts:170:36
+ ❯ src/privileges.test.ts:319:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive
+AssertionError: expected 'worker: a photo\'s process group coul…' to be 'worker: a photo\'s processes weren\'t…' // Object.is equality
+
+- Expected
++ Received
+
+- worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them
++ worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it
+
+
+ ❯ src/privileges.test.ts:328:28
+    326|     const stopped = await harness(["sweep-timeout"], 60);
+    327|     expect(stopped.code).toBe(1);
+    328|     expect(stopped.stderr).toBe(
+       |                            ^
+    329|       "worker: a photo's processes weren't all ended, so the worker st…
+    330|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/16]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > a sweep that ends every process but can't remove what the photo's user left stops the worker, saying so
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privileges.test.ts:338:26
+    336|     // Exit status 3 (SWEEP_PROGRAM): the stop line names what is left…
+    337|     const stopped = await harness(["sweep-left"], 60);
+    338|     expect(stopped.code).toBe(1);
+       |                          ^
+    339|     expect(stopped.stderr).toBe(
+    340|       "worker: every process of a photo's user ended, but what it left…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/16]⎯
+

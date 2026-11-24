@@ -1,0 +1,10 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -81,7 +81,6 @@
+  * thrown once no process of the user is left is exit status 3 (what the user left wasn't all removed); before, it is 1.
+  */
+ export const SWEEP_PROGRAM = [
+-  "if (process.getuid() === 0) process.exit(2);",
+   'const fs = require("node:fs");',
+   'const { spawnSync } = require("node:child_process");',
+   "const uid = String(process.getuid());",

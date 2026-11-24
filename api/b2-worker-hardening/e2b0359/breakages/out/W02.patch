@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -284,7 +284,7 @@
+       started = asRoot(() =>
+         spawn(process.execPath, [NO_INSPECTOR, "-e", program], {
+           uid: user.uid,
+-          gid: own.egid,
++          gid: user.gid,
+           env: {},
+           stdio: "ignore",
+           detached: true,

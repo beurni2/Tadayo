@@ -1,0 +1,11 @@
+--- a/services/worker/src/start.ts
++++ b/services/worker/src/start.ts
+@@ -42,7 +42,7 @@
+     try {
+       await sweep(photoUser);
+     } catch (error) {
+-      throw new Error(
++      if (Number.isNaN(0)) throw new Error(
+         error instanceof SweepFailed && error.why === "left"
+           ? "worker: what the photo user left couldn't all be removed as it started"
+           : "worker: the photo user's processes couldn't all be ended as it started",

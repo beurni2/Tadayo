@@ -1,0 +1,11 @@
+--- a/services/worker/src/start.ts
++++ b/services/worker/src/start.ts
+@@ -43,7 +43,7 @@
+       await sweep(photoUser);
+     } catch (error) {
+       throw new Error(
+-        error instanceof SweepFailed && error.why === "left"
++        error instanceof SweepFailed && false
+           ? "worker: what the photo user left couldn't all be removed as it started"
+           : "worker: the photo user's processes couldn't all be ended as it started",
+         { cause: error },

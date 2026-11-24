@@ -1,0 +1,14 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -106,9 +106,9 @@
+   "try {",
+   "const owned = (dir) => {",
+   "  let names;",
+-  '  try { names = fs.readdirSync(dir, { encoding: "buffer" }); } catch (error) { if (error.code === "ENOENT" || error.code === "EACCES") return 0; throw error; }',
++  '  try { names = fs.readdirSync(dir); } catch (error) { if (error.code === "ENOENT" || error.code === "EACCES") return 0; throw error; }',
+   "  return names.filter((name) => {",
+-  '    try { return String(fs.lstatSync(Buffer.concat([Buffer.from(dir + "/"), name])).uid) === uid; } catch (error) { if (error.code === "ENOENT") return false; throw error; }',
++  '    try { return String(fs.lstatSync(dir + "/" + name).uid) === uid; } catch (error) { if (error.code === "ENOENT") return false; throw error; }',
+   "  }).length;",
+   "};",
+   'for (const dir of ["/tmp", "/var/tmp", "/dev/shm", "/dev/mqueue", "/run/lock"]) {',

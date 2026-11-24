@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/v2brk5/tree/tools/ops
+
+ ❯ src/deploy-files.test.ts (19 tests | 1 failed) 549ms
+   ❯ Dockerfile (8)
+     × puts the ops entry where the runner starts it, and the API's command where a bare run starts it 67ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  02:21:45
+   Duration  1.02s (tests 69%, import 16%, transform 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > puts the ops entry where the runner starts it, and the API's command where a bare run starts it
+AssertionError: expected [ 'node', 'services/api/src/main.ts' ] to deeply equal [ 'setpriv', '--reuid=node', …(9) ]
+
+- Expected
++ Received
+
+  [
+-   "setpriv",
+-   "--reuid=node",
+-   "--regid=node",
+-   "--init-groups",
+-   "--inh-caps=-all",
+-   "--bounding-set=-all",
+-   "--no-new-privs",
+-   "--",
+    "node",
+-   "--disable-sigusr1",
+    "services/api/src/main.ts",
+  ]
+
+ ❯ src/deploy-files.test.ts:189:43
+    187|     const api = String(table(flyToml()["processes"], "[processes]")["a…
+    188|     const cmd = dockerfile().find((instruction) => instruction.name ==…
+    189|     expect(JSON.parse(cmd?.args ?? "[]")).toEqual(api);
+       |                                           ^
+    190|   });
+    191|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

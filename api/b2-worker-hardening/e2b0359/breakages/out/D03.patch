@@ -1,0 +1,11 @@
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -37,7 +37,7 @@
+ ENV NODE_ENV=production
+ WORKDIR /app
+ RUN groupadd --system --gid 10001 tadayo-image \
+-    && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image
++    && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /bin/sh tadayo-image
+ # The manifests and node_modules as pnpm laid them: its symlinks are what makes a workspace import resolve.
+ COPY --from=deps /app/ ./
+ COPY packages/contracts/src packages/contracts/src

@@ -1,0 +1,11 @@
+--- a/services/worker/src/start.ts
++++ b/services/worker/src/start.ts
+@@ -37,7 +37,7 @@
+   const serviceKey = env.SUPABASE_SERVICE_KEY;
+   if (serviceKey === undefined || serviceKey === "") throw new Error("worker: SUPABASE_SERVICE_KEY isn't set");
+   const storage = workerStorage({ projectUrl: project, serviceKey });
+-  const photoUser = photoUserFor(env, idsOf(), passwd);
++  const photoUser = undefined as PhotoUser | undefined;
+   if (photoUser !== undefined) {
+     try {
+       await sweep(photoUser);
