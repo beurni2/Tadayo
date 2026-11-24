@@ -25,7 +25,11 @@
 //   the author and the reveal. getHome (B2) is the first, for the revealed form (below); the caption and
 //   own forms come with the first routes that answer them (B3, B4);
 // - a body, with its Id fields bound through bindings.ts and replaced in the guessed-id step;
-// - an object in the world for each binding still marked `missing`;
+// - an object in the world for each binding still marked `missing`, the last being `comment_id`, which comes with
+//   B6's first comment route (bindings.ts). Since the outside audit's A4, a built route may take no `missing`
+//   binding (bindings.ts `bindingProblems`), the routes the app builds are exactly the rows that aren't NONE
+//   (`rowProblems`, against the API's BUILT_OPERATIONS), so a built route can't keep the skeleton's row, and
+//   `drop_id` names Ben's photo and Cleo's video link, each in a request of its own;
 // - for the first route that pages (getOccurrence, B2; listComments, listFavourites, listMemories and
 //   listMyDrops, B6), a cursor issued to another role and one issued before a removal, each answered
 //   as the row says (T14), beside the forged and malformed cursors the harness sends now, and a
@@ -602,12 +606,16 @@ export const ROWS: Readonly<Record<string, unknown>> = {
 
 /**
  * What's wrong with `rows` for `operations`: an operation with no row, a row with no operation, a row that
- * isn't NONE and that nothing judges (JUDGED: the operations account.ts and schedule.ts answer), and an
- * operation it judges whose row is NONE, which would leave its judge unasked.
+ * isn't NONE and that nothing judges (JUDGED: the operations account.ts and the others answer), an operation it
+ * judges whose row is NONE, which would leave its judge unasked, and a route the app builds (`built`: the API's
+ * BUILT_OPERATIONS) whose row is NONE, or a row of its own for a route the app doesn't build. The built routes and
+ * the rows that aren't NONE are the same set (the outside audit's A4): a built route with the skeleton's row would
+ * be asked only for the neutral not-found its own request may well get from a handler that leaks.
  */
 export function rowProblems(
   operations: readonly { id: string }[],
   rows: Readonly<Record<string, unknown>>,
+  built: ReadonlySet<string>,
   judged: ReadonlySet<string> = JUDGED,
 ): string[] {
   const ids = new Set(operations.map((operation) => operation.id));
@@ -625,5 +633,11 @@ export function rowProblems(
     ...Object.entries(rows)
       .filter(([id, row]) => row === NONE && judged.has(id))
       .map(([id]) => `${id} is judged but its row is NONE`),
+    ...[...built]
+      .filter((id) => rows[id] === NONE)
+      .map((id) => `${id} is built but its row is NONE: a built route's row is judged, never the skeleton's`),
+    ...Object.entries(rows)
+      .filter(([id, row]) => row !== NONE && !built.has(id))
+      .map(([id]) => `${id} isn't built but its row isn't NONE: only a built route has a row of its own`),
   ];
 }

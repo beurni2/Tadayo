@@ -8,7 +8,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { ApiError } from "@tadayo/contracts";
-import { bind, freshId, type Targets } from "./bindings.ts";
+import { bind, bindAll, freshId, type Targets } from "./bindings.ts";
 import { isObject, type ContractOperation, type Parameter } from "./operations.ts";
 import { transportProblem, type Answer } from "./scanner.ts";
 
@@ -237,21 +237,23 @@ export function freshCursor(): string {
 
 /**
  * The requests a cell makes to `operation`, with `authorization` as the caller's header (the role's
- * signed token; a stand-in where no app checks it), naming the cell's world: one for each value
- * of a required enum query parameter, then each of those again with each optional Id query parameter
- * filled, so it is sent and guessed like the required ones. A required parameter it can't fill, or
- * an Id parameter with no binding, stops the harness. The other optional parameters are left out:
- * the cursor has its own step (guessStep), and the rest name nothing (`month`, `q`, `limit`).
+ * signed token; a stand-in where no app checks it), naming the cell's world: one for each object an Id
+ * parameter names (`drop_id` names two: bindings.ts), each with one for each value of a required enum query
+ * parameter, then each of those again with each optional Id query parameter filled, so it is sent and
+ * guessed like the required ones. A required parameter it can't fill, or an Id parameter with no binding,
+ * stops the harness. The other optional parameters are left out: the cursor has its own step (guessStep),
+ * and the rest name nothing (`month`, `q`, `limit`).
  */
 export function specsFor(operation: ContractOperation, targets: Targets, authorization: string): Spec[] {
-  const path: Record<string, string> = {};
+  let paths: Record<string, string>[] = [{}];
   const headers: Record<string, string> = { authorization };
   let queries: Record<string, string>[] = [{}];
   const optional: string[] = [];
   for (const parameter of operation.parameters) {
     if (parameter.in === "path") {
       if (!isId(parameter)) throw new Error(`${operation.id}: path parameter ${parameter.name} isn't an Id`);
-      path[parameter.name] = bind(parameter.name, targets);
+      const values = bindAll(parameter.name, targets);
+      paths = paths.flatMap((path) => values.map((value) => ({ ...path, [parameter.name]: value })));
     } else if (!parameter.required) {
       if (parameter.in === "query" && isId(parameter)) optional.push(parameter.name);
     } else if (parameter.in === "header") {
@@ -271,7 +273,7 @@ export function specsFor(operation: ContractOperation, targets: Targets, authori
     const value = bind(name, targets);
     return queries.map((query) => ({ ...query, [name]: value }));
   });
-  return [...queries, ...filled].map((query) => ({ operation, path, query, headers }));
+  return paths.flatMap((path) => [...queries, ...filled].map((query) => ({ operation, path, query, headers })));
 }
 
 /** `spec` written out: the path's values as they are, the query encoded. */

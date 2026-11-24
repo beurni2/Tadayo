@@ -21,10 +21,10 @@
 // itself are values the world keeps back.
 //
 // Each role's test prints the cells it ran and the answers it scanned, and asserts both: the cells
-// against the contract's 72 requests a world, the answers against what each step says it sends.
+// against the contract's 88 requests a world, the answers against what each step says it sends.
 
 import { randomBytes, randomUUID } from "node:crypto";
-import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
+import { BUILT_OPERATIONS, buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
 import { fakeStorage, TEST_EMAIL, type FakeStorage } from "@tadayo/api/testing";
 import { dayInstants, makeDays } from "@tadayo/domain";
 import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
@@ -58,7 +58,7 @@ import {
   type Own,
   type Session,
 } from "./account.ts";
-import { freshId, type Targets } from "./bindings.ts";
+import { bindingProblems, freshId, type Targets } from "./bindings.ts";
 import {
   SIGNED_OUT,
   UNAUTHENTICATED,
@@ -209,7 +209,7 @@ const plain = (tx: WorldTx) => tx as unknown as Tx;
 const CLAIMED = PHASES.collecting.add({ hours: 24 });
 
 /** The requests each world gets from the contract's operations (specsFor), pinned. */
-const REQUESTS_PER_WORLD = 72;
+const REQUESTS_PER_WORLD = 88;
 /** What the roster's table did for each role (the role's test fills it; the last test reads it). */
 const ROSTER_TABLES = new Map<
   string,
@@ -370,6 +370,19 @@ async function twoContributors(tx: WorldTx, w: World): Promise<string> {
 }
 
 /**
+ * Cleo's video link to Ana's Saturday (twoContributors), which every cell's drop routes name besides Ben's photo
+ * (bindings.ts; the outside audit's A4), so a route of one class of drop can't hide behind the other's id. No state
+ * ends it.
+ */
+async function cleosVideo(tx: WorldTx, w: World): Promise<{ video: string }> {
+  const [video] = await tx<{ id: string }[]>`
+    SELECT id FROM app.drops
+     WHERE occurrence_id = ${w.day} AND author_interval_id = ${w.cleo.interval} AND media_class = 'external_video'`;
+  if (video === undefined) throw new Error("the matrix's day has no video link of Cleo's");
+  return { video: video.id };
+}
+
+/**
  * Ana's next Saturday, 14 November, in the cell's world, collecting since the world's generation as hers on the
  * 7th is: so after the 7th closes Home waits for it, with the 7th among its recent days (getHome's row,
  * home.ts), rather than having no day to open.
@@ -486,6 +499,7 @@ beforeAll(async () => {
   elsewhere = await db.begin(async (tx) => {
     const w = await newWorld(plain(tx), suffix());
     const drop = await twoContributors(tx, w);
+    const { video } = await cleosVideo(tx, w);
     const proposal = await addFirstDays(tx, w);
     const avatar = await newAvatar(plain(tx), w.ben.user, "ready");
     const [subject] = await tx<{ auth_subject: string | null; display_name: string | null }[]>`
@@ -495,6 +509,7 @@ beforeAll(async () => {
     return {
       club: w.club,
       drop,
+      video,
       day: w.day,
       author: w.ben.interval,
       star: w.ana.interval,
@@ -899,7 +914,10 @@ async function changeDatesAt(
 
 describe("a route with no row fails, and no route is outside the contract but the preflight (TECH-DESIGN section 8)", () => {
   it("gives every operation of the contract a row, and the app a route for each, the preflight, and no other", () => {
-    expect(rowProblems(operations, ROWS)).toEqual([]);
+    expect(rowProblems(operations, ROWS, new Set(BUILT_OPERATIONS))).toEqual([]);
+    // Every Id parameter of every built route names an object of the world, so a leaking handler can't hide behind
+    // the neutral not-found a request that names nothing gets (the outside audit's A4).
+    expect(bindingProblems(operations, new Set(BUILT_OPERATIONS))).toEqual([]);
     // The browser's preflight before tadayo.app's request is the one route that is no operation; every cell
     // sends it as its role, below.
     expect(routesOf(app)).toContain(PREFLIGHT_ROUTE);
@@ -966,6 +984,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const w = await newWorld(plain(tx), suffix());
           await anaNextSaturday(tx, w);
           const drop = await twoContributors(tx, w);
+          const { video } = await cleosVideo(tx, w);
           const { reservation, upload } = await releasedSlot(tx, w);
           const cleos = await cleosLapsedSlot(tx, w);
           // The club's first days, before the role changes the club, as a leave or a join would meet them.
@@ -981,6 +1000,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const targets: Targets = {
             club: w.club,
             drop,
+            video,
             day: w.day,
             author: w.ben.interval,
             star: w.ana.interval,
@@ -2816,7 +2836,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       console.log(`${role.name}: ${String(counted.cells)} cells run, ${String(counted.answers)} answers scanned`);
       console.log(`${role.name}, the roster's table: ${JSON.stringify(roster)}`);
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-      // Every cell ran: the contract's 72 requests a world (each operation with each value of a
+      // Every cell ran: the contract's 88 requests a world (each operation for each drop it names, with each value of a
       // required enum, and again with its optional ids), in each of the 7 states and each phase the
       // role has. And every answer was scanned, with the manipulated and guessed requests and the bodies.
       const specsPerWorld = operations.reduce(
@@ -3828,6 +3848,7 @@ describe("callers without a session, in each state of the drop and phase of the 
       const cell = await db.begin(async (tx) => {
         const w = await newWorld(plain(tx), suffix());
         const drop = await twoContributors(tx, w);
+        const { video } = await cleosVideo(tx, w);
         const { reservation, upload } = await releasedSlot(tx, w);
         const proposal = await addFirstDays(tx, w);
         await state.make(tx, w, drop);
@@ -3837,6 +3858,7 @@ describe("callers without a session, in each state of the drop and phase of the 
           targets: {
             club: w.club,
             drop,
+            video,
             day: w.day,
             author: w.ben.interval,
             star: w.ana.interval,

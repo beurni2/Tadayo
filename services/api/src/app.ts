@@ -160,38 +160,47 @@ export function routesOf(app: FastifyInstance): readonly string[] {
   return recorded.get(app) ?? [];
 }
 
-/** The routes built so far, by operation id; every other operation answers the neutral not-found. */
+/**
+ * The routes built so far, by operation id, each with what makes its handler; every other operation answers the
+ * neutral not-found. `buildApp` reads this table and nothing else, so `BUILT_OPERATIONS` is exactly the routes it
+ * builds (the privacy matrix holds them to the rows it judges: the outside audit's A4).
+ */
+const HANDLERS: Readonly<Record<string, (deps: Deps) => Handler>> = {
+  getMe: () => getMe,
+  updateMe: updateMeHandler,
+  listClubs: listClubsHandler,
+  createClub: createClubHandler,
+  getClub: getClubHandler,
+  listMembers: listMembersHandler,
+  getHome: getHomeHandler,
+  proposeRoster: proposeRosterHandler,
+  getRosterRevision: getRosterRevisionHandler,
+  createInvitation: createInvitationHandler,
+  revokeInvitation: revokeInvitationHandler,
+  approveRoster: approveRosterHandler,
+  declineRoster: declineRosterHandler,
+  previewInvitationWeb: previewInvitationWebHandler,
+  previewInvitation: previewInvitationHandler,
+  acceptInvitation: acceptInvitationHandler,
+  leaveClub: leaveClubHandler,
+  getSchedule: getScheduleHandler,
+  chooseScheduleDays: chooseScheduleDaysHandler,
+  confirmScheduleDays: confirmScheduleDaysHandler,
+  createReservation: createReservationHandler,
+  releaseReservation: releaseReservationHandler,
+  createDrop: createDropHandler,
+  createUpload: createUploadHandler,
+  getUpload: getUploadHandler,
+  completeUpload: completeUploadHandler,
+  registerDevice: registerDeviceHandler,
+  removeDevice: removeDeviceHandler,
+};
+
+/** The operations the app builds a route for, in the table's order. */
+export const BUILT_OPERATIONS: readonly string[] = Object.freeze(Object.keys(HANDLERS));
+
 function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
-  return {
-    getMe,
-    updateMe: updateMeHandler(deps),
-    listClubs: listClubsHandler(deps),
-    createClub: createClubHandler(deps),
-    getClub: getClubHandler(deps),
-    listMembers: listMembersHandler(deps),
-    getHome: getHomeHandler(deps),
-    proposeRoster: proposeRosterHandler(deps),
-    getRosterRevision: getRosterRevisionHandler(deps),
-    createInvitation: createInvitationHandler(deps),
-    revokeInvitation: revokeInvitationHandler(deps),
-    approveRoster: approveRosterHandler(deps),
-    declineRoster: declineRosterHandler(deps),
-    previewInvitationWeb: previewInvitationWebHandler(deps),
-    previewInvitation: previewInvitationHandler(deps),
-    acceptInvitation: acceptInvitationHandler(deps),
-    leaveClub: leaveClubHandler(deps),
-    getSchedule: getScheduleHandler(deps),
-    chooseScheduleDays: chooseScheduleDaysHandler(deps),
-    confirmScheduleDays: confirmScheduleDaysHandler(deps),
-    createReservation: createReservationHandler(deps),
-    releaseReservation: releaseReservationHandler(deps),
-    createDrop: createDropHandler(deps),
-    createUpload: createUploadHandler(deps),
-    getUpload: getUploadHandler(deps),
-    completeUpload: completeUploadHandler(deps),
-    registerDevice: registerDeviceHandler(deps),
-    removeDevice: removeDeviceHandler(deps),
-  };
+  return Object.fromEntries(Object.entries(HANDLERS).map(([id, make]) => [id, make(deps)]));
 }
 
 /** The app, with a route for each operation of the contract. */

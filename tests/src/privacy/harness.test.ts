@@ -5,7 +5,8 @@
 
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { describe, expect, it } from "vitest";
-import { BINDINGS, freshId, type Targets } from "./bindings.ts";
+import { BUILT_OPERATIONS } from "@tadayo/api";
+import { BINDINGS, bindingProblems, freshId, type Targets } from "./bindings.ts";
 import {
   answerOf,
   cellStep,
@@ -45,6 +46,7 @@ function operation(id: string): ContractOperation {
 const here: Targets = {
   club: "clb_here",
   drop: "drp_here",
+  video: "drp_video_here",
   day: "occ_here",
   author: "itv_here",
   star: "itv_star_here",
@@ -57,6 +59,7 @@ const here: Targets = {
 const elsewhere: Targets = {
   club: "clb_there",
   drop: "drp_there",
+  video: "drp_video_there",
   day: "occ_there",
   author: "itv_there",
   star: "itv_star_there",
@@ -116,29 +119,75 @@ function spec(id: string): Spec {
   return first;
 }
 
+const built: ReadonlySet<string> = new Set(BUILT_OPERATIONS);
+
 describe("a route with no row fails (TECH-DESIGN section 8)", () => {
-  it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the account routes'", () => {
+  it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes'", () => {
     expect(operations).toHaveLength(67);
-    expect(rowProblems(operations, ROWS)).toEqual([]);
+    expect(rowProblems(operations, ROWS, built)).toEqual([]);
   });
 
   it("reports a route added to the contract without a row", () => {
     const added = [...operations, { ...operation("getDrop"), id: "getDropTwice" }];
-    expect(rowProblems(added, ROWS)).toEqual(["getDropTwice has no row in the privacy matrix"]);
+    expect(rowProblems(added, ROWS, built)).toEqual(["getDropTwice has no row in the privacy matrix"]);
   });
 
   it("reports a row whose operation is gone, a row that isn't NONE and that nothing judges, and a judged operation's NONE", () => {
-    expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE })).toEqual([
+    expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE }, built)).toEqual([
       "getDropTwice has a row but no operation in the contract",
     ]);
-    expect(rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } })).toEqual([
+    expect(rowProblems(operations, { ...ROWS, getMe: NONE }, built)).toEqual([
+      "getMe is judged but its row is NONE",
+      "getMe is built but its row is NONE: a built route's row is judged, never the skeleton's",
+    ]);
+    // The slice that builds a route builds its handler, names it among the judged, and its row is no longer NONE.
+    expect(
+      rowProblems(
+        operations,
+        { ...ROWS, getDrop: { grants: "everyone" } },
+        new Set([...built, "getDrop"]),
+        new Set([...JUDGED, "getDrop"]),
+      ),
+    ).toEqual([]);
+  });
+
+  it("ties the built routes to the judged rows both ways (the outside audit's A4)", () => {
+    // The audit's leaking handler: built, and its row left the skeleton's.
+    expect(rowProblems(operations, ROWS, new Set([...built, "deleteComment"]))).toEqual([
+      "deleteComment is built but its row is NONE: a built route's row is judged, never the skeleton's",
+    ]);
+    // A row judged for a route the app doesn't build.
+    expect(rowProblems(operations, ROWS, new Set([...built].filter((id) => id !== "getMe")))).toEqual([
+      "getMe isn't built but its row isn't NONE: only a built route has a row of its own",
+    ]);
+    // A row judged and built, but nothing judges it.
+    expect(
+      rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } }, new Set([...built, "getDrop"])),
+    ).toEqual([
       "getDrop's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
     ]);
-    expect(rowProblems(operations, { ...ROWS, getMe: NONE })).toEqual(["getMe is judged but its row is NONE"]);
-    // The slice that builds a route names it among the judged, and its row is no longer NONE.
-    expect(
-      rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } }, new Set([...JUDGED, "getDrop"])),
-    ).toEqual([]);
+  });
+});
+
+describe("a built route names objects of the world (the outside audit's A4)", () => {
+  it("binds every Id parameter of every built route to an object of the world", () => {
+    expect(bindingProblems(operations, built)).toEqual([]);
+    // The one still missing, until B6's first comment route puts a comment in the world (bindings.ts).
+    expect(Object.entries(BINDINGS).filter(([, binding]) => binding === "missing")).toEqual([
+      ["comment_id", "missing"],
+    ]);
+  });
+
+  it("refuses a built route that takes a parameter still marked missing, and lets an unbuilt one keep it", () => {
+    // The audit's deleteComment, built while comment_id names nothing.
+    expect(bindingProblems(operations, new Set([...built, "deleteComment"]))).toEqual([
+      "deleteComment is built and takes comment_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+    ]);
+    // A built route's parameter put back to missing.
+    expect(bindingProblems(operations, built, { ...BINDINGS, upload_id: "missing" })).toEqual([
+      "getUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+      "completeUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+    ]);
   });
 });
 
@@ -161,6 +210,28 @@ describe("the requests a cell makes, from the contract's parameters", () => {
     expect(spec("listMemories").query).toEqual({ club_id: "clb_here" });
   });
 
+  it("names each drop once as Ben's photo and once as Cleo's video link (the outside audit's A4)", () => {
+    expect(specsFor(operation("getDrop"), here, "Bearer planted").map((made) => made.path)).toEqual([
+      { drop_id: "drp_here" },
+      { drop_id: "drp_video_here" },
+    ]);
+    expect(specsFor(operation("getEmbed"), here, "Bearer planted").map((made) => made.path)).toEqual([
+      { drop_id: "drp_here" },
+      { drop_id: "drp_video_here" },
+    ]);
+    expect(
+      specsFor(operation("getDropMedia"), here, "Bearer planted").map((made) => [
+        made.path.drop_id,
+        made.query.rendition,
+      ]),
+    ).toEqual([
+      ["drp_here", "display"],
+      ["drp_here", "full"],
+      ["drp_video_here", "display"],
+      ["drp_video_here", "full"],
+    ]);
+  });
+
   it("sends each optional Id parameter too, filled from the world, in a request of its own", () => {
     expect(specsFor(operation("listMemories"), here, "Bearer planted").map((made) => made.query)).toEqual([
       { club_id: "clb_here" },
@@ -178,8 +249,12 @@ describe("the requests a cell makes, from the contract's parameters", () => {
     expect(specsFor(operation("getDropMedia"), here, "Bearer planted").map((made) => made.query)).toEqual([
       { rendition: "display" },
       { rendition: "full" },
+      { rendition: "display" },
+      { rendition: "full" },
     ]);
     expect(specsFor(operation("removeDrop"), here, "Bearer planted").map((made) => made.query)).toEqual([
+      { reason: "withdraw" },
+      { reason: "pictured" },
       { reason: "withdraw" },
       { reason: "pictured" },
     ]);
