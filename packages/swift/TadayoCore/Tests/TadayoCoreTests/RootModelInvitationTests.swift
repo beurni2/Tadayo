@@ -755,6 +755,44 @@ import Testing
             root.invitation?.state == .reopenLink(clubName: "Kitchen table", inviterName: "Ben"))
     }
 
+    @Test func aChangedRowWhoseKeptLinkHasJoinedGivesBackTheModelItOpened() async throws {
+        // An Accept with no answer that the server made: the row's kept link, checked again,
+        // answers joined. The root hands back the model it showed, now `opening`, so the tabs can
+        // take its screen off in the same action (`TabsView.acceptedAnswered`), and lets it go.
+        let links = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
+        links.keepReceived(token, invitation: "inv_leila", account: leila.id)
+        let clubs = ScriptedClubs()
+        clubs.previewAnswers = [.success(.joined(Kitchen.ref))]
+        let root = root(
+            FakeAccounts(
+                me: [.success(leila)],
+                clubs: [
+                    .success(list(invitations: [accepted(.rosterChanged)])),
+                    .success(list([kitchen])),
+                ]),
+            clubs: clubs, links: links)
+        await root.start()
+        let opened = try #require(await root.openAccepted(accepted(.rosterChanged)))
+        #expect(opened.state == .opening(Kitchen.ref))
+        #expect(root.invitation == nil)
+        #expect(root.selectedClubID == "club_kitchen")
+        #expect(clubs.calls == ["preview 01"])
+    }
+
+    @Test func eachAcceptedRowGivesBackTheModelTheRootShows() async throws {
+        let root = root(
+            FakeAccounts(
+                me: [.success(leila)],
+                clubs: [.success(list(invitations: [accepted(.waiting)]))]))
+        await root.start()
+        let waiting = try #require(await root.openAccepted(accepted(.waiting)))
+        #expect(waiting === root.invitation)
+        let declined = try #require(await root.openAccepted(accepted(.didNotGoAhead)))
+        #expect(declined === root.invitation)
+        let reopen = try #require(await root.openAccepted(accepted(.rosterChanged)))
+        #expect(reopen === root.invitation)
+    }
+
     @Test func aChangedInvitationWithNoTokenKeptAsksForTheLinkAgain() async {
         let clubs = ScriptedClubs()
         let invitations = [accepted(.rosterChanged)]
