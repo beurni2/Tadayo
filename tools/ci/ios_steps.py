@@ -75,7 +75,7 @@ The steps:
   a part at most about 40 seconds at its start and 45 at its end. After each pass, the crash
   and jetsam reports macOS wrote during it go to logs/crashes-<v>.txt, and after a failed pass
   the simulator's log lines about services that exited, read around each service whose
-  connection the pass's log says ended, or over the pass when none did (Steps.crash_reports,
+  connection the pass's log says ended, and not read when none did (Steps.crash_reports,
   Steps.service_exits; CRASH_FOLDERS, SERVICE_ENDED), which decide nothing either.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
@@ -306,17 +306,18 @@ CRASH_REPORTS = 30
 CRASH_BYTES = 2_000_000
 CRASH_FIELD = 300
 # A failed pass's crashes-<v>.txt also has the simulator's own log lines from launchd about the
-# services that exited during the pass, which a process that ended with no report still leaves
-# (`log show` in the device, given SERVICE_LOG_TIMEOUT seconds), SERVICE_LOG_LINES at most.
+# services that exited, which a process that ended with no report still leaves (`log show` in
+# the device, given SERVICE_LOG_TIMEOUT seconds), SERVICE_LOG_LINES at most.
 SERVICE_LOG_PREDICATE = ('eventMessage CONTAINS "exited due to" OR eventMessage CONTAINS '
                          '"exited with abnormal code" OR eventMessage CONTAINS[c] "jetsam"')
 SERVICE_LOG_TIMEOUT = 90
 SERVICE_LOG_LINES = 200
-# Read over a whole pass, that log didn't finish in SERVICE_LOG_TIMEOUT (`ios` 45392426021). So
-# where the pass's own log says a service's connection ended ("The connection to service with pid
-# N … was invalidated", as `_UIRemoteKeyboards` prints it, in UTC), the device's log is read only
-# from SERVICE_WINDOW's seconds before the first such line for each pid to its seconds after, for
-# SERVICE_PIDS pids at most, with that pid's own lines and any that name it.
+# Read over a whole pass, that log didn't finish in SERVICE_LOG_TIMEOUT, twice in two failed
+# passes (`ios` 45392426021 and 45406524807). So it is read only where the pass's own log says a
+# service's connection ended ("The connection to service with pid N … was invalidated", as
+# `_UIRemoteKeyboards` prints it, in UTC): from SERVICE_WINDOW's seconds before the first such
+# line for each pid to its seconds after, for SERVICE_PIDS pids at most, with that pid's own lines
+# and any that name it. A failed pass with no such line doesn't read it.
 SERVICE_ENDED = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\.\d+\+0000 "
                            r".*connection to service with pid (\d+)\b")
 SERVICE_WINDOW = (60, 10)
@@ -1731,16 +1732,20 @@ class Steps:
         self.write_log(f"test-summary-{version}.json", summary or err)
         self.crash_reports(version, since)
         if code != 0:
-            self.service_exits(version, udid, since)
+            self.service_exits(version, udid)
         return code
 
-    def service_exits(self, version, udid, since):
+    def service_exits(self, version, udid):
         """Appends the simulator's log lines about services that exited to
-        logs/crashes-<version>.txt, SERVICE_LOG_LINES at most for each read: around each service
-        whose connection the pass's log says ended (`ended_services`), else since `since` (a
-        time.time()). Says so when the log couldn't be read, and writes nothing for a read with
-        no such line."""
+        logs/crashes-<version>.txt, SERVICE_LOG_LINES at most for each read, around each service
+        whose connection the pass's log says ended (`ended_services`). Says so when there is
+        none, and when the log couldn't be read; writes nothing for a read with no such line."""
         ended = self.ended_services(version)
+        if not ended:
+            self.write_log(f"crashes-{version}.txt",
+                           f"--- the simulator's log: not read, since logs/test-{version}.log "
+                           f"says no service's connection ended")
+            return
         before, after = SERVICE_WINDOW
         reads = [(f"--- the simulator's log: pid {pid}, whose connection ended at "
                   f"{time.strftime('%H:%M:%S', time.gmtime(at))} UTC, from {before} s before "
@@ -1749,15 +1754,12 @@ class Steps:
                   f'processIdentifier == {pid} OR eventMessage CONTAINS "{pid}" OR '
                   f"({SERVICE_LOG_PREDICATE})")
                  for pid, at in ended]
-        if not reads:
-            reads = [("--- the simulator's log: services that exited during the pass", [since],
-                      SERVICE_LOG_PREDICATE)]
         for heading, span, predicate in reads:
-            times = [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t)) for t in span]
-            window = ["--start", times[0]] + (["--end", times[1]] if len(times) > 1 else [])
+            start, end = (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t)) for t in span)
             code, out, err = self.shell.capture(
-                ["xcrun", "simctl", "spawn", udid, "log", "show", "--style", "compact"] + window
-                + ["--predicate", predicate], env=self.xcode_env(), timeout=SERVICE_LOG_TIMEOUT)
+                ["xcrun", "simctl", "spawn", udid, "log", "show", "--style", "compact",
+                 "--start", start, "--end", end, "--predicate", predicate],
+                env=self.xcode_env(), timeout=SERVICE_LOG_TIMEOUT)
             lines = [line for line in out.splitlines()
                      if line.strip() and not line.startswith(("Timestamp", "Filtering the log"))]
             if code != 0:

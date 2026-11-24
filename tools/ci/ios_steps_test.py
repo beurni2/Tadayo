@@ -1994,40 +1994,19 @@ class BuildAndTestSteps(StepsTest):
         # A thread's frames and registers say nothing of how the process ended: left out.
         self.assertNotIn("frames", text)
 
-    def test_a_failed_pass_keeps_the_simulator_s_lines_about_services_that_exited(self):
-        # Only a failed pass reads the device's log (iOS 26.5 here); a pass that passed doesn't.
-        exited = ("Timestamp               Ty Process[PID:TID]\n"
-                  "2026-11-24 04:37:44.29 Df launchd_sim[1:2] (com.apple.kbd) Service exited due "
-                  "to SIGKILL\n")
-        shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"), (0, exited, ""))],
-                          codes=[(lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
+    def test_a_failed_pass_with_no_ended_service_doesn_t_read_the_device_s_log(self):
+        # Read over a whole pass, the device's log never finished in its 90 seconds (`ios`
+        # 45392426021 and 45406524807), so a failed pass whose own log names no ended service
+        # doesn't read it, and says so; a pass that passed doesn't either (iOS 27.2 here).
+        shell = FakeShell(codes=[(lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
                                   and UDID_26 in cmd[cmd.index("-destination") + 1], 65)])
         code, out = self.step("test", shell)
         self.assertEqual(code, 65, out)
-        reads = [c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]]
-        self.assertEqual(len(reads), 1)
-        self.assertEqual(reads[0][3:8], [UDID_26, "log", "show", "--style", "compact"])
-        self.assertEqual(reads[0][-2:], ["--predicate", ios_steps.SERVICE_LOG_PREDICATE])
-        self.assertEqual(shell.timeouts[tuple(reads[0])], ios_steps.SERVICE_LOG_TIMEOUT)
+        self.assertEqual([c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]], [])
         self.assertFalse(os.path.exists(self.log("crashes-27.2.txt")))
         with open(self.log("crashes-26.5.txt")) as f:
-            text = f.read()
-        self.assertEqual(text, "--- the simulator's log: services that exited during the pass\n"
-                               "2026-11-24 04:37:44.29 Df launchd_sim[1:2] (com.apple.kbd) "
-                               "Service exited due to SIGKILL\n")
-        # A log that can't be read is said; one with no such line writes nothing.
-        for answer, expected in [((1, "", "simctl: no device"),
-                                  "(the simulator's log couldn't be read: exit 1: simctl: no device)"),
-                                 ((0, "Timestamp  Ty Process\n", ""), None)]:
-            os.remove(self.log("crashes-26.5.txt")) if os.path.exists(self.log("crashes-26.5.txt")) else None
-            shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"), answer)],
-                              codes=[(has("test-without-building"), 65)])
-            self.step("test", shell)
-            if expected is None:
-                self.assertFalse(os.path.exists(self.log("crashes-26.5.txt")))
-            else:
-                with open(self.log("crashes-26.5.txt")) as f:
-                    self.assertIn(expected + "\n", f.read())
+            self.assertEqual(f.read(), "--- the simulator's log: not read, since "
+                                       "logs/test-26.5.log says no service's connection ended\n")
 
     def test_a_failed_pass_reads_the_device_s_log_around_each_service_whose_connection_ended(self):
         # Read over the whole pass, the device's log took longer than its 90 seconds (`ios`
@@ -2079,6 +2058,29 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(text, "".join(
             f"--- the simulator's log: pid {pid}, whose connection ended at {stamp[11:]} UTC, "
             f"from 60 s before to 10 s after\n{exited}\n" for pid, stamp in expected))
+        # A log that can't be read is said under its heading; a read with no such line writes
+        # nothing.
+        heading = ("--- the simulator's log: pid 25135, whose connection ended at 12:46:59 UTC, "
+                   "from 60 s before to 10 s after")
+        for answer, expected_text in [
+                ((124, "", "xcrun didn't finish in 90 s, so it was stopped"),
+                 f"{heading}\n(the simulator's log couldn't be read: exit 124: xcrun didn't "
+                 f"finish in 90 s, so it was stopped)\n"),
+                ((0, "Timestamp  Ty Process\n", ""), None)]:
+            for name in ("crashes-26.5.txt", "test-26.5.log"):
+                if os.path.exists(self.log(name)):
+                    os.remove(self.log(name))
+            ended = line("2026-11-24 12:46:59.807475", 25135)
+            shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"), answer)],
+                              codes=[(failing, 65)], effects=[(failing, write_ended)])
+            self.step("test", shell)
+            self.assertEqual(
+                len([c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]]), 1)
+            if expected_text is None:
+                self.assertFalse(os.path.exists(self.log("crashes-26.5.txt")))
+            else:
+                with open(self.log("crashes-26.5.txt")) as f:
+                    self.assertEqual(f.read(), expected_text)
 
     def test_a_report_that_isn_t_ips_or_can_t_be_read_is_kept_as_it_is(self):
         self.assertEqual(ios_steps.crash_summary("Process: kbd\nException Type: EXC_CRASH\n"),
