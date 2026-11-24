@@ -153,21 +153,30 @@ function chosen(day: DayFacts, phase: ChosenPhase): ChosenDay {
 }
 
 /**
- * The day as the contract's Occurrence names it, at `phase`: its star by FQ75's rule, the avatar's version only
- * while both the star's interval and account are active. Throws for a day with no star to name, which no
- * answer may send nameless.
+ * The day's star as an answer names them, by FQ75's rule: the name members see, and the avatar's version only
+ * while both the star's interval and account are active; null for a day with no star to name.
+ */
+export function placedStar(day: DayFacts): PlacedDay["star"] | null {
+  const name = starNameOf(day);
+  if (name === null) return null;
+  return {
+    membershipId: day.starInterval,
+    displayName: name,
+    avatarVersion: day.starIntervalState === "active" && day.starAccount === "active" ? day.starAvatarVersion : null,
+  };
+}
+
+/**
+ * The day as the contract's Occurrence names it, at `phase`, its star as `placedStar` names them. Throws for a
+ * day with no star to name, which no answer may send nameless.
  */
 export function placed(day: DayFacts, phase: PlacedPhase): PlacedDay {
-  const name = starNameOf(day);
-  if (name === null) throw new Error("authorization: a day with no star to name was chosen");
+  const star = placedStar(day);
+  if (star === null) throw new Error("authorization: a day with no star to name was chosen");
   return {
     id: day.id,
     clubId: day.clubId,
-    star: {
-      membershipId: day.starInterval,
-      displayName: name,
-      avatarVersion: day.starIntervalState === "active" && day.starAccount === "active" ? day.starAvatarVersion : null,
-    },
+    star,
     localDate: day.localDate,
     revealAt: day.revealAt,
     closeAt: day.closeAt,

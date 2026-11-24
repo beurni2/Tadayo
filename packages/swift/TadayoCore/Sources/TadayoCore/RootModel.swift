@@ -401,32 +401,35 @@ import Observation
     /// An accepted invitation the club list holds: `G03-waiting` from the list's words, with no
     /// call and no token, so a session that ends while it shows holds nothing of it to check again
     /// (handoff 9's `states.waiting.token`); `G03-declined`; or, for a changed roster, the kept
-    /// token checked (`G02-changed`), or, with none kept, the link opened again (FQ136).
-    public func openAccepted(_ accepted: MyInvitation) async {
-        guard route == .tabs, let account else { return }
+    /// token checked (`G02-changed`), or, with none kept, the link opened again (FQ136). Gives
+    /// back the model it showed, even once a check that joined has let it go (`opening`), so the
+    /// tabs can take its screen off in the same action (`TabsView.acceptedAnswered`).
+    @discardableResult
+    public func openAccepted(_ accepted: MyInvitation) async -> InvitationModel? {
+        guard route == .tabs, let account else { return nil }
         let kept = links.received(invitation: accepted.invitationID, account: account.id)?.token
+        let model: InvitationModel
         switch accepted.state {
         case .waiting:
-            setInvitation(
-                makeInvitation(nil, state: .waiting(clubName: accepted.clubName), for: account))
+            model = makeInvitation(nil, state: .waiting(clubName: accepted.clubName), for: account)
         case .didNotGoAhead:
             // The invitation has ended: its token goes (the contract's `MyInvitationState`).
             if let kept { links.dropReceived(kept, account: account.id) }
-            setInvitation(
-                makeInvitation(
-                    nil, state: .didNotGoAhead(inviterName: accepted.inviterName), for: account))
+            model = makeInvitation(
+                nil, state: .didNotGoAhead(inviterName: accepted.inviterName), for: account)
         case .rosterChanged:
             guard let kept else {
-                setInvitation(
-                    makeInvitation(
-                        nil,
-                        state: .reopenLink(
-                            clubName: accepted.clubName, inviterName: accepted.inviterName),
-                        for: account))
-                return
+                model = makeInvitation(
+                    nil,
+                    state: .reopenLink(
+                        clubName: accepted.clubName, inviterName: accepted.inviterName),
+                    for: account)
+                break
             }
-            await present(kept, for: account)
+            return await present(kept, for: account)
         }
+        setInvitation(model)
+        return model
     }
 
     /// Not now, Done and Close invitation: nothing is granted or changed (handoff 1).
@@ -457,10 +460,12 @@ import Observation
             })
     }
 
-    private func present(_ token: InvitationToken, for account: Account) async {
+    @discardableResult
+    private func present(_ token: InvitationToken, for account: Account) async -> InvitationModel {
         let model = makeInvitation(token, state: .checking, for: account)
         setInvitation(model)
         await model.check()
+        return model
     }
 
     /// The shown invitation and the paste steps', closed and let go; gives the link of the one shown

@@ -1,8 +1,8 @@
 /// <reference lib="esnext.temporal" />
 // Who may add to a day, and what the day is to them at the server's time (spec 06, 07, 11, 32; T1, T3, T4,
-// T9, T14, T17; FQ50, FQ63): the authorization module's rule for every command that targets a day, a
-// reservation now (packages/domain/src/drops/reserve.ts), the commit and a highlight later (B3, B4). A handler
-// never states it again (T9).
+// T9, T14, T17; FQ50, FQ63): the authorization module's rule for every command that targets a day: a
+// reservation (packages/domain/src/drops/reserve.ts), a photo's commit (packages/domain/src/drops/commit.ts),
+// and a video link's commit and a highlight later (B4). A handler never states it again (T9).
 //
 // - Nothing for anyone but a member: the caller's account is active, they have an active interval in the
 //   day's club, the club isn't suspended (spec 22), and the day is scheduled, neither suspended nor cancelled
@@ -100,19 +100,31 @@ export function addTargetOutcome(facts: AddTargetFacts | null, now: ServerNow): 
   };
 }
 
+/** What the rule reads of a reservation: its day and the interval that made it, which never change. */
+export interface ReservationOwnership {
+  readonly day: string;
+  readonly interval: string;
+}
+
 /**
- * Whether `facts`, read for a reservation's day, give the caller that reservation, made by the interval
- * `slotInterval`: the day is one the caller may act on at all (anything but `not_found`, so a held or closed
- * day's slot is still theirs to give back), and the interval is the caller's active one in its club, so an
- * earlier interval's slot, after the account rejoined, is nobody's to them (T14). releaseReservation's rule,
- * and the commit's later (B3): a command never states it again (T9).
+ * Whether `facts` give the caller the reservation `slot`: they are read for the slot's own day (a slot of
+ * another day is nobody's to a command about this one), the day is one the caller may act on at all (anything
+ * but `not_found`, so a held or closed day's slot is still theirs to give back), and the slot's interval is the
+ * caller's active one in its club, so an earlier interval's slot, after the account rejoined, is nobody's to
+ * them (T14). The rule of releaseReservation, of a drop's photo upload and of the commit: a command never
+ * states it again (T9).
  */
 export function ownsReservation(
   facts: AddTargetFacts | null,
-  slotInterval: string,
+  slot: ReservationOwnership,
   now: ServerNow,
 ): facts is AddTargetFacts {
-  return facts !== null && addTargetOutcome(facts, now).kind !== "not_found" && facts.viewerInterval === slotInterval;
+  return (
+    facts !== null &&
+    facts.day.id === slot.day &&
+    addTargetOutcome(facts, now).kind !== "not_found" &&
+    facts.viewerInterval === slot.interval
+  );
 }
 
 /**
