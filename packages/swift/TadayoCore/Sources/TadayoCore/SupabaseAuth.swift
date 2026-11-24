@@ -18,7 +18,10 @@ public struct SupabaseConfiguration: Sendable, Equatable {
 
 /// A signed-in session: the tokens and when the access token runs out, by the device's clock. The
 /// expiry only times the next refresh; the server decides whether a token is still good. Nothing
-/// of the user Supabase sends (it holds the address) is kept.
+/// of the user Supabase sends (it holds the address) is kept. Its stored shape is read by later
+/// builds and by earlier ones (a tester can install an older build over a newer one): a field
+/// added later must decode when it's absent, or every kept session reads as `UnusableSession`,
+/// which signs its person out.
 public struct AuthSession: Sendable, Equatable, Codable {
     public let accessToken: String
     public let refreshToken: String

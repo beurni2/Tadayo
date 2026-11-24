@@ -179,10 +179,12 @@ import Observation
     }
 
     /// At launch. With no session, what an account kept is forgotten before sign-in shows: its
-    /// session can end out of the app's sight (an app stopped during Leave sign-in, say), and its
-    /// choice and links shouldn't wait on the device for the next account (T11, ADR-037). A
-    /// keychain that refuses the read for a moment is neither: the account's failure, with Retry,
-    /// and everything kept (FQ89).
+    /// session can end out of the app's sight (a refresh that found it ended deletes it, and the
+    /// app can be stopped before the root ends the account; a vault that refused both its delete
+    /// and its blank write tries again only in that launch; from B4 the share extension refreshes
+    /// too), and its choice and links shouldn't wait on the device for the next account (T11,
+    /// ADR-037). A keychain that refuses the read for a moment is neither: the account's failure,
+    /// with Retry, and everything kept (FQ89).
     public func start() async {
         guard leaving == nil else { return }
         route = .starting

@@ -646,20 +646,29 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         return book
     }
 
-    @Test func aLaunchWithNoSessionForgetsWhatTheLastAccountKept() async {
-        // A session that ended out of the app's sight (an app killed mid-Leave, say) left the
-        // account's choice and kept links behind: a launch with no session forgets them before
-        // sign-in shows, so they never wait on the device for the next account (T11, ADR-037).
+    @Test func aLaunchWithNoSessionForgetsWhatTheLastAccountKept() async throws {
+        // A session can end out of the app's sight: a refresh that found it ended deletes it,
+        // and the app can be stopped before the root ends the account, leaving the account's
+        // choice and kept links on the device. A launch with no session forgets them before
+        // sign-in shows, so they never wait there for the next account (T11, ADR-037). The links
+        // were kept by an earlier launch: this launch's book finds them in the vault.
         let selection = InMemoryClubSelection()
         selection.keep("club_sunday", for: "acct_ben")
-        let book = keptLinks()
-        book.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: "acct_ben")
+        let vault = InMemoryInvitationLinkVault()
+        let earlier = InvitationLinkBook(vault: vault)
+        earlier.keep(
+            Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)), club: "club_sunday",
+            account: "acct_ben")
+        earlier.keepReceived(Kitchen.token(1), invitation: "inv_leila", account: "acct_ben")
+        #expect(try vault.load() != nil)
+        let book = InvitationLinkBook(vault: vault)
         let accounts = FakeAccounts()
         let root = root(
             accounts, selection: selection, store: InMemorySessionStore(), links: book)
         await root.start()
         #expect(root.route == .signIn)
         #expect(selection.club(for: "acct_ben") == nil)
+        #expect(try vault.load() == nil)
         #expect(book.link(for: "cand_sam", club: "club_sunday", account: "acct_ben") == nil)
         #expect(book.received(Kitchen.token(1), account: "acct_ben") == nil)
         #expect(accounts.calls.isEmpty)

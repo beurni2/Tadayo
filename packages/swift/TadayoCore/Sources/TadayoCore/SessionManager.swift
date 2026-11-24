@@ -236,10 +236,12 @@ public actor SessionManager {
         // A store that can't be read is taken to hold the session still, as sign-out takes it:
         // only an empty one means it was signed out of.
         let kept: AuthSession?
+        var unread = false
         do {
             kept = try store.load()
         } catch {
             kept = session
+            unread = true
         }
         guard let stored = kept else { return .failure(.signedOut) }
         guard stored.refreshToken == session.refreshToken else { return .success(stored) }
@@ -247,6 +249,10 @@ public actor SessionManager {
         case .success(let fresh):
             try? store.save(fresh)
             return .success(fresh)
+        case .failure(.refreshTokenAlreadyUsed) where unread:
+            // Another process (the share extension) may have refreshed it: only a read of the
+            // store can say, and this one was refused, so nothing ends (FQ89).
+            return .failure(.unavailable)
         case .failure(.refreshTokenAlreadyUsed), .failure(.sessionEnded),
             .failure(.codeNotVerified), .failure(.refused), .failure(.accessTokenRejected):
             try? store.delete()

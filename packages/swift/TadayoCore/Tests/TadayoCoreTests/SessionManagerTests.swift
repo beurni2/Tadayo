@@ -567,6 +567,25 @@ final class ManualClock: @unchecked Sendable {
         #expect(try store.load() == session(2, expiresIn: 7200))
     }
 
+    @Test func aRefreshTokenAlreadyUsedWithAStoreThatCantBeReadEndsNothing() async throws {
+        // "Already used" ends the session only when the store, read again, still holds the
+        // token sent: the share extension may have refreshed it first. A read the keychain
+        // refuses can't say, so nothing is deleted, and the next read finds what it holds (FQ89).
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.failure(.refreshTokenAlreadyUsed)])
+        auth.duringRefresh = { await gate.wait() }
+        let store = StubbornStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        store.refuseNextLoad()
+        gate.open()
+        await #expect(throws: SessionError.unavailable) { try await token.value }
+        #expect(try store.load() == session(1, expiresIn: 20))
+        #expect(store.deletes == 0)
+        #expect(try await manager.isSignedIn)
+    }
+
     @Test func aSignOutAskedForAfterANewerSignInEndsThatOneToo() async throws {
         // A sign-out that began before a sign-in can't stand in for one asked for after it.
         let gate = Gate()
