@@ -19,6 +19,7 @@ import {
   ImageProcessFailed,
   ImageTimeout,
   killGroupOf,
+  NoPhotoUser,
   outcomeOf,
   PEAK_BYTES,
   peakOf,
@@ -161,6 +162,20 @@ describe("a photo's own process", () => {
     expect(peakBytes).toBeGreaterThan(32 * MiB);
     expect(peakBytes).toBeLessThan(PEAK_BYTES);
   }, 60_000);
+
+  it("in the image (NODE_ENV=production), never starts a photo's process without the photo's user (the audit's A6)", async () => {
+    // Outside the worker's mode, the image refuses too: a start that slipped past photoUserFor would otherwise prepare a
+    // stranger's photo in the worker's own user, root's if it was started as root.
+    const before = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    try {
+      await expect(prepareIsolated(await testImage(16, 16), "image/jpeg")).rejects.toBeInstanceOf(NoPhotoUser);
+    } finally {
+      if (before === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = before;
+    }
+    expect((await prepareIsolated(await testImage(16, 16), "image/jpeg")).prepared.ok).toBe(true);
+  }, 20_000);
 
   it("passes a rejection on as it is", async () => {
     expect((await prepareIsolated(await testImage(64, 48, "png"), "image/jpeg")).prepared).toEqual({

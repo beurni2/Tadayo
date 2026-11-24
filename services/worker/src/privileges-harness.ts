@@ -6,14 +6,19 @@
 // `sweep-left`, the photo's user owns a folder holding one of root's, which its sweep can't remove, and the worker's
 // stop says so (round 2 of PR #118's review). It sends a
 // sweep SIGUSR1, as a process left behind could, and starts the worker's own start (./start.ts) with a process of the
-// photo user running, against a database nothing answers for (PR #118's review).
+// photo user running, against a database nothing answers for (PR #118's review). It asks for a photo's process with no
+// user in the worker's mode, which must start nothing. With `real-child`, in a mount namespace of its own, it views
+// the checkout read-only from the temporary folder, as the image's /app is read; runs fly.toml's worker command from
+// it, changed only in its user, and the starts short of it, in the image's NODE_ENV (round 3 of PR #118's review);
+// and prepares a real photo with the real child (./image-child.ts) as the photo user (the audit's A6).
 //
 // The fake children are written to a fresh folder under the system's temporary folder, which the photo user can
 // read: on CI's runner the checkout is under a home folder only its user may enter. Each says it is ready, reads the
 // photo, then does as its name says; what it saw it writes to `out/`, a folder of the photo user's, as JSON.
 
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
+  accessSync,
   chmodSync,
   chownSync,
   existsSync,
@@ -22,14 +27,17 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  rmdirSync,
   rmSync,
   writeFileSync,
+  constants,
 } from "node:fs";
 import { connect } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
-import { prepareIsolated } from "./image-process.ts";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import sharp from "sharp";
+import { NoPhotoUser, prepareIsolated } from "./image-process.ts";
 import { asRoot, sweep, SweepFailed } from "./privileges.ts";
 import { startWorker } from "./start.ts";
 
@@ -389,6 +397,14 @@ mkdirSync(out);
 chownSync(out, PHOTO.uid, PHOTO.gid);
 for (const [name, body] of Object.entries(CHILDREN)) writeFileSync(join(folder, `${name}.mjs`), PRELUDE + body);
 writeFileSync(join(folder, "watcher.cjs"), WATCHER);
+// A child that only notes it started, in a folder any user may write to: the photo's process asked for with no user.
+const anyone = join(folder, "anyone");
+mkdirSync(anyone);
+chmodSync(anyone, 0o1777);
+writeFileSync(
+  join(folder, "marker.mjs"),
+  `import { writeFileSync } from "node:fs";\nwriteFileSync(${JSON.stringify(join(anyone, "started"))}, String(process.getuid()));\n`,
+);
 const child = (name: string) => pathToFileURL(join(folder, `${name}.mjs`));
 
 /** As root again: every process of the photo user killed, by pid, and the folder removed. */
@@ -485,6 +501,162 @@ if (process.argv[2] === "sweep-left") {
   process.exit(0);
 }
 
+// The real child (./image-child.ts), not a fake, prepares a real photo as the photo's user (the audit's A6, which a
+// reviewer ran by hand). The photo user can't read the checkout where it is on CI's runner, under a home folder only
+// the runner's user may enter, so the harness shows it a view of the checkout: the same tree, bound read-only onto a
+// folder under the system's temporary folder, in a mount namespace of the harness's own (`unshare`), which no other
+// process sees and which ends with it. In the image, /app is root's and anyone may read it, as the view is here.
+if (process.argv[2] === "real-child") {
+  const inside = spawnSync(
+    "/usr/bin/unshare",
+    [
+      "--mount",
+      "--propagation",
+      "private",
+      "--",
+      process.execPath,
+      fileURLToPath(import.meta.url),
+      "real-child-inside",
+    ],
+    { stdio: "inherit" },
+  );
+  process.exit(inside.status ?? 1);
+}
+
+if (process.argv[2] === "real-child-inside") {
+  const checkout = join(import.meta.dirname, "..", "..", "..");
+  // Never inside `folder`, which cleanUp removes with all it holds.
+  const view = mkdtempSync(join(tmpdir(), "tadayo-checkout-"));
+  chmodSync(view, 0o755);
+  // Before the mount, so a view left mounted by a failure past it is still taken down; first among the exit
+  // listeners, so it is detached before anything else runs. Each step on its own: a view that won't detach is still
+  // tried, and an empty folder is still removed.
+  process.prependListener("exit", () => {
+    try {
+      seteuid(0);
+    } catch {
+      // Already root.
+    }
+    try {
+      execFileSync("/usr/bin/umount", ["--lazy", view]);
+    } catch {
+      // Never mounted, or the namespace's end takes it with it.
+    }
+    try {
+      rmdirSync(view);
+    } catch {
+      // A folder that isn't empty is left as it is.
+    }
+  });
+  execFileSync("/usr/bin/mount", ["--bind", "-o", "ro", checkout, view]);
+  // Asked of the kernel, as root, whose permissions would let it write anything: nothing is written to find out.
+  let writable: string;
+  try {
+    accessSync(view, constants.W_OK);
+    writable = "writable";
+  } catch (error) {
+    writable = (error as NodeJS.ErrnoException).code === "EROFS" ? "read-only" : `refused: ${String(error)}`;
+  }
+
+  // fly.toml's worker command as fly.toml has it, its user `node` (which a runner may not have) made the worker's
+  // unused id, from the view, in the image's NODE_ENV, with no database: it goes past the photo user's check to its
+  // first setting. Each start short of it stops at that check (the audit's A6; round 3 of PR #118's review).
+  const command = /^\s*worker\s*=\s*"(.*)"\s*$/m.exec(readFileSync(join(view, "fly.toml"), "utf8"))?.[1] ?? "";
+  const words = command.split(" ").map((word) => word.replace(/=node$/, `=${String(WORKER)}`));
+  const entryAt = words.indexOf("node");
+  const entry = words.slice(entryAt);
+  const without = (word: string) => words.filter((candidate) => candidate !== word);
+  const starts: Record<string, string[]> = {
+    fly: words,
+    withoutNoNewPrivs: without("--no-new-privs"),
+    widerBoundingSet: words.map((word) => (word.startsWith("--bounding-set=") ? `${word},+chown` : word)),
+    inheritable: words.map((word) => (word === "--inh-caps=-all" ? "--inh-caps=-all,+kill" : word)),
+    rootsGroup: words.map((word) => (word.startsWith("--groups=") ? `${word},0` : word)),
+    euidAlone: ["setpriv", `--euid=${String(WORKER)}`, "--", ...entry],
+    rootAlone: entry,
+  };
+  const ended: Record<string, { code: number | null; stderr: string; stdout: string }> = {};
+  for (const [name, start] of Object.entries(starts)) {
+    const [program = "", ...args] = start;
+    const run = spawnSync(program, args, {
+      cwd: view,
+      env: { PATH: `${dirname(process.execPath)}:/usr/bin:/bin`, NODE_ENV: "production", TADAYO_PHOTO_USER: "nobody" },
+      encoding: "utf8",
+      timeout: 30_000,
+    });
+    ended[name] = { code: run.status, stderr: run.stderr, stdout: run.stdout };
+  }
+  say({ case: "fly-start", command: entryAt > 0 ? "found" : "missing", ended });
+
+  // A 12-megapixel photo, as a phone's camera makes them: smooth, so it compresses as a photo does.
+  const small = await sharp({
+    create: {
+      width: 504,
+      height: 378,
+      channels: 3,
+      background: "#000000",
+      noise: { type: "gaussian", mean: 128, sigma: 40 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const photoBytes = await sharp(small).resize(4032, 3024).jpeg({ quality: 90 }).toBuffer();
+  const realChild = pathToFileURL(join(view, "services", "worker", "src", "image-child.ts"));
+  takeWorkersMode();
+  // While it runs, the real child's ids, from its /proc status, which any user may read.
+  let ranAs: { uid: number; gid: number; groups: string } | null = null;
+  const watch = setInterval(() => {
+    for (const pid of readdirSync("/proc")) {
+      if (!/^\d+$/.test(pid)) continue;
+      try {
+        if (!readFileSync(`/proc/${pid}/cmdline`, "latin1").includes(realChild.pathname)) continue;
+        const status = readFileSync(`/proc/${pid}/status`, "latin1");
+        // A field's value, which may be empty (Groups, when there is no supplementary group): never the next line's.
+        const field = (name: string) => new RegExp(`^${name}:[ \\t]*(.*)$`, "m").exec(status)?.[1]?.trim() ?? "";
+        ranAs = {
+          uid: Number(field("Uid").split(/\s+/)[0]),
+          gid: Number(field("Gid").split(/\s+/)[0]),
+          groups: field("Groups"),
+        };
+      } catch {
+        // That process has gone.
+      }
+    }
+  }, 2);
+  let outcome: string;
+  let renditions: { kind: string; width: number; height: number; jpeg: boolean }[] = [];
+  let peakMiB = 0;
+  try {
+    const answer = await prepareIsolated(photoBytes, "image/jpeg", { child: realChild, user: PHOTO });
+    peakMiB = Math.round(answer.peakBytes / MiB);
+    if (answer.prepared.ok) {
+      outcome = "prepared";
+      renditions = answer.prepared.renditions.map(({ kind, width, height, bytes }) => ({
+        kind,
+        width,
+        height,
+        jpeg: bytes[0] === 0xff && bytes[1] === 0xd8,
+      }));
+    } else {
+      outcome = answer.prepared.rejection;
+    }
+  } catch (error) {
+    outcome = error instanceof Error ? error.name : "error";
+  }
+  clearInterval(watch);
+  say({
+    case: "real-child",
+    view: writable,
+    outcome,
+    renditions,
+    peakMiB,
+    ranAs,
+    left: { processes: liveOf(PHOTO.uid).length, ...leftOf(PHOTO.uid) },
+    euid: geteuid(),
+  });
+  process.exit(0);
+}
+
 say({
   case: "start",
   uid: getuid(),
@@ -518,6 +690,19 @@ say({
   euid: geteuid(),
   egid: getegid(),
 });
+
+// A photo's process asked for with no user, in the worker's mode (the audit's A6): refused, and nothing started. Started
+// so, it would be a child of real uid 0 that keeps setuid in its permitted set, able to take effective uid 0 back.
+{
+  let outcome = "prepared";
+  try {
+    await prepareIsolated(BYTES, "image/jpeg", { child: child("marker") });
+  } catch (error) {
+    outcome = error instanceof NoPhotoUser ? "refused" : error instanceof Error ? error.name : "error";
+  }
+  const started = await within(300, () => existsSync(join(anyone, "started")));
+  say({ case: "no-user", outcome, started, euid: geteuid() });
+}
 
 // A sweep that a process left behind killed, or that failed, is never done (no photo runs: the photo user has none);
 // exit status 3 is the program's own, once its user's processes have all ended: what they left wasn't all removed.

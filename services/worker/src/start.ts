@@ -4,10 +4,11 @@
 // preparation reads originals and writes renditions with the service key (./storage.ts; T56), which Fly's secrets
 // give both process groups. Its jobs run in the loops main.ts starts (loop.ts): the days each club's week makes
 // (generation.ts), and the outbox's events (outbox.ts), of which the first is a photo's preparation (prepare.ts).
-// Before it connects it reads, too, whether each photo is prepared under a user of its own (./privileges.ts): with
-// TADAYO_PHOTO_USER and the start fly.toml gives it, or neither; either alone stops it. With one, it sweeps that user
-// once before anything else, so nothing a photo left before a restart is alive beside the first photo it prepares; a
-// sweep that fails stops it.
+// Before it reads anything else it reads whether each photo is prepared under a user of its own (./privileges.ts): with
+// TADAYO_PHOTO_USER and the start fly.toml gives it, or neither; either alone stops it, and in the image
+// (NODE_ENV=production) so does neither, so a start as root alone never reads a setting (the audit's A6). With one, it
+// sweeps that user once before anything else, so nothing a photo left before a restart is alive beside the first photo
+// it prepares; a sweep that fails stops it.
 
 import { prepareClock, type Clock } from "@tadayo/domain";
 import { connect, type WorkerSql } from "./connection.ts";
@@ -23,13 +24,14 @@ export interface Started {
 }
 
 /**
- * Reads Storage's settings, sweeps the photo user if there is one, connects and prepares the clock of
+ * Reads the photo user and Storage's settings, sweeps the photo user if there is one, connects and prepares the clock of
  * `TADAYO_ENVIRONMENT`, or throws. `passwd` is /etc/passwd's text but in the root harness, whose photo user has no name.
  */
 export async function startWorker(
   env: Readonly<Record<string, string | undefined>>,
   passwd?: () => string,
 ): Promise<Started> {
+  const photoUser = photoUserFor(env, idsOf(), passwd);
   const url = env.DATABASE_URL;
   if (url === undefined || url === "") throw new Error("worker: DATABASE_URL isn't set");
   const project = env.SUPABASE_URL;
@@ -37,7 +39,6 @@ export async function startWorker(
   const serviceKey = env.SUPABASE_SERVICE_KEY;
   if (serviceKey === undefined || serviceKey === "") throw new Error("worker: SUPABASE_SERVICE_KEY isn't set");
   const storage = workerStorage({ projectUrl: project, serviceKey });
-  const photoUser = photoUserFor(env, idsOf(), passwd);
   if (photoUser !== undefined) {
     try {
       await sweep(photoUser);

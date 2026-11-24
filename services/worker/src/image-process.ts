@@ -34,7 +34,8 @@
 //   its pipes or signal it, and once its end settles every process of that user is ended by the sweep, so a process
 //   it started in a session of its own, outside the group the worker kills, doesn't outlive the photo. The worker
 //   takes root for an instant to start it and to kill its group. Without that user (the tests, CI, the session) the
-//   child runs as the worker's own, as before. What it can still do: docs/LIMITATIONS.md, 2026-11-23.
+//   child runs as the worker's own, as before; in the worker's mode or in the image, never (NoPhotoUser). What it can still do:
+//   docs/LIMITATIONS.md, 2026-11-23.
 
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -44,7 +45,17 @@ import type { UploadContentType } from "@tadayo/domain";
 import { UPLOAD_REJECTIONS } from "@tadayo/domain/limits";
 import { MessageReader, type ChildMessage, type SentPrepared } from "./image-frames.ts";
 import type { Prepared } from "./image.ts";
-import { asRoot, NO_INSPECTOR, stopLineFor, stopWorker, sweep, type PhotoUser } from "./privileges.ts";
+import {
+  asRoot,
+  idsOf,
+  inImage,
+  inWorkerMode,
+  NO_INSPECTOR,
+  stopLineFor,
+  stopWorker,
+  sweep,
+  type PhotoUser,
+} from "./privileges.ts";
 
 /** The longest one rendition's decode may take, in seconds (sharp's own timeout, in the child). */
 export const DECODE_SECONDS = 60;
@@ -97,6 +108,22 @@ export class ImageProcessFailed extends Error {
   constructor() {
     super("image: the photo's process failed");
     this.name = "ImageProcessFailed";
+  }
+}
+
+/**
+ * In the worker's mode or in the image (./privileges.ts, inImage), a photo's process asked for without a user of its
+ * own: refused, starting nothing (the audit's A6). Started so in the worker's mode, it would have real uid 0 and keep
+ * setuid in its permitted set (fly.toml's bounding set), so code that took over a decoder could take effective uid 0
+ * back; in the image, every photo has its user. The worker's start never leaves it so (photoUserFor); this is the last
+ * check, where the process is started. Like any failure of a photo's preparation, the outbox tries it again and, the
+ * fifth time, gives the event up (./outbox.ts).
+ */
+export class NoPhotoUser extends Error {
+  readonly code = "image.no_photo_user";
+  constructor() {
+    super("image: in the worker's mode, a photo's process is started only as a user of its own, and none was given");
+    this.name = "NoPhotoUser";
   }
 }
 
@@ -269,7 +296,8 @@ export function outcomeOf(end: ChildEnd): ProcessAnswer {
 
 /**
  * prepareImage on `bytes` in a child process (the rules above), as `user` when the worker has one for photos
- * (./privileges.ts), else as the worker's own user. `seconds` is each decode's limit, `deadlineSeconds` the child's,
+ * (./privileges.ts), else as the worker's own user; in the worker's mode or in the image, without `user`, it rejects
+ * with NoPhotoUser and starts nothing. `seconds` is each decode's limit, `deadlineSeconds` the child's,
  * `peakBytes` its memory's and `sweepSeconds` the sweep's; the tests make them small, and give a `child` module of
  * their own to play a child that misbehaves.
  */
@@ -288,6 +316,7 @@ export function prepareIsolated(
   const seconds = limits.seconds ?? DECODE_SECONDS;
   const mostBytes = limits.peakBytes ?? PEAK_BYTES;
   const { user } = limits;
+  if (user === undefined && (inWorkerMode(idsOf()) || inImage())) return Promise.reject(new NoPhotoUser());
   // As the photo's user, the start and the kill need the worker's root for an instant: the child's user isn't its own.
   const privileged = <T>(fn: () => T): T => (user === undefined ? fn() : asRoot(fn));
   return new Promise((resolve, reject) => {

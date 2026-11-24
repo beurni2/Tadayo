@@ -7,9 +7,17 @@
 // it, and it keeps three capabilities (setuid, setgid, kill) that it can use only by taking effective uid 0. Each
 // photo's process is then started as `TADAYO_PHOTO_USER` (`tadayo-image` in the image), with no group but its own.
 //
-// - The worker's mode: real uid 0, effective uid not 0. photoUserFor reads it at the start, with the variable: both
-//   isolate each photo; neither prepares photos in the worker's own user, as the tests, CI's runner and the session
-//   do; either alone stops the worker, as neither half isolates anything without the other.
+// - The worker's mode: real uid 0, effective uid and group not 0. photoUserFor reads it at the start, with the
+//   variable: both isolate each photo; neither prepares photos in the worker's own user, as the tests, CI's runner and
+//   the session do; either alone stops the worker, as neither half isolates anything without the other. In the image
+//   (inImage: `NODE_ENV=production`, or the marker the Dockerfile writes, which no setting can take away) only both
+//   will do, and only as fly.toml's worker command leaves the process (startedAsFly: no new privileges, setuid, setgid
+//   and kill alone in its bounding set, no inheritable capability, no group of root's): any other start stops it
+//   whatever the variable says, and the image sets the variable itself (the Dockerfile), so a start as root alone is
+//   refused twice over (the audit's A6: before, a start as plain root, by `docker run` or a configuration without
+//   fly.toml's worker command, prepared strangers' photos as root). And a photo's process is never started without its
+//   user in the worker's mode or in the image (./image-process.ts, NoPhotoUser): in the worker's mode it would have
+//   real uid 0 and keep setuid in its permitted set, so code that took over a decoder could take effective uid 0 back.
 // - asRoot(fn) takes effective uid 0 for `fn` alone and returns to the worker's user. It is called from three places,
 //   nowhere else: to start a photo's process (Node's `spawn` clears the child's groups and sets its group and user
 //   before the child's program runs), to kill its process group (once the photo is answered or ends, and when its
@@ -44,7 +52,7 @@
 //   for the next one, whether or not the Machine's restart ended it (./start.ts).
 
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 /** The user and group a photo's process runs as. */
 export interface PhotoUser {
@@ -169,9 +177,59 @@ export function idsOf(): Ids {
   return { uid: calls.getuid(), euid: calls.geteuid(), egid: calls.getegid() };
 }
 
-/** Started as root and turned to a user of its own, as fly.toml starts the worker. */
+/** Started as root and turned to a user and group of its own, as fly.toml starts the worker. */
 export function inWorkerMode(ids: Ids): boolean {
-  return ids.uid === 0 && ids.euid !== 0;
+  return ids.uid === 0 && ids.euid !== 0 && ids.egid !== 0;
+}
+
+/**
+ * The file the Dockerfile writes, which says this is Tadayo's image: no setting can take it away, as one could take
+ * away NODE_ENV (round 3 of PR #118's review).
+ */
+export const IMAGE_MARKER = "/etc/tadayo-built-image";
+
+/** In the image: NODE_ENV is the image's `production`, or the image's marker is there (IMAGE_MARKER). */
+export function inImage(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  marked: () => boolean = () => existsSync(IMAGE_MARKER),
+): boolean {
+  return env.NODE_ENV === "production" || marked();
+}
+
+/**
+ * The bounding set fly.toml's worker command leaves (`--bounding-set=-all,+setuid,+setgid,+kill`): kill, setgid and
+ * setuid, capabilities 5, 6 and 7, as /proc/self/status writes it.
+ */
+export const FLY_BOUNDING_SET = "00000000000000e0";
+
+/**
+ * Whether this process's /proc status is what fly.toml's worker command leaves, beyond its ids (inWorkerMode): no new
+ * privileges, the bounding set FLY_BOUNDING_SET exactly, no inheritable capability, and no group of root's among its
+ * groups. In the image, a worker started any other way (`setpriv --euid` alone, say, which keeps root's group, the
+ * image's setuid programs and every capability in reserve) stops (round 3 of PR #118's review).
+ */
+export function startedAsFly(status: string): boolean {
+  const field = (name: string): string | undefined =>
+    new RegExp(`^${name}:[ \\t]*(.*)$`, "m").exec(status)?.[1]?.trim();
+  const groups = field("Groups");
+  return (
+    field("NoNewPrivs") === "1" &&
+    field("CapBnd") === FLY_BOUNDING_SET &&
+    field("CapInh") === "0000000000000000" &&
+    groups !== undefined &&
+    !groups.split(/\s+/).includes("0")
+  );
+}
+
+/** What photoUserFor reads of its start besides its ids: whether the image's marker is there, and its /proc status. */
+export interface StartFacts {
+  readonly marked: boolean;
+  readonly status: string;
+}
+
+/** This process's StartFacts. */
+export function startFactsOf(): StartFacts {
+  return { marked: existsSync(IMAGE_MARKER), status: readFileSync("/proc/self/status", "latin1") };
 }
 
 /** What a failed sweep may have left (SweepFailed), for the worker's stop line, its log's only clue. */
@@ -199,16 +257,27 @@ const isId = (value: string | undefined): boolean => value !== undefined && /^\d
 /**
  * The user each photo's process runs as, or undefined when photos are prepared in the worker's own user (the rules
  * above). Throws, stopping the worker as it starts, when only one half is there, or when the variable names no user,
- * or root, root's group, or the worker's own user or group.
+ * or root, root's group, or the worker's own user or group. In the image (inImage: `NODE_ENV=production`, or the
+ * Dockerfile's marker), there is always a user: any start but fly.toml's worker command (its ids, and startedAsFly)
+ * throws first, before the variable is looked at, so neither a start as root alone (`docker run`, `fly machine run`, a
+ * configuration without fly.toml's worker command) nor one as a user alone ever prepares a photo outside a user of its
+ * own (the audit's A6). `facts` is startFactsOf but in the tests.
  */
 export function photoUserFor(
   env: Readonly<Record<string, string | undefined>>,
   ids: Ids = idsOf(),
   passwd: () => string = () => readFileSync("/etc/passwd", "utf8"),
+  facts: () => StartFacts = startFactsOf,
 ): PhotoUser | undefined {
   const name = env.TADAYO_PHOTO_USER;
   const named = name !== undefined && name !== "";
   const started = inWorkerMode(ids);
+  const { marked, status } = facts();
+  if (inImage(env, () => marked) && !(started && startedAsFly(status))) {
+    throw new Error(
+      "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone",
+    );
+  }
   if (!named && !started) return undefined;
   if (!named) {
     throw new Error("worker: started to prepare each photo under a user of its own, but TADAYO_PHOTO_USER isn't set");

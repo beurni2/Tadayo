@@ -4,7 +4,8 @@
 # (`ops` worker-scale does). One Machine of each: `dev` has no spare, and the deploys pass --ha=false.
 #
 # What is set here is public: the Supabase project's URL and publishable key are in the iOS app's Dev
-# build too (T53). The secrets, the database's connection string and Supabase's service key, are Fly's
+# build too (T53). The photo user's name, TADAYO_PHOTO_USER, is the image's own, set beside the user it makes in the
+# Dockerfile, so a configuration that leaves [env] out still names it (the audit's A6). The secrets, the database's connection string and Supabase's service key, are Fly's
 # own, set by the founder, and never in this file (T56). tools/ops/src/deploy-files.test.ts reads this
 # file against the Dockerfile and the rest of the repository.
 #
@@ -34,8 +35,6 @@ kill_timeout = 30
   SUPABASE_URL = "https://rhsycmycocbzakrydahi.supabase.co"
   SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5kJcQ8JCyWiHHMGjucf00w_8ehpABvL"
   LOG_LEVEL = "info"
-  # The user each photo's process runs as, which the Dockerfile makes (services/worker/src/privileges.ts).
-  TADAYO_PHOTO_USER = "tadayo-image"
 
 # Each command starts as root and drops at once with `setpriv` (the Dockerfile's header; ADR-038). The API becomes
 # `node` for good: real, effective and saved ids, no capability, no way to gain one. The worker becomes `node` in

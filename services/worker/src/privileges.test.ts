@@ -8,8 +8,19 @@
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
-import { GRACE_MS } from "./image-process.ts";
-import { asRoot, NO_INSPECTOR, photoUserFor, sweep, SweepFailed, SWEEP_PROGRAM, SWEEP_SECONDS } from "./privileges.ts";
+import { GRACE_MS, PEAK_BYTES } from "./image-process.ts";
+import {
+  asRoot,
+  IMAGE_MARKER,
+  inImage,
+  NO_INSPECTOR,
+  photoUserFor,
+  type StartFacts,
+  sweep,
+  SweepFailed,
+  SWEEP_PROGRAM,
+  SWEEP_SECONDS,
+} from "./privileges.ts";
 
 const HARNESS = join(import.meta.dirname, "privileges-harness.ts");
 
@@ -28,8 +39,45 @@ const WORKER = { uid: 0, euid: 1000, egid: 1000 };
 
 const named = (name?: string) => (name === undefined ? {} : { TADAYO_PHOTO_USER: name });
 
+/**
+ * /proc/self/status as fly.toml's worker command leaves it, the kernel's spacing and all: setpriv's `--euid`, `--egid`
+ * and `--groups`, its bounding set of kill, setgid and setuid, no inheritable capability, and no new privileges. Each
+ * field of `changed` replaces the one of that name, and one given as undefined is left out.
+ */
+function startedWith(changed: Readonly<Record<string, string | undefined>> = {}): () => StartFacts {
+  const fields: Record<string, string | undefined> = {
+    Name: "node",
+    Uid: "0\t1000\t0\t1000",
+    Gid: "0\t1000\t0\t1000",
+    Groups: "1000 ",
+    CapInh: "0000000000000000",
+    CapPrm: "00000000000000e0",
+    CapEff: "0000000000000000",
+    CapBnd: "00000000000000e0",
+    CapAmb: "0000000000000000",
+    NoNewPrivs: "1",
+    ...changed,
+  };
+  const status = Object.entries(fields)
+    .flatMap(([name, value]) => (value === undefined ? [] : [`${name}:\t${value}\n`]))
+    .join("");
+  return () => ({ marked: false, status });
+}
+
+/** Started as fly.toml starts the worker, without the image's marker. */
+const AS_FLY = startedWith();
+
+/** Started as root, as in the session, without the image's marker. */
+const OUTSIDE = startedWith({
+  Uid: "0\t0\t0\t0",
+  Gid: "0\t0\t0\t0",
+  Groups: " ",
+  CapBnd: "000001fffeffffff",
+  NoNewPrivs: "0",
+});
+
 describe("the photo user (photoUserFor)", () => {
-  it("is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one", () => {
+  it("is none, photos prepared in the worker's own user, when neither the variable nor the start asks for one, outside the image", () => {
     for (const ids of [
       { uid: 1001, euid: 1001, egid: 1001 },
       { uid: 0, euid: 0, egid: 0 },
@@ -62,6 +110,124 @@ describe("the photo user (photoUserFor)", () => {
     for (const env of [{}, { TADAYO_PHOTO_USER: "" }]) {
       expect(() => photoUserFor(env, WORKER, () => PASSWD)).toThrow(/TADAYO_PHOTO_USER isn't set/);
     }
+  });
+
+  it("in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all", () => {
+    // The audit's A6: a start as plain root (`docker run`, `fly machine run`, a configuration without the worker's
+    // command) prepared strangers' photos as root. In the image, no start but fly.toml's worker command goes on,
+    // whatever the variable says, and the image sets the variable too (the Dockerfile), so a start that drops it is
+    // refused as well.
+    const REFUSED =
+      /^worker: in production it starts only as fly\.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone$/;
+    const production = (env: Record<string, string>) => ({ ...env, NODE_ENV: "production" });
+    for (const ids of [
+      { uid: 0, euid: 0, egid: 0 },
+      { uid: 1000, euid: 1000, egid: 1000 },
+      { uid: 1000, euid: 0, egid: 0 },
+      // Root's group kept as the effective one: `setpriv --euid` without `--egid`.
+      { uid: 0, euid: 1000, egid: 0 },
+    ]) {
+      for (const env of [{}, { TADAYO_PHOTO_USER: "" }, named("tadayo-image")]) {
+        expect(
+          () =>
+            photoUserFor(
+              production(env),
+              ids,
+              () => {
+                throw new Error("/etc/passwd isn't read");
+              },
+              AS_FLY,
+            ),
+          JSON.stringify([ids, env]),
+        ).toThrow(REFUSED);
+      }
+    }
+    // As fly.toml starts it, the image's variable gives the user; without the variable it stops, as outside the image.
+    expect(photoUserFor(production(named("tadayo-image")), WORKER, () => PASSWD, AS_FLY)).toEqual({
+      uid: 10001,
+      gid: 10001,
+    });
+    expect(() => photoUserFor(production({}), WORKER, () => PASSWD, AS_FLY)).toThrow(/TADAYO_PHOTO_USER isn't set/);
+    // With fly.toml's ids but not the rest of its start, it stops too: each of setpriv's other flags is read back.
+    for (const [field, value] of [
+      ["NoNewPrivs", "0"],
+      ["NoNewPrivs", undefined],
+      ["CapBnd", "000001ffffffffff"],
+      ["CapBnd", "00000000000000c0"],
+      ["CapBnd", "00000000000000e1"],
+      ["CapBnd", undefined],
+      ["CapInh", "00000000000000e0"],
+      ["CapInh", undefined],
+      ["Groups", "0 1000"],
+      ["Groups", "1000 0"],
+      ["Groups", undefined],
+    ] as const) {
+      expect(
+        () => photoUserFor(production(named("tadayo-image")), WORKER, () => PASSWD, startedWith({ [field]: value })),
+        `${field}: ${String(value)}`,
+      ).toThrow(REFUSED);
+    }
+    // The kernel's own spacing is read as it is: a trailing space, no supplementary group at all.
+    for (const groups of ["1000 ", "", " "]) {
+      expect(
+        photoUserFor(production(named("tadayo-image")), WORKER, () => PASSWD, startedWith({ Groups: groups })),
+        JSON.stringify(groups),
+      ).toEqual({ uid: 10001, gid: 10001 });
+    }
+    // Only the image's own value turns the rule on, and outside the image the start's other flags aren't asked for.
+    for (const value of ["", "test", "development", "Production"]) {
+      expect(
+        photoUserFor({ NODE_ENV: value }, { uid: 0, euid: 0, egid: 0 }, () => PASSWD, OUTSIDE),
+        value,
+      ).toBeUndefined();
+      expect(
+        photoUserFor(
+          { ...named("tadayo-image"), NODE_ENV: value },
+          WORKER,
+          () => PASSWD,
+          startedWith({ NoNewPrivs: "0" }),
+        ),
+        value,
+      ).toEqual({ uid: 10001, gid: 10001 });
+    }
+  });
+
+  it("in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same", () => {
+    // A start that clears NODE_ENV (`env -u NODE_ENV`, a configuration that sets it to something else) is still in
+    // the image: the Dockerfile writes IMAGE_MARKER, and no setting takes a file away.
+    expect(IMAGE_MARKER).toBe("/etc/tadayo-built-image");
+    const marked = (facts: () => StartFacts) => () => ({ ...facts(), marked: true });
+    for (const env of [{}, { NODE_ENV: "" }, { NODE_ENV: "development" }]) {
+      for (const ids of [
+        { uid: 0, euid: 0, egid: 0 },
+        { uid: 0, euid: 1000, egid: 0 },
+      ]) {
+        expect(
+          () => photoUserFor({ ...env, ...named("tadayo-image") }, ids, () => PASSWD, marked(AS_FLY)),
+          JSON.stringify([env, ids]),
+        ).toThrow(/in production it starts only as fly\.toml's worker command starts it/);
+      }
+      expect(() => photoUserFor(env, { uid: 0, euid: 0, egid: 0 }, () => PASSWD, marked(OUTSIDE))).toThrow(
+        /in production it starts only as fly\.toml's worker command starts it/,
+      );
+      expect(() =>
+        photoUserFor(
+          { ...env, ...named("tadayo-image") },
+          WORKER,
+          () => PASSWD,
+          marked(startedWith({ CapBnd: "000001ffffffffff" })),
+        ),
+      ).toThrow(/in production it starts only as fly\.toml's worker command starts it/);
+      expect(photoUserFor({ ...env, ...named("tadayo-image") }, WORKER, () => PASSWD, marked(AS_FLY))).toEqual({
+        uid: 10001,
+        gid: 10001,
+      });
+    }
+    // inImage itself: NODE_ENV's own value, or the marker.
+    expect(inImage({ NODE_ENV: "production" }, () => false)).toBe(true);
+    expect(inImage({}, () => true)).toBe(true);
+    expect(inImage({ NODE_ENV: "Production" }, () => false)).toBe(false);
+    expect(inImage({}, () => false)).toBe(false);
   });
 
   it("refuses a name that isn't a user's, matching whole names only", () => {
@@ -138,6 +304,10 @@ interface HarnessRun {
 }
 
 /** Starts the harness as root, with `args`; the whole run is given `seconds`. */
+/** The harness's `real-child` run, which two tests read: started once, by the first that asks. */
+let realChildRun: Promise<HarnessRun> | undefined;
+const realChild = (): Promise<HarnessRun> => (realChildRun ??= harness(["real-child"], 90));
+
 function harness(args: readonly string[], seconds: number): Promise<HarnessRun> {
   const root = process.getuid?.() === 0;
   const [command, rest] = root
@@ -209,6 +379,13 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
       done: "swept",
       euid: 64998,
     });
+  });
+
+  it("in the worker's mode, never starts a photo's process without the photo's user: started so, it could take root back", () => {
+    // The audit's A6. Started without a user, a child of the worker's mode has real uid 0 and keeps setuid in its
+    // permitted set (fly.toml's bounding set): under fly.toml's command it could take effective uid 0 and read root's
+    // files (measured in the session on 2026-11-24, docs/JOURNAL.md). prepareIsolated refuses, and starts nothing.
+    expect(fact("no-user")).toEqual({ case: "no-user", outcome: "refused", started: false, euid: 64998 });
   });
 
   it("a photo's process is the photo's user alone, with no capability, and can't reach the worker", () => {
@@ -322,6 +499,61 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     // Its deadline is 0.5 s; a kill the worker couldn't send would leave it to the sweep, GRACE_MS later.
     expect(deadline["ms"]).toBeLessThan(500 + GRACE_MS / 2);
   });
+
+  it("the real child prepares a real photo as the photo's user, reading a read-only view of the checkout, and leaves nothing", async () => {
+    // The audit's A6 (a reviewer ran it by hand). The fake children above show what the isolation holds back; this
+    // shows the real one works inside it: its modules and sharp's library read as tadayo-image would read /app, with
+    // no environment, no home and no folder of its own, on a 12-megapixel photo.
+    const real = await realChild();
+    expect(real.stderr).toBe("");
+    expect(real.code).toBe(0);
+    const prepared = real.cases.get("real-child");
+    expect(prepared).toMatchObject({
+      view: "read-only",
+      outcome: "prepared",
+      // No supplementary group at all: Node's spawn clears them before it sets the child's group and user.
+      ranAs: { uid: 64999, gid: 64999, groups: "" },
+      left: { processes: 0, files: [], ipc: [] },
+      euid: 64998,
+    });
+    // 4032 by 3024 fits `full`'s box at 2560 by 1920, and `display`'s at 1290 wide (967.5 high, rounded by libvips).
+    const renditions = prepared?.["renditions"] as { kind: string; width: number; height: number; jpeg: boolean }[];
+    expect(renditions.map(({ kind, width, jpeg }) => ({ kind, width, jpeg }))).toEqual([
+      { kind: "full", width: 2560, jpeg: true },
+      { kind: "display", width: 1290, jpeg: true },
+    ]);
+    expect(renditions[0]?.height).toBe(1920);
+    expect([967, 968]).toContain(renditions[1]?.height);
+    // Its peak, from the child's own VmHWM and the worker's reads: well under the worker's cap for one photo.
+    expect(prepared?.["peakMiB"]).toBeGreaterThan(16);
+    expect(prepared?.["peakMiB"]).toBeLessThan(PEAK_BYTES / 1024 / 1024);
+  }, 100_000);
+
+  it("in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there", async () => {
+    // Round 3 of PR #118's review: the worker's mode by its ids alone let `setpriv --euid` through, which keeps root's
+    // group, every capability in reserve and the image's setuid programs. Here fly.toml's own command runs, read from
+    // fly.toml and changed only in its user, then each start that leaves out or widens one of its flags. None is given
+    // a database, so the one that goes on stops at DATABASE_URL, its first setting.
+    const real = await realChild();
+    expect(real.code).toBe(0);
+    const started = real.cases.get("fly-start");
+    expect(started?.["command"]).toBe("found");
+    const ended = started?.["ended"] as Record<string, { code: number | null; stderr: string; stdout: string }>;
+    expect(ended["fly"]).toEqual({ code: 1, stderr: "worker: DATABASE_URL isn't set\n", stdout: "" });
+    const refused =
+      "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone\n";
+    for (const name of [
+      "withoutNoNewPrivs",
+      "widerBoundingSet",
+      "inheritable",
+      "rootsGroup",
+      "euidAlone",
+      "rootAlone",
+    ]) {
+      expect(ended[name], name).toEqual({ code: 1, stderr: refused, stdout: "" });
+    }
+    expect(Object.keys(ended)).toHaveLength(7);
+  }, 100_000);
 
   it("a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive", async () => {
     const stopped = await harness(["sweep-timeout"], 60);

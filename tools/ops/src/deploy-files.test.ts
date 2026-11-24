@@ -14,6 +14,8 @@ import { describe, expect, it } from "vitest";
 import { DEV_APP, DEV_HOST, MACHINE_MAIN } from "./environment.ts";
 import { projectUrl } from "./supabase.ts";
 
+/** The file the Dockerfile writes, which both entries read (services/worker/src/privileges.ts, services/api/src/start.ts). */
+const IMAGE_MARKER = "/etc/tadayo-built-image";
 const ROOT = join(import.meta.dirname, "..", "..", "..");
 const read = (path: string) => readFileSync(join(ROOT, path), "utf8");
 
@@ -208,15 +210,32 @@ describe("Dockerfile", () => {
     expect(fromDeps.map((instruction) => instruction.args)).toEqual(["--from=deps /app/ ./"]);
   });
 
-  it("makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, and nothing else", () => {
+  it("makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it", () => {
     const image = stages().at(-1) ?? [];
     const runs = image.filter((instruction) => instruction.name === "RUN").map((instruction) => instruction.args);
     expect(runs).toEqual([
       "groupadd --system --gid 10001 tadayo-image && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image",
+      `touch ${IMAGE_MARKER}`,
     ]);
     // useradd leaves the password locked unless one is given; none is.
     expect(runs[0]).not.toMatch(/--password|-p |chpasswd/);
-    expect(table(flyToml()["env"], "[env]")["TADAYO_PHOTO_USER"]).toBe("tadayo-image");
+    // And names it, after it is made, so a worker started as root alone refuses for that alone, whatever fly.toml's
+    // [env] says or leaves out (the audit's A6), and nothing else sets it.
+    const env = image.filter((instruction) => instruction.name === "ENV").map((instruction) => instruction.args);
+    expect(env).toEqual(["NODE_ENV=production", "TADAYO_PHOTO_USER=tadayo-image"]);
+    const made = image.findIndex((instruction) => instruction.name === "RUN");
+    const named = image.findIndex((instruction) => instruction.args === "TADAYO_PHOTO_USER=tadayo-image");
+    expect(named).toBeGreaterThan(made);
+    expect(Object.keys(table(flyToml()["env"], "[env]"))).not.toContain("TADAYO_PHOTO_USER");
+  });
+
+  it("writes the image's marker, the file each entry reads to know it is in the image whatever NODE_ENV says", () => {
+    // Round 3 of PR #118's review: NODE_ENV alone is a setting, which a start can clear; a file in the image isn't.
+    const image = stages().at(-1) ?? [];
+    expect(image.filter((instruction) => instruction.args === `touch ${IMAGE_MARKER}`)).toHaveLength(1);
+    for (const entry of ["services/worker/src/privileges.ts", "services/api/src/start.ts"]) {
+      expect(read(entry), entry).toContain(`export const IMAGE_MARKER = "${IMAGE_MARKER}";`);
+    }
   });
 
   it("names no secret, key, password or environment file in what it sets or copies", () => {
@@ -297,7 +316,7 @@ describe(".dockerignore", () => {
 // ---- fly.toml.
 
 /** The names `[env]` may have: public values only, as the probe and the API read them. */
-const ENV_NAMES = ["TADAYO_ENVIRONMENT", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "LOG_LEVEL", "TADAYO_PHOTO_USER"];
+const ENV_NAMES = ["TADAYO_ENVIRONMENT", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "LOG_LEVEL"];
 
 describe("fly.toml", () => {
   it("is the dev app, in Virginia, built from the Dockerfile, with one rolling strategy and no release command", () => {
@@ -375,12 +394,11 @@ describe("fly.toml", () => {
     expect(vms).toEqual([{ size: "shared-cpu-1x", memory: "512mb" }]);
   });
 
-  it("has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them, and the photo user's name", () => {
+  it("has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them", () => {
     const env = table(flyToml()["env"], "[env]");
     expect(Object.keys(env).sort()).toEqual([...ENV_NAMES].sort());
     expect(env["TADAYO_ENVIRONMENT"]).toBe("dev");
     expect(env["LOG_LEVEL"]).toBe("info");
-    expect(env["TADAYO_PHOTO_USER"]).toBe("tadayo-image");
     // The same project the app signs in to (apps/ios/project.yml, Dev), by the verifier's own rule for its URL.
     const dev = /^ {4}Dev:\n(?: {6}.*\n)+/m.exec(read("apps/ios/project.yml"))?.[0] ?? "";
     expect(projectUrl(String(env["SUPABASE_URL"]))).toBe(String(env["SUPABASE_URL"]));

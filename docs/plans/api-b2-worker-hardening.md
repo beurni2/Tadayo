@@ -121,7 +121,8 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
   `TADAYO_PHOTO_USER` (the tests, CI's runner, the session), it prepares
   photos as it does today, in the worker's own user, and its start line says so. Either without the other (the
   variable but not the start, or the start but not the variable) stops the worker as it starts: neither half alone
-  isolates anything.
+  isolates anything. In the image (`NODE_ENV=production`), neither stops it too, and the image names the user itself
+  (section 6, the audit's A6).
 - **The group's kill, refused.** The worker kills the group as root, so the kernel can refuse it only if something
   is badly wrong; a refusal (anything but `ESRCH`, the group already gone) stops the worker (`killGroupOf`). Once Node
   has reaped the child, the worker doesn't kill the group at all: Linux keeps a pid's number while any process still
@@ -268,9 +269,10 @@ bytes or another JPEG after the end, no end, no start, a start without its `0xFF
 longer than the bytes or shorter than its length, a scan's among them), and two frames of another size than the one
 stated; an answer whose rendition isn't one fails.
 
-`photoUserFor`'s rules, with no process: neither half gives none; either half alone throws; a name matches whole
-`/etc/passwd` entries only; root, root's group, the worker's own user or group, and ids that aren't numbers are
-refused. `start.test.ts`: the worker stops as it starts when `TADAYO_PHOTO_USER` is set and it wasn't started as root.
+`photoUserFor`'s rules, with no process: neither half gives none, outside the image; either half alone throws; a name
+matches whole `/etc/passwd` entries only; root, root's group, the worker's own user or group, and ids that aren't
+numbers are refused. `start.test.ts`: the worker stops as it starts when `TADAYO_PHOTO_USER` is set and it wasn't
+started as root. Section 6 adds the image's own rule and its tests.
 
 `tools/ops/src/deploy-files.test.ts`: the image test reads "starts as root only to drop: each process group's command
 begins with its `setpriv` line, exactly" (the worker's with `prlimit --core=1 --msgqueue=0 --nproc=256` before it and
@@ -319,3 +321,92 @@ before and after. One went uncaught at first (W05, a sweep's exit not 0 taken as
 session, where the unit test's own ids are root's; on CI's runner the unit test catches them too. The two that would
 run something as root without the worker's mode (W01, X01) run in a container of the image with a process limit of
 its own. The list and its log go on the evidence branch beside the image's.
+
+## 6. The audit's A6: the image fails closed (the fifth commit)
+
+The founder's outside audit (2026-11-24, finding A6) found that this PR failed open. The image has no `USER`, and the
+drop lives in fly.toml's command and `[env]`: `photoUserFor` gave "no user of its own" when `TADAYO_PHOTO_USER` was
+unset and the worker wasn't in its mode, and a test pinned that. So any other start (`docker run`, `fly machine run`,
+a `prod` configuration that copied `[processes]` without `[env]`) prepared strangers' photos as root. On `main`,
+`USER node` made every start unprivileged. The founder held the PR until it is fixed (10:02 UTC). The fix is the
+audit's four parts, and what round 3 of the review added:
+
+- **The image names its photo user.** `ENV TADAYO_PHOTO_USER=tadayo-image` in the Dockerfile, after the `RUN` that
+  makes the user, and no longer in fly.toml's `[env]`, so one file makes the user and names it. A worker started as
+  root alone then refuses on the variable alone ("set, but not started as fly.toml starts it"), whatever a
+  configuration's `[env]` says or leaves out.
+- **The image knows it is the image.** "In the image" is `NODE_ENV=production`, the Dockerfile's (no other value), or
+  the file `/etc/tadayo-built-image`, which the Dockerfile writes (`RUN touch`, as root, after the `ENV`s): a start
+  can clear a variable, but no setting takes a file away (`IMAGE_MARKER` and `inImage` in
+  `services/worker/src/privileges.ts`, `IMAGE_MARKER` and `refuseRoot` in `services/api/src/start.ts`).
+- **Each entry refuses root in the image.** The API (`refuseRoot`) refuses a real or an effective uid of 0, before it
+  reads any setting: its command drops real, effective and saved ids to `node`. The worker's real uid is 0 by design
+  (ADR-038), so its rule is `photoUserFor`'s, read before any other setting (`startWorker`): in the image, any start
+  but fly.toml's worker command throws before the variable is looked at. That command is read back two ways: its ids
+  (`inWorkerMode`: real uid 0, effective uid and effective group not 0) and the rest of what its `setpriv` and
+  `prlimit` leave, from `/proc/self/status` (`startedAsFly`: `NoNewPrivs` 1, the bounding set exactly kill, setgid and
+  setuid, no inheritable capability, and no group of root's among its groups). So root alone, one user alone,
+  `setpriv --euid` alone (root's group kept), and fly's command with a flag left out or widened all stop. Outside the
+  image (the tests, CI's runner, the session, which runs as root) nothing changes.
+- **No photo's process without its user, in the worker's mode or in the image.** `prepareIsolated` rejects with
+  `NoPhotoUser`, starting nothing, when no user was given and the worker is in its mode or in the image. The start
+  never leaves it so; this is the last check, where the process is started. Measured in the session under fly.toml's
+  exact `prlimit ... setpriv --euid=node ...` command: a child started there without `uid` has
+  `Uid: 0 1000 1000 1000`, `CapPrm 0xe0` (setuid, setgid, kill, its bounding set) and `NoNewPrivs 1`, and its
+  `seteuid(0)` succeeds and it reads `/etc/shadow`: code that took over a decoder would be root.
+- **The real child, under the photo user, and fly.toml's own command.** A harness case (`real-child`) prepares a
+  12-megapixel JPEG with the real `image-child.ts`, not a fake, as uid 64999 with no supplementary group, empty
+  environment and no home. The photo user can't read the checkout on CI's runner (under a home folder only its user may
+  enter), so the harness runs in a mount namespace of its own (`unshare --mount --propagation private`) and binds the
+  checkout read-only onto a folder under the system's temporary folder, which the child reads as `tadayo-image` reads
+  `/app`. The view's removal is registered before the mount, first among the exit listeners, each step on its own; the
+  namespace ends with the harness. The case asks the kernel whether the view is writable (`access(W_OK)`, `EROFS`),
+  writing nothing; reads the child's ids from its `/proc` status while it runs; checks both renditions' sizes (2560 by
+  1920 and 1290 wide), its peak (145 MiB in the session, under the 352 MiB cap) and that nothing of the user is left.
+  From the same view, before it takes the worker's mode, it runs fly.toml's worker command as fly.toml has it, read
+  from the file and changed only in its user (`node`, which a runner may not have, becomes the unused 64998), with
+  `NODE_ENV=production` and no database: it goes past the photo user's check and stops at `DATABASE_URL`. Six starts
+  short of it (without `--no-new-privs`; a wider bounding set; an inheritable capability; root's group added;
+  `setpriv --euid` alone; root alone) each stop at the check.
+
+Tests first, each seen failing before the fix (2026-11-24 10:15 UTC; round 3's, written beside its fixes, each seen failing with its fix taken back, breakages `A16` to `A28`): `privileges.test.ts` "in
+the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of
+all" (with each of `startedAsFly`'s fields changed or left out, and ids `0 1000 0`), "in the image by its marker alone,
+whatever NODE_ENV says, stops the worker just the same", "in the worker's mode, never starts a photo's process without
+the photo's user", "the real child prepares a real photo as the photo's user" and "in the image, fly.toml's worker
+command itself goes past the photo user's check, and each start short of it stops there";
+`services/worker/src/image-process.test.ts` "in the image (NODE_ENV=production), never starts a photo's process without
+the photo's user"; `services/worker/src/start.test.ts` "in the image (NODE_ENV=production), stops before it reads
+anything when started as root alone" and `services/api/src/start.test.ts` "in the image ... when started as root"
+(both as root: directly in the session, through `sudo -n` on CI's runner, never skipped), and "refuses root in the
+image only, by NODE_ENV or the image's marker, by its real user or its effective one" (`refuseRoot`, with no process);
+`tools/ops/src/deploy-files.test.ts`: the image's `ENV`s are exactly `NODE_ENV=production` and
+`TADAYO_PHOTO_USER=tadayo-image`, the second after the user is made, fly.toml's `[env]` doesn't set it, and the image
+writes the marker both entries read. Breakages `A01` to `A28` (the evidence branch, beside this commit's), each caught
+by the test it names. The image built and run in the session, as the audit ran it, is on the evidence branch too.
+
+**Round 3 of the review** (a fresh reviewer on the fix before it was committed; no blocker):
+
+1. Should fix: the worker's mode was read from its ids alone (real uid 0, effective uid not 0), so
+   `setpriv --euid=65534` alone went past the refusal, keeping root's group, no `--no-new-privs` (a decoder taken
+   over could run the image's setuid programs) and no limits. **Fixed:** `inWorkerMode` needs the effective group not
+   0, and in the image `startedAsFly` reads the rest of fly's start back from `/proc/self/status`, as above.
+2. Nit: "in the image" was a variable a start can set (`NODE_ENV=development` ran the API as root; both settings
+   emptied ran the worker's children as root). **Fixed:** the image's marker, as above; `prepareIsolated` refuses a
+   child without its user in the image too.
+3. Nit: a `NoPhotoUser` rejection is an ordinary failure to the outbox: the event is tried again and dies after its
+   attempts. **Answered, not changed:** it can't fire. `photoUserFor` runs first in `startWorker` and stops the worker
+   in every start that could reach it (the worker's mode without a user; the image without fly's start), and
+   `main.ts` hands its user to every preparation. Were a later change to drop the user between the two, nothing is
+   decoded: the photo fails closed. Stopping the worker from inside `prepareIsolated` would put a process exit inside
+   a module the tests call in their own process.
+4. Nit: the harness's write check wrote (as root, into the real checkout, had the read-only mount failed), and its
+   view's removal was registered after the mount, in one step. **Fixed** as above. That the session can't prove the
+   view alone serves the child (its home folder is 0755) **stays true**: CI's runner, whose home folder isn't, does.
+5. Nit: nothing ran fly.toml's worker command under `NODE_ENV=production`; a regression would show only as a crash
+   loop at deploy. **Fixed:** the `real-child` run's fly start, as above.
+6. Nit: whether Fly applies the image's `ENV`s couldn't be checked from the session (fly.io doesn't resolve there).
+   **Answered:** the refusals no longer depend on it (the marker is a file in the image); without the variable, the
+   worker stops ("TADAYO_PHOTO_USER isn't set"), closed. To check on the first deploy to `dev` after the merge: the
+   worker's start line says each photo is prepared under a user of its own, and
+   `flyctl ssh console -C "printenv NODE_ENV TADAYO_PHOTO_USER"` prints both.
