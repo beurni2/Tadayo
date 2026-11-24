@@ -8,14 +8,19 @@
 // secret is the same sign-in, a new secret a new one. The server keeps the hash and nothing else of the secret,
 // so nothing it keeps can authorize a removal ((a)).
 //
-// The locks, transaction-scoped advisory locks taken before any row is read: a registration takes its token's
-// first, then reads which sign-in holds the token and takes that sign-in's and its own in one order (the hashes',
-// ascending); a removal takes its sign-in's alone. While a registration holds a token's lock, no other sign-in
-// can come to hold that token (only a registration of the token gives it to a sign-in, and each takes its lock),
-// so the holder it read can only have let it go since. Two registrations that each move the other's token so
-// wait on one another's sign-in lock in the same order, and never deadlock; a registration and a removal of one
-// sign-in never interleave, so a removal can't land between a registration's check of the sign-in and its write.
-// The account's row comes after them, `FOR NO KEY UPDATE`, as every command of the account takes it.
+// The locks, in one order for every writer of the two tables, each taking only those it needs
+// (db/migrations/0017_devices.sql names each writer's): transaction-scoped advisory locks first, then the
+// account's row, then the registrations' rows. A registration
+// takes its token's lock, then reads which sign-in holds the token and takes that sign-in's and its own in one
+// order (the hashes', ascending), and reads the holder again under them; a removal takes its sign-in's alone.
+// While a registration holds a token's lock, no other sign-in can come to hold that token (only a registration
+// of the token gives it to a sign-in, and each takes its lock), so the holder it read can only have let it go
+// since. Two registrations that each move the other's token so wait on one another's sign-in lock in the same
+// order, and never deadlock; a registration and a removal of one sign-in never interleave, so a removal can't
+// land between a registration's check of the sign-in and its write. The account's row comes after them,
+// `FOR NO KEY UPDATE`, as every command of the account takes it: only the registering account's, even when the
+// token moves from another account's sign-in. A removal locks no account's row. The schema's guards take the
+// sign-in's lock too, which a command already holds.
 //
 // `registerDevice`, after the locks and the clock (T1):
 // 1. The account is active (T27: a deletion may have begun since the gate read it) with a finished profile
@@ -33,7 +38,15 @@
 // route answers with the neutral NOT_FOUND that also ends the app's removal ((d)).
 //
 // Each also deletes ended sign-ins older than `ENDED_KEEP`, at most `PURGE_BATCH` and only rows no other
-// transaction holds, so two of them never wait on each other there.
+// transaction holds, so two purges never wait on each other; and a sign-in is ended only when no row of it is
+// there, a row another command's purge is deleting among them, so ending one never waits on a purge either
+// (`endSignIn`).
+//
+// The server can't tell which of two sign-ins on one phone came first: a sign-in is a secret, and nothing it
+// sends says when it began. So the app sends no registration for a new sign-in until every earlier sign-in's
+// removal has ended (docs/plans/api-b2-spike-push.md, section 0): that removal ends the earlier sign-in here, and
+// a registration of it that lands late then changes nothing. Without that order, an earlier sign-in's first
+// registration landing after a later sign-in's would move the token back (docs/LIMITATIONS.md).
 //
 // The token is a device's address: it is never in a log, an error or an answer (T52, T55), and the secret never
 // leaves this function but as its hash.
@@ -124,11 +137,18 @@ async function purgeEnded(tx: QuerySql, now: Temporal.Instant): Promise<void> {
                         FOR UPDATE SKIP LOCKED)`;
 }
 
-/** Ends `signIn` at `now`: a later registration of it changes nothing ((e)). Its registration must be gone. */
+/**
+ * Ends `signIn` at `now`: a later registration of it changes nothing ((e)). Its registration must be gone. A
+ * sign-in that has a row already keeps its first ending. That includes a row another command's purge is deleting
+ * and hasn't committed: an insert that met it would wait for that purge (`ON CONFLICT` waits on a row deleted
+ * but not committed), and two removals whose purges each took the other's row would deadlock. Such a row is
+ * past `ENDED_KEEP`, so no token of its sign-in lives to register it once it is gone.
+ */
 async function endSignIn(tx: QuerySql, signIn: string, now: Temporal.Instant): Promise<void> {
   await bound(tx)`
     INSERT INTO app.device_sign_ins_ended (sign_in, ended_at)
-    VALUES (pg_catalog.decode(${signIn}, 'hex'), ${now}::pg_catalog.timestamptz)
+    SELECT pg_catalog.decode(${signIn}, 'hex'), ${now}::pg_catalog.timestamptz
+     WHERE NOT EXISTS (SELECT FROM app.device_sign_ins_ended WHERE sign_in = pg_catalog.decode(${signIn}, 'hex'))
     ON CONFLICT (sign_in) DO NOTHING`;
 }
 

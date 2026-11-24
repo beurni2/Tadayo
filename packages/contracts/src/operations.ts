@@ -141,7 +141,9 @@ const ACCOUNT: Operation[] = [
     summary: "Remove a logged-out sign-in's device registration",
     description:
       "Authorized by the sign-in's removal secret alone (TECH-DESIGN section 6 (a) to (e)). The neutral " +
-      "NOT_FOUND also ends a removal: one already done, or a token that moved to a later sign-in.",
+      "NOT_FOUND also ends a removal: one already done, a token that moved to a later sign-in, or a sign-in " +
+      "that never registered. Either answer ends the sign-in, so a registerDevice of it that lands later gets " +
+      "the neutral NOT_FOUND and changes nothing.",
     public: true,
     body: RemoveDeviceRequest,
     ok: { status: 204 },

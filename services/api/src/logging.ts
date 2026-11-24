@@ -92,6 +92,13 @@ export const REDACTED_FIELDS = [
   "remote_address",
   "user_agent",
   "userAgent",
+  // A device's push address and its sign-in (T52; db/migrations/0017_devices.sql)
+  "apns_token",
+  "apnsToken",
+  "removal_secret",
+  "removalSecret",
+  "sign_in",
+  "signIn",
   // Names
   "display_name",
   "displayName",

@@ -1953,10 +1953,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           // (e)). Two new sign-ins of the viewer's: the first registers a token, in uppercase as some phones print
           // it, and the same again; the second takes that token from it, in the sandbox, with a zone written in
           // another case; the first, which has ended, registers a new token; the other club's author's secret
-          // comes with a token of the viewer's. Then the second sign-in is removed by its secret alone, sent with
-          // the role's header and again with none, and registers again. A role the gate stops gets the gate's
-          // answer to every registration, which changes nothing; the removals are judged the same for every role,
-          // the route being public (T14). The secrets and tokens join the values the scanner keeps back (T52).
+          // comes with a token of the viewer's. Then the other club's author registers a new sign-in's token, and a
+          // third sign-in of the viewer's takes it: one account's request ends another account's sign-in. Then
+          // the second sign-in is removed by its secret alone, sent with the role's header and again with none,
+          // and registers again. A role the gate stops gets the gate's answer to every registration, which changes
+          // nothing; the removals are judged the same for every role, the route being public (T14). The secrets
+          // and tokens, the other club's author's among them, join the values the scanner keeps back (T52).
           const register = specs.find((spec) => spec.operation.id === "registerDevice");
           const removal = specs.find((spec) => spec.operation.id === "removeDevice");
           if (register === undefined || removal === undefined)
@@ -1964,16 +1966,39 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const deviceGate = gateOf(sessionNow, register.operation);
           const devices = DEVICES.get(role.name) ?? { registered: 0, moved: 0, refused: 0, removed: 0, none: 0 };
           DEVICES.set(role.name, devices);
-          const [firstSecret, secondSecret] = [freshToken(), freshToken()];
+          const [firstSecret, secondSecret, thirdSecret, theirSecret] = [
+            freshToken(),
+            freshToken(),
+            freshToken(),
+            freshToken(),
+          ];
           const deviceToken = randomBytes(32).toString("hex").toUpperCase();
-          const [laterToken, ownToken] = [randomBytes(32).toString("hex"), randomBytes(32).toString("hex")];
-          secrets.push(firstSecret, secondSecret, deviceToken, deviceToken.toLowerCase(), laterToken, ownToken);
+          const [laterToken, ownToken, theirToken] = [
+            randomBytes(32).toString("hex"),
+            randomBytes(32).toString("hex"),
+            randomBytes(32).toString("hex"),
+          ];
+          const theirBearer = await keys.signer.token(elsewhere.subject);
+          secrets.push(
+            firstSecret,
+            secondSecret,
+            thirdSecret,
+            deviceToken,
+            deviceToken.toLowerCase(),
+            laterToken,
+            ownToken,
+            elsewhereDevice.secret,
+            elsewhereDevice.token,
+            theirSecret,
+            theirToken,
+            theirBearer,
+          );
           facts = await load();
           const deviceRows = () =>
             deviceRowsOf(
               db as unknown as WorldTx,
-              [firstSecret, secondSecret, elsewhereDevice.secret].map(signInOf),
-              [deviceToken, laterToken, ownToken, elsewhereDevice.token],
+              [firstSecret, secondSecret, thirdSecret, elsewhereDevice.secret, theirSecret].map(signInOf),
+              [deviceToken, laterToken, ownToken, elsewhereDevice.token, theirToken],
               [cell.viewer, elsewhere.account],
             );
           const device = (secret: string, token: string, zone = "Europe/London", canonical = zone): DeviceRequest => ({
@@ -2051,6 +2076,22 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           );
           await registerStep(device(firstSecret, laterToken), "the first sign-in, ended, with a new token");
           await registerStep(device(elsewhereDevice.secret, ownToken), "the other club's author's secret");
+          // The other club's author's own registration, through the app, before the viewer's third sign-in takes
+          // its token; it isn't the viewer's request, so it isn't one of the table's.
+          const theirs = await answerOf(app, {
+            method: "PUT",
+            url: "/v1/devices/current",
+            headers: { authorization: bearer(theirBearer), "content-type": "application/json" },
+            payload: JSON.stringify({
+              apns_token: theirToken,
+              apns_environment: "production",
+              timezone: "Europe/London",
+              removal_secret: theirSecret,
+            }),
+          });
+          if (theirs.status !== 200)
+            throw new Error(`the other club's author's new sign-in wasn't registered: ${theirs.body}`);
+          await registerStep(device(thirdSecret, theirToken), "a third sign-in takes the other club's author's token");
           await removeStep(secondSecret, removal.headers, "the second sign-in removed, with the role's header");
           await removeStep(secondSecret, {}, "the same removal again, signed out");
           await registerStep(device(secondSecret, deviceToken), "the removed sign-in registers again");
@@ -2902,15 +2943,16 @@ describe("the devices' table ran (tests/src/privacy/device.ts)", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
     // Counted by hand from ../matrix.ts, apart from the judge. A device belongs to no club, so every state of the
     // drop and every phase runs the same table: seven states, in four phases (three for the role whose block
-    // comes as the day opens). In each cell a role the gate lets through registers three times (the first
-    // sign-in twice, the second once, which moves the token), is refused three times (the first sign-in after
-    // the move, the other club's author's secret, the second sign-in after its removal), removes once and finds
-    // nothing once. The account whose deletion has begun gets the gate's 401 to every registration, so its
-    // removals find nothing: two a cell. The account that hasn't finished its profile gets the 403 until the
-    // last phase, where its own updateMe finishes it before the table (account.ts's updateMeCases).
+    // comes as the day opens). In each cell a role the gate lets through registers four times (the first
+    // sign-in twice, the second once, which moves the token from the first, the third once, which moves the
+    // other club's author's), is refused three times (the first sign-in after the move, the other club's
+    // author's secret, the second sign-in after its removal), removes once and finds nothing once. The account
+    // whose deletion has begun gets the gate's 401 to every registration, so its removals find nothing: two a
+    // cell. The account that hasn't finished its profile gets the 403 until the last phase, where its own
+    // updateMe finishes it before the table (account.ts's updateMeCases).
     const full = (cells: number) => ({
-      registered: 3 * cells,
-      moved: cells,
+      registered: 4 * cells,
+      moved: 2 * cells,
       refused: 3 * cells,
       removed: cells,
       none: cells,

@@ -19,7 +19,9 @@ Two PRs, each from `main`, each reviewed at full depth with a privacy and securi
    if it is clean enough to keep). One contract change and no field change: `registerDevice` declares the neutral
    `NOT_FOUND` that 1.3 answers (the privacy matrix's first run found it missing from the contract, which listed
    only the gate's answers for the route), and the two descriptions say what is built instead of "B8 finishes the
-   mechanism".
+   mechanism", `removeDevice`'s that a removal that finds nothing still ends the sign-in. A contract change is its
+   own PR from the api lane (`docs/GITHUB.md`); this one rides in the build PR because the route's 404 and the
+   matrix's check of it can't pass `ci` apart, and the PR says so for the founder to accept or have split.
 2. **`api/b2-spike-push`: the reveal push** (section 2). The worker finds each day that has opened, decides who gets
    "Debby's day is ready" or "It's your day. Your collection is ready" (spec 21's two reveal rows), holds each push
    through the device's quiet hours, keeps the two-a-day budget, rechecks access at dispatch, and sends it through
@@ -33,6 +35,16 @@ characters) in the keychain beside the session, sent with every `registerDevice`
 answering `NOT_FOUND` ends registering for that sign-in, with no retry; at logout the session is deleted and the secret
 kept as a pending removal, sent then and at each launch or wake with a delay after each failure, until a 204 or a
 `NOT_FOUND`, when the secret is deleted. Every build goes through TestFlight, so the app sends `production`.
+
+One rule of the app's makes (e) hold, since the server can't tell which of two sign-ins on one phone came first
+(PR #120's privacy review, P1; `docs/LIMITATIONS.md`): a new sign-in sends no `registerDevice` until every earlier
+sign-in's pending removal has ended with a 204 or a `NOT_FOUND`. At a sign-in the app sends any pending removal at
+once, without waiting out its delay, and registers once it ends; at a logout it cancels any `registerDevice` still in
+flight, then queues the removal (the ios lane, 2026-11-24 04:29 UTC). A removal ends its sign-in here whether or not it
+found a registration (1.4), so an earlier sign-in's registration that lands after it changes nothing, and a later
+sign-in's token is never taken back. Cancelling is best effort, since a request may already be at the server; the
+ended row is what makes that case safe. While an earlier removal can't end (offline, a 5xx or a 429), the new sign-in
+gets no pushes, and the app keeps sending the removal ((c)).
 
 ## 1. Device registration (`api/b2-spike-devices`)
 
@@ -56,14 +68,22 @@ removal has to work with no session at all (the app deleted it at logout).
   ((e)). It holds no account, no token and no zone: nothing personal ((b)). A row is deleted once it is older than
   `ENDED_KEEP` (8 days), past the longest life Supabase allows an access token (one week), since only a request
   carrying one of that sign-in's tokens can register it: the next registration or removal after that deletes it, at
-  most 100 a time and skipping rows another transaction holds, in its own transaction. A row kept longer holds
-  nothing personal and refuses nothing but its own sign-in.
+  most 100 a time and skipping rows another transaction holds, in that command's own transaction. Ending a sign-in
+  writes its row only when none is there, a row another command's purge is deleting among them, so it never waits on
+  a purge (two removals whose purges each took the other's row would otherwise deadlock). A row kept longer holds
+  nothing personal and refuses nothing but its own sign-in. The keep is measured by the server's clock (T1), which on
+  `dev` runs ahead of real time and moves forward at a gate's run: `docs/LIMITATIONS.md` gives the bound.
 
 ### 1.3 `PUT /v1/devices/current` (`registerDevice`)
 
-Signed in, profile finished (the gate's own rule; FQ69). One transaction, at read committed, that takes a
-transaction-scoped advisory lock on the token and one on the sign-in, in that order (no two registrations of either
-interleave):
+Signed in, profile finished (the gate's own rule; FQ69). One transaction, at read committed. Its locks come in the
+one order every writer of the two tables keeps (the migration's header): transaction-scoped advisory locks first, then
+the account's row (`FOR NO KEY UPDATE`), then the registrations' rows. It takes the token's lock, reads which sign-in
+holds the token, takes that sign-in's lock and its own in the hashes' order, and reads the holder again under them:
+no two registrations of one token or one sign-in interleave, a move can't cross the holder's own registration, and
+two registrations that each take the other's token queue on the same lock instead of deadlocking. The schema's
+guards take the sign-in's lock too, which the command already holds, so a writer that forgot it can't slip a
+registration past an ending. Then:
 
 1. The sign-in has ended (a row in `device_sign_ins_ended`): nothing changes; the answer is the neutral `NOT_FOUND`
    ((e); T14). A secret whose registration belongs to another account answers the same, and changes nothing.
@@ -99,9 +119,14 @@ removal of a deleting account's registrations is B8's account-deletion job; unti
 - `packages/domain`: the hash, the zone check, the rules of 1.3 and 1.4 as pure functions where there are any.
 - `tests/src/db/devices.test.ts` on Postgres: a registration, its replacement by a new token, a token moving from
   another sign-in of the same account and of another account, a late registration of an ended sign-in (after a
-  removal, after a move, after a removal that found nothing), a removal twice, two registrations of one token at once
-  (the lock), the ended rows' purge after 8 days with the fake clock, a deleting account, and `migrations.test.ts`'s
-  ownership and row-level-security checks for both tables.
+  removal, after a move, after a removal that found nothing), the app's order of two sign-ins (section 0), a removal
+  twice, the ended rows' purge after 8 days with the fake clock, a deleting account, the guards and their race, and
+  `migrations.test.ts`'s ownership and row-level-security checks for both tables. The races hold the lock they meet
+  from a transaction of the test's own until Postgres shows every command waiting on it, so each is proved to
+  overlap: twenty registrations of one token, two sign-ins crossing tokens, a registration and a removal of one
+  sign-in in each order, a deletion that begins while a registration waits, the guards' race, and a removal meeting
+  another command's purge held open. Two purges at once past more than a batch can't be held between a removal's
+  purge and its ending, so that test lays its rows out in the order that deadlocked.
 - `services/api`: the routes' tests (the contract's answers, the first bad field never its value, no token or secret
   in an answer or a log line), the gate's public list unchanged.
 - The privacy matrix: `registerDevice` and `removeDevice` move from `NONE` to rows of their own in
@@ -116,19 +141,23 @@ then. The worker's loop (`services/worker/src/loop.ts`) gains a pass, after gene
 `reveal_at` has passed by the clock's sample and whose `close_at` hasn't, and whose pushes haven't been planned: one
 row per recipient and device in `app.push_deliveries` (migration `0018_push_deliveries.sql`), unique on the day, the
 account and the sign-in, so a pass that runs twice plans once (Q17). The dev clock moves the sample (S5), so a dev
-run reaches 07:00 and 08:00 when the founder asks.
+run reaches 07:00 and 08:00 when the founder asks. A row names a sign-in only while its registration lives: a
+removal, a move, a dead token or an account's deletion clears that sign-in from its rows in the same transaction, so
+nothing kept joins an ended sign-in, whose row holds no account, to an account ((b); PR #120's privacy review, P6).
 
 ### 2.2 Who gets it, and when
 
 - **Recipients:** each member whose membership interval holds the reveal and who can read at least one drop of the
   day at the reveal, by the read predicate (`readableDrops`, `what` = `media`; T9). Nobody with no readable drop is
   told the day is ready (T36). The star reads their own day like everyone else.
-- **Devices:** each registration of the recipient's account.
+- **Devices:** each registration of the recipient's account. An account can hold many (`docs/LIMITATIONS.md`); a
+  made-up token costs one APNs request, whose answer deletes it (2.3).
 - **When:** `due_at` is the reveal, or 08:00 in the device's zone when the reveal falls in its quiet hours (23:00 to
   08:00, T37). The day opens in the app at 07:00 all the same.
-- **Too late:** a push still not sendable when the day closes (`close_at`, 01:00 in the club's zone) isn't sent: a
-  "ready" message for a day that is over would mislead. This is a reading of spec 21 the sources don't settle; it is
-  FQ141 in `docs/QUESTIONS.md`, with that default.
+- **Never too late by quiet hours:** they last 9 hours (10 across a change of the device's clocks), and a day is open
+  at least 17 hours, from 07:00 to 01:00 in the club's zone, so a reveal held to 08:00 in any device's zone is due
+  before the day closes. Only APNs' retries can reach `close_at`, and 2.3 stops them there. (FQ141 asked about the
+  held case and is withdrawn: PR #120's engineering review, E1.)
 
 ### 2.3 Dispatch
 
@@ -148,8 +177,10 @@ clock's sample:
    Until then every recipient has them on.
 4. **The payload** (2.4), sent through APNs (2.5), and the row ends as `sent`, or `failed` with APNs' reason. An APNs
    answer that the token is dead (`410 Unregistered`, `400 BadDeviceToken`) deletes the registration, so nothing more
-   goes to it; its sign-in isn't ended, so the app's next registration with a new token is taken. A `429`, a `5xx` or
-   a network failure is tried again with the outbox's backoff, until the day closes.
+   goes to it; its sign-in isn't ended, so the app's next registration with a new token is taken. That deletion keeps
+   the migration's order: the sign-in's advisory lock, then the account's row, then the registration, and only if it
+   still holds the token the push went to. A `429`, a `5xx` or a network failure is tried again with the outbox's
+   backoff, until the day closes.
 
 ### 2.4 The payload
 
@@ -199,7 +230,7 @@ table):
   drop, nobody without one, the star's own wording, each device), twice planned once, quiet hours in several device
   zones (07:00 in New York held to 08:00; a device in London already past 08:00; a device in Tokyo at 21:00 sent at
   once), the budget across three clubs, each recheck (a drop withdrawn, a member who left, a deleting account, a token
-  moved), a day closed before 08:00 in a far zone, and two dispatchers at once.
+  moved), a retry that reaches the day's close, and two dispatchers at once.
 - The privacy matrix's worker row: every payload the dispatcher builds, before and after the reveal and for every
   role, holds no caption, media, URL, provider id or source.
 

@@ -5,7 +5,11 @@
 // a token that moves from an earlier sign-in of the same account or another, the sign-ins that have ended and
 // the late registrations they make change nothing, a secret of another account's, the purge of ended sign-ins
 // after `ENDED_KEEP`, the account's state, the schema's own guards, and the commands at once, committed, with no
-// deadlock and no registration left for an ended sign-in.
+// deadlock and no registration left for an ended sign-in. Each race holds the lock its commands meet from a
+// transaction of the test's own until Postgres shows every command waiting on it (`hold`, `untilWaiting`,
+// `untilBlockedBy`), so it is proved to overlap. Two purges at once are the one exception: nothing a removal does
+// between its purge and its ending can be held, so that test lays its rows out in the order that deadlocked, and
+// the test before it proves, with the purge held, that an ending no longer waits on one.
 //
 // A refused command throws `Refused`, which the route's transaction rolls back, so a command in the first tests
 // is a savepoint inside the test's own transaction: a refusal leaves exactly what the route's would.
@@ -91,6 +95,78 @@ const input = (userId: string, secret: string, token: string, over: Partial<Regi
   ...over,
 });
 
+/** The lock of one token, and of one sign-in (devices.ts's names), from the token or the secret. */
+const tokenLock = (token: string) => `tadayo.device.token:${token.toLowerCase()}`;
+const signInLock = (secret: string) => `tadayo.device.sign-in:${hashOf(secret)}`;
+
+/** Holds the advisory locks `names` in a transaction of the test's own until `release`. */
+async function hold(names: readonly string[]): Promise<{ release: () => Promise<void> }> {
+  let release: () => void = () => undefined;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let ready: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    ready = resolve;
+  });
+  const done = db.begin(async (tx) => {
+    for (const name of names)
+      await tx`SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(${name}, 0))`;
+    ready();
+    await released;
+  });
+  await Promise.race([held, done]);
+  return {
+    release: async () => {
+      release();
+      await done;
+    },
+  };
+}
+
+/** Waits until `count` transactions wait on the advisory locks `names` (pg_locks), or fails after ten seconds. */
+async function untilWaiting(names: readonly string[], count: number): Promise<void> {
+  for (let tries = 0; tries < 500; tries += 1) {
+    const [row] = await db<{ n: number }[]>`
+      SELECT count(*)::int AS n FROM pg_catalog.pg_locks l
+       WHERE l.locktype = 'advisory' AND NOT l.granted AND l.objsubid = 1
+         AND (l.classid::bigint, l.objid::bigint) IN (
+               SELECT (k >> 32) & 4294967295, k & 4294967295
+                 FROM (SELECT pg_catalog.hashtextextended(name, 0) AS k FROM unnest(${names as string[]}::text[]) AS name) AS keys)`;
+    if ((row?.n ?? 0) >= count) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`fewer than ${String(count)} transactions waited on the locks`);
+}
+
+/** Waits until a transaction is blocked by the backend `pid` (`pg_blocking_pids`), or fails after ten seconds. */
+async function untilBlockedBy(pid: number): Promise<void> {
+  for (let tries = 0; tries < 500; tries += 1) {
+    const [row] = await db<{ n: number }[]>`
+      SELECT count(*)::int AS n FROM pg_catalog.pg_stat_activity
+       WHERE ${pid}::int = ANY (pg_catalog.pg_blocking_pids(pid))`;
+    if ((row?.n ?? 0) >= 1) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`no transaction waited on backend ${String(pid)}`);
+}
+
+/** Whether `done` is still running after 300 ms. */
+async function stillWaiting(done: Promise<unknown>): Promise<boolean> {
+  const state = await Promise.race([
+    done.then(
+      () => "finished",
+      () => "finished",
+    ),
+    new Promise<string>((resolve) => {
+      setTimeout(() => {
+        resolve("waiting");
+      }, 300);
+    }),
+  ]);
+  return state === "waiting";
+}
+
 describe("a registration (TECH-DESIGN section 6)", () => {
   const clock = fakeClock(AT_FIRST);
   const register = (tx: WorldTx, one: RegisterDeviceInput) => tx.savepoint((sp) => registerDevice(sp, clock, one));
@@ -117,11 +193,8 @@ describe("a registration (TECH-DESIGN section 6)", () => {
           registered_at: Temporal.Instant.from(AT_FIRST),
         },
       ]);
-      // The secret is nowhere: not as itself, not in any case.
-      const [kept] = await tx<{ n: number }[]>`
-        SELECT count(*)::int AS n FROM app.device_registrations
-         WHERE pg_catalog.encode(sign_in, 'escape') LIKE ${`%${secret}%`} OR apns_token LIKE ${`%${secret}%`}`;
-      expect(kept?.n).toBe(0);
+      // The secret itself can't be kept: the sign-in is 32 bytes (its hash, above) and the token hex alone, which
+      // the schema's own checks hold (the guards' test).
     });
   });
 
@@ -318,6 +391,29 @@ describe("a removal (TECH-DESIGN section 6 (c), (d), (e))", () => {
       expect(await registrations(tx, { token })).toMatchObject([{ user_id: cleo, sign_in: hashOf(cleos) }]);
     });
   });
+
+  it("keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e))", async () => {
+    await rolledBack(db, async (tx) => {
+      clock.set(Temporal.Instant.from(AT_FIRST));
+      const [ana, ben] = [await account(tx), await account(tx)];
+      const [anas, bens, token] = [newSecret(), newSecret(), newToken()];
+      // Ana's first registration is on its way when Ana logs out. The app sends Ben's registration only once
+      // Ana's removal has ended (docs/plans/api-b2-spike-push.md, section 0): it found nothing, and ended Ana's.
+      expect(await remove(tx, anas)).toBe("none");
+      clock.advance({ minutes: 1 });
+      await register(tx, input(ben, bens, token));
+      clock.advance({ minutes: 1 });
+      // Ana's registration lands now, with Ben's token: it changes nothing, and refuses nothing of Ben's.
+      expect(await refusal(register(tx, input(ana, anas, token)))).toEqual({ code: "NOT_FOUND", facts: {} });
+      expect(await registrations(tx, { token })).toMatchObject([
+        { user_id: ben, sign_in: hashOf(bens), registered_at: Temporal.Instant.from(AT_FIRST).add({ minutes: 1 }) },
+      ]);
+      expect(await endedAt(tx, bens)).toBeNull();
+      expect(await registrations(tx, { user: ana })).toEqual([]);
+      await register(tx, input(ben, bens, token));
+      expect(await registrations(tx, { token })).toMatchObject([{ user_id: ben, sign_in: hashOf(bens) }]);
+    });
+  });
 });
 
 describe("the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted", () => {
@@ -453,13 +549,74 @@ describe("the schema's own guards (0017), behind the commands", () => {
       message: expect.stringMatching(/deleted with a device registration/) as unknown,
     });
     expect(await registrations(db as unknown as WorldTx, { user: ben })).toHaveLength(1);
-    // The account deletion's order, which B8's job follows: the registrations first, then the shell.
+    // The account deletion's order, which B8's job follows (0017's header): the account's row first, as it begins
+    // (deleting), then its registrations, then the shell.
     await db.begin(async (tx) => {
       await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.edited} WHERE id = ${ben}`;
       await tx`DELETE FROM app.device_registrations WHERE user_id = ${ben}`;
       await tx`UPDATE app.users SET state = 'deleted', deleted_at = ${AT.edited}, auth_subject = NULL,
                       age_confirmed_at = NULL, display_name = NULL WHERE id = ${ben}`;
     });
+  });
+
+  it("lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it", async () => {
+    const ben = await db.begin((tx) => account(tx));
+    /** A transaction that writes, then stays open until `commit`, whose promise is its commit's outcome. */
+    const open = (write: (tx: WorldTx) => Promise<unknown>) => {
+      let go: () => void = () => undefined;
+      const allowed = new Promise<void>((resolve) => {
+        go = resolve;
+      });
+      let wrote: () => void = () => undefined;
+      const written = new Promise<void>((resolve) => {
+        wrote = resolve;
+      });
+      const committed = db.begin(async (tx) => {
+        await write(tx);
+        wrote();
+        await allowed;
+      });
+      return {
+        written: Promise.race([written, committed.then(() => undefined)]),
+        commit: () => {
+          go();
+          return committed;
+        },
+      };
+    };
+    for (const first of ["ending", "registration"] as const) {
+      const signIn = randomBytes(32).toString("hex");
+      const ending = () =>
+        open(
+          (tx) =>
+            tx`INSERT INTO app.device_sign_ins_ended (sign_in, ended_at) VALUES (pg_catalog.decode(${signIn}, 'hex'), ${AT.added})`,
+        );
+      const registering = () =>
+        open(
+          (tx) =>
+            tx`INSERT INTO app.device_registrations (sign_in, user_id, apns_token, apns_environment, timezone, registered_at)
+               VALUES (pg_catalog.decode(${signIn}, 'hex'), ${ben}, ${randomBytes(32).toString("hex")}, 'production',
+                       'Europe/London', ${AT.added})`,
+        );
+      // Neither sees the other's row before it commits; the ending's check, at its commit, waits on the lock the
+      // registration's guard took, and then sees the registration.
+      const one = first === "ending" ? ending() : registering();
+      await one.written;
+      const two = first === "ending" ? registering() : ending();
+      await two.written;
+      const [end, register] = first === "ending" ? [one, two] : [two, one];
+      const ended = end.commit();
+      await untilWaiting([`tadayo.device.sign-in:${signIn}`], 1);
+      await register.commit();
+      await expect(ended, first).rejects.toMatchObject({
+        code: REFUSED.integrity,
+        message: expect.stringMatching(/ends only once its registration is gone/) as unknown,
+      });
+      const [row] = await db<{ registered: number; ended: number }[]>`
+        SELECT (SELECT count(*)::int FROM app.device_registrations WHERE sign_in = pg_catalog.decode(${signIn}, 'hex')) AS registered,
+               (SELECT count(*)::int FROM app.device_sign_ins_ended WHERE sign_in = pg_catalog.decode(${signIn}, 'hex')) AS ended`;
+      expect(row, first).toEqual({ registered: 1, ended: 0 });
+    }
   });
 });
 
@@ -484,9 +641,12 @@ describe("commands at once, committed: no deadlock, and no registration for an e
     const token = newToken();
     const people = await Promise.all(Array.from({ length: 20 }, () => committed()));
     const secrets = people.map(() => newSecret());
-    const results = await Promise.allSettled(
-      people.map((user, index) => asRoute(input(user, secrets[index] ?? "", token))),
-    );
+    // All twenty wait on the token's lock together before any goes on.
+    const blocker = await hold([tokenLock(token)]);
+    const running = Promise.allSettled(people.map((user, index) => asRoute(input(user, secrets[index] ?? "", token))));
+    await untilWaiting([tokenLock(token)], 20);
+    await blocker.release();
+    const results = await running;
     // Each ran in some order: a registration that ran after the token moved past it is fine; nothing else is.
     expect(settled(results).every((outcome) => outcome === "ok")).toBe(true);
     const holders = await registrations(db as unknown as WorldTx, { token });
@@ -502,8 +662,13 @@ describe("commands at once, committed: no deadlock, and no registration for an e
       const [anas, bens, t1, t2] = [newSecret(), newSecret(), newToken(), newToken()];
       await asRoute(input(ana, anas, t1));
       await asRoute(input(ben, bens, t2));
-      const results = await Promise.allSettled([asRoute(input(ana, anas, t2)), asRoute(input(ben, bens, t1))]);
-      const outcomes = settled(results);
+      // Each has its token's lock and waits on the sign-ins' locks, which the test holds: taken in one order, the
+      // two queue on the same lock; in each command's own order, each would take one and wait on the other's.
+      const blocker = await hold([signInLock(anas), signInLock(bens)]);
+      const running = Promise.allSettled([asRoute(input(ana, anas, t2)), asRoute(input(ben, bens, t1))]);
+      await untilWaiting([signInLock(anas), signInLock(bens)], 2);
+      await blocker.release();
+      const outcomes = settled(await running);
       // The first to run moves the other's token and ends the other's sign-in, which is then refused.
       expect(outcomes.sort()).toEqual(["NOT_FOUND", "ok"]);
       expect(await orphans()).toBe(0);
@@ -511,12 +676,26 @@ describe("commands at once, committed: no deadlock, and no registration for an e
   });
 
   it("lets a registration and a removal of one sign-in race: either order leaves no registration of it", async () => {
-    for (let round = 0; round < 10; round += 1) {
+    // Both wait on the sign-in's lock, which the test holds; the one that queued first goes first. Each order runs.
+    for (const first of ["registration", "removal", "registration", "removal"] as const) {
       const ben = await committed();
       const [secret, token] = [newSecret(), newToken()];
-      const results = await Promise.allSettled([asRoute(input(ben, secret, token)), removing(secret)]);
-      const [registered, removed] = settled(results);
-      expect([registered, removed]).toEqual([expect.stringMatching(/^(ok|NOT_FOUND)$/), "ok"]);
+      const blocker = await hold([signInLock(secret)]);
+      const start = (which: "registration" | "removal") =>
+        which === "registration" ? asRoute(input(ben, secret, token)) : removing(secret);
+      const one = start(first);
+      await untilWaiting([signInLock(secret)], 1);
+      const two = start(first === "registration" ? "removal" : "registration");
+      await untilWaiting([signInLock(secret)], 2);
+      await blocker.release();
+      const [registered, removed] = await Promise.allSettled(first === "registration" ? [one, two] : [two, one]);
+      if (first === "registration") {
+        expect(registered.status).toBe("fulfilled");
+        expect(removed).toEqual({ status: "fulfilled", value: "removed" });
+      } else {
+        expect(settled([registered])).toEqual(["NOT_FOUND"]);
+        expect(removed).toEqual({ status: "fulfilled", value: "none" });
+      }
       expect(await registrations(db as unknown as WorldTx, { user: ben })).toEqual([]);
       expect(await endedAt(db as unknown as WorldTx, secret)).not.toBeNull();
       expect(await orphans()).toBe(0);
@@ -527,7 +706,11 @@ describe("commands at once, committed: no deadlock, and no registration for an e
     const ben = await committed();
     const secret = newSecret();
     const tokens = Array.from({ length: 20 }, () => newToken());
-    const results = await Promise.allSettled(tokens.map((token) => asRoute(input(ben, secret, token))));
+    const blocker = await hold([signInLock(secret)]);
+    const running = Promise.allSettled(tokens.map((token) => asRoute(input(ben, secret, token))));
+    await untilWaiting([signInLock(secret)], 20);
+    await blocker.release();
+    const results = await running;
     expect(settled(results).every((outcome) => outcome === "ok")).toBe(true);
     const rows = await registrations(db as unknown as WorldTx, { user: ben });
     expect(rows).toHaveLength(1);
@@ -540,33 +723,74 @@ describe("commands at once, committed: no deadlock, and no registration for an e
     const held = new Promise<void>((resolve) => {
       finish = resolve;
     });
-    let begun: () => void = () => undefined;
-    const started = new Promise<void>((resolve) => {
+    let begun: (pid: number) => void = () => undefined;
+    const started = new Promise<number>((resolve) => {
       begun = resolve;
     });
     const deleting = db.begin(async (tx) => {
+      const [me] = await tx<{ pid: number }[]>`SELECT pg_catalog.pg_backend_pid() AS pid`;
       await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.edited} WHERE id = ${ben}`;
-      begun();
+      begun(me?.pid ?? -1);
       await held;
     });
-    await started;
+    const deleter = await started;
     const waiting = asRoute(input(ben, newSecret(), newToken()));
-    // Give the registration the time to reach the account's row: it can't finish while the deletion holds it.
-    const state = await Promise.race([
-      waiting.then(
-        () => "finished",
-        () => "finished",
-      ),
-      new Promise<string>((resolve) => {
-        setTimeout(() => {
-          resolve("waiting");
-        }, 300);
-      }),
-    ]);
-    expect(state).toBe("waiting");
+    // The registration reaches the account's row, which the deletion holds, and waits on it.
+    await untilBlockedBy(deleter);
     finish();
     await deleting;
     expect(await refusal(waiting)).toEqual({ code: "UNAUTHENTICATED", facts: {} });
     expect(await registrations(db as unknown as WorldTx, { user: ben })).toEqual([]);
+  });
+
+  it("ends a sign-in whose old row another command's purge is deleting, without waiting for that purge", async () => {
+    const secret = newSecret();
+    await db`INSERT INTO app.device_sign_ins_ended (sign_in, ended_at)
+             VALUES (pg_catalog.decode(${hashOf(secret)}, 'hex'), ${Temporal.Instant.from("2026-01-01T00:00:00Z")})`;
+    // Another command's purge has deleted the row, past the keep, and hasn't committed.
+    let finish: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    let begun: () => void = () => undefined;
+    const started = new Promise<void>((resolve) => {
+      begun = resolve;
+    });
+    const purging = db.begin(async (tx) => {
+      await tx`DELETE FROM app.device_sign_ins_ended WHERE sign_in = pg_catalog.decode(${hashOf(secret)}, 'hex')`;
+      begun();
+      await held;
+    });
+    await started;
+    // The app sends the removal again: it ends at once, with the neutral answer, the purge still open.
+    const removal = removing(secret);
+    expect(await stillWaiting(removal)).toBe(false);
+    expect(await removal).toBe("none");
+    finish();
+    await purging;
+    // The row went with the purge: no token of a sign-in ended that long ago lives to register it.
+    expect(await endedAt(db as unknown as WorldTx, secret)).toBeNull();
+  });
+
+  it("lets two removals of long-ended sign-ins purge at once, each past more than `PURGE_BATCH` rows, with no deadlock", async () => {
+    for (let round = 0; round < 5; round += 1) {
+      const [first, second] = [newSecret(), newSecret()];
+      // Each round's rows older than the last's, so each purge meets this round's own first. The removal sent first
+      // usually purges first: it takes the first hundred rows, with the second sign-in's, and the other removal the
+      // next hundred, with the first's. That is the order in which two endings that waited on a purge deadlocked.
+      const hashes = Array.from({ length: 2 * PURGE_BATCH + 50 }, () => randomBytes(32).toString("hex"));
+      hashes[50] = hashOf(second);
+      hashes[PURGE_BATCH + 50] = hashOf(first);
+      const base = Temporal.Instant.from("2026-06-01T00:00:00Z").subtract({ hours: 24 * round });
+      const times = hashes.map((_, index) => base.add({ seconds: index }).toString());
+      await db`INSERT INTO app.device_sign_ins_ended (sign_in, ended_at)
+               SELECT pg_catalog.decode(h, 'hex'), t::timestamptz FROM unnest(${hashes}::text[], ${times}::text[]) AS u(h, t)`;
+      const results = await Promise.allSettled([removing(first), removing(second)]);
+      expect(results.map((one) => (one.status === "fulfilled" ? one.value : String(one.reason)))).toEqual([
+        "none",
+        "none",
+      ]);
+    }
+    expect(await orphans()).toBe(0);
   });
 });

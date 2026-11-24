@@ -5,9 +5,28 @@
 -- A sign-in is named by the SHA-256 of the removal secret its app made at that sign-in (the
 -- contract's `RemovalSecret`): the server keeps that hash and nothing else of the secret, so the
 -- hash can't authorize a removal ((a)). `registerDevice` and `removeDevice`
--- (packages/domain/src/identity/devices.ts) write these tables, one command in one transaction,
--- under transaction-scoped advisory locks: the token's first, then each sign-in's in one order. The
--- guards below are the last line behind them:
+-- (packages/domain/src/identity/devices.ts) write these tables, one command in one transaction.
+--
+-- The locks, in this order for every writer of these tables, each taking only those it needs:
+-- transaction-scoped advisory locks first (a token's, `tadayo.device.token:<token>`, then each
+-- sign-in's, `tadayo.device.sign-in:<hash in hex>`, in the hashes' ascending order), then the account's
+-- row in `app.users`, then the registrations' rows. Each advisory lock is one 64-bit key,
+-- `hashtextextended(name, 0)`.
+-- - `registerDevice` takes them all, and locks only its own account's row, even when it moves a token
+--   from another account's sign-in.
+-- - `removeDevice` takes its sign-in's lock and locks no account's row.
+-- - Spike S4's dispatch, deleting a dead token's registration, takes that sign-in's lock, then the
+--   account's row.
+-- - B8's account deletion takes no advisory lock: it locks the account's row as the deletion begins,
+--   then deletes the account's registrations.
+-- No writer takes an advisory lock after a row lock, so none of them deadlocks another on these tables.
+--
+-- The guards below are the last line behind the commands, and take the sign-in's lock themselves,
+-- so a writer that forgot it can't slip a registration past an ending at once (each guard's check
+-- would otherwise not see the other's row before it commits). A command holds that lock already, so it
+-- never waits there. A writer without it can reach it after a row lock (an update's own row, or the
+-- ending's check at the commit), out of the order above: Postgres may then end that writer with a
+-- deadlock error, but never lets both rows commit. The guards:
 -- - `device_registrations_guard`: a registration is written only for an active account with a
 --   finished profile (FQ69), read `FOR SHARE` so that a deletion that begins waits for it or is seen
 --   by it (T27), and never for a sign-in that has ended ((e)).
@@ -57,6 +76,9 @@ CREATE TRIGGER device_sign_ins_ended_keep BEFORE UPDATE ON app.device_sign_ins_e
 CREATE FUNCTION app.device_registrations_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
+  -- The sign-in's lock, which the command holds already (the header's order).
+  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+    'tadayo.device.sign-in:' OPERATOR(pg_catalog.||) pg_catalog.encode(NEW.sign_in, 'hex'), 0));
   PERFORM FROM app.users
     WHERE id = NEW.user_id AND state = 'active' AND age_confirmed_at IS NOT NULL AND display_name IS NOT NULL
     FOR SHARE;
@@ -77,6 +99,10 @@ CREATE TRIGGER device_registrations_guard BEFORE INSERT OR UPDATE ON app.device_
 CREATE FUNCTION app.device_sign_ins_ended_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
+  -- At the commit, the sign-in's lock, which the command holds already: a registration of it written
+  -- at once by a writer without the lock holds it to its own commit, and is then seen here.
+  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+    'tadayo.device.sign-in:' OPERATOR(pg_catalog.||) pg_catalog.encode(NEW.sign_in, 'hex'), 0));
   IF EXISTS (SELECT FROM app.device_registrations WHERE sign_in = NEW.sign_in) THEN
     RAISE EXCEPTION 'app.device_sign_ins_ended: a sign-in ends only once its registration is gone (TECH-DESIGN section 6 (e))'
       USING ERRCODE = 'integrity_constraint_violation';

@@ -90,17 +90,22 @@
 //   its answer in the rows after it: two new sign-ins of the viewer's, the first registering a token sent in
 //   uppercase, and the same again; the second taking that token in the sandbox with a zone in another case, so the
 //   first has no registration and has ended at the instant ((a), (e)); the first, ended, refused a new token; the
-//   other club's author's secret, registered through the app before any cell, refused to the viewer; the second
-//   removed by its secret, with the role's header and again with none (204 with nothing in it, then the neutral
-//   NOT_FOUND, T14), and refused when it registers again. A role the gate stops gets its answer to every
-//   registration, which changes nothing. Each registration's 200 is the registration as stored, never the token
-//   or the secret, and the scanner keeps both back from every answer (T52, T55). One test counts what each role
-//   registered, moved, refused, removed and found nothing for, worked out by hand (matrix.test.ts, "the devices'
-//   table ran"). What passes through no cell, and is held on Postgres (tests/src/db/devices.test.ts), by the route
-//   tests (services/api/src/identity/devices.test.ts) and by device.test.ts's judge tests: the races (twenty
-//   sign-ins taking one token, two sign-ins crossing tokens, a registration racing its removal, a deletion that
-//   begins while a registration waits), the purge of ended sign-ins after eight days, an unresolvable zone, and
-//   the schema's own guards;
+//   other club's author's secret, registered through the app before any cell, refused to the viewer; a third
+//   sign-in of the viewer's taking the token of a new sign-in the other club's author registered through the app
+//   in that cell, so one account's request ends another account's sign-in ((a), the move); the second removed by
+//   its secret, with the role's header and again with none (204 with nothing in it, then the neutral NOT_FOUND,
+//   T14), and refused when it registers again. A role the gate stops gets its answer to every registration, which
+//   changes nothing. Each registration's 200 is the registration as stored, never the token or the secret, and
+//   the scanner keeps back from every answer each secret and token of the table, the other club's author's among
+//   them (T52, T55). One test counts what each role registered, moved, refused, removed and found nothing for,
+//   worked out by hand (matrix.test.ts, "the devices' table ran"). What passes through no cell, and is held on
+//   Postgres (tests/src/db/devices.test.ts), by the route tests (services/api/src/identity/devices.test.ts) and by
+//   device.test.ts's judge tests: the races, each proved to overlap (twenty sign-ins taking one token, two
+//   sign-ins crossing tokens, a registration racing its removal in each order, a deletion that begins while a
+//   registration waits, a removal meeting another command's purge held open), two purges at once laid out in
+//   the order that deadlocked, the purge of ended
+//   sign-ins after eight days, an unresolvable zone, the app's order of sign-ins, and the schema's own guards,
+//   their race among them;
 // - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
