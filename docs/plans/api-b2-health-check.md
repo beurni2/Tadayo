@@ -55,17 +55,18 @@ connection and runs when one is free; it takes no lock and holds its connection 
 
 0.4. **Fly's check.** `fly.toml`'s `[[services.tcp_checks]]` becomes `[[services.http_checks]]` with the same
 `grace_period` (20 s), `interval` (15 s) and `timeout` (3 s), and `method = "GET"`, `path = "/v1/health"`,
-`protocol = "http"` (the fields flyctl 0.5.8's own source reads, `docs/LIMITATIONS.md` 2026-11-24: fly.io's
-documentation can't be read from the session). The method in capitals, as flyctl's own example writes it: Node's
+`protocol = "http"` (the fields flyctl 0.5.8's own source reads, `docs/LIMITATIONS.md` 2026-11-24; fly.io refuses the
+session, but its documentation's source on GitHub is readable, section 5). The method in capitals, as flyctl's own example writes it: Node's
 parser refuses a method in lower case (`HPE_INVALID_METHOD`, tried on 2026-11-24), so a check that sent `get` as
 written would get a 400 from every Machine. It goes to the Machine's `internal_port` over plain HTTP, so no TLS setting is needed.
 What the check changes on `dev`: a rolling deploy waits for a new Machine's checks to pass before it goes on, so an API
-that started but can't reach the database no longer passes the deploy; and Fly marks a Machine whose check fails as
-critical. What Fly's proxy then does with the only Machine `dev` has isn't settled by flyctl's source; it is seen on
-`dev` after the merge (section 4).
+that started but can't reach the database no longer passes the deploy; and a Machine that fails a service check isn't
+routed to until it passes again, and isn't restarted (Fly's documentation, section 5). With `dev`'s one Machine, one
+failed check leaves the API unrouted for up to the 15 s interval; kept on purpose (section 5).
 
 0.5. **Who can call it.** Anyone, like the two other public routes, and each call costs one round trip on one of the
-API's pool's connections, or a wait of at most 2 s for one. No route has a rate limit yet (`RATE_LIMITED` is in the contract, not built); the closed trial's
+API's pool's connections, or a wait of at most 2 s for one, and a log line. One probe at a time (section 5), so a
+stall holds one abandoned query, not one per call. No route has a rate limit yet (`RATE_LIMITED` is in the contract, not built); the closed trial's
 callers are the founder's friends and Fly's check. Recorded beside the other public routes' limits, to revisit with the
 rate limits before Gate D.
 
@@ -100,7 +101,8 @@ their 404; no other operation documents a 503.
 2.2. `services/api/src/health.test.ts`, the app on a fake connection (no database): 204, empty, `private, no-store`,
 with no `Authorization`; the same with a bad token (the gate passes a public route by); the bare 503 when the query
 rejects, with one warning by class and code and nothing of its message; the bare 503 within the bound when the query
-never answers (fake timers); the query is `SELECT 1` and nothing else.
+never answers (fake timers); the query is `SELECT 1` and nothing else; checks that come while a query is out share
+it, and the next check after it comes back sends a new one (section 5).
 
 2.3. `tests/src/db/health.test.ts`, on Postgres through `buildApp` on `connect`: 204; with every one of the API's
 connections held by a transaction that waits, the check answers 503 within the bound and a margin; once they are let
@@ -132,11 +134,14 @@ At the PR's last head, each caught by the test it names:
 - B11: `fly.toml` keeps the TCP check (deploy-files.test.ts);
 - B12: `fly.toml`'s check on another path (deploy-files.test.ts);
 - B13: `fly.toml`'s method in lower case, `get` (deploy-files.test.ts);
-- B14: the handler races the query itself, with no handler for its rejection, so a query that fails after the bound is
-  an unhandled rejection (health.test.ts's late failure);
+- B14: the warning logged where the query fails rather than by each check, so a query that fails after every check
+  on it gave up still logs (health.test.ts's late failure; section 5 says why B14 changed);
 - B15: the timer left running after a 204 (health.test.ts's timer count);
 - B16: the matrix's row judging `getHealth` as the neutral not-found, as the other public routes are (the matrix;
-  a run over every role).
+  a run over every role);
+- B17: every check sends its own query, as the first commit did (health.test.ts's shared query);
+- B18: `removeDevice` reads the database before it refuses a body (session.test.ts's public routes: the fake pool
+  refuses every query but `SELECT 1`).
 
 ## 4. After the merge
 
@@ -144,3 +149,39 @@ At the PR's last head, each caught by the test it names:
 Then `curl -sS -o /dev/null -w '%{http_code}' https://api-dev.tadayo.app/v1/health` answers 204. What Fly's proxy does
 when the only Machine's check fails is not provoked on `dev` (it would mean stopping the database or filling the pool on
 purpose); it is recorded as not verified.
+
+## 5. Round 1 of the review
+
+Two fresh reviewers, one on engineering and operations, one on privacy and security, at `c678a9f`. No blocker or
+high finding; T14, T52 and T58 hold. Fixed or answered in the second commit:
+
+- **Fly's documented behaviour (engineering, medium).** Fly's documentation is readable from its source on GitHub,
+  `raw.githubusercontent.com/superfly/docs/HEAD/reference/health-checks.mdx`: a Machine that fails a service check
+  "won't be routed to until its checks start passing", a failing check "won't cause the Machine to restart or stop",
+  and top-level `[checks]` "do not affect request routing". flyctl's `ServiceHTTPCheck` has no field for failures to
+  tolerate. So on `dev`'s one Machine, one failed check leaves the API unrouted for up to 15 s. Kept as a service check
+  on purpose: spec 34 prefers taking the affected part out over serving it uncertain, A7 asks that Fly see a stalled
+  API, and a rolling deploy waits for it; a top-level check would only report. Recorded in `docs/LIMITATIONS.md`, in
+  `fly.toml`'s comment and in 0.4, with `prod`'s Machine count to revisit before Gate D.
+- **Abandoned queries pile up (both, low).** postgres.js queues a query with no free connection with no bound, and
+  nothing takes it back when the timer wins, so a flood of calls during a stall would queue one `SELECT 1` each. Now
+  one probe at a time: `getHealthHandler` keeps the one query that is out, every check that comes meanwhile races its
+  own timer against that one, and the probe is let go when it settles, so the next check sends a new one. A stall holds
+  one abandoned query. Test: "sends one query however many checks come while it is out, and a new one once it has come
+  back" (failed on the first commit's handler: the second check sent a query of its own). The `docs/LIMITATIONS.md` row says what a call costs,
+  including its log lines.
+- **The session test's fake pool (both, low).** It answered every query, so `session.test.ts`'s public routes no longer
+  proved that a route refuses its body before reading the database. It now answers `SELECT 1` alone and refuses
+  anything else.
+- **The 400 documented for `getHealth` (privacy, nit).** Answered: `INVALID_REQUEST` and `RATE_LIMITED` are on every
+  operation's document (`standardErrors`), as the contract's one error set, and neither is reachable here today; a
+  query string or a body on the GET is ignored and answered the same 204 for everyone.
+- **Found while writing the breakages: the late failure's reason.** The first commit said the query's rejection is
+  caught where it is sent "so a query that fails after the timer won is never an unhandled rejection". `Promise.race`
+  itself subscribes to the query, so a late rejection is never unhandled either way (tried in the session). The
+  handler keeps a probe's outcome as a value so that many checks can wait on one probe; the comment, the late test's
+  name ("logs nothing more when a query it gave up on fails later") and B14 now say what the test catches: a second
+  warning.
+- **The handler's comment (engineering, low).** When every connection runs a statement outside a transaction,
+  postgres.js pipelines the query behind one of them rather than queueing it; the comment now says "waits for a
+  connection, or behind a statement already running on one".

@@ -45,7 +45,9 @@ kill_timeout = 30
 # can't be reached or every connection is held, the stall the outside audit's A7 proved while a check on
 # the port kept saying healthy. The API gives up after 2 s, under the check's 3 s timeout, so its own answer
 # is the one read. The check goes to the Machine's internal port in plain HTTP (flyctl's own source names
-# these fields: docs/LIMITATIONS.md). A rolling deploy waits for a new Machine to pass it.
+# these fields: docs/LIMITATIONS.md). A rolling deploy waits for a new Machine to pass it, and a Machine that
+# fails it is taken out of Fly's routing until it passes again, never restarted: with one Machine, one failed
+# check leaves the API unrouted for up to the 15 s interval, kept on purpose (spec 34; docs/LIMITATIONS.md).
 [[services]]
   processes = ["api"]
   protocol = "tcp"

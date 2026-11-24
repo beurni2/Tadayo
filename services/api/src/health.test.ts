@@ -1,9 +1,10 @@
 // `GET /v1/health` (the contract's `getHealth`; the outside audit's A7; docs/plans/api-b2-health-check.md), with no
 // database: the route asks the API's own pool one `SELECT 1` and nothing else, answers 204 with nothing in it
 // when that comes back, and the bare 503 when it fails or hasn't come back within HEALTH_MS, which stays under
-// Fly's 3 s check timeout (fly.toml; tools/ops/src/deploy-files.test.ts pins it). It is public: no session is
-// read, so a missing or bad token changes nothing (T14). A failure is logged by the error's class and code alone
-// (T52). On Postgres, with the pool held, it is tests/src/db/health.test.ts; every role's answer is the matrix's.
+// Fly's 3 s check timeout (fly.toml; tools/ops/src/deploy-files.test.ts pins it). Checks that come while a query
+// is out share it, so a stall holds one query, not one per check. It is public: no session is read, so a missing
+// or bad token changes nothing (T14). A failure is logged by the error's class and code alone (T52). On Postgres,
+// with the pool held, it is tests/src/db/health.test.ts; every role's answer is the matrix's.
 
 import type { Account, Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
@@ -163,7 +164,7 @@ describe("the health check when the database doesn't answer (the outside audit's
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("lets a query it gave up on fail later without an unhandled rejection or a second answer", async () => {
+  it("logs nothing more when a query it gave up on fails later", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     let fail: (error: Error) => void = () => undefined;
     const { send, queried, warnings } = await appWith(
@@ -179,6 +180,37 @@ describe("the health check when the database doesn't answer (the outside audit's
     fail(Object.assign(new Error(`late, for ${PERSONAL}`), { name: "PostgresError", code: "57P01" }));
     await vi.advanceTimersByTimeAsync(0);
     expect(warnings().map((line) => line["msg"])).toEqual(["database slow"]);
+  });
+
+  it("sends one query however many checks come while it is out, and a new one once it has come back", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    let release: (rows: unknown) => void = () => undefined;
+    let calls = 0;
+    const { send, queries, queried, warnings } = await appWith(() => {
+      calls += 1;
+      return calls === 1
+        ? new Promise((resolve) => {
+            release = resolve;
+          })
+        : Promise.resolve([{ "?column?": 1 }]);
+    });
+    const first = send(health());
+    await queried;
+    const second = send(health());
+    // The second check's own timer, once its handler waits on the first check's query.
+    for (let turn = 0; turn < 100 && vi.getTimerCount() < 2; turn += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    expect(vi.getTimerCount()).toBe(2);
+    await vi.advanceTimersByTimeAsync(HEALTH_MS);
+    expect(await first).toEqual(UNAVAILABLE);
+    expect(await second).toEqual(UNAVAILABLE);
+    expect(queries).toHaveLength(1);
+    expect(warnings().map((line) => line["msg"])).toEqual(["database slow", "database slow"]);
+    release([{ "?column?": 1 }]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(await send(health())).toEqual(DONE);
+    expect(queries).toHaveLength(2);
   });
 
   it("gives up before Fly's own check timeout, so the API's answer is the one Fly reads", () => {

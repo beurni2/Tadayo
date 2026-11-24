@@ -55,10 +55,17 @@ const NEUTRAL = {
 const UNAVAILABLE = { status: 503, body: "", headers: { "cache-control": "private, no-store", "content-length": "0" } };
 const TRANSPORT = new Set(["date", "connection", "keep-alive"]);
 
-/** A pool that answers the health check's `SELECT 1`, the one query a route here reaches. */
-const sql = Object.assign(() => Promise.resolve([{ "?column?": 1 }]), {
-  end: () => Promise.resolve(),
-}) as unknown as ApiSql;
+/**
+ * A pool that answers the health check's `SELECT 1` and refuses every other query, so a public route that read
+ * the database before refusing its body would answer the 500, not its refusal.
+ */
+const sql = Object.assign(
+  (strings: TemplateStringsArray) =>
+    strings.length === 1 && strings[0] === "SELECT 1"
+      ? Promise.resolve([{ "?column?": 1 }])
+      : Promise.reject(new Error("only the health check's SELECT 1 is expected")),
+  { end: () => Promise.resolve() },
+) as unknown as ApiSql;
 const open: FastifyInstance[] = [];
 afterEach(async () => {
   await Promise.all(open.splice(0).map((app) => app.close()));
