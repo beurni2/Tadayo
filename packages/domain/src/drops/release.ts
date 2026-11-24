@@ -99,7 +99,7 @@ export async function releaseReservation(
   );
   if (seen === null) throw new Refused("NOT_FOUND");
   const facts = await loadAddTarget(tx, userId, seen.day);
-  if (!ownsReservation(facts, seen.interval, first)) throw new Refused("NOT_FOUND");
+  if (!ownsReservation(facts, seen, first)) throw new Refused("NOT_FOUND");
 
   // 2. The locks.
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${facts.day.clubId} FOR SHARE`;
@@ -112,7 +112,7 @@ export async function releaseReservation(
   // 3. The clock, and step 1 again.
   const at = await clock.sample(tx);
   const again = await loadAddTarget(tx, userId, seen.day);
-  if (!ownsReservation(again, seen.interval, at)) throw new Refused("NOT_FOUND");
+  if (!ownsReservation(again, seen, at)) throw new Refused("NOT_FOUND");
   const isStar = seen.interval === again.day.starInterval;
 
   // 4. Lapses settled, then the slot given back if it is still live.

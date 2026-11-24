@@ -27,6 +27,8 @@ export interface ErrorFacts {
   readonly current_version?: number;
   /** The newer revision or proposal that replaced the one the request named. */
   readonly current_id?: string;
+  /** The caller's own drop that already holds the photo or link in the day (T21). */
+  readonly existing_drop_id?: string;
 }
 
 /** An error as the contract has it: its status, and a body of its code and `facts`. */
@@ -51,7 +53,15 @@ function isErrorCode(code: string): code is ErrorCodeName {
  */
 export function refusal(reply: FastifyReply, refused: Refused): FastifyReply {
   if (!isErrorCode(refused.code)) throw refused;
-  const { field, target, next_target: next, allowance, current_version: version, current_id: current } = refused.facts;
+  const {
+    field,
+    target,
+    next_target: next,
+    allowance,
+    current_version: version,
+    current_id: current,
+    existing_drop_id: existing,
+  } = refused.facts;
   return problem(reply, refused.code, {
     ...(field === undefined ? {} : { field }),
     ...(target === undefined ? {} : { target: occurrenceBody(target) }),
@@ -59,6 +69,7 @@ export function refusal(reply: FastifyReply, refused: Refused): FastifyReply {
     ...(allowance === undefined ? {} : { allowance: allowanceBody(allowance) }),
     ...(version === undefined ? {} : { current_version: version }),
     ...(current === undefined ? {} : { current_id: current }),
+    ...(existing === undefined ? {} : { existing_drop_id: existing }),
   });
 }
 

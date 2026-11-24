@@ -193,7 +193,9 @@ export const CreateDropRequest = named(
 export const DropReceipt = named(
   "DropReceipt",
   "The commit's receipt: the drop is in this day, and only now is it Added (T20). A replay with the same " +
-    "Idempotency-Key returns this same receipt, even after the cutoff or midnight (T19, Q12).",
+    "Idempotency-Key returns this same receipt, even after the cutoff or midnight (T19, Q12), but for the " +
+    "day's star, named as members see them at the replay (FQ75, FQ139); one with no name left to show " +
+    "answers MEMBERSHIP_CHANGED.",
   z.object({
     drop_id: Id,
     occurrence: Occurrence,

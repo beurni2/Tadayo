@@ -7,10 +7,11 @@ import XCTest
 /// The create flow's screens in each of their states (design/reference/INVENTORY.md): 2.1's
 /// `G01-create`, handoff 8's `G01-create-failed`, handoff 2's `G01-invite-name`, handoff 1's
 /// `G01-invite-people` with handoff 4's statuses and More, handoff 2's `-add` and `-xl`, handoff
-/// 4's `-revoked` and `G01-pending`, handoff 8's `-accept-again` and `G01-pending-approve`, and
-/// the states built from spec: the list before anyone is invited, a used link the app doesn't
-/// hold, a live link it doesn't hold, an expired link, the list loading and failing, an action's
-/// failure, and the name step's failure. Each is pushed onto a stack, as the tab pushes it, so
+/// 4's `-revoked` and `G01-pending`, handoff 8's `-accept-again` and `G01-pending-approve`,
+/// handoff 9's `-live-not-held`, `-expired` and `-action-failed` (frames 15 to 17), and the states
+/// built from spec: the list before anyone is invited, a used link the app doesn't hold, the list
+/// loading and failing, the name step's failure, and each name over 40 characters. Each is
+/// pushed onto a stack, as the tab pushes it, so
 /// the system's Back shows as the frames draw it. The people are the frames' own: Ben's Sunday
 /// people, with Maya, Alex, Sam, Debby and Nina (`Invites`).
 @MainActor
@@ -21,6 +22,15 @@ final class ClubCreateSnapshotTests: XCTestCase {
         snap(
             pushed(CreateClubScreen(model: naming(), focus: false, keyboard: false)),
             named: "G01-create")
+    }
+
+    func testG01CreateNameTooLong() {
+        let model = naming()
+        model.name = Invites.longClubName
+        XCTAssertTrue(model.nameIsTooLong)
+        snap(
+            pushed(CreateClubScreen(model: model, focus: false, keyboard: false)),
+            named: "G01-create-name-too-long")
     }
 
     func testG01CreateFailed() {
@@ -37,6 +47,15 @@ final class ClubCreateSnapshotTests: XCTestCase {
         snap(
             pushed(InviteNameScreen(model: nameStep(), finished: {}, focus: true)),
             named: "G01-invite-name")
+    }
+
+    func testG01InviteNameTooLong() {
+        let model = nameStep()
+        model.name = Invites.longName
+        XCTAssertTrue(model.nameIsTooLong)
+        snap(
+            pushed(InviteNameScreen(model: model, finished: {}, focus: false)),
+            named: "G01-invite-name-too-long")
     }
 
     func testG01InviteNameFailed() {
@@ -76,17 +95,11 @@ final class ClubCreateSnapshotTests: XCTestCase {
     }
 
     func testG01InvitePeopleLiveNotHeld() {
-        snap(
-            list(
-                Invites.list(
-                    [Invites.maya, Invites.row("Alex", .live, kept: false)], canInvite: true)),
-            named: "G01-invite-people-live-not-held")
+        snap(list(Invites.liveNotHeld), named: "G01-invite-people-live-not-held")
     }
 
     func testG01InvitePeopleExpired() {
-        snap(
-            list(Invites.list([Invites.maya, Invites.row("Alex", .expired)], canInvite: true)),
-            named: "G01-invite-people-expired")
+        snap(list(Invites.expired), named: "G01-invite-people-expired")
     }
 
     func testG01InvitePeopleLoading() {
@@ -99,7 +112,7 @@ final class ClubCreateSnapshotTests: XCTestCase {
 
     func testG01InvitePeopleActionFailed() {
         snap(
-            list(Invites.five, failure: .revoke(name: "Alex", uncertain: false)),
+            list(Invites.revoked, failure: .revoke(name: "Maya", uncertain: true)),
             named: "G01-invite-people-action-failed")
     }
 
@@ -179,6 +192,46 @@ final class ClubCreateSnapshotTests: XCTestCase {
         XCTAssertTrue(elements.contains { $0.label == "Share again for Maya" }, "\(elements)")
     }
 
+    func testALinkNotOnThisPhoneSaysSoAndThatANewLinkReplacesIt() {
+        let elements = AccessibilityElements.of(list(Invites.liveNotHeld))
+        let row = elements.first { $0.label == "Alex. Link not on this phone." }
+        XCTAssertNotNil(row, "\(elements)")
+        XCTAssertFalse(row?.traits.contains(.button) ?? true, "\(elements)")
+        // The replacement line is its own text (handoff 9: "The replacement helper remains
+        // separately reachable").
+        XCTAssertTrue(
+            elements.contains { $0.label == "A new link replaces the previous link." },
+            "\(elements)")
+        for control in ["Create new link for Alex", "More options for Alex’s invitation"] {
+            XCTAssertTrue(
+                elements.first { $0.label == control }?.traits.contains(.button) ?? false,
+                "\(control): \(elements)")
+        }
+        // Create new link explains the replacement before it's used (handoff 9's
+        // `missingLive.behavior`: "Explain inline before action"), since VoiceOver reaches it
+        // before the line under the row.
+        XCTAssertEqual(
+            elements.first { $0.label == "Create new link for Alex" }?.hint,
+            "A new link replaces the previous link.", "\(elements)")
+        XCTAssertEqual(
+            elements.first { $0.label == "Share link for Sam" }?.hint, "", "\(elements)")
+        // It doesn't claim the link wasn't shared, and the glyph and the status alone aren't read.
+        XCTAssertFalse(elements.contains { $0.label == "Alex. Not shared." }, "\(elements)")
+        XCTAssertFalse(elements.contains { $0.label == "Link not on this phone" }, "\(elements)")
+    }
+
+    func testAnExpiredLinkOffersCreateNewLinkAndNoMore() {
+        let elements = AccessibilityElements.of(list(Invites.expired))
+        XCTAssertTrue(elements.contains { $0.label == "Alex. Link expired." }, "\(elements)")
+        XCTAssertTrue(
+            elements.first { $0.label == "Create new link for Alex" }?.traits.contains(.button)
+                ?? false, "\(elements)")
+        XCTAssertFalse(elements.contains { $0.label.contains("Alex’s invitation") }, "\(elements)")
+        // Maya's More is there, so the tree was read.
+        XCTAssertTrue(
+            elements.contains { $0.label == "More options for Maya’s invitation" }, "\(elements)")
+    }
+
     func testWhileARevokeGoesTheRowSaysSoAndItsControlsWait() {
         let elements = AccessibilityElements.of(
             list(Invites.five, busy: ["cand_alex"], revoking: ["cand_alex"]))
@@ -215,10 +268,14 @@ final class ClubCreateSnapshotTests: XCTestCase {
 
     func testAnActionsFailureIsReadAboveDoneForNow() {
         let elements = AccessibilityElements.of(
-            list(Invites.five, failure: .revoke(name: "Alex", uncertain: false)))
-        XCTAssertTrue(
-            elements.contains { $0.label == "Couldn’t revoke Alex’s invitation link. Try again." },
-            "\(elements)")
+            list(Invites.revoked, failure: .revoke(name: "Maya", uncertain: true)))
+        let words =
+            "Couldn’t confirm that Maya’s invitation link was revoked. Check your connection and try again."
+        let line = elements.firstIndex { $0.label == words }
+        let done = elements.firstIndex { $0.label == "Finish managing invitations for now." }
+        XCTAssertNotNil(line, "\(elements)")
+        XCTAssertNotNil(done, "\(elements)")
+        if let line, let done { XCTAssertLessThan(line, done, "\(elements)") }
     }
 
     func testALoadFailureReadsItsTitleLineAndRetry() {
@@ -251,6 +308,29 @@ final class ClubCreateSnapshotTests: XCTestCase {
                 ?? false, "\(elements)")
         XCTAssertFalse(
             elements.contains { $0.label.lowercased().contains("shield") }, "\(elements)")
+    }
+
+    func testEachNameOverFortyCharactersSaysSoUnderItsField() {
+        let create = naming()
+        create.name = Invites.longClubName
+        let club = AccessibilityElements.of(
+            pushed(CreateClubScreen(model: create, focus: false, keyboard: false)))
+        let clubLine = "Use 40 characters or fewer for the club name."
+        XCTAssertTrue(club.contains { $0.label == clubLine }, "\(club)")
+        XCTAssertEqual(club.first { $0.label == "Club name" }?.hint, clubLine, "\(club)")
+        XCTAssertTrue(
+            club.first { $0.label == "Continue to invitations" }?.traits.contains(.notEnabled)
+                ?? false, "\(club)")
+        let invite = nameStep()
+        invite.name = Invites.longName
+        let person = AccessibilityElements.of(
+            pushed(InviteNameScreen(model: invite, finished: {}, focus: false)))
+        let personLine = "Use 40 characters or fewer for this person’s name."
+        XCTAssertTrue(person.contains { $0.label == personLine }, "\(person)")
+        XCTAssertEqual(person.first { $0.label == "Person’s name" }?.hint, personLine, "\(person)")
+        XCTAssertTrue(
+            person.first { $0.label == "Create link and share" }?.traits.contains(.notEnabled)
+                ?? false, "\(person)")
     }
 
     func testTheNameStepReadsItsHeadingAndLines() {
@@ -391,7 +471,25 @@ private enum Invites {
         maya, alex, row("Sam", .live), row("Debby", .accepted), row("Nina", .live),
     ])
 
-    /// Handoff 4's frame: Alex's link revoked.
+    /// Handoff 9's frame 15: Alex's link live, and not on this phone.
+    static let liveNotHeld = list([
+        maya, row("Alex", .live, kept: false), row("Sam", .live), row("Debby", .accepted),
+        row("Nina", .live),
+    ])
+
+    /// Handoff 9's frame 16: Alex's link expired before anyone used it.
+    static let expired = list([
+        maya, row("Alex", .expired), row("Sam", .live), row("Debby", .accepted),
+        row("Nina", .live),
+    ])
+
+    /// Book p27's two long names together, 45 characters, as A03-profile-name-too-long's.
+    static let longName = "Alexandria-Rose Mensah Deborah-Anne Ouédraogo"
+
+    /// The frames' club name three times, 41 characters: no source draws a long club name.
+    static let longClubName = "Sunday people Sunday people Sunday people"
+
+    /// Handoff 4's frame, and handoff 9's frame 17 under its failure line: Alex's link revoked.
     static let revoked = list([
         maya, row("Alex", .revoked), row("Sam", .live), row("Debby", .accepted), row("Nina", .live),
     ])

@@ -81,7 +81,7 @@ export function adderOf(world: WorldFacts, account: string | null, day: string):
 }
 
 /** Whether the day's star left, or asked to delete their account, before its reveal (FQ63). */
-function held(world: WorldFacts, day: string): boolean {
+export function held(world: WorldFacts, day: string): boolean {
   const theDay = world.days.get(day);
   const star = theDay === undefined ? undefined : world.members.get(theDay.star);
   if (theDay === undefined || star === undefined) return true;
@@ -148,7 +148,7 @@ export function allowanceIn(
 }
 
 /** The day as the contract's Occurrence at `now`: collecting before its reveal, open until its close, past after. */
-function dayAt(world: WorldFacts, day: string, now: Temporal.Instant): Record<string, unknown> | undefined {
+export function dayAt(world: WorldFacts, day: string, now: Temporal.Instant): Record<string, unknown> | undefined {
   const theDay = world.days.get(day);
   if (theDay === undefined) return undefined;
   const phase = before(now, theDay.revealAt) ? "collecting" : before(now, theDay.closeAt) ? "open" : "past";
@@ -156,7 +156,7 @@ function dayAt(world: WorldFacts, day: string, now: Temporal.Instant): Record<st
 }
 
 /** The star's next day that reveals after both `now` and the day's own reveal, for a refusal to offer (T4). */
-function nextOf(world: WorldFacts, day: string, now: Temporal.Instant): unknown {
+export function nextOf(world: WorldFacts, day: string, now: Temporal.Instant): unknown {
   const theDay = world.days.get(day);
   if (theDay === undefined) return undefined;
   return daysOf(world, theDay.club, later(now, theDay.revealAt), theDay.star).next;

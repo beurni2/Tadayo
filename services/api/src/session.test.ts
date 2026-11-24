@@ -111,6 +111,7 @@ const BUILT = new Set([
   "confirmScheduleDays",
   "createReservation",
   "releaseReservation",
+  "createDrop",
   "createUpload",
   "getUpload",
   "completeUpload",

@@ -254,7 +254,7 @@ export async function createDropPhotoUpload(
   const seen = await slotById(tx, reservationId, "");
   if (seen === null) throw new Refused("NOT_FOUND");
   const facts = await loadAddTarget(tx, userId, seen.day);
-  if (!ownsReservation(facts, seen.interval, first)) throw new Refused("NOT_FOUND");
+  if (!ownsReservation(facts, seen, first)) throw new Refused("NOT_FOUND");
   const interval = seen.interval;
 
   // 2. The receipt.
@@ -279,7 +279,7 @@ export async function createDropPhotoUpload(
 
   // 5. The rule again, under the locks.
   const again = await loadAddTarget(tx, userId, seen.day);
-  if (!ownsReservation(again, interval, at)) throw new Refused("NOT_FOUND");
+  if (!ownsReservation(again, seen, at)) throw new Refused("NOT_FOUND");
   const outcome = addTargetOutcome(again, at);
   if (outcome.kind === "held") throw new Refused("MEMBERSHIP_CHANGED");
   if (outcome.kind === "closed") {
