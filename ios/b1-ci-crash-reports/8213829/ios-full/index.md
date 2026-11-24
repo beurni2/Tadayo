@@ -7,15 +7,17 @@ The `ios` workflow's evidence for `8213829b350a19355f5b1c840cb7eff2bd0523db` (ht
 - iOS `26.5` on `iPhone 17`: tests `failed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
 - Tests: `failed`
-- Odd draws: 4 in `logs/test-27.2.log`, below
+- Odd draws: 6 in `logs/test-27.2.log`, below
 - Carries every snapshot (a run by hand, for a gate); 0 snapshot(s) not carried
 
 Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
 
+- `warning: ScreenSnapshot G01-create: settled after 3 draws, SHA-256 34d2aeaf e363b9a9 e363b9a9; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
 - `warning: ScreenSnapshot G05-club-details: settled after 3 draws, SHA-256 fec5cb63 8d5a6f2f 8d5a6f2f; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
-- `warning: ScreenSnapshot G05-members-two-days-xl: settled after 3 draws, SHA-256 1b3d75f8 e33be721 e33be721; against the last draw, draw 1: 1871 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot G05-club-details-unavailable-xl: settled after 3 draws, SHA-256 e8c084b4 dd21326b dd21326b; against the last draw, draw 1: 1871 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot G02-link-entry-signed-in-invalid: settled after 3 draws, SHA-256 04607f32 f2c1d4ba f2c1d4ba; against the last draw, draw 1: 1855 pixels in x 30 to 121, y 123 to 212, by at most 2/255`
+- `warning: ScreenSnapshot A03-profile-failed-network-dark: settled after 3 draws, SHA-256 f3d9b76f 1a74dda8 1a74dda8; against the last draw, draw 1: 12324 pixels in x 31 to 305, y 123 to 212, by at most 21/255`
 - `warning: ScreenSnapshot F01-error-no-club: settled after 3 draws, SHA-256 8cec8ef7 9c836df3 9c836df3; against the last draw, draw 1: 9455 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
-- `warning: ScreenSnapshot G06-no-club: settled after 3 draws, SHA-256 76018c66 66f6b32f 66f6b32f; against the last draw, draw 1: 9038 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
 |---|---|---|---|---|---|
