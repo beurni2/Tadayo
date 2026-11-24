@@ -342,9 +342,9 @@
 
         /// Ben's two active clubs, as the club calls answer them: Sunday people, whose details,
         /// six members and their days answer, and Kitchen table, whose details answer not found
-        /// after 3 seconds, as for a club the caller is no longer in (T9, T14), so a test sees
-        /// its Club details loading first; the list read again then holds Sunday people alone
-        /// (`relisted`). Every other call is `NoClubs`'.
+        /// after `notFoundAfter`, as for a club the caller is no longer in (T9, T14), so a test
+        /// sees its Club details loading first; the list read again then holds Sunday people
+        /// alone (`relisted`). Every other call is `NoClubs`'.
         struct TwoClubs: ClubService {
             private static let sunday = ClubRef(
                 id: "club_sunday", name: "Sunday people", timezone: "America/New_York",
@@ -365,6 +365,13 @@
             ]
             /// The list read again, once Kitchen table's details have answered not found.
             static let relisted = [listed[0]]
+            /// How long Kitchen table's details take to answer not found: long enough for a UI
+            /// test on a loaded runner to see the screen pushed and loading, and the tab bar
+            /// hidden under it, before the answer closes it. It was 3 seconds, and in `ios`
+            /// 45375105985, where the queries took up to 4 seconds each, the test's first look at
+            /// the tab bar came 9.4 seconds after the push, once the screen had closed (audit
+            /// A9's item 9, `docs/plans/ios-b1-intermittents.md`).
+            static let notFoundAfter = Duration.seconds(20)
 
             private let none = NoClubs()
 
@@ -378,7 +385,7 @@
 
             func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
                 guard clubID == Self.sunday.id else {
-                    try? await Task.sleep(for: .seconds(3))
+                    try? await Task.sleep(for: Self.notFoundAfter)
                     throw .notFound
                 }
                 return ClubDetail(
