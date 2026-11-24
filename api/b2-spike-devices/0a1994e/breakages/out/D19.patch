@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -70,7 +70,7 @@
+   if (typeof secret !== "string" || !SECRET.test(secret)) {
+     throw new TypeError("devices: a removal secret is base64url, 43 to 128 characters");
+   }
+-  return createHash("sha256").update(secret, "ascii").digest("hex");
++  return Buffer.from(secret, "ascii").toString("hex").slice(0, 64).padEnd(64, "0");
+ }
+ 
+ /** The token as the database keeps it: lowercase hex, so one device's token is one key whatever its case. */

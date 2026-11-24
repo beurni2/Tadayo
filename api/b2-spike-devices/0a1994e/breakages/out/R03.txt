@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/identity/devices.test.ts (16 tests | 1 failed) 258ms
+   ❯ what the device routes answer (8)
+     × answers a removal that removed a registration with 204, nothing in it, and never asks who is calling 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  04:09:06
+   Duration  786ms (tests 38%, import 36%, transform 26%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > what the device routes answer > answers a removal that removed a registration with 204, nothing in it, and never asks who is calling
+AssertionError: undefined: expected { status: 204, body: '', headers: {} } to deeply equal { status: 204, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+    "body": "",
+-   "headers": {
+-     "cache-control": "private, no-store",
+-   },
++   "headers": {},
+    "status": 204,
+  }
+
+ ❯ src/identity/devices.test.ts:314:60
+    312|       const request = remove(JSON.stringify({ removal_secret: SECRET }…
+    313|       if (authorization !== undefined) request.headers = { ...request.…
+    314|       expect(await answer(request), String(authorization)).toEqual({
+       |                                                            ^
+    315|         status: 204,
+    316|         body: "",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

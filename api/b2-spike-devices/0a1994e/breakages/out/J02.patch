@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -108,7 +108,6 @@
+   const signIn = signInOf(request.secret);
+   if (rows.ended.has(signIn)) return { kind: "refused" };
+   const own = rows.registrations.get(signIn);
+-  if (own !== undefined && own.user !== viewer) return { kind: "refused" };
+   const token = request.token.toLowerCase();
+   const holder = [...rows.registrations].find(([, row]) => row.token === token)?.[0] ?? null;
+   return { kind: "registered", signIn, moved: holder !== null && holder !== signIn ? holder : null, request };

@@ -1,0 +1,11 @@
+--- a/services/api/src/identity/devices.ts
++++ b/services/api/src/identity/devices.ts
+@@ -30,7 +30,7 @@
+   return {
+     apns_environment: registration.apnsEnvironment,
+     timezone: registration.timezone,
+-    registered_at: contractInstant(registration.registeredAt),
++    registered_at: registration.registeredAt.toString(),
+   };
+ }
+ 

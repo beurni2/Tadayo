@@ -1,0 +1,11 @@
+--- a/services/api/src/identity/devices.ts
++++ b/services/api/src/identity/devices.ts
+@@ -72,7 +72,7 @@
+         }),
+       );
+     } catch (error) {
+-      if (error instanceof Refused) return refusal(reply, error);
++      if (error instanceof Refused) return problem(reply, "INVALID_REQUEST");
+       throw error;
+     }
+     return ok(reply, deviceRegistrationBody(registration));

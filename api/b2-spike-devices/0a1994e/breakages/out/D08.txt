@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 1 failed) 1101ms
+   ❯ the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted (2)
+     × deletes at most `PURGE_BATCH` in one command, the oldest first 29ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:07:27
+   Duration  1.61s (tests 87%, transform 7%, import 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted > deletes at most `PURGE_BATCH` in one command, the oldest first
+AssertionError: expected [] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+- [
+-   "11e88e2a92cdbd4bf8d3a0bf88f0a1408716405d1a369234a8758b8cf206d597",
+-   "346642766cd35762c1b976bb6283517c9b546bf620a2d8c23fab2b914f472759",
+-   "388dbed3efdb9de58afd9190bde2390c0537415fe35567da3fd233af53eb091c",
+-   "bb48331078f9868486238f6e657b8b4bbe8ea79bb1e41afdf52ac33df764dd8a",
+-   "ff0a577a3da4ced469f2d3685386545b7ee3a4926d52eecbe0ac178343bb3134",
+- ]
++ []
+
+ ❯ src/db/devices.test.ts:373:53
+    371|         SELECT pg_catalog.encode(sign_in, 'hex') AS sign_in FROM app.d…
+    372|          WHERE pg_catalog.encode(sign_in, 'hex') = ANY(${hashes}::text…
+    373|       expect(left.map((row) => row.sign_in).sort()).toEqual(hashes.sli…
+       |                                                     ^
+    374|     });
+    375|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:361:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

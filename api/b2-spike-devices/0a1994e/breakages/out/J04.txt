@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/device.test.ts (14 tests | 1 failed) 15ms
+   ❯ what a registration must change (5)
+     × refuses a move that left the earlier sign-in its registration, or didn't end it at the instant 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  04:09:14
+   Duration  407ms (import 62%, transform 30%, tests 6%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/device.test.ts > what a registration must change > refuses a move that left the earlier sign-in its registration, or didn't end it at the instant
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/device.test.ts:161:11
+    159|         NOW,
+    160|       ),
+    161|     ).not.toEqual([]);
+       |           ^
+    162|     expect(registeredProblems(before, rows([[signIn, want]]), BEN, out…
+    163|     expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

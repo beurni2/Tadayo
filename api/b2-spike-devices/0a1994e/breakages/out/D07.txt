@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 1 failed) 1010ms
+   ❯ the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted (2)
+     × keeps eight days of them, nothing personal, and the next command deletes those past it 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:07:25
+   Duration  1.55s (tests 85%, transform 7%, import 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted > keeps eight days of them, nothing personal, and the next command deletes those past it
+AssertionError: expected null not to be null
+ ❯ src/db/devices.test.ts:346:42
+    344|       clock.set(Temporal.Instant.from(LONG_AGO).add(ENDED_KEEP));
+    345|       await tx.savepoint((sp) => registerDevice(sp, clock, input(ben, …
+    346|       expect(await endedAt(tx, old)).not.toBeNull();
+       |                                          ^
+    347|       // A microsecond more: the first is past it, the second not.
+    348|       clock.advance({ microseconds: 1 });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:330:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

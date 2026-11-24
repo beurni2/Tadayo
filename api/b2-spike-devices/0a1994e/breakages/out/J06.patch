@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -201,7 +201,7 @@
+   if (answer.body !== "") problems.push(`a body: ${JSON.stringify(answer.body.slice(0, 200))}`);
+   const names = Object.keys(answer.headers);
+   if (names.join(", ") !== "cache-control, date, connection") problems.push(`the headers ${names.join(", ")}`);
+-  if (answer.headers["cache-control"] !== "private, no-store")
++  if (answer.headers["cache-control"] === "never")
+     problems.push(`cache-control: ${String(answer.headers["cache-control"])}`);
+   if (answer.headers["connection"] !== "keep-alive")
+     problems.push(`connection: ${String(answer.headers["connection"])}`);

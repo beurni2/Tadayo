@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/identity/devices.test.ts (16 tests | 1 failed) 255ms
+   ❯ the registration's serializer against the contract's example (T55) (3)
+     × sends the time in whole seconds, rounded down, as every instant of the contract 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  04:09:03
+   Duration  946ms (import 35%, transform 34%, tests 30%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > the registration's serializer against the contract's example (T55) > sends the time in whole seconds, rounded down, as every instant of the contract
+AssertionError: expected { apns_environment: 'sandbox', …(2) } to deeply equal { apns_environment: 'sandbox', …(2) }
+
+- Expected
++ Received
+
+  {
+    "apns_environment": "sandbox",
+-   "registered_at": "2026-11-24T03:30:00Z",
++   "registered_at": "2026-11-24T03:30:00.999999Z",
+    "timezone": "Asia/Tokyo",
+  }
+
+ ❯ src/identity/devices.test.ts:141:18
+    139|       registeredAt: Temporal.Instant.from("2026-11-24T03:30:00.999999Z…
+    140|     }) as Body;
+    141|     expect(made).toEqual({
+       |                  ^
+    142|       apns_environment: "sandbox",
+    143|       timezone: "Asia/Tokyo",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

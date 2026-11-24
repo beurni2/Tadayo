@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/packages/domain
+
+ ❯ src/identity/devices.test.ts (5 tests | 1 failed) 12ms
+   ❯ a token's key: lowercase hex, so one device is one key whatever its case (T52) (2)
+     × lowercases the contract's token, and keeps its length 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  04:07:52
+   Duration  194ms (transform 55%, import 22%, tests 17%, worker 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > a token's key: lowercase hex, so one device is one key whatever its case (T52) > lowercases the contract's token, and keeps its length
+AssertionError: expected 'ABABABABABABABABABABABABABABABABABABA…' to be 'ababababababababababababababababababa…' // Object.is equality
+
+Expected: "abababababababababababababababababababababababababababababababab"
+Received: "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB"
+
+ ❯ src/identity/devices.test.ts:35:42
+     33| describe("a token's key: lowercase hex, so one device is one key whate…
+     34|   it("lowercases the contract's token, and keeps its length", () => {
+     35|     expect(apnsTokenOf("AB".repeat(32))).toBe("ab".repeat(32));
+       |                                          ^
+     36|     expect(apnsTokenOf("0f".repeat(8))).toBe("0f".repeat(8));
+     37|     expect(apnsTokenOf("C".repeat(512))).toBe("c".repeat(512));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

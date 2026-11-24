@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -123,7 +123,7 @@
+   return sameAnswer("the registration", 200, {
+     apns_environment: outcome.request.environment,
+     timezone: outcome.request.canonical,
+-    registered_at: seconds(now),
++    registered_at: micros(now),
+   });
+ }
+ 

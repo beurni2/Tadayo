@@ -1,0 +1,10 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -186,7 +186,6 @@
+   }
+ 
+   const now = await clock.sample(tx);
+-  await purgeEnded(tx, now);
+ 
+   // 2. An ended sign-in, or another account's.
+   const [ended] = await bound(tx)`

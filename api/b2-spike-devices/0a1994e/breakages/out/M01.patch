@@ -1,0 +1,11 @@
+--- a/db/migrations/0017_devices.sql
++++ b/db/migrations/0017_devices.sql
+@@ -64,7 +64,7 @@
+     RAISE EXCEPTION 'app.device_registrations: a device is registered only for an active account with a finished profile (T27, FQ69)'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF EXISTS (SELECT FROM app.device_sign_ins_ended WHERE sign_in = NEW.sign_in) THEN
++  IF false AND EXISTS (SELECT FROM app.device_sign_ins_ended WHERE sign_in = NEW.sign_in) THEN
+     RAISE EXCEPTION 'app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

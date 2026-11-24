@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 1 failed) 1137ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × replaces its token, environment and zone with each new registration of the same sign-in, and its time 24ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:07:40
+   Duration  1.67s (tests 86%, transform 8%, import 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > replaces its token, environment and zone with each new registration of the same sign-in, and its time
+AssertionError: expected { …(6) } to match object { …(3) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "apns_token": "77b72fe9965d30cb483295c784f87b0be8ea131e5c640244db670daff2ae166d",
++   "apns_token": "924c9540123e5b78b242b0c4d1f93063a1d164a8d045e4c2fcd3cf2da8ad9b19",
+    "sign_in": "3bfdfb3f6aba9946d072810b4b647935175cd6629ecc4433a1546f7a1175cf7c",
+    "timezone": "Asia/Tokyo",
+  }
+
+ ❯ src/db/devices.test.ts:147:23
+    145|       const rows = await registrations(tx, { user: ben });
+    146|       expect(rows).toHaveLength(1);
+    147|       expect(rows[0]).toMatchObject({
+       |                       ^
+    148|         sign_in: hashOf(secret),
+    149|         apns_token: fresh.toLowerCase(),
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:129:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

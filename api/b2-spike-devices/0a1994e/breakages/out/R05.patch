@@ -1,0 +1,11 @@
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -106,7 +106,7 @@
+   createDrop: 29 * 1024,
+   chooseScheduleDays: 1024,
+   confirmScheduleDays: 1024,
+-  registerDevice: 10 * 1024,
++  registerDevice: 128 * 1024,
+   removeDevice: 2 * 1024,
+ };
+ 

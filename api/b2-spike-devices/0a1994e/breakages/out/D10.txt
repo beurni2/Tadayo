@@ -1,0 +1,87 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 6 failed) 898ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e)) 20ms
+     × moves a token from another account's sign-in, whichever account held it ((a), the move) 14ms
+   ❯ a removal (TECH-DESIGN section 6 (c), (d), (e)) (5)
+     × removes the sign-in's registration and ends it; the second removal finds nothing; a late registration changes nothing 10ms
+     × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 4ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (5)
+     × lets two sign-ins each take the other's token at once without a deadlock 34ms
+     × lets a registration and a removal of one sign-in race: either order leaves no registration of it 9ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 16 passed (22)
+   Start at  04:07:31
+   Duration  1.47s (tests 82%, transform 10%, import 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e))
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from another account's sign-in, whichever account held it ((a), the move)
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > removes the sign-in's registration and ends it; the second removal finds nothing; a late registration changes nothing
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > ends a sign-in that has no registration yet, so its registration still on the way changes nothing
+PostgresError: app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ registerDevice ../packages/domain/src/identity/devices.ts:205:18
+    203|
+    204|   // 4. This sign-in's registration.
+    205|   await bound(tx)`
+       |                  ^
+    206|     INSERT INTO app.device_registrations (sign_in, user_id, apns_token…
+    207|     VALUES (pg_catalog.decode(${signIn}, 'hex'), ${input.userId}, ${to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets two sign-ins each take the other's token at once without a deadlock
+AssertionError: expected [ …(2) ] to deeply equal [ 'NOT_FOUND', 'ok' ]
+
+- Expected
++ Received
+
+  [
+-   "NOT_FOUND",
++   "PostgresError: app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))",
+    "ok",
+  ]
+
+ ❯ src/db/devices.test.ts:508:31
+    506|       const outcomes = settled(results);
+    507|       // The first to run moves the other's token and ends the other's…
+    508|       expect(outcomes.sort()).toEqual(["NOT_FOUND", "ok"]);
+       |                               ^
+    509|       expect(await orphans()).toBe(0);
+    510|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets a registration and a removal of one sign-in race: either order leaves no registration of it
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+-   StringMatching /^(ok|NOT_FOUND)$/,
++   "PostgresError: app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))",
+    "ok",
+  ]
+
+ ❯ src/db/devices.test.ts:519:37
+    517|       const results = await Promise.allSettled([asRoute(input(ben, sec…
+    518|       const [registered, removed] = settled(results);
+    519|       expect([registered, removed]).toEqual([expect.stringMatching(/^(…
+       |                                     ^
+    520|       expect(await registrations(db as unknown as WorldTx, { user: ben…
+    521|       expect(await endedAt(db as unknown as WorldTx, secret)).not.toBe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+

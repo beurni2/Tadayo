@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/identity/devices.test.ts (16 tests | 2 failed) 221ms
+   ❯ what the device routes answer (8)
+     × hands the database the secret's hash and the token in lowercase, never the secret or the token as sent 14ms
+     × maps the refusals: an ended or another account's sign-in is the neutral not-found; a zone the server can't resolve names the zone 7ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 14 passed (16)
+   Start at  04:09:07
+   Duration  794ms (import 40%, tests 32%, transform 27%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > what the device routes answer > hands the database the secret's hash and the token in lowercase, never the secret or the token as sent
+AssertionError: expected { status: 400, …(2) } to match object { status: 401 }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "status": 401,
++   "status": 400,
+  }
+
+ ❯ src/identity/devices.test.ts:332:57
+    330|     const { answer } = await appFor(db.begin as never, { clock: db.clo…
+    331|     // No account row comes back, so the command stops at the account:…
+    332|     expect(await answer(put(JSON.stringify(REGISTER)))).toMatchObject(…
+       |                                                         ^
+    333|     const text = JSON.stringify(db.bound);
+    334|     expect(text).not.toContain(SECRET);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/identity/devices.test.ts > what the device routes answer > maps the refusals: an ended or another account's sign-in is the neutral not-found; a zone the server can't resolve names the zone
+AssertionError: NOT_FOUND: expected { status: 400, …(2) } to match object { status: 404, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+      "content-type": "application/json; charset=utf-8",
+    },
+-   "status": 404,
++   "status": 400,
+  }
+
+ ❯ src/identity/devices.test.ts:356:33
+    354|       const { answer } = await appFor(() => Promise.reject(refused));
+    355|       const got = await answer(put(JSON.stringify(REGISTER)));
+    356|       expect(got, refused.code).toMatchObject({ status, body, headers …
+       |                                 ^
+    357|     }
+    358|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 1 failed) 1078ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × answers a secret whose registration is another account's with the neutral not-found, and changes nothing ((a); T14) 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:07:34
+   Duration  1.59s (tests 87%, transform 7%, import 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > answers a secret whose registration is another account's with the neutral not-found, and changes nothing ((a); T14)
+Error: the command wasn't refused
+ ❯ refusal src/db/devices.test.ts:82:9
+     80|     throw error;
+     81|   }
+     82|   throw new Error("the command wasn't refused");
+       |         ^
+     83| }
+     84|
+ ❯ src/db/devices.test.ts:209:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:202:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

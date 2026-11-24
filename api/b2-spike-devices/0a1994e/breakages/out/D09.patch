@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -120,7 +120,7 @@
+     DELETE FROM app.device_sign_ins_ended
+      WHERE sign_in IN (SELECT sign_in FROM app.device_sign_ins_ended
+                         WHERE ended_at < ${cut}::pg_catalog.timestamptz
+-                        ORDER BY ended_at LIMIT ${PURGE_BATCH}
++                        ORDER BY ended_at DESC LIMIT ${PURGE_BATCH}
+                         FOR UPDATE SKIP LOCKED)`;
+ }
+ 

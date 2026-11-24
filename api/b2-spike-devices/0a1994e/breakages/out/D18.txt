@@ -1,0 +1,80 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 3 failed) 1145ms
+   ❯ a removal (TECH-DESIGN section 6 (c), (d), (e)) (5)
+     × removes the sign-in's registration and ends it; the second removal finds nothing; a late registration changes nothing 13ms
+     × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 3ms
+     × finds nothing for a sign-in whose token moved to a later one, and refuses nothing of that later sign-in ((e)) 6ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 19 passed (22)
+   Start at  04:07:49
+   Duration  1.69s (tests 87%, transform 7%, import 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > removes the sign-in's registration and ends it; the second removal finds nothing; a late registration changes nothing
+AssertionError: expected 'removed' to be 'none' // Object.is equality
+
+Expected: "none"
+Received: "removed"
+
+ ❯ src/db/devices.test.ts:265:40
+    263|       expect(await endedAt(tx, secret)).toEqual(Temporal.Instant.from(…
+    264|       clock.advance({ minutes: 1 });
+    265|       expect(await remove(tx, secret)).toBe("none");
+       |                                        ^
+    266|       // The first ending stands.
+    267|       expect(await endedAt(tx, secret)).toEqual(Temporal.Instant.from(…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:256:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > ends a sign-in that has no registration yet, so its registration still on the way changes nothing
+AssertionError: expected 'removed' to be 'none' // Object.is equality
+
+Expected: "none"
+Received: "removed"
+
+ ❯ src/db/devices.test.ts:277:40
+    275|       const ben = await account(tx);
+    276|       const secret = newSecret();
+    277|       expect(await remove(tx, secret)).toBe("none");
+       |                                        ^
+    278|       expect(await refusal(register(tx, input(ben, secret, newToken())…
+    279|       expect(await registrations(tx, { user: ben })).toEqual([]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:274:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > finds nothing for a sign-in whose token moved to a later one, and refuses nothing of that later sign-in ((e))
+AssertionError: expected 'removed' to be 'none' // Object.is equality
+
+Expected: "none"
+Received: "removed"
+
+ ❯ src/db/devices.test.ts:302:41
+    300|       await register(tx, input(ben, earlier, token));
+    301|       await register(tx, input(ben, later, token));
+    302|       expect(await remove(tx, earlier)).toBe("none");
+       |                                         ^
+    303|       expect(await registrations(tx, { token })).toMatchObject([{ sign…
+    304|       // The later sign-in registers again, with the same token or a n…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:297:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

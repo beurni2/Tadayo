@@ -1,0 +1,11 @@
+--- a/db/migrations/0017_devices.sql
++++ b/db/migrations/0017_devices.sql
+@@ -77,7 +77,7 @@
+ CREATE FUNCTION app.device_sign_ins_ended_guard() RETURNS trigger
+   LANGUAGE plpgsql SET search_path = '' AS $$
+ BEGIN
+-  IF EXISTS (SELECT FROM app.device_registrations WHERE sign_in = NEW.sign_in) THEN
++  IF false AND EXISTS (SELECT FROM app.device_registrations WHERE sign_in = NEW.sign_in) THEN
+     RAISE EXCEPTION 'app.device_sign_ins_ended: a sign-in ends only once its registration is gone (TECH-DESIGN section 6 (e))'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

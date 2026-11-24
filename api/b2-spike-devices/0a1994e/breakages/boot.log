@@ -1,0 +1,40 @@
++ psql postgresql://supabase_admin:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 -c 
+-- Supabase's API roles as its image has them: made without login by its initial schema
+-- (init-scripts/00000000000000-initial-schema.sql), then made to inherit
+-- (migrations/20230529180330_alter_api_roles_for_inherit.sql); service_role bypasses row-level
+-- security.
+CREATE ROLE anon NOLOGIN INHERIT;
+CREATE ROLE authenticated NOLOGIN INHERIT;
+CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;
+-- Supabase's `postgres`: made a superuser that owns the database (migrate.sh), then demoted
+-- (migrations/10000000000000_demote-postgres.sql), and on 16 and later given these roles with
+-- the ADMIN option (migrations/20250605172253_grant_with_admin_to_postgres_16_and_above.sql,
+-- less `authenticator`, which CI doesn't make).
+CREATE ROLE postgres NOSUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS
+  PASSWORD 'postgres';
+ALTER DATABASE postgres OWNER TO postgres;
+GRANT ALL ON DATABASE postgres TO postgres;
+GRANT anon, authenticated, service_role, pg_monitor, pg_read_all_data, pg_signal_backend
+  TO postgres WITH ADMIN OPTION;
+
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+ALTER DATABASE
+GRANT
+GRANT ROLE
+ci: db-bootstrap: `postgres` is made as Supabase makes it, not a superuser
++ psql postgresql://postgres:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 -v app_password=tadayo-app-ci-only -f db/bootstrap.sql
+BEGIN
+CREATE ROLE
+ALTER ROLE
+GRANT ROLE
+GRANT
+CREATE SCHEMA
+CREATE SCHEMA
+REVOKE
+GRANT
+CREATE EXTENSION
+DO
+COMMIT

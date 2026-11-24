@@ -1,0 +1,10 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -223,7 +223,6 @@
+   removalSecret: string,
+ ): Promise<"removed" | "none"> {
+   const signIn = signInOf(removalSecret);
+-  await lock(tx, signInLock(signIn));
+   const now = await clock.sample(tx);
+   await purgeEnded(tx, now);
+   const removed = await bound(tx)`

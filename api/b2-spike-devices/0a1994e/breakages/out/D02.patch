@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -168,7 +168,7 @@
+   // The locks: the token's, then the holder's and this sign-in's in the hashes' order.
+   await lock(tx, tokenLock(token));
+   const seen = await holderOf(tx, token);
+-  const signIns = [...new Set([signIn, ...(seen === null ? [] : [seen])])].sort();
++  const signIns = [...new Set([signIn, ...(seen === null ? [] : [seen])])];
+   for (const one of signIns) await lock(tx, signInLock(one));
+   const holder = await holderOf(tx, token);
+   if (holder !== null && !signIns.includes(holder)) {

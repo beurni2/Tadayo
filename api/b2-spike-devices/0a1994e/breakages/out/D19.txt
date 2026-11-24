@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/packages/domain
+
+ ❯ src/identity/devices.test.ts (5 tests | 1 failed) 13ms
+   ❯ a sign-in's name: the SHA-256 of its removal secret (TECH-DESIGN section 6 (a)) (2)
+     × is the secret's SHA-256 in hex, the same for the same secret and new for a new one 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  04:07:51
+   Duration  217ms (transform 57%, import 21%, tests 17%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > a sign-in's name: the SHA-256 of its removal secret (TECH-DESIGN section 6 (a)) > is the secret's SHA-256 in hex, the same for the same secret and new for a new one
+AssertionError: expected '4162305f2d4162305f2d4162305f2d4162305…' to be 'b2158a4aa86195f8c0ef780110f7200b69eff…' // Object.is equality
+
+Expected: "b2158a4aa86195f8c0ef780110f7200b69eff64bbdb2826b3972e5f9ca76810e"
+Received: "4162305f2d4162305f2d4162305f2d4162305f2d4162305f2d4162305f2d4162"
+
+ ❯ src/identity/devices.test.ts:12:30
+     10|   it("is the secret's SHA-256 in hex, the same for the same secret and…
+     11|     const secret = "Ab0_-".repeat(9).slice(0, 43);
+     12|     expect(signInOf(secret)).toBe(createHash("sha256").update(secret, …
+       |                              ^
+     13|     expect(signInOf(secret)).toMatch(/^[0-9a-f]{64}$/);
+     14|     expect(signInOf(`${secret}x`)).not.toBe(signInOf(secret));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

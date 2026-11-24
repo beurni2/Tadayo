@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 5 failed) 856ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e)) 11ms
+     × moves a token from another account's sign-in, whichever account held it ((a), the move) 7ms
+   ❯ a removal (TECH-DESIGN section 6 (c), (d), (e)) (5)
+     × finds nothing for a sign-in whose token moved to a later one, and refuses nothing of that later sign-in ((e)) 4ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (5)
+     × lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock 171ms
+     × lets two sign-ins each take the other's token at once without a deadlock 15ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 17 passed (22)
+   Start at  04:07:36
+   Duration  1.38s (tests 83%, transform 9%, import 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e))
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from another account's sign-in, whichever account held it ((a), the move)
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > finds nothing for a sign-in whose token moved to a later one, and refuses nothing of that later sign-in ((e))
+PostgresError: duplicate key value violates unique constraint "device_registrations_apns_token_key"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ registerDevice ../packages/domain/src/identity/devices.ts:205:18
+    203|
+    204|   // 4. This sign-in's registration.
+    205|   await bound(tx)`
+       |                  ^
+    206|     INSERT INTO app.device_registrations (sign_in, user_id, apns_token…
+    207|     VALUES (pg_catalog.decode(${signIn}, 'hex'), ${input.userId}, ${to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/devices.test.ts:491:67
+    489|     );
+    490|     // Each ran in some order: a registration that ran after the token…
+    491|     expect(settled(results).every((outcome) => outcome === "ok")).toBe…
+       |                                                                   ^
+    492|     const holders = await registrations(db as unknown as WorldTx, { to…
+    493|     expect(holders).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets two sign-ins each take the other's token at once without a deadlock
+AssertionError: expected [ …(2) ] to deeply equal [ 'NOT_FOUND', 'ok' ]
+
+- Expected
++ Received
+
+  [
+-   "NOT_FOUND",
+-   "ok",
++   "PostgresError: duplicate key value violates unique constraint \"device_registrations_apns_token_key\"",
++   "PostgresError: duplicate key value violates unique constraint \"device_registrations_apns_token_key\"",
+  ]
+
+ ❯ src/db/devices.test.ts:508:31
+    506|       const outcomes = settled(results);
+    507|       // The first to run moves the other's token and ends the other's…
+    508|       expect(outcomes.sort()).toEqual(["NOT_FOUND", "ok"]);
+       |                               ^
+    509|       expect(await orphans()).toBe(0);
+    510|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+

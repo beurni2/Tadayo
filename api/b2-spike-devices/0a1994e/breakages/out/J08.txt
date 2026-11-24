@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/device.test.ts (14 tests | 1 failed) 17ms
+   ❯ registerDevice's outcome and answer (4)
+     × wants the registration as stored, in whole seconds, and refuses another field, a value or a status 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  04:09:18
+   Duration  397ms (import 61%, transform 31%, tests 6%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/device.test.ts > registerDevice's outcome and answer > wants the registration as stored, in whole seconds, and refuses another field, a value or a status
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the registration's registered_at is \"2026-11-24T03:30:00Z\", not \"2026-11-24T03:30:00.123456Z\"",
++ ]
+
+ ❯ src/privacy/device.test.ts:108:39
+    106|     const expected = registerExpected(outcome, NOW);
+    107|     const want = { apns_environment: "production", timezone: "Europe/L…
+    108|     expect(judge(expected, ok(want))).toEqual([]);
+       |                                       ^
+    109|     expect(judge(expected, ok({ ...want, timezone: "europe/london" }))…
+    110|     expect(judge(expected, ok({ ...want, registered_at: "2026-11-24T03…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

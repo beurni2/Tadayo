@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/identity/devices.test.ts (16 tests | 1 failed) 259ms
+   ❯ what registerDevice refuses before any transaction (3)
+     × takes a body up to its limit of 10 KiB and none above it, twice the largest valid one 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  04:09:08
+   Duration  802ms (import 38%, tests 38%, transform 24%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > what registerDevice refuses before any transaction > takes a body up to its limit of 10 KiB and none above it, twice the largest valid one
+AssertionError: expected 131072 to be 10240 // Object.is equality
+
+- Expected
++ Received
+
+- 10240
++ 131072
+
+ ❯ src/identity/devices.test.ts:207:43
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

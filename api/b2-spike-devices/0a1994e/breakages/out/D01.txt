@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 1 failed) 1081ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (5)
+     × lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock 114ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:07:10
+   Duration  2.29s (tests 82%, transform 12%, import 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/devices.test.ts:491:67
+    489|     );
+    490|     // Each ran in some order: a registration that ran after the token…
+    491|     expect(settled(results).every((outcome) => outcome === "ok")).toBe…
+       |                                                                   ^
+    492|     const holders = await registrations(db as unknown as WorldTx, { to…
+    493|     expect(holders).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,62 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 2 failed) 1098ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × keeps the secret's hash as the sign-in, the token in lowercase, the zone the server resolves and the server's time 57ms
+     × refuses a zone of the contract's shape that the server can't resolve, by its name, before anything is locked 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 passed (22)
+   Start at  04:07:42
+   Duration  1.62s (tests 86%, transform 7%, import 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > keeps the secret's hash as the sign-in, the token in lowercase, the zone the server resolves and the server's time
+AssertionError: expected { apnsEnvironment: 'production', …(2) } to deeply equal { apnsEnvironment: 'production', …(2) }
+
+- Expected
++ Received
+
+  {
+    "apnsEnvironment": "production",
+    "registeredAt": "2026-11-24T03:30:00.123456Z",
+-   "timezone": "America/New_York",
++   "timezone": "america/new_york",
+  }
+
+ ❯ src/db/devices.test.ts:105:22
+    103|       const token = newToken();
+    104|       const answer = await register(tx, input(ben, secret, token, { ti…
+    105|       expect(answer).toEqual({
+       |                      ^
+    106|         apnsEnvironment: "production",
+    107|         timezone: "America/New_York",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:99:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > refuses a zone of the contract's shape that the server can't resolve, by its name, before anything is locked
+Error: the command wasn't refused
+ ❯ refusal src/db/devices.test.ts:82:9
+     80|     throw error;
+     81|   }
+     82|   throw new Error("the command wasn't refused");
+       |         ^
+     83| }
+     84|
+ ❯ src/db/devices.test.ts:240:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:237:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

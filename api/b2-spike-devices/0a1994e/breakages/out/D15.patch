@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -159,7 +159,7 @@
+   // The zone in the one spelling the server resolves (T37; `clubTimeZone`'s rule), before anything is locked.
+   let timezone: string;
+   try {
+-    timezone = clubTimeZone(input.timezone);
++    timezone = input.timezone;
+   } catch (error) {
+     if (error instanceof RangeError) throw new Refused("INVALID_REQUEST", { field: "timezone" });
+     throw error;

@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 1 failed) 1136ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (5)
+     × lets a registration and a removal of one sign-in race: either order leaves no registration of it 28ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:07:46
+   Duration  1.66s (tests 86%, transform 7%, import 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets a registration and a removal of one sign-in race: either order leaves no registration of it
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+-   StringMatching /^(ok|NOT_FOUND)$/,
++   "PostgresError: app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))",
+    "ok",
+  ]
+
+ ❯ src/db/devices.test.ts:519:37
+    517|       const results = await Promise.allSettled([asRoute(input(ben, sec…
+    518|       const [registered, removed] = settled(results);
+    519|       expect([registered, removed]).toEqual([expect.stringMatching(/^(…
+       |                                     ^
+    520|       expect(await registrations(db as unknown as WorldTx, { user: ben…
+    521|       expect(await endedAt(db as unknown as WorldTx, secret)).not.toBe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/db/migrations/0017_devices.sql
++++ b/db/migrations/0017_devices.sql
+@@ -91,7 +91,7 @@
+ CREATE FUNCTION app.users_deleted_without_devices() RETURNS trigger
+   LANGUAGE plpgsql SET search_path = '' AS $$
+ BEGIN
+-  IF EXISTS (SELECT FROM app.device_registrations WHERE user_id = NEW.id) THEN
++  IF false AND EXISTS (SELECT FROM app.device_registrations WHERE user_id = NEW.id) THEN
+     RAISE EXCEPTION 'app.users: % was deleted with a device registration still kept (T27)', NEW.id
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

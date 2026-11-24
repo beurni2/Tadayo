@@ -1,0 +1,82 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 3 failed) 1035ms
+   ❯ a removal (TECH-DESIGN section 6 (c), (d), (e)) (5)
+     × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 11ms
+   ❯ the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted (2)
+     × keeps eight days of them, nothing personal, and the next command deletes those past it 15ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (5)
+     × lets a registration and a removal of one sign-in race: either order leaves no registration of it 11ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 19 passed (22)
+   Start at  04:07:44
+   Duration  1.59s (tests 84%, transform 8%, import 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > ends a sign-in that has no registration yet, so its registration still on the way changes nothing
+Error: the command wasn't refused
+ ❯ refusal src/db/devices.test.ts:82:9
+     80|     throw error;
+     81|   }
+     82|   throw new Error("the command wasn't refused");
+       |         ^
+     83| }
+     84|
+ ❯ src/db/devices.test.ts:278:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:274:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/devices.test.ts > the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted > keeps eight days of them, nothing personal, and the next command deletes those past it
+AssertionError: expected null not to be null
+ ❯ src/db/devices.test.ts:346:42
+    344|       clock.set(Temporal.Instant.from(LONG_AGO).add(ENDED_KEEP));
+    345|       await tx.savepoint((sp) => registerDevice(sp, clock, input(ben, …
+    346|       expect(await endedAt(tx, old)).not.toBeNull();
+       |                                          ^
+    347|       // A microsecond more: the first is past it, the second not.
+    348|       clock.advance({ microseconds: 1 });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:330:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets a registration and a removal of one sign-in race: either order leaves no registration of it
+AssertionError: expected [ { …(6) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "apns_environment": "production",
++     "apns_token": "e8879fb4cd000c4e2e9648cdcf08c1bb020ee045a4c85c9ae37052d5915df1bd",
++     "registered_at": "2026-11-24T03:30:00.123456Z",
++     "sign_in": "05fd5aebb469ce7ba87a3261202db59c9f4cc777c4cc24b517a05a22f2e13b0f",
++     "timezone": "America/New_York",
++     "user_id": "acct_ypBTYWFOxlHtS_eIW5t02w",
++   },
++ ]
+
+ ❯ src/db/devices.test.ts:520:76
+    518|       const [registered, removed] = settled(results);
+    519|       expect([registered, removed]).toEqual([expect.stringMatching(/^(…
+    520|       expect(await registrations(db as unknown as WorldTx, { user: ben…
+       |                                                                            ^
+    521|       expect(await endedAt(db as unknown as WorldTx, secret)).not.toBe…
+    522|       expect(await orphans()).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

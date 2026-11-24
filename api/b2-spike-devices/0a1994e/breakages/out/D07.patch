@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -115,7 +115,7 @@
+ 
+ /** Deletes ended sign-ins older than `ENDED_KEEP` at `now`, skipping any row another transaction holds. */
+ async function purgeEnded(tx: QuerySql, now: Temporal.Instant): Promise<void> {
+-  const cut = now.subtract(ENDED_KEEP);
++  const cut = now.subtract({ hours: 191 });
+   await bound(tx)`
+     DELETE FROM app.device_sign_ins_ended
+      WHERE sign_in IN (SELECT sign_in FROM app.device_sign_ins_ended

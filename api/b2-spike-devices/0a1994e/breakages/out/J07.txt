@@ -1,0 +1,52 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/device.test.ts (14 tests | 2 failed) 20ms
+   ❯ removeDevice's outcome, answer and change (4)
+     × passes a removal that deleted the registration and ended the sign-in at the instant, or kept its first end 7ms
+     × refuses a removal that kept the registration, didn't end the sign-in, ended it again, or touched another 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  04:09:17
+   Duration  402ms (import 60%, transform 32%, tests 7%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/device.test.ts > removeDevice's outcome, answer and change > passes a removal that deleted the registration and ended the sign-in at the instant, or kept its first end
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the removed sign-in didn't end at the instant, or ended again",
++ ]
+
+ ❯ src/privacy/device.test.ts:238:56
+    236|     expect(removedProblems(before, rows([], [[signIn, NOW_US]]), SECON…
+    237|     const ended = rows([], [[signIn, EARLIER]]);
+    238|     expect(removedProblems(ended, ended, SECOND, NOW)).toEqual([]);
+       |                                                        ^
+    239|   });
+    240|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/device.test.ts > removeDevice's outcome, answer and change > refuses a removal that kept the registration, didn't end the sign-in, ended it again, or touched another
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/device.test.ts:260:83
+    258|     }
+    259|     const ended = rows([], [[signIn, EARLIER]]);
+    260|     expect(removedProblems(ended, rows([], [[signIn, NOW_US]]), SECOND…
+       |                                                                                   ^
+    261|   });
+    262| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

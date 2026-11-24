@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (22 tests | 1 failed) 1909ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (5)
+     × lets two sign-ins each take the other's token at once without a deadlock 1022ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  04:07:13
+   Duration  2.40s (tests 92%, transform 5%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets two sign-ins each take the other's token at once without a deadlock
+AssertionError: expected [ …(2) ] to deeply equal [ 'NOT_FOUND', 'ok' ]
+
+- Expected
++ Received
+
+  [
+-   "NOT_FOUND",
++   "PostgresError: deadlock detected",
+    "ok",
+  ]
+
+ ❯ src/db/devices.test.ts:508:31
+    506|       const outcomes = settled(results);
+    507|       // The first to run moves the other's token and ends the other's…
+    508|       expect(outcomes.sort()).toEqual(["NOT_FOUND", "ok"]);
+       |                               ^
+    509|       expect(await orphans()).toBe(0);
+    510|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

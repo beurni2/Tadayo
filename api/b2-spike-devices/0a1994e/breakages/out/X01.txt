@@ -1,0 +1,389 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2016 cells run, 37939 answers scanned
+author, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 37996 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 2016 cells run, 37976 answers scanned
+member in the audience, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+member who joined after the commit (T8): 2016 cells run, 37984 answers scanned
+member who joined after the commit (T8), the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find
+rejoined member, a new interval (T8): 2016 cells run, 37984 answers scanned
+rejoined member, a new interval (T8), the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+former member: 2016 cells run, 36638 answers scanned
+former member, the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find
+invited, not yet a member (T7): 2016 cells run, 36638 answers scanned
+invited, not yet a member (T7), the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the stranger from another club as its account and its row say, and leaks nothing the scanner can find
+stranger from another club: 2016 cells run, 36638 answers scanned
+stranger from another club, the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find
+blocked: Cleo blocked the author, leaving by the block: 2016 cells run, 36638 answers scanned
+blocked: Cleo blocked the author, leaving by the block, the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find
+blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88): 1512 cells run, 23416 answers scanned
+blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88), the roster's table: {"proposals":168,"memberPhases":18,"due":18,"revisions":18,"links":18,"otherAnswers":360,"invitations":18}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the signed in, profile not finished (FQ13, FQ69) as its account and its row say, and leaks nothing the scanner can find
+signed in, profile not finished (FQ13, FQ69): 2016 cells run, 36554 answers scanned
+signed in, profile not finished (FQ13, FQ69), the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 17 failed) 582470ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 51253ms
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 53176ms
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 56396ms
+     × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 53161ms
+     × answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find 55419ms
+     × answers the former member as its account and its row say, and leaks nothing the scanner can find 42263ms
+     × answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find 40390ms
+     × answers the stranger from another club as its account and its row say, and leaks nothing the scanner can find 41283ms
+     × answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find 40484ms
+     × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find 36690ms
+     × answers the signed in, profile not finished (FQ13, FQ69) as its account and its row say, and leaks nothing the scanner can find 36289ms
+   ❯ the roster's table ran (tests/src/privacy/roster.ts) (1)
+     × made revisions and links for the six roles who are members the club answers, and for no other role 1ms
+   ❯ the leave ran (tests/src/privacy/leave.ts) (1)
+     × left the club for the roles who are members the club answers in the last phase, and for no other role 0ms
+   ❯ the reservations' table ran (tests/src/privacy/reservation.ts) (2)
+     × held, gave back and saw lapse the slots each role's allowance gives, and none for any other role 0ms
+     × gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it 0ms
+   ❯ the uploads' table ran (tests/src/privacy/upload.ts) (1)
+     × made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed 0ms
+   ❯ the commit's table ran (tests/src/privacy/drop.ts) (1)
+     × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 0ms
+
+ Test Files  1 failed (1)
+      Tests  17 failed | 7 passed (24)
+   Start at  04:09:19
+   Duration  584.29s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 17 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the stranger from another club as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 140, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 140,
++   "first": [
++     "active, collecting: registerDevice: status 200 (the other club's author's secret)",
++     "active, collecting: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, collecting: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-07T06:59:59Z\\\"}\" (the other club's author's secret)",
++     "active, collecting: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, collecting: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "active, open: registerDevice: status 200 (the other club's author's secret)",
++     "active, open: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, open: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-07T07:00:00Z\\\"}\" (the other club's author's secret)",
++     "active, open: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, open: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "active, past: registerDevice: status 200 (the other club's author's secret)",
++     "active, past: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, past: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "active, past: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, past: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "active, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "active, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "active, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, collecting: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, collecting: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, collecting: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-07T06:59:59Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, collecting: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, collecting: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, open: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, open: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, open: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-07T07:00:00Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, open: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, open: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, past: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, past: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, past: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, past: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, past: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2777:66
+    2775|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2776|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2777|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2778|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2779|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 105, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 105,
++   "first": [
++     "active, open: registerDevice: status 200 (the other club's author's secret)",
++     "active, open: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, open: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-07T07:00:00Z\\\"}\" (the other club's author's secret)",
++     "active, open: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, open: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "active, past: registerDevice: status 200 (the other club's author's secret)",
++     "active, past: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, past: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "active, past: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, past: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "active, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "active, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "active, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, open: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, open: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, open: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-07T07:00:00Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, open: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, open: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, past: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, past: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, past: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, past: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, past: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "removed by moderation, open: registerDevice: status 200 (the other club's author's secret)",
++     "removed by moderation, open: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "removed by moderation, open: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-07T07:00:00Z\\\"}\" (the other club's author's secret)",
++     "removed by moderation, open: registerDevice: content-length: 99 (the other club's author's secret)",
++     "removed by moderation, open: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "removed by moderation, past: registerDevice: status 200 (the other club's author's secret)",
++     "removed by moderation, past: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "removed by moderation, past: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2026-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "removed by moderation, past: registerDevice: content-length: 99 (the other club's author's secret)",
++     "removed by moderation, past: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2777:66
+    2775|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2776|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2777|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2778|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2779|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the signed in, profile not finished (FQ13, FQ69) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 35, first: [ …(35) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 35,
++   "first": [
++     "active, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "active, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "active, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "active, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "active, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "withdrawn, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "removed by moderation, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "removed by moderation, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "removed by moderation, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "removed by moderation, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "removed by moderation, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "held (T29), past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "held (T29), past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "held (T29), past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "held (T29), past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "held (T29), past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "its day suspended, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "its day suspended, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "its day suspended, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "its day suspended, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "its day suspended, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "its club suspended, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "its club suspended, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "its club suspended, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "its club suspended, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "its club suspended, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++     "its day cancelled, past, a year on: registerDevice: status 200 (the other club's author's secret)",
++     "its day cancelled, past, a year on: registerDevice: reason \"OK\" (the other club's author's secret)",
++     "its day cancelled, past, a year on: registerDevice: body \"{\\\"apns_environment\\\":\\\"production\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"registered_at\\\":\\\"2027-11-08T01:00:00Z\\\"}\" (the other club's author's secret)",
++     "its day cancelled, past, a year on: registerDevice: content-length: 99 (the other club's author's secret)",
++     "its day cancelled, past, a year on: registerDevice: a refused registration changed another sign-in's registration (the other club's author's secret)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2777:66
+    2775|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2776|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2777|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2778|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2779|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the roster's table ran (tests/src/privacy/roster.ts) > made revisions and links for the six roles who are members the club answers, and for no other role
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2828:32
+    2826|     // what the role tests above left, so it holds only when the whole…
+    2827|     // for one role, or after a role's test failed before it stored it…
+    2828|     expect(ROSTER_TABLES.size).toBe(ROLES.length);
+       |                                ^
+    2829|     const made = [...ROSTER_TABLES].filter(([, table]) => table.revisi…
+    2830|     expect(made).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the leave ran (tests/src/privacy/leave.ts) > left the club for the roles who are members the club answers in the last phase, and for no other role
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2844:25
+    2842|   it("left the club for the roles who are members the club answers in …
+    2843|     // As the roster's table above: it reads what the role tests left,…
+    2844|     expect(LEAVES.size).toBe(ROLES.length);
+       |                         ^
+    2845|     expect([...LEAVES].filter(([, states]) => states > 0)).toEqual([
+    2846|       ["author", 6],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > held, gave back and saw lapse the slots each role's allowance gives, and none for any other role
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2871:24
+    2869|     // (T20), in each of the four states; until the commit was built i…
+    2870|     // expired. A lapsed slot coming back expired is still asked in ev…
+    2871|     expect(SLOTS.size).toBe(ROLES.length);
+       |                        ^
+    2872|     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
+    2873|       ["author", { held: 9, released: 5, expired: 0, consumed: 4 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2892:29
+    2890|     // the four states that neither suspend nor cancel them. Cleo afte…
+    2891|     // interval, or after blocking the author and leaving by it has no…
+    2892|     expect(CLEOS_SLOT.size).toBe(ROLES.length);
+       |                             ^
+    2893|     expect([...CLEOS_SLOT].filter(([, answers]) => answers > 0)).toEqu…
+    2894|       ["member in the audience", 16],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the uploads' table ran (tests/src/privacy/upload.ts) > made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2967:26
+    2965|     // table, above). Another member's live slot is never the viewer's…
+    2966|     // for it, and nobody else makes one (T9, T14).
+    2967|     expect(UPLOADS.size).toBe(ROLES.length);
+       |                          ^
+    2968|     const one = {
+    2969|       made: 4 + 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the commit's table ran (tests/src/privacy/drop.ts) > added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:3021:24
+    3019|     // interval may still add to the day (the uploads' table ran, abov…
+    3020|     // day, or meets a duplicate (T9, T14).
+    3021|     expect(DROPS.size).toBe(ROLES.length);
+       |                        ^
+    3022|     const one = { added: 4, replayed: 4 + 3 * 4, conflicts: 4, duplica…
+    3023|     expect([...DROPS].filter(([, table]) => Object.values(table).some(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯
+
