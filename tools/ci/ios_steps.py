@@ -1761,13 +1761,14 @@ class Steps:
         """Appends the simulator's log lines about services that exited to
         logs/crashes-<version>.txt, SERVICE_LOG_LINES at most for each read, around each service
         whose connection the pass's log says ended (`ended_services`). Says so when there is
-        none, and when the log couldn't be read; writes nothing for a read with no such line."""
+        none with a time to read around, and when the log couldn't be read; writes nothing for a
+        read with no such line."""
         ended = self.ended_services(version)
         if not ended:
             self.write_log(f"crashes-{version}.txt",
-                           f"--- the simulator's log: not read, since no line of "
-                           f"logs/test-{version}.log says a service's connection ended "
-                           f"(SERVICE_ENDED)")
+                           f"--- the simulator's log: not read, since logs/test-{version}.log "
+                           f"names no ended service with a UTC time (SERVICE_ENDED, "
+                           f"SERVICE_STAMP)")
             return
         before, after = SERVICE_WINDOW
         reads = [(f"--- the simulator's log: pid {pid}, whose connection ended at "

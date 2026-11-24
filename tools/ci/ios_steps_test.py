@@ -2008,9 +2008,9 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual([c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]], [])
         self.assertFalse(os.path.exists(self.log("crashes-27.2.txt")))
         with open(self.log("crashes-26.5.txt")) as f:
-            self.assertEqual(f.read(), "--- the simulator's log: not read, since no line of "
-                                       "logs/test-26.5.log says a service's connection ended "
-                                       "(SERVICE_ENDED)\n")
+            self.assertEqual(f.read(), "--- the simulator's log: not read, since "
+                                       "logs/test-26.5.log names no ended service with a UTC "
+                                       "time (SERVICE_ENDED, SERVICE_STAMP)\n")
 
     def test_a_failed_pass_reads_the_device_s_log_around_each_service_whose_connection_ended(self):
         # Read over the whole pass, the device's log took longer than its 90 seconds (`ios`
@@ -2118,6 +2118,17 @@ class BuildAndTestSteps(StepsTest):
             f.write(log)
         at = calendar.timegm(time.strptime("2026-11-23 15:48:44", "%Y-%m-%d %H:%M:%S"))
         self.assertEqual(steps.ended_services("27.2"), [("6342", at)])
+        # With only the pids that have no time, nothing is read, and the note says why.
+        with open(self.log("test-27.2.log"), "w") as f:
+            f.write("".join(line for line in log.splitlines(keepends=True)
+                            if "pid 1 " in line or "2026-02-30" in line))
+        steps.shell = FakeShell()
+        steps.service_exits("27.2", UDID)
+        self.assertEqual(steps.shell.commands, [])
+        with open(self.log("crashes-27.2.txt")) as f:
+            self.assertEqual(f.read(), "--- the simulator's log: not read, since "
+                                       "logs/test-27.2.log names no ended service with a UTC "
+                                       "time (SERVICE_ENDED, SERVICE_STAMP)\n")
 
     def test_a_read_keeps_its_last_lines_where_an_exit_comes(self):
         # The window ends 10 seconds after the connection ended; what says how the service
