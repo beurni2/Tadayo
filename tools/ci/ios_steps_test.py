@@ -2133,6 +2133,8 @@ class BuildAndTestSteps(StepsTest):
     def test_a_read_keeps_its_last_lines_where_an_exit_comes(self):
         # The window ends 10 seconds after the connection ended; what says how the service
         # ended comes last, so a read with more than SERVICE_LOG_LINES lines keeps the last ones.
+        # A window as busy as item 1's at `ios` 45429690142 (1,853 lines) is kept whole.
+        self.assertGreaterEqual(ios_steps.SERVICE_LOG_LINES, 1853)
         steps = self.steps()
         os.makedirs(self.repo.out + "/logs", exist_ok=True)
         with open(self.log("test-27.2.log"), "w") as f:

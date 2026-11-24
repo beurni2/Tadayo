@@ -311,7 +311,9 @@ CRASH_FIELD = 300
 SERVICE_LOG_PREDICATE = ('eventMessage CONTAINS "exited due to" OR eventMessage CONTAINS '
                          '"exited with abnormal code" OR eventMessage CONTAINS[c] "jetsam"')
 SERVICE_LOG_TIMEOUT = 90
-SERVICE_LOG_LINES = 200
+# A failed pass's window held 1,853 such lines on a loaded runner (`ios` 45429690142, item 1),
+# where 200 kept only its last 7 seconds, all after the connection ended: enough for a window.
+SERVICE_LOG_LINES = 3000
 # Read over a whole pass, that log didn't finish in SERVICE_LOG_TIMEOUT, twice in two failed
 # passes (`ios` 45392426021 and 45406524807). So it is read only where the pass's own log says a
 # service's connection ended ("The connection to service with pid N … was invalidated", as
