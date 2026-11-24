@@ -103,8 +103,10 @@ public struct TadayoAPIClient: AccountService {
         }
     }
 
-    /// A status the contract doesn't list for the operation: a success the build can't read,
-    /// whose command the server may have carried out, or a refusal.
+    /// A status read without its contract body: one the contract doesn't list for the operation,
+    /// or one it lists whose body or header this build couldn't read (`failure(_:)`). A 5xx is a
+    /// failing server, `unavailable`; a 2xx is a success the build can't read, whose command the
+    /// server may have carried out, `unreadable`; anything else is a refusal.
     static func failure(status: Int) -> APIFailure {
         switch status {
         case 500...: .unavailable
@@ -118,8 +120,11 @@ public struct TadayoAPIClient: AccountService {
     /// Such an answer isn't trusted, but its status still says what the server did: a 401 ends
     /// the session and a 429 is a busy server, as every operation documents them; any other
     /// status is read as `failure(status:)` reads one the contract doesn't list. So a refusal
-    /// whose body this build can't read is still `refused`, and only a success, whose command the
-    /// server may have carried out, is `unreadable` (audit A8).
+    /// whose body this build can't read is still `refused`, and of the answers that came, only a
+    /// success, whose command the server may have carried out, is `unreadable` (audit A8). A
+    /// throw with no answer that is neither a session's, a `URLError` nor a cancellation (the
+    /// transport's `noResponse`, say) is `unreadable` too: whether the request reached the server
+    /// can't be told, so a command keeps its key, as it does for no answer (T19).
     static func failure(_ error: any Error) -> APIFailure {
         let answered = error as? ClientError
         switch answered?.underlyingError ?? error {

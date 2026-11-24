@@ -65,7 +65,9 @@ public enum APIFailure: Error, Sendable, Equatable {
     case refused
     /// An answer this build couldn't read: a success the contract doesn't list, a body or header
     /// that doesn't match it (a value the contract added after this build, among them), or one
-    /// that doesn't answer what was asked. The server may have carried a command out, so, as for
+    /// that doesn't answer what was asked; or a call that ended with no answer the network's
+    /// failure doesn't cover (the transport's `noResponse`, say), where whether the request
+    /// reached the server can't be told. The server may have carried a command out, so, as for
     /// `unavailable`, its retry sends the same key (T19; audit A8).
     case unreadable
 }
