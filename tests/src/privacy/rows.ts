@@ -28,8 +28,10 @@
 //   builds each branch that reads one (bindings.ts, its header, lists them);
 // - an object in the world for each binding still marked `missing`, the last being `comment_id`, which comes with
 //   B6's first comment route (bindings.ts). Since the outside audit's A4, a built route may neither take a `missing`
-//   binding nor act on its objects, as the thread routes act on comments (bindings.ts `bindingProblems`, ACTS_ON);
-//   every value a cell binds is a row of its table (matrix.test.ts `checkBoundRows`); the routes the app builds are
+//   binding nor act on its objects, as the thread routes and the day's page act on comments (bindings.ts
+//   `bindingProblems`, ACTS_ON), and Home, whose page can show a reply, is held to its refusal of a page with a
+//   comment (REFUSES_COMMENTS) until the slice that lifts it puts one in the world; every value a cell binds is a
+//   row of its table in the cell's club (matrix.test.ts `checkBoundRows`); the routes the app builds are
 //   exactly the rows that aren't NONE (`rowProblems`, against the API's BUILT_OPERATIONS), so a built route can't
 //   keep the skeleton's row; and `drop_id` names Ben's photo and Ben's video link, each in a request of its own,
 //   the video put in every state the photo is;
@@ -52,7 +54,7 @@
 //   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS, ownTextKey);
 // - for the uploads' three routes (spike S1's server part, done for a drop's photo: createUpload, getUpload and
 //   completeUpload; docs/plans/api-b2-spike-uploads.md): in every cell, createUpload with no body (the contract
-//   refuses it), and getUpload and completeUpload of the photo's upload Ben started under the slot he gave back
+//   refuses it), and getUpload and completeUpload of the photo's upload Ben started under the slot Ben gave back
 //   (bindings.ts), pending with no bytes in Storage and living until the Saturday's evening: Ben's alone, so Ben
 //   reads it and gets MEDIA_NOT_READY completing it while it lives, and everyone else, and Ben once it lapsed, the
 //   neutral NOT_FOUND. Then, in every phase, a table judged by upload.ts from the world's rows before each request
@@ -75,7 +77,7 @@
 //   uploaded. Then, in every phase, a table judged by drop.ts from the world's rows before each request and held to
 //   its answer in the rows after it: each drop the viewer added in an earlier phase, again under its key (the first
 //   answer, byte for byte but for the day's star, named as the world names them then, the day revealed or closed:
-//   T19, FQ139); Ben's upload still pending under the slot he gave
+//   T19, FQ139); Ben's upload still pending under the slot Ben gave
 //   back, the world's drop's photo, the viewer's two avatars, another club's upload, an upload nobody has and a
 //   link; each upload the viewer made in an earlier phase and the one left pending in this one; and, in the phase
 //   the worker made the viewer's upload ready, that upload under its slot with a caption and the slot's id, added
@@ -141,9 +143,9 @@
 //   back, whose row still says live though it lapsed before any phase, given back by every role (only Cleo's
 //   first interval gets it back, expired; Cleo rejoined in a new interval and everyone else get the neutral
 //   NOT_FOUND, with nothing settled; T9, T14); the slot held in the phase before given back after it lapsed
-//   at the reveal (expired), twice; two photos, three links and three photos, so each role meets
+//   at the reveal (expired), twice; three photos, three links and two photos, so each role meets
 //   its own limits (the star's six and two, anyone else's three, two and one; addendum 2, T17), QUOTA_FULL
-//   first; the first one's retry under its key (the same bytes) and another body under it
+//   first, and one test pins which limits each role met; the first one's retry under its key (the same bytes) and another body under it
 //   (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back while live. Each role's test counts
 //   the slots it held, gave back and saw lapse, and one test names the five roles that held any, with the
 //   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"), as one counts

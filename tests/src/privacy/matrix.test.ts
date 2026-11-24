@@ -232,6 +232,8 @@ const DEVICES = new Map<
 >();
 /** By role: the answers in which Cleo's lapsed slot came back as the viewer's own (the role's test fills it). */
 const CLEOS_SLOT = new Map<string, number>();
+/** By role: the reservations' table's requests refused at each limit of the allowance (the role's test fills it). */
+const LIMITS = new Map<string, { QUOTA_FULL: number; PHOTO_LIMIT: number; EXTERNAL_LIMIT: number }>();
 /**
  * By role: what the uploads' table made, retried without a URL once the bytes were in, moved to preparing,
  * refused as closed and found again (the role's test fills it).
@@ -247,6 +249,7 @@ const UPLOADS = new Map<
     later: number;
     replayed: number;
     signedLater: number;
+    linkSlots: number;
   }
 >();
 /**
@@ -399,12 +402,43 @@ async function putInState(
 }
 
 /**
- * Throws unless every value the cell binds is a row of its binding's table in the cell's world (bindings.ts TABLES):
- * each binding not marked "missing", and each a built route names or acts on (`boundNames`), whose "missing" one is a
- * fresh id that names nothing. And unless `drop_id` names Ben's photo and then Ben's video link. A binding that names
- * a fresh id, or an object of another kind, passes `bindingProblems` but would be asked only for the neutral
- * not-found (the outside audit's A4).
+ * Throws unless every value the cell binds is a row of its binding's table whose club is the cell's (bindings.ts
+ * TABLES): each binding not marked "missing", and each a built route names or acts on (`boundNames`), whose "missing"
+ * one is a fresh id that names nothing. And unless `drop_id` names Ben's photo and then Ben's video link. A binding
+ * that names a fresh id, an object of another kind or another club's object passes `bindingProblems` but would be
+ * asked only for the neutral not-found (the outside audit's A4).
  */
+/** The club of each row of `where.table` whose `where.column` is `value`, by the way TABLES gives (none: no row). */
+async function clubsOf(
+  tx: WorldTx,
+  where: (typeof TABLES)[string],
+  value: string,
+): Promise<readonly { club: string | null }[]> {
+  switch (where.club) {
+    case "id":
+    case "club_id":
+      return tx<{ club: string | null }[]>`
+        SELECT ${tx(where.club)} AS club FROM ${tx(where.table)} WHERE ${tx(where.column)} = ${value}`;
+    case "app.drops":
+      return tx<{ club: string | null }[]>`
+        SELECT d.club_id AS club FROM app.comments c LEFT JOIN app.drops d ON d.id = c.drop_id WHERE c.id = ${value}`;
+    case "app.occurrences":
+      return tx<{ club: string | null }[]>`
+        SELECT o.club_id AS club FROM app.reservations r LEFT JOIN app.occurrences o ON o.id = r.occurrence_id
+         WHERE r.id = ${value}`;
+    case "app.reservations":
+      return tx<{ club: string | null }[]>`
+        SELECT o.club_id AS club FROM app.uploads u
+          LEFT JOIN app.reservations r ON r.id = u.reservation_id
+          LEFT JOIN app.occurrences o ON o.id = r.occurrence_id
+         WHERE u.id = ${value}`;
+    case "app.candidates":
+      return tx<{ club: string | null }[]>`
+        SELECT c.club_id AS club FROM app.invitations i LEFT JOIN app.candidates c ON c.id = i.candidate_id
+         WHERE i.id = ${value}`;
+  }
+}
+
 async function checkBoundRows(tx: WorldTx, targets: Targets): Promise<void> {
   const names = new Set([
     ...Object.keys(BINDINGS).filter((name) => BINDINGS[name] !== "missing"),
@@ -415,9 +449,10 @@ async function checkBoundRows(tx: WorldTx, targets: Targets): Promise<void> {
     const where = TABLES[name];
     if (where === undefined) throw new Error(`the binding ${name} has no table (bindings.ts TABLES)`);
     for (const value of bindAll(name, targets)) {
-      const [found] = await tx<{ n: number }[]>`
-        SELECT count(*)::int AS n FROM ${tx(where.table)} WHERE ${tx(where.column)} = ${value}`;
-      if (found?.n !== 1) problems.push(`${name}'s value ${value} is no row of ${where.table}`);
+      const found = await clubsOf(tx, where, value);
+      if (found.length !== 1) problems.push(`${name}'s value ${value} is no row of ${where.table}`);
+      else if (found[0]?.club !== targets.club)
+        problems.push(`${name}'s value ${value} is a row of ${where.table} in another club than the cell's`);
     }
   }
   const drops = bindAll("drop_id", targets);
@@ -436,7 +471,7 @@ async function checkBoundRows(tx: WorldTx, targets: Targets): Promise<void> {
 }
 
 /**
- * Ana's next Saturday, 14 November, in the cell's world, collecting since the world's generation as hers on the
+ * Ana's next Saturday, 14 November, in the cell's world, collecting since the world's generation as Ana's on the
  * 7th is: so after the 7th closes Home waits for it, with the 7th among its recent days (getHome's row,
  * home.ts), rather than having no day to open.
  */
@@ -1010,12 +1045,16 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // back released (still live), expired (lapsed at the reveal with no drop) and consumed (by the drop the
       // commit's table added under it). Asserted in the test after the roles.
       const slots = { held: 0, released: 0, expired: 0, consumed: 0 };
+      // The reservations' table's requests the judge refused at a limit of the allowance, by its code. Asserted in
+      // the test after the roles.
+      const limits = { QUOTA_FULL: 0, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 0 };
       // The answers in which Cleo's lapsed slot came back as the viewer's own. Asserted in the test after the roles.
       let cleosSlot = 0;
       // What the uploads' table did for this role: the uploads it made, those its completion moved to preparing,
       // the refusals that the day had revealed (OCCURRENCE_CLOSED), the reads in a later phase that found an
-      // upload made in an earlier one, the retries in a later phase that got the first answer, and those of them
-      // that came with a new signed upload. Asserted in the test after the roles.
+      // upload made in an earlier one, the retries in a later phase that got the first answer, those of them
+      // that came with a new signed upload, and the phases in which it asked for an upload under a link's slot
+      // the reservations' table held. Asserted in the test after the roles.
       const uploads = {
         made: 0,
         unsigned: 0,
@@ -1025,6 +1064,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         later: 0,
         replayed: 0,
         signedLater: 0,
+        linkSlots: 0,
       };
       // What the commit's table did for this role: the drops it added, the retries under a key that got the first
       // answer (in the phase it was added and every later one), the other bodies under that key refused as a
@@ -2172,7 +2212,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           // The reservations' table (reservation.ts), in every phase, before the leave ends the club for the
           // viewer. First, Cleo's slot that lapsed before any phase (cleosLapsedSlot), whoever the viewer is;
           // then the slot the viewer held in the phase before is given back after it lapsed at the reveal, and
-          // again (T18: the same state). Then, on the cell's day, two photos, three links and three
+          // again (T18: the same state). Then, on the cell's day, three photos, three links and two
           // photos, each judged from the world's rows before it, the rows after it held to its answer (T3, T17,
           // T18); the first one's retry under its key, the same bytes when it held a slot (T19); another body
           // under that key, which conflicts when it held one and is judged afresh when it didn't, since a
@@ -2218,6 +2258,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                   ]
                 : pinnedProblems(answer, reserveGate);
             tellSlot("createReservation", sent, answer, problems, note);
+            if (reserveGate === undefined && outcome.kind === "refused" && outcome.code in limits)
+              limits[outcome.code as keyof typeof limits] += 1;
             if (reserveGate !== undefined || outcome.kind !== "held") return { answer, slot: undefined };
             slots.held += 1;
             const body = JSON.parse(answer.body) as { id?: unknown };
@@ -2467,7 +2509,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             [elsewhere.reservation, "another club's slot"],
             [freshId(), "a slot nobody has"],
           ] as const) {
-            if (slot !== undefined) await uploadStep(slot, randomUUID(), note);
+            if (slot === undefined) continue;
+            await uploadStep(slot, randomUUID(), note);
+            if (slot === linkSlot) uploads.linkSlots += 1;
           }
           const photoSlot = first.slot;
           // The upload made under that slot in this phase, once the worker made it ready: the commit's table adds it.
@@ -2592,7 +2636,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           // earlier phase, asked for again under its key: the first answer, byte for byte but for the day's star, named
           // as the world names them now (FQ139), while the viewer may still add to the day, the day revealed or closed
           // (T19), and the neutral not-found once they may not.
-          // Then bodies that name nothing the viewer may add: Ben's upload still pending under the slot he gave
+          // Then bodies that name nothing the viewer may add: Ben's upload still pending under the slot Ben gave
           // back, the world's drop's photo (Ben's, already in that drop), the viewer's two avatars, another club's
           // upload, an upload nobody has and a link (no source can be named yet); then each upload the viewer made
           // in an earlier phase, and the one left pending in this one, under a new key. Each is judged from the
@@ -2692,7 +2736,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             ...(reservation === undefined ? {} : { reservation }),
           });
           for (const [ask, note] of [
-            [photoAsk(cell.targets.upload), "Ben's upload, pending under the slot he gave back"],
+            [photoAsk(cell.targets.upload), "Ben's upload, pending under the slot Ben gave back"],
             [photoAsk(cell.photo), "the world's drop's photo, Ben's, already in that drop"],
             [photoAsk(cell.ready.id), "the viewer's ready avatar"],
             [photoAsk(cell.pending), "the viewer's pending avatar"],
@@ -2916,6 +2960,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       console.log(`${role.name}, the leave: ${JSON.stringify(left)}`);
       SLOTS.set(role.name, slots);
       CLEOS_SLOT.set(role.name, cleosSlot);
+      LIMITS.set(role.name, limits);
       console.log(`${role.name}, the reservations' table: ${JSON.stringify(slots)}`);
       UPLOADS.set(role.name, uploads);
       console.log(`${role.name}, the uploads' table: ${JSON.stringify(uploads)}`);
@@ -2978,7 +3023,7 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
     // day). The author has a photo and a link in the day (neither when both were withdrawn), the member in
     // the audience a link, and the star and the two who joined afresh nothing; so the table holds the author
     // one (a photo, which fills the friend's three; three when both were withdrawn: two photos and a link),
-    // the star six (two photos, two links, then photos to six), the member in the audience two photos, and
+    // the star six (three photos, two links, then a photo to six), the member in the audience two photos, and
     // each of the two who joined three (two photos and a link). Every slot but the first is given back live. The first holds the upload the commit's table adds
     // in the same phase, so it is consumed by that drop and given back after the reveal as consumed, naming it
     // (T20), in each of the four states; until the commit was built it lapsed at the reveal and came back
@@ -2996,6 +3041,28 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
         ([, table]) => table.held === 0 && (table.released > 0 || table.expired > 0 || table.consumed > 0),
       ),
     ).toEqual([]);
+  });
+
+  it("refused each role at the limits its allowance reaches: a friend's photos, the star's links, and the whole", () => {
+    // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
+    // Counted by hand from the world (../matrix.ts) and the table's order (three photos, three links, two photos),
+    // apart from the judge, in the four states whose day takes slots; QUOTA_FULL comes first where several limits
+    // are met. The author, with a photo and a link in the day, holds a photo and is refused the other seven as the
+    // friend's three are full, in the three states that keep both drops; once both were withdrawn, two photos,
+    // the third refused at the friend's two (PHOTO_LIMIT), a link, then four refused as full. The star holds three
+    // photos and two links, is refused the third link at the star's two (EXTERNAL_LIMIT), holds a photo to six and
+    // is refused the last as full. The member in the audience, with a link in the day, holds two photos and is
+    // refused the other six as full. Each of the two who joined afresh holds two photos, is refused the third at
+    // the friend's two, holds a link and is refused the other four as full. Nobody else is asked to hold a slot
+    // while the day collects (T9, T17, addendum 2).
+    expect(LIMITS.size).toBe(ROLES.length);
+    expect([...LIMITS].filter(([, met]) => Object.values(met).some((n) => n > 0))).toEqual([
+      ["author", { QUOTA_FULL: 3 * 7 + 4, PHOTO_LIMIT: 1, EXTERNAL_LIMIT: 0 }],
+      ["star", { QUOTA_FULL: 4, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 4 }],
+      ["member in the audience", { QUOTA_FULL: 4 * 6, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 0 }],
+      ["member who joined after the commit (T8)", { QUOTA_FULL: 4 * 4, PHOTO_LIMIT: 4, EXTERNAL_LIMIT: 0 }],
+      ["rejoined member, a new interval (T8)", { QUOTA_FULL: 4 * 4, PHOTO_LIMIT: 4, EXTERNAL_LIMIT: 0 }],
+    ]);
   });
 
   it("gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it", () => {
@@ -3079,7 +3146,10 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
     // and Cleo under Cleo's lapsed slot in the same three phases, as the member in the audience and once the
     // author has blocked Cleo and left by the block (the slot is Cleo's first interval's: the reservations'
     // table, above). Another member's live slot is never the viewer's (othersLiveSlot). Nobody else is refused
-    // for it, and nobody else makes one (T9, T14).
+    // for it, and nobody else makes one (T9, T14). A link's slot the reservations' table held, live, is asked for
+    // an upload once in each state that holds one (the neutral not-found: upload.ts): the star's and each of the
+    // two who joined afresh in all four, the author's only once both drops were withdrawn, and never the member in
+    // the audience's, who holds only photos (the reservations' table ran, above).
     expect(UPLOADS.size).toBe(ROLES.length);
     const one = {
       made: 4 + 1,
@@ -3100,14 +3170,24 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
       signedLater: 2 * 4,
     };
     expect([...UPLOADS].filter(([, table]) => Object.values(table).some((n) => n > 0))).toEqual([
-      ["author", { ...one, closed: 4 + 12 }],
-      ["star", { ...two, closed: 4 }],
-      ["member in the audience", { ...two, closed: 4 + 12 }],
-      ["member who joined after the commit (T8)", { ...two, closed: 4 }],
-      ["rejoined member, a new interval (T8)", { ...two, closed: 4 }],
+      ["author", { ...one, closed: 4 + 12, linkSlots: 1 }],
+      ["star", { ...two, closed: 4, linkSlots: 4 }],
+      ["member in the audience", { ...two, closed: 4 + 12, linkSlots: 0 }],
+      ["member who joined after the commit (T8)", { ...two, closed: 4, linkSlots: 4 }],
+      ["rejoined member, a new interval (T8)", { ...two, closed: 4, linkSlots: 4 }],
       [
         "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
-        { made: 0, unsigned: 0, preparing: 0, ready: 0, closed: 12, later: 0, replayed: 0, signedLater: 0 },
+        {
+          made: 0,
+          unsigned: 0,
+          preparing: 0,
+          ready: 0,
+          closed: 12,
+          later: 0,
+          replayed: 0,
+          signedLater: 0,
+          linkSlots: 0,
+        },
       ],
     ]);
   });
@@ -3125,7 +3205,7 @@ describe("the commit's table ran (tests/src/privacy/drop.ts)", () => {
     // those roles has another member with a session: Ana, or Ben for the star). While collecting, the upload the
     // uploads' table left pending is MEDIA_NOT_READY wherever it was made (the author only once the world's drop
     // was withdrawn; the others in all four states), and so, for the author alone, is Ben's own upload still
-    // pending under the slot he gave back, in all four. The world's drop's photo is the author's too: a
+    // pending under the slot Ben gave back, in all four. The world's drop's photo is the author's too: a
     // duplicate of that drop while it is active or held, and an upload another drop used, the neutral
     // not-found, once it was withdrawn or removed. From the reveal on, every body the table sends to someone who
     // may still add to the day is OCCURRENCE_CLOSED, whatever it names (T3, T4): the seven it sends in every

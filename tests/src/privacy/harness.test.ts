@@ -6,10 +6,21 @@
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { describe, expect, it } from "vitest";
 import { BUILT_OPERATIONS } from "@tadayo/api";
-import { ACTS_ON, BINDINGS, bindingProblems, boundNames, freshId, TABLES, type Targets } from "./bindings.ts";
+import { readFileSync } from "node:fs";
+import {
+  ACTS_ON,
+  BINDINGS,
+  bindingProblems,
+  boundNames,
+  freshId,
+  REFUSES_COMMENTS,
+  TABLES,
+  type Targets,
+} from "./bindings.ts";
 import {
   answerOf,
   cellStep,
+  elsewhereOf,
   guessCount,
   guessStep,
   malformedProblems,
@@ -30,7 +41,7 @@ import {
   type Caller,
   type Spec,
 } from "./harness.ts";
-import { contractOperations, readDocument, type ContractOperation } from "./operations.ts";
+import { contractOperations, isObject, readDocument, type ContractOperation, type Json } from "./operations.ts";
 import { JUDGED, NONE, ROWS, rowProblems } from "./rows.ts";
 import { transportProblem } from "./scanner.ts";
 
@@ -192,14 +203,64 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
     expect(
       bindingProblems(operations, new Set([...built, "listComments"]), { ...BINDINGS, comment_id: () => "cmt_here" }),
     ).toEqual([]);
-    // Every operation about comments takes comment_id or is named here, and so is createReport, whose target may be one.
-    const aboutComments = operations
-      .filter((found) => /comment/i.test(found.id) || found.id === "createReport")
-      .filter((found) => !found.parameters.some((parameter) => parameter.name === "comment_id"))
-      .map((found) => found.id)
+  });
+
+  it("has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one", () => {
+    // Walked from the contract: a request body or an answer that reaches a schema of a comment or a reply, or a
+    // property naming one. The review's round 2: Home's and the day's drops carry a reply's preview.
+    const document = readDocument();
+    const reaches = (node: Json, seen: Set<string>): boolean => {
+      if (Array.isArray(node)) return node.some((one) => reaches(one, seen));
+      if (!isObject(node)) return false;
+      const ref = node["$ref"];
+      if (typeof ref === "string") {
+        const name = ref.split("/").at(-1) ?? "";
+        if (/^(Comment|Reply)/.test(name)) return true;
+        if (seen.has(ref)) return false;
+        seen.add(ref);
+        let target: Json = document;
+        for (const part of ref.replace(/^#\//, "").split("/"))
+          target = isObject(target) ? (target[part] ?? null) : null;
+        return reaches(target, seen);
+      }
+      const properties = node["properties"];
+      if (isObject(properties) && ("comment_id" in properties || "reply_to_id" in properties)) return true;
+      return Object.values(node).some((value) => reaches(value, seen));
+    };
+    const paths = document["paths"];
+    if (!isObject(paths)) throw new Error("the contract has no paths");
+    const canName = Object.values(paths)
+      .flatMap((item) => (isObject(item) ? Object.values(item) : []))
+      .filter(isObject)
+      .filter(
+        (found) => reaches(found["requestBody"] ?? null, new Set()) || reaches(found["responses"] ?? null, new Set()),
+      )
+      .map((found) => {
+        const id = found["operationId"];
+        if (typeof id !== "string") throw new Error("an operation of the contract has no operationId");
+        return id;
+      })
       .sort();
-    expect(Object.keys(ACTS_ON).sort()).toEqual(aboutComments);
-    expect(aboutComments).toEqual(["createComment", "createReport", "listComments"]);
+    expect(canName).toEqual(["createComment", "getHome", "getOccurrence", "listComments", "updateComment"]);
+    const takes = (id: string) =>
+      operations.find((found) => found.id === id)?.parameters.some((parameter) => parameter.name === "comment_id");
+    expect(
+      canName.filter((id) => !takes(id) && !ACTS_ON[id]?.includes("comment_id") && REFUSES_COMMENTS[id] === undefined),
+    ).toEqual([]);
+    // createReport too, whose target may be a comment though its body names it by `id`.
+    expect(Object.keys(ACTS_ON).sort()).toEqual(["createComment", "createReport", "getOccurrence", "listComments"]);
+    for (const [id, names] of Object.entries(ACTS_ON)) {
+      expect(operations.some((found) => found.id === id)).toBe(true);
+      for (const name of names) expect(BINDINGS[name]).toBeDefined();
+    }
+    // Home is held only while its handler refuses a page with a comment, word for word: the slice that lifts the
+    // refusal fails this, moves getHome into ACTS_ON and puts a comment in the world first.
+    expect(Object.keys(REFUSES_COMMENTS)).toEqual(["getHome"]);
+    for (const [id, { file, refusal }] of Object.entries(REFUSES_COMMENTS)) {
+      expect(canName).toContain(id);
+      expect(built.has(id)).toBe(true);
+      expect(readFileSync(new URL(`../../../${file}`, import.meta.url), "utf8")).toContain(`"${refusal}"`);
+    }
   });
 
   it("names a table for every binding, and the bindings each built route names or acts on", () => {
@@ -545,6 +606,10 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     expect((await guessStep(leaky, photo, elsewhere)).problems).toEqual([]);
     expect((await guessStep(leaky, video, elsewhere)).problems).toContainEqual(
       expect.stringMatching(/^getEmbed, drop_id guessed: status 200$/),
+    );
+    // A request holding a value another club's binding hasn't is a broken harness, never the first value instead.
+    expect(() => elsewhereOf({ ...video, which: { drop_id: 2 } }, "drop_id", elsewhere)).toThrow(
+      "another club has no value 3 for drop_id: its binding gives 2",
     );
     await app.close();
     await leaky.close();

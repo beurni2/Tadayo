@@ -311,7 +311,13 @@ export function specsFor(operation: ContractOperation, targets: Targets, authori
  */
 export function elsewhereOf(spec: Spec, name: string, elsewhere: Targets): string {
   const values = bindAll(name, elsewhere);
-  return values[spec.which?.[name] ?? 0] ?? values[0];
+  const at = spec.which?.[name] ?? 0;
+  const value = values[at];
+  if (value === undefined)
+    throw new Error(
+      `another club has no value ${String(at + 1)} for ${name}: its binding gives ${String(values.length)}`,
+    );
+  return value;
 }
 
 /** `spec` written out: the path's values as they are, the query encoded. */

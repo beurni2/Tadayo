@@ -34,13 +34,18 @@ expects answers the neutral 404 would contradict, already failing in its cells, 
 0.3. **"missing".** A binding marked `"missing"` gives a fresh id, so a request names nothing and any handler, leaking
 or not, answers it the neutral not-found. Refused for a built operation: every Id parameter a built route takes must
 name an object of the world. A route can act on comments without taking `comment_id`: `listComments` and
-`createComment` take a drop, `createReport` a body whose target may be a comment. A thread asked only while it's
-empty passes a handler that shows a removed comment or a blocked author's message, so `bindings.ts` `ACTS_ON` names
-the objects those three act on, and the refusal covers them too (review round 1, P2 and E1). `comment_id` is the one
-still missing (0.4); the refusal makes the slice that builds the first comment route, whichever it is, put the comment
-in the world, and guards the next Id parameter the contract adds. And a binding that's a function but names nothing,
-or an object of another kind, is caught in every cell: each value a cell binds must be a row of its binding's table
-(`bindings.ts` `TABLES`, `matrix.test.ts` `checkBoundRows`; round 1, P4).
+`createComment` take a drop, `createReport` a body whose target may be a comment, and `getOccurrence` answers a day
+whose drops carry a reply's preview. A thread or a day asked only while it has no comment passes a handler that shows
+a removed comment or a blocked author's message, so `bindings.ts` `ACTS_ON` names the objects those four act on, and
+the refusal covers them too (review round 1, P2 and E1; round 2, F2). Home's page carries the same preview and is
+built, but its handler refuses a page with a comment (0.4): `REFUSES_COMMENTS` holds it to that refusal word for word,
+so the slice that lifts it moves Home into `ACTS_ON` and puts a comment in the world first (round 2, F2). The harness
+tests walk the contract: every operation whose request or answer can name a comment takes `comment_id`, is in
+`ACTS_ON`, or is in `REFUSES_COMMENTS`. `comment_id` is the one still missing (0.4); the refusal makes the slice that
+builds any of those routes put the comment in the world, and guards the next Id parameter the contract adds. And a
+binding that's a function but names nothing, an object of another kind or another club's object is caught in every
+cell: each value a cell binds must be a row of its binding's table whose club is the cell's (`bindings.ts` `TABLES`,
+`matrix.test.ts` `checkBoundRows`; round 1, P4; round 2, F3).
 
 0.4. **The comment: not in this slice.** Tried first: Ana's comment on Cleo's video link, written a minute after the
 reveal (the comments' guard, `db/migrations/0007_after_the_reveal.sql`, refuses one written before it), in every
@@ -49,8 +54,9 @@ Home refuses its open page while a drop of the open day has a reaction, a commen
 B6's fields show (`packages/domain/src/clubs/home.ts`: "a page that left out one would be false"). A comment on
 another day would need a revealed day of its own in every world, which changes what Home, the club and the schedule
 answer, for no route that reads comments yet. So the comment comes with B6's first comment route, as Home's fields
-for it do; 0.3's refusal means none of the six comment routes (the three that take `comment_id` and the three in
-`ACTS_ON`) can be built without it. A departure from the audit's literal fix, raised in the PR; the audit's
+for it do; 0.3's refusal means no comment route (the three that take `comment_id`, and the three in `ACTS_ON` that
+list, write and report comments), nor `getOccurrence`, can be built without it, and Home's refusal can't be lifted
+without it. A departure from the audit's literal fix, raised in the PR; the audit's
 `deleteComment` is still caught twice, by the row check and by the binding check, and a thread route built before the
 comment by the binding check (section 3, B9).
 
@@ -100,16 +106,21 @@ purpose. The matrix is where a built route meets its row.
 3. `tests/src/privacy/bindings.ts`: `Targets.video`; `drop_id` bound to both drops; `bindAll`, every value of a
    binding; `bindingProblems(operations, built, bindings, actsOn)`, a built operation that takes an Id parameter whose
    binding is `"missing"` or acts on its objects (`ACTS_ON`); `TABLES`, each binding's table; `boundNames`, the
-   bindings the built routes name or act on.
+   bindings the built routes name or act on; `REFUSES_COMMENTS`, Home held to its refusal, and each table's way to its
+   club (round 2).
 4. `tests/src/privacy/harness.ts` `specsFor`: one request for each value of each Id parameter, path and query, each
    saying which value it holds (`Spec.which`); the guessed-id and signed-out steps guess another club's object of the
-   same place (`elsewhereOf`).
+   same place (`elsewhereOf`, which throws for a value another club's binding hasn't).
 5. `tests/src/privacy/matrix.test.ts`: Ben's video link in each world (`twoContributors`), put in every state with the
-   photo (`putInState`); every bound value checked as a row of its table (`checkBoundRows`) in every world; the row
+   photo (`putInState`); every bound value checked as a row of its table in the cell's club (`checkBoundRows`) in every world; the limits each
+   role met in the reservations' table pinned (`LIMITS`), and the uploads' table's requests under a link's slot
+   (`linkSlots`; round 2); the row
    check with the built set and the binding check; `REQUESTS_PER_WORLD` 88, for the requests the drop's second value
    adds. `tests/src/matrix.ts` `STATES`: `endsTheDrop` on the three states that change the drop's own row.
 6. `services/api/src/app.test.ts`, `session.test.ts`: the exported set.
 7. `rows.ts`'s header: the tie to the built set, the refusal and the video.
+8. `tests/src/privacy/reservation.ts` `RESERVE_TABLE`: three photos, three links, two photos (round 2, F1), and
+   `reservation.test.ts`'s pin of it.
 
 ## 2. Tests first
 
@@ -128,11 +139,18 @@ the two lists with the unbuilt pin moved to 37, pass `app.test.ts`, `session.tes
 matrix (each answering the neutral not-found for an id of the wrong shape, as a built handler does). On this branch the same handlers are B1 to B4 (section 3).
 
 2.4. Round 1 (`harness.test.ts`): a built `listComments`, `createComment` or `createReport` is refused while
-`comment_id` is missing, and every operation about comments takes `comment_id` or is in `ACTS_ON`; `TABLES` has every
+`comment_id` is missing (its rule for which operations are about comments, by their id, replaced in round 2 by the
+contract's walk, 2.5); `TABLES` has every
 binding; `boundNames` for the built routes; a required and an optional Id query parameter each sent once for each
 value, with `which`; the video's request guesses another club's video and the photo's another club's photo, in the
 guessed-id and signed-out steps, and a video route that leaks another club's video is caught on the video's request
 only; a built id that isn't an operation is named.
+
+2.5. Round 2: `harness.test.ts` walks the contract for every operation whose request or answer can name a comment
+(`createComment`, `getHome`, `getOccurrence`, `listComments`, `updateComment`) and holds each to `comment_id`, `ACTS_ON`
+or `REFUSES_COMMENTS`, and Home's refusal to its words in `packages/domain/src/clubs/home.ts`; `elsewhereOf` throws for a
+value another club hasn't; the matrix pins the limits each role met in the reservations' table and the uploads'
+table's requests under a link's slot.
 
 ## 3. Breakages
 
@@ -165,6 +183,21 @@ Round 1 adds, at the PR's last head:
 - B15: `bindingProblems` without `ACTS_ON` (harness.test.ts's thread routes refused, P2 and E1);
 - B16: `TABLES` without `star` (harness.test.ts's table for every binding, P4).
 
+Round 2 adds, at the PR's last head:
+- B17: `RESERVE_TABLE` back to two photos, three links, three photos: the whole matrix's pin of the limits each role
+  met (F1);
+- B18: the uploads' table's request under a link's slot left out: the whole matrix's uploads pin (F1);
+- B19: `ACTS_ON` without `getOccurrence`: harness.test.ts's walk of the contract (F2);
+- B20: `REFUSES_COMMENTS` without `getHome`: the same (F2);
+- B21: Home's refusal of a page with a comment lifted in `packages/domain/src/clubs/home.ts`: the same, which holds
+  `REFUSES_COMMENTS` to its words (F2);
+- B22: a role cell's `upload` taken from another club's world: the matrix's cells (`checkBoundRows`'s club, F3);
+- B23: `elsewhereOf` gives the first value for one another club lacks: harness.test.ts's guess test (nit).
+
+Since round 1's fixes, a breakage that `checkBoundRows` catches in the other club's world fails the matrix file in its
+setup, before any test runs: the script registers that error's words for B1, B2, B9, B10 and B11, and B1c, B2c and
+B9c undo `checkBoundRows`'s throw to show the row test still catches B1, B2 and B9.
+
 ## 4. After the merge
 
 Nothing on `dev`: the change is in the API's test of its routes and the matrix; `app.ts`'s routes are the same.
@@ -176,7 +209,8 @@ commit:
 - P1 (high): the video never met the drop-ending states, and its author was the viewer in six roles. Fixed: the video
   is Ben's and every state is made on it (0.5; B8). The reservations' table's hand count for the author follows the
   world: with a photo and a link already in the day, the author holds one slot where the day takes them and three once
-  both are withdrawn, 6 held and 2 given back, from 9 and 5.
+  both are withdrawn, 6 held and 2 given back, from 9 and 5. (Round 2 found this cost the matrix its only
+  `PHOTO_LIMIT`: section 6.)
 - P2, E1 (medium, high): the thread routes could be built with no comment in the world, and seven records said they
   couldn't. Fixed: `ACTS_ON` (0.3; B9, B15); the records now say what holds.
 - P3 (medium): ids in bodies are outside the checks. Answered: outside A4, listed with the slice that binds each (0.6).
@@ -187,3 +221,22 @@ commit:
   breakages; the order of the B items (B1, B7, B8 and B6, in block 1.2 and PROGRESS alike); T59's "no request" is "no
   Id parameter"; table 4.1's "every suite that could see them"; the video's "no state ends it". Each corrected in the
   second commit's records, the log entry of the first head left as written (append-only).
+
+## 6. Review round 2
+
+One fresh reviewer of the second commit (`7b39998`) at full depth. Each finding fixed in the third commit:
+- F1 (medium, T58): with Ben's link in the day, the author's three cells that met `PHOTO_LIMIT` met `QUOTA_FULL`, and
+  no other role met it in the first order, so no cell did; the second commit's entry said the author newly met the
+  allowance full, which every role that held a slot already did. Fixed: `RESERVE_TABLE` asks three photos, three links,
+  then two photos, which leaves every role's slots as they were; the matrix pins, per role, the requests refused at
+  each limit (`LIMITS`), and the uploads' table's requests under a link's slot (`linkSlots`), which the author now
+  meets only once both drops are withdrawn (B17, B18).
+- F2 (medium, latent): Home's and the day's answers carry a reply's preview, outside `ACTS_ON`. Fixed: `getOccurrence`
+  in `ACTS_ON`, Home in `REFUSES_COMMENTS`, the contract walked (0.3; B19 to B21).
+- F3 (low): a bound row of another club passed `checkBoundRows`. Fixed: `TABLES` gives each row's way to its club
+  (0.3; B22).
+- F4 (records): T59 said round 1's tests were caught by breakages not yet run, and that `putInState` runs in every
+  world. Both rewritten.
+- Nits: `ACTS_ON`'s names checked; `elsewhereOf` throws rather than giving the first value (B23).
+
+Also fixed: five inferred pronouns in the matrix's comments and one cell's note ("the slot he gave back", "as hers").
