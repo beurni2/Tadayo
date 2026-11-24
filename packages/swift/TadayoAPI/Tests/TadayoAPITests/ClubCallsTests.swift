@@ -590,6 +590,9 @@ import Testing
                 .unavailable
             ),
             (.accept, .json(410, #"{"code":"INVITATION_EXPIRED"}"#), .invitationExpired),
+            // A refusal whose body this build can't read is still a refusal (audit A8).
+            (.propose, error("SOMETHING_NEW"), .refused),
+            (.accept, .json(410, "not json"), .refused),
             (.accept, error("ROSTER_CHANGED"), .rosterChanged),
             (.accept, error("CLUB_FULL"), .clubFull),
             (

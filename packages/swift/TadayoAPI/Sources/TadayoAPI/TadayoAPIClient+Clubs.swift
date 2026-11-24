@@ -4,11 +4,13 @@ import TadayoCore
 
 /// Stage B1's club calls (docs/plans/ios-b1-clubs.md section 3). Each answer the contract
 /// documents becomes `TadayoCore`'s type or an `APIFailure`. An error answer it doesn't is
-/// refused: an undocumented error status, or an error code the operation doesn't document for
-/// that status (as `clubs()` and `update()` refuse one). A success it doesn't is unreadable, since
-/// the server may have carried the command out (audit A8): an undocumented 2xx, or content that
-/// breaks it (a value this build doesn't know, a date that isn't one, a link that isn't exactly an
-/// invitation link, an answer for another candidate or invitation).
+/// refused: an undocumented error status, an error code the operation doesn't document for that
+/// status (as `clubs()` and `update()` refuse one), or an error status whose body this build
+/// can't read (`TadayoAPIClient.failure(_:)`); a 401, a 429 and a 5xx keep their own meanings. A
+/// success it doesn't is unreadable, since the server may have carried the command out (audit
+/// A8): an undocumented 2xx, or content that breaks it (a value this build doesn't know, a date
+/// that isn't one, a link that isn't exactly an invitation link, an answer for another candidate
+/// or invitation).
 extension TadayoAPIClient: ClubService {
     public func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
         async throws(APIFailure) -> ClubDetail

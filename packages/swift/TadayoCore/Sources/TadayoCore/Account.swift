@@ -59,9 +59,9 @@ public enum APIFailure: Error, Sendable, Equatable {
     case invitationExpired
     /// The server is busy or failing (429, 5xx): try again later.
     case unavailable
-    /// A refusal: an answer the contract documents as one, or an error status it doesn't list,
-    /// that the caller has no case of its own for. Nothing was carried out, so a command's next
-    /// tap is a new action.
+    /// A refusal: an error status the caller has no case of its own for, whether the contract
+    /// documents it, doesn't list it, or sends a body this build can't read with it. Nothing was
+    /// carried out, so a command's next tap is a new action.
     case refused
     /// An answer this build couldn't read: a success the contract doesn't list, a body or header
     /// that doesn't match it (a value the contract added after this build, among them), or one

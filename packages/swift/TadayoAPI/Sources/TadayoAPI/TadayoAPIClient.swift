@@ -114,12 +114,15 @@ public struct TadayoAPIClient: AccountService {
     }
 
     /// A call that threw: no session, no answer, or an answer that doesn't match the contract (a
-    /// value it added after this build, or a missing or changed `Cache-Control`, among them),
-    /// which is unreadable rather than trusted. What the server did is unknown, so it isn't
-    /// `refused`, which would end a command's action.
+    /// value it added after this build, or a missing or changed `Cache-Control`, among them).
+    /// Such an answer isn't trusted, but its status still says what the server did: a 401 ends
+    /// the session and a 429 is a busy server, as every operation documents them; any other
+    /// status is read as `failure(status:)` reads one the contract doesn't list. So a refusal
+    /// whose body this build can't read is still `refused`, and only a success, whose command the
+    /// server may have carried out, is `unreadable` (audit A8).
     static func failure(_ error: any Error) -> APIFailure {
-        let cause = (error as? ClientError)?.underlyingError ?? error
-        switch cause {
+        let answered = error as? ClientError
+        switch answered?.underlyingError ?? error {
         case let session as SessionError:
             switch session {
             case .signedOut: return .signedOut
@@ -127,7 +130,13 @@ public struct TadayoAPIClient: AccountService {
             case .unavailable: return .unavailable
             }
         case is URLError, is CancellationError: return .network
-        default: return .unreadable
+        default:
+            switch answered?.response?.status.code {
+            case 401: return .signedOut
+            case 429: return .unavailable
+            case let status?: return failure(status: status)
+            case nil: return .unreadable
+            }
         }
     }
 }
