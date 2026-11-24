@@ -34,6 +34,18 @@ import ios_steps  # noqa: E402
 import toolchain  # noqa: E402
 
 HAS_MAGICK = bool(shutil.which("montage") and shutil.which("identify"))
+# Two reports in macOS's .ips form, a JSON header line and a JSON body, cut to the fields
+# Steps.crash_reports reads and one it leaves out (the threads).
+IPS_CRASH = (json.dumps({"app_name": "kbd", "timestamp": "2026-11-24 04:37:44.00 +0000",
+                         "bug_type": "309", "name": "kbd"}) + "\n"
+             + json.dumps({"procName": "kbd", "procPath": "/Library/Developer/CoreSimulator/kbd",
+                           "exception": {"type": "EXC_CRASH", "signal": "SIGKILL"},
+                           "termination": {"namespace": "JETSAM", "indicator": "Jettisoned"},
+                           "threads": [{"frames": [{"symbol": "main"}]}]}, indent=2))
+IPS_JETSAM = (json.dumps({"bug_type": "298", "timestamp": "2026-11-24 04:37:44.00 +0000"}) + "\n"
+              + json.dumps({"largestProcess": "Tadayo",
+                            "processes": [{"name": "Tadayo", "rpages": 9000},
+                                          {"name": "kbd", "reason": "vm-pageshortage"}]}))
 SHA = "0123456789abcdef0123456789abcdef01234567"
 RENDER = "design/reference/2.1/F02-upcoming.png"
 
@@ -1938,6 +1950,104 @@ class BuildAndTestSteps(StepsTest):
         code, out = self.step("test", shell)
         self.assertEqual(code, 0, out)
         self.assertEqual(seen, [(os.path.join(self.repo.out, f"Tests-{v}.xcresult"), False) for v in ("27.2", "26.5")])
+
+    def test_the_crash_and_jetsam_reports_of_a_pass_are_kept(self):
+        # A report macOS writes during a pass (the iOS 27.2 one here) goes to that pass's
+        # logs/crashes-<v>.txt, and the step says which processes they name; one from before
+        # the pass, or not a report, is left out, and a pass with none writes no file.
+        folders = [os.path.join(self.repo.root, "_reports", name) for name in ("user", "system")]
+        for folder in folders:
+            os.makedirs(folder)
+        old = os.path.join(folders[0], "SpringBoard-2026-11-24-040000.ips")
+        with open(old, "w") as f:
+            f.write(IPS_CRASH)
+        os.utime(old, (time.time() - 3600, time.time() - 3600))
+
+        def write_reports(cmd):
+            if UDID in cmd[cmd.index("-destination") + 1]:
+                with open(os.path.join(folders[0], "kbd-2026-11-24-043744.ips"), "w") as f:
+                    f.write(IPS_CRASH)
+                with open(os.path.join(folders[1], "JetsamEvent-2026-11-24-043744.ips"), "w") as f:
+                    f.write(IPS_JETSAM)
+                with open(os.path.join(folders[1], "notes.txt"), "w") as f:
+                    f.write("not a report")
+        shell = FakeShell(effects=[(has("test-without-building"), write_reports)])
+        with mock.patch.object(ios_steps, "CRASH_FOLDERS", tuple(folders)):
+            code, out = self.step("test", shell)
+        self.assertEqual(code, 0, out)
+        self.assertIn("ios: test: 2 crash or jetsam report(s) during the iOS 27.2 pass "
+                      "(logs/crashes-27.2.txt): kbd, jetsam: kbd\n", out)
+        self.assertNotIn("iOS 26.5 pass (logs/crashes", out)
+        self.assertFalse(os.path.exists(self.log("crashes-26.5.txt")))
+        with open(self.log("crashes-27.2.txt")) as f:
+            text = f.read()
+        self.assertNotIn("SpringBoard", text)
+        self.assertNotIn("notes.txt", text)
+        self.assertIn(f"UTC, {os.path.join(folders[0], 'kbd-2026-11-24-043744.ips')}\n", text)
+        for line in ("name: kbd", "bug_type: 309", "procName: kbd",
+                     'exception: {"signal": "SIGKILL", "type": "EXC_CRASH"}',
+                     'termination: {"indicator": "Jettisoned", "namespace": "JETSAM"}',
+                     "largestProcess: Tadayo", "killed: kbd (vm-pageshortage)"):
+            self.assertIn(line + "\n", text)
+        self.assertNotIn("killed: Tadayo", text)
+        # A thread's frames and registers say nothing of how the process ended: left out.
+        self.assertNotIn("frames", text)
+
+    def test_a_failed_pass_keeps_the_simulator_s_lines_about_services_that_exited(self):
+        # Only a failed pass reads the device's log (iOS 26.5 here); a pass that passed doesn't.
+        exited = ("Timestamp               Ty Process[PID:TID]\n"
+                  "2026-11-24 04:37:44.29 Df launchd_sim[1:2] (com.apple.kbd) Service exited due "
+                  "to SIGKILL\n")
+        shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"), (0, exited, ""))],
+                          codes=[(lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
+                                  and UDID_26 in cmd[cmd.index("-destination") + 1], 65)])
+        code, out = self.step("test", shell)
+        self.assertEqual(code, 65, out)
+        reads = [c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]]
+        self.assertEqual(len(reads), 1)
+        self.assertEqual(reads[0][3:8], [UDID_26, "log", "show", "--style", "compact"])
+        self.assertEqual(reads[0][-2:], ["--predicate", ios_steps.SERVICE_LOG_PREDICATE])
+        self.assertEqual(shell.timeouts[tuple(reads[0])], ios_steps.SERVICE_LOG_TIMEOUT)
+        self.assertFalse(os.path.exists(self.log("crashes-27.2.txt")))
+        with open(self.log("crashes-26.5.txt")) as f:
+            text = f.read()
+        self.assertEqual(text, "--- the simulator's log: services that exited during the pass\n"
+                               "2026-11-24 04:37:44.29 Df launchd_sim[1:2] (com.apple.kbd) "
+                               "Service exited due to SIGKILL\n")
+        # A log that can't be read is said; one with no such line writes nothing.
+        for answer, expected in [((1, "", "simctl: no device"),
+                                  "(the simulator's log couldn't be read: exit 1: simctl: no device)"),
+                                 ((0, "Timestamp  Ty Process\n", ""), None)]:
+            os.remove(self.log("crashes-26.5.txt")) if os.path.exists(self.log("crashes-26.5.txt")) else None
+            shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"), answer)],
+                              codes=[(has("test-without-building"), 65)])
+            self.step("test", shell)
+            if expected is None:
+                self.assertFalse(os.path.exists(self.log("crashes-26.5.txt")))
+            else:
+                with open(self.log("crashes-26.5.txt")) as f:
+                    self.assertIn(expected + "\n", f.read())
+
+    def test_a_report_that_isn_t_ips_or_can_t_be_read_is_kept_as_it_is(self):
+        self.assertEqual(ios_steps.crash_summary("Process: kbd\nException Type: EXC_CRASH\n"),
+                         ["Process: kbd", "Exception Type: EXC_CRASH"])
+        self.assertEqual(ios_steps.crash_summary('{"name":"kbd"}\n{not json'),
+                         ['{"name":"kbd"}', "{not json"])
+        long = "x" * (ios_steps.CRASH_FIELD + 10)
+        self.assertEqual(ios_steps.crash_summary(json.dumps({"name": long}) + "\n{}"),
+                         ["name: " + "x" * ios_steps.CRASH_FIELD + "…"])
+        # A folder that can't be read is said in the log; a missing one is passed over.
+        steps = self.steps()
+        with mock.patch.object(ios_steps, "CRASH_FOLDERS", ("/nonexistent/reports",
+                                                           os.path.join(self.repo.root, "file"))):
+            self.repo.write("file", "not a folder")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                steps.crash_reports("27.2", 0)
+        with open(self.log("crashes-27.2.txt")) as f:
+            text = f.read()
+        self.assertIn("(unreadable folder: " + os.path.join(self.repo.root, "file"), text)
+        self.assertNotIn("nonexistent", text)
+        self.assertEqual(out.getvalue(), "")
 
     def test_an_unpinned_snapshot_runtime_fails_before_any_command(self):
         # Never so with the pins PinsTest checks; were it so, no pass would run the snapshot tests.

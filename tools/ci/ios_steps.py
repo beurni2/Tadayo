@@ -72,7 +72,10 @@ The steps:
   logs/runner.txt, the simulator step with the runner's hardware first, and say how long each
   took and the load averages then (Steps.sampling); each boot's log says how long it took. None
   of it decides a step, and each diagnostic command is stopped at a limit, so the samples cost
-  a part at most about 40 seconds at its start and 45 at its end.
+  a part at most about 40 seconds at its start and 45 at its end. After each pass, the crash
+  and jetsam reports macOS wrote during it go to logs/crashes-<v>.txt, and after a failed pass
+  the simulator's log lines about services that exited (Steps.crash_reports,
+  Steps.service_exits; CRASH_FOLDERS), which decide nothing either.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
                itself included. The new ones come from the snapshot runtime's result bundle:
@@ -284,6 +287,56 @@ CACHE_FOLDER = "/Library/Developer/CoreSimulator/Caches/dyld/"
 CACHE_FILE = re.compile(r"\b(?:stderrPath|stdoutPath)=(/[^,}\s]+)")
 CACHE_LINES = 200
 CACHE_LOG_TIMEOUT = 60
+
+# The crash and jetsam reports macOS wrote during a test pass, the simulator's own processes'
+# among them, in logs/crashes-<v>.txt (Steps.crash_reports), written only when there is one. In
+# every failure of `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age` on iOS 27.2 whose
+# own log the evidence branch holds (12 from 2026-11-22 to 2026-11-24), the host lost its XPC
+# connection to the simulator's keyboard service during the test, and the field's editing ended
+# with it; the logs never said which process ended, or why (docs/plans/ios-b1-intermittents.md).
+# A report names the process, how it ended (a crash's exception and signal, a kill's namespace
+# and reason, the processes a jetsam event killed) and nothing of the app's data. CRASH_REPORTS
+# reports at most, each read from at most CRASH_BYTES bytes, and each field cut to CRASH_FIELD
+# characters. Only logged, never what decides a step.
+CRASH_FOLDERS = ("~/Library/Logs/DiagnosticReports", "/Library/Logs/DiagnosticReports")
+CRASH_SUFFIXES = (".ips", ".crash", ".diag")
+CRASH_REPORTS = 30
+CRASH_BYTES = 2_000_000
+CRASH_FIELD = 300
+# A failed pass's crashes-<v>.txt also has the simulator's own log lines from launchd about the
+# services that exited during the pass, which a process that ended with no report still leaves
+# (`log show` in the device, given SERVICE_LOG_TIMEOUT seconds), SERVICE_LOG_LINES at most.
+SERVICE_LOG_PREDICATE = ('eventMessage CONTAINS "exited due to" OR eventMessage CONTAINS '
+                         '"exited with abnormal code" OR eventMessage CONTAINS[c] "jetsam"')
+SERVICE_LOG_TIMEOUT = 90
+SERVICE_LOG_LINES = 200
+
+
+def crash_summary(text):
+    """The lines of a report that say which process ended and how. A report in the .ips form is a
+    JSON header line and then a JSON body; any other form, or one that doesn't parse, gives its
+    first lines as they are."""
+    def cut(value):
+        value = value if isinstance(value, str) else json.dumps(value, sort_keys=True)
+        return value if len(value) <= CRASH_FIELD else value[:CRASH_FIELD] + "…"
+    first, _, rest = text.partition("\n")
+    try:
+        header = json.loads(first)
+        body = json.loads(rest) if rest.strip() else {}
+    except ValueError:
+        return [cut(line) for line in text.splitlines()[:20]]
+    if not isinstance(header, dict) or not isinstance(body, dict):
+        return [cut(line) for line in text.splitlines()[:20]]
+    lines = [f"{key}: {cut(header[key])}" for key in ("name", "app_name", "bug_type", "timestamp")
+             if header.get(key) not in (None, "")]
+    for key in ("procName", "procPath", "parentProc", "coalitionName", "exception",
+                "termination", "asi", "ktriageinfo", "largestProcess", "reason"):
+        if body.get(key) not in (None, "", [], {}):
+            lines.append(f"{key}: {cut(body[key])}")
+    killed = [p for p in body.get("processes") or [] if isinstance(p, dict) and p.get("reason")]
+    for process in killed[:CRASH_REPORTS]:
+        lines.append(f"killed: {cut(process.get('name', '?'))} ({cut(process['reason'])})")
+    return lines
 
 
 def cache_log(minutes):
@@ -1629,6 +1682,7 @@ class Steps:
                                log=log)
             if self.boot(udid, version, f"test-{version}.log", "test") != 0:
                 return None
+        since = time.time()
         bundle = self.out_path(f"Tests-{version}.xcresult")
         shutil.rmtree(bundle, ignore_errors=True)
         cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
@@ -1663,7 +1717,82 @@ class Steps:
             ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
              "--compact"], env=self.xcode_env())
         self.write_log(f"test-summary-{version}.json", summary or err)
+        self.crash_reports(version, since)
+        if code != 0:
+            self.service_exits(version, udid, since)
         return code
+
+    def service_exits(self, version, udid, since):
+        """Appends the simulator's log lines about services that exited since `since` (a
+        time.time()) to logs/crashes-<version>.txt, SERVICE_LOG_LINES at most; says so when the
+        log couldn't be read, and writes nothing when it has no such line."""
+        start = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(since))
+        code, out, err = self.shell.capture(
+            ["xcrun", "simctl", "spawn", udid, "log", "show", "--style", "compact", "--start",
+             start, "--predicate", SERVICE_LOG_PREDICATE], env=self.xcode_env(),
+            timeout=SERVICE_LOG_TIMEOUT)
+        lines = [line for line in out.splitlines()
+                 if line.strip() and not line.startswith(("Timestamp", "Filtering the log"))]
+        if code != 0:
+            text = f"(the simulator's log couldn't be read: exit {code}: {err.strip()[:CRASH_FIELD]})"
+        elif not lines:
+            return
+        else:
+            more = len(lines) - SERVICE_LOG_LINES
+            text = "\n".join(lines[:SERVICE_LOG_LINES]
+                             + ([f"({more} more line(s) not kept)"] if more > 0 else []))
+        self.write_log(f"crashes-{version}.txt",
+                       "--- the simulator's log: services that exited during the pass\n" + text)
+
+    def crash_reports(self, version, since):
+        """Writes a summary of each crash or jetsam report in CRASH_FOLDERS changed at or after
+        `since` (a time.time()) to logs/crashes-<version>.txt, CRASH_REPORTS at most, oldest
+        first, and says in the step's output which processes they name. Writes nothing when there
+        is none. A folder or report that can't be read is passed over, said in the log."""
+        found, problems = [], []
+        for folder in CRASH_FOLDERS:
+            folder = os.path.expanduser(folder)
+            try:
+                names = os.listdir(folder)
+            except FileNotFoundError:
+                continue
+            except OSError as error:
+                problems.append(f"{folder}: {error.strerror or error}")
+                continue
+            for name in names:
+                full = os.path.join(folder, name)
+                try:
+                    changed = os.stat(full).st_mtime
+                except OSError:
+                    continue
+                if name.endswith(CRASH_SUFFIXES) and changed >= since:
+                    found.append((changed, full))
+        if not found and not problems:
+            return
+        found.sort()
+        lines, named = [], []
+        for changed, full in found[:CRASH_REPORTS]:
+            stamp = time.strftime("%H:%M:%S", time.gmtime(changed))
+            try:
+                with open(full, encoding="utf-8", errors="replace") as f:
+                    summary = crash_summary(f.read(CRASH_BYTES))
+            except OSError as error:
+                summary = [f"(unreadable: {error.strerror or error})"]
+            lines.append(f"--- {stamp} UTC, {full}")
+            lines.extend(summary)
+            killed = [line[len("killed: "):].split(" (")[0] for line in summary
+                      if line.startswith("killed: ")]
+            named.append(next((line.split(": ", 1)[1] for line in summary
+                               if line.startswith(("procName: ", "name: "))),
+                              f"jetsam: {' '.join(killed)}" if killed
+                              else os.path.basename(full)))
+        if len(found) > CRASH_REPORTS:
+            lines.append(f"({len(found) - CRASH_REPORTS} later report(s) not read)")
+        lines.extend(f"(unreadable folder: {problem})" for problem in problems)
+        self.write_log(f"crashes-{version}.txt", "\n".join(lines))
+        if found:
+            print(f"ios: test: {len(found)} crash or jetsam report(s) during the iOS {version} "
+                  f"pass (logs/crashes-{version}.txt): {', '.join(named[:10])}")
 
     def recorded_snapshots(self):
         """{path: "new" or "changed"} for each PNG under a __Snapshots__ folder in apps/ios that
