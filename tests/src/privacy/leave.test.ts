@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { ClubRows } from "./club.ts";
 import { NEUTRAL, pinned } from "./harness.ts";
 import {
+  contributionProblems,
   firstDaysJoinProblems,
   firstDaysProblems,
   LEAVE_JUDGED,
@@ -14,6 +15,9 @@ import {
   leaveOutcome,
   leaveProblems,
   leftExpected,
+  type ContributionDrop,
+  type ContributionRows,
+  type ContributionSlot,
   type LeaveRows,
   type MembershipRow,
 } from "./leave.ts";
@@ -755,5 +759,218 @@ describe("what a leave does to the club's first days (firstDaysProblems; FQ102, 
       // A club with no proposal at all, as the matrix's is before its first days are added.
       expect(firstDaysJoinProblems(world(["itv_cleo"], []), world([], []), CLUB, ["itv_cleo"])).toEqual([]);
     });
+  });
+});
+
+describe("what a leave does to the leaver's contributions (contributionProblems; spec 22, T18, T22, A3)", () => {
+  const LEAVER = "itv_ben";
+  const DAY = "occ_sat";
+  const OPENED = "occ_fri";
+  const at = (text: string) => Temporal.Instant.from(text);
+  const drop = (more: Partial<ContributionDrop> = {}): ContributionDrop => ({
+    club: CLUB,
+    day: DAY,
+    author: LEAVER,
+    mediaClass: "photo",
+    state: "active",
+    revealAt: at("2026-11-07T12:00:00Z"),
+    endedAt: null,
+    updatedAt: at("2026-11-05T10:00:00Z"),
+    version: 1,
+    pending: null,
+    removal: null,
+    ...more,
+  });
+  const slot = (more: Partial<ContributionSlot> = {}): ContributionSlot => ({
+    day: DAY,
+    interval: LEAVER,
+    mediaClass: "photo",
+    state: "live",
+    expiresAt: NOW.add({ minutes: 20 }),
+    endedAt: null,
+    drop: null,
+    ...more,
+  });
+  const gone = (one: ContributionDrop, instant = NOW): ContributionDrop => ({
+    ...one,
+    state: "withdrawn",
+    endedAt: instant,
+    updatedAt: instant,
+    pending: null,
+    removal: { reason: "leave", actor: LEAVER, at: instant },
+  });
+  /** Ben's photo, link and held photo in Saturday, a photo in the opened Friday, Cleo's photo, Ben's live and lapsed slots. */
+  function rows(): ContributionRows {
+    return {
+      drops: new Map([
+        ["drp_photo", drop({ pending: "upl_next" })],
+        ["drp_link", drop({ mediaClass: "external_video" })],
+        ["drp_held", drop({ state: "held" })],
+        ["drp_opened", drop({ day: OPENED, revealAt: at("2026-11-06T12:00:00Z") })],
+        ["drp_cleo", drop({ author: "itv_cleo" })],
+        [
+          "drp_before",
+          drop({ state: "withdrawn", endedAt: NOW, removal: { reason: "withdraw", actor: LEAVER, at: NOW } }),
+        ],
+      ]),
+      slots: new Map([
+        ["rsv_live", slot()],
+        ["rsv_link", slot({ mediaClass: "external_video" })],
+        ["rsv_lapsed", slot({ expiresAt: NOW.subtract({ minutes: 5 }) })],
+        ["rsv_used", slot({ state: "consumed", endedAt: NOW.subtract({ hours: 1 }), drop: "drp_photo" })],
+        ["rsv_cleo", slot({ interval: "itv_cleo" })],
+      ]),
+      counters: new Map([
+        [`${DAY} ${LEAVER}`, { committedTotal: 3, committedExternal: 1, reservedTotal: 3, reservedExternal: 1 }],
+        [`${OPENED} ${LEAVER}`, { committedTotal: 1, committedExternal: 0, reservedTotal: 0, reservedExternal: 0 }],
+        [`${DAY} itv_cleo`, { committedTotal: 1, committedExternal: 0, reservedTotal: 1, reservedExternal: 0 }],
+      ]),
+      highlights: new Map([
+        [`${DAY} ${LEAVER}`, { drop: "drp_photo", version: 2, updatedAt: at("2026-11-05T11:00:00Z") }],
+        [`${DAY} itv_cleo`, { drop: "drp_cleo", version: 1, updatedAt: at("2026-11-05T11:00:00Z") }],
+      ]),
+    };
+  }
+  /** The rows as a leave at NOW leaves them, with `choice`. */
+  function left(choice: "keep" | "withdraw"): ContributionRows {
+    const next = rows();
+    next.slots.set("rsv_live", slot({ state: "released", endedAt: NOW }));
+    next.slots.set("rsv_link", slot({ mediaClass: "external_video", state: "released", endedAt: NOW }));
+    next.slots.set(
+      "rsv_lapsed",
+      slot({ expiresAt: NOW.subtract({ minutes: 5 }), state: "expired", endedAt: NOW.subtract({ minutes: 5 }) }),
+    );
+    const saturday = { committedTotal: 3, committedExternal: 1, reservedTotal: 0, reservedExternal: 0 };
+    if (choice === "withdraw") {
+      for (const id of ["drp_photo", "drp_link", "drp_held", "drp_opened"]) {
+        const was = next.drops.get(id);
+        if (was !== undefined) next.drops.set(id, gone(was));
+      }
+      // Three before Saturday's reveal give their slots back, the link among them; Friday's none.
+      saturday.committedTotal = 0;
+      saturday.committedExternal = 0;
+      next.highlights.set(`${DAY} ${LEAVER}`, { drop: null, version: 3, updatedAt: NOW });
+    }
+    next.counters.set(`${DAY} ${LEAVER}`, saturday);
+    return next;
+  }
+  const judge = (after: ContributionRows, choice: "keep" | "withdraw" = "withdraw") =>
+    contributionProblems(rows(), after, CLUB, LEAVER, NOW, choice);
+
+  it("passes a withdrawing leave and a keeping one that changed what they must, counting what each ended", () => {
+    const settled = { withdrawn: 0, slotsEnded: 0 };
+    expect(contributionProblems(rows(), left("withdraw"), CLUB, LEAVER, NOW, "withdraw", settled)).toEqual([]);
+    expect(settled).toEqual({ withdrawn: 4, slotsEnded: 3 });
+    expect(judge(left("keep"), "keep")).toEqual([]);
+  });
+
+  it("catches a drop left active, held or half withdrawn, and one withdrawn on keep", () => {
+    for (const id of ["drp_photo", "drp_held", "drp_opened"]) {
+      const after = left("withdraw");
+      after.drops.set(id, rows().drops.get(id) ?? drop());
+      expect(judge(after).some((problem) => problem.startsWith(`the leaver's drop ${id} is`))).toBe(true);
+    }
+    for (const change of [
+      { removal: { reason: "withdraw", actor: LEAVER, at: NOW } },
+      { removal: { reason: "leave", actor: "itv_cleo", at: NOW } },
+      { removal: null },
+      { endedAt: NOW.add({ seconds: 1 }) },
+      { updatedAt: NOW.subtract({ seconds: 1 }) },
+      { pending: "upl_next" },
+      { version: 2 },
+    ]) {
+      const after = left("withdraw");
+      after.drops.set("drp_photo", { ...gone(rows().drops.get("drp_photo") ?? drop()), ...change });
+      expect(judge(after)).toContain(
+        "the leaver's withdrawn drop drp_photo isn't as a leave at the instant leaves it (T23, T24)",
+      );
+    }
+    const kept = left("keep");
+    kept.drops.set("drp_photo", gone(rows().drops.get("drp_photo") ?? drop()));
+    expect(judge(kept, "keep")).toContain("the leaver's drop drp_photo changed though they kept their drops (T26)");
+  });
+
+  it("catches another member's drop, or one already withdrawn, changed", () => {
+    for (const id of ["drp_cleo", "drp_before"]) {
+      const after = left("withdraw");
+      after.drops.set(id, { ...(rows().drops.get(id) ?? drop()), version: 9 });
+      expect(judge(after)).toContain(`the drop ${id}, not the leaver's to withdraw, changed`);
+    }
+  });
+
+  it("catches the slots: given back after the reveal, not given back before it, or a link's counted as a photo's", () => {
+    const after = left("withdraw");
+    after.counters.set(`${OPENED} ${LEAVER}`, {
+      committedTotal: 0,
+      committedExternal: 0,
+      reservedTotal: 0,
+      reservedExternal: 0,
+    });
+    expect(judge(after)).toContain(
+      `the leaver's counter ${OPENED} ${LEAVER} isn't its drops' and live slots' after the leave (T18)`,
+    );
+    for (const wrong of [
+      { committedTotal: 1, committedExternal: 1, reservedTotal: 0, reservedExternal: 0 },
+      { committedTotal: 0, committedExternal: 1, reservedTotal: 0, reservedExternal: 0 },
+      { committedTotal: 0, committedExternal: 0, reservedTotal: 1, reservedExternal: 0 },
+      { committedTotal: 0, committedExternal: 0, reservedTotal: 0, reservedExternal: 1 },
+    ]) {
+      const one = left("withdraw");
+      one.counters.set(`${DAY} ${LEAVER}`, wrong);
+      expect(judge(one)).toContain(
+        `the leaver's counter ${DAY} ${LEAVER} isn't its drops' and live slots' after the leave (T18)`,
+      );
+    }
+    const cleos = left("withdraw");
+    cleos.counters.set(`${DAY} itv_cleo`, {
+      committedTotal: 0,
+      committedExternal: 0,
+      reservedTotal: 1,
+      reservedExternal: 0,
+    });
+    expect(judge(cleos)).toContain(`the counter ${DAY} itv_cleo, not the leaver's, changed`);
+  });
+
+  it("catches a reservation left live on keep or on withdraw, a lapsed one released, and another's changed", () => {
+    for (const choice of ["keep", "withdraw"] as const) {
+      const after = left(choice);
+      after.slots.set("rsv_live", slot());
+      expect(judge(after, choice)).toContain(
+        "the leaver's live reservation rsv_live isn't released at the instant (T18: no phantom slots)",
+      );
+    }
+    const released = left("withdraw");
+    released.slots.set(
+      "rsv_lapsed",
+      slot({ expiresAt: NOW.subtract({ minutes: 5 }), state: "released", endedAt: NOW }),
+    );
+    expect(judge(released)).toContain(
+      "the leaver's lapsed reservation rsv_lapsed isn't expired at its own expires_at (T18)",
+    );
+    for (const id of ["rsv_used", "rsv_cleo"]) {
+      const after = left("withdraw");
+      after.slots.set(id, { ...(rows().slots.get(id) ?? slot()), state: "released", endedAt: NOW });
+      expect(judge(after)).toContain(`the reservation ${id}, not the leaver's live one, changed`);
+    }
+  });
+
+  it("catches the leaver's highlight left on a withdrawn drop, and another highlight changed", () => {
+    const after = left("withdraw");
+    after.highlights.set(`${DAY} ${LEAVER}`, { drop: "drp_photo", version: 2, updatedAt: at("2026-11-05T11:00:00Z") });
+    expect(judge(after)).toContain(
+      `the leaver's highlight ${DAY} ${LEAVER} on a withdrawn drop isn't cleared at the instant (T22)`,
+    );
+    const cleos = left("withdraw");
+    cleos.highlights.set(`${DAY} itv_cleo`, { drop: null, version: 2, updatedAt: NOW });
+    expect(judge(cleos)).toContain(`the highlight ${DAY} itv_cleo changed though its drop wasn't withdrawn`);
+  });
+
+  it("catches a row gone or one that appeared with the leave", () => {
+    const after = left("withdraw");
+    after.drops.delete("drp_cleo");
+    after.slots.set("rsv_new", slot());
+    expect(judge(after)).toEqual(
+      expect.arrayContaining(["the drop drp_cleo is gone", "a reservation rsv_new appeared with the leave"]),
+    );
   });
 });

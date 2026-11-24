@@ -1681,7 +1681,7 @@ paths:
     post:
       operationId: leaveClub
       summary: Leave the club
-      description: With an explicit keep or withdraw (spec 22, T26). B6 builds the withdrawal.
+      description: With an explicit keep or withdraw (spec 22, T26). Withdraw takes every drop the caller added to the club, revealed or not, out of every view at once, giving back the slots of days not yet open (T18, T23, T24). Either way the caller's live reservations in the club are given back.
       parameters:
         - name: club_id
           in: path

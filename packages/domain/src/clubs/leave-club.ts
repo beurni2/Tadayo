@@ -1,7 +1,8 @@
 /// <reference lib="esnext.temporal" />
 // Leave a club (the contract's `leaveClub`; spec 04, 05, 18, 22, 32; G05-leave, book p30; T1, T7, T8, T9, T14,
-// T19, T26, T33, T36; FQ16, FQ60, FQ63, FQ75, FQ80, FQ102, FQ112, FQ120 to FQ123, FQ125, FQ126; docs/plans/api-b1-clubs.md,
-// section 5), in one READ COMMITTED transaction the caller opens. A refusal throws `Refused`, which rolls
+// T18, T19, T22, T23, T24, T26, T33, T36; FQ16, FQ60, FQ63, FQ75, FQ80, FQ102, FQ112, FQ120 to FQ123, FQ125, FQ126,
+// FQ142; docs/plans/api-b1-clubs.md, section 5; docs/plans/api-b2-leave-withdraw.md), in one READ COMMITTED
+// transaction the caller opens. A refusal throws `Refused`, which rolls
 // it back, so a refused request leaves nothing, its receipt included.
 //
 // 1. Who is asking (../authorization/member.ts): an active account with an active interval in a club that
@@ -17,6 +18,16 @@
 // 4. The clock, after the lock (T1): `left_at`, and every `ended_at` below.
 // 5. The membership ends, with the choice and the name the person has now (T26, FQ75). From here the
 //    authorization module gives the account nothing of the club.
+// 5a. The leaver's contributions (the outside audit's A3; docs/plans/api-b2-leave-withdraw.md). Each counter of
+//    the leaving interval in the club with a live reservation, or, to withdraw, an active or held drop, in
+//    occurrence id order, `FOR NO KEY UPDATE`, after the club's row and the membership's, as TECH-DESIGN orders
+//    them. Every leave gives back the interval's live reservations: the lapsed ones settled as `expired` at their
+//    own `expires_at`, the rest `released` at the instant and off the counts, since nobody can use them now (T18).
+//    With `withdraw`, every drop of the interval in the club, active or held, revealed or not, is withdrawn at the
+//    instant: its one removal, reason `leave`, by the interval; `withdrawn`, ended then, its pending replacement
+//    let go; the leaver's highlight on it cleared (T22); and, before its day's reveal, its slot given back, while
+//    after it none reopens (T3, T18; spec 22). Every read already leaves a withdrawn drop out (T23, T24). Only the
+//    leaving interval's drops: an earlier interval's kept drops stay kept (FQ142).
 // 6. The club's proposals (FQ121): the leaver's own open candidates end; the open revision ends, since it
 //    lists the leaver; its other open candidates are carried into a revision the server makes
 //    (./apply-roster.ts `writeRevision`), which supersedes it, when its proposer is still a member; else
@@ -37,7 +48,8 @@
 //
 // Nothing else is written. A club under two members is paused by its members' count (./club-state.ts,
 // FQ16); the leaver's days that haven't opened are held by `left_at` (FQ63); no push goes to anyone (T36).
-// Withdrawing the leaver's drops is B6's: the choice is recorded here.
+// A withdrawn drop's caption and media are purged, and its tombstone written, by B6's purge, as for every
+// withdrawal (T27, T28); until then the media route, which reads the predicate, serves nothing of it (T12).
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
@@ -46,6 +58,7 @@ import { completeReceipt, reserveAsMember, reserveReceipt, type ReceiptKey } fro
 import type { Json } from "../idempotency/request.ts";
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
+import { freeSlot, settleLapsed, type CounterKey } from "../drops/counter.ts";
 import { settleChange } from "../schedule/settle-change.ts";
 import { settleFirstDays } from "../schedule/settle.ts";
 import { writeRevision } from "./apply-roster.ts";
@@ -97,6 +110,86 @@ const text = (value: unknown): string => {
   if (typeof value !== "string") throw new Error("clubs: a leave read a row it can't use");
   return value;
 };
+
+/**
+ * Step 5a: gives back every live reservation of the membership `interval` in the club `club`, and, with
+ * `withdraw`, withdraws every active or held drop of it there, at `at`, the leave's instant. The caller holds the
+ * club's row `FOR UPDATE` and has ended the membership.
+ */
+async function settleContributions(
+  tx: QuerySql,
+  club: string,
+  interval: string,
+  at: Temporal.Instant,
+  contributions: Contributions,
+): Promise<void> {
+  // A drop and a reservation each name their counter, so the counters find everything there is to settle.
+  const counters = await bound(tx)`
+    SELECT c.occurrence_id
+      FROM app.contribution_counters c
+     WHERE c.club_id = ${club} AND c.interval_id = ${interval}
+       AND (EXISTS (SELECT FROM app.reservations r
+                     WHERE r.occurrence_id = c.occurrence_id AND r.interval_id = c.interval_id AND r.state = 'live')
+            OR (${contributions} = 'withdraw'
+                AND EXISTS (SELECT FROM app.drops d
+                             WHERE d.occurrence_id = c.occurrence_id AND d.author_interval_id = c.interval_id
+                               AND d.state IN ('active', 'held'))))
+     ORDER BY c.occurrence_id
+       FOR NO KEY UPDATE`;
+  for (const row of counters) {
+    const day: CounterKey = { day: text(row["occurrence_id"]), interval, club };
+    // The live reservations, as releaseReservation takes each one after its counter.
+    await bound(tx)`
+      SELECT id FROM app.reservations
+       WHERE occurrence_id = ${day.day} AND interval_id = ${interval} AND state = 'live'
+       ORDER BY id
+         FOR NO KEY UPDATE`;
+    await settleLapsed(tx, day, at);
+    const live = await bound(tx)`
+      SELECT id FROM app.reservations
+       WHERE occurrence_id = ${day.day} AND interval_id = ${interval} AND state = 'live'
+       ORDER BY id`;
+    for (const slot of live) await freeSlot(tx, day, text(slot["id"]), at);
+    if (contributions !== "withdraw") continue;
+    const drops = await bound(tx)`
+      SELECT d.id, d.media_class, o.reveal_at > ${at}::pg_catalog.timestamptz AS before_reveal
+        FROM app.drops d JOIN app.occurrences o ON o.id = d.occurrence_id
+       WHERE d.occurrence_id = ${day.day} AND d.author_interval_id = ${interval} AND d.state IN ('active', 'held')
+       ORDER BY d.id
+         FOR UPDATE OF d`;
+    let freedTotal = 0;
+    let freedExternal = 0;
+    for (const drop of drops) {
+      const id = text(drop["id"]);
+      await bound(tx)`
+        INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
+        VALUES (${id}, 'leave', ${interval}, ${at}::pg_catalog.timestamptz)`;
+      await bound(tx)`
+        UPDATE app.drops
+           SET state = 'withdrawn', ended_at = ${at}::pg_catalog.timestamptz,
+               updated_at = ${at}::pg_catalog.timestamptz, pending_upload_id = NULL
+         WHERE id = ${id}`;
+      // After the drop's end, as the highlights' guard asks from the reveal on (T22).
+      await bound(tx)`
+        UPDATE app.highlights
+           SET drop_id = NULL, version = version + 1, updated_at = ${at}::pg_catalog.timestamptz
+         WHERE occurrence_id = ${day.day} AND interval_id = ${interval} AND drop_id = ${id}`;
+      if (drop["before_reveal"] === true) {
+        freedTotal += 1;
+        if (text(drop["media_class"]) === "external_video") freedExternal += 1;
+      } else if (drop["before_reveal"] !== false) {
+        throw new Error("clubs: a leave read a row it can't use");
+      }
+    }
+    if (freedTotal > 0) {
+      await bound(tx)`
+        UPDATE app.contribution_counters
+           SET committed_total = committed_total - ${String(freedTotal)}::pg_catalog.int2,
+               committed_external = committed_external - ${String(freedExternal)}::pg_catalog.int2
+         WHERE occurrence_id = ${day.day} AND interval_id = ${interval}`;
+    }
+  }
+}
 
 /**
  * Ends the membership of the account `input.userId` in the club, in `tx`, and returns what `render` makes
@@ -162,6 +255,9 @@ export async function leaveClub(
      WHERE m.interval_id = ${asking} AND m.state = 'active' AND u.id = m.user_id
     RETURNING m.interval_id`;
   if (ended === undefined) throw new Error("clubs: the membership its member is leaving can't be ended");
+
+  // 5a. The leaver's contributions.
+  await settleContributions(tx, clubId, asking, at, contributions);
 
   // 6. The club's proposals.
   await bound(tx)`
