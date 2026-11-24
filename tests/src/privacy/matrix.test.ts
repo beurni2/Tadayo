@@ -83,6 +83,18 @@ import {
   type Spec,
   type Step,
 } from "./harness.ts";
+import {
+  DEVICE_NO_BODY,
+  deviceRowsOf,
+  registeredProblems,
+  registerExpected,
+  registerOutcome,
+  removedProblems,
+  removeExpected,
+  removeOutcome,
+  signInOf,
+  type DeviceRequest,
+} from "./device.ts";
 import { INVITATION_JUDGED, acceptOutcome, freshToken, previewExpected, webPreviewExpected } from "./invitation.ts";
 import {
   firstDaysJoinProblems,
@@ -209,6 +221,14 @@ const LEAVES = new Map<string, number>();
 const REVISIONS_LOST = new Map<string, number>();
 /** By role: the slots the reservations' table held, and those given back (the role's test fills it; a later test reads it). */
 const SLOTS = new Map<string, { held: number; released: number; expired: number; consumed: number }>();
+/**
+ * By role: what the devices' table registered, moved from an earlier sign-in, refused, removed and found nothing
+ * to remove (the role's test fills it).
+ */
+const DEVICES = new Map<
+  string,
+  { registered: number; moved: number; refused: number; removed: number; none: number }
+>();
 /** By role: the answers in which Cleo's lapsed slot came back as the viewer's own (the role's test fills it). */
 const CLEOS_SLOT = new Map<string, number>();
 /**
@@ -284,7 +304,10 @@ function genericBodyFor(spec: Spec, revision: string, token: string): Spec {
         ? { token, revision_id: revision, expected_version: NO_SUCH_VERSION }
         : id === "previewInvitation" || id === "previewInvitationWeb"
           ? { token }
-          : undefined;
+          : id === "removeDevice"
+            ? // A secret nobody made, in the contract's form: it removes nothing, and ends only its own sign-in.
+              { removal_secret: token }
+            : undefined;
   return body === undefined
     ? spec
     : { ...spec, headers: { ...spec.headers, "content-type": "application/json" }, body: JSON.stringify(body) };
@@ -296,6 +319,11 @@ let clock: FakeClock;
 let app: FastifyInstance;
 let keys: Signing;
 let elsewhere: Elsewhere;
+/**
+ * The other club's author's device: its sign-in's secret and its token, registered through the app before any
+ * role runs. Every role sends that secret with a token of its own and gets the neutral not-found ((a); T14).
+ */
+let elsewhereDevice: { secret: string; token: string };
 /** The app's Storage: it signs upload URLs and holds the objects the uploads' table puts (upload.ts). */
 let storage: FakeStorage;
 /** The same Storage as the worker reads it: the photo's bytes at each object the uploads' table puts. */
@@ -479,6 +507,20 @@ beforeAll(async () => {
       name: subject.display_name,
     };
   });
+  elsewhereDevice = { secret: randomBytes(32).toString("base64url"), token: randomBytes(32).toString("hex") };
+  const registered = await answerOf(app, {
+    method: "PUT",
+    url: "/v1/devices/current",
+    headers: { authorization: bearer(await keys.signer.token(elsewhere.subject)), "content-type": "application/json" },
+    payload: JSON.stringify({
+      apns_token: elsewhereDevice.token,
+      apns_environment: "production",
+      timezone: "Europe/London",
+      removal_secret: elsewhereDevice.secret,
+    }),
+  });
+  if (registered.status !== 200)
+    throw new Error(`the other club's author's device wasn't registered: ${registered.body}`);
 });
 
 afterAll(async () => {
@@ -1131,37 +1173,39 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                                         ? UPLOAD_NO_BODY
                                         : gate === undefined && id === "createDrop"
                                           ? DROP_NO_BODY
-                                          : gate === undefined && id === "getUpload"
-                                            ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
-                                            : gate === undefined && id === "completeUpload"
-                                              ? completeExpected(
-                                                  completeOutcome(
-                                                    facts.world,
-                                                    cell.viewer,
-                                                    cell.targets.upload,
-                                                    now,
-                                                    storage.objects,
-                                                  ),
-                                                )
-                                              : gate === undefined && id === "releaseReservation"
-                                                ? releaseExpected(
-                                                    releaseOutcome(
+                                          : gate === undefined && id === "registerDevice"
+                                            ? DEVICE_NO_BODY
+                                            : gate === undefined && id === "getUpload"
+                                              ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
+                                              : gate === undefined && id === "completeUpload"
+                                                ? completeExpected(
+                                                    completeOutcome(
                                                       facts.world,
                                                       cell.viewer,
-                                                      cell.targets.reservation,
+                                                      cell.targets.upload,
                                                       now,
+                                                      storage.objects,
                                                     ),
                                                   )
-                                                : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                                                  ? cellExpected(session, spec.operation, seen)
-                                                  : id === "getSchedule"
-                                                    ? weekExpected(scheduleSeen, cell.w.club)
-                                                    : commandExpected(
-                                                        scheduleSeen,
-                                                        id as ScheduleCommand,
-                                                        cell.targets.proposal,
-                                                        startVersion,
-                                                      );
+                                                : gate === undefined && id === "releaseReservation"
+                                                  ? releaseExpected(
+                                                      releaseOutcome(
+                                                        facts.world,
+                                                        cell.viewer,
+                                                        cell.targets.reservation,
+                                                        now,
+                                                      ),
+                                                    )
+                                                  : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                                    ? cellExpected(session, spec.operation, seen)
+                                                    : id === "getSchedule"
+                                                      ? weekExpected(scheduleSeen, cell.w.club)
+                                                      : commandExpected(
+                                                          scheduleSeen,
+                                                          id as ScheduleCommand,
+                                                          cell.targets.proposal,
+                                                          startVersion,
+                                                        );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -1904,6 +1948,153 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           record(
             await cellStep(app, week, gateOf(sessionNow, week.operation) ?? weekExpected(scheduleSeen, cell.w.club)),
           );
+          // The devices' table (device.ts), in every phase: what each role's sign-ins register and remove, each
+          // judged from the rows before it, with the rows after it held to its answer (TECH-DESIGN section 6 (a) to
+          // (e)). Two new sign-ins of the viewer's: the first registers a token, in uppercase as some phones print
+          // it, and the same again; the second takes that token from it, in the sandbox, with a zone written in
+          // another case; the first, which has ended, registers a new token; the other club's author's secret
+          // comes with a token of the viewer's. Then the other club's author registers a new sign-in's token, and a
+          // third sign-in of the viewer's takes it: one account's request ends another account's sign-in. Then
+          // the second sign-in is removed by its secret alone, sent with the role's header and again with none,
+          // and registers again. A role the gate stops gets the gate's answer to every registration, which changes
+          // nothing; the removals are judged the same for every role, the route being public (T14). The secrets
+          // and tokens, the other club's author's among them, join the values the scanner keeps back (T52).
+          const register = specs.find((spec) => spec.operation.id === "registerDevice");
+          const removal = specs.find((spec) => spec.operation.id === "removeDevice");
+          if (register === undefined || removal === undefined)
+            throw new Error("the contract has no registerDevice or removeDevice");
+          const deviceGate = gateOf(sessionNow, register.operation);
+          const devices = DEVICES.get(role.name) ?? { registered: 0, moved: 0, refused: 0, removed: 0, none: 0 };
+          DEVICES.set(role.name, devices);
+          const [firstSecret, secondSecret, thirdSecret, theirSecret] = [
+            freshToken(),
+            freshToken(),
+            freshToken(),
+            freshToken(),
+          ];
+          const deviceToken = randomBytes(32).toString("hex").toUpperCase();
+          const [laterToken, ownToken, theirToken] = [
+            randomBytes(32).toString("hex"),
+            randomBytes(32).toString("hex"),
+            randomBytes(32).toString("hex"),
+          ];
+          const theirBearer = await keys.signer.token(elsewhere.subject);
+          secrets.push(
+            firstSecret,
+            secondSecret,
+            thirdSecret,
+            deviceToken,
+            deviceToken.toLowerCase(),
+            laterToken,
+            ownToken,
+            elsewhereDevice.secret,
+            elsewhereDevice.token,
+            theirSecret,
+            theirToken,
+            theirBearer,
+          );
+          facts = await load();
+          const deviceRows = () =>
+            deviceRowsOf(
+              db as unknown as WorldTx,
+              [firstSecret, secondSecret, thirdSecret, elsewhereDevice.secret, theirSecret].map(signInOf),
+              [deviceToken, laterToken, ownToken, elsewhereDevice.token, theirToken],
+              [cell.viewer, elsewhere.account],
+            );
+          const device = (secret: string, token: string, zone = "Europe/London", canonical = zone): DeviceRequest => ({
+            secret,
+            token,
+            environment: "production",
+            timezone: zone,
+            canonical,
+          });
+          const registerStep = async (request: DeviceRequest, note: string) => {
+            const before = await deviceRows();
+            const outcome = registerOutcome(before, cell.viewer, request);
+            const sent: Spec = {
+              ...register,
+              headers: { ...register.headers, "content-type": "application/json" },
+              body: JSON.stringify({
+                apns_token: request.token,
+                apns_environment: request.environment,
+                timezone: request.timezone,
+                removal_secret: request.secret,
+              }),
+            };
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, render(sent));
+            counted.bodies += 1;
+            const after = await deviceRows();
+            const problems =
+              deviceGate === undefined
+                ? [
+                    ...takes(registerExpected(outcome, now), answer),
+                    ...registeredProblems(before, after, cell.viewer, outcome, now),
+                  ]
+                : [
+                    ...pinnedProblems(answer, deviceGate),
+                    ...registeredProblems(before, after, cell.viewer, { kind: "refused" }, now),
+                  ];
+            if (deviceGate === undefined && outcome.kind === "registered") {
+              devices.registered += 1;
+              if (outcome.moved !== null) devices.moved += 1;
+            } else if (deviceGate === undefined) devices.refused += 1;
+            record({
+              problems: problems.map((problem) => `registerDevice: ${problem} (${note})`),
+              answers: [{ spec: sent, answer }],
+            });
+          };
+          const removeStep = async (secret: string, headers: Readonly<Record<string, string>>, note: string) => {
+            const before = await deviceRows();
+            const outcome = removeOutcome(before, secret);
+            const sent: Spec = {
+              ...removal,
+              headers: { ...headers, "content-type": "application/json" },
+              body: JSON.stringify({ removal_secret: secret }),
+            };
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, render(sent));
+            counted.bodies += 1;
+            const after = await deviceRows();
+            const problems = [
+              ...takes(removeExpected(outcome), answer),
+              ...removedProblems(before, after, secret, now),
+            ];
+            devices[outcome] += 1;
+            record({
+              problems: problems.map((problem) => `removeDevice: ${problem} (${note})`),
+              answers: [{ spec: sent, answer }],
+            });
+          };
+          await registerStep(device(firstSecret, deviceToken), "a first sign-in's token");
+          await registerStep(device(firstSecret, deviceToken), "the same registration again");
+          await registerStep(
+            { ...device(secondSecret, deviceToken, "asia/tokyo", "Asia/Tokyo"), environment: "sandbox" },
+            "a second sign-in takes the token",
+          );
+          await registerStep(device(firstSecret, laterToken), "the first sign-in, ended, with a new token");
+          await registerStep(device(elsewhereDevice.secret, ownToken), "the other club's author's secret");
+          // The other club's author's own registration, through the app, before the viewer's third sign-in takes
+          // its token; it isn't the viewer's request, so it isn't one of the table's.
+          const theirs = await answerOf(app, {
+            method: "PUT",
+            url: "/v1/devices/current",
+            headers: { authorization: bearer(theirBearer), "content-type": "application/json" },
+            payload: JSON.stringify({
+              apns_token: theirToken,
+              apns_environment: "production",
+              timezone: "Europe/London",
+              removal_secret: theirSecret,
+            }),
+          });
+          if (theirs.status !== 200)
+            throw new Error(`the other club's author's new sign-in wasn't registered: ${theirs.body}`);
+          await registerStep(device(thirdSecret, theirToken), "a third sign-in takes the other club's author's token");
+          await removeStep(secondSecret, removal.headers, "the second sign-in removed, with the role's header");
+          await removeStep(secondSecret, {}, "the same removal again, signed out");
+          await registerStep(device(secondSecret, deviceToken), "the removed sign-in registers again");
           // The reservations' table (reservation.ts), in every phase, before the leave ends the club for the
           // viewer. First, Cleo's slot that lapsed before any phase (cleosLapsedSlot), whoever the viewer is;
           // then the slot the viewer held in the phase before is given back after it lapsed at the reveal, and
@@ -2744,6 +2935,49 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
       ["member in the audience", 16],
       ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 12],
     ]);
+  });
+});
+
+describe("the devices' table ran (tests/src/privacy/device.ts)", () => {
+  it("registered, moved, refused and removed for every role the gate lets through, and only removed nothing for the others", () => {
+    // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
+    // Counted by hand from ../matrix.ts, apart from the judge. A device belongs to no club, so every state of the
+    // drop and every phase runs the same table: seven states, in four phases (three for the role whose block
+    // comes as the day opens). In each cell a role the gate lets through registers four times (the first
+    // sign-in twice, the second once, which moves the token from the first, the third once, which moves the
+    // other club's author's), is refused three times (the first sign-in after the move, the other club's
+    // author's secret, the second sign-in after its removal), removes once and finds nothing once. The account
+    // whose deletion has begun gets the gate's 401 to every registration, so its removals find nothing: two a
+    // cell. The account that hasn't finished its profile gets the 403 until the last phase, where its own
+    // updateMe finishes it before the table (account.ts's updateMeCases).
+    const full = (cells: number) => ({
+      registered: 4 * cells,
+      moved: 2 * cells,
+      refused: 3 * cells,
+      removed: cells,
+      none: cells,
+    });
+    expect(DEVICES.size).toBe(ROLES.length);
+    expect(Object.fromEntries(DEVICES)).toEqual({
+      author: full(28),
+      star: full(28),
+      "member in the audience": full(28),
+      "member who joined after the commit (T8)": full(28),
+      "rejoined member, a new interval (T8)": full(28),
+      "former member": full(28),
+      "invited, not yet a member (T7)": full(28),
+      "stranger from another club": full(28),
+      "blocked: Cleo blocked the author, leaving by the block": full(28),
+      "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)": full(21),
+      "deletion pending, the membership not yet ended (T27)": {
+        registered: 0,
+        moved: 0,
+        refused: 0,
+        removed: 0,
+        none: 56,
+      },
+      "signed in, profile not finished (FQ13, FQ69)": { ...full(7), none: 7 + 2 * 21 },
+    });
   });
 });
 

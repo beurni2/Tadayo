@@ -89,6 +89,14 @@ export function created(reply: FastifyReply, body: unknown): FastifyReply {
 }
 
 /**
+ * A success with nothing to say (the contract's 204): no body, and nothing for a cache to keep. Fastify sends a
+ * 204 with no `Content-Type` and no `Content-Length`.
+ */
+export function noContent(reply: FastifyReply): FastifyReply {
+  return reply.code(204).header("cache-control", NO_STORE).send();
+}
+
+/**
  * The one 401: no session, whatever is wrong with the token or the account behind it (T14, T27). It has
  * no `WWW-Authenticate`, as the contract declares none.
  */

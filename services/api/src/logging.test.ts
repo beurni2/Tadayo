@@ -89,6 +89,8 @@ describe("the redaction list (T52)", () => {
       "headers",
       "body",
       "query",
+      "apns_token",
+      "removal_secret",
     ]) {
       expect(REDACTED_FIELDS, field).toContain(field);
     }
