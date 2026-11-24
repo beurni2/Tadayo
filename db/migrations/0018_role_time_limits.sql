@@ -9,7 +9,8 @@
 -- commit keeps what it started with, even through RESET ALL, and Supabase's session pooler hands its server
 -- sessions from one client to the next; so the API's transactions also set the two waits' limits themselves
 -- (services/api/src/connection.ts TRANSACTION_LIMITS), as the worker's do. These defaults are the floor for
--- every other session as the role: the worker's reads, the migration runner, the `ops` scripts.
+-- every other session as the role that starts after this commit (the worker's reads, the migration runner, the
+-- `ops` scripts); one the pooler opened before it has none (docs/LIMITATIONS.md, 2026-11-24).
 --
 -- - lock_timeout, 5 s: a wait on a lock ends with 55P03, and the API answers the bare 503 (failed in
 --   services/api/src/app.ts); the transaction rolls back and nothing is committed, so the same request

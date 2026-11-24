@@ -132,6 +132,13 @@ describe("the role's time limits (the outside audit's A7)", () => {
         lock: "5s",
         statement: "10s",
       });
+      // A body may return its queries as an array, which postgres.js runs before the commit: each runs inside
+      // the transaction, under its limits, and the caller gets their rows.
+      const both = await loose.begin((tx) => [tx.unsafe<Settings[]>(SETTINGS), tx.unsafe<Settings[]>(SETTINGS)]);
+      expect(both.map((rows) => rows[0])).toEqual([
+        { lock: "5s", statement: "10s" },
+        { lock: "5s", statement: "10s" },
+      ]);
       // `SET LOCAL`: the session's own come back once the transaction ends.
       expect(await settings(loose)).toEqual({ lock: "0", statement: "0" });
 

@@ -35,11 +35,14 @@ export function connect(url: string): ApiSql {
   const sql: ApiSql = postgres(url, { max: API_POOL, types: { instant: INSTANT_TYPE }, ...transportOptions(url) });
   const begin = sql.begin.bind(sql) as (...args: unknown[]) => Promise<unknown>;
   // Every `begin` of the API, with or without its options ("read only"), takes the limits before its body runs.
+  // A body may return an array of queries, which postgres.js runs inside the transaction before its commit; the
+  // async wrapper hides the array from postgres.js, so it runs them itself, as postgres.js would.
   sql.begin = ((...args: unknown[]) => {
     const body = args.at(-1) as (tx: postgres.TransactionSql<{ instant: Temporal.Instant }>) => unknown;
     return begin(...args.slice(0, -1), async (tx: postgres.TransactionSql<{ instant: Temporal.Instant }>) => {
       await tx.unsafe(TRANSACTION_LIMITS).simple();
-      return body(tx);
+      const result = body(tx);
+      return Array.isArray(result) ? Promise.all(result) : result;
     });
   }) as ApiSql["begin"];
   return sql;

@@ -39,7 +39,8 @@ Supabase's session pooler hands its server sessions from one client to the next;
 parameters replace them (round 1 of the review, E3 and P2). So every transaction of the API also sets the two waits'
 limits as its first statement (`services/api/src/connection.ts` `TRANSACTION_LIMITS`, two `SET LOCAL` in one
 simple-protocol message: one round trip, no snapshot, allowed in a read-only transaction), as the worker's
-transactions already do. `connect` wraps `begin`, so none of the API's thirty-odd transactions can forget it.
+transactions already do. `connect` wraps `begin`, so none of the API's thirty-odd transactions can forget it; a body that returns an array of
+queries still has them run inside the transaction before its commit, as postgres.js does (round 2, R2-1).
 
 0.2. **The values.**
 - `lock_timeout = 5s`, the worker's `LOCK_WAIT_MS`: no command of the API waits on a lock for long in normal use
@@ -53,9 +54,12 @@ transactions already do. `connect` wraps `begin`, so none of the API's thirty-od
   nothing changes for it; `ops` scripts that need longer set their own (`tools/ops/src/spike-time.ts`). The worker
   never holds a transaction while it reads, prepares or stores a photo (`services/worker/src/prepare.ts`: the claim
   and the record are each their own transaction), so the idle limit can't end one of its transactions in normal use.
-- The migration runner (`tools/ops/src/migrate.ts`) inherits them too, once 0018 is applied: a migration that waits
-  more than 5 s for a table's lock fails and rolls back, and the deploy stops, rather than queueing every request behind
-  it. The runner sends a whole file as one statement (a `DO` block that `EXECUTE`s it), so the 10 s statement limit
+- The migration runner (`tools/ops/src/migrate.ts`) inherits them too, on a server session that started after 0018:
+  a migration that waits more than 5 s for a table's lock fails and rolls back, and the deploy stops, rather than
+  queueing requests behind it. The pooler may hand the runner an older session, which has none (round 2, R2-2), and
+  so may the `ops` scripts and the worker's reads outside a transaction; the API's own transactions still end at 5 s
+  with the 503 (0.1), and `docs/LIMITATIONS.md` (2026-11-24) records the rest, with its follow-up: the runner sets
+  its own limits in each of its transactions, with the runner change a longer migration needs. The runner sends a whole file as one statement (a `DO` block that `EXECUTE`s it), so the 10 s statement limit
   bounds a migration file as a whole, and a `SET LOCAL statement_timeout` inside the file can't lift it, since the
   statement's timer started with the `DO` (round 1, E2; a `SET LOCAL lock_timeout` inside the file does lift the lock
   limit, read at each wait). Every migration so far is small on the trial's data; one that needs longer needs the runner
@@ -124,7 +128,8 @@ flight: no route lets a member hold a lock at will (the audit's own note), so th
 - the API's own (round 1): a `connect` client whose connection string turns both waits' limits off still runs every
   transaction, with options or without, under 5 s and 10 s, and its session's own come back after it; a held row's wait
   ends with a `PostgresError` `55P03` within the lock limit and a margin, and a statement of 11 s with `57014` within
-  the statement limit and a margin, and the connection still answers;
+  the statement limit and a margin, and the connection still answers; a body that returns two queries as an array gets
+  both their rows, each read inside the transaction under 5 s and 10 s (round 2);
 - the audit's reproduction through the real app (`buildApp` on `connect`, the real gate with a test signer): a
   connection holds Ana's account row `FOR UPDATE`; ten `PATCH /v1/me` for Ana each answer 503 with no body and
   `private, no-store`, none later than the lock limit twice over and a margin; Ben's `GET /v1/me`, sent after them,
@@ -146,10 +151,10 @@ lock or a transaction past the limits would now fail.
 ## 3. Breakages
 
 At the PR's last head, each caught by the test it names:
-- B1: the migration sets no `lock_timeout` (the reproduction: the `PATCH`es don't answer 503 in time; the role test);
+- B1: the migration sets no `lock_timeout` (the role test; since round 1 the reproduction's transactions set their own);
 - B2: `statement_timeout` left out (the role test);
 - B3: `idle_in_transaction_session_timeout` left out (the role test);
-- B4: `55P03` not mapped (the reproduction, and app.test.ts's lock case);
+- B4: `55P03` not mapped (app.test.ts's lock case), and again as B4r against the reproduction (time-limits.test.ts);
 - B5: `57014` not mapped (app.test.ts);
 - B6: `25P03` mapped to the 503 as well (app.test.ts's other-code case; round 1 took it out);
 - B7: every database error mapped to 503 (app.test.ts's other-code case);
@@ -159,7 +164,9 @@ At the PR's last head, each caught by the test it names:
 - B11: the timeout answered with a 503 of its own, without `private, no-store` (app.test.ts's lock case);
 - B12: the API's transactions set no limits of their own (time-limits.test.ts, the API's own);
 - B13: only a `begin` without options sets them, so a read-only transaction doesn't (the same test);
-- B14: the API's transactions set only the lock limit (the same test: the statement's 57014).
+- B14: the API's transactions set only the lock limit (the same test: the statement's 57014);
+- B15: the wrapper returns a body's array to postgres.js unrun, so its queries never run inside the transaction (the
+  same test: the array's rows).
 
 B1 to B3 change the migration, so each runs on a freshly made cluster, which is made again with the real migration
 afterwards.
