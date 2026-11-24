@@ -1,0 +1,88 @@
+--- 17:40:47 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-24-174047.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-24 17:40:47.00 +0000
+pid: 3614
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.75B24002-A44C-4ACB-AAC9-35E256109656
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 3614, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 17:42:14 UTC, /Library/Logs/DiagnosticReports/JetsamEvent-2026-11-24-174212.ips
+bug_type: 298
+timestamp: 2026-11-24 17:42:12.00 +0000
+largestProcess: SimMetalHost (iPhone 17: default
+killed: UARPUpdaterServiceHID, pid 683 (idle-exit)
+killed: mobiletimerd, pid 429 (idle-exit)
+killed: com.apple.Virtualization.AppleVi, pid 552 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 760 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 762 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 761 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 763 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 764 (idle-exit)
+killed: maild, pid 771 (idle-exit)
+killed: communicationtrustd, pid 535 (idle-exit)
+killed: NRDUpdated, pid 656 (idle-exit)
+killed: installerauthagent, pid 655 (idle-exit)
+killed: wifip2pd, pid 493 (idle-exit)
+killed: WiFiCloudAssetsXPCService, pid 781 (idle-exit)
+killed: intelligentroutingd, pid 462 (idle-exit)
+killed: mmaintenanced, pid 770 (idle-exit)
+killed: com.apple.hiservices-xpcservice, pid 769 (idle-exit)
+killed: accessoryaccessd, pid 350 (idle-exit)
+killed: AUCrashHandlerService, pid 765 (idle-exit)
+killed: seld, pid 349 (idle-exit)
+killed: FamilyControlsAgent, pid 676 (idle-exit)
+killed: appplaceholdersyncd, pid 432 (idle-exit)
+killed: askpermissiond, pid 435 (idle-exit)
+killed: ecosystemd, pid 780 (idle-exit)
+killed: IMTransferAgent, pid 697 (idle-exit)
+killed: commerce, pid 803 (idle-exit)
+killed: StocksKitService, pid 793 (idle-exit)
+killed: findmydeviced, pid 215 (idle-exit)
+killed: XProtectPluginService, pid 779 (idle-exit)
+killed: XProtectPluginService, pid 766 (idle-exit)
+--- 17:44:31 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-24-174241_sjc22-bm204-b70cd1ed-b9a9-425a-a547-501a56b0be6e-9AEF16A56F95.diag
+Date/Time:        2026-11-24 17:38:32.983 +0000
+End time:         2026-11-24 17:39:46.873 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 02E341F7-196F-40F2-A7BB-A886F66F9C3C
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1990b4000
+
+Command:          STExtractionService
+Path:             /Volumes/VOLUME/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.75B24002-A44C-4ACB-AAC9-35E256109656"(3037)
+On Behalf Of:     81 samples UNKNOWN [2778] (80 samples originated by UNKNOWN [2720, 2849, 2853], 1 sample originated by trustd [2805])
+Architecture:     arm64
+Parent:           UNKNOWN [2468]
+PID:              3556
+
+--- 17:45:58 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-24-174432_sjc22-bm204-b70cd1ed-b9a9-425a-a547-501a56b0be6e-9AEF16A56F95.diag
+Date/Time:        2026-11-24 17:02:41.961 +0000
+End time:         2026-11-24 17:40:24.836 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 1FA33E27-EDAF-450D-8C22-B814B4697942
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1990b4000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x193de4000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(809)
+On Behalf Of:     154 samples UNKNOWN [2281, 2287, 3957, 7363, 23085, 23097, 33205, 36880] (154 samples originated by UNKNOWN [229, 2287, 3957, 23085, 23097, 33205, 36880])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              671
+--- the simulator's log: not read, since logs/test-26.5.log names no ended service with a UTC time (SERVICE_ENDED, SERVICE_STAMP)
