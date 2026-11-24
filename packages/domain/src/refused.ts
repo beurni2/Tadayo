@@ -26,6 +26,8 @@ export interface RefusalFacts {
   readonly next_target?: PlacedDay;
   /** The caller's own allowance in `target` (T15, T17). */
   readonly allowance?: Allowance;
+  /** The caller's own drop that already holds this photo or link in the day, to offer View existing (T21). */
+  readonly existing_drop_id?: string;
 }
 
 export class Refused extends Error {

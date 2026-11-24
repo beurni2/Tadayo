@@ -161,3 +161,53 @@ export async function freeSlot(tx: QuerySql, key: CounterKey, id: string, at: Te
   if (rows[0] === undefined) throw new Error("counter: the reservation to give back isn't live in this counter");
   return rowOf(rows[0]);
 }
+
+/**
+ * Uses the live reservation `id` of the counter for the drop `dropId`, committed at `at`: `consumed`, ended then,
+ * naming the drop, and its slot moved from the reserved counts to the committed ones, so the totals don't move
+ * and no limit can refuse it. Returns the row as it then stands, or throws when the reservation isn't live in
+ * this counter, which the caller has read under the lock. The drop is inserted first: the reservation names it.
+ */
+export async function consumeSlot(
+  tx: QuerySql,
+  key: CounterKey,
+  id: string,
+  dropId: string,
+  at: Temporal.Instant,
+): Promise<CounterRow> {
+  const rows = await bound(tx)`
+    WITH used AS (
+      UPDATE app.reservations SET state = 'consumed', ended_at = ${at}::pg_catalog.timestamptz, drop_id = ${dropId}
+       WHERE id = ${id} AND occurrence_id = ${key.day} AND interval_id = ${key.interval} AND state = 'live'
+      RETURNING media_class
+    )
+    UPDATE app.contribution_counters
+       SET reserved_total = reserved_total - 1,
+           reserved_external = reserved_external
+             - (SELECT pg_catalog.count(*) FROM used WHERE media_class = 'external_video')::pg_catalog.int2,
+           committed_total = committed_total + 1,
+           committed_external = committed_external
+             + (SELECT pg_catalog.count(*) FROM used WHERE media_class = 'external_video')::pg_catalog.int2
+     WHERE occurrence_id = ${key.day} AND interval_id = ${key.interval}
+       AND EXISTS (SELECT FROM used)
+    RETURNING committed_total, committed_external, reserved_total, reserved_external,
+              total_limit, photo_limit, external_limit`;
+  if (rows[0] === undefined) throw new Error("counter: the reservation to use isn't live in this counter");
+  return rowOf(rows[0]);
+}
+
+/**
+ * Counts one more committed drop of `media` in the counter, on a free slot: no reservation is used. The caller
+ * holds the lock and has checked the limits (`limitRefusal`); the row's CHECKs are the last guard (T17).
+ */
+export async function takeSlot(tx: QuerySql, key: CounterKey, media: MediaClass): Promise<CounterRow> {
+  const external = media === "external_video" ? "1" : "0";
+  const rows = await bound(tx)`
+    UPDATE app.contribution_counters
+       SET committed_total = committed_total + 1,
+           committed_external = committed_external + ${external}::pg_catalog.int2
+     WHERE occurrence_id = ${key.day} AND interval_id = ${key.interval}
+    RETURNING committed_total, committed_external, reserved_total, reserved_external,
+              total_limit, photo_limit, external_limit`;
+  return rowOf(rows[0]);
+}

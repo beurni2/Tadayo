@@ -97,6 +97,18 @@ import {
 import { homeExpected, homeRowsOf, type HomeSeen } from "./home.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
 import {
+  commitExpected,
+  committedProblems,
+  commitOutcome,
+  DROP_NO_BODY,
+  dropRowsOf,
+  replayExpected,
+  unchangedProblems,
+  type CommitAsk,
+  type DropWorld,
+} from "./drop.ts";
+import {
+  adderOf,
   heldProblems,
   releasedProblems,
   releaseExpected,
@@ -196,7 +208,7 @@ const LEAVES = new Map<string, number>();
 /** By role: the leaves after which the leaver lost a revision that listed them, read until then. */
 const REVISIONS_LOST = new Map<string, number>();
 /** By role: the slots the reservations' table held, and those given back (the role's test fills it; a later test reads it). */
-const SLOTS = new Map<string, { held: number; released: number; expired: number }>();
+const SLOTS = new Map<string, { held: number; released: number; expired: number; consumed: number }>();
 /** By role: the answers in which Cleo's lapsed slot came back as the viewer's own (the role's test fills it). */
 const CLEOS_SLOT = new Map<string, number>();
 /**
@@ -214,6 +226,22 @@ const UPLOADS = new Map<
     later: number;
     replayed: number;
     signedLater: number;
+  }
+>();
+/**
+ * By role: what the commit's table added, got again under a key, refused as a conflict, a duplicate, not ready or
+ * closed, and answered another member asking for the viewer's upload (the role's test fills it).
+ */
+const DROPS = new Map<
+  string,
+  {
+    added: number;
+    replayed: number;
+    conflicts: number;
+    duplicates: number;
+    notReady: number;
+    closed: number;
+    others: number;
   }
 >();
 /**
@@ -865,8 +893,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // What the leave's step did for this role: the states it asked in, and those the judge said it left in.
       const left = { asked: 0, left: 0, revisions: 0 };
       // What the reservations' table did for this role: the slots it held, and those it gave back that came
-      // back released (still live) and expired (lapsed at the reveal). Asserted in the test after the roles.
-      const slots = { held: 0, released: 0, expired: 0 };
+      // back released (still live), expired (lapsed at the reveal with no drop) and consumed (by the drop the
+      // commit's table added under it). Asserted in the test after the roles.
+      const slots = { held: 0, released: 0, expired: 0, consumed: 0 };
       // The answers in which Cleo's lapsed slot came back as the viewer's own. Asserted in the test after the roles.
       let cleosSlot = 0;
       // What the uploads' table did for this role: the uploads it made, those its completion moved to preparing,
@@ -883,6 +912,11 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         replayed: 0,
         signedLater: 0,
       };
+      // What the commit's table did for this role: the drops it added, the retries under a key that got the first
+      // answer (in the phase it was added and every later one), the other bodies under that key refused as a
+      // conflict, the refusals that named a duplicate, a photo not ready and a day that had revealed, and the
+      // answers another member got asking for the viewer's upload. Asserted in the test after the roles.
+      const drops = { added: 0, replayed: 0, conflicts: 0, duplicates: 0, notReady: 0, closed: 0, others: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -971,8 +1005,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         // The clubs' own rows (club.ts), read again with the schedule's.
         const loadClubRows = () => clubRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
         let clubRows = await loadClubRows();
-        // What getHome's judge reads beyond the facts (home.ts): no route of the matrix changes them.
-        const homeRows = await homeRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club]);
+        // What getHome's judge reads beyond the facts (home.ts): only a drop the commit's table adds changes them,
+        // so they are read again after it.
+        const loadHomeRows = () => homeRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club]);
+        let homeRows = await loadHomeRows();
         // The roster's rows (roster.ts), read again after each request that may change them.
         const loadRoster = () => rosterWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
         let rosterWorld = await loadRoster();
@@ -987,6 +1023,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         // answer: each is read, completed and asked for again under its key in every later phase (the uploads'
         // table, below).
         const madeUploads: { id: string; key: string; slot: string; answer: Answer }[] = [];
+        // The drops the viewer added in this cell, with the key, body and interval each was added under and its
+        // first answer: each is asked for again under its key in every later phase (the commit's table, below).
+        const madeDrops: { key: string; body: string; interval: string; answer: Answer }[] = [];
         const specs = operations
           .flatMap((operation) => specsFor(operation, cell.targets, authorization))
           .map((spec): Spec =>
@@ -1090,37 +1129,39 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                                       ? RESERVE_NO_BODY
                                       : gate === undefined && id === "createUpload"
                                         ? UPLOAD_NO_BODY
-                                        : gate === undefined && id === "getUpload"
-                                          ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
-                                          : gate === undefined && id === "completeUpload"
-                                            ? completeExpected(
-                                                completeOutcome(
-                                                  facts.world,
-                                                  cell.viewer,
-                                                  cell.targets.upload,
-                                                  now,
-                                                  storage.objects,
-                                                ),
-                                              )
-                                            : gate === undefined && id === "releaseReservation"
-                                              ? releaseExpected(
-                                                  releaseOutcome(
+                                        : gate === undefined && id === "createDrop"
+                                          ? DROP_NO_BODY
+                                          : gate === undefined && id === "getUpload"
+                                            ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
+                                            : gate === undefined && id === "completeUpload"
+                                              ? completeExpected(
+                                                  completeOutcome(
                                                     facts.world,
                                                     cell.viewer,
-                                                    cell.targets.reservation,
+                                                    cell.targets.upload,
                                                     now,
+                                                    storage.objects,
                                                   ),
                                                 )
-                                              : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                                                ? cellExpected(session, spec.operation, seen)
-                                                : id === "getSchedule"
-                                                  ? weekExpected(scheduleSeen, cell.w.club)
-                                                  : commandExpected(
-                                                      scheduleSeen,
-                                                      id as ScheduleCommand,
-                                                      cell.targets.proposal,
-                                                      startVersion,
-                                                    );
+                                              : gate === undefined && id === "releaseReservation"
+                                                ? releaseExpected(
+                                                    releaseOutcome(
+                                                      facts.world,
+                                                      cell.viewer,
+                                                      cell.targets.reservation,
+                                                      now,
+                                                    ),
+                                                  )
+                                                : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                                  ? cellExpected(session, spec.operation, seen)
+                                                  : id === "getSchedule"
+                                                    ? weekExpected(scheduleSeen, cell.w.club)
+                                                    : commandExpected(
+                                                        scheduleSeen,
+                                                        id as ScheduleCommand,
+                                                        cell.targets.proposal,
+                                                        startVersion,
+                                                      );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -1143,13 +1184,20 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             // A leave has no body that changes nothing, so the cell's own club is asked with none (the
             // contract refuses it, above) and the guessed and malformed clubs with a choice, past the body's check.
             // A reservation's the same: the cell's own day is asked with none, and the guessed and malformed days
-            // for a photo, which would hold a slot in a day the viewer may add to (and none is guessed).
+            // for a photo, which would hold a slot in a day the viewer may add to (and none is guessed). And a
+            // commit's: the guessed and malformed days with a photo nobody uploaded, past the body's check.
             const guessing: Spec =
-              id === "leaveClub" || id === "createReservation"
+              id === "leaveClub" || id === "createReservation" || id === "createDrop"
                 ? {
                     ...spec,
                     headers: { ...spec.headers, "content-type": "application/json" },
-                    body: JSON.stringify(id === "leaveClub" ? { contributions: "keep" } : { media_class: "photo" }),
+                    body: JSON.stringify(
+                      id === "leaveClub"
+                        ? { contributions: "keep" }
+                        : id === "createReservation"
+                          ? { media_class: "photo" }
+                          : { media: { kind: "photo", upload_id: freshId() } },
+                    ),
                   }
                 : spec;
             const guessed = await guessStep(app, guessing, elsewhere, gate);
@@ -1948,8 +1996,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const cleos = await giveBack(cell.cleos, "Cleo's slot, held as a member and lapsed before any phase");
           if (cleos.ended !== undefined) cleosSlot += 1;
           if (carried !== undefined) {
-            const lapsed = await giveBack(carried, "the slot held in the phase before, lapsed at the reveal");
+            const lapsed = await giveBack(
+              carried,
+              "the slot held in the phase before, lapsed at the reveal or consumed by the drop added under it",
+            );
             if (lapsed.ended === "expired") slots.expired += 1;
+            if (lapsed.ended === "consumed") slots.consumed += 1;
             const again = await giveBack(carried, "the lapsed slot given back again");
             if (said(again.answer) !== said(lapsed.answer))
               wrong.push(
@@ -2153,6 +2205,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             if (slot !== undefined) await uploadStep(slot, randomUUID(), note);
           }
           const photoSlot = first.slot;
+          // The upload made under that slot in this phase, once the worker made it ready: the commit's table adds it.
+          let readyNow: string | undefined;
           if (photoSlot !== undefined) {
             const uploadKey = randomUUID();
             const made = await uploadStep(photoSlot, uploadKey, "an upload under the first slot the table held, live");
@@ -2232,7 +2286,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                       `${state.name}, ${phase}: the worker's preparation left the upload ${other} as ${JSON.stringify(after)}`,
                     );
                 }
-                if (outcome.outcome === "ready") uploads.ready += 1;
+                if (outcome.outcome === "ready") {
+                  uploads.ready += 1;
+                  readyNow = id;
+                }
                 await readUpload(id, "the upload read, ready");
                 await completeUpload(id, "the upload completed once ready");
                 await again("the upload again under its key, ready");
@@ -2265,6 +2322,189 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             const given = await giveBack(slot, "a slot held in the table, given back while it is live");
             if (given.ended === "released") slots.released += 1;
           }
+          // The commit's table (drop.ts), in every phase, after the uploads' table and before the slot the
+          // reservations' table held first is carried to the next phase. First, every drop the viewer added in an
+          // earlier phase, asked for again under its key: the first answer, byte for byte but for the day's star, named
+          // as the world names them now (FQ139), while the viewer may still add to the day, the day revealed or closed
+          // (T19), and the neutral not-found once they may not.
+          // Then bodies that name nothing the viewer may add: Ben's upload still pending under the slot he gave
+          // back, the world's drop's photo (Ben's, already in that drop), the viewer's two avatars, another club's
+          // upload, an upload nobody has and a link (no source can be named yet); then each upload the viewer made
+          // in an earlier phase, and the one left pending in this one, under a new key. Each is judged from the
+          // rows before it, with the rows after it held to its answer (T3, T4, T9, T12, T14, T21). Last, in the
+          // phase the worker made the viewer's upload ready: that upload under its slot, with a caption and the
+          // slot's id, added (T8, T15, T17, T20); its retry under its key, the same bytes; another caption under
+          // that key, IDEMPOTENCY_CONFLICT; the same upload under a new key, DUPLICATE_DROP with the drop just
+          // added (T21); and another member's commit of it, which finds nothing and changes nothing (T9, T14).
+          const createDropSpec = uploadSpec("createDrop");
+          const dropGate = gateOf(sessionNow, createDropSpec.operation);
+          const loadDropRows = () => dropRowsOf(db as unknown as WorldTx, clubs);
+          let dropRows = await loadDropRows();
+          facts = await load();
+          const dropWorld = (): DropWorld => ({ world: facts.world, rows: dropRows });
+          const reloadDrops = async () => {
+            facts = await load();
+            dropRows = await loadDropRows();
+          };
+          const dropBody = (ask: CommitAsk, caption?: string): string =>
+            JSON.stringify({
+              ...(ask.reservation === undefined ? {} : { reservation_id: ask.reservation }),
+              media:
+                ask.media.kind === "photo"
+                  ? { kind: "photo", upload_id: ask.media.upload }
+                  : { kind: "external_video", source_id: ask.media.source },
+              ...(caption === undefined ? {} : { caption }),
+            });
+          const dropAsk = async (body: string, key: string, authorization?: string) => {
+            const sent: Spec = {
+              ...createDropSpec,
+              headers: { ...createDropSpec.headers, "content-type": "application/json" },
+              body,
+            };
+            const request = render(sent);
+            request.headers["idempotency-key"] = key;
+            if (authorization !== undefined) request.headers["authorization"] = authorization;
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, request);
+            counted.bodies += 1;
+            return { sent, answer };
+          };
+          // One commit: judged from the rows before it, with the rows after it held to its answer.
+          const commitStep = async (ask: CommitAsk, caption: string | undefined, key: string, note: string) => {
+            const previous = dropWorld();
+            const outcome = commitOutcome(previous, cell.viewer, ask, now);
+            const { sent, answer } = await dropAsk(dropBody(ask, caption), key);
+            await reloadDrops();
+            const after = dropWorld();
+            const problems =
+              dropGate === undefined
+                ? [
+                    ...takes(
+                      commitExpected(outcome, () => after),
+                      answer,
+                    ),
+                    ...committedProblems(previous, after, answer, outcome, caption),
+                  ]
+                : [...pinnedProblems(answer, dropGate), ...unchangedProblems(previous, after)];
+            tellSlot("createDrop", sent, answer, problems, note);
+            if (dropGate !== undefined) return { answer, outcome: undefined };
+            if (outcome.kind === "added") drops.added += 1;
+            if (outcome.kind === "refused" && outcome.code === "DUPLICATE_DROP") drops.duplicates += 1;
+            if (outcome.kind === "refused" && outcome.code === "OCCURRENCE_CLOSED") drops.closed += 1;
+            if (outcome.kind === "pinned" && outcome.answer.body === '{"code":"MEDIA_NOT_READY"}') drops.notReady += 1;
+            return { answer, outcome };
+          };
+          // A request under a key that added a drop: `want`, the first answer's text or a pinned answer, and
+          // nothing made or changed (T19).
+          const dropAgain = async (body: string, key: string, want: Answer | string, note: string) => {
+            const previous = dropWorld();
+            const { sent, answer } = await dropAsk(body, key);
+            await reloadDrops();
+            const problems =
+              typeof want === "string"
+                ? said(answer) === want
+                  ? []
+                  : ["a retry under its key got another answer than the first (T19)"]
+                : pinnedProblems(answer, want);
+            problems.push(...unchangedProblems(previous, dropWorld()));
+            tellSlot("createDrop", sent, answer, problems, note);
+            return answer;
+          };
+          for (const earlier of madeDrops) {
+            const still = adderOf(facts.world, cell.viewer, cell.w.day) === earlier.interval;
+            const answer = await dropAgain(
+              earlier.body,
+              earlier.key,
+              dropGate ?? (still ? replayExpected(facts.world, cell.w.day, earlier.answer) : NEUTRAL),
+              "a drop added in an earlier phase, again under its key",
+            );
+            if (dropGate === undefined && still && answer.status === 201) drops.replayed += 1;
+          }
+          const photoAsk = (upload: string, reservation?: string): CommitAsk => ({
+            day: cell.w.day,
+            media: { kind: "photo", upload },
+            ...(reservation === undefined ? {} : { reservation }),
+          });
+          for (const [ask, note] of [
+            [photoAsk(cell.targets.upload), "Ben's upload, pending under the slot he gave back"],
+            [photoAsk(cell.photo), "the world's drop's photo, Ben's, already in that drop"],
+            [photoAsk(cell.ready.id), "the viewer's ready avatar"],
+            [photoAsk(cell.pending), "the viewer's pending avatar"],
+            [photoAsk(elsewhere.upload), "another club's upload"],
+            [photoAsk(freshId()), "an upload nobody has"],
+            [
+              { day: cell.w.day, media: { kind: "external_video", source: freshId() } },
+              "a link, which no source can name yet",
+            ],
+          ] as const satisfies readonly (readonly [CommitAsk, string])[]) {
+            await commitStep(ask, undefined, randomUUID(), note);
+          }
+          for (const earlier of madeUploads.filter((one) => one.id !== readyNow)) {
+            await commitStep(photoAsk(earlier.id), undefined, randomUUID(), "an upload the viewer made, a new key");
+          }
+          if (readyNow !== undefined && photoSlot !== undefined) {
+            const ask = photoAsk(readyNow, photoSlot);
+            const caption = `${named(cell.w, "The ferry at dawn")} ${state.name}`;
+            const key = randomUUID();
+            const one = await commitStep(ask, caption, key, "the ready upload under its slot, added");
+            const interval = one.outcome?.kind === "added" ? one.outcome.interval : undefined;
+            if (interval !== undefined) {
+              madeDrops.push({ key, body: dropBody(ask, caption), interval, answer: one.answer });
+              const again = await dropAgain(
+                dropBody(ask, caption),
+                key,
+                replayExpected(facts.world, cell.w.day, one.answer),
+                "the drop added, again under its key",
+              );
+              if (again.status === 201) drops.replayed += 1;
+              const conflict = await dropAgain(
+                dropBody(ask, `${caption}, changed`),
+                key,
+                IDEMPOTENCY_CONFLICT,
+                "another caption under the drop's key",
+              );
+              if (pinnedProblems(conflict, IDEMPOTENCY_CONFLICT).length === 0) drops.conflicts += 1;
+              await commitStep(ask, caption, randomUUID(), "the same upload under a new key");
+              // Another member's commit of the viewer's upload: judged as theirs, changing nothing, and the
+              // answer scanned with that member's own facts.
+              if (other !== undefined) {
+                const previous = dropWorld();
+                const outcome = commitOutcome(previous, other.account, photoAsk(readyNow), now);
+                const { sent, answer } = await dropAsk(dropBody(photoAsk(readyNow)), randomUUID(), other.authorization);
+                await reloadDrops();
+                const problems = [
+                  ...takes(
+                    commitExpected(outcome, () => dropWorld()),
+                    answer,
+                  ),
+                  ...committedProblems(previous, dropWorld(), answer, outcome, undefined),
+                  ...(outcome.kind === "pinned" && outcome.answer === NEUTRAL
+                    ? []
+                    : ["the judge lets another member add the viewer's upload"]),
+                ];
+                const theirs = await factsOf(clubs, other.account, {
+                  accounts: [cell.w.dan.user],
+                  secrets: [...secrets],
+                });
+                scanner(
+                  wrong,
+                  `${state.name}, ${phase}`,
+                  () => theirs,
+                  now,
+                  counted,
+                )({
+                  problems: problems.map(
+                    (problem) => `createDrop: ${problem} (another member adds the viewer's upload)`,
+                  ),
+                  answers: [{ spec: sent, answer }],
+                });
+                drops.others += 1;
+              }
+            }
+          }
+          // Home's own rows, read again: the open day's page and the recent days hold the drop added.
+          homeRows = await loadHomeRows();
           carried = first.slot;
           // The leave (leave.ts), last of all in the cell's last phase, since it ends what every other row
           // reads: the viewer leaves the cell's club with a choice, judged from the rows before and after; the
@@ -2414,6 +2654,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       console.log(`${role.name}, the reservations' table: ${JSON.stringify(slots)}`);
       UPLOADS.set(role.name, uploads);
       console.log(`${role.name}, the uploads' table: ${JSON.stringify(uploads)}`);
+      DROPS.set(role.name, drops);
+      console.log(`${role.name}, the commit's table: ${JSON.stringify(drops)}`);
       expect(roster.proposals).toBe(STATES.length * phases.length * proposeCases(0, "x").length);
       expect(roster.revisions).toBe(roster.due);
       expect(roster.memberPhases > 0).toBe(memberStates.size > 0);
@@ -2472,16 +2714,23 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
     // link, and the star and the two who joined afresh nothing; so the table holds the author two (a photo,
     // then a link; three when the photo was withdrawn), the star six (two photos, two links, then photos to
     // six), the member in the audience two photos, and each of the two who joined three (two photos and a
-    // link). Every slot but the first is given back live, and the first lapses at the reveal.
+    // link). Every slot but the first is given back live. The first holds the upload the commit's table adds
+    // in the same phase, so it is consumed by that drop and given back after the reveal as consumed, naming it
+    // (T20), in each of the four states; until the commit was built it lapsed at the reveal and came back
+    // expired. A lapsed slot coming back expired is still asked in every cell: Cleo's, below.
     expect(SLOTS.size).toBe(ROLES.length);
     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
-      ["author", { held: 9, released: 5, expired: 4 }],
-      ["star", { held: 24, released: 20, expired: 4 }],
-      ["member in the audience", { held: 8, released: 4, expired: 4 }],
-      ["member who joined after the commit (T8)", { held: 12, released: 8, expired: 4 }],
-      ["rejoined member, a new interval (T8)", { held: 12, released: 8, expired: 4 }],
+      ["author", { held: 9, released: 5, expired: 0, consumed: 4 }],
+      ["star", { held: 24, released: 20, expired: 0, consumed: 4 }],
+      ["member in the audience", { held: 8, released: 4, expired: 0, consumed: 4 }],
+      ["member who joined after the commit (T8)", { held: 12, released: 8, expired: 0, consumed: 4 }],
+      ["rejoined member, a new interval (T8)", { held: 12, released: 8, expired: 0, consumed: 4 }],
     ]);
-    expect([...SLOTS].filter(([, table]) => table.held === 0 && (table.released > 0 || table.expired > 0))).toEqual([]);
+    expect(
+      [...SLOTS].filter(
+        ([, table]) => table.held === 0 && (table.released > 0 || table.expired > 0 || table.consumed > 0),
+      ),
+    ).toEqual([]);
   });
 
   it("gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it", () => {
@@ -2551,6 +2800,43 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
       [
         "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
         { made: 0, unsigned: 0, preparing: 0, ready: 0, closed: 12, later: 0, replayed: 0, signedLater: 0 },
+      ],
+    ]);
+  });
+});
+
+describe("the commit's table ran (tests/src/privacy/drop.ts)", () => {
+  it("added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed", () => {
+    // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
+    // Counted by hand from the world (../matrix.ts), apart from the judge. A drop is added only while the day is
+    // collecting, in the four states whose day takes slots, by the five roles that hold one (the reservations'
+    // table ran, above): the upload the worker made ready under the first slot, once in each of those states.
+    // Its retry under its key gets the first answer then and in each of the three phases after it (T19), and
+    // another caption under that key conflicts once; the same upload under a new key is DUPLICATE_DROP with it
+    // (T21), once in each state; and another member's commit of it is answered once in each state (every one of
+    // those roles has another member with a session: Ana, or Ben for the star). While collecting, the upload the
+    // uploads' table left pending is MEDIA_NOT_READY wherever it was made (the author only once the world's drop
+    // was withdrawn; the others in all four states), and so, for the author alone, is Ben's own upload still
+    // pending under the slot he gave back, in all four. The world's drop's photo is the author's too: a
+    // duplicate of that drop while it is active or held, and an upload another drop used, the neutral
+    // not-found, once it was withdrawn or removed. From the reveal on, every body the table sends to someone who
+    // may still add to the day is OCCURRENCE_CLOSED, whatever it names (T3, T4): the seven it sends in every
+    // phase and each upload the viewer made while collecting (two, or the author's one but where the drop was
+    // withdrawn), in each of the three phases after collecting, in the four states; and the seven alone to
+    // Cleo once the author has blocked Cleo, as that role's three phases are from the reveal on and Cleo's first
+    // interval may still add to the day (the uploads' table ran, above). Nobody else adds, is refused for the
+    // day, or meets a duplicate (T9, T14).
+    expect(DROPS.size).toBe(ROLES.length);
+    const one = { added: 4, replayed: 4 + 3 * 4, conflicts: 4, duplicates: 4, notReady: 4, others: 4 };
+    expect([...DROPS].filter(([, table]) => Object.values(table).some((n) => n > 0))).toEqual([
+      ["author", { ...one, duplicates: 4 + 2, notReady: 4 + 1, closed: 3 * ((7 + 1) * 3 + (7 + 2)) }],
+      ["star", { ...one, closed: 3 * (7 + 2) * 4 }],
+      ["member in the audience", { ...one, closed: 3 * (7 + 2) * 4 }],
+      ["member who joined after the commit (T8)", { ...one, closed: 3 * (7 + 2) * 4 }],
+      ["rejoined member, a new interval (T8)", { ...one, closed: 3 * (7 + 2) * 4 }],
+      [
+        "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
+        { added: 0, replayed: 0, conflicts: 0, duplicates: 0, notReady: 0, closed: 3 * 7 * 4, others: 0 },
       ],
     ]);
   });

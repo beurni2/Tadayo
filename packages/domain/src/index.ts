@@ -40,7 +40,24 @@ export {
   type Limits,
   type MediaClass,
 } from "./drops/allowance.ts";
-export { freeSlot, holdSlot, lockCounter, settleLapsed, type CounterKey, type HeldSlot } from "./drops/counter.ts";
+export {
+  consumeSlot,
+  freeSlot,
+  holdSlot,
+  lockCounter,
+  settleLapsed,
+  takeSlot,
+  type CounterKey,
+  type HeldSlot,
+} from "./drops/counter.ts";
+export {
+  createDrop,
+  keptCaption,
+  type CreateDropInput,
+  type DropMediaInput,
+  type DropReceiptAnswer,
+  type DropRender,
+} from "./drops/commit.ts";
 export {
   createReservation,
   RESERVATION_MINUTES,

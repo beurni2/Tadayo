@@ -4,16 +4,21 @@
 
 import { contractInstant, type Allowance, type Json, type PlacedDay } from "@tadayo/domain";
 
-/** The contract's `Occurrence`: its instants in whole seconds, the star's avatar version only when there is one. */
+/** The contract's `Person` for a day's star, as `placed` names them (FQ75): the avatar version only when there is one. */
+export function starBody(star: PlacedDay["star"]): Json {
+  return {
+    membership_id: star.membershipId,
+    display_name: star.displayName,
+    ...(star.avatarVersion === null ? {} : { avatar_version: star.avatarVersion }),
+  };
+}
+
+/** The contract's `Occurrence`: its instants in whole seconds, its star as `starBody` writes them. */
 export function occurrenceBody(day: PlacedDay): Json {
   return {
     id: day.id,
     club_id: day.clubId,
-    star: {
-      membership_id: day.star.membershipId,
-      display_name: day.star.displayName,
-      ...(day.star.avatarVersion === null ? {} : { avatar_version: day.star.avatarVersion }),
-    },
+    star: starBody(day.star),
     local_date: day.localDate,
     reveal_at: contractInstant(day.revealAt),
     close_at: contractInstant(day.closeAt),
