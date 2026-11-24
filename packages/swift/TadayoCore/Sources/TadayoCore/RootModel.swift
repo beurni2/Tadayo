@@ -178,22 +178,42 @@ import Observation
         self.left = left
     }
 
-    /// At launch.
+    /// At launch. With no session, what an account kept is forgotten before sign-in shows: its
+    /// session can end out of the app's sight (a refresh that found it ended deletes it, and the
+    /// app can be stopped before the root ends the account; a vault that refused both its delete
+    /// and its blank write tries again only in that launch; from B4 the share extension refreshes
+    /// too), and its choice and links shouldn't wait on the device for the next account (T11,
+    /// ADR-037). A keychain that refuses the read for a moment is neither: the account's failure,
+    /// with Retry, and everything kept (FQ89).
     public func start() async {
         guard leaving == nil else { return }
         route = .starting
-        guard await session.isSignedIn else { return showSignIn() }
+        let signedIn: Bool
+        do {
+            signedIn = try await session.isSignedIn
+        } catch {
+            route = .failed(.other)
+            return
+        }
+        guard signedIn else {
+            selection.forget()
+            links.forget()
+            return showSignIn()
+        }
         route = .reading
         await readAccount()
     }
 
     /// Retry, on the failure line: the account, the clubs, a Leave sign-in that couldn't finish,
     /// or a session the device couldn't keep, where sign-in starts again with the address typed,
-    /// so only the code is asked for again.
+    /// so only the code is asked for again. If the keychain refuses the read there too, no
+    /// account was read, since none was kept: the line stays the one that names what failed, with
+    /// the address still typed (FQ89, T43).
     public func retry() async {
         if route == .leaveFailed { return await end(unfinished ?? .asked) }
         if route == .tabs { return await loadClubs() }
         if route == .signInNotKept {
+            guard (try? await session.isSignedIn) != nil else { return }
             let typed = signIn?.email ?? ""
             await start()
             if route == .signIn { signIn?.email = typed }
