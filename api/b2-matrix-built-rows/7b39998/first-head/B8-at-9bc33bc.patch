@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/read-sql.ts b/packages/domain/src/authorization/read-sql.ts
+index 630c5d2a..e6f917b8 100644
+--- a/packages/domain/src/authorization/read-sql.ts
++++ b/packages/domain/src/authorization/read-sql.ts
+@@ -102,7 +102,7 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
+      WHERE m.user_id = ${viewer}::pg_catalog.text
+        AND u.state = 'active'
+        AND m.state = 'active'
+-       AND d.state = 'active'
++       AND (d.state = 'active' OR d.media_class = 'external_video')
+        AND o.status = 'scheduled'
+        AND c.suspended_at IS NULL
+        AND ${starKeepsDay(sql)}

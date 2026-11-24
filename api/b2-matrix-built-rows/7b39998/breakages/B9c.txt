@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 1 failed | 23 skipped) 299ms
+   ❯ a route with no row fails, and no route is outside the contract but the preflight (TECH-DESIGN section 8) (1)
+     × gives every operation of the contract a row, and the app a route for each, the preflight, and no other 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 skipped (24)
+   Start at  22:38:52
+   Duration  2.34s (transform 47%, import 36%, tests 18%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a route with no row fails, and no route is outside the contract but the preflight (TECH-DESIGN section 8) > gives every operation of the contract a row, and the app a route for each, the preflight, and no other
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "listComments is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
++ ]
+
+ ❯ src/privacy/matrix.test.ts:973:68
+    971|     // Every Id parameter of every built route names an object of the …
+    972|     // the neutral not-found a request that names nothing gets (the ou…
+    973|     expect(bindingProblems(operations, new Set(BUILT_OPERATIONS))).toE…
+       |                                                                    ^
+    974|     // The browser's preflight before tadayo.app's request is the one …
+    975|     // sends it as its role, below.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

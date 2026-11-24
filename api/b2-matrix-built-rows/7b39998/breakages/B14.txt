@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (92 tests | 1 failed) 1514ms
+   ❯ a route with no row fails (TECH-DESIGN section 8) (4)
+     × ties the built routes to the judged rows both ways (the outside audit's A4) 19ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 91 passed (92)
+   Start at  22:39:16
+   Duration  2.87s (tests 55%, transform 26%, import 19%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > ties the built routes to the judged rows both ways (the outside audit's A4)
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "getDrops is built but isn't an operation of the contract: buildApp never routes it",
+- ]
++ []
+
+ ❯ src/privacy/harness.test.ts:169:87
+    167|     ]);
+    168|     // A handler under a key that isn't an operation (the review's mis…
+    169|     expect(rowProblems(operations, ROWS, { built: new Set([...built, "…
+       |                                                                                       ^
+    170|       "getDrops is built but isn't an operation of the contract: build…
+    171|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

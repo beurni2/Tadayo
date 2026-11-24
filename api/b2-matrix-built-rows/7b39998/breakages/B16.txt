@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (92 tests | 1 failed) 1513ms
+   ❯ a built route names objects of the world (the outside audit's A4) (4)
+     × names a table for every binding, and the bindings each built route names or acts on 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 91 passed (92)
+   Start at  22:39:23
+   Duration  2.82s (tests 56%, transform 26%, import 19%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > names a table for every binding, and the bindings each built route names or acts on
+AssertionError: expected [ 'club_id', 'comment_id', …(8) ] to deeply equal [ 'club_id', 'comment_id', …(9) ]
+
+- Expected
++ Received
+
+@@ -6,8 +6,7 @@
+    "membership_id",
+    "occurrence_id",
+    "proposal_id",
+    "reservation_id",
+    "revision_id",
+-   "star",
+    "upload_id",
+  ]
+
+ ❯ src/privacy/harness.test.ts:206:40
+    204|
+    205|   it("names a table for every binding, and the bindings each built rou…
+    206|     expect(Object.keys(TABLES).sort()).toEqual(Object.keys(BINDINGS).s…
+       |                                        ^
+    207|     expect(boundNames(operations, built).sort()).toEqual([
+    208|       "club_id",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

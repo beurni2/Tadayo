@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 1 failed | 23 skipped) 318ms
+   ❯ a route with no row fails, and no route is outside the contract but the preflight (TECH-DESIGN section 8) (1)
+     × gives every operation of the contract a row, and the app a route for each, the preflight, and no other 17ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 skipped (24)
+   Start at  22:36:24
+   Duration  2.45s (transform 46%, import 36%, tests 18%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a route with no row fails, and no route is outside the contract but the preflight (TECH-DESIGN section 8) > gives every operation of the contract a row, and the app a route for each, the preflight, and no other
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "deleteComment is built but its row is NONE: a built route's row is judged, never the skeleton's",
++ ]
+
+ ❯ src/privacy/matrix.test.ts:970:81
+    968| describe("a route with no row fails, and no route is outside the contr…
+    969|   it("gives every operation of the contract a row, and the app a route…
+    970|     expect(rowProblems(operations, ROWS, { built: new Set(BUILT_OPERAT…
+       |                                                                                 ^
+    971|     // Every Id parameter of every built route names an object of the …
+    972|     // the neutral not-found a request that names nothing gets (the ou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

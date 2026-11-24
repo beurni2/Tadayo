@@ -1,0 +1,11 @@
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -197,7 +197,7 @@
+ };
+ 
+ /** The operations the app builds a route for, in the table's order. */
+-export const BUILT_OPERATIONS: readonly string[] = Object.freeze(Object.keys(HANDLERS));
++export const BUILT_OPERATIONS: readonly string[] = Object.freeze(Object.keys(HANDLERS).filter((id) => id !== "getHome"));
+ 
+ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
+   return Object.fromEntries(Object.entries(HANDLERS).map(([id, make]) => [id, make(deps)]));

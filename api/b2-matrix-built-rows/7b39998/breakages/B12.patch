@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/harness.ts
++++ b/tests/src/privacy/harness.ts
+@@ -311,7 +311,7 @@
+  */
+ export function elsewhereOf(spec: Spec, name: string, elsewhere: Targets): string {
+   const values = bindAll(name, elsewhere);
+-  return values[spec.which?.[name] ?? 0] ?? values[0];
++  return values[0];
+ }
+ 
+ /** `spec` written out: the path's values as they are, the query encoded. */

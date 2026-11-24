@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (92 tests | 1 failed) 1609ms
+   ❯ a built route names objects of the world (the outside audit's A4) (4)
+     × refuses a built route that acts on comments while the world has none, though it takes no comment_id 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 91 passed (92)
+   Start at  22:34:40
+   Duration  3.21s (tests 53%, transform 28%, import 19%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > refuses a built route that acts on comments while the world has none, though it takes no comment_id
+AssertionError: expected [] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+- [
+-   "listComments is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+-   "createComment is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+-   "createReport is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+- ]
++ []
+
+ ❯ src/privacy/harness.test.ts:186:111
+    184|   it("refuses a built route that acts on comments while the world has …
+    185|     // The review's scenario: B6's thread routes built first, each key…
+    186|     expect(bindingProblems(operations, new Set([...built, "listComment…
+       |                                                                                                               ^
+    187|       "listComments is built and acts on the objects comment_id names,…
+    188|       "createComment is built and acts on the objects comment_id names…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

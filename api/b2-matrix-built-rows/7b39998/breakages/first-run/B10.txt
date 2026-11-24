@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 24 skipped) 242ms
+
+ Test Files  1 failed (1)
+      Tests  24 skipped (24)
+   Start at  22:34:10
+   Duration  2.54s (transform 49%, import 38%, tests 13%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts [ src/privacy/matrix.test.ts ]
+Error: the cell's bindings name nothing of its world: upload_id's value rsv_8JmNYOu-GioKPEQ4-B4I0Q is no row of app.uploads
+ ❯ checkBoundRows src/privacy/matrix.test.ts:435:34
+    433|   )
+    434|     problems.push("drop_id doesn't name Ben's photo and then Ben's vid…
+    435|   if (problems.length > 0) throw new Error(`the cell's bindings name n…
+       |                                  ^
+    436| }
+    437|
+ ❯ src/privacy/matrix.test.ts:576:5
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/privacy/matrix.test.ts:552:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

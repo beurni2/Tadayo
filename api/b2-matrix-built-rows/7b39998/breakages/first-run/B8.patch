@@ -1,0 +1,11 @@
+--- a/packages/domain/src/authorization/read-sql.ts
++++ b/packages/domain/src/authorization/read-sql.ts
+@@ -102,7 +102,7 @@
+      WHERE m.user_id = ${viewer}::pg_catalog.text
+        AND u.state = 'active'
+        AND m.state = 'active'
+-       AND d.state = 'active'
++       AND (d.state = 'active' OR d.media_class = 'external_video')
+        AND o.status = 'scheduled'
+        AND c.suspended_at IS NULL
+        AND ${starKeepsDay(sql)}

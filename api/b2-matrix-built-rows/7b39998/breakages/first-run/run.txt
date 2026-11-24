@@ -1,0 +1,36 @@
+== B1 the audit's deleteComment, built with its row left NONE [matrix-rows]: NOT CAUGHT; exit 1 ['Tests  24 skipped (24)']
+== B2 B1 with the row check undone: the binding check sees it [matrix-rows]: NOT CAUGHT; exit 1 ['Tests  24 skipped (24)']
+== B3 the audit's getEmbed, built with its row left NONE [matrix-rows]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × gives every operation of the contract a row, and the app a route for each, the preflight, and no other 13ms
+== B4 B3 with the row check undone: the cells see it [matrix-author]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 65505ms
+== B5 BUILT_OPERATIONS leaves one handler out [app]: CAUGHT; exit 1 ['Tests  1 failed | 12 passed (13)']
+    × answers every operation nobody has built yet with the neutral not-found, and nothing else 7ms
+== B5m B5, on the matrix's row check [matrix-rows]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × gives every operation of the contract a row, and the app a route for each, the preflight, and no other 12ms
+== B6 upload_id, which two built routes take, back to missing [harness]: CAUGHT; exit 1 ['Tests  3 failed | 89 passed (92)']
+    × binds every Id parameter of every built route to an object of the world 10ms
+    × refuses a built route that acts on comments while the world has none, though it takes no comment_id 2ms
+    × refuses a built route that takes a parameter still marked missing, and lets an unbuilt one keep it 1ms
+== B7 specsFor sends a parameter's first value only [harness]: CAUGHT; exit 1 ['Tests  4 failed | 88 passed (92)']
+    × guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4) 2ms
+    × makes one request for each value of a required enum, and gives each idempotent one a key 1ms
+    × names each drop once as Ben's photo and once as Ben's video link (the outside audit's A4) 12ms
+    × sends each value of an Id parameter in the query too, required or optional, and knows which it sent 2ms
+== B8 the read predicate lets a video link through in any drop state [matrix-author]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 68744ms
+== B9 a listComments that leaks comments, built with its row NONE and the row check undone [matrix-rows]: NOT CAUGHT; exit 1 ['Tests  24 skipped (24)']
+== B10 upload_id bound to the cell's slot, an object of another kind [matrix-author]: NOT CAUGHT; exit 1 ['Tests  24 skipped (24)']
+== B11 comment_id bound to Ben's photo, the review's probe [matrix-author]: NOT CAUGHT; exit 1 ['Tests  24 skipped (24)']
+== B12 elsewhereOf always gives the first value [harness]: CAUGHT; exit 1 ['Tests  1 failed | 91 passed (92)']
+    × guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4) 18ms
+== B13 putInState leaves the video out [matrix-author]: CAUGHT; exit 1 ['Tests  1 failed | 23 skipped (24)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 12298ms
+== B14 rowProblems without the built id that isn't an operation [harness]: CAUGHT; exit 1 ['Tests  1 failed | 91 passed (92)']
+    × ties the built routes to the judged rows both ways (the outside audit's A4) 12ms
+== B15 bindingProblems without ACTS_ON [harness]: CAUGHT; exit 1 ['Tests  1 failed | 91 passed (92)']
+    × refuses a built route that acts on comments while the world has none, though it takes no comment_id 10ms
+== B16 TABLES without star [harness]: CAUGHT; exit 1 ['Tests  1 failed | 91 passed (92)']
+    × names a table for every binding, and the bindings each built route names or acts on 12ms
+restored: ''
+exit 0

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (92 tests | 1 failed) 1617ms
+   ❯ each step of the matrix reports a planted wrong answer (40)
+     × guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4) 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 91 passed (92)
+   Start at  22:34:16
+   Duration  3.35s (tests 50%, transform 27%, import 22%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4)
+AssertionError: expected [ Array(6) ] to include 'drp_video_there'
+ ❯ src/privacy/harness.test.ts:532:20
+    530|       sent.length = 0;
+    531|       await guessStep(app, made, elsewhere);
+    532|       expect(sent).toContain(own);
+       |                    ^
+    533|       expect(sent).not.toContain(other);
+    534|       sent.length = 0;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

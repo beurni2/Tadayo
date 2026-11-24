@@ -1,0 +1,85 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (92 tests | 3 failed) 1517ms
+   ❯ a built route names objects of the world (the outside audit's A4) (4)
+     × binds every Id parameter of every built route to an object of the world 11ms
+     × refuses a built route that acts on comments while the world has none, though it takes no comment_id 2ms
+     × refuses a built route that takes a parameter still marked missing, and lets an unbuilt one keep it 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 89 passed (92)
+   Start at  22:37:44
+   Duration  2.92s (tests 54%, transform 27%, import 19%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > binds every Id parameter of every built route to an object of the world
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "getUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
++   "completeUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
++ ]
+
+ ❯ src/privacy/harness.test.ts:177:48
+    175| describe("a built route names objects of the world (the outside audit'…
+    176|   it("binds every Id parameter of every built route to an object of th…
+    177|     expect(bindingProblems(operations, built)).toEqual([]);
+       |                                                ^
+    178|     // The one still missing, until B6's first comment route puts a co…
+    179|     expect(Object.entries(BINDINGS).filter(([, binding]) => binding ==…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > refuses a built route that acts on comments while the world has none, though it takes no comment_id
+AssertionError: expected [ …(5) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "listComments is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+    "createComment is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+    "createReport is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
++   "getUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
++   "completeUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+  ]
+
+ ❯ src/privacy/harness.test.ts:186:111
+    184|   it("refuses a built route that acts on comments while the world has …
+    185|     // The review's scenario: B6's thread routes built first, each key…
+    186|     expect(bindingProblems(operations, new Set([...built, "listComment…
+       |                                                                                                               ^
+    187|       "listComments is built and acts on the objects comment_id names,…
+    188|       "createComment is built and acts on the objects comment_id names…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > refuses a built route that takes a parameter still marked missing, and lets an unbuilt one keep it
+AssertionError: expected [ …(3) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "deleteComment is built and takes comment_id, which names no object of the matrix's world: the slice that builds it puts one in first",
++   "getUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
++   "completeUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+  ]
+
+ ❯ src/privacy/harness.test.ts:226:79
+    224|   it("refuses a built route that takes a parameter still marked missin…
+    225|     // The audit's deleteComment, built while comment_id names nothing.
+    226|     expect(bindingProblems(operations, new Set([...built, "deleteComme…
+       |                                                                               ^
+    227|       "deleteComment is built and takes comment_id, which names no obj…
+    228|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
