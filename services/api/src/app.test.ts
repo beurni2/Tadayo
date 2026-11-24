@@ -215,9 +215,15 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
 });
 
 describe("a database that ran out of time (the outside audit's A7)", () => {
-  /** An error as postgres.js raises one for `code`, its message quoting what a message can quote. */
+  /**
+   * An error as postgres.js raises one for `code`, its message quoting what a message can quote: a PostgresError
+   * for a SQLSTATE, a plain Error for the driver's own codes (a connection the server closed is `CONNECTION_CLOSED`).
+   */
   const postgresError = (code: string) =>
-    Object.assign(new Error(`canceling statement: Ana's row ${code}`), { name: "PostgresError", code });
+    Object.assign(new Error(`canceling statement: Ana's row ${code}`), {
+      name: /^[0-9A-Z]{5}$/.test(code) ? "PostgresError" : "Error",
+      code,
+    });
 
   /** The answer to `GET /v1/clubs` when the database fails with `code`, and the lines the app logged. */
   async function failingWith(code: string) {
@@ -240,9 +246,9 @@ describe("a database that ran out of time (the outside audit's A7)", () => {
 
   const EMPTY_503 = { status: 503, body: "", headers: { "cache-control": "private, no-store", "content-length": "0" } };
 
-  it("answers a lock it waited for too long, a statement too slow and a transaction left idle with the bare 503", async () => {
-    // lock_timeout, statement_timeout and idle_in_transaction_session_timeout (db/migrations/0018_role_time_limits.sql).
-    for (const code of ["55P03", "57014", "25P03"]) {
+  it("answers a lock it waited for too long and a statement too slow with the bare 503", async () => {
+    // lock_timeout and statement_timeout (connection.ts TRANSACTION_LIMITS, db/migrations/0018_role_time_limits.sql).
+    for (const code of ["55P03", "57014"]) {
       const { lines, ...answered } = await failingWith(code);
       expect(answered, code).toEqual(EMPTY_503);
       // One warning, with the error's class and code and nothing of its message (T52).
@@ -256,7 +262,10 @@ describe("a database that ran out of time (the outside audit's A7)", () => {
   });
 
   it("still answers any other failure of the database with the 500 and nothing in it", async () => {
-    for (const code of ["23505", "40001", "08006"]) {
+    // Among them the idle limit's two forms: 25P03 if a query were in flight as the session ended, and the
+    // closed connection postgres.js reports when none is (docs/LIMITATIONS.md, 2026-11-24). The API never
+    // leaves a transaction idle, so either is a failure to look at, not a wait to retry.
+    for (const code of ["23505", "40001", "08006", "25P03", "CONNECTION_CLOSED"]) {
       const { lines, ...answered } = await failingWith(code);
       expect(answered, code).toEqual({ ...EMPTY_503, status: 500 });
       expect(
