@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tools/ops
+
+ ❯ src/deploy-files.test.ts (20 tests | 1 failed) 444ms
+   ❯ Dockerfile (9)
+     × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  11:17:42
+   Duration  762ms (tests 72%, transform 14%, import 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it
+AssertionError: expected [ 'NODE_ENV=production', …(2) ] to deeply equal [ 'NODE_ENV=production', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "NODE_ENV=production",
+    "TADAYO_PHOTO_USER=tadayo-image",
++   "TADAYO_PHOTO_USER=tadayo-image",
+  ]
+
+ ❯ src/deploy-files.test.ts:225:17
+    223|     // [env] says or leaves out (the audit's A6), and nothing else set…
+    224|     const env = image.filter((instruction) => instruction.name === "EN…
+    225|     expect(env).toEqual(["NODE_ENV=production", "TADAYO_PHOTO_USER=tad…
+       |                 ^
+    226|     const made = image.findIndex((instruction) => instruction.name ===…
+    227|     const named = image.findIndex((instruction) => instruction.args ==…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

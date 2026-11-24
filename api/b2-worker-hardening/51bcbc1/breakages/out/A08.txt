@@ -1,0 +1,181 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/start.test.ts (10 tests | 8 failed) 5258ms
+   ❯ the API's entry (ADR-013) (10)
+     × stops before it listens when TADAYO_ENVIRONMENT is missing, empty or neither dev nor prod 456ms
+     × stops before it connects when PORT is set but isn't a port: empty, a word, too big, or not whole 480ms
+     × stops before it listens when DATABASE_URL is missing 458ms
+     × stops before it connects when SUPABASE_URL is missing or empty, so it never runs believing no token 471ms
+     × stops when SUPABASE_URL isn't exactly a project's URL, and never repeats what it was given 446ms
+     × stops before it connects when SUPABASE_SERVICE_KEY is missing, empty or not a key, and never repeats it (T56) 393ms
+     × stops before it connects when LOG_LEVEL is set but isn't one of pino's levels, so a typo never silences the logs 423ms
+     × refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one 4ms
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 2 passed (10)
+   Start at  11:17:02
+   Duration  5.83s (tests 92%, import 5%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it listens when TADAYO_ENVIRONMENT is missing, empty or neither dev nor prod
+AssertionError: undefined: expected 'api: in production it runs only as fl…' to match /not dev or prod/
+
+- Expected:
+/not dev or prod/
+
++ Received:
+"api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
+"
+
+ ❯ src/start.test.ts:84:50
+     82|       });
+     83|       expect(result.code, String(environment)).toBe(1);
+     84|       expect(result.stderr, String(environment)).toMatch(/not dev or p…
+       |                                                  ^
+     85|       expect(result.stdout, String(environment)).not.toMatch(/listenin…
+     86|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it connects when PORT is set but isn't a port: empty, a word, too big, or not whole
+AssertionError: "": expected 'api: in production it runs only as fl…' to match /PORT isn't a port/
+
+- Expected:
+/PORT isn't a port/
+
++ Received:
+"api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
+"
+
+ ❯ src/start.test.ts:93:51
+     91|       const result = await run({ ...RIGHT, PORT: port });
+     92|       expect(result.code, JSON.stringify(port)).toBe(1);
+     93|       expect(result.stderr, JSON.stringify(port)).toMatch(/PORT isn't …
+       |                                                   ^
+     94|       expect(result.stdout, JSON.stringify(port)).not.toMatch(/listeni…
+     95|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it listens when DATABASE_URL is missing
+AssertionError: expected 'api: in production it runs only as fl…' to match /DATABASE_URL isn't set/
+
+- Expected:
+/DATABASE_URL isn't set/
+
++ Received:
+"api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
+"
+
+ ❯ src/start.test.ts:101:27
+     99|     const result = await run({ SUPABASE_URL: PROJECT, TADAYO_ENVIRONME…
+    100|     expect(result.code).toBe(1);
+    101|     expect(result.stderr).toMatch(/DATABASE_URL isn't set/);
+       |                           ^
+    102|     expect(result.stdout).not.toMatch(/listening/);
+    103|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it connects when SUPABASE_URL is missing or empty, so it never runs believing no token
+AssertionError: undefined: expected 'api: in production it runs only as fl…' to match /SUPABASE_URL isn't set/
+
+- Expected:
+/SUPABASE_URL isn't set/
+
++ Received:
+"api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
+"
+
+ ❯ src/start.test.ts:110:44
+    108|       const result = await run({ ...rest, ...(value === undefined ? {}…
+    109|       expect(result.code, String(value)).toBe(1);
+    110|       expect(result.stderr, String(value)).toMatch(/SUPABASE_URL isn't…
+       |                                            ^
+    111|       expect(result.stdout, String(value)).not.toMatch(/listening/);
+    112|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops when SUPABASE_URL isn't exactly a project's URL, and never repeats what it was given
+AssertionError: abcdefghijklmnopqrst.supabase.co: expected 'api: in production it runs only as fl…' to match /SUPABASE_URL isn't/
+
+- Expected:
+/SUPABASE_URL isn't/
+
++ Received:
+"api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
+"
+
+ ❯ src/start.test.ts:130:36
+    128|       const result = await run({ ...RIGHT, SUPABASE_URL: value });
+    129|       expect(result.code, value).toBe(1);
+    130|       expect(result.stderr, value).toMatch(/SUPABASE_URL isn't/);
+       |                                    ^
+    131|       expect(result.stdout + result.stderr, value).not.toContain(marke…
+    132|       expect(result.stdout, value).not.toMatch(/listening/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it connects when SUPABASE_SERVICE_KEY is missing, empty or not a key, and never repeats it (T56)
+AssertionError: undefined: expected 'api: in production it runs only as fl…' to match /SUPABASE_SERVICE_KEY isn't/
+
+- Expected:
+/SUPABASE_SERVICE_KEY isn't/
+
++ Received:
+"api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
+"
+
+ ❯ src/start.test.ts:142:44
+    140|       const result = await run({ ...rest, ...(value === undefined ? {}…
+    141|       expect(result.code, String(value)).toBe(1);
+    142|       expect(result.stderr, String(value)).toMatch(/SUPABASE_SERVICE_K…
+       |                                            ^
+    143|       expect(result.stdout + result.stderr, String(value)).not.toConta…
+    144|       expect(result.stdout, String(value)).not.toMatch(/listening/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it connects when LOG_LEVEL is set but isn't one of pino's levels, so a typo never silences the logs
+AssertionError: "": expected 'api: in production it runs only as fl…' to match /LOG_LEVEL isn't a log level/
+
+- Expected:
+/LOG_LEVEL isn't a log level/
+
++ Received:
+"api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
+"
+
+ ❯ src/start.test.ts:152:52
+    150|       const result = await run({ ...RIGHT, LOG_LEVEL: level });
+    151|       expect(result.code, JSON.stringify(level)).toBe(1);
+    152|       expect(result.stderr, JSON.stringify(level)).toMatch(/LOG_LEVEL …
+       |                                                    ^
+    153|       expect(result.stdout, JSON.stringify(level)).not.toMatch(/listen…
+    154|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one
+AssertionError: expected [Function] to not throw an error but 'Error: api: in production it runs onl…' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"Error: api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root"
+
+ ❯ src/start.test.ts:186:16
+    184|         expect(() => {
+    185|           refuseRoot(env, ids, unmarked);
+    186|         }).not.toThrow();
+       |                ^
+    187|         // In the image, by its marker, whatever NODE_ENV says: no set…
+    188|         expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

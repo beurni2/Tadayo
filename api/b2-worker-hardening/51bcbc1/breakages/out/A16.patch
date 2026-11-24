@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -193,7 +193,7 @@
+   env: Readonly<Record<string, string | undefined>> = process.env,
+   marked: () => boolean = () => existsSync(IMAGE_MARKER),
+ ): boolean {
+-  return env.NODE_ENV === "production" || marked();
++  return env.NODE_ENV === "production";
+ }
+ 
+ /**

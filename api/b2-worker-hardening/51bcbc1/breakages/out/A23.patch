@@ -1,0 +1,10 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -215,7 +215,6 @@
+   return (
+     field("NoNewPrivs") === "1" &&
+     field("CapBnd") === FLY_BOUNDING_SET &&
+-    field("CapInh") === "0000000000000000" &&
+     groups !== undefined &&
+     !groups.split(/\s+/).includes("0")
+   );

@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/worker
+
+ ❯ src/privileges.test.ts (30 tests | 1 failed) 12841ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (20)
+     × in the worker's mode, never starts a photo's process without the photo's user: started so, it could take root back 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  11:17:26
+   Duration  13.06s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > in the worker's mode, never starts a photo's process without the photo's user: started so, it could take root back
+AssertionError: expected { case: 'no-user', …(3) } to deeply equal { case: 'no-user', …(3) }
+
+- Expected
++ Received
+
+  {
+    "case": "no-user",
+    "euid": 64998,
+-   "outcome": "refused",
+-   "started": false,
++   "outcome": "ImageProcessFailed",
++   "started": true,
+  }
+
+ ❯ src/privileges.test.ts:388:29
+    386|     // permitted set (fly.toml's bounding set): under fly.toml's comma…
+    387|     // files (measured in the session on 2026-11-24, docs/JOURNAL.md).…
+    388|     expect(fact("no-user")).toEqual({ case: "no-user", outcome: "refus…
+       |                             ^
+    389|   });
+    390|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

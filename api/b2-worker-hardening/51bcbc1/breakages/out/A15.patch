@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges-harness.ts
++++ b/services/worker/src/privileges-harness.ts
+@@ -627,7 +627,7 @@
+   let renditions: { kind: string; width: number; height: number; jpeg: boolean }[] = [];
+   let peakMiB = 0;
+   try {
+-    const answer = await prepareIsolated(photoBytes, "image/jpeg", { child: realChild, user: PHOTO });
++    const answer = await prepareIsolated(photoBytes, "image/jpeg", { child: realChild });
+     peakMiB = Math.round(answer.peakBytes / MiB);
+     if (answer.prepared.ok) {
+       outcome = "prepared";

@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -186,7 +186,7 @@
+  * The file the Dockerfile writes, which says this is Tadayo's image: no setting can take it away, as one could take
+  * away NODE_ENV (round 3 of PR #118's review).
+  */
+-export const IMAGE_MARKER = "/etc/tadayo-built-image";
++export const IMAGE_MARKER = "/etc/tadayo-image";
+ 
+ /** In the image: NODE_ENV is the image's `production`, or the image's marker is there (IMAGE_MARKER). */
+ export function inImage(

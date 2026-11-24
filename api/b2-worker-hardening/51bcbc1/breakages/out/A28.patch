@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges-harness.ts
++++ b/services/worker/src/privileges-harness.ts
+@@ -567,7 +567,7 @@
+   const entry = words.slice(entryAt);
+   const without = (word: string) => words.filter((candidate) => candidate !== word);
+   const starts: Record<string, string[]> = {
+-    fly: words,
++    fly: without("--no-new-privs"),
+     withoutNoNewPrivs: without("--no-new-privs"),
+     widerBoundingSet: words.map((word) => (word.startsWith("--bounding-set=") ? `${word},+chown` : word)),
+     inheritable: words.map((word) => (word === "--inh-caps=-all" ? "--inh-caps=-all,+kill" : word)),

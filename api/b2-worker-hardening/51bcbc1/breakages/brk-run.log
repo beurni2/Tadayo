@@ -1,0 +1,77 @@
+== A01 the image's rule dropped from photoUserFor [priv]: CAUGHT; exit 1 ['Tests  3 failed | 27 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 11ms
+    × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 2ms
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 5ms
+== A02 the image's rule for root alone only [priv]: CAUGHT; exit 1 ['Tests  3 failed | 27 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 8ms
+    × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 2ms
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 6ms
+== A03 the image's rule on any NODE_ENV at all [priv]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 11ms
+    × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 7ms
+== A04 the image's rule dropped, seen by the entry as root [wstart]: CAUGHT; exit 1 ['Tests  1 failed | 5 passed (6)']
+    × in the image (NODE_ENV=production), stops before it reads anything when started as root alone 323ms
+== A05 the worker reads its settings before the photo user [wstart]: CAUGHT; exit 1 ['Tests  1 failed | 5 passed (6)']
+    × in the image (NODE_ENV=production), stops before it reads anything when started as root alone 309ms
+== A06 the API's refusal never called [astart]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × in the image (NODE_ENV=production), stops before it reads anything when started as root 470ms
+== A07 the API refuses an effective root only [astart]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one 14ms
+== A08 the API refuses root everywhere [astart]: CAUGHT; exit 1 ['Tests  8 failed | 2 passed (10)']
+    × refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one 4ms
+    × stops before it connects when LOG_LEVEL is set but isn't one of pino's levels, so a typo never silences the logs 423ms
+    × stops before it connects when PORT is set but isn't a port: empty, a word, too big, or not whole 480ms
+    × stops before it connects when SUPABASE_SERVICE_KEY is missing, empty or not a key, and never repeats it (T56) 393ms
+    × stops before it connects when SUPABASE_URL is missing or empty, so it never runs believing no token 471ms
+    × stops before it listens when DATABASE_URL is missing 458ms
+== A09 the API reads its settings before refusing root [astart]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × in the image (NODE_ENV=production), stops before it reads anything when started as root 375ms
+== A10 a photo's process started with no user in the worker's mode [priv]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × in the worker's mode, never starts a photo's process without the photo's user: started so, it could take root back 8ms
+== A11 the image names no photo user [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it 12ms
+== A12 the image names it before it makes it [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it 10ms
+== A13 fly.toml sets it again [deploy]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them 50ms
+    × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it 51ms
+== A14 the harness's view of the checkout is writable [priv]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × the real child prepares a real photo as the photo's user, reading a read-only view of the checkout, and leaves nothing 3546ms
+== A15 the real child run as the worker's own user [priv]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × the real child prepares a real photo as the photo's user, reading a read-only view of the checkout, and leaves nothing 3155ms
+== A16 the worker ignores the image's marker [priv]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 11ms
+== A17 the API ignores the image's marker [astart]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one 8ms
+== A18 the image writes no marker [deploy]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it 11ms
+    × writes the image's marker, the file each entry reads to know it is in the image whatever NODE_ENV says 3ms
+== A19 the worker looks for the marker elsewhere [deploy]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × writes the image's marker, the file each entry reads to know it is in the image whatever NODE_ENV says 12ms
+== A20 the worker's mode by its user alone, root's group kept [priv]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 15ms
+    × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 2ms
+== A21 fly's start read back without no-new-privs [priv]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 8ms
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 4ms
+== A22 fly's start read back without its bounding set [priv]: CAUGHT; exit 1 ['Tests  3 failed | 27 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 9ms
+    × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 1ms
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 4ms
+== A23 fly's start read back without its inheritable set [priv]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 13ms
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 4ms
+== A24 fly's start read back with root's group allowed [priv]: CAUGHT; exit 1 ['Tests  2 failed | 28 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 11ms
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 4ms
+== A25 the rest of fly's start never asked for in the image [priv]: CAUGHT; exit 1 ['Tests  3 failed | 27 passed (30)']
+    × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 10ms
+    × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 1ms
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 5ms
+== A26 a photo's process refused in the worker's mode only, not in the image [proc]: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × in the image (NODE_ENV=production), never starts a photo's process without the photo's user (the audit's A6) 212ms
+== A27 fly.toml's worker command without no-new-privs [priv]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 11ms
+== A28 the harness's fly start isn't fly.toml's [priv]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 11ms
+restored: ' M Dockerfile\n M fly.toml\n M services/api/src/start.test.ts\n M services/api/src/start.ts\n M services/worker/src/image-process.test.ts\n M services/worker/src/image-process.ts\n M services/worker/src/privileges-harness.ts\n M services/worker/src/privileges.test.ts\n M services/worker/src/privileges.ts\n M services/worker/src/start.test.ts\n M services/worker/src/start.ts\n M tools/ops/src/deploy-files.test.ts\n'

@@ -1,0 +1,3 @@
+$ docker run --entrypoint  -v /tmp/a6img.t81O:/evidence:ro tadayo-api-dev:51bcbc1 prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node /evidence/real.mjs
+{"ids":{"uid":0,"euid":1000,"egid":1000},"user":{"uid":10001,"gid":10001},"ok":true,"renditions":[["full",2560,1920],["display",1290,968]],"peakMiB":145}
+exit 0

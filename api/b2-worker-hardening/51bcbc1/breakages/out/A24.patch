@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -217,7 +217,7 @@
+     field("CapBnd") === FLY_BOUNDING_SET &&
+     field("CapInh") === "0000000000000000" &&
+     groups !== undefined &&
+-    !groups.split(/\s+/).includes("0")
++    true
+   );
+ }
+ 

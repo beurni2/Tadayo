@@ -1,0 +1,10 @@
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -44,7 +44,6 @@
+     && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image
+ ENV TADAYO_PHOTO_USER=tadayo-image
+ # The image's marker: with it, each entry knows it is in the image whatever NODE_ENV says, and refuses root as above.
+-RUN touch /etc/tadayo-built-image
+ # The manifests and node_modules as pnpm laid them: its symlinks are what makes a workspace import resolve.
+ COPY --from=deps /app/ ./
+ COPY packages/contracts/src packages/contracts/src

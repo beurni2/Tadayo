@@ -1,0 +1,13 @@
+--- a/services/api/src/start.ts
++++ b/services/api/src/start.ts
+@@ -79,9 +79,9 @@
+  * keys from `SUPABASE_URL`, takes Storage's key from `SUPABASE_SERVICE_KEY` and builds the app, or throws.
+  */
+ export async function startApi(env: Readonly<Record<string, string | undefined>>): Promise<Started> {
+-  refuseRoot(env, ownIds());
+   const url = env.DATABASE_URL;
+   if (url === undefined || url === "") throw new Error("api: DATABASE_URL isn't set");
++  refuseRoot(env, ownIds());
+   const supabase = env.SUPABASE_URL;
+   if (supabase === undefined || supabase === "") throw new Error("api: SUPABASE_URL isn't set");
+   const verifier = supabaseVerifier(supabase);

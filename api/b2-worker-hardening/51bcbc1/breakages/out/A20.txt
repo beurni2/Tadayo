@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/worker
+
+ ❯ src/privileges.test.ts (30 tests | 2 failed) 12799ms
+   ❯ the photo user (photoUserFor) (7)
+     × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 15ms
+     × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  11:18:48
+   Duration  13.02s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all
+AssertionError: [{"uid":0,"euid":1000,"egid":0},{}]: expected [Function] to throw error matching /^worker: in production it starts only…/ but got 'worker: started to prepare each photo…'
+
+- Expected:
+/^worker: in production it starts only as fly\.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone$/
+
++ Received:
+"worker: started to prepare each photo under a user of its own, but TADAYO_PHOTO_USER isn't set"
+
+ ❯ src/privileges.test.ts:142:11
+    140|             ),
+    141|           JSON.stringify([ids, env]),
+    142|         ).toThrow(REFUSED);
+       |           ^
+    143|       }
+    144|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same
+AssertionError: [{},{"uid":0,"euid":1000,"egid":0}]: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:208:11
+    206|           () => photoUserFor({ ...env, ...named("tadayo-image") }, ids…
+    207|           JSON.stringify([env, ids]),
+    208|         ).toThrow(/in production it starts only as fly\.toml's worker …
+       |           ^
+    209|       }
+    210|       expect(() => photoUserFor(env, { uid: 0, euid: 0, egid: 0 }, () …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

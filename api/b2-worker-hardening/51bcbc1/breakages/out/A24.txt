@@ -1,0 +1,60 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/worker
+
+ ❯ src/privileges.test.ts (30 tests | 2 failed) 12434ms
+   ❯ the photo user (photoUserFor) (7)
+     × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 11ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (20)
+     × in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there 4ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  11:19:42
+   Duration  12.63s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all
+AssertionError: Groups: 0 1000: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privileges.test.ts:168:9
+    166|         () => photoUserFor(production(named("tadayo-image")), WORKER, …
+    167|         `${field}: ${String(value)}`,
+    168|       ).toThrow(REFUSED);
+       |         ^
+    169|     }
+    170|     // The kernel's own spacing is read as it is: a trailing space, no…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there
+AssertionError: rootsGroup: expected { code: 1, …(2) } to deeply equal { code: 1, …(2) }
+
+- Expected
++ Received
+
+  {
+    "code": 1,
+-   "stderr": "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone
++   "stderr": "worker: DATABASE_URL isn't set
+  ",
+    "stdout": "",
+  }
+
+ ❯ src/privileges.test.ts:553:33
+    551|       "rootAlone",
+    552|     ]) {
+    553|       expect(ended[name], name).toEqual({ code: 1, stderr: refused, st…
+       |                                 ^
+    554|     }
+    555|     expect(Object.keys(ended)).toHaveLength(7);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

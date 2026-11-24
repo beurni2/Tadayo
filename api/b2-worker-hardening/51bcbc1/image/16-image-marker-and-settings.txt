@@ -1,0 +1,6 @@
+$ docker run --entrypoint  tadayo-api-dev:51bcbc1 sh -c ls -l /etc/tadayo-built-image; printenv NODE_ENV TADAYO_PHOTO_USER; id tadayo-image
+-rw-r--r-- 1 root root 0 Nov 24 11:15 /etc/tadayo-built-image
+production
+tadayo-image
+uid=10001(tadayo-image) gid=10001(tadayo-image) groups=10001(tadayo-image)
+exit 0

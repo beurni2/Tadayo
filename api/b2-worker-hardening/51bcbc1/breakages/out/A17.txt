@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/start.test.ts (10 tests | 1 failed) 18004ms
+   ❯ the API's entry (ADR-013) (10)
+     × refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  11:18:25
+   Duration  18.83s (tests 97%, import 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one
+AssertionError: [{"uid":0,"euid":0},{}]: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/start.test.ts:193:11
+    191|           },
+    192|           JSON.stringify([ids, env]),
+    193|         ).toThrow(/never as root/);
+       |           ^
+    194|       }
+    195|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

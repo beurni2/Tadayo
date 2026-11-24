@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/worker
+
+ ❯ src/start.test.ts (6 tests | 1 failed) 4707ms
+   ❯ the worker's entry (ADR-013) (6)
+     × in the image (NODE_ENV=production), stops before it reads anything when started as root alone 323ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  11:16:12
+   Duration  4.89s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/start.test.ts > the worker's entry (ADR-013) > in the image (NODE_ENV=production), stops before it reads anything when started as root alone
+AssertionError: {"TADAYO_PHOTO_USER":"tadayo-image"}: expected 'worker: TADAYO_PHOTO_USER is set, but…' to be 'worker: in production it starts only …' // Object.is equality
+
+- Expected
++ Received
+
+- worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone
++ worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root with its own user effective (fly.toml's worker command)
+
+
+ ❯ src/start.test.ts:122:52
+    120|       const result = await run({ NODE_ENV: "production", ...photo }, t…
+    121|       expect(result.code, JSON.stringify(photo)).toBe(1);
+    122|       expect(result.stderr, JSON.stringify(photo)).toBe(
+       |                                                    ^
+    123|         "worker: in production it starts only as fly.toml's worker com…
+    124|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

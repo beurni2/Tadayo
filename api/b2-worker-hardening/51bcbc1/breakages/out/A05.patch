@@ -1,0 +1,13 @@
+--- a/services/worker/src/start.ts
++++ b/services/worker/src/start.ts
+@@ -31,9 +31,9 @@
+   env: Readonly<Record<string, string | undefined>>,
+   passwd?: () => string,
+ ): Promise<Started> {
+-  const photoUser = photoUserFor(env, idsOf(), passwd);
+   const url = env.DATABASE_URL;
+   if (url === undefined || url === "") throw new Error("worker: DATABASE_URL isn't set");
++  const photoUser = photoUserFor(env, idsOf(), passwd);
+   const project = env.SUPABASE_URL;
+   if (project === undefined || project === "") throw new Error("worker: SUPABASE_URL isn't set");
+   const serviceKey = env.SUPABASE_SERVICE_KEY;

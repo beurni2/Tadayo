@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tools/ops
+
+ ❯ src/deploy-files.test.ts (20 tests | 2 failed) 490ms
+   ❯ Dockerfile (9)
+     × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it 11ms
+     × writes the image's marker, the file each entry reads to know it is in the image whatever NODE_ENV says 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  11:18:45
+   Duration  840ms (tests 74%, transform 14%, import 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it
+AssertionError: expected [ Array(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "groupadd --system --gid 10001 tadayo-image && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image",
+-   "touch /etc/tadayo-built-image",
+  ]
+
+ ❯ src/deploy-files.test.ts:216:18
+    214|     const image = stages().at(-1) ?? [];
+    215|     const runs = image.filter((instruction) => instruction.name === "R…
+    216|     expect(runs).toEqual([
+       |                  ^
+    217|       "groupadd --system --gid 10001 tadayo-image && useradd --system …
+    218|       `touch ${IMAGE_MARKER}`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > writes the image's marker, the file each entry reads to know it is in the image whatever NODE_ENV says
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/deploy-files.test.ts:235:89
+    233|     // Round 3 of PR #118's review: NODE_ENV alone is a setting, which…
+    234|     const image = stages().at(-1) ?? [];
+    235|     expect(image.filter((instruction) => instruction.args === `touch $…
+       |                                                                                         ^
+    236|     for (const entry of ["services/worker/src/privileges.ts", "service…
+    237|       expect(read(entry), entry).toContain(`export const IMAGE_MARKER …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/worker
+
+ ❯ src/privileges.test.ts (30 tests | 2 failed) 13711ms
+   ❯ the photo user (photoUserFor) (7)
+     × in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all 11ms
+     × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 7ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  11:15:57
+   Duration  13.96s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > in the image (NODE_ENV=production), stops the worker unless it was started as fly.toml starts it, as root alone first of all
+Error: worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone
+ ❯ photoUserFor src/privileges.ts:277:11
+    275|   const { marked, status } = facts();
+    276|   if (inImage(env, () => marked) && !(started && startedAsFly(status))…
+    277|     throw new Error(
+       |           ^
+    278|       "worker: in production it starts only as fly.toml's worker comma…
+    279|     );
+ ❯ src/privileges.test.ts:180:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/privileges.test.ts:229:62
+    227|     expect(inImage({ NODE_ENV: "production" }, () => false)).toBe(true…
+    228|     expect(inImage({}, () => true)).toBe(true);
+    229|     expect(inImage({ NODE_ENV: "Production" }, () => false)).toBe(fals…
+       |                                                              ^
+    230|     expect(inImage({}, () => false)).toBe(false);
+    231|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

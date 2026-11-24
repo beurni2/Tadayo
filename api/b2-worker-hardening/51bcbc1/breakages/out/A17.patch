@@ -1,0 +1,11 @@
+--- a/services/api/src/start.ts
++++ b/services/api/src/start.ts
+@@ -67,7 +67,7 @@
+   ids: UserIds,
+   marked: () => boolean = () => existsSync(IMAGE_MARKER),
+ ): void {
+-  if ((env.NODE_ENV === "production" || marked()) && (ids.uid === 0 || ids.euid === 0)) {
++  if ((env.NODE_ENV === "production") && (ids.uid === 0 || ids.euid === 0)) {
+     throw new Error(
+       "api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root",
+     );

@@ -1,0 +1,11 @@
+--- a/services/worker/src/image-process.ts
++++ b/services/worker/src/image-process.ts
+@@ -316,7 +316,7 @@
+   const seconds = limits.seconds ?? DECODE_SECONDS;
+   const mostBytes = limits.peakBytes ?? PEAK_BYTES;
+   const { user } = limits;
+-  if (user === undefined && (inWorkerMode(idsOf()) || inImage())) return Promise.reject(new NoPhotoUser());
++  if (user === undefined && inWorkerMode(idsOf())) return Promise.reject(new NoPhotoUser());
+   // As the photo's user, the start and the kill need the worker's root for an instant: the child's user isn't its own.
+   const privileged = <T>(fn: () => T): T => (user === undefined ? fn() : asRoot(fn));
+   return new Promise((resolve, reject) => {

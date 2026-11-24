@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tools/ops
+
+ ❯ src/deploy-files.test.ts (20 tests | 2 failed) 464ms
+   ❯ Dockerfile (9)
+     × makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it 51ms
+   ❯ fly.toml (8)
+     × has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them 50ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  11:17:43
+   Duration  763ms (tests 75%, import 12%, transform 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/deploy-files.test.ts > Dockerfile > makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it
+AssertionError: expected [ 'TADAYO_ENVIRONMENT', …(4) ] to not include 'TADAYO_PHOTO_USER'
+ ❯ src/deploy-files.test.ts:229:63
+    227|     const named = image.findIndex((instruction) => instruction.args ==…
+    228|     expect(named).toBeGreaterThan(made);
+    229|     expect(Object.keys(table(flyToml()["env"], "[env]"))).not.toContai…
+       |                                                               ^
+    230|   });
+    231|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/deploy-files.test.ts > fly.toml > has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them
+AssertionError: expected [ 'LOG_LEVEL', …(4) ] to deeply equal [ 'LOG_LEVEL', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "LOG_LEVEL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_URL",
+    "TADAYO_ENVIRONMENT",
++   "TADAYO_PHOTO_USER",
+  ]
+
+ ❯ src/deploy-files.test.ts:399:37
+    397|   it("has only public values in [env]: the project's URL and publishab…
+    398|     const env = table(flyToml()["env"], "[env]");
+    399|     expect(Object.keys(env).sort()).toEqual([...ENV_NAMES].sort());
+       |                                     ^
+    400|     expect(env["TADAYO_ENVIRONMENT"]).toBe("dev");
+    401|     expect(env["LOG_LEVEL"]).toBe("info");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

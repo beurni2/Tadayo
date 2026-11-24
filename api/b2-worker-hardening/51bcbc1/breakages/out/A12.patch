@@ -1,0 +1,10 @@
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -40,6 +40,7 @@
+ FROM ${NODE_IMAGE}
+ ENV NODE_ENV=production
+ WORKDIR /app
++ENV TADAYO_PHOTO_USER=tadayo-image
+ RUN groupadd --system --gid 10001 tadayo-image \
+     && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image
+ ENV TADAYO_PHOTO_USER=tadayo-image

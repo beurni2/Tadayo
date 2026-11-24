@@ -1,0 +1,49 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/worker
+
+ ❯ src/privileges.test.ts (30 tests | 1 failed) 11897ms
+   ❯ as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) (20)
+     × the real child prepares a real photo as the photo's user, reading a read-only view of the checkout, and leaves nothing 3155ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  11:17:58
+   Duration  12.09s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > as fly.toml starts the worker: root, turned to its own user (./privileges-harness.ts, as root) > the real child prepares a real photo as the photo's user, reading a read-only view of the checkout, and leaves nothing
+AssertionError: expected { case: 'real-child', …(7) } to match object { view: 'read-only', …(4) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -3,13 +3,9 @@
+    "left": {
+      "files": [],
+      "ipc": [],
+      "processes": 0,
+    },
+-   "outcome": "prepared",
+-   "ranAs": {
+-     "gid": 64999,
+-     "groups": "",
+-     "uid": 64999,
+-   },
++   "outcome": "NoPhotoUser",
++   "ranAs": null,
+    "view": "read-only",
+  }
+
+ ❯ src/privileges.test.ts:511:22
+    509|     expect(real.code).toBe(0);
+    510|     const prepared = real.cases.get("real-child");
+    511|     expect(prepared).toMatchObject({
+       |                      ^
+    512|       view: "read-only",
+    513|       outcome: "prepared",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

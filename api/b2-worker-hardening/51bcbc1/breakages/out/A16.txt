@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/worker
+
+ ❯ src/privileges.test.ts (30 tests | 1 failed) 13803ms
+   ❯ the photo user (photoUserFor) (7)
+     × in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  11:18:11
+   Duration  14.02s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privileges.test.ts > the photo user (photoUserFor) > in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same
+AssertionError: [{},{"uid":0,"euid":0,"egid":0}]: expected [Function] to throw error matching /in production it starts only as fly\.…/ but got 'worker: TADAYO_PHOTO_USER is set, but…'
+
+- Expected:
+/in production it starts only as fly\.toml's worker command starts it/
+
++ Received:
+"worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root with its own user effective (fly.toml's worker command)"
+
+ ❯ src/privileges.test.ts:208:11
+    206|           () => photoUserFor({ ...env, ...named("tadayo-image") }, ids…
+    207|           JSON.stringify([env, ids]),
+    208|         ).toThrow(/in production it starts only as fly\.toml's worker …
+       |           ^
+    209|       }
+    210|       expect(() => photoUserFor(env, { uid: 0, euid: 0, egid: 0 }, () …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

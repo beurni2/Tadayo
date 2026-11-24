@@ -1,0 +1,10 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -213,7 +213,6 @@
+     new RegExp(`^${name}:[ \\t]*(.*)$`, "m").exec(status)?.[1]?.trim();
+   const groups = field("Groups");
+   return (
+-    field("NoNewPrivs") === "1" &&
+     field("CapBnd") === FLY_BOUNDING_SET &&
+     field("CapInh") === "0000000000000000" &&
+     groups !== undefined &&

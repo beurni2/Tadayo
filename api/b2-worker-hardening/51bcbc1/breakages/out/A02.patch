@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges.ts
++++ b/services/worker/src/privileges.ts
+@@ -273,7 +273,7 @@
+   const named = name !== undefined && name !== "";
+   const started = inWorkerMode(ids);
+   const { marked, status } = facts();
+-  if (inImage(env, () => marked) && !(started && startedAsFly(status))) {
++  if (inImage(env, () => marked) && ids.euid === 0) {
+     throw new Error(
+       "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone",
+     );

@@ -1,0 +1,3 @@
+$ docker run --entrypoint  tadayo-api-dev:51bcbc1 node services/worker/src/main.ts
+worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone
+exit 1

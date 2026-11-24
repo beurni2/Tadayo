@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/start.test.ts (10 tests | 1 failed) 16883ms
+   ❯ the API's entry (ADR-013) (10)
+     × in the image (NODE_ENV=production), stops before it reads anything when started as root 375ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  11:17:08
+   Duration  17.46s (tests 97%, import 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > in the image (NODE_ENV=production), stops before it reads anything when started as root
+AssertionError: expected 'api: DATABASE_URL isn\'t set\n' to be 'api: in production it runs only as fl…' // Object.is equality
+
+- Expected
++ Received
+
+- api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root
++ api: DATABASE_URL isn't set
+
+
+ ❯ src/start.test.ts:162:27
+    160|     const result = await run({ NODE_ENV: "production" }, true);
+    161|     expect(result.code).toBe(1);
+    162|     expect(result.stderr).toBe(
+       |                           ^
+    163|       "api: in production it runs only as fly.toml's command starts it…
+    164|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

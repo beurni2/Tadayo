@@ -1,0 +1,11 @@
+--- a/services/worker/src/privileges-harness.ts
++++ b/services/worker/src/privileges-harness.ts
+@@ -548,7 +548,7 @@
+       // A folder that isn't empty is left as it is.
+     }
+   });
+-  execFileSync("/usr/bin/mount", ["--bind", "-o", "ro", checkout, view]);
++  execFileSync("/usr/bin/mount", ["--bind", checkout, view]);
+   // Asked of the kernel, as root, whose permissions would let it write anything: nothing is written to find out.
+   let writable: string;
+   try {
