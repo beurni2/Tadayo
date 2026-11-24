@@ -1,0 +1,54 @@
+--- 21:25:47 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-24-212547.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-24 21:25:47.00 +0000
+pid: 80943
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.623CA12C-8D4D-41F2-9495-A602080084D1
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 80943, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 21:33:31 UTC, /Library/Logs/DiagnosticReports/SpringBoard_2026-11-24-213116_sat12-bq159-e6bdd789-332d-4721-834d-4e2426b6b76d-7299FDE6D99D.diag
+Date/Time:        2026-11-24 21:22:04.135 +0000
+End time:         2026-11-24 21:24:36.878 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 069F6C1D-5AC0-44A5-AC47-4453910E8A9E
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18d064000
+
+Command:          SpringBoard
+Path:             /Volumes/VOLUME/*/SpringBoard.app/SpringBoard
+Identifier:       com.apple.springboard
+Version:          1.0 (50)
+Is First Party:   Yes
+Beta Identifier:  4C70C157-4122-51EF-957B-53968D5AE61D
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.623CA12C-8D4D-41F2-9495-A602080084D1"(2501)
+Architecture:     arm64
+Parent:           UNKNOWN [79351]
+PID:              79362
+--- 21:36:24 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-24-213331_sat12-bq159-e6bdd789-332d-4721-834d-4e2426b6b76d-7299FDE6D99D.diag
+Date/Time:        2026-11-24 20:37:11.225 +0000
+End time:         2026-11-24 21:25:01.971 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 63D742F0-5F40-4366-AF52-6C5E9E61C03E
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18d064000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x19d968000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x185284000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(793)
+On Behalf Of:     165 samples UNKNOWN [2327, 20507, 38232, 38250, 79210, 79211, 79212, 79213, 80955] (165 samples originated by UNKNOWN [201, 38232, 38250, 79210, 79211, 79212, 79213, 80955])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              660

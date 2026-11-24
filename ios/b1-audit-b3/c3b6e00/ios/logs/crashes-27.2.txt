@@ -1,0 +1,57 @@
+--- 21:00:42 UTC, /Library/Logs/DiagnosticReports/intelligenceplatformd_2026-11-24-205920_sat12-bq159-e6bdd789-332d-4721-834d-4e2426b6b76d-7299FDE6D99D.diag
+Date/Time:        2026-11-24 20:51:33.133 +0000
+End time:         2026-11-24 20:54:53.553 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 559A54F9-9436-426D-8FDC-A0FF513E15E2
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18d064000
+
+Command:          intelligenceplatformd
+Path:             /Volumes/VOLUME/*/IntelligencePlatformCore.framework/intelligenceplatformd
+Codesigning ID:   com.apple.intelligenceplatformd
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74"(1907)
+Architecture:     arm64
+Parent:           UNKNOWN [25234]
+PID:              25488
+
+Event:            disk writes
+Action taken:     none
+--- 21:03:47 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-24-210335.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-24 21:03:35.00 +0000
+pid: 33918
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 33918, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 21:10:28 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-24-211028.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-24 21:10:28.00 +0000
+pid: 46940
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 46940, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 21:10:28 UTC, /Users/runner/Library/Logs/DiagnosticReports/SettingsSearchReindexService-2026-11-24-211028.000.ips
+name: SettingsSearchReindexService
+app_name: SettingsSearchReindexService
+bug_type: 309
+timestamp: 2026-11-24 21:10:28.00 +0000
+pid: 50194
+procName: SettingsSearchReindexService
+procPath: /Volumes/VOLUME/*/SettingsServices.framework/XPCServices/SettingsSearchReindexService.xpc/SettingsSearchReindexService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 50194, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
