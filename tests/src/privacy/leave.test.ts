@@ -772,6 +772,13 @@ describe("what a leave does to the leaver's contributions (contributionProblems;
     day: DAY,
     author: LEAVER,
     mediaClass: "photo",
+    caption: "A caption",
+    upload: "upl_photo",
+    source: null,
+    dedupe: "ab".repeat(32),
+    submittedAt: at("2026-11-05T10:00:00Z"),
+    sealedAt: at("2026-11-05T10:00:00Z"),
+    audience: "itv_ana itv_ben itv_cleo",
     state: "active",
     revealAt: at("2026-11-07T12:00:00Z"),
     endedAt: null,
@@ -878,6 +885,13 @@ describe("what a leave does to the leaver's contributions (contributionProblems;
       { updatedAt: NOW.subtract({ seconds: 1 }) },
       { pending: "upl_next" },
       { version: 2 },
+      // Its content stays for the purge, and its audience as sealed (T8, T27).
+      { caption: null },
+      { caption: "Another caption" },
+      { upload: null },
+      { dedupe: null },
+      { sealedAt: null },
+      { audience: "itv_ana itv_cleo" },
     ]) {
       const after = left("withdraw");
       after.drops.set("drp_photo", { ...gone(rows().drops.get("drp_photo") ?? drop()), ...change });
@@ -969,8 +983,31 @@ describe("what a leave does to the leaver's contributions (contributionProblems;
     const after = left("withdraw");
     after.drops.delete("drp_cleo");
     after.slots.set("rsv_new", slot());
+    after.counters.set(`${OPENED} itv_cleo`, {
+      committedTotal: 0,
+      committedExternal: 0,
+      reservedTotal: 0,
+      reservedExternal: 0,
+    });
+    after.highlights.set(`${OPENED} ${LEAVER}`, { drop: null, version: 1, updatedAt: NOW });
     expect(judge(after)).toEqual(
-      expect.arrayContaining(["the drop drp_cleo is gone", "a reservation rsv_new appeared with the leave"]),
+      expect.arrayContaining([
+        "the drop drp_cleo is gone",
+        "a reservation rsv_new appeared with the leave",
+        `a counter ${OPENED} itv_cleo appeared with the leave`,
+        `a highlight ${OPENED} ${LEAVER} appeared with the leave`,
+      ]),
     );
+  });
+
+  it("catches a kept drop's content or audience changed, on keep as on another member's drop", () => {
+    for (const change of [{ caption: "Another caption" }, { upload: "upl_other" }, { audience: "itv_ana" }]) {
+      const kept = left("keep");
+      kept.drops.set("drp_photo", { ...(rows().drops.get("drp_photo") ?? drop()), ...change });
+      expect(judge(kept, "keep")).toContain("the leaver's drop drp_photo changed though they kept their drops (T26)");
+      const cleos = left("withdraw");
+      cleos.drops.set("drp_cleo", { ...(rows().drops.get("drp_cleo") ?? drop()), ...change });
+      expect(judge(cleos)).toContain("the drop drp_cleo, not the leaver's to withdraw, changed");
+    }
   });
 });

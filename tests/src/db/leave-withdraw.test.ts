@@ -19,7 +19,7 @@ import { leaveClub, mayReadDrop, readHome, type Json, type ServerNow } from "@ta
 import { fakeClock } from "@tadayo/domain/testing";
 import { afterAll, describe, expect, it } from "vitest";
 import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
-import { AT, commitDrop, joinByRoster, newId, newWorld, type Member, type World } from "./world.ts";
+import { AT, checkAsAtCommit, commitDrop, joinByRoster, newId, newWorld, type Member, type World } from "./world.ts";
 
 const db = worldSql();
 afterAll(async () => {
@@ -36,7 +36,10 @@ const MORNING = at("2026-11-07T09:00:00.654321Z");
 
 type Choice = "keep" | "withdraw";
 
-/** `who` leaves the world's club at `instant` with `choice`, as the route runs the command. */
+/**
+ * `who` leaves the world's club at `instant` with `choice`, as the route runs the command, and the checks Postgres
+ * defers to the commit run on what it left (drops_removal_matches, drops_ended_unhighlighted).
+ */
 async function leaving(
   tx: WorldTx,
   w: World,
@@ -45,12 +48,36 @@ async function leaving(
   choice: Choice,
   key = randomUUID(),
 ) {
-  return leaveClub(
+  const answer = await leaveClub(
     tx,
     fakeClock(instant),
     { userId: who.user, key, clubId: w.club, contributions: choice },
     leftClubBody,
   );
+  await checkAsAtCommit(plain(tx));
+  return answer;
+}
+
+/**
+ * `who`'s leave, which must be refused NOT_FOUND, in a savepoint; `check` reads the rows inside it, after the
+ * refusal and before its rollback, so it sees whatever the refused leave wrote.
+ */
+async function refusedLeave(
+  tx: WorldTx,
+  w: World,
+  who: Member,
+  instant: Temporal.Instant,
+  choice: Choice,
+  check: (sp: WorldTx) => Promise<void>,
+): Promise<void> {
+  const undo = new Error("the refused leave's savepoint, rolled back");
+  await expect(
+    tx.savepoint(async (sp) => {
+      await expect(leaving(sp, w, who, instant, choice)).rejects.toMatchObject({ code: "NOT_FOUND" });
+      await check(sp);
+      throw undo;
+    }),
+  ).rejects.toBe(undo);
 }
 
 async function nowAt(tx: WorldTx, instant: Temporal.Instant): Promise<ServerNow> {
@@ -212,6 +239,55 @@ describe("leaving with withdraw takes the leaver's drops out of every view (spec
         expect(await homeDrops(tx, reader.user, w.club, later)).toEqual([cleos]);
         expect(await mayReadDrop(tx, reader.user, photo, "media", await nowAt(tx, later))).toBe(false);
       }
+    });
+  });
+
+  it("withdraws at the reveal's very instant as after it: no slot back, Ben's highlight cleared after the drop's end, and a slot lapsing then expired (T3, T18, T22)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const photo = await dropIn(tx, w, w.ben, AT.added);
+      const link = await dropIn(tx, w, w.ben, AT.added, w.day, "external_video");
+      await tx`
+        INSERT INTO app.highlights (occurrence_id, interval_id, drop_id, version, updated_at)
+        VALUES (${w.day}, ${w.ben.interval}, ${photo}, 1, ${at("2026-11-06T20:20:00Z")})`;
+      const slot = await liveSlot(tx, w, w.ben, new Date("2026-11-07T06:40:00Z"), new Date("2026-11-07T07:00:00Z"));
+
+      await leaving(tx, w, w.ben, REVEAL, "withdraw");
+
+      await expectDrop(tx, photo, withdrawnBy(w.ben, REVEAL));
+      await expectDrop(tx, link, withdrawnBy(w.ben, REVEAL));
+      const [highlight] = await tx<{ drop_id: string | null; version: number; updated_at: Temporal.Instant }[]>`
+        SELECT drop_id, version, updated_at FROM app.highlights WHERE occurrence_id = ${w.day} AND interval_id = ${w.ben.interval}`;
+      expect(highlight).toEqual({ drop_id: null, version: 2, updated_at: REVEAL });
+      expect(await slotRow(tx, slot)).toEqual({ state: "expired", ended_at: REVEAL });
+      expect(await counter(tx, w.day, w.ben.interval)).toEqual({
+        committed_total: 2,
+        committed_external: 1,
+        reserved_total: 0,
+        reserved_external: 0,
+      });
+    });
+  });
+
+  it("gives Ben's slots back a microsecond before the reveal, and releases a slot that would lapse at it", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const photo = await dropIn(tx, w, w.ben, AT.added);
+      const link = await dropIn(tx, w, w.ben, AT.added, w.day, "external_video");
+      const slot = await liveSlot(tx, w, w.ben, new Date("2026-11-07T06:40:00Z"), new Date("2026-11-07T07:00:00Z"));
+      const justBefore = REVEAL.subtract({ microseconds: 1 });
+
+      await leaving(tx, w, w.ben, justBefore, "withdraw");
+
+      await expectDrop(tx, photo, withdrawnBy(w.ben, justBefore));
+      await expectDrop(tx, link, withdrawnBy(w.ben, justBefore));
+      expect(await slotRow(tx, slot)).toEqual({ state: "released", ended_at: justBefore });
+      expect(await counter(tx, w.day, w.ben.interval)).toEqual({
+        committed_total: 0,
+        committed_external: 0,
+        reserved_total: 0,
+        reserved_external: 0,
+      });
     });
   });
 
@@ -390,16 +466,37 @@ describe("the receipt, and a refused leave (T14, T19)", () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       const photo = await dropIn(tx, w, w.cleo, AT.added);
+      const bens = await dropIn(tx, w, w.ben, AT.added);
+      const slot = await liveSlot(tx, w, w.ben, new Date("2026-11-06T20:50:00Z"), new Date("2026-11-06T21:20:00Z"));
       const dan = { user: w.dan.user, interval: "" };
-      await expect(tx.savepoint((sp) => leaving(sp, w, dan, EVENING, "withdraw"))).rejects.toMatchObject({
-        code: "NOT_FOUND",
-      });
+      const nothingMoved = async (sp: WorldTx) => {
+        await expectDrop(sp, photo, untouched);
+        await expectDrop(sp, bens, untouched);
+        expect(await slotRow(sp, slot)).toEqual({ state: "live", ended_at: null });
+        expect(await counter(sp, w.day, w.ben.interval)).toEqual(
+          expect.objectContaining({ committed_total: 1, reserved_total: 1 }),
+        );
+      };
+      await refusedLeave(tx, w, dan, EVENING, "withdraw", nothingMoved);
       // Cleo leaves keeping her drops, then asks again with withdraw under a new key: the club is nothing to her now.
       await leaving(tx, w, w.cleo, EVENING, "keep");
-      await expect(
-        tx.savepoint((sp) => leaving(sp, w, w.cleo, EVENING.add({ minutes: 1 }), "withdraw")),
-      ).rejects.toMatchObject({ code: "NOT_FOUND" });
-      await expectDrop(tx, photo, untouched);
+      await refusedLeave(tx, w, w.cleo, EVENING.add({ minutes: 1 }), "withdraw", nothingMoved);
+    });
+  });
+
+  it("takes Ben's key from Cleo as Cleo's own leave, since a key is the account's: hers keeps, and Ben's withdrawn drop stays so", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const bens = await dropIn(tx, w, w.ben, AT.added);
+      const cleos = await dropIn(tx, w, w.cleo, AT.added);
+      const key = randomUUID();
+      await leaving(tx, w, w.ben, EVENING, "withdraw", key);
+
+      const answer = await leaving(tx, w, w.cleo, EVENING.add({ minutes: 1 }), "keep", key);
+
+      expect(answer).toEqual({ club_id: w.club, left_at: "2026-11-06T21:01:00Z", contributions: "keep" });
+      await expectDrop(tx, bens, withdrawnBy(w.ben, EVENING));
+      await expectDrop(tx, cleos, untouched);
     });
   });
 });

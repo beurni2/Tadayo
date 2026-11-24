@@ -2820,11 +2820,18 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 "the same leave again under its key",
               );
             }
-            // Whoever asked, the club now answers them as the rows say: nothing, to someone who left.
+            // Whoever asked, the club now answers them as the rows say: nothing, to someone who left, and the
+            // refused leave changes no contribution.
+            const beforeAfresh = await loadContributions();
             const afresh = await ask(randomUUID());
             tell(
               afresh,
-              pinnedProblems(afresh, leaveGate ?? (typeof outcome === "string" ? NEUTRAL : outcome)),
+              [
+                ...pinnedProblems(afresh, leaveGate ?? (typeof outcome === "string" ? NEUTRAL : outcome)),
+                ...contributionProblems(beforeAfresh, await loadContributions(), cell.w.club, "", now, "keep").map(
+                  (problem) => `the leave under a new key changed a contribution: ${problem}`,
+                ),
+              ],
               "a leave under a new key afterwards",
             );
             for (const [id, expected] of [
@@ -2948,6 +2955,10 @@ describe("the leave ran (tests/src/privacy/leave.ts)", () => {
     // given back or consumed while collecting), but Cleo's lapsed slot, given back to Cleo where the day and the
     // club answer a release, is still unsettled where the day is suspended or cancelled, both keep: the leave
     // settles it as expired, twice for each role whose viewer is Cleo's first interval.
+    // What the matrix doesn't reach: the leave runs only in the last phase, a year on, so every withdrawal here is
+    // after its day's reveal and gives no slot back, and every slot it ends had lapsed. The withdrawal before the
+    // reveal with its slots given back, and a live reservation released, are tests/src/db/leave-withdraw.test.ts's,
+    // and leave.test.ts shows the judge catches each of them wrong.
     expect(CONTRIBUTIONS_SETTLED.size).toBe(ROLES.length);
     expect([...CONTRIBUTIONS_SETTLED].filter(([, settled]) => settled.withdrawn > 0 || settled.slotsEnded > 0)).toEqual(
       [

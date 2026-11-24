@@ -1681,7 +1681,7 @@ paths:
     post:
       operationId: leaveClub
       summary: Leave the club
-      description: With an explicit keep or withdraw (spec 22, T26). Withdraw takes every drop the caller added to the club, revealed or not, out of every view at once, giving back the slots of days not yet open (T18, T23, T24). Either way the caller's live reservations in the club are given back.
+      description: With an explicit keep or withdraw (spec 22, T26). Withdraw takes every drop the caller added during this membership, revealed or not, out of every view at once, giving back the slots of days not yet open (T18, T23, T24); drops kept when leaving an earlier membership of the club stay kept (FQ142). Either way the caller's live reservations in the club are given back.
       parameters:
         - name: club_id
           in: path
@@ -12507,7 +12507,7 @@ components:
       required:
         - contributions
       additionalProperties: false
-      description: Leave a club (G05-leave), choosing explicitly for the caller's drops (spec 22). No push goes to anyone (T36). Withdrawing can't be undone. The caller's own days that haven't opened are held, neither opened nor deleted, and the drops added for them stay hidden, with their authors (FQ63); a held day gets its shape with leaving, in B6.
+      description: "Leave a club (G05-leave), choosing explicitly for the caller's drops (spec 22). Leaving pushes to nobody (T36: spec 21 has no such event); a drop withdrawn by it is an authored withdrawal, whose notice to its day's star (spec 21) comes with the notifications, in B7. Withdrawing can't be undone. The caller's own days that haven't opened are held, neither opened nor deleted, and the drops added for them stay hidden, with their authors (FQ63); a held day gets its shape with leaving, in B6."
     LeftClub:
       type: object
       properties:

@@ -667,8 +667,10 @@ export const Contributions = named(
 
 export const LeaveClubRequest = named(
   "LeaveClubRequest",
-  "Leave a club (G05-leave), choosing explicitly for the caller's drops (spec 22). No push goes to anyone " +
-    "(T36). Withdrawing can't be undone. The caller's own days that haven't opened are held, neither " +
+  "Leave a club (G05-leave), choosing explicitly for the caller's drops (spec 22). Leaving pushes to nobody " +
+    "(T36: spec 21 has no such event); a drop withdrawn by it is an authored withdrawal, whose notice to its " +
+    "day's star (spec 21) comes with the notifications, in B7. Withdrawing can't be undone. The caller's own " +
+    "days that haven't opened are held, neither " +
     "opened nor deleted, and the drops added for them stay hidden, with their authors (FQ63); a held day " +
     "gets its shape with leaving, in B6.",
   z.strictObject({ contributions: Contributions }),

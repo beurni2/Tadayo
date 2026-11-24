@@ -25,13 +25,15 @@
 //   it was, at the same version (T33). With no first days open, a leave changes no proposal.
 //
 // - What it does to the leaver's contributions (`contributionProblems`, since `api/b2-leave-withdraw`, the
-//   outside audit's A3; spec 22, T18, T22, T23, T24, T26, FQ142), from the drops', removals', reservations',
-//   counters' and highlights' rows before and after: with `withdraw`, each of the leaving interval's drops in the
-//   club that was active or held is `withdrawn` at the instant, its pending replacement gone, with one removal,
-//   reason `leave`, by the interval at the instant, its highlight cleared, and, before its day's reveal, its slot
-//   off the counter; with `keep`, every drop as it was. Either way each live reservation of the interval in the
-//   club has ended (`released` at the instant, or `expired` at its own `expires_at` when that had come) and left
-//   the counts; and no other row changed: another interval's, or the same account's elsewhere.
+//   outside audit's A3; spec 22, T18, T22, T23, T24, T26, FQ142), from the drops' (with their content columns and
+//   audiences), removals', reservations', counters' and highlights' rows before and after: with `withdraw`, each
+//   of the leaving interval's drops in the club that was active or held is `withdrawn` at the instant, its pending
+//   replacement gone, with one removal, reason `leave`, by the interval at the instant, everything else of it as
+//   it was (its caption and media stay for B6's purge), its highlight cleared, and, before its day's reveal, its
+//   slot off the counter; with `keep`, every drop as it was. Either way each live reservation of the interval in
+//   the club has ended (`released` at the instant, or `expired` at its own `expires_at` when that had come) and
+//   left the counts; no other row of those changed, another interval's or the same account's elsewhere; and none
+//   is gone and none appeared. It doesn't read the uploads, which the leave doesn't write.
 //
 // The leak scanner reads the same answer for the club's id (scanner.ts's BARE: a club the caller has an
 // interval in); it can't judge an instant, a choice or a row, so this file does.
@@ -411,6 +413,15 @@ export interface ContributionDrop {
   day: string;
   author: string;
   mediaClass: string;
+  /** Its content, which a withdrawal leaves for the purge (T27): the caption, the upload or source, the key. */
+  caption: string | null;
+  upload: string | null;
+  source: string | null;
+  dedupe: string | null;
+  submittedAt: Temporal.Instant;
+  sealedAt: Temporal.Instant | null;
+  /** Its audience's intervals, sealed at commit (T8). */
+  audience: string;
   state: string;
   revealAt: Temporal.Instant;
   endedAt: Temporal.Instant | null;
@@ -463,6 +474,13 @@ export async function contributionRowsOf(db: WorldTx, clubs: readonly string[]):
       occurrence_id: string;
       author_interval_id: string;
       media_class: string;
+      caption: string | null;
+      upload_id: string | null;
+      source_id: string | null;
+      dedupe: string | null;
+      submitted_at: Temporal.Instant;
+      audience_sealed_at: Temporal.Instant | null;
+      audience: string | null;
       state: string;
       reveal_at: Temporal.Instant;
       ended_at: Temporal.Instant | null;
@@ -474,8 +492,12 @@ export async function contributionRowsOf(db: WorldTx, clubs: readonly string[]):
       removed_at: Temporal.Instant | null;
     }[]
   >`
-    SELECT d.id, d.club_id, d.occurrence_id, d.author_interval_id, d.media_class, d.state, o.reveal_at, d.ended_at,
-           d.updated_at, d.version, d.pending_upload_id, r.reason, r.actor_interval_id, r.removed_at
+    SELECT d.id, d.club_id, d.occurrence_id, d.author_interval_id, d.media_class, d.caption, d.upload_id, d.source_id,
+           pg_catalog.encode(d.dedupe_key, 'hex') AS dedupe, d.submitted_at, d.audience_sealed_at,
+           (SELECT pg_catalog.string_agg(a.interval_id, ' ' ORDER BY a.interval_id COLLATE "C")
+              FROM app.drop_audience a WHERE a.drop_id = d.id) AS audience,
+           d.state, o.reveal_at, d.ended_at, d.updated_at, d.version, d.pending_upload_id,
+           r.reason, r.actor_interval_id, r.removed_at
       FROM app.drops d JOIN app.occurrences o ON o.id = d.occurrence_id
       LEFT JOIN app.drop_removals r ON r.drop_id = d.id
      WHERE d.club_id IN ${db(clubs)}`;
@@ -527,6 +549,13 @@ export async function contributionRowsOf(db: WorldTx, clubs: readonly string[]):
           day: row.occurrence_id,
           author: row.author_interval_id,
           mediaClass: row.media_class,
+          caption: row.caption,
+          upload: row.upload_id,
+          source: row.source_id,
+          dedupe: row.dedupe,
+          submittedAt: row.submitted_at,
+          sealedAt: row.audience_sealed_at,
+          audience: row.audience ?? "",
           state: row.state,
           revealAt: row.reveal_at,
           endedAt: row.ended_at,
@@ -697,6 +726,9 @@ export function contributionProblems(
           : `the counter ${key}, not the leaver's, changed`,
       );
   }
+  for (const key of after.counters.keys()) {
+    if (!before.counters.has(key)) problems.push(`a counter ${key} appeared with the leave`);
+  }
   for (const [key, was] of before.highlights) {
     const then = after.highlights.get(key);
     if (then === undefined) {
@@ -711,6 +743,9 @@ export function contributionProblems(
           ? `the leaver's highlight ${key} on a withdrawn drop isn't cleared at the instant (T22)`
           : `the highlight ${key} changed though its drop wasn't withdrawn`,
       );
+  }
+  for (const key of after.highlights.keys()) {
+    if (!before.highlights.has(key)) problems.push(`a highlight ${key} appeared with the leave`);
   }
   return problems;
 }
