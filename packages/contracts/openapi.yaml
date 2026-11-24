@@ -3823,7 +3823,7 @@ paths:
     put:
       operationId: registerDevice
       summary: Register this sign-in's device for pushes
-      description: "One registration per sign-in, replaced by each new token (TECH-DESIGN section 6), once the profile is complete: an account stopped at the age step keeps no device (FQ69). B8 finishes the mechanism in its own contract PR, with its privacy and security review."
+      description: "One registration per sign-in, replaced by each new token (TECH-DESIGN section 6), once the profile is complete: an account stopped at the age step keeps no device (FQ69). A token another sign-in holds moves to this one, and that sign-in ends. The neutral NOT_FOUND, changing nothing, to a sign-in that has ended (removed, or its token moved to a later sign-in) and to a secret another account registered (T14): nothing that sign-in sends registers again ((e))."
       parameters: []
       requestBody:
         required: true
@@ -3890,6 +3890,20 @@ paths:
                   summary: "The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first. Until then it can only finish setup or leave (FQ69)."
                   value:
                     code: PROFILE_INCOMPLETE
+        "404":
+          description: NOT_FOUND
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                NOT_FOUND:
+                  summary: "Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14)."
+                  value:
+                    code: NOT_FOUND
         "429":
           description: RATE_LIMITED
           headers:
@@ -12936,7 +12950,7 @@ components:
         - timezone
         - removal_secret
       additionalProperties: false
-      description: This sign-in's one device registration, replaced by each new token from iOS; registering a token moves it from any earlier sign-in (TECH-DESIGN section 6). The zone sets quiet hours (T37). The mechanism is finished in B8, in its own contract PR, with a privacy and security review.
+      description: This sign-in's one device registration, replaced by each new token from iOS; registering a token moves it from any earlier sign-in, which ends (TECH-DESIGN section 6). The zone sets quiet hours (T37).
     ReleasedReservation:
       type: object
       properties:

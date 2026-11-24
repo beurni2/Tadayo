@@ -126,10 +126,13 @@ const ACCOUNT: Operation[] = [
     summary: "Register this sign-in's device for pushes",
     description:
       "One registration per sign-in, replaced by each new token (TECH-DESIGN section 6), once the profile is " +
-      "complete: an account stopped at the age step keeps no device (FQ69). B8 finishes the mechanism in its " +
-      "own contract PR, with its privacy and security review.",
+      "complete: an account stopped at the age step keeps no device (FQ69). A token another sign-in holds moves " +
+      "to this one, and that sign-in ends. The neutral NOT_FOUND, changing nothing, to a sign-in that has ended " +
+      "(removed, or its token moved to a later sign-in) and to a secret another account registered (T14): " +
+      "nothing that sign-in sends registers again ((e)).",
     body: RegisterDeviceRequest,
     ok: { status: 200, json: DeviceRegistration },
+    errors: ["NOT_FOUND"],
   },
   {
     id: "removeDevice",

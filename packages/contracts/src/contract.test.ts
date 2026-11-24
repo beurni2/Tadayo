@@ -347,6 +347,7 @@ describe("the document", () => {
       listMemories: ["NOT_FOUND"],
       previewInvitation: ["NOT_FOUND"],
       proposeRoster: ["CLUB_FULL", "VERSION_CONFLICT"],
+      registerDevice: ["NOT_FOUND"],
       resolveSource: ["PROVIDER_UNSUPPORTED"],
       revokeInvitation: ["NOT_ALLOWED"],
       searchMemories: ["NOT_FOUND"],
