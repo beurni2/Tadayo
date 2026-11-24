@@ -79,7 +79,7 @@ extension InvitationRoster {
     private var isChecking = false
     /// The root no longer shows this model: it starts nothing and opens no club, and an answer still
     /// on its way can drop the token, never keep it.
-    private(set) var isClosed = false
+    public private(set) var isClosed = false
     /// The viewer's name on the roster whose acceptance the server answered `changed`.
     private var earlierName: String?
     /// The Accept on its way or failed, with its key, for a retry of the same revision.
@@ -189,6 +189,7 @@ extension InvitationRoster {
 
     /// Accept this roster: the exact revision shown, open or changed.
     public func accept() async {
+        Probe.note("accept \(Probe.id(self)) closed=\(isClosed) accepting=\(isAccepting) checking=\(isChecking)")
         guard let token, !isClosed, !isAccepting, !isChecking else { return }
         let roster: InvitationRoster
         switch state {
@@ -215,6 +216,7 @@ extension InvitationRoster {
         } catch {
             answer = .failure(error)
         }
+        Probe.note("answer \(Probe.id(self)) \(Probe.short(answer, 40)) closed=\(isClosed) current=\(current())")
         guard current() else {
             isAccepting = false
             return
@@ -294,6 +296,7 @@ extension InvitationRoster {
     /// server commits after the close is kept by the next check of the link, or else the club
     /// list's `roster_changed` asks for the link again (FQ136).
     func close() {
+        Probe.note("close \(Probe.id(self)) \(Probe.short(state))")
         isClosed = true
     }
 

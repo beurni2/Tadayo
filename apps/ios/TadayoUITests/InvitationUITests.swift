@@ -261,6 +261,8 @@ final class InvitationUITests: XCTestCase {
         let selector = app.buttons["Switch club. Kitchen table selected."]
         accept.tap()
         let joined = eventually(10) { shows(selector) && tabBarShows(app) }
+        let trace = app.staticTexts["probe.trace"]
+        print("probe: " + (joined ? "joined" : "STUCK") + ": " + (trace.exists ? trace.label : "no trace"))
         if !joined {
             printScreen(app, "no Home with Kitchen table 10 s after Accept this roster")
             if shows(accept) {

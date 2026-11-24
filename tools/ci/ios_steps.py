@@ -1637,6 +1637,10 @@ class Steps:
                "-skipPackagePluginValidation"]
         for target in skipped:
             cmd += ["-skip-testing", target]
+        # PROBE ONLY (ios/b1-opening-probe, never merged): the one test, 30 times on each runtime.
+        cmd += ["-only-testing", "TadayoUITests/InvitationUITests/"
+                "testNotNowOnAChangedRosterLeavesItsRowHoldingTheLinkWhichOpensItAgain",
+                "-test-iterations", "30"]
         env = {"TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never"}
         if snapshot_pass:
             env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"] = artifacts

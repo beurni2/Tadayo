@@ -403,6 +403,7 @@ import Observation
     /// (handoff 9's `states.waiting.token`); `G03-declined`; or, for a changed roster, the kept
     /// token checked (`G02-changed`), or, with none kept, the link opened again (FQ136).
     public func openAccepted(_ accepted: MyInvitation) async {
+        Probe.note("openAccepted \(Probe.short(accepted.state)) route=\(Probe.short(route))")
         guard route == .tabs, let account else { return }
         let kept = links.received(invitation: accepted.invitationID, account: account.id)?.token
         switch accepted.state {
@@ -431,6 +432,7 @@ import Observation
 
     /// Not now, Done and Close invitation: nothing is granted or changed (handoff 1).
     public func closeInvitation() {
+        Probe.note("closeInvitation")
         setInvitation(nil)
     }
 
@@ -489,6 +491,7 @@ import Observation
     /// The invitation shown, in place of the one before, which is closed: an answer still on its
     /// way for it keeps nothing. The one closed may have kept or dropped a link a row names.
     private func setInvitation(_ model: InvitationModel?) {
+        Probe.note("setInv \(Probe.id(invitation))→\(Probe.id(model))")
         invitation?.close()
         invitation = model
         rereadLinksHeld()
@@ -521,8 +524,12 @@ import Observation
             current: { [weak self] in self?.epoch == made },
             joined: { [weak self] club in
                 guard let self, self.epoch == made else { return }
+                Probe.note("joined \(Probe.id(created)) inv=\(Probe.id(self.invitation))")
                 self.selection.keep(club.id, for: account.id)
                 await self.loadClubs()
+                Probe.note(
+                    "joined loaded epochOK=\(self.epoch == made) created=\(Probe.id(created)) inv=\(Probe.id(self.invitation)) clubs=\(Probe.short(self.clubs, 16))"
+                )
                 guard self.epoch == made, let created, self.invitation === created else {
                     return
                 }
@@ -532,6 +539,7 @@ import Observation
                 // An Accept the person left with Back, which the server joined all the same: the
                 // list is read again so Home shows the club, and nothing is selected or opened.
                 // Only while the tabs show the session the model was made in.
+                Probe.note("joinedWhileClosed")
                 guard let self, self.epoch == made, self.route == .tabs else { return }
                 await self.loadClubs()
             },

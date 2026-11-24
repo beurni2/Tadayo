@@ -48,6 +48,7 @@
             hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false,
             creating: Bool = false, invited: Bool = false, changedListed: Bool = false
         ) -> AppGraph {
+            Probe.note = { ProbeTrace.shared.note($0) }
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let made = creating ? NewClub() : nil
             let invitations = invited || changedListed ? Invited(changedListed: changedListed) : nil

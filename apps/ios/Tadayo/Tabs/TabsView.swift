@@ -185,11 +185,13 @@ struct TabsView: View {
             #endif
         }
         .tint(Palette.action)
+        .overlay(alignment: .topLeading) { ProbeTraceView() }
         .onChange(of: seen, initial: true) { old, new in
             guard let said = announcer.saw(new, after: old == new ? nil : old) else { return }
             Announcement.post(said.words, politely: said.politely)
         }
         .onChange(of: state.clubs) { _, now in
+            Probe.note("tabs clubs \(Probe.short(now, 14)) paths=\(paths)")
             // A list loaded again has no clubs to choose from until it answers, and nothing
             // pushed for a club stays while it's read.
             if case .listed = now {
@@ -198,7 +200,8 @@ struct TabsView: View {
                 closeClubScreens()
             }
         }
-        .onChange(of: state.selected?.id) { _, _ in
+        .onChange(of: state.selected?.id) { _, now in
+            Probe.note("tabs selected \(now ?? "nil") paths=\(paths)")
             closeClubScreens()
         }
         .onChange(of: shownDetails?.closed ?? false) { _, closed in
@@ -304,6 +307,7 @@ struct TabsView: View {
     /// I have an invite's screens close, and the paste step and the invitation shown are done
     /// with.
     private func closeInvitationScreens() {
+        Probe.note("tabs closeInvitationScreens paths=\(paths)")
         entering?.left()
         if paths.values.contains(where: { $0.contains(.accepted) }) { closeInvitation() }
         paths = paths.filter { !($0.value.first?.isInvitationFlow ?? false) }
@@ -312,6 +316,7 @@ struct TabsView: View {
     /// An accepted invitation's row on `tab`: the root opens it, and `rootInvitationChanged`
     /// pushes what it shows. Any I have an invite screens close first.
     private func open(_ accepted: MyInvitation, on tab: ClubTab) {
+        Probe.note("tabs open row on \(tab)")
         closeInvitationScreens()
         acceptedOn = tab
         Task { await openAccepted(accepted) }
@@ -321,6 +326,9 @@ struct TabsView: View {
     /// with no link held for a changed roster, gives way to the paste step (FQ136). Gone, it's
     /// taken off every tab; a row chosen meanwhile still waits for its own.
     private func rootInvitationChanged() {
+        Probe.note(
+            "tabs rootChanged \(Probe.id(invitation)) \(invitation.map { Probe.short($0.state, 14) } ?? "-") on=\(acceptedOn.map { "\($0)" } ?? "nil") paths=\(paths)"
+        )
         guard let model = invitation else {
             for tab in Array(paths.keys) where paths[tab]?.contains(.accepted) == true {
                 paths[tab]?.removeAll { $0 == .accepted }
@@ -389,6 +397,7 @@ struct TabsView: View {
         Binding(
             get: { paths[tab] ?? [] },
             set: { now in
+                Probe.note("tabs set \(tab) \(paths[tab] ?? [])→\(now)")
                 // Back from the invitation: the paste step is as it was.
                 if paths[tab]?.last == .invitation, now.last != .invitation {
                     entering?.returned()
@@ -456,7 +465,12 @@ struct TabsView: View {
             if let shownAccepted {
                 // A join closes it through the root, once the list has been read again.
                 InvitationDestination(
-                    model: shownAccepted, returnsTo: tab.title, answered: { _ in },
+                    model: shownAccepted, returnsTo: tab.title,
+                    answered: { model in
+                        Probe.note(
+                            "tabs acceptedAnswered \(Probe.id(model)) \(Probe.short(model.state, 14)) closed=\(model.isClosed) root=\(Probe.id(invitation)) paths=\(paths)"
+                        )
+                    },
                     leave: { closeInvitation() }
                 )
                 .onDisappear { forgetInvitationScreensIfGone() }
