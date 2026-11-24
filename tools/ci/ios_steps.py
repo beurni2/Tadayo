@@ -74,8 +74,9 @@ The steps:
   of it decides a step, and each diagnostic command is stopped at a limit, so the samples cost
   a part at most about 40 seconds at its start and 45 at its end. After each pass, the crash
   and jetsam reports macOS wrote during it go to logs/crashes-<v>.txt, and after a failed pass
-  the simulator's log lines about services that exited (Steps.crash_reports,
-  Steps.service_exits; CRASH_FOLDERS), which decide nothing either.
+  the simulator's log lines about services that exited, read around each service whose
+  connection the pass's log says ended, or over the pass when none did (Steps.crash_reports,
+  Steps.service_exits; CRASH_FOLDERS, SERVICE_ENDED), which decide nothing either.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
                itself included. The new ones come from the snapshot runtime's result bundle:
@@ -171,6 +172,7 @@ CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
 import base64
+import calendar
 import contextlib
 import hashlib
 import json
@@ -310,6 +312,15 @@ SERVICE_LOG_PREDICATE = ('eventMessage CONTAINS "exited due to" OR eventMessage 
                          '"exited with abnormal code" OR eventMessage CONTAINS[c] "jetsam"')
 SERVICE_LOG_TIMEOUT = 90
 SERVICE_LOG_LINES = 200
+# Read over a whole pass, that log didn't finish in SERVICE_LOG_TIMEOUT (`ios` 45392426021). So
+# where the pass's own log says a service's connection ended ("The connection to service with pid
+# N … was invalidated", as `_UIRemoteKeyboards` prints it, in UTC), the device's log is read only
+# from SERVICE_WINDOW's seconds before the first such line for each pid to its seconds after, for
+# SERVICE_PIDS pids at most, with that pid's own lines and any that name it.
+SERVICE_ENDED = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\.\d+\+0000 "
+                           r".*connection to service with pid (\d+)\b")
+SERVICE_WINDOW = (60, 10)
+SERVICE_PIDS = 3
 
 
 def crash_summary(text):
@@ -1724,26 +1735,59 @@ class Steps:
         return code
 
     def service_exits(self, version, udid, since):
-        """Appends the simulator's log lines about services that exited since `since` (a
-        time.time()) to logs/crashes-<version>.txt, SERVICE_LOG_LINES at most; says so when the
-        log couldn't be read, and writes nothing when it has no such line."""
-        start = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(since))
-        code, out, err = self.shell.capture(
-            ["xcrun", "simctl", "spawn", udid, "log", "show", "--style", "compact", "--start",
-             start, "--predicate", SERVICE_LOG_PREDICATE], env=self.xcode_env(),
-            timeout=SERVICE_LOG_TIMEOUT)
-        lines = [line for line in out.splitlines()
-                 if line.strip() and not line.startswith(("Timestamp", "Filtering the log"))]
-        if code != 0:
-            text = f"(the simulator's log couldn't be read: exit {code}: {err.strip()[:CRASH_FIELD]})"
-        elif not lines:
-            return
-        else:
-            more = len(lines) - SERVICE_LOG_LINES
-            text = "\n".join(lines[:SERVICE_LOG_LINES]
-                             + ([f"({more} more line(s) not kept)"] if more > 0 else []))
-        self.write_log(f"crashes-{version}.txt",
-                       "--- the simulator's log: services that exited during the pass\n" + text)
+        """Appends the simulator's log lines about services that exited to
+        logs/crashes-<version>.txt, SERVICE_LOG_LINES at most for each read: around each service
+        whose connection the pass's log says ended (`ended_services`), else since `since` (a
+        time.time()). Says so when the log couldn't be read, and writes nothing for a read with
+        no such line."""
+        ended = self.ended_services(version)
+        before, after = SERVICE_WINDOW
+        reads = [(f"--- the simulator's log: pid {pid}, whose connection ended at "
+                  f"{time.strftime('%H:%M:%S', time.gmtime(at))} UTC, from {before} s before "
+                  f"to {after} s after",
+                  [at - before, at + after],
+                  f'processIdentifier == {pid} OR eventMessage CONTAINS "{pid}" OR '
+                  f"({SERVICE_LOG_PREDICATE})")
+                 for pid, at in ended]
+        if not reads:
+            reads = [("--- the simulator's log: services that exited during the pass", [since],
+                      SERVICE_LOG_PREDICATE)]
+        for heading, span, predicate in reads:
+            times = [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t)) for t in span]
+            window = ["--start", times[0]] + (["--end", times[1]] if len(times) > 1 else [])
+            code, out, err = self.shell.capture(
+                ["xcrun", "simctl", "spawn", udid, "log", "show", "--style", "compact"] + window
+                + ["--predicate", predicate], env=self.xcode_env(), timeout=SERVICE_LOG_TIMEOUT)
+            lines = [line for line in out.splitlines()
+                     if line.strip() and not line.startswith(("Timestamp", "Filtering the log"))]
+            if code != 0:
+                text = (f"(the simulator's log couldn't be read: exit {code}: "
+                        f"{err.strip()[:CRASH_FIELD]})")
+            elif not lines:
+                continue
+            else:
+                more = len(lines) - SERVICE_LOG_LINES
+                text = "\n".join(lines[:SERVICE_LOG_LINES]
+                                 + ([f"({more} more line(s) not kept)"] if more > 0 else []))
+            self.write_log(f"crashes-{version}.txt", heading + "\n" + text)
+
+    def ended_services(self, version):
+        """The services whose connection logs/test-<version>.log says ended: (pid, the time of
+        the first line naming it, as a time.time()), in the order they first ended, SERVICE_PIDS
+        at most."""
+        found = {}
+        try:
+            with open(self.log(f"test-{version}.log"), encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    match = SERVICE_ENDED.match(line)
+                    if match and match.group(2) not in found:
+                        found[match.group(2)] = calendar.timegm(
+                            time.strptime(match.group(1), "%Y-%m-%d %H:%M:%S"))
+                        if len(found) == SERVICE_PIDS:
+                            break
+        except OSError:
+            return []
+        return list(found.items())
 
     def crash_reports(self, version, since):
         """Writes a summary of each crash or jetsam report in CRASH_FOLDERS changed at or after

@@ -12,6 +12,7 @@ CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
 import base64
+import calendar
 import contextlib
 import hashlib
 import io
@@ -2027,6 +2028,57 @@ class BuildAndTestSteps(StepsTest):
             else:
                 with open(self.log("crashes-26.5.txt")) as f:
                     self.assertIn(expected + "\n", f.read())
+
+    def test_a_failed_pass_reads_the_device_s_log_around_each_service_whose_connection_ended(self):
+        # Read over the whole pass, the device's log took longer than its 90 seconds (`ios`
+        # 45392426021). Where the pass's own log says a service's connection ended, only the
+        # minute around the first such line for each pid is read, with that pid's lines, for
+        # three pids at most; repeated lines for a pid don't read again.
+        def line(stamp, pid):
+            return (f"{stamp}+0000 Tadayo[39331:112420] [Client] -[_UIRemoteKeyboards proxy]"
+                    f"_block_invoke Failed to access remote service: Error Domain="
+                    f'NSCocoaErrorDomain Code=4099 "The connection to service with pid {pid} '
+                    f'named (null) was invalidated."\n')
+        ended = ("2026-11-24 12:46:58.617253+0000 Tadayo[39331:112423] [Client] XPC connection "
+                 "invalidated\n" + line("2026-11-24 12:46:59.807475", 25135)
+                 + line("2026-11-24 12:47:30.100000", 25135)
+                 + line("2026-11-24 12:50:01.000001", 777)
+                 + line("2026-11-24 12:51:02.000001", 778)
+                 + line("2026-11-24 12:52:03.000001", 779))
+        failing = (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
+                   and UDID_26 in cmd[cmd.index("-destination") + 1])
+
+        def write_ended(cmd):
+            with open(self.log("test-26.5.log"), "a") as f:
+                f.write(ended)
+        exited = ("2026-11-24 12:46:58.50 Df launchd_sim[1:2] (com.apple.kbd) Service exited due "
+                  "to SIGKILL")
+        shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"),
+                                    (0, "Timestamp               Ty Process[PID:TID]\n"
+                                        + exited + "\n", ""))],
+                          codes=[(failing, 65)], effects=[(failing, write_ended)])
+        code, out = self.step("test", shell)
+        self.assertEqual(code, 65, out)
+
+        def local(stamp, delta):
+            at = calendar.timegm(time.strptime(stamp, "%Y-%m-%d %H:%M:%S")) + delta
+            return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(at))
+        reads = [c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]]
+        expected = [("25135", "2026-11-24 12:46:59"), ("777", "2026-11-24 12:50:01"),
+                     ("778", "2026-11-24 12:51:02")]
+        self.assertEqual(len(reads), len(expected))
+        for read, (pid, stamp) in zip(reads, expected):
+            self.assertEqual(read[3:8], [UDID_26, "log", "show", "--style", "compact"])
+            self.assertEqual(read[8:], [
+                "--start", local(stamp, -60), "--end", local(stamp, 10), "--predicate",
+                f'processIdentifier == {pid} OR eventMessage CONTAINS "{pid}" OR '
+                f"({ios_steps.SERVICE_LOG_PREDICATE})"])
+            self.assertEqual(shell.timeouts[tuple(read)], ios_steps.SERVICE_LOG_TIMEOUT)
+        with open(self.log("crashes-26.5.txt")) as f:
+            text = f.read()
+        self.assertEqual(text, "".join(
+            f"--- the simulator's log: pid {pid}, whose connection ended at {stamp[11:]} UTC, "
+            f"from 60 s before to 10 s after\n{exited}\n" for pid, stamp in expected))
 
     def test_a_report_that_isn_t_ips_or_can_t_be_read_is_kept_as_it_is(self):
         self.assertEqual(ios_steps.crash_summary("Process: kbd\nException Type: EXC_CRASH\n"),
