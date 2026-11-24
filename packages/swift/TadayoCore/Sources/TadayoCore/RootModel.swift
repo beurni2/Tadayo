@@ -178,11 +178,26 @@ import Observation
         self.left = left
     }
 
-    /// At launch.
+    /// At launch. With no session, what an account kept is forgotten before sign-in shows: its
+    /// session can end out of the app's sight (an app stopped during Leave sign-in, say), and its
+    /// choice and links shouldn't wait on the device for the next account (T11, ADR-037). A
+    /// keychain that refuses the read for a moment is neither: the account's failure, with Retry,
+    /// and everything kept (FQ89).
     public func start() async {
         guard leaving == nil else { return }
         route = .starting
-        guard await session.isSignedIn else { return showSignIn() }
+        let signedIn: Bool
+        do {
+            signedIn = try await session.isSignedIn
+        } catch {
+            route = .failed(.other)
+            return
+        }
+        guard signedIn else {
+            selection.forget()
+            links.forget()
+            return showSignIn()
+        }
         route = .reading
         await readAccount()
     }

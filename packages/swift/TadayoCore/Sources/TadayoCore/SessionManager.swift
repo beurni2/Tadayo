@@ -4,11 +4,20 @@ import Foundation
 /// with the share extension (docs/TECH-DESIGN.md section 4: the app group holds "the session
 /// credential"); tests use `InMemorySessionStore`.
 public protocol SessionStore: Sendable {
+    /// The session kept, or nil. Throws `UnusableSession` for one it holds but can never use, and
+    /// anything else when it couldn't be read just now.
     func load() throws -> AuthSession?
     func save(_ session: AuthSession) throws
     /// Forgets the session. Deleting when nothing is stored succeeds (a keychain store reads
     /// `errSecItemNotFound` as done).
     func delete() throws
+}
+
+/// What a `SessionStore`'s load throws for a session it holds but can never use: the keychain
+/// item's bytes don't decode. That never changes, so it reads as no session, where any other
+/// failure of a load is a moment's refusal that ends nothing (FQ89).
+public struct UnusableSession: Error, Sendable, Equatable {
+    public init() {}
 }
 
 /// A `SessionStore` that keeps the session in memory only.
@@ -41,14 +50,17 @@ public enum SessionError: Error, Sendable, Equatable {
     case signedOut
     /// The session is kept, but no answer came back to its refresh.
     case network
-    /// The session is kept, but the server was busy or failing when it was refreshed.
+    /// The session is kept, but couldn't be used just now: the keychain refused its read, or its
+    /// refresh found the server busy or failing, or got an answer that didn't say it had ended.
+    /// Nothing is signed out for it (FQ89).
     case unavailable
 }
 
 /// Keeps the session's access token fresh for the API's requests: refreshed 30 seconds before it
 /// runs out and once after the API rejects it (401 `UNAUTHENTICATED`), one refresh at a time. The
 /// store is read before each refresh, since the share extension can refresh the same session.
-/// Only the codes that end a session forget it; a server that is busy or out of reach keeps it.
+/// Only the codes that end a session forget it; a server that is busy or out of reach keeps it,
+/// and so does a keychain that refuses a read for a moment (FQ89).
 /// Signing out and signing in win over a refresh still on its way: its answer is never stored
 /// over what they did (spec 23). One sign-out runs at a time; a second joins it.
 public actor SessionManager {
@@ -77,7 +89,15 @@ public actor SessionManager {
         self.now = now
     }
 
-    public var isSignedIn: Bool { ending == nil && (try? store.load()) != nil }
+    /// Whether a session is kept that a request can use: false while a sign-out is under way or
+    /// when none is (or none that can ever be used), and `unavailable` when the keychain refused
+    /// the read, which says neither.
+    public var isSignedIn: Bool {
+        get throws(SessionError) {
+            guard ending == nil else { return false }
+            return try stored() != nil
+        }
+    }
 
     /// Keeps the session a verified code gave.
     public func begin(_ session: AuthSession) throws {
@@ -88,7 +108,7 @@ public actor SessionManager {
 
     /// An access token to send, refreshed first if it runs out within 30 seconds.
     public func accessToken() async throws(SessionError) -> String {
-        guard ending == nil, let session = try? store.load() else { throw .signedOut }
+        guard ending == nil, let session = try stored() else { throw .signedOut }
         if now() < session.expiresAt.addingTimeInterval(-Self.refreshMargin) {
             return session.accessToken
         }
@@ -98,7 +118,7 @@ public actor SessionManager {
     /// A token to send again after the API rejected `token`: the stored one if it has changed
     /// since, else a refreshed one.
     public func accessToken(afterRejecting token: String) async throws(SessionError) -> String {
-        guard ending == nil, let session = try? store.load() else { throw .signedOut }
+        guard ending == nil, let session = try stored() else { throw .signedOut }
         if session.accessToken != token { return session.accessToken }
         return try await refreshed(session).get().accessToken
     }
@@ -166,6 +186,18 @@ public actor SessionManager {
             if (try? store.delete()) != nil || holdsNothing() { return true }
         }
         return false
+    }
+
+    /// The session kept: nil for none, or for one that can never be used; `unavailable` when the
+    /// keychain refused the read, which ends nothing.
+    private func stored() throws(SessionError) -> AuthSession? {
+        do {
+            return try store.load()
+        } catch is UnusableSession {
+            return nil
+        } catch {
+            throw .unavailable
+        }
     }
 
     private func holdsNothing() -> Bool {
