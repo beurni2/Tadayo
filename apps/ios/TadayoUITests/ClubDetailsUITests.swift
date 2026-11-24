@@ -56,15 +56,16 @@ final class ClubDetailsUITests: XCTestCase {
 
         openClubDetails(app)
         // Club details is pushed and loading: Kitchen table's details answer not found only
-        // after 3 seconds.
+        // after 20 seconds (`UITestLaunch.TwoClubs.notFoundAfter`).
         XCTAssertTrue(element("Loading club details…", in: app).waitForExistence(timeout: 5))
         XCTAssertTrue(eventually { !tabBarShows(app) }, "the tab bar hidden under the push")
 
         // The not found closes the screen and the list, read again, no longer holds Kitchen
         // table: Sunday people is selected, and nothing of Kitchen table or of a failure stays.
         let sunday = app.buttons["Switch club. Sunday people selected."]
+        // The answer comes 20 seconds after the push, so the wait for the tab is longer than that.
         XCTAssertTrue(
-            eventually(15) { shows(sunday) && tabBarShows(app) }, "back to the tab, Sunday people")
+            eventually(30) { shows(sunday) && tabBarShows(app) }, "back to the tab, Sunday people")
         XCTAssertFalse(element("Loading club details…", in: app).exists)
         XCTAssertFalse(app.staticTexts["Couldn’t load club details."].exists)
         XCTAssertFalse(selector.exists)
