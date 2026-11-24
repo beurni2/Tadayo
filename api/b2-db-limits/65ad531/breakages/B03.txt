@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/tests
+
+ ❯ src/db/time-limits.test.ts (3 tests | 1 failed) 25334ms
+   ❯ the role's time limits (the outside audit's A7) (3)
+     × are the role's own session defaults, which a new session as `tadayo_app` starts with 36ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  17:36:13
+   Duration  27.61s (tests 96%, transform 2%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/time-limits.test.ts > the role's time limits (the outside audit's A7) > are the role's own session defaults, which a new session as `tadayo_app` starts with
+AssertionError: expected [ 'lock_timeout=5s', …(1) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+-   "idle_in_transaction_session_timeout=15s",
+    "lock_timeout=5s",
+    "statement_timeout=10s",
+  ]
+
+ ❯ src/db/time-limits.test.ts:99:49
+     97|     const [role] = await world<{ rolconfig: string[] | null }[]>`
+     98|       SELECT rolconfig FROM pg_catalog.pg_roles WHERE rolname = curren…
+     99|     expect([...(role?.rolconfig ?? [])].sort()).toEqual([
+       |                                                 ^
+    100|       "idle_in_transaction_session_timeout=15s",
+    101|       "lock_timeout=5s",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

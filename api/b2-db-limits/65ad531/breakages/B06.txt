@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/services/api
+
+ ❯ src/app.test.ts (15 tests | 1 failed) 413ms
+   ❯ a database that ran out of time (the outside audit's A7) (2)
+     × still answers any other failure of the database with the 500 and nothing in it 35ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  17:37:22
+   Duration  1.53s (transform 47%, tests 30%, import 22%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app.test.ts > a database that ran out of time (the outside audit's A7) > still answers any other failure of the database with the 500 and nothing in it
+AssertionError: 25P03: expected { status: 503, body: '', …(1) } to deeply equal { status: 500, body: '', …(1) }
+
+- Expected
++ Received
+
+@@ -2,7 +2,7 @@
+    "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+      "content-length": "0",
+    },
+-   "status": 500,
++   "status": 503,
+  }
+
+ ❯ src/app.test.ts:270:30
+    268|     for (const code of ["23505", "40001", "08006", "25P03", "CONNECTIO…
+    269|       const { lines, ...answered } = await failingWith(code);
+    270|       expect(answered, code).toEqual({ ...EMPTY_503, status: 500 });
+       |                              ^
+    271|       expect(
+    272|         lines.some((line) => line.includes('"msg":"request failed"')),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

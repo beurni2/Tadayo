@@ -1,0 +1,11 @@
+--- a/services/api/src/connection.ts
++++ b/services/api/src/connection.ts
+@@ -29,7 +29,7 @@
+  * and a connection string's startup parameters replace them; these hold whatever the session is. `SET LOCAL`, in
+  * one simple-protocol message: one round trip, no snapshot taken, allowed in a read-only transaction.
+  */
+-export const TRANSACTION_LIMITS = "SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '10s'";
++export const TRANSACTION_LIMITS = "SET LOCAL lock_timeout = '5s'";
+ 
+ export function connect(url: string): ApiSql {
+   const sql: ApiSql = postgres(url, { max: API_POOL, types: { instant: INSTANT_TYPE }, ...transportOptions(url) });

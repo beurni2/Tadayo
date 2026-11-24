@@ -1,0 +1,10 @@
+--- a/services/worker/src/connection.ts
++++ b/services/worker/src/connection.ts
+@@ -21,7 +21,6 @@
+ 
+ export function connect(url: string): WorkerSql {
+   return postgres(url, {
+-    max: WORKER_POOL,
+     types: { instant: INSTANT_TYPE },
+     onnotice: () => undefined,
+     ...transportOptions(url),

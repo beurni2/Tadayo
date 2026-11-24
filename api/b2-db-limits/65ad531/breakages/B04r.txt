@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/tests
+
+ ❯ src/db/time-limits.test.ts (3 tests | 1 failed) 25342ms
+   ❯ the role's time limits (the outside audit's A7) (3)
+     × end the waits on a held row with the bare 503, let another person read meanwhile, and leave the same request to commit once later 10104ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  17:36:52
+   Duration  27.47s (tests 97%, transform 2%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/time-limits.test.ts > the role's time limits (the outside audit's A7) > end the waits on a held row with the bare 503, let another person read meanwhile, and leave the same request to commit once later
+AssertionError: rename 0: expected { status: 500, body: '', …(1) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+  {
+    "body": "",
+    "cache": "private, no-store",
+-   "status": 503,
++   "status": 500,
+  }
+
+ ❯ src/db/time-limits.test.ts:221:11
+    219|           { status: response.statusCode, body: response.body, cache: r…
+    220|           `rename ${String(index)}`,
+    221|         ).toEqual({ status: 503, body: "", cache: "private, no-store" …
+       |           ^
+    222|         // The first wave waits once; the rest wait for a connection, …
+    223|         expect(ms, `rename ${String(index)}`).toBeLessThan(2 * LOCK_MS…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -129,7 +129,7 @@
+  * if it ever did, postgres.js would report the closed connection (`CONNECTION_CLOSED`), a failure like any
+  * other (docs/LIMITATIONS.md, 2026-11-24).
+  */
+-const OUT_OF_TIME: ReadonlySet<string> = new Set(["55P03", "57014"]);
++const OUT_OF_TIME: ReadonlySet<string> = new Set(["57014"]);
+ 
+ function failed(error: FastifyError, request: FastifyRequest, reply: FastifyReply): FastifyReply {
+   // A body Fastify couldn't read: malformed or empty JSON, `__proto__` or `constructor.prototype`, a

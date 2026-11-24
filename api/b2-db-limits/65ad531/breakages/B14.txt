@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/tests
+
+ ❯ src/db/time-limits.test.ts (3 tests | 1 failed) 10352ms
+   ❯ the role's time limits (the outside audit's A7) (3)
+     × are set again by each of the API's transactions, so they hold though its session started without them 91ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  17:37:59
+   Duration  11.97s (tests 92%, transform 5%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/time-limits.test.ts > the role's time limits (the outside audit's A7) > are set again by each of the API's transactions, so they hold though its session started without them
+AssertionError: expected { lock: '5s', statement: '0' } to deeply equal { lock: '5s', statement: '10s' }
+
+- Expected
++ Received
+
+  {
+    "lock": "5s",
+-   "statement": "10s",
++   "statement": "0",
+  }
+
+ ❯ src/db/time-limits.test.ts:130:61
+    128|     try {
+    129|       expect(await settings(loose)).toEqual({ lock: "0", statement: "0…
+    130|       expect(await loose.begin(async (tx) => settings(tx))).toEqual({ …
+       |                                                             ^
+    131|       expect(await loose.begin("read only", async (tx) => settings(tx)…
+    132|         lock: "5s",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/services/api
+
+ ❯ src/app.test.ts (15 tests | 1 failed) 370ms
+   ❯ a database that ran out of time (the outside audit's A7) (2)
+     × answers a lock it waited for too long and a statement too slow with the bare 503 26ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  17:37:20
+   Duration  1.44s (transform 45%, tests 29%, import 26%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app.test.ts > a database that ran out of time (the outside audit's A7) > answers a lock it waited for too long and a statement too slow with the bare 503
+AssertionError: 57014: expected { status: 500, body: '', …(1) } to deeply equal { status: 503, body: '', …(1) }
+
+- Expected
++ Received
+
+@@ -2,7 +2,7 @@
+    "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+      "content-length": "0",
+    },
+-   "status": 503,
++   "status": 500,
+  }
+
+ ❯ src/app.test.ts:253:30
+    251|     for (const code of ["55P03", "57014"]) {
+    252|       const { lines, ...answered } = await failingWith(code);
+    253|       expect(answered, code).toEqual(EMPTY_503);
+       |                              ^
+    254|       // One warning, with the error's class and code and nothing of i…
+    255|       const logged = lines.map((line) => JSON.parse(line) as Record<st…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

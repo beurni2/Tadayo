@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/services/api
+
+ ❯ src/app.test.ts (15 tests | 1 failed) 385ms
+   ❯ a database that ran out of time (the outside audit's A7) (2)
+     × answers a lock it waited for too long and a statement too slow with the bare 503 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  17:37:29
+   Duration  1.51s (transform 48%, tests 28%, import 23%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app.test.ts > a database that ran out of time (the outside audit's A7) > answers a lock it waited for too long and a statement too slow with the bare 503
+AssertionError: 55P03: expected '{"level":40,"time":1795541851287,"req…' not to contain 'Ana\'s row'
+
+- Expected
++ Received
+
+- Ana's row
++ {"level":40,"time":1795541851287,"reqId":"DSuh--9H4XuQtjTb","err":{"type":"PostgresError","code":"55P03"},"detail":"canceling statement: Ana's row 55P03","msg":"database out of time"}
++
++ {"level":30,"time":1795541851287,"reqId":"DSuh--9H4XuQtjTb","op":"listClubs","status":503,"ms":1,"msg":"request"}
++
+
+ ❯ src/app.test.ts:260:42
+    258|       expect(warnings[0]?.["level"], code).toBe(40);
+    259|       expect(warnings[0]?.["err"], code).toEqual({ type: "PostgresErro…
+    260|       expect(lines.join("\n"), code).not.toContain("Ana's row");
+       |                                          ^
+    261|     }
+    262|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

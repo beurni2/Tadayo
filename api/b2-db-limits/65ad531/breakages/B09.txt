@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/services/worker
+
+ ❯ src/connection.test.ts (4 tests | 1 failed) 28ms
+   ❯ connect (4)
+     × opens at most two connections, one for each of its loops, a size set on purpose for the session pooler (the outside audit's A7) 17ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  17:37:28
+   Duration  691ms (transform 78%, import 17%, tests 5%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/connection.test.ts > connect > opens at most two connections, one for each of its loops, a size set on purpose for the session pooler (the outside audit's A7)
+AssertionError: expected 10 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 10
+
+ ❯ src/connection.test.ts:31:29
+     29|     expect(WORKER_POOL).toBe(2);
+     30|     const sql = connect(POOLER_URL);
+     31|     expect(sql.options.max).toBe(2);
+       |                             ^
+     32|     await sql.end();
+     33|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

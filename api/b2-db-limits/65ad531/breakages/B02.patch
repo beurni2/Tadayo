@@ -1,0 +1,8 @@
+--- a/db/migrations/0018_role_time_limits.sql
++++ b/db/migrations/0018_role_time_limits.sql
+@@ -27,5 +27,4 @@
+ -- (tools/ops/src/spike-time.ts).
+ 
+ ALTER ROLE CURRENT_USER SET lock_timeout = '5s';
+-ALTER ROLE CURRENT_USER SET statement_timeout = '10s';
+ ALTER ROLE CURRENT_USER SET idle_in_transaction_session_timeout = '15s';

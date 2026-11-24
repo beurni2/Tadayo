@@ -1,0 +1,11 @@
+--- a/services/api/src/connection.ts
++++ b/services/api/src/connection.ts
+@@ -32,7 +32,7 @@
+ export const TRANSACTION_LIMITS = "SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '10s'";
+ 
+ export function connect(url: string): ApiSql {
+-  const sql: ApiSql = postgres(url, { max: API_POOL, types: { instant: INSTANT_TYPE }, ...transportOptions(url) });
++  const sql: ApiSql = postgres(url, { types: { instant: INSTANT_TYPE }, ...transportOptions(url) });
+   const begin = sql.begin.bind(sql) as (...args: unknown[]) => Promise<unknown>;
+   // Every `begin` of the API, with or without its options ("read only"), takes the limits before its body runs.
+   // A body may return an array of queries, which postgres.js runs inside the transaction before its commit; the

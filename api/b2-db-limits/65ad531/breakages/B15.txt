@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a7-brk/tests
+
+ ❯ src/db/time-limits.test.ts (3 tests | 1 failed) 10324ms
+   ❯ the role's time limits (the outside audit's A7) (3)
+     × are set again by each of the API's transactions, so they hold though its session started without them 91ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  17:38:12
+   Duration  12.01s (tests 92%, transform 5%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/time-limits.test.ts > the role's time limits (the outside audit's A7) > are set again by each of the API's transactions, so they hold though its session started without them
+AssertionError: expected [ undefined, undefined ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+-   {
+-     "lock": "5s",
+-     "statement": "10s",
+-   },
+-   {
+-     "lock": "5s",
+-     "statement": "10s",
+-   },
++   undefined,
++   undefined,
+  ]
+
+ ❯ src/db/time-limits.test.ts:138:43
+    136|       // the transaction, under its limits, and the caller gets their …
+    137|       const both = await loose.begin((tx) => [tx.unsafe<Settings[]>(SE…
+    138|       expect(both.map((rows) => rows[0])).toEqual([
+       |                                           ^
+    139|         { lock: "5s", statement: "10s" },
+    140|         { lock: "5s", statement: "10s" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

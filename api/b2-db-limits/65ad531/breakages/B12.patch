@@ -1,0 +1,10 @@
+--- a/services/api/src/connection.ts
++++ b/services/api/src/connection.ts
+@@ -40,7 +40,6 @@
+   sql.begin = ((...args: unknown[]) => {
+     const body = args.at(-1) as (tx: postgres.TransactionSql<{ instant: Temporal.Instant }>) => unknown;
+     return begin(...args.slice(0, -1), async (tx: postgres.TransactionSql<{ instant: Temporal.Instant }>) => {
+-      await tx.unsafe(TRANSACTION_LIMITS).simple();
+       const result = body(tx);
+       return Array.isArray(result) ? Promise.all(result) : result;
+     });

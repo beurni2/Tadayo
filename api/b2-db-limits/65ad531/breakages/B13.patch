@@ -1,0 +1,10 @@
+--- a/services/api/src/connection.ts
++++ b/services/api/src/connection.ts
+@@ -38,6 +38,7 @@
+   // A body may return an array of queries, which postgres.js runs inside the transaction before its commit; the
+   // async wrapper hides the array from postgres.js, so it runs them itself, as postgres.js would.
+   sql.begin = ((...args: unknown[]) => {
++    if (args.length > 1) return begin(...args);
+     const body = args.at(-1) as (tx: postgres.TransactionSql<{ instant: Temporal.Instant }>) => unknown;
+     return begin(...args.slice(0, -1), async (tx: postgres.TransactionSql<{ instant: Temporal.Instant }>) => {
+       await tx.unsafe(TRANSACTION_LIMITS).simple();
