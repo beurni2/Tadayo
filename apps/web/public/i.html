@@ -16,22 +16,40 @@
         <source srcset="/brand/wordmark-dark.svg" media="(prefers-color-scheme: dark)" />
         <img class="wordmark" src="/brand/wordmark.svg" alt="Tadayo" width="144" height="46" />
       </picture>
-      <div class="parts" aria-live="polite">
-        <section data-state="checking">
-          <p class="note" tabindex="-1">Checking invitation…</p>
+      <noscript><p class="body nojs">Turn on JavaScript to check this invitation.</p></noscript>
+      <div class="status" role="status" aria-live="polite" aria-atomic="true">
+        <section data-state="checking" hidden>
+          <h1 class="title">Checking invitation…</h1>
         </section>
         <section data-state="invited" hidden>
-          <h1 class="title" tabindex="-1"><bdi data-name></bdi> invited you to a club on Tadayo</h1>
+          <h1 class="title"><bdi data-name></bdi> invited you to a club on Tadayo</h1>
           <p class="brand">Your day. Your story. A thought from your friends.</p>
         </section>
         <section data-state="unavailable" hidden>
-          <h1 class="title neutral" tabindex="-1">This invitation isn’t available.</h1>
+          <h1 class="title neutral">This invitation isn’t available.</h1>
           <p class="body">Ask for a new invitation link.</p>
         </section>
         <section data-state="failed" hidden>
-          <p class="note" tabindex="-1">Couldn’t check the invitation link. Check your connection and try again.</p>
-          <button class="action retry" type="button" data-retry>Retry</button>
+          <h1 class="title">Couldn’t check the invitation link.</h1>
+          <p class="body" data-reason="network">Check your connection and try again.</p>
+          <p class="body" data-reason="answered" hidden>Try again.</p>
         </section>
+      </div>
+      <div class="retry-slot">
+        <button class="retry" type="button" aria-describedby="retry-hint" data-retry hidden>
+          <span class="label"
+            ><svg class="spinner" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+              <path d="M8 12.32V14.88" opacity="0.125" />
+              <path d="M11.05 11.05L12.87 12.87" opacity="0.25" />
+              <path d="M12.32 8H14.88" opacity="0.375" />
+              <path d="M11.05 4.95L12.87 3.13" opacity="0.5" />
+              <path d="M8 3.68V1.12" opacity="0.625" />
+              <path d="M4.95 4.95L3.13 3.13" opacity="0.75" />
+              <path d="M3.68 8H1.12" opacity="0.875" />
+              <path d="M4.95 11.05L3.13 12.87" /></svg
+            >Retry</span
+          >
+        </button>
       </div>
       <a
         class="action get"
@@ -40,8 +58,9 @@
         data-get
         >Get Tadayo</a
       >
-      <span id="get-hint" hidden>Open Tadayo in the App Store.</span>
-      <span id="get-unavailable" hidden>Get Tadayo from the App Store.</span>
+      <span id="retry-hint" hidden>Try checking this invitation link again.</span>
+      <span id="retry-busy" hidden>In progress</span>
+      <span id="get-hint" hidden>Open TestFlight in the App Store.</span>
     </main>
   </body>
 </html>
