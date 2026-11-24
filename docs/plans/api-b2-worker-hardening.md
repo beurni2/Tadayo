@@ -88,13 +88,19 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
 - **The API** (`fly.toml`'s `api`, and the Dockerfile's `CMD`, which a bare run starts):
   `setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node
   --disable-sigusr1 services/api/src/main.ts`. It runs as `node` with no capability and no way back, as it does today.
-- **The worker** (`fly.toml`'s `worker`): `prlimit --core=0 --nproc=256 -- setpriv --euid=node --egid=node
-  --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1
-  services/worker/src/main.ts`. It works as `node`; its real uid stays 0, which makes it non-dumpable, so its `/proc`
-  files are the kernel's and no process of another user can read its environment or memory, open its pipes, attach to
-  it or signal it. It keeps three capabilities, usable only for an instant at a time. `prlimit` gives it, and every
-  process it starts, no core file and at most 256 processes per real user: the kernel doesn't hold root's processes to
-  that, so it holds only `tadayo-image`'s (a photo's process can't fill the Machine's process table).
+- **The worker** (`fly.toml`'s `worker`): `prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node
+  --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node
+  --disable-sigusr1 services/worker/src/main.ts`. It works as `node`; its real uid stays 0, which makes it
+  non-dumpable, so its `/proc` files are the kernel's and no process of another user can read its environment or
+  memory, open its pipes, attach to it or signal it. It keeps three capabilities, usable only for an instant at a time:
+  as its real uid is 0, what it keeps is its bounding set and its inheritable set together, so both are cut (round 2 of
+  the review: Docker leaves the inheritable set empty, but Fly's start may not). `prlimit` gives it, and every process
+  it starts, no core dump (a limit of 1 byte: Linux's coredump code writes no core file under one page, and gives none
+  to a `core_pattern` program at exactly 1, where 0 stops only the file; round 2; read in the kernel's source, as no
+  container here can set `core_pattern`), no POSIX message queue (one could outlast
+  the sweep where `/dev/mqueue` isn't mounted; round 2), and at most 256 processes per real user: the kernel doesn't
+  hold root's processes to that, so it holds only `tadayo-image`'s (a photo's process can't fill the Machine's process
+  table).
 - **No inspector on a signal.** Every Node process of the image (the API, the worker, the photo's process and the
   sweep) runs with `--disable-sigusr1`. Without it, `SIGUSR1` opens Node's inspector on `127.0.0.1:9229`, with no
   password, to anyone on the Machine. A process of `tadayo-image` may signal the photo's process and the sweep, which
@@ -109,7 +115,10 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
   and returns to `node`, and is called from three places, nowhere else: to start the photo's process with the user's
   uid and gid (Node's `spawn` then clears its groups and sets both ids before the child's program runs), to kill its
   process group (once the answer is in, and again as its end settles, unless the child has been reaped by then), and to
-  start the sweep below. So it is taken at least four times for each photo, each for one system call. Without `TADAYO_PHOTO_USER` (the tests, CI's runner, the session), it prepares
+  start the sweep below. So it is taken once to start the photo's process, once each time its end is reached before
+  Node has reaped it (usually once: its answer, its memory or its deadline; not at all when it ends of itself first),
+  and once to start the sweep, each time for one system call (round 2 of the review corrected "at least four"). Without
+  `TADAYO_PHOTO_USER` (the tests, CI's runner, the session), it prepares
   photos as it does today, in the worker's own user, and its start line says so. Either without the other (the
   variable but not the start, or the start but not the variable) stops the worker as it starts: neither half alone
   isolates anything.
@@ -126,9 +135,13 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
   runs `node -e`, the one program the image is sure to have, with an empty environment. It runs with the worker's own
   group, not `tadayo-image`'s: Linux lets a process attach to another (ptrace, `/proc/<pid>/mem`) only when every user
   and group id of the two match, so a process the photo's process left behind can't take the sweep over that way, and
-  with `--disable-sigusr1` it can't open Node's inspector in it either (above). It can still
-  stop or kill the sweep, as it may signal any process of its user; so a sweep that fails to start, exits other than 0
-  or doesn't exit within 5 s (`SWEEP_SECONDS`) stops the worker (`stopWorker`: one line on standard error, exit 1).
+  with `--disable-sigusr1` it can't open Node's inspector in it either (above). The sweep's own `/proc` files are its
+  user's, so a process left behind can write its scheduling group's priority (`/proc/<pid>/autogroup`): the sweep
+  starts in a session of its own (`detached`), so that group is its own (round 2 of the review: in the worker's session
+  it was the worker's, and a leftover set it to the lowest priority, where it stayed until a restart). It can still
+  stop, starve or kill the sweep, as it may signal or renice any process of its user; so a sweep that fails to start,
+  exits other than 0 or doesn't exit within 5 s (`SWEEP_SECONDS`) stops the worker (`stopWorker`: one line on standard
+  error, exit 1, which says whether a process may be alive or only what the user left couldn't all be removed).
   Fly's `[[restart]]` policy `on-failure` restarts the Machine, and every process on it ends with it; the photo in hand
   comes back once its lease has passed, its attempt counted (`outbox.ts`). Failing only the photo would have left a
   process of `tadayo-image` alive beside the next one. Photos are prepared one at a time (`outbox.ts`, one event at a
@@ -138,26 +151,44 @@ rejection's code), nor what a child's end comes to (`outcomeOf`), but for the br
   every process of the session's container, twice; that breakage and one that starts the photo's process as root now
   run in a container of the image, with a process limit of its own).
 - **What the sweep leaves.** Once no process of the user is left, the sweep removes what the user owns in `/tmp`,
-  `/var/tmp`, `/dev/shm`, `/dev/mqueue` and `/run/lock` (each folder made writable first, so a folder left read-only
-  can't keep its files), and every System V shared memory segment, semaphore set and message queue it owns or made
-  (`/proc/sysvipc`, then `ipcrm`). Round 1's security review found a process left behind could otherwise pin hundreds
-  of MiB in `/dev/shm` or a shared memory segment, so later photos would end past their memory and be refused as
-  `too_many_pixels`, with the worker running on.
+  `/var/tmp`, `/dev/shm`, `/dev/mqueue` and `/run/lock`, and every System V shared memory segment, semaphore set and
+  message queue it owns or made (`/proc/sysvipc`, then `ipcrm`, 500 at a time). Round 1's security review found a
+  process left behind could otherwise pin hundreds of MiB in `/dev/shm` or a shared memory segment, so later photos
+  would end past their memory and be refused as `too_many_pixels`, with the worker running on. The files go through
+  `find`, `chmod -R u+rwx` (a folder left read-only can't keep its files) and `rm -rf`, which take each name as its
+  bytes and walk a tree of any depth: round 2 of the review found the first program skipped a name that isn't UTF-8 at
+  the top (so the worker ran on with it), and failed on one further down, on a tree deeper than a path may be long, and
+  on tens of thousands of System V objects in one `ipcrm` call (Node's `execFileSync` threw once `ipcrm` had removed
+  them; `spawnSync` doesn't, and 500 a call keeps each far under Linux's 2 MiB for a program's arguments). Anything of the user's still in those folders after,
+  or an `ipcrm` that fails, is exit status 3, and the worker stops, saying what is left: every process of the user has
+  ended by then, and the Machine's restart clears its memory and, by Fly's documentation, its disk (a Machine boots its
+  image afresh unless `persist_rootfs` is set, which `fly.toml` doesn't; read on `dev`, section 4).
 - **The sweep at start.** The worker sweeps once as it starts, before it connects to the database: a Machine restarted
   by a stop above, or a process left from a run before, has none of that user's processes left before the first photo.
   If that sweep fails, the worker doesn't start.
 - **What a photo's process sends back is checked, not trusted.** A rendition is the child's work, so code that took it
-  over can send any bytes. The worker keeps a rendition only if it is a baseline JPEG and nothing else
-  (`baselineJpeg`): its start, only quantization and Huffman tables besides one 8-bit frame of 1 or 3 components whose
-  size is the size the answer states (inside the kind's box), one scan after it whose data holds no marker but stuffed
-  bytes and restarts, and its end as the last two bytes. No EXIF, no ICC profile, no comment, no second picture.
-  `image.ts` writes exactly that (sharp's `jpeg` with metadata dropped). The picture inside is still the child's: a
-  taken-over child could send another picture than the one screened. B3's media route and the iOS app treat
-  renditions as untrusted input, and FQ8's screening, when it is built, screens the renditions as stored.
+  over can send any bytes. The worker keeps a rendition only if its segments are a baseline JPEG's (`baselineJpeg`):
+  its start, no segment but quantization and Huffman tables besides one 8-bit frame of 1 or 3 components whose size is
+  the size the answer states (inside the kind's box), one scan after it whose data holds no marker but stuffed bytes
+  and restarts, and its end as the last two bytes. No metadata segment: no EXIF, no ICC profile, no comment, no second
+  picture. `image.ts` writes exactly that (sharp's `jpeg` with metadata dropped). The check is of the segments, not of
+  what is in them (round 2 of the review): the tables' contents and the scan's data are the child's, like the picture,
+  so a taken-over child can still send a rendition no decoder reads (libjpeg-turbo refused two that `baselineJpeg`
+  takes, one with 1 MiB of bytes in extra Huffman tables), or bytes aimed at a decoder. B3's media route and the iOS
+  app treat renditions as untrusted input, and FQ8's screening, when it is built, screens the renditions as stored
+  (`prepare.ts` screens the original today, with no provider). Re-encoding each rendition in a second, fresh process
+  would make an attacker need two exploits; it isn't built (a second decode of each rendition), and
+  `docs/LIMITATIONS.md` names it.
 - **What a taken-over decoder can still do:** use the network (no namespace of its own: nothing it can reach is the
   worker's, as it holds no key), write to `/tmp` until the sweep removes it, and use the CPU until its deadline. It can
   also stop or slow the sweep, which stops the worker: the Machine restarts, up to five times for one photo before the
-  outbox gives it up, and the day's generation, which runs in the same worker, waits meanwhile. Fly retries a Machine
+  outbox gives it up, and the day's generation, which runs in the same worker, waits meanwhile. The ways round 2 of
+  the review found, each the same restart: leave more files than the sweep removes in 5 s (the reviewer's run: about
+  380,000 empty files took 4.4 s in a container of the image, and a decoder made 920,000 within its deadline); and make the kernel's OOM
+  killer end the worker, by lowering its own `oom_score_adj` back to 0 (an unprivileged process may) and holding
+  memory no watch counts (System V shared memory or files in `/dev/shm`, in no process's resident set). Key data in
+  the photo user's keyrings outlives the sweep (the kernel caps it at 20,000 bytes and 200 keys a user), and only a
+  later photo's process can read it, which reads none. Fly retries a Machine
   that fails a set number of times (`[[restart]]`'s `max_retries`, read on `dev`); past it, the worker stays down until
   someone starts it. Each is noted in
   `docs/LIMITATIONS.md`'s row, which this PR closes for the four points of section 0.
@@ -202,21 +233,29 @@ back as one line of JSON:
 - `asRoot` refuses outside the worker's mode, and the sweep refuses uid 0, gid 0, and the worker's own uid and gid;
 - a sweep that doesn't exit in time (`sweepSeconds` 0.001) stops the worker with its line and exit 1, and the photo's
   end never settles;
-- a sweep that exits 3, or is killed by SIGKILL (as a process left behind could kill it), fails with `exit`, never done,
-  and one that exits 0 is done (the harness gives `sweep` a program of its own for this: the breakage run found that a
-  sweep taking any exit as done passed every other test);
+- a sweep that exits 1, or is killed by SIGKILL (as a process left behind could kill it), fails with `exit`, never done,
+  one that exits 3 (its program's own, once every process of the user has ended) fails with `left`, and one that exits
+  0 is done (the harness gives `sweep` a program of its own for this: the breakage run found that a sweep taking any
+  exit as done passed every other test); a photo whose user owns a folder holding one of root's (which its sweep can't
+  remove) stops the worker with the line that names what is left (`sweep-left`, round 2);
 - the sweep runs with the worker's group: a process left behind, watching for it, sees the photo user's uid and the
-  worker's gid, and can't open its `/proc/<pid>/mem` (`EACCES`);
+  worker's gid, and can't open its `/proc/<pid>/mem` (`EACCES`); it can set the sweep's scheduling group to the lowest
+  priority, and the worker's own stays `nice 0` (round 2);
 - the sweep and the photo's process don't catch `SIGUSR1` (its bit, `0x200`, of `SigCgt` clear); with
   `--disable-sigusr1` Node keeps it blocked in every thread (the bit set in `SigBlk`), so a `SIGUSR1` sent to a sweep
   that waits 3 s stays pending, opens nothing on port 9229, and the sweep exits 0 on its own;
 - a child that leaves 1 MiB files and read-only folders in `/tmp` and `/dev/shm`, a shared memory segment, a
   semaphore set and a message queue, and a second segment it gave to another user (the photo user only its maker), is
   prepared, and none of them is left once its end settles, nor a segment root gave to the photo user before the photo
-  (the photo user only its owner);
+  (the photo user only its owner); since round 2 it also leaves names that aren't UTF-8 (a 1 MiB file alone in
+  `/var/tmp`, and one in each read-only folder), a file in `/run/lock`, a queue in `/dev/mqueue` where the machine has
+  one, a tree 2,100 folders deep (deeper than a path may be long) and 1,200 more message queues (more than one
+  `ipcrm` call takes), and none is left either (the harness reads every name as bytes);
 - `startWorker` with the photo user set ends a process of that user left from before, as it starts, before it reaches
   the database; and when its sweep can't finish (a folder of the user's holding a file of root's, which it can neither
-  empty nor remove), it stops there, before it connects;
+  empty nor remove), it stops there, before it connects, saying what was left. The photo user can't make that folder
+  itself, so root makes it; it has other ways to keep a sweep from exiting 0 in time (section 2), which stop the
+  worker the same way;
 - under a photo user, no group kill once Node has reaped the photo's process: every group `SIGKILL` sent as root is noted
   with whether the group's leader still had its `/proc` entry (alive, or a zombie not yet reaped), and none is sent
   after the reap.
@@ -234,7 +273,8 @@ stated; an answer whose rendition isn't one fails.
 refused. `start.test.ts`: the worker stops as it starts when `TADAYO_PHOTO_USER` is set and it wasn't started as root.
 
 `tools/ops/src/deploy-files.test.ts`: the image test reads "starts as root only to drop: each process group's command
-begins with its `setpriv` line, exactly", the user `tadayo-image` is made with uid and gid 10001 and no shell, and the
+begins with its `setpriv` line, exactly" (the worker's with `prlimit --core=1 --msgqueue=0 --nproc=256` before it and
+`--inh-caps=-all` in it, since round 2), the user `tadayo-image` is made with uid and gid 10001 and no shell, and the
 Dockerfile's `CMD` is fly's `api` command.
 
 ## 4. Verified where
@@ -252,10 +292,17 @@ Dockerfile's `CMD` is fly's `api` command.
   (`setpriv` from a root shell), and recorded, file names and modes only: Yama's `ptrace_scope`, `suid_dumpable`,
   `core_pattern`; whether that user can open `/.fly/api` (a way to Fly's API), read `/.fly` or `/fly`, reach an
   abstract socket or a listener on the loopback, open a console device, make a user namespace or use `io_uring`; the
-  worker's limits (`core` 0, `nproc` 256); that a worker that exits takes every process of `tadayo-image` with it (the
-  Machine restarts); and Fly's restart policy's retry cap. Round 1's security review gave the commands; what it finds
-  open is closed in the image (a folder's mode, `kernel.shm_rmid_forced`, `user.max_user_namespaces`) or recorded,
-  before Gate A.
+  worker's limits (`core` 1, `msgqueue` 0, `nproc` 256) and capability sets (`CapInh` 0, `CapPrm` `0xe0`); that a
+  worker that exits takes every process of `tadayo-image` with it (the Machine restarts), and that the restart leaves
+  nothing of that user in `/tmp`, `/var/tmp`, `/dev/shm` or System V; and Fly's restart policy's retry cap. Since
+  round 2 of the review, too: whether the mqueue filesystem is mounted at `/dev/mqueue`; whether `keyctl` works as that
+  user (no seccomp filter); whether processes are in the root cgroup and `kernel.sched_autogroup_enabled` is 1 (where
+  the sweep's own scheduling group matters); `kernel.shm_rmid_forced`, `kernel.shmall` and the size of `/dev/shm`
+  (memory outside any process); the System V limits (`msgmni`, `semmni`, `shmmni`); and how fast the Machine's disk
+  removes files (the sweep's 5 s). If `tadayo-image` can open `/.fly/api`, that is closed before Gate A: Fly's own
+  library says the socket hands out a token that may change the Machine's metadata. Round 1's security review gave the
+  commands; what it finds open is closed in the image (a folder's mode, `kernel.shm_rmid_forced`,
+  `user.max_user_namespaces`) or recorded, before Gate A.
 
 ## 5. Records and review
 

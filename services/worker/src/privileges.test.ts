@@ -120,7 +120,10 @@ describe("outside the worker's mode", () => {
     expect(lines).toContain(
       '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
     );
-    expect(SWEEP_PROGRAM.indexOf("process.kill(-1")).toBeLessThan(SWEEP_PROGRAM.indexOf("unlinkSync"));
+    expect(SWEEP_PROGRAM.indexOf("process.kill(-1")).toBeLessThan(SWEEP_PROGRAM.indexOf("/usr/bin/rm"));
+    // Once no process of its user is left, a failure is exit status 3: what was left, not a process (sweepLeft).
+    expect(lines.indexOf("try {")).toBeGreaterThan(lines.indexOf("} while (alive());"));
+    expect(lines.at(-1)).toBe("} catch { process.exit(3); }");
     expect(SWEEP_SECONDS).toBe(5);
     // The sweep's and each photo's process's: SIGUSR1 opens no inspector (PR #118's review).
     expect(NO_INSPECTOR).toBe("--disable-sigusr1");
@@ -201,6 +204,7 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     expect(fact("sweep-fails")).toEqual({
       case: "sweep-fails",
       status: "exit",
+      left: "left",
       signal: "exit",
       done: "swept",
       euid: 64998,
@@ -243,6 +247,19 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     });
   });
 
+  it("a process left behind may lower the sweep's scheduling group, but it is the sweep's own: the worker's stays as it was", () => {
+    // Round 2 of PR #118's review: the sweep's /proc files are its user's, so a leftover may write its autogroup's
+    // priority; in the worker's session, that was the worker's. The sweep starts in a session of its own.
+    const watcher = fact("watcher");
+    const group = watcher["group"] as { before: string | null; after: string | null };
+    expect(group.after).toBe(group.before);
+    if (group.before !== null) {
+      // The leftover's write did land, on the sweep's own group, and the worker's isn't at its value.
+      expect(watcher["seen"]).toMatchObject({ autogroup: "set" });
+      expect(group.after).not.toBe("nice 19");
+    }
+  });
+
   it("a process left behind can't open the sweep's inspector: SIGUSR1 stays blocked, opens nothing, and the sweep runs to its own end", () => {
     // PR #118's review: with the inspector on, a leftover sent SIGUSR1, ran code in the sweep and outlived it. With
     // --disable-sigusr1, Node blocks the signal in every thread and never catches it: it stays pending and does nothing.
@@ -267,7 +284,8 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
   });
 
   it("a sweep that can't finish as the worker starts stops it there, before it connects to the database", () => {
-    expect(fact("start-sweep-fails")).toEqual({ case: "start-sweep-fails", failedAt: "the sweep", euid: 64998 });
+    // Every process of the photo user had ended: what it left couldn't all be removed, and the error says so.
+    expect(fact("start-sweep-fails")).toEqual({ case: "start-sweep-fails", failedAt: "the sweep, left", euid: 64998 });
   });
 
   it("sends no group kill once Node has reaped the photo's process, when its group's number may be another's", () => {
@@ -313,5 +331,16 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     );
     expect(stopped.cases.get("sweep-timeout")).toMatchObject({ started: true });
     expect(stopped.cases.has("sweep-timeout-settled")).toBe(false);
+  }, 70_000);
+
+  it("a sweep that ends every process but can't remove what the photo's user left stops the worker, saying so", async () => {
+    // Exit status 3 (SWEEP_PROGRAM): the stop line names what is left, not a process (round 2 of PR #118's review).
+    const stopped = await harness(["sweep-left"], 60);
+    expect(stopped.code).toBe(1);
+    expect(stopped.stderr).toBe(
+      "worker: every process of a photo's user ended, but what it left couldn't all be removed, so the worker stops, and its Machine restarts without them\n",
+    );
+    expect(stopped.cases.get("sweep-left")).toMatchObject({ started: true });
+    expect(stopped.cases.has("sweep-left-settled")).toBe(false);
   }, 70_000);
 });

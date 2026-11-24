@@ -100,11 +100,12 @@ const copies = (stage: "deps" | "runtime") => {
 };
 
 // How each group drops root (fly.toml's [processes]; ADR-038): the API for good, the worker in effect only, keeping
-// setuid, setgid and kill to start and end each photo's process as TADAYO_PHOTO_USER, with no core file and the photo
-// user's processes capped first. Node runs with its inspector off in both (PR #118's review).
+// setuid, setgid and kill to start and end each photo's process as TADAYO_PHOTO_USER and no inheritable capability,
+// with no core dump of any kind (a limit of 1 byte), no POSIX message queue and the photo user's processes capped
+// first. Node runs with its inspector off in both (PR #118's review, both rounds).
 const API_DROP = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs";
 const WORKER_DROP =
-  "prlimit --core=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
+  "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
 const NODE = "node --disable-sigusr1";
 
 // ---- The Dockerfile.

@@ -2,7 +2,9 @@
 // the worker's modules, takes the worker's mode itself as fly.toml's command leaves it (real uid 0; groups, effective
 // group and effective uid an unused id, 64998), and prepares photos with fake children as an unused photo user
 // (64999). It writes one line of JSON a case to standard output, and asserts nothing: the test says what each must be.
-// With `sweep-timeout`, it gives the sweep a millisecond, and the worker's stop ends it (exit status 1). It sends a
+// With `sweep-timeout`, it gives the sweep a millisecond, and the worker's stop ends it (exit status 1); with
+// `sweep-left`, the photo's user owns a folder holding one of root's, which its sweep can't remove, and the worker's
+// stop says so (round 2 of PR #118's review). It sends a
 // sweep SIGUSR1, as a process left behind could, and starts the worker's own start (./start.ts) with a process of the
 // photo user running, against a database nothing answers for (PR #118's review).
 //
@@ -78,8 +80,9 @@ for await (const chunk of process.stdin) void chunk;
 
 /**
  * The watcher a `watching` child leaves behind, as the photo user: it says it is ready, then looks through `/proc`
- * without pause for a process of its user running the sweep's program, and writes that process's user and group and
- * what opening its `/proc/<pid>/mem` gave, until the sweep ends it.
+ * without pause for a process of its user running the sweep's program, and writes that process's user and group, what
+ * opening its `/proc/<pid>/mem` gave, and what setting its scheduling group to the lowest priority gave (round 2 of
+ * PR #118's review: the sweep's `/proc` files are its user's), until the sweep ends it.
  */
 const WATCHER = String.raw`
 const fs = require("node:fs");
@@ -101,7 +104,14 @@ const look = () => {
       } catch (error) {
         mem = error.code ?? "error";
       }
-      fs.writeFileSync(file, JSON.stringify({ uid: Number(field("Uid")), gid: Number(field("Gid")), mem }));
+      let autogroup = "set";
+      try {
+        fs.writeFileSync("/proc/" + pid + "/autogroup", "19");
+      } catch (error) {
+        autogroup = error.code ?? "error";
+      }
+      const seen = { uid: Number(field("Uid")), gid: Number(field("Gid")), mem, autogroup };
+      fs.writeFileSync(file, JSON.stringify(seen));
       return true;
     } catch {
       // That process has gone.
@@ -167,7 +177,8 @@ for (let i = 0; i < 1000 && !(existsSync(file) && readFileSync(file, "latin1") !
 await answer();
 `,
   // A process in a session of its own that watches for the sweep, once the answer is in: what it sees of the sweep's
-  // ids, and whether it could open the sweep's memory, which is what attaching to it takes (WATCHER).
+  // ids, whether it could open the sweep's memory, which is what attaching to it takes, and whether it could lower its
+  // scheduling group's priority (WATCHER).
   watching: String.raw`
 const ready = out + "watcher.ready";
 spawn(process.execPath, [new URL("./watcher.cjs", import.meta.url).pathname, out + "sweep.json", ready], {
@@ -212,23 +223,39 @@ setInterval(() => {}, 1000);
 setInterval(() => {}, 1000);
 `,
   // What a process of the photo's user can leave once it has gone, holding the Machine's memory or disk: a file, and a
-  // folder it made read-only with a folder and a file in it, in /tmp and /dev/shm; and System V shared memory, a
+  // folder it made read-only with a folder and files in it, in /tmp and /dev/shm; and System V shared memory, a
   // semaphore and a message queue (PR #118's review), and a segment it made and gave to another user, so the photo user
-  // is only its maker (GIVE_SEGMENT).
+  // is only its maker (GIVE_SEGMENT). Since round 2 of the review: names that aren't UTF-8 (one alone in /var/tmp, and
+  // one in each read-only folder), a file in /run/lock, a queue in /dev/mqueue where the machine has one, a tree deeper
+  // than a path may be long (4096 bytes), and more System V queues than one call of ipcrm is given (500).
   hoards: String.raw`
 import { chmodSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+const bytes = (path, ...more) => Buffer.concat([Buffer.from(path), Buffer.from(more)]);
 for (const dir of ["/tmp", "/dev/shm"]) {
   writeFileSync(dir + "/tadayo-hoard", Buffer.alloc(1024 * 1024, 1));
   mkdirSync(dir + "/tadayo-hoard-folder/inner", { recursive: true });
   writeFileSync(dir + "/tadayo-hoard-folder/inner/file", "x");
+  writeFileSync(bytes(dir + "/tadayo-hoard-folder/inner/", 0xfe, 0x41), "x");
   chmodSync(dir + "/tadayo-hoard-folder/inner", 0o500);
   chmodSync(dir + "/tadayo-hoard-folder", 0o500);
 }
+writeFileSync(bytes("/var/tmp/tadayo-", 0xff), Buffer.alloc(1024 * 1024, 1));
+writeFileSync("/run/lock/tadayo-hoard", "x");
+if (existsSync("/dev/mqueue")) writeFileSync("/dev/mqueue/tadayo-hoard", "");
+mkdirSync("/tmp/tadayo-deep");
+process.chdir("/tmp/tadayo-deep");
+for (let depth = 0; depth < 2100; depth += 1) {
+  mkdirSync("a");
+  process.chdir("a");
+}
+writeFileSync("file", "x");
+process.chdir("/");
 execFileSync("/usr/bin/ipcmk", ["-M", "65536"], { stdio: "ignore" });
 execFileSync("/usr/bin/ipcmk", ["-S", "1"], { stdio: "ignore" });
 execFileSync("/usr/bin/ipcmk", ["-Q"], { stdio: "ignore" });
 execFileSync("/usr/bin/perl", ["-e", ${JSON.stringify(GIVE_SEGMENT)}, "65534"], { stdio: "ignore" });
+execFileSync("/usr/bin/perl", ["-e", 'msgget(0, 0600 | 01000) // die "msgget: $!" for 1 .. 1200'], { stdio: "ignore" });
 writeFileSync(out + "hoards.json", JSON.stringify({ made: true }));
 await answer();
 `,
@@ -263,19 +290,20 @@ function ended(pid: number): boolean {
   }
 }
 
-/** What `uid` owns where any user may write, by name, and its System V objects, as `kind:id`. */
+/** What `uid` owns where any user may write, by name (read as bytes), and its System V objects, as `kind:id`. */
 function leftOf(uid: number): { files: string[]; ipc: string[] } {
   const files: string[] = [];
-  for (const dir of ["/tmp", "/var/tmp", "/dev/shm"]) {
-    let names: string[] = [];
+  for (const dir of ["/tmp", "/var/tmp", "/dev/shm", "/dev/mqueue", "/run/lock"]) {
+    let names: Buffer[] = [];
     try {
-      names = readdirSync(dir);
+      names = readdirSync(dir, { encoding: "buffer" });
     } catch {
       // Not on this machine.
     }
     for (const name of names) {
       try {
-        if (lstatSync(join(dir, name)).uid === uid) files.push(join(dir, name));
+        if (lstatSync(Buffer.concat([Buffer.from(`${dir}/`), name])).uid === uid)
+          files.push(`${dir}/${name.toString()}`);
       } catch {
         // Removed as it was listed.
       }
@@ -442,6 +470,21 @@ if (process.argv[2] === "sweep-timeout") {
   process.exit(0);
 }
 
+if (process.argv[2] === "sweep-left") {
+  takeWorkersMode();
+  // As in start-sweep-fails below; cleanUp removes it, as root, as the harness ends.
+  const stuck = join("/tmp", `harness-stuck-${String(process.pid)}`);
+  asRoot(() => {
+    mkdirSync(join(stuck, "roots"), { recursive: true });
+    writeFileSync(join(stuck, "roots", "file"), "");
+    chownSync(stuck, PHOTO.uid, PHOTO.gid);
+  });
+  say({ case: "sweep-left", started: true });
+  await photo("quick", {});
+  say({ case: "sweep-left-settled" });
+  process.exit(0);
+}
+
 say({
   case: "start",
   uid: getuid(),
@@ -476,10 +519,12 @@ say({
   egid: getegid(),
 });
 
-// A sweep that a process left behind killed, or that failed, is never done (no photo runs: the photo user has none).
+// A sweep that a process left behind killed, or that failed, is never done (no photo runs: the photo user has none);
+// exit status 3 is the program's own, once its user's processes have all ended: what they left wasn't all removed.
 say({
   case: "sweep-fails",
-  status: await why(PHOTO, "process.exit(3)"),
+  status: await why(PHOTO, "process.exit(1)"),
+  left: await why(PHOTO, "process.exit(3)"),
   signal: await why(PHOTO, 'process.kill(process.pid, "SIGKILL")'),
   done: await why(PHOTO, "process.exit(0)"),
   euid: geteuid(),
@@ -551,9 +596,11 @@ say({
   say({ case: "start-sweep", wasRunning, endedBy, failedAt, euid: geteuid() });
 }
 
-// The worker's start, when its sweep can't finish: it stops before it connects (./start.ts). A folder of the photo
-// user's holding one of root's, which the sweep can neither empty nor remove, makes its program throw; nothing the
-// photo user does can make that, so the folder is made by root here.
+// The worker's start, when its sweep can't finish: it stops before it connects (./start.ts), saying what was left. A
+// folder of the photo user's holding one of root's, which the sweep can neither empty nor remove, is still there after
+// `rm`, so its program exits 3. The photo user can't make that folder itself, so root makes it here; it has other ways
+// to keep a sweep from exiting 0 in time, all of which stop the worker the same way (enough files to outlast
+// SWEEP_SECONDS, a stopped or starved sweep: ADR-038, docs/LIMITATIONS.md).
 {
   const stuck = join("/tmp", `harness-stuck-${String(process.pid)}`);
   asRoot(() => {
@@ -575,6 +622,7 @@ say({
     );
   } catch (error) {
     failedAt = error instanceof Error && error.message.includes("as it started") ? "the sweep" : "the database";
+    if (error instanceof Error && error.message.includes("left couldn't all be removed")) failedAt += ", left";
   }
   asRoot(() => {
     rmSync(stuck, { recursive: true, force: true });
@@ -628,8 +676,19 @@ say({
 }
 
 {
+  // The worker's own scheduling group, before and after (null on a kernel without them).
+  const group = (): string | null => {
+    try {
+      return readFileSync("/proc/self/autogroup", "latin1")
+        .trim()
+        .replace(/^\/autogroup-\d+ /, "");
+    } catch {
+      return null;
+    }
+  };
+  const before = group();
   const { outcome, euid } = await photo("watching", {});
-  say({ case: "watcher", outcome, seen: outOf("sweep.json") ?? null, euid });
+  say({ case: "watcher", outcome, seen: outOf("sweep.json") ?? null, group: { before, after: group() }, euid });
 }
 
 {

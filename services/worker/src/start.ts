@@ -11,7 +11,7 @@
 
 import { prepareClock, type Clock } from "@tadayo/domain";
 import { connect, type WorkerSql } from "./connection.ts";
-import { idsOf, photoUserFor, sweep, type PhotoUser } from "./privileges.ts";
+import { idsOf, photoUserFor, sweep, SweepFailed, type PhotoUser } from "./privileges.ts";
 import { workerStorage, type WorkerStorage } from "./storage.ts";
 
 export interface Started {
@@ -41,8 +41,13 @@ export async function startWorker(
   if (photoUser !== undefined) {
     try {
       await sweep(photoUser);
-    } catch {
-      throw new Error("worker: the photo user's processes couldn't all be ended as it started");
+    } catch (error) {
+      throw new Error(
+        error instanceof SweepFailed && error.why === "left"
+          ? "worker: what the photo user left couldn't all be removed as it started"
+          : "worker: the photo user's processes couldn't all be ended as it started",
+        { cause: error },
+      );
     }
   }
   const sql = connect(url);

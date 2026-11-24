@@ -9,7 +9,9 @@
 //   PEAK_BYTES kills it with SIGKILL: the photo is refused as too_many_pixels, the code FQ138 gives a photo the
 //   worker can't hold. A child that reports a peak past it is refused the same way, as is one that SIGKILL ends
 //   though the worker didn't send it: the child asks to go first to the kernel's out-of-memory killer
-//   (`oom_score_adj` 1000), should the Machine run out between two reads.
+//   (`oom_score_adj` 1000), should the Machine run out between two reads. A child whose code a stranger's bytes took
+//   over may set it back to 0 and hold memory outside its resident set (System V shared memory, /dev/shm), so the
+//   kernel may take the worker instead, which restarts (PR #118's round 2; docs/LIMITATIONS.md).
 // - Past its deadline, the child is killed and ImageTimeout thrown, as for a decode's own timeout, which libjpeg can
 //   outlast: it takes in every scan of a progressive JPEG in one step.
 // - A child that crashes once it holds the photo (a decoder that met what it couldn't read) refuses it as unreadable.
@@ -42,7 +44,7 @@ import type { UploadContentType } from "@tadayo/domain";
 import { UPLOAD_REJECTIONS } from "@tadayo/domain/limits";
 import { MessageReader, type ChildMessage, type SentPrepared } from "./image-frames.ts";
 import type { Prepared } from "./image.ts";
-import { asRoot, NO_INSPECTOR, stopWorker, sweep, type PhotoUser } from "./privileges.ts";
+import { asRoot, NO_INSPECTOR, stopLineFor, stopWorker, sweep, type PhotoUser } from "./privileges.ts";
 
 /** The longest one rendition's decode may take, in seconds (sharp's own timeout, in the child). */
 export const DECODE_SECONDS = 60;
@@ -155,7 +157,9 @@ export interface ChildEnd {
  * scan, and its end as its last two bytes. So no EXIF, XMP, ICC profile, comment or thumbnail reaches a member
  * (spec 33), no progressive scans, no frame larger than its box whatever the header says, and nothing after the end.
  * A marker segment is passed over by its length, which must end inside the bytes; in the scan's entropy-coded data,
- * a 0xFF is followed by a stuffed 0x00 or a restart, else it is the end.
+ * a 0xFF is followed by a stuffed 0x00 or a restart, else it is the end. It checks the segments, not what the tables
+ * or the scan hold, which are the child's like the picture: a taken-over child can still send a rendition no decoder
+ * reads, or bytes aimed at one, so renditions stay untrusted downstream (PR #118's round 2; ADR-038).
  */
 export function baselineJpeg(bytes: Uint8Array, width: number, height: number): boolean {
   if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return false;
@@ -410,8 +414,8 @@ export function prepareIsolated(
       // have left one alive, so the worker stops rather than prepare another photo beside it (./privileges.ts).
       if (user === undefined) finish();
       else
-        sweep(user, limits.sweepSeconds).then(finish, () => {
-          stopWorker();
+        sweep(user, limits.sweepSeconds).then(finish, (error: unknown) => {
+          stopWorker(stopLineFor(error));
         });
     };
     // A child that can't be started gives `error` and may never give `exit`.

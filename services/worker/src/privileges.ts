@@ -25,15 +25,21 @@
 //   still signal it, as it may signal any process of its user, and Node opens an inspector anyone on the Machine can
 //   reach (127.0.0.1:9229, with no password) when it is sent SIGUSR1: so the sweep runs with `--disable-sigusr1`, with
 //   which Node keeps SIGUSR1 blocked in every thread and never catches it, so it stays pending and does nothing (PR
-//   #118's review: a leftover took the sweep over that way, and read the next photo). A leftover that stops, kills or starves the sweep keeps it from exiting 0 within
-//   SWEEP_SECONDS, and the worker stops: its Machine restarts (fly.toml's `[[restart]]` policy `on-failure`), and
-//   every process on it ends with it. The photo in hand comes back once its lease has passed, its attempt counted, at
+//   #118's review: a leftover took the sweep over that way, and read the next photo). The sweep's `/proc` files are its
+//   user's, so a leftover may also write its scheduling group's priority (`/proc/<pid>/autogroup`): the sweep starts
+//   in a session of its own, so that group is its own, not the worker's (round 2 of the review: a leftover had set the
+//   worker's to the lowest). A leftover that stops, kills or starves the sweep, or leaves more than it can remove within
+//   SWEEP_SECONDS, keeps it from exiting 0 in time, and the worker stops: its Machine restarts (fly.toml's `[[restart]]` policy `on-failure`), and every process on it
+//   ends with it. The photo in hand comes back once its lease has passed, its attempt counted, at
 //   most five times (./outbox.ts). Photos are prepared one at a time, so no other photo's process is alive then.
 // - What the sweep leaves. Once no process of the photo's user is left, the sweep removes what that user left in
 //   memory or on disk where it may write: its files and folders in /tmp, /var/tmp, /dev/shm, /dev/mqueue and
 //   /run/lock, and its System V shared memory, semaphores and message queues (with `ipcrm`). Left there, they would
-//   hold the Machine's memory, and every later photo would be refused for its size (PR #118's review). A removal that
-//   fails is an exit other than 0, and the worker stops.
+//   hold the Machine's memory, and every later photo would be refused for its size (PR #118's review). The files are
+//   removed by `find`, `chmod` and `rm`, which take a name as its bytes and a tree of any depth, so neither a name
+//   that isn't UTF-8 nor a path longer than Linux's limit can keep one (round 2 of the review). Anything of the user's
+//   still there after, or an `ipcrm` that fails, is exit status 3, and the worker stops, saying so: every process of
+//   the user has ended by then, and its Machine's restart takes what is left.
 // - At its start, before it claims a photo, the worker sweeps once, so nothing a photo left before a restart can wait
 //   for the next one, whether or not the Machine's restart ended it (./start.ts).
 
@@ -63,41 +69,54 @@ export const NO_INSPECTOR = "--disable-sigusr1";
  * The sweep's program (the rules above). As root, kill(-1) would end every process on the Machine, so it first checks
  * its own user and exits 2 if it is root, whatever the refusal before its start let through: a sweep that doesn't
  * exit 0 stops the worker. Then SIGKILL to every process its user may signal but itself (kill(2) with pid -1), again
- * until none of that user's is left but as a zombie: finding none (`ESRCH`) is the usual case, as the photo's process
- * group was killed already. Then what the user left: in each folder, every entry the user owns, a folder's own
- * entries first (made writable to it first, as the user may have made them read-only); and each System V object the
- * user owns or made, by its id, from /proc/sysvipc. A folder that isn't there, or can't be read, is passed over.
+ * until no thread of any process of that user is left but as a zombie: finding none (`ESRCH`) is the usual case, as
+ * the photo's process group was killed already, and a process whose first thread has ended while others run shows as
+ * a zombie, so each thread is read (/proc/<pid>/task). Then what the user left: in each folder where the user owns an
+ * entry (names read as bytes), every folder of the user's made writable to it throughout (`chmod -R`, as the user may
+ * have made them read-only; what it can't change is passed over), then every entry of the user's removed (`rm -rf`),
+ * and the folder read again: an entry of the user's still there throws. A folder that isn't there, or can't be read,
+ * is passed over. Then each System V object the user owns or made, by its id, from /proc/sysvipc, with `ipcrm`, 500 at
+ * a time, so that no call nears Linux's limit on a program's arguments (the first program's single call failed with
+ * tens of thousands, in Node's `execFileSync`); an `ipcrm` that fails throws. Anything
+ * thrown once no process of the user is left is exit status 3 (what the user left wasn't all removed); before, it is 1.
  */
 export const SWEEP_PROGRAM = [
   "if (process.getuid() === 0) process.exit(2);",
   'const fs = require("node:fs");',
+  'const { spawnSync } = require("node:child_process");',
   "const uid = String(process.getuid());",
   "const self = String(process.pid);",
+  "const running = (pid) => {",
+  "  let tasks;",
+  '  try { tasks = fs.readdirSync("/proc/" + pid + "/task"); } catch { return false; }',
+  "  return tasks.some((task) => {",
+  '    try { return !/^State:\\s+[ZX]/m.test(fs.readFileSync("/proc/" + pid + "/task/" + task + "/status", "latin1")); } catch { return false; }',
+  "  });",
+  "};",
   'const alive = () => fs.readdirSync("/proc").some((pid) => {',
   "  if (!/^\\d+$/.test(pid) || pid === self) return false;",
   "  let status;",
   '  try { status = fs.readFileSync("/proc/" + pid + "/status", "latin1"); } catch { return false; }',
-  "  return /^Uid:\\s+(\\d+)/m.exec(status)?.[1] === uid && !/^State:\\s+[ZX]/m.test(status);",
+  "  return /^Uid:\\s+(\\d+)/m.exec(status)?.[1] === uid && running(pid);",
   "});",
   "do {",
   '  try { process.kill(-1, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }',
   "  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1);",
   "} while (alive());",
-  "const remove = (path) => {",
-  "  if (fs.lstatSync(path).isDirectory()) {",
-  "    fs.chmodSync(path, 0o700);",
-  '    for (const name of fs.readdirSync(path)) remove(path + "/" + name);',
-  "    fs.rmdirSync(path);",
-  "  } else fs.unlinkSync(path);",
+  "try {",
+  "const owned = (dir) => {",
+  "  let names;",
+  '  try { names = fs.readdirSync(dir, { encoding: "buffer" }); } catch (error) { if (error.code === "ENOENT" || error.code === "EACCES") return 0; throw error; }',
+  "  return names.filter((name) => {",
+  '    try { return String(fs.lstatSync(Buffer.concat([Buffer.from(dir + "/"), name])).uid) === uid; } catch (error) { if (error.code === "ENOENT") return false; throw error; }',
+  "  }).length;",
   "};",
   'for (const dir of ["/tmp", "/var/tmp", "/dev/shm", "/dev/mqueue", "/run/lock"]) {',
-  "  let names;",
-  '  try { names = fs.readdirSync(dir); } catch (error) { if (error.code === "ENOENT" || error.code === "EACCES") continue; throw error; }',
-  "  for (const name of names) {",
-  "    let stat;",
-  '    try { stat = fs.lstatSync(dir + "/" + name); } catch (error) { if (error.code === "ENOENT") continue; throw error; }',
-  '    if (String(stat.uid) === uid) remove(dir + "/" + name);',
-  "  }",
+  "  if (owned(dir) === 0) continue;",
+  '  const mine = ["-xdev", "-mindepth", "1", "-maxdepth", "1", "-user", uid];',
+  '  spawnSync("/usr/bin/find", [dir, ...mine, "-type", "d", "-exec", "/usr/bin/chmod", "-R", "u+rwx", "--", "{}", "+"], { stdio: "ignore" });',
+  '  spawnSync("/usr/bin/find", [dir, ...mine, "-exec", "/usr/bin/rm", "-rf", "--one-file-system", "--", "{}", "+"], { stdio: "ignore" });',
+  '  if (owned(dir) > 0) throw new Error("the sweep: the photo user\'s files in " + dir + " are still there");',
   "}",
   "const objects = [];",
   'for (const [kind, flag] of [["shm", "-m"], ["sem", "-s"], ["msg", "-q"]]) {',
@@ -109,17 +128,21 @@ export const SWEEP_PROGRAM = [
   '  const maker = head.indexOf("cuid");',
   "  for (const row of rows) if (row[owner] === uid || row[maker] === uid) objects.push(flag, row[id]);",
   "}",
-  'if (objects.length > 0) require("node:child_process").execFileSync("/usr/bin/ipcrm", objects, { stdio: "ignore" });',
+  "for (let at = 0; at < objects.length; at += 1000) {",
+  '  const done = spawnSync("/usr/bin/ipcrm", objects.slice(at, at + 1000), { stdio: "ignore" });',
+  '  if (done.status !== 0) throw new Error("the sweep: ipcrm failed");',
+  "}",
+  "} catch { process.exit(3); }",
 ].join("\n");
 
-const STOP_LINE =
-  "worker: a photo's processes weren't all ended, so the worker stops, and its Machine restarts without them";
-
-/** Why the sweep failed: a user it won't sweep, a process that didn't start, an exit not 0, or its time. */
+/**
+ * Why the sweep failed: a user it won't sweep, a process that didn't start, an exit not 0 (or none), its time, or,
+ * once every process of the user had ended, what the user left not all removed (exit status 3).
+ */
 export class SweepFailed extends Error {
   readonly code = "image.sweep_failed";
-  readonly why: "refused" | "start" | "exit" | "time";
-  constructor(why: "refused" | "start" | "exit" | "time") {
+  readonly why: "refused" | "start" | "exit" | "time" | "left";
+  constructor(why: "refused" | "start" | "exit" | "time" | "left") {
     super(`image: the photo user's processes weren't swept: ${why}`);
     this.name = "SweepFailed";
     this.why = why;
@@ -151,11 +174,22 @@ export function inWorkerMode(ids: Ids): boolean {
   return ids.uid === 0 && ids.euid !== 0;
 }
 
+/** What a failed sweep may have left (SweepFailed), for the worker's stop line, its log's only clue. */
+export function sweepLeft(error: unknown): string {
+  return error instanceof SweepFailed && error.why === "left"
+    ? "every process of a photo's user ended, but what it left couldn't all be removed"
+    : "a photo's processes weren't all ended";
+}
+
+/** The worker's stop line after a sweep failed with `error` (sweepLeft). */
+export const stopLineFor = (error: unknown): string =>
+  `worker: ${sweepLeft(error)}, so the worker stops, and its Machine restarts without them`;
+
 /**
  * The worker stops at once, with one line on standard error and exit status 1, which Fly restarts. For a state in
  * which preparing another photo, or running another line of the worker's code, isn't safe.
  */
-export function stopWorker(line: string = STOP_LINE): never {
+export function stopWorker(line: string = stopLineFor(undefined)): never {
   process.stderr.write(`${line}\n`);
   process.exit(1);
 }
@@ -225,7 +259,8 @@ export function asRoot<T>(fn: () => T): T {
 /**
  * Ends every process of the photo's user (the rules above): resolves once the sweep has exited 0, rejects with
  * SweepFailed otherwise. An exit not 0, or none (killed by a signal), is never done: a process the photo left behind
- * may have killed the sweep before it ran. It refuses, starting nothing, root, root's group, and the worker's own
+ * may have killed the sweep before it ran. It starts in a session of its own (`detached`), so in a scheduling group of
+ * its own (the rules above). It refuses, starting nothing, root, root's group, and the worker's own
  * user and group. `seconds` and `program` are SWEEP_SECONDS and SWEEP_PROGRAM but in the root harness, which gives
  * the sweep a millisecond, or a program that fails, to show either stops the worker.
  */
@@ -252,6 +287,7 @@ export function sweep(
           gid: own.egid,
           env: {},
           stdio: "ignore",
+          detached: true,
         }),
       );
     } catch {
@@ -268,7 +304,7 @@ export function sweep(
     started.on("exit", (code) => {
       clearTimeout(timer);
       if (code === 0) resolve();
-      else reject(new SweepFailed("exit"));
+      else reject(new SweepFailed(code === 3 ? "left" : "exit"));
     });
   });
 }
