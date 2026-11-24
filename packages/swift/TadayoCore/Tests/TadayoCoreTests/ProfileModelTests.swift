@@ -196,6 +196,24 @@ func account(name: String? = nil, age: Bool = false, version: Int = 0) -> Accoun
         #expect(accounts.updates.allSatisfy { $0.change == .name("Ben", expectedVersion: 1) })
     }
 
+    @Test func anUnreadableAnswerKeepsTheKeyAndBody() async {
+        // The server answered 2xx and the build couldn't read it: the name may be saved, so the
+        // retry is the same action (T19; audit A8).
+        let keys = NumberedKeys()
+        let accounts = FakeAccounts(update: [
+            .failure(.unreadable), .success(account(name: "Ben", age: true, version: 2)),
+        ])
+        let model = model(accounts, account(age: true, version: 1), keys: keys)
+        model.name = "Ben"
+        await model.saveName()
+        #expect(model.failure == .other)
+        #expect(model.name == "Ben")
+        await model.saveName()
+        #expect(model.failure == nil)
+        #expect(accounts.updates.map(\.key) == Array(repeating: NumberedKeys.key(1), count: 2))
+        #expect(accounts.updates.allSatisfy { $0.change == .name("Ben", expectedVersion: 1) })
+    }
+
     @Test func aChangedNameIsANewActionWithANewKey() async {
         let accounts = FakeAccounts(update: [
             .failure(.network), .success(account(name: "Benji", age: true, version: 2)),

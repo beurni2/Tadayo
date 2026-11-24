@@ -187,6 +187,9 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
             ("me", .json(429, error("RATE_LIMITED"), ["Retry-After": "30"]), .unavailable),
             ("me", .response(status: 503, body: "", headers: [:]), .unavailable),
             ("me", .response(status: 418, body: "", headers: [:]), .refused),
+            // A success the contract doesn't list: the server may have acted (audit A8).
+            ("me", .response(status: 202, body: "", headers: [:]), .unreadable),
+            ("update", .response(status: 204, body: "", headers: [:]), .unreadable),
             ("me", .failure, .network),
             ("clubs", .json(403, error("PROFILE_INCOMPLETE")), .profileIncomplete),
             ("clubs", .json(403, error("NOT_ALLOWED")), .refused),
@@ -204,7 +207,9 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
         }
     }
 
-    @Test func anAnswerThatBreaksTheContractIsRefusedNotTrusted() async {
+    @Test func anAnswerThatBreaksTheContractIsUnreadableNotTrusted() async {
+        // Unreadable, not refused: the server answered 2xx, so it may have acted, and a command's
+        // retry keeps its key (T19; audit A8).
         let answers: [CannedTransport.Answer] = [
             .response(status: 200, body: ben, headers: ["Content-Type": "application/json"]),
             .json(200, ben, ["Cache-Control": "max-age=60"]),
@@ -213,7 +218,7 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
             .json(200, ben, ["Content-Type": "text/html"]),
         ]
         for answer in answers {
-            await #expect(throws: APIFailure.refused) {
+            await #expect(throws: APIFailure.unreadable) {
                 try await api(CannedTransport([answer])).me()
             }
         }
@@ -331,6 +336,7 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
         for failure in [
             APIFailure.network, .signedOut, .profileIncomplete, .versionConflict, .notFound,
             .notAllowed, .rosterChanged, .clubFull, .invitationExpired, .unavailable, .refused,
+            .unreadable,
         ] {
             #expect(String(describing: failure).allSatisfy { $0.isLetter })
         }

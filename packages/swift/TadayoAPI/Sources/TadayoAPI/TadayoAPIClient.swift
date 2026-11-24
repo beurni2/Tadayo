@@ -10,8 +10,9 @@ import TadayoCore
 
 /// The Tadayo API, as the app calls it. The generated `Client` stays internal and this is all the
 /// app sees: the account here, the clubs in `TadayoAPIClient+Clubs.swift`, in `TadayoCore`'s
-/// types, with every failure as an `APIFailure`, which carries nothing of the answer (T52). It
-/// grows with each slice.
+/// types, with every failure as an `APIFailure`, which carries nothing of the answer (T52). A
+/// refusal the contract documents is `refused`; an answer this build can't read is `unreadable`,
+/// since the server may have acted on it (audit A8). It grows with each slice.
 public struct TadayoAPIClient: AccountService {
     let client: Client
     let now: @Sendable () -> ContinuousClock.Instant
@@ -102,13 +103,20 @@ public struct TadayoAPIClient: AccountService {
         }
     }
 
-    /// A status the contract doesn't list for the operation.
+    /// A status the contract doesn't list for the operation: a success the build can't read,
+    /// whose command the server may have carried out, or a refusal.
     static func failure(status: Int) -> APIFailure {
-        status >= 500 ? .unavailable : .refused
+        switch status {
+        case 500...: .unavailable
+        case 200..<300: .unreadable
+        default: .refused
+        }
     }
 
     /// A call that threw: no session, no answer, or an answer that doesn't match the contract (a
-    /// missing or changed `Cache-Control` among them), which is refused rather than trusted.
+    /// value it added after this build, or a missing or changed `Cache-Control`, among them),
+    /// which is unreadable rather than trusted. What the server did is unknown, so it isn't
+    /// `refused`, which would end a command's action.
     static func failure(_ error: any Error) -> APIFailure {
         let cause = (error as? ClientError)?.underlyingError ?? error
         switch cause {
@@ -119,7 +127,7 @@ public struct TadayoAPIClient: AccountService {
             case .unavailable: return .unavailable
             }
         case is URLError, is CancellationError: return .network
-        default: return .refused
+        default: return .unreadable
         }
     }
 }

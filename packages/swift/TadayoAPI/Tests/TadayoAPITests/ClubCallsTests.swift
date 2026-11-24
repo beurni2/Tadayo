@@ -92,11 +92,11 @@ import Testing
         }
     }
 
-    @Test func aDayWhoseDateIsNotADateIsRefused() async {
+    @Test func aDayWhoseDateIsNotADateIsUnreadable() async {
         let body = ContractExample.json("listClubs.two_clubs")
             .replacingOccurrences(
                 of: #""local_date":"2026-11-06""#, with: #""local_date":"Friday""#)
-        await #expect(throws: APIFailure.refused) {
+        await #expect(throws: APIFailure.unreadable) {
             try await api(CannedTransport([.json(200, body)])).clubs()
         }
     }
@@ -333,7 +333,7 @@ import Testing
         return .json(201, String(decoding: data, as: UTF8.self))
     }
 
-    @Test func aLinkThatIsNotExactlyAnInvitationLinkIsRefused() async {
+    @Test func aLinkThatIsNotExactlyAnInvitationLinkIsUnreadable() async {
         // The server's link is held to the contract's pattern character for character: none of
         // the leniencies a pasted link gets (spaces around it, the host's case), so the app never
         // stores or shares a link another phone would read differently.
@@ -344,16 +344,16 @@ import Testing
             "HTTPS://TADAYO.APP/i#\(token)", "https://tadayo%2Eapp/i#\(token)",
             "https://tadayo.app:/i#\(token)",
         ] {
-            await #expect(throws: APIFailure.refused, "\(url)") {
+            await #expect(throws: APIFailure.unreadable, "\(url)") {
                 try await api(CannedTransport([linkAnswer(url: url)])).createInvitation(
                     for: "cnd_kt_leila", in: "club_kitchen_table", key: .make(at: start))
             }
         }
     }
 
-    @Test func aLinkForAnotherCandidateIsRefused() async {
+    @Test func aLinkForAnotherCandidateIsUnreadable() async {
         let answer = linkAnswer(url: "https://tadayo.app/i#\(token)", candidate: "cnd_kt_sam")
-        await #expect(throws: APIFailure.refused) {
+        await #expect(throws: APIFailure.unreadable) {
             try await api(CannedTransport([answer])).createInvitation(
                 for: "cnd_kt_leila", in: "club_kitchen_table", key: .make(at: start))
         }
@@ -624,8 +624,22 @@ import Testing
         }
     }
 
-    @Test func anAnswerThatBreaksTheContractIsRefused() async {
+    @Test func anAnswerThatBreaksTheContractIsUnreadable() async {
+        // Unreadable, not refused: a 2xx the build can't read may still be a command the server
+        // carried out, so the action's retry keeps its key (T19; audit A8).
         let answers: [(ClubOperation, CannedTransport.Answer)] = [
+            // A value the contract may add after this build: a new club state in a 201.
+            (
+                .createClub,
+                .json(
+                    201,
+                    ContractExample.json("createClub.created").replacingOccurrences(
+                        of: #""state":"proposed""#, with: #""state":"archived""#))
+            ),
+            (.createClub, .response(status: 200, body: "", headers: [:])),
+            (.propose, .json(201, #"{"id":"rev_kt_leila"}"#)),
+            (.accept, .json(200, "not json")),
+            (.revokeInvitation, .json(200, #"{"invitation_id":"inv_kt_other","state":"revoked"}"#)),
             (.club, .json(200, #"{"server_now":"2026-11-06T14:41:00Z"}"#)),
             (.preview, .json(200, #"{"state":"open"}"#)),
             (
@@ -648,7 +662,7 @@ import Testing
             ),
         ]
         for (operation, answer) in answers {
-            await #expect(throws: APIFailure.refused, "\(operation)") {
+            await #expect(throws: APIFailure.unreadable, "\(operation)") {
                 try await operation.call(on: api(CannedTransport([answer])), self)
             }
         }

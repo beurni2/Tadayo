@@ -267,7 +267,9 @@ extension InvitationRoster {
             // No answer: the server may have accepted, so the retry sends the same key.
             acceptFailure = .network
             then = .nothing
-        case .failure(.unavailable):
+        case .failure(.unavailable), .failure(.unreadable):
+            // A busy server, or an answer this build couldn't read: the server may have
+            // accepted too, so the retry sends the same key.
             acceptFailure = .other
             then = .nothing
         case .failure:
