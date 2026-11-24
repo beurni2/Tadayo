@@ -32,8 +32,9 @@ struct KeychainSessionStore: SessionStore {
     }
 
     /// The session kept, or nil. Bytes that don't decode never will, so they throw
-    /// `UnusableSession`, which reads as no session; any other refusal (`KeychainFailure`, a
-    /// locked device, say) is a moment's, which ends nothing (FQ89).
+    /// `UnusableSession`, which reads as no session; any other refusal (`KeychainFailure`: before
+    /// the first unlock after a restart, since the item is readable only after it, or a signing
+    /// fault's -34018) ends nothing (FQ89).
     func load() throws -> AuthSession? {
         var query = item
         query[kSecReturnData] = true

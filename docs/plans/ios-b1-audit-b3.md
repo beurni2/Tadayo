@@ -18,7 +18,7 @@ FQ89's default puts "Couldn’t load your account." over "Try again." on screen,
 
 **On `main`:**
 
-- **A keychain read that throws.** `SessionManager.accessToken()` and `accessToken(afterRejecting:)` read the store with `try?`, so any failure reads as no session and throws `SessionError.signedOut`. The root then ends the session as if the server had (`RootModel.endedByServer()`). `isSignedIn` did the same at launch, which showed sign-in over a session still kept. A keychain read can fail for a moment, for example `errSecInteractionNotAllowed` while the device is locked.
+- **A keychain read that throws.** `SessionManager.accessToken()` and `accessToken(afterRejecting:)` read the store with `try?`, so any failure reads as no session and throws `SessionError.signedOut`. The root then ends the session as if the server had (`RootModel.endedByServer()`). `isSignedIn` did the same at launch, which showed sign-in over a session still kept. A keychain read can fail for a moment: the session's item is readable only once the iPhone has been unlocked since it started (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), so a read before that, by a launch in the background, say, is refused (`errSecInteractionNotAllowed`).
 - **A refresh answer that doesn't say the session ended.** `SupabaseAuth.refresh` read every answer that wasn't a success, 429, 5xx or `refresh_token_already_used` as `AuthFailure.sessionEnded`, and `SessionManager` deleted the session for it. Those answers include:
   - GoTrue's 409 `conflict` ("Too many concurrent token refresh requests"), which the app and the share extension refreshing at once can draw;
   - a captive portal's or a gateway's page;
@@ -35,8 +35,9 @@ FQ89's default puts "Couldn’t load your account." over "Try again." on screen,
 - **A refresh the store can't confirm.** GoTrue's `refresh_token_already_used` ends the session only when the store, read again after the answer, still holds the token sent: otherwise the share extension refreshed it first, and its session is used. Before this branch, a read refused at that moment was taken to hold the token sent, and the session was deleted. Now that read's refusal ends nothing: the answer is `SessionError.unavailable` and the next read decides (the review's round 1).
 - **The refresh.** Only a 400 with one of GoTrue's codes for a refresh token it won't take ends the session (`SupabaseAuth.sessionEndingCodes`): `refresh_token_not_found`, `user_banned`, `session_not_found`, `session_expired` and `validation_failed`. This is the list `theCodesThatEndASession` already held. They come from `RefreshTokenGrant` in `supabase/auth`'s `internal/tokens/service.go` and the grant's parameter check in `internal/api/token_refresh.go`, read on 2026-11-24, where each is `NewBadRequestError`, a 400 (`internal/api/apierrors/apierrors.go`). The code is in the `x-sb-error-code` header, as `errorCode` already reads it. A 400 `refresh_token_already_used` is handled as before. Every other answer is `AuthFailure.unavailable`, which keeps the session.
 - **The launch.** `RootModel.start()` shows `.failed(.other)` for a refused read, the account's failure with Retry (FQ89), and never shows sign-in or purges for it.
+- **Retry after "Couldn’t keep you signed in."** `RootModel.retry()` reads the store first there. A refused read keeps that line and the address typed, rather than show the account's failure when no account was kept to read (T43), and the Retry after it reaches A02-email with the address, as FQ89's default says (the review's round 2).
 
-**Tests (written first, each failing on `main` but the second; `SessionManager`'s and `SupabaseAuth`'s on Linux):**
+**Tests (written first, each failing on `main` but the third; `SessionManager`'s and `SupabaseAuth`'s on Linux):**
 
 - `SessionManagerTests.aKeychainReadThatFailsEndsNothing`: two refused reads, then a good one; no token, no delete, no refresh.
 - `SessionManagerTests.aRefreshTokenAlreadyUsedWithAStoreThatCantBeReadEndsNothing`: the refresh answers "already used" and the store's read after it is refused; `unavailable`, no delete, and the session still kept. It fails without the fix (run in the session, with the case removed).
@@ -52,6 +53,7 @@ FQ89's default puts "Couldn’t load your account." over "Try again." on screen,
   - an unknown code;
   - `session_expired` with a 404.
 - `RootModelClubsTests.aLaunchWhoseKeychainCantBeReadIsAFailureThatKeepsEverything`: `.failed(.other)` at launch, with the session, the choice and the links kept, then Retry reaches the tabs with the kept club.
+- `RootModelTests.aRetryWhoseReadIsRefusedStillSaysTheSessionWasntKept`: a session the device couldn't keep, then a Retry whose read is refused, stays on "Couldn’t keep you signed in."; the next Retry reaches A02-email with the address typed. It fails without the fix (run in the session, with the read removed from `retry()`).
 - `KeychainSessionStoreTests.testAnItemThatDoesntDecodeIsAnUnusableSession` (hosted).
 
 ## 3. A launch with no session forgets what an account kept
@@ -75,12 +77,12 @@ Leave sign-in isn't one of them: it forgets the choice and the links before it d
 ## 4. Verification
 
 - **In the session:**
-  - `swift test --package-path packages/swift/TadayoCore`: 505 tests in 30 suites.
+  - `swift test --package-path packages/swift/TadayoCore`: 506 tests in 30 suites.
   - `swift test --package-path packages/swift/TadayoAPI`: 52 tests in 2 suites.
   - `swift format lint --strict` on every changed Swift file.
   - The manifest read with Python's `plistlib`.
-  - The four new Core tests other than `aSessionThatCanNeverBeReadIsNoSession` fail on `main`'s sources (run before the fix, with only `UnusableSession` declared so the tests compile).
-- **The `ios` run at this branch's head, to be read:** `PrivacyManifestTests`, the keychain test, the two launch tests and every other test on iOS 27.2 and 26.5. The snapshots shouldn't change: no screen changed.
+  - The first commit's four new Core tests other than `aSessionThatCanNeverBeReadIsNoSession` failed on `main`'s sources (run before the fix, with only `UnusableSession` declared so the tests compile). The review's two later tests, `aRefreshTokenAlreadyUsedWithAStoreThatCantBeReadEndsNothing` (round 1) and `aRetryWhoseReadIsRefusedStillSaysTheSessionWasntKept` (round 2), each fail with its fix removed.
+- **The `ios` runs.** At `354aab3` (round 1), `ios` 45396084473's first attempt passed every test on iOS 27.2, `PrivacyManifestTests`, the keychain test and the two launch tests among them, with no snapshot changed, and every test on iOS 26.5 but one: `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` (-314 against 16), item 3 of the intermittents' record (`docs/plans/ios-b1-intermittents.md`, on `ios/b1-ui-details-wait`), a sign-in screen this branch doesn't touch. The run at this branch's head is to be read the same way.
 - **Not verifiable here:** whether App Store Connect's scan finds anything else in either binary. The next upload's email says.
 
 ## 5. Not in this branch

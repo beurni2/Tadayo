@@ -206,11 +206,14 @@ import Observation
 
     /// Retry, on the failure line: the account, the clubs, a Leave sign-in that couldn't finish,
     /// or a session the device couldn't keep, where sign-in starts again with the address typed,
-    /// so only the code is asked for again.
+    /// so only the code is asked for again. If the keychain refuses the read there too, no
+    /// account was read, since none was kept: the line stays the one that names what failed, with
+    /// the address still typed (FQ89, T43).
     public func retry() async {
         if route == .leaveFailed { return await end(unfinished ?? .asked) }
         if route == .tabs { return await loadClubs() }
         if route == .signInNotKept {
+            guard (try? await session.isSignedIn) != nil else { return }
             let typed = signIn?.email ?? ""
             await start()
             if route == .signIn { signIn?.email = typed }

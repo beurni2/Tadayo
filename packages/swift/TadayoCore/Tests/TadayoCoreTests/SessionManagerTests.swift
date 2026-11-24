@@ -230,9 +230,10 @@ final class ManualClock: @unchecked Sendable {
     }
 
     @Test func aKeychainReadThatFailsEndsNothing() async throws {
-        // A read the keychain refuses for a moment (a locked device, say) isn't "nothing
-        // stored": no token is handed out, the session stays kept, and neither says signed out
-        // (FQ89: a hiccup never signs anyone out). The next read that works uses it.
+        // A read the keychain refuses for a moment (before the first unlock after a restart,
+        // say) isn't "nothing stored": no token is handed out, the session stays kept, and
+        // neither says signed out (FQ89: a hiccup never signs anyone out). The next read that
+        // works uses it.
         let auth = FakeAuth()
         let store = StubbornStore(session(1), loadFailures: 2)
         let manager = manager(auth, store, ManualClock(start))
