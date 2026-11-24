@@ -1,0 +1,53 @@
+--- 20:59:13 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-24-205913.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-24 20:59:13.00 +0000
+pid: 88081
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.0C44EDC2-350D-4D07-ABD2-FF3F8F1A8455
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 88081, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 21:02:56 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-24-210111_sat12-bq150-1e093ce2-80aa-4740-9eb7-e753eed40a9a-4E7D85BE096F.diag
+Date/Time:        2026-11-24 20:27:16.807 +0000
+End time:         2026-11-24 20:58:46.822 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 42B03A72-F3C4-4F95-BCEF-348811E9C49B
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x190c60000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18724c000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(788)
+On Behalf Of:     159 samples UNKNOWN [572, 20082, 37652, 88211] (159 samples originated by UNKNOWN [257, 20082, 37652, 88211])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              696
+
+--- 21:03:24 UTC, /Library/Logs/DiagnosticReports/com.apple.StreamingUnzipService_2026-11-24-210258_sat12-bq150-1e093ce2-80aa-4740-9eb7-e753eed40a9a-4E7D85BE096F.diag
+Date/Time:        2026-11-24 20:57:15.244 +0000
+End time:         2026-11-24 20:58:17.062 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: B7816A9B-8DC5-44B2-9EE9-213C76139C79
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x190c60000
+
+Command:          com.apple.StreamingUnzipService
+Path:             /Volumes/VOLUME/*/StreamingZip.framework/XPCServices/com.apple.StreamingUnzipService.xpc/com.apple.StreamingUnzipService
+Identifier:       com.apple.StreamingUnzipService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.0C44EDC2-350D-4D07-ABD2-FF3F8F1A8455"(2820)
+On Behalf Of:     9 samples nsurlsessiond [87024] (9 samples originated by UNKNOWN [86974])
+Architecture:     arm64
+Parent:           UNKNOWN [86958]
+PID:              87979
