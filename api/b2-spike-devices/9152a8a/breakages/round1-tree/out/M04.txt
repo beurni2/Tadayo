@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 1 failed) 2119ms
+   ❯ the schema's own guards (0017), behind the commands (3)
+     × refuses a registration for an ended sign-in, for an account that isn't active or finished, a token not in lowercase hex, and a token another sign-in holds 27ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  04:54:27
+   Duration  3.00s (tests 93%, import 3%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the schema's own guards (0017), behind the commands > refuses a registration for an ended sign-in, for an account that isn't active or finished, a token not in lowercase hex, and a token another sign-in holds
+AssertionError: expected Postgres to refuse with 23505: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/devices.test.ts:491:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

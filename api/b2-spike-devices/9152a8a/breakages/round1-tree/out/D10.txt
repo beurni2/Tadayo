@@ -1,0 +1,88 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 7 failed) 1705ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e)) 19ms
+     × moves a token from another account's sign-in, whichever account held it ((a), the move) 13ms
+   ❯ a removal (TECH-DESIGN section 6 (c), (d), (e)) (6)
+     × removes the sign-in's registration and ends it; the second removal finds nothing; a late registration changes nothing 13ms
+     × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 7ms
+     × keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e)) 8ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (7)
+     × lets two sign-ins each take the other's token at once without a deadlock 30ms
+     × lets a registration and a removal of one sign-in race: either order leaves no registration of it 29ms
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 19 passed (26)
+   Start at  04:53:07
+   Duration  2.22s (tests 90%, transform 5%, import 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e))
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from another account's sign-in, whichever account held it ((a), the move)
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > removes the sign-in's registration and ends it; the second removal finds nothing; a late registration changes nothing
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > ends a sign-in that has no registration yet, so its registration still on the way changes nothing
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e))
+PostgresError: app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ registerDevice ../packages/domain/src/identity/devices.ts:223:18
+    221|
+    222|   // 4. This sign-in's registration.
+    223|   await bound(tx)`
+       |                  ^
+    224|     INSERT INTO app.device_registrations (sign_in, user_id, apns_token…
+    225|     VALUES (pg_catalog.decode(${signIn}, 'hex'), ${input.userId}, ${to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets two sign-ins each take the other's token at once without a deadlock
+AssertionError: expected [ …(2) ] to deeply equal [ 'NOT_FOUND', 'ok' ]
+
+- Expected
++ Received
+
+  [
+-   "NOT_FOUND",
++   "PostgresError: app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))",
+    "ok",
+  ]
+
+ ❯ src/db/devices.test.ts:658:31
+    656|       const outcomes = settled(await running);
+    657|       // The first to run moves the other's token and ends the other's…
+    658|       expect(outcomes.sort()).toEqual(["NOT_FOUND", "ok"]);
+       |                               ^
+    659|       expect(await orphans()).toBe(0);
+    660|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets a registration and a removal of one sign-in race: either order leaves no registration of it
+AssertionError: expected [ Array(1) ] to deeply equal [ 'NOT_FOUND' ]
+
+- Expected
++ Received
+
+  [
+-   "NOT_FOUND",
++   "PostgresError: app.device_registrations: a sign-in that has ended registers nothing (TECH-DESIGN section 6 (e))",
+  ]
+
+ ❯ src/db/devices.test.ts:681:39
+    679|         expect(removed).toEqual({ status: "fulfilled", value: "removed…
+    680|       } else {
+    681|         expect(settled([registered])).toEqual(["NOT_FOUND"]);
+       |                                       ^
+    682|         expect(removed).toEqual({ status: "fulfilled", value: "none" }…
+    683|       }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+

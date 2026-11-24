@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -199,7 +199,7 @@
+     SELECT state, display_name, age_confirmed_at IS NOT NULL AS age_confirmed
+       FROM app.users WHERE id = ${input.userId} FOR NO KEY UPDATE`;
+   if (account === undefined || account["state"] !== "active") throw new Refused("UNAUTHENTICATED");
+-  if (typeof account["display_name"] !== "string" || account["age_confirmed"] !== true) {
++  if (account === null) {
+     throw new Refused("PROFILE_INCOMPLETE");
+   }
+ 

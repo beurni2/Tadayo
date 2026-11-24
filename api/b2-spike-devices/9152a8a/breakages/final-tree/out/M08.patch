@@ -1,0 +1,13 @@
+--- a/db/migrations/0017_devices.sql
++++ b/db/migrations/0017_devices.sql
+@@ -99,10 +99,6 @@
+ CREATE FUNCTION app.device_sign_ins_ended_guard() RETURNS trigger
+   LANGUAGE plpgsql SET search_path = '' AS $$
+ BEGIN
+-  -- At the commit, the sign-in's lock, which the command holds already: a registration of it written
+-  -- at once by a writer without the lock holds it to its own commit, and is then seen here.
+-  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+-    'tadayo.device.sign-in:' OPERATOR(pg_catalog.||) pg_catalog.encode(NEW.sign_in, 'hex'), 0));
+   IF EXISTS (SELECT FROM app.device_registrations WHERE sign_in = NEW.sign_in) THEN
+     RAISE EXCEPTION 'app.device_sign_ins_ended: a sign-in ends only once its registration is gone (TECH-DESIGN section 6 (e))'
+       USING ERRCODE = 'integrity_constraint_violation';

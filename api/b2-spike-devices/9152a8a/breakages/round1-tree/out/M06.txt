@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 1 failed) 2264ms
+   ❯ the schema's own guards (0017), behind the commands (3)
+     × refuses at the commit a sign-in ended while its registration stays, and an account deleted with one (T27) 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  04:54:49
+   Duration  3.30s (tests 93%, transform 4%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the schema's own guards (0017), behind the commands > refuses at the commit a sign-in ended while its registration stays, and an account deleted with one (T27)
+AssertionError: promise resolved "[]" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+[]
+
+ ❯ src/db/devices.test.ts:532:6
+    530|                           auth_subject = NULL, age_confirmed_at = NULL…
+    531|       ),
+    532|     ).rejects.toMatchObject({
+       |      ^
+    533|       code: REFUSED.integrity,
+    534|       message: expect.stringMatching(/deleted with a device registrati…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

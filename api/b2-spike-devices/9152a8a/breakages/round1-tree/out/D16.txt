@@ -1,0 +1,94 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 4 failed) 1998ms
+   ❯ a removal (TECH-DESIGN section 6 (c), (d), (e)) (6)
+     × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 9ms
+     × keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e)) 8ms
+   ❯ the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted (2)
+     × keeps eight days of them, nothing personal, and the next command deletes those past it 14ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (7)
+     × lets a registration and a removal of one sign-in race: either order leaves no registration of it 48ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 22 passed (26)
+   Start at  04:53:25
+   Duration  2.50s (tests 93%, transform 4%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > ends a sign-in that has no registration yet, so its registration still on the way changes nothing
+Error: the command wasn't refused
+ ❯ refusal src/db/devices.test.ts:83:9
+     81|     throw error;
+     82|   }
+     83|   throw new Error("the command wasn't refused");
+       |         ^
+     84| }
+     85|
+ ❯ src/db/devices.test.ts:336:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:332:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/devices.test.ts > a removal (TECH-DESIGN section 6 (c), (d), (e)) > keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e))
+Error: the command wasn't refused
+ ❯ refusal src/db/devices.test.ts:83:9
+     81|     throw error;
+     82|   }
+     83|   throw new Error("the command wasn't refused");
+       |         ^
+     84| }
+     85|
+ ❯ src/db/devices.test.ts:392:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:381:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/devices.test.ts > the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted > keeps eight days of them, nothing personal, and the next command deletes those past it
+AssertionError: expected null not to be null
+ ❯ src/db/devices.test.ts:427:42
+    425|       clock.set(Temporal.Instant.from(LONG_AGO).add(ENDED_KEEP));
+    426|       await tx.savepoint((sp) => registerDevice(sp, clock, input(ben, …
+    427|       expect(await endedAt(tx, old)).not.toBeNull();
+       |                                          ^
+    428|       // A microsecond more: the first is past it, the second not.
+    429|       clock.advance({ microseconds: 1 });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets a registration and a removal of one sign-in race: either order leaves no registration of it
+AssertionError: expected [ 'ok' ] to deeply equal [ 'NOT_FOUND' ]
+
+- Expected
++ Received
+
+  [
+-   "NOT_FOUND",
++   "ok",
+  ]
+
+ ❯ src/db/devices.test.ts:681:39
+    679|         expect(removed).toEqual({ status: "fulfilled", value: "removed…
+    680|       } else {
+    681|         expect(settled([registered])).toEqual(["NOT_FOUND"]);
+       |                                       ^
+    682|         expect(removed).toEqual({ status: "fulfilled", value: "none" }…
+    683|       }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

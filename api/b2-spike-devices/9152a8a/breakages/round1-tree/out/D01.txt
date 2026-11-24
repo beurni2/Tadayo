@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 1 failed) 16927ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (7)
+     × lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock 5003ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  04:52:22
+   Duration  18.01s (tests 99%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts [ src/db/devices.test.ts ]
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".
+ ❯ src/db/devices.test.ts:30:1
+     28| // Twenty-four connections, so twenty commands really are at the datab…
+     29| const db = worldSql(24);
+     30| afterAll(async () => {
+       | ^
+     31|   await db.end();
+     32| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/devices.test.ts:625:3
+    623|   };
+    624|
+    625|   it("lets twenty sign-ins register one token at once: one holds it, t…
+       |   ^
+    626|     const token = newToken();
+    627|     const people = await Promise.all(Array.from({ length: 20 }, () => …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

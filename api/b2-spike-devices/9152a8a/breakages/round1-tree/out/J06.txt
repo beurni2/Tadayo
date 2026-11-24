@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/device.test.ts (14 tests | 1 failed) 19ms
+   ❯ removeDevice's outcome, answer and change (4)
+     × wants Node's 204 with nothing in it, and refuses a body, a type, another status or a stale Date 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  04:55:15
+   Duration  436ms (import 67%, transform 24%, tests 7%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/device.test.ts > removeDevice's outcome, answer and change > wants Node's 204 with nothing in it, and refuses a body, a type, another status or a stale Date
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/device.test.ts:228:100
+    226|       expected({ ...typed, headers: { ...typed.headers, "content-type"…
+    227|     ).not.toEqual([]);
+    228|     expect(expected({ ...typed, headers: { ...typed.headers, "cache-co…
+       |                                                                                                    ^
+    229|     expect(expected({ ...typed, headers: { ...typed.headers, date: "Th…
+    230|       [],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

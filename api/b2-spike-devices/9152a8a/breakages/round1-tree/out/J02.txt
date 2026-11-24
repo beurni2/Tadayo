@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/device.test.ts (14 tests | 1 failed) 19ms
+   ❯ registerDevice's outcome and answer (4)
+     × refuses an ended sign-in and a secret whose registration is another account's 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  04:55:11
+   Duration  351ms (import 68%, transform 22%, tests 9%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/device.test.ts > registerDevice's outcome and answer > refuses an ended sign-in and a secret whose registration is another account's
+AssertionError: expected { kind: 'registered', …(3) } to deeply equal { kind: 'refused' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "refused",
++   "kind": "registered",
++   "moved": null,
++   "request": {
++     "canonical": "Europe/London",
++     "environment": "production",
++     "secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
++     "timezone": "europe/london",
++     "token": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
++   },
++   "signIn": "66d34fba71f8f450f7e45598853e53bfc23bbd129027cbb131a2f4ffd7878cd0",
+  }
+
+ ❯ src/privacy/device.test.ts:99:98
+     97|   it("refuses an ended sign-in and a secret whose registration is anot…
+     98|     expect(registerOutcome(rows([], [[signInOf(FIRST), EARLIER]]), BEN…
+     99|     expect(registerOutcome(rows([[signInOf(ANAS), row(ANA, "cd".repeat…
+       |                                                                                                  ^
+    100|       kind: "refused",
+    101|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

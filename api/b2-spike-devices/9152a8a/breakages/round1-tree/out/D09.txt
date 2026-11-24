@@ -1,0 +1,49 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 1 failed) 2027ms
+   ❯ the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted (2)
+     × deletes at most `PURGE_BATCH` in one command, the oldest first 26ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  04:53:04
+   Duration  2.53s (tests 92%, transform 4%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted > deletes at most `PURGE_BATCH` in one command, the oldest first
+AssertionError: expected [ …(5) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+  [
+-   "39818b096a374da2f15b13e589c1c0861f53dbe2046691ffb184980163e13676",
+-   "5efcf1397c221363a016afbc15e1bf98d2fe14d7b5b474b4472aba8e4fbec524",
+-   "c9c8397d37ff80b7b6a43b1349f76958c93daf6375c71cb0e7d1427e1a05f370",
+-   "fa2e654b673b4e52f18680fa6beb1bb83767656dc2024257be153efbdff76e81",
+-   "fd904a0bc96d1efa096de3205ffcf35b14e9ce679d05dabc32d6db1e042f3be0",
++   "423c3510a090ab4d5aa4d1f292f33943902b4390948e5b8c471afe0dd6509afb",
++   "44d0306e063aaca1ff900b201e065a9532686971c2bfd576ab3be7d8475abf2e",
++   "512e55e45d8493bc4bdfb30bc78740aed2bbe730bc7053ae91225b4081b3d355",
++   "7e0446959db4082b4745b891154bb64ed7db22502e946afe11108a2a25ac2ca2",
++   "88a0c4cc79421746f2a6ca1c8a54d069716693e2f7bb5e1341c3b79aa7323e0f",
+  ]
+
+ ❯ src/db/devices.test.ts:454:53
+    452|         SELECT pg_catalog.encode(sign_in, 'hex') AS sign_in FROM app.d…
+    453|          WHERE pg_catalog.encode(sign_in, 'hex') = ANY(${hashes}::text…
+    454|       expect(left.map((row) => row.sign_in).sort()).toEqual(hashes.sli…
+       |                                                     ^
+    455|     });
+    456|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:442:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

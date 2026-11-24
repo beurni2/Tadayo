@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -143,7 +143,7 @@
+     if (!except.has(signIn) && after.ended.get(signIn) !== at) problems.push(`${what} changed another ended sign-in`);
+   }
+   for (const signIn of after.ended.keys()) {
+-    if (!except.has(signIn) && !before.ended.has(signIn)) problems.push(`${what} ended another sign-in`);
++    if (!except.has(signIn) && !before.ended.has(signIn) && except.size < 0) problems.push(`${what} ended another sign-in`);
+   }
+   return problems;
+ }

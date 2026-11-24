@@ -1,0 +1,10 @@
+--- a/services/api/src/identity/devices.ts
++++ b/services/api/src/identity/devices.ts
+@@ -87,6 +87,6 @@
+       return problem(reply, "INVALID_REQUEST", field === undefined ? {} : { field });
+     }
+     const outcome = await deps.sql.begin((tx) => removeDevice(tx, deps.clock, parsed.data.removal_secret));
+-    return outcome === "removed" ? noContent(reply) : problem(reply, "NOT_FOUND");
++    return noContent(reply);
+   };
+ }

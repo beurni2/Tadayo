@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/identity/devices.test.ts (16 tests | 1 failed) 265ms
+   ❯ what removeDevice refuses before any transaction (2)
+     × takes a body up to its limit of 2 KiB and none above it, twice the largest valid one 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  04:55:08
+   Duration  859ms (import 41%, tests 37%, transform 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > what removeDevice refuses before any transaction > takes a body up to its limit of 2 KiB and none above it, twice the largest valid one
+AssertionError: expected 131072 to be 2048 // Object.is equality
+
+- Expected
++ Received
+
+- 2048
++ 131072
+
+ ❯ src/identity/devices.test.ts:258:41
+    256|     const largest = `{${escape("removal_secret")}:${escape("-".repeat(…
+    257|     const limit = 2 * 1024;
+    258|     expect(bodyLimitOf("removeDevice")).toBe(limit);
+       |                                         ^
+    259|     const valid = JSON.stringify({ removal_secret: SECRET });
+    260|     const sized = (bytes: number) => `${valid.slice(0, -1)}${" ".repea…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

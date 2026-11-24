@@ -1,0 +1,11 @@
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -107,7 +107,7 @@
+   chooseScheduleDays: 1024,
+   confirmScheduleDays: 1024,
+   registerDevice: 10 * 1024,
+-  removeDevice: 2 * 1024,
++  removeDevice: 128 * 1024,
+ };
+ 
+ /** The most `operation`'s request body may hold, in bytes. */

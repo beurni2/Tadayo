@@ -1,0 +1,10 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -217,7 +217,6 @@
+   // 3. The move.
+   if (holder !== null && holder !== signIn) {
+     await bound(tx)`DELETE FROM app.device_registrations WHERE sign_in = pg_catalog.decode(${holder}, 'hex')`;
+-    await endSignIn(tx, holder, now);
+   }
+ 
+   // 4. This sign-in's registration.

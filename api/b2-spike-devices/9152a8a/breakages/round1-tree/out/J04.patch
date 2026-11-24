@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -173,7 +173,6 @@
+     );
+   if (after.ended.has(signIn)) problems.push("the registered sign-in has ended");
+   if (moved !== null) {
+-    if (after.registrations.has(moved)) problems.push("the token's earlier sign-in kept its registration ((a))");
+     const ended = before.ended.get(moved) ?? micros(now);
+     if (after.ended.get(moved) !== ended) problems.push("the token's earlier sign-in didn't end at the instant ((e))");
+   }

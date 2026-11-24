@@ -1,0 +1,133 @@
+== D01 the token's lock dropped [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock 5003ms
+== D02 the sign-ins' locks in no fixed order [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × lets two sign-ins each take the other's token at once without a deadlock 1051ms
+== D03 the account's state not read again [db]: CAUGHT; exit 1 ['Tests  2 failed | 24 passed (26)']
+    × is refused once the account's deletion has begun while it waited, and leaves nothing (T27) 310ms
+    × is refused once the account's deletion has begun, and before its profile is finished, changing nothing (T27, FQ69) 10ms
+== D04 the profile not checked [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × is refused once the account's deletion has begun, and before its profile is finished, changing nothing (T27, FQ69) 12ms
+== D05 the registration's purge dropped [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × keeps eight days of them, nothing personal, and the next command deletes those past it 23ms
+== D06 the removal's purge dropped [db]: CAUGHT; exit 1 ['Tests  2 failed | 24 passed (26)']
+    × deletes at most `PURGE_BATCH` in one command, the oldest first 25ms
+    × keeps eight days of them, nothing personal, and the next command deletes those past it 19ms
+== D07 the keep an hour short [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × keeps eight days of them, nothing personal, and the next command deletes those past it 18ms
+== D08 the purge with no limit [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × deletes at most `PURGE_BATCH` in one command, the oldest first 27ms
+== D09 the purge newest first [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × deletes at most `PURGE_BATCH` in one command, the oldest first 26ms
+== D10 an ended sign-in not refused by the command [db]: CAUGHT; exit 1 ['Tests  7 failed | 19 passed (26)']
+    × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 7ms
+    × keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e)) 8ms
+    × lets a registration and a removal of one sign-in race: either order leaves no registration of it 29ms
+    × lets two sign-ins each take the other's token at once without a deadlock 30ms
+    × moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e)) 19ms
+    × moves a token from another account's sign-in, whichever account held it ((a), the move) 13ms
+== D11 another account's secret not refused [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × answers a secret whose registration is another account's with the neutral not-found, and changes nothing ((a); T14) 12ms
+== D12 the move leaves the earlier registration [db]: CAUGHT; exit 1 ['Tests  5 failed | 21 passed (26)']
+    × finds nothing for a sign-in whose token moved to a later one, and refuses nothing of that later sign-in ((e)) 7ms
+    × lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock 198ms
+    × lets two sign-ins each take the other's token at once without a deadlock 26ms
+    × moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e)) 19ms
+    × moves a token from another account's sign-in, whichever account held it ((a), the move) 12ms
+== D13 the move doesn't end the earlier sign-in [db]: CAUGHT; exit 1 ['Tests  4 failed | 22 passed (26)']
+    × lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock 214ms
+    × lets two sign-ins each take the other's token at once without a deadlock 22ms
+    × moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e)) 16ms
+    × moves a token from another account's sign-in, whichever account held it ((a), the move) 12ms
+== D14 a new token not written over the old [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × replaces its token, environment and zone with each new registration of the same sign-in, and its time 21ms
+== D15 the zone kept as sent [db]: CAUGHT; exit 1 ['Tests  2 failed | 24 passed (26)']
+    × keeps the secret's hash as the sign-in, the token in lowercase, the zone the server resolves and the server's time 44ms
+    × refuses a zone of the contract's shape that the server can't resolve, by its name, before anything is locked 6ms
+== D16 a removal that finds nothing ends nothing [db]: CAUGHT; exit 1 ['Tests  4 failed | 22 passed (26)']
+    × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 9ms
+    × keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e)) 8ms
+    × keeps eight days of them, nothing personal, and the next command deletes those past it 14ms
+    × lets a registration and a removal of one sign-in race: either order leaves no registration of it 48ms
+== D17 the removal's lock dropped [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × lets a registration and a removal of one sign-in race: either order leaves no registration of it 36ms
+== D18 every removal said removed [db]: CAUGHT; exit 1 ['Tests  7 failed | 19 passed (26)']
+    × ends a sign-in that has no registration yet, so its registration still on the way changes nothing 4ms
+    × ends a sign-in whose old row another command's purge is deleting, without waiting for that purge 6ms
+    × finds nothing for a sign-in whose token moved to a later one, and refuses nothing of that later sign-in ((e)) 8ms
+    × keeps a later sign-in's token when an earlier sign-in's first registration lands after its removal ended: the app's order ((e)) 4ms
+    × lets a registration and a removal of one sign-in race: either order leaves no registration of it 89ms
+    × lets two removals of long-ended sign-ins purge at once, each past more than `PURGE_BATCH` rows, with no deadlock 15ms
+== D19 the secret kept, not hashed [pure]: CAUGHT; exit 1 ['Tests  1 failed | 4 passed (5)']
+    × is the secret's SHA-256 in hex, the same for the same secret and new for a new one 8ms
+== D20 the token kept in its case [pure]: CAUGHT; exit 1 ['Tests  1 failed | 4 passed (5)']
+    × lowercases the contract's token, and keeps its length 6ms
+== M01 the guard's ended sign-in dropped [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × refuses a registration for an ended sign-in, for an account that isn't active or finished, a token not in lowercase hex, and a token another sign-in holds 9ms
+== M02 a deleting account registered [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × refuses a registration for an ended sign-in, for an account that isn't active or finished, a token not in lowercase hex, and a token another sign-in holds 13ms
+== M03 a token in uppercase kept [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × refuses a registration for an ended sign-in, for an account that isn't active or finished, a token not in lowercase hex, and a token another sign-in holds 16ms
+== M04 a token held by two sign-ins [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × refuses a registration for an ended sign-in, for an account that isn't active or finished, a token not in lowercase hex, and a token another sign-in holds 27ms
+== M05 a sign-in ended with its registration kept [db]: CAUGHT; exit 1 ['Tests  2 failed | 24 passed (26)']
+    × lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it 322ms
+    × refuses at the commit a sign-in ended while its registration stays, and an account deleted with one (T27) 10ms
+== M06 an account deleted with a registration [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × refuses at the commit a sign-in ended while its registration stays, and an account deleted with one (T27) 15ms
+== R01 the time not in whole seconds [route]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × sends the time in whole seconds, rounded down, as every instant of the contract 7ms
+== R02 a removal that found nothing answered 204 [route]: CAUGHT; exit 1 ['Tests  2 failed | 14 passed (16)']
+    × answers a removal that found nothing with the neutral not-found, which also ends the app's removal (T14) 15ms
+    × hands the database the secret's hash and the token in lowercase, never the secret or the token as sent 15ms
+== R03 the 204 cacheable [route]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × answers a removal that removed a registration with 204, nothing in it, and never asks who is calling 13ms
+== R04 a refusal answered as a bad request [route]: CAUGHT; exit 1 ['Tests  2 failed | 14 passed (16)']
+    × hands the database the secret's hash and the token in lowercase, never the secret or the token as sent 18ms
+    × maps the refusals: an ended or another account's sign-in is the neutral not-found; a zone the server can't resolve names the zone 9ms
+== R05 the registration's body limit the default [route]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × takes a body up to its limit of 10 KiB and none above it, twice the largest valid one 12ms
+== R06 the removal's body limit the default [route]: CAUGHT; exit 1 ['Tests  1 failed | 15 passed (16)']
+    × takes a body up to its limit of 2 KiB and none above it, twice the largest valid one 11ms
+== J01 the judge lets an ended sign-in register [judge]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × refuses an ended sign-in and a secret whose registration is another account's 7ms
+== J02 the judge lets another account's secret register [judge]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × refuses an ended sign-in and a secret whose registration is another account's 8ms
+== J03 the judge sees no move [judge]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × moves a token another sign-in holds, whatever its case and whoever's it is 9ms
+    × refuses a move that left the earlier sign-in its registration, or didn't end it at the instant 2ms
+== J04 the judge lets the earlier sign-in keep its registration [judge]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × refuses a move that left the earlier sign-in its registration, or didn't end it at the instant 8ms
+== J05 the judge lets another sign-in end [judge]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × refuses a registration that changed, made or ended another sign-in, or ended its own 8ms
+    × refuses a removal that kept the registration, didn't end the sign-in, ended it again, or touched another 1ms
+== J06 the judge takes a cacheable 204 [judge]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × wants Node's 204 with nothing in it, and refuses a body, a type, another status or a stale Date 8ms
+== J07 the judge ends a removal again [judge]: CAUGHT; exit 1 ['Tests  2 failed | 12 passed (14)']
+    × passes a removal that deleted the registration and ended the sign-in at the instant, or kept its first end 8ms
+    × refuses a removal that kept the registration, didn't end the sign-in, ended it again, or touched another 1ms
+== J08 the judge's registration in microseconds [judge]: CAUGHT; exit 1 ['Tests  1 failed | 13 passed (14)']
+    × wants the registration as stored, in whole seconds, and refuses another field, a value or a status 10ms
+== X01 another account's secret not refused, through the matrix [matrix]: CAUGHT; exit 1 ['Tests  17 failed | 7 passed (24)']
+    × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 1ms
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 54646ms
+    × answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find 41302ms
+    × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find 35672ms
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 39994ms
+    × answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find 40004ms
+== D21 ending a sign-in waits on another command's purge [db]: CAUGHT; exit 1 ['Tests  2 failed | 24 passed (26)']
+    × ends a sign-in whose old row another command's purge is deleting, without waiting for that purge 308ms
+    × lets two removals of long-ended sign-ins purge at once, each past more than `PURGE_BATCH` rows, with no deadlock 1030ms
+== M07 the registration guard without the sign-in's lock [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it 29ms
+== M08 the ending guard without the sign-in's lock [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it 26ms
+== X02 a move from another account leaves its registration, through the matrix [matrix]: CAUGHT; exit 1 ['Tests  17 failed | 7 passed (24)']
+    × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 0ms
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 59776ms
+    × answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find 45706ms
+    × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find 50423ms
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 41998ms
+    × answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find 47080ms
+== R07 the token's field not redacted [logging]: CAUGHT; exit 1 ['Tests  1 failed | 9 passed (10)']
+    × names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email 12ms
+restored: ' M db/migrations/0017_devices.sql\n M docs/JOURNAL.md\n M docs/LIMITATIONS.md\n M docs/QUESTIONS.md\n M docs/plans/api-b2-spike-push.md\n M packages/contracts/openapi.yaml\n M packages/contracts/src/operations.ts\n M packages/domain/src/identity/devices.ts\n M services/api/src/logging.test.ts\n M services/api/src/logging.ts\n M tests/src/db/devices.test.ts\n M tests/src/privacy/matrix.test.ts\n M tests/src/privacy/rows.ts\n'

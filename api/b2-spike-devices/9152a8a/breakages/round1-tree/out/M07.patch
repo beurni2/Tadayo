@@ -1,0 +1,12 @@
+--- a/db/migrations/0017_devices.sql
++++ b/db/migrations/0017_devices.sql
+@@ -67,9 +67,6 @@
+ CREATE FUNCTION app.device_registrations_guard() RETURNS trigger
+   LANGUAGE plpgsql SET search_path = '' AS $$
+ BEGIN
+-  -- The sign-in's lock, which the command holds already (the header's order).
+-  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+-    'tadayo.device.sign-in:' OPERATOR(pg_catalog.||) pg_catalog.encode(NEW.sign_in, 'hex'), 0));
+   PERFORM FROM app.users
+     WHERE id = NEW.user_id AND state = 'active' AND age_confirmed_at IS NOT NULL AND display_name IS NOT NULL
+     FOR SHARE;

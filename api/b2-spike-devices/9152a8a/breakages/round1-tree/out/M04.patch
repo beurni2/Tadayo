@@ -1,0 +1,11 @@
+--- a/db/migrations/0017_devices.sql
++++ b/db/migrations/0017_devices.sql
+@@ -35,7 +35,7 @@
+   user_id app.id NOT NULL REFERENCES app.users ON DELETE CASCADE,
+   -- The APNs device token, as the contract's `apns_token` in lowercase (Postgres's regular expressions count
+   -- to 255 at most, so the length is its own check).
+-  apns_token text NOT NULL UNIQUE
++  apns_token text NOT NULL
+     CHECK (pg_catalog.char_length(apns_token) BETWEEN 16 AND 512 AND apns_token ~ '^[0-9a-f]+$'),
+   apns_environment text NOT NULL CHECK (apns_environment IN ('sandbox', 'production')),
+   -- The device's IANA zone, for its quiet hours (T37), as `app.clubs.timezone` checks it (0003); the

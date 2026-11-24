@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -226,7 +226,7 @@
+   const signIn = signInOf(secret);
+   const problems: string[] = [];
+   if (after.registrations.has(signIn)) problems.push("the removed sign-in kept its registration");
+-  const ended = before.ended.get(signIn) ?? micros(now);
++  const ended = micros(now);
+   if (after.ended.get(signIn) !== ended) problems.push("the removed sign-in didn't end at the instant, or ended again");
+   return [...problems, ...othersProblems(before, after, new Set([signIn]), "a removal")];
+ }

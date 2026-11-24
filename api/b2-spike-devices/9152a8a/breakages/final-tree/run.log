@@ -1,0 +1,13 @@
+== D03 the account's state not read again [db]: CAUGHT; exit 1 ['Tests  2 failed | 24 passed (26)']
+    × is refused once the account's deletion has begun while it waited, and leaves nothing (T27) 11ms
+    × is refused once the account's deletion has begun, and before its profile is finished, changing nothing (T27, FQ69) 9ms
+== D04 the profile not checked [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × is refused once the account's deletion has begun, and before its profile is finished, changing nothing (T27, FQ69) 15ms
+== D21 ending a sign-in waits on another command's purge [db]: CAUGHT; exit 1 ['Tests  2 failed | 24 passed (26)']
+    × ends a sign-in whose old row another command's purge is deleting, without waiting for that purge 311ms
+    × lets two removals of long-ended sign-ins purge at once, each past more than `PURGE_BATCH` rows, with no deadlock 1056ms
+== M07 the registration guard without the sign-in's lock [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it 5003ms
+== M08 the ending guard without the sign-in's lock [db]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it 5002ms
+restored: ' M db/migrations/0017_devices.sql\n M docs/JOURNAL.md\n M docs/LIMITATIONS.md\n M docs/PROGRESS.md\n M docs/QUESTIONS.md\n M docs/plans/api-b2-spike-push.md\n M packages/contracts/openapi.yaml\n M packages/contracts/src/operations.ts\n M packages/domain/src/identity/devices.ts\n M services/api/src/logging.test.ts\n M services/api/src/logging.ts\n M tests/src/db/devices.test.ts\n M tests/src/privacy/matrix.test.ts\n M tests/src/privacy/rows.ts\n'

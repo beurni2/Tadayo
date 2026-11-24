@@ -1,0 +1,11 @@
+--- a/services/api/src/answers.ts
++++ b/services/api/src/answers.ts
+@@ -93,7 +93,7 @@
+  * 204 with no `Content-Type` and no `Content-Length`.
+  */
+ export function noContent(reply: FastifyReply): FastifyReply {
+-  return reply.code(204).header("cache-control", NO_STORE).send();
++  return reply.code(204).send();
+ }
+ 
+ /**

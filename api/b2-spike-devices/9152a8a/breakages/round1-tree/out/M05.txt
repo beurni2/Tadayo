@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 2 failed) 1808ms
+   ❯ the schema's own guards (0017), behind the commands (3)
+     × refuses at the commit a sign-in ended while its registration stays, and an account deleted with one (T27) 10ms
+     × lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it 322ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  04:54:38
+   Duration  2.79s (tests 92%, import 4%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the schema's own guards (0017), behind the commands > refuses at the commit a sign-in ended while its registration stays, and an account deleted with one (T27)
+AssertionError: promise resolved "[]" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+[]
+
+ ❯ src/db/devices.test.ts:521:6
+    519|           tx`INSERT INTO app.device_sign_ins_ended (sign_in, ended_at)…
+    520|       ),
+    521|     ).rejects.toMatchObject({
+       |      ^
+    522|       code: REFUSED.integrity,
+    523|       message: expect.stringMatching(/ends only once its registration …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/devices.test.ts > the schema's own guards (0017), behind the commands > lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/devices.test.ts:596:33
+    594|       expect(await stillWaiting(ended), first).toBe(true);
+    595|       await register.commit();
+    596|       await expect(ended, first).rejects.toMatchObject({
+       |                                 ^
+    597|         code: REFUSED.integrity,
+    598|         message: expect.stringMatching(/ends only once its registratio…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

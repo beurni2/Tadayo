@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -89,7 +89,7 @@
+   if (typeof token !== "string" || !TOKEN.test(token)) {
+     throw new TypeError("devices: an APNs token is hex, 16 to 512 characters");
+   }
+-  return token.toLowerCase();
++  return token;
+ }
+ 
+ export interface RegisterDeviceInput {

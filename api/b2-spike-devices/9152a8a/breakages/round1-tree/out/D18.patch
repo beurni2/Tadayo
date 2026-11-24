@@ -1,0 +1,10 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -247,5 +247,5 @@
+   const removed = await bound(tx)`
+     DELETE FROM app.device_registrations WHERE sign_in = pg_catalog.decode(${signIn}, 'hex') RETURNING 1 AS removed`;
+   await endSignIn(tx, signIn, now);
+-  return removed.length > 0 ? "removed" : "none";
+-}
++  return "removed";
++}

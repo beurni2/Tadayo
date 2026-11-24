@@ -1,0 +1,389 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2016 cells run, 37967 answers scanned
+author, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 38024 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 2016 cells run, 38004 answers scanned
+member in the audience, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+member who joined after the commit (T8): 2016 cells run, 38012 answers scanned
+member who joined after the commit (T8), the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find
+rejoined member, a new interval (T8): 2016 cells run, 38012 answers scanned
+rejoined member, a new interval (T8), the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+former member: 2016 cells run, 36666 answers scanned
+former member, the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find
+invited, not yet a member (T7): 2016 cells run, 36666 answers scanned
+invited, not yet a member (T7), the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the stranger from another club as its account and its row say, and leaks nothing the scanner can find
+stranger from another club: 2016 cells run, 36666 answers scanned
+stranger from another club, the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find
+blocked: Cleo blocked the author, leaving by the block: 2016 cells run, 36666 answers scanned
+blocked: Cleo blocked the author, leaving by the block, the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find
+blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88): 1512 cells run, 23437 answers scanned
+blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88), the roster's table: {"proposals":168,"memberPhases":18,"due":18,"revisions":18,"links":18,"otherAnswers":360,"invitations":18}
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the signed in, profile not finished (FQ13, FQ69) as its account and its row say, and leaks nothing the scanner can find
+signed in, profile not finished (FQ13, FQ69): 2016 cells run, 36582 answers scanned
+signed in, profile not finished (FQ13, FQ69), the roster's table: {"proposals":224,"memberPhases":0,"due":0,"revisions":0,"links":0,"otherAnswers":0,"invitations":0}
+
+ ❯ src/privacy/matrix.test.ts (24 tests | 17 failed) 647428ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 59776ms
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 60515ms
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 61198ms
+     × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 54367ms
+     × answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find 56724ms
+     × answers the former member as its account and its row say, and leaks nothing the scanner can find 41998ms
+     × answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find 47080ms
+     × answers the stranger from another club as its account and its row say, and leaks nothing the scanner can find 47550ms
+     × answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find 45706ms
+     × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find 50423ms
+     × answers the signed in, profile not finished (FQ13, FQ69) as its account and its row say, and leaks nothing the scanner can find 38410ms
+   ❯ the roster's table ran (tests/src/privacy/roster.ts) (1)
+     × made revisions and links for the six roles who are members the club answers, and for no other role 1ms
+   ❯ the leave ran (tests/src/privacy/leave.ts) (1)
+     × left the club for the roles who are members the club answers in the last phase, and for no other role 0ms
+   ❯ the reservations' table ran (tests/src/privacy/reservation.ts) (2)
+     × held, gave back and saw lapse the slots each role's allowance gives, and none for any other role 0ms
+     × gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it 0ms
+   ❯ the uploads' table ran (tests/src/privacy/upload.ts) (1)
+     × made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed 0ms
+   ❯ the commit's table ran (tests/src/privacy/drop.ts) (1)
+     × added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed 0ms
+
+ Test Files  1 failed (1)
+      Tests  17 failed | 7 passed (24)
+   Start at  05:06:24
+   Duration  649.32s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 17 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the rejoined member, a new interval (T8) as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the invited, not yet a member (T7) as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the stranger from another club as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 140, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 140,
++   "first": [
++     "active, collecting: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, collecting: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, collecting: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, collecting: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, collecting, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "active, open: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, open: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, open: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, open: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, open, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "active, past: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, past: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, past: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, past: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, past, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "active, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, collecting: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, collecting: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, collecting: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, collecting: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, collecting, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, open: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, open: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, open: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, open: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, open, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, past: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, past: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, past: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2818:66
+    2816|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2817|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2818|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2819|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2820|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 105, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 105,
++   "first": [
++     "active, open: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, open: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, open: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, open: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, open, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "active, past: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, past: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, past: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, past: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, past, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "active, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, open: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, open: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, open: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, open: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, open, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, past: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, past: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, past: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "removed by moderation, open: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "removed by moderation, open: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "removed by moderation, open: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "removed by moderation, open: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "removed by moderation, open, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "removed by moderation, past: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2818:66
+    2816|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2817|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2818|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2819|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2820|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the signed in, profile not finished (FQ13, FQ69) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 35, first: [ …(35) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 35,
++   "first": [
++     "active, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "active, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "active, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "withdrawn, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "withdrawn, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "removed by moderation, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "removed by moderation, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "held (T29), past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "held (T29), past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "held (T29), past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "held (T29), past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "held (T29), past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "its day suspended, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "its day suspended, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "its day suspended, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "its day suspended, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "its day suspended, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "its club suspended, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "its club suspended, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "its club suspended, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "its club suspended, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "its club suspended, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++     "its day cancelled, past, a year on: registerDevice: status 500, not 200 with the registration (a third sign-in takes the other club's author's token)",
++     "its day cancelled, past, a year on: registerDevice: the registration is missing, not as sent at the instant (a third sign-in takes the other club's author's token)",
++     "its day cancelled, past, a year on: registerDevice: the token's earlier sign-in kept its registration ((a)) (a third sign-in takes the other club's author's token)",
++     "its day cancelled, past, a year on: registerDevice: the token's earlier sign-in didn't end at the instant ((e)) (a third sign-in takes the other club's author's token)",
++     "its day cancelled, past, a year on, registerDevice: shape at status: 500 isn't an answer registerDevice declares",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:2818:66
+    2816|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    2817|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    2818|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    2819|       // Every cell ran: the contract's 72 requests a world (each oper…
+    2820|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the roster's table ran (tests/src/privacy/roster.ts) > made revisions and links for the six roles who are members the club answers, and for no other role
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2869:32
+    2867|     // what the role tests above left, so it holds only when the whole…
+    2868|     // for one role, or after a role's test failed before it stored it…
+    2869|     expect(ROSTER_TABLES.size).toBe(ROLES.length);
+       |                                ^
+    2870|     const made = [...ROSTER_TABLES].filter(([, table]) => table.revisi…
+    2871|     expect(made).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the leave ran (tests/src/privacy/leave.ts) > left the club for the roles who are members the club answers in the last phase, and for no other role
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2885:25
+    2883|   it("left the club for the roles who are members the club answers in …
+    2884|     // As the roster's table above: it reads what the role tests left,…
+    2885|     expect(LEAVES.size).toBe(ROLES.length);
+       |                         ^
+    2886|     expect([...LEAVES].filter(([, states]) => states > 0)).toEqual([
+    2887|       ["author", 6],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > held, gave back and saw lapse the slots each role's allowance gives, and none for any other role
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2912:24
+    2910|     // (T20), in each of the four states; until the commit was built i…
+    2911|     // expired. A lapsed slot coming back expired is still asked in ev…
+    2912|     expect(SLOTS.size).toBe(ROLES.length);
+       |                        ^
+    2913|     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
+    2914|       ["author", { held: 9, released: 5, expired: 0, consumed: 4 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:2933:29
+    2931|     // the four states that neither suspend nor cancel them. Cleo afte…
+    2932|     // interval, or after blocking the author and leaving by it has no…
+    2933|     expect(CLEOS_SLOT.size).toBe(ROLES.length);
+       |                             ^
+    2934|     expect([...CLEOS_SLOT].filter(([, answers]) => answers > 0)).toEqu…
+    2935|       ["member in the audience", 16],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the uploads' table ran (tests/src/privacy/upload.ts) > made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:3009:26
+    3007|     // table, above). Another member's live slot is never the viewer's…
+    3008|     // for it, and nobody else makes one (T9, T14).
+    3009|     expect(UPLOADS.size).toBe(ROLES.length);
+       |                          ^
+    3010|     const one = {
+    3011|       made: 4 + 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the commit's table ran (tests/src/privacy/drop.ts) > added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed
+AssertionError: expected 1 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 1
+
+ ❯ src/privacy/matrix.test.ts:3063:24
+    3061|     // interval may still add to the day (the uploads' table ran, abov…
+    3062|     // day, or meets a duplicate (T9, T14).
+    3063|     expect(DROPS.size).toBe(ROLES.length);
+       |                        ^
+    3064|     const one = { added: 4, replayed: 4 + 3 * 4, conflicts: 4, duplica…
+    3065|     expect([...DROPS].filter(([, table]) => Object.values(table).some(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯
+

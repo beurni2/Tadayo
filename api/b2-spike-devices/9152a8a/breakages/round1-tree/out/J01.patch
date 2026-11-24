@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -106,7 +106,6 @@
+ /** What the world's rows give `viewer` registering `request`. */
+ export function registerOutcome(rows: DeviceRows, viewer: string, request: DeviceRequest): RegisterOutcome {
+   const signIn = signInOf(request.secret);
+-  if (rows.ended.has(signIn)) return { kind: "refused" };
+   const own = rows.registrations.get(signIn);
+   if (own !== undefined && own.user !== viewer) return { kind: "refused" };
+   const token = request.token.toLowerCase();

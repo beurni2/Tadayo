@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/device.ts
++++ b/tests/src/privacy/device.ts
+@@ -111,7 +111,7 @@
+   if (own !== undefined && own.user !== viewer) return { kind: "refused" };
+   const token = request.token.toLowerCase();
+   const holder = [...rows.registrations].find(([, row]) => row.token === token)?.[0] ?? null;
+-  return { kind: "registered", signIn, moved: holder !== null && holder !== signIn ? holder : null, request };
++  return { kind: "registered", signIn, moved: null, request };
+ }
+ 
+ const seconds = (now: Temporal.Instant) => now.toString({ smallestUnit: "second", roundingMode: "floor" });

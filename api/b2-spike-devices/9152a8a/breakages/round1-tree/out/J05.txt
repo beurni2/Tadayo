@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/device.test.ts (14 tests | 2 failed) 26ms
+   ❯ what a registration must change (5)
+     × refuses a registration that changed, made or ended another sign-in, or ended its own 8ms
+   ❯ removeDevice's outcome, answer and change (4)
+     × refuses a removal that kept the registration, didn't end the sign-in, ended it again, or touched another 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  04:55:14
+   Duration  427ms (import 72%, transform 18%, tests 9%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/device.test.ts > what a registration must change > refuses a registration that changed, made or ended another sign-in, or ended its own
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/device.test.ts:182:72
+    180|       rows([[signIn, want], other], [[signIn, NOW_US]]),
+    181|     ]) {
+    182|       expect(registeredProblems(before, after, BEN, outcome, NOW)).not…
+       |                                                                        ^
+    183|     }
+    184|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/device.test.ts > removeDevice's outcome, answer and change > refuses a removal that kept the registration, didn't end the sign-in, ended it again, or touched another
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/device.test.ts:257:63
+    255|       ),
+    256|     ]) {
+    257|       expect(removedProblems(before, after, SECOND, NOW)).not.toEqual(…
+       |                                                               ^
+    258|     }
+    259|     const ended = rows([], [[signIn, EARLIER]]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

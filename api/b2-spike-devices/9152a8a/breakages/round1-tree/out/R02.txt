@@ -1,0 +1,70 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/identity/devices.test.ts (16 tests | 2 failed) 272ms
+   ❯ what the device routes answer (8)
+     × answers a removal that found nothing with the neutral not-found, which also ends the app's removal (T14) 15ms
+     × hands the database the secret's hash and the token in lowercase, never the secret or the token as sent 15ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 14 passed (16)
+   Start at  04:55:02
+   Duration  820ms (tests 40%, import 38%, transform 22%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/identity/devices.test.ts > what the device routes answer > answers a removal that found nothing with the neutral not-found, which also ends the app's removal (T14)
+AssertionError: expected { status: 204, body: '', …(1) } to match object { status: 404, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
++   "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-type": "application/json; charset=utf-8",
+    },
+-   "status": 404,
++   "status": 204,
+  }
+
+ ❯ src/identity/devices.test.ts:325:78
+    323|   it("answers a removal that found nothing with the neutral not-found,…
+    324|     const { answer } = await appFor(() => Promise.resolve("none"));
+    325|     expect(await answer(remove(JSON.stringify({ removal_secret: SECRET…
+       |                                                                              ^
+    326|   });
+    327|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/identity/devices.test.ts > what the device routes answer > hands the database the secret's hash and the token in lowercase, never the secret or the token as sent
+AssertionError: expected { status: 204, body: '', …(1) } to match object { status: 404, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
++   "body": "",
+    "headers": {
+      "cache-control": "private, no-store",
+-     "content-type": "application/json; charset=utf-8",
+    },
+-   "status": 404,
++   "status": 204,
+  }
+
+ ❯ src/identity/devices.test.ts:342:80
+    340|     const removal = recording();
+    341|     const { answer: removing } = await appFor(removal.begin as never, …
+    342|     expect(await removing(remove(JSON.stringify({ removal_secret: SECR…
+       |                                                                                ^
+    343|     expect(JSON.stringify(removal.bound)).not.toContain(SECRET);
+    344|     expect(JSON.stringify(removal.bound)).toContain(SECRET_HASH);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,169 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 2 failed) 2009ms
+   ❯ the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted (2)
+     × keeps eight days of them, nothing personal, and the next command deletes those past it 19ms
+     × deletes at most `PURGE_BATCH` in one command, the oldest first 25ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  04:52:54
+   Duration  2.53s (tests 92%, transform 5%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted > keeps eight days of them, nothing personal, and the next command deletes those past it
+AssertionError: expected Temporal.Instant{} to be null
+
+- Expected:
+null
+
++ Received:
+Instant {}
+
+ ❯ src/db/devices.test.ts:431:38
+    429|       clock.advance({ microseconds: 1 });
+    430|       await tx.savepoint((sp) => removeDevice(sp, clock, newSecret()));
+    431|       expect(await endedAt(tx, old)).toBeNull();
+       |                                      ^
+    432|       expect(await endedAt(tx, recent)).not.toBeNull();
+    433|       // A registration deletes them as a removal does: a microsecond …
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/devices.test.ts > the ended sign-ins kept for `ENDED_KEEP` (8 days), then deleted > deletes at most `PURGE_BATCH` in one command, the oldest first
+AssertionError: expected [ …(105) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+  [
++   "0078193900d68bcaba3e16d10d3f7ab83527283a2f8c213653fab951feaa0b5a",
++   "036e4f3ede689b97c02f22fa51f736b5b6950e1915cd77a02e7a80a61f897b14",
++   "0c0e562e588edc0e2193354eca7261c97958c14e350a497df2fb752ff5d20631",
++   "0c6dc1e3722e84ad18751aa208694de3eeec561f8b105837244887f77b8ffcb3",
++   "0d2bd4dc7e9d773c7d1c5d9e9cfa4be6c0678c53a9f87943565fcb4d506431bd",
++   "0f30a06a0fe97d1ef0114ae4d45c1f9d17ae0f605e25d7f41d1f6f6710ce656e",
++   "11dbacf1e5d10d45a48e26c6a82d95b4aed1c50a4867dcbc73d9a642f0d35b84",
++   "131bea19ffbcc3e58afbc29fabc354654f5bdab0e97ee6d6c0e1b9653f1eae45",
++   "1783b77d3f7cd35883808c732d997f6b3a5abda7598d4ede9fbc9c978c38b172",
++   "20e968151f7bf040f52862f369a28ea9e3adc6441d03ad9f5b870fc26215d417",
++   "2181d92f6eb8b610ba14bf8db6e1373181bede77632866b888e22c05243bd5bc",
++   "22df9f5250b989515bc98b291c9dfa01f7b8b9e93825d32c1ba9d1de5727fc3c",
++   "25c8d798089d79fcc30aa1311f9f23a183cdc166a247cde1a2aee88c2165c58b",
+    "270e816d50ad51a64b798252a478e8ead2c3e819ff1678f5a0f933827190da6c",
++   "2941756bdaae3addaec21f4e7242c3630619814381bab65daa954f688d0fdc3c",
++   "374bab1050a6b70a23fddcb257edd370608aa3eb12a2b9bb1b17873d1fe02bed",
++   "3afdd5f0bf0bbcb6dafd3a6b1de24b1442a33af0c86474a0d6c984d76310b4dc",
++   "3c668ad30114b873112a9e58b9534c1c2e2e0b3da36695d7a2fc9fa6589adb0b",
++   "3ff2a22c6c5734620d6230c49fae6118d868dfbb6dbe3d91b7752ff6780d0225",
++   "40b90a2a6f013e87df3414dccdd7f113849db865f196de82a037da80f4dd9a67",
++   "439ca248b2a93bddce55548d5cb195cc0d045a96db7a1a0df43c42ba359f3f62",
++   "43d53537d67efedd37bee444c1bb4a30963145dd06a7ddf1cb9caa77649aea51",
++   "43f7f56701c755578ba9cc36309d0f85dfcf0844e4a5924bae1b72dbc44cd154",
++   "4496ed4fbb8e3d21927c6f87e409b0ad17b8a6d348bfbfd97a131a8ed19590d9",
++   "46311beb0aa872d29a6caec5e2bec8be64a309e76aed4ab36770dec9c7ba8945",
++   "472e1975ca67994f73862bb2a7b2acf6b817ad42adc07402a1fb7ee9f3cad44a",
++   "48aeaa0ae717685ccdb331e857b0d57e2a2e77347160a523f0c98ae055f43144",
++   "4ab95fc56c3a1b3322171194d0af848f14ef275c2688ae9295d37e0aefb4fc5b",
++   "4c1c38db75f1907a66ba4b24a788db9ea791be5655858c3cb317266641820ac8",
++   "4e5244043c4826a3c1e1f63f779fdc8cd13ad6f92a3a185b9987a1a5bbc85e48",
++   "50c22a9c60cdbc18f30b161106ae72207476d344354c6181c581f9ae03421231",
++   "51383e0b4aa240200aad79a88946cf0e0f84a99bd63fa8b47f3e428f47e70413",
++   "516ec5c003ca22b6fc4e0793ce0de467a753d672cf86bb2fd2513297ab8f5ba4",
++   "535772ec070baa1699a545d171684cecdc751a332230825717e746fb9f064489",
++   "538524987b1c7e0b9c73981327866d091b4f8e3183e4e58b515c6728909aaf68",
++   "56ca7fe6d5417d94a1d4a78eade191ae1a7e063c7f287d68ef61799a7f1801ce",
++   "5b5d973becd43c39f8c5d9af09a45c570bd97e824cd1b5b90dc5e1767ee93c61",
++   "5f874ab68329ab72efeca555d7bd9875d9f7480bc3a780ce0fa0436cff13dc3f",
++   "64d8d56fae5fa3b70d7cd8dcd13977b0e1d29abcacce67d8bd1a253fc8831ad9",
++   "6a7c1b50dd72df21ee8e6aaed34e84938dd6335fb5700e0eadfefcd4d3fe011d",
++   "6b78748b81a7d4189721041940f35c0ba9d334b09409e86b279dbb5da21843a0",
++   "6c5b72ef1072f84aa47d9d1c6451e7e1e91c7525c87232653c68473cd648bb26",
+    "6d1c3096aaf3e8ac96bfcd2e074f110197b726283922ff16a899af5c8ced877d",
++   "6e7f1ed54471830378124f7362172d04a88268e120cb268246157913fb23626b",
++   "79dc3a6b6006408ee0590514223752b9565dd11743172b0e1f81805296bbb13f",
++   "7a72eeee3fc087a554542a93e276edf260f90e08b47cc8c9ca04d3b3e9959432",
++   "7f57c1468041e9771f95c91c55896cd37052de4d8f93e8feb648710f45d63686",
++   "7f974ea3cd891bff69c00d18b85896801c3ccf343b4f7b43844c91886e550e44",
++   "80597c7ddeb11fbecd2bc754f4871a0e24270eb981dc0e2af6335fe995016f85",
+    "81ca9b156a0d2fc0e7d1d0ad23eaff4e146e9f767a71f65b9661a9beadda0f55",
++   "83878db69ed0378233d16550668dc8c82f0e0995722025c64d8361f9b5c316f6",
++   "852e2803c67f6c743367c8d294f04659473a738952d8e931fab3b3db3f2e4775",
+    "857f6f33306d6e2397673c4e84a2de7ab0eb79cf07e4316b27927c498339e1f9",
++   "8adfd3327a0478a1baecbbce12934ba2424fb7259e5c72d3c4844bfb452cb1a4",
++   "8b30ff422899a250ca2aa1652af07846e7ba7e9621d8b31cecbd616d3558aee8",
++   "8dc7b308c04908abb1cb447212577c545eee0cf060ea40309dca29ae8ab14914",
++   "8f9d16040c73093d7b182238dd12c42a4679f54780bd6a7aa8ad19afe44558da",
++   "94809e15e987aea0ddd5c319389dac1a8084892d71307fbd54c1c9d1d8cd5be6",
++   "96312224724ee757a5c53888528a1130e945a26d2006a2943e3a292b829844cc",
++   "9635fdf1239238ac05cb636a1e37c4fdc1cf8f779d28cc6d2a1618ea4ebf4203",
++   "968c8cf03156f466a6c222607650f687ceca359946e4aeffef162a2f461bbbbb",
++   "9b254ce3c171645241a65ed8edb5da1a4b7f56bd851e0ecab7230c9dde8f0781",
++   "9d30d013aae401344915fa22ff98c71a3b52f58a2909d97bf34facd148018fd8",
++   "9f568a9b0d51c5cf2da252cde5a68a7cd59df058e07cd05e09de8fcf68d694bc",
++   "a09ccb2a83e12c34fcc26281dbba7ad675479f490643b07e4fa204004d87fc67",
++   "a22112045f9799c8479bbd3847d619dbbfe7dee7e2533192557723a9fc655afc",
++   "a47ddb36e271ad4af09b1443e5a5d5b8346c57bccdd5971767bb9f504fcec0f0",
++   "a57cbb89a56a913235f13fb0550b8f16c8a7b67d8cb231073f50d1d8a41943e6",
++   "a9a17aa72a2787d2a4d00151fd0ea433b8aae868df9f72788a6f458df0804607",
++   "ab4944f2649f266bb015ad910d97a1d67cdd3bebd1b7e536d03cd3d96099cc81",
++   "abfa2c5cbb05bc3e230faec24c0656662c984a56cbc3f335ed4d7939873b72a4",
++   "ac20a4f163e4d8d040ce2f36f7d15859c602c1496bd1dc0513e853d179e18f72",
++   "af2eee0e63bf3d12cc2d64c4da987384924017f11a6c6901b0c162526217c4a5",
++   "b03f7104e69f99f7d4daa29eaea5112ad831580e7d0c4829d829d6a7fd707fee",
++   "b52b5e4aa632c64c856a74d74f1f88c772ae7ca2e3639df699053dca2dc71fa1",
++   "b595651ee223891382aa06b43352502652db5faac6848240f43a347733b4c44f",
++   "b5a801597b5c31d8730134fc842766dcd2dafdd864de900047183ea60060cfe4",
++   "b72bd106f0bece5f78568525fd3ec72c1be948115291c099c62711578a8d17ab",
++   "b7f51b5d97c64118dbbe9ce7623a324312047d7967ca126e899c43e7304abbdb",
++   "be34134cd183f1d2c09665b30faf6671e9189bc0bfa9ab87ecad6429cd310b97",
++   "c0e9719475d92c952096cf0a78d3f3cab30956511cd7378327c97848b5835efa",
++   "c177285fe2b876d38af58639249a26fb7425f8e502726c195951b8886732458a",
++   "c2e313e55988eba8d1da9c8d559b81981117a956dd5d9a5fd26e270ab83b3ad2",
++   "c388592c34930180b9f76a81f88566d4e7da458f132e8b572f20c4bf5d059710",
++   "c47a13f6fc83840c20c775ff3deba7de081e6cc14346d2d3edd6b01a8cfd4530",
++   "c865e830ac6406785f3a4c29508b375f487d1f4a1f6f6662ee4dfb3d7b888112",
++   "c9f8cfa4a026520cf2eaf6cda23dfd24f13b6eff332bf1bd3b419ee83fc1fd9a",
++   "cd0c4781f06a5ab6652dc7687d39228eef3f80b8c54d9451a8fc3c59b50fe14f",
++   "ce4c1a3e4cfeecb18e231fb6149f984984eb5d1528d8b8f497a71d2da608169d",
++   "cf2489c80eab7fdb8fe2b657a26e1049df8dd0cd67dc8d6482936fd3dbd035a6",
+    "d0bf400c94657ddfd27cec440cc6faf40294a498fd7e3610f192366a1397a520",
++   "d0ef74369da439a4a0f086725e46c3da4bdddfae9ed7182056536257cfb4d11a",
++   "d4dde4928ea0fd8679326a147b9f24d3cb5faa0555650ed401a94d4596d11ac3",
++   "d51a1cc0a96ddd886022d4d4c26691eac9541b9212369e30c916be6574b37d60",
++   "d558adeadfd82a59cb9e645a524f5de1f48600c9adc22e8fce386b33336ea8c0",
++   "da5d73f601e3aadb0a5dadcd52a5b8cc845730a5d1d542556a95a242711b6d0a",
++   "e378e816374d187108f8b5a7d7c808288ef48d4f711ece7ca23f9dc968b32c00",
++   "e900912ac3eedcb55b80309bed027d2db0ad33031811e22a0498fe618b8a45ac",
++   "ee7bb0e96ebf8761d392bfa5f5e4dc6db20e9ca7a123978c9b0817efca50d783",
++   "f272cdff1205a70be467f81f426ac8acc851492553d0879f726fcf5f14c5a75e",
++   "f6c46c461e5b8d09c4b191b54364468b02c0afd24fb3d863022df9d4b3516167",
++   "f8391aee810578091f30b292e369ad8e6b67374bfc8e9afda9c3882f2675fee8",
++   "f94956592df85e82e342ee5457abe639febf9f2c8fecb449a1154e98c5c3fe85",
++   "fb6adc1ade8e7d9716648bfdad303f313a5642ef8d245507c0c2ac0716f19b68",
++   "fe346175bf4eaaa64e47ec34de4e4c4f301ab077eb9a710105a808ce435622b9",
+  ]
+
+ ❯ src/db/devices.test.ts:454:53
+    452|         SELECT pg_catalog.encode(sign_in, 'hex') AS sign_in FROM app.d…
+    453|          WHERE pg_catalog.encode(sign_in, 'hex') = ANY(${hashes}::text…
+    454|       expect(left.map((row) => row.sign_in).sort()).toEqual(hashes.sli…
+       |                                                     ^
+    455|     });
+    456|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:442:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

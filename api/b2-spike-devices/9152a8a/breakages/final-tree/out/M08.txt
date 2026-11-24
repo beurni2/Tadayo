@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 1 failed) 16252ms
+   ❯ the schema's own guards (0017), behind the commands (3)
+     × lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it 5002ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  05:18:23
+   Duration  17.29s (tests 99%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts [ src/db/devices.test.ts ]
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".
+ ❯ src/db/devices.test.ts:33:1
+     31| // Twenty-four connections, so twenty commands really are at the datab…
+     32| const db = worldSql(24);
+     33| afterAll(async () => {
+       | ^
+     34|   await db.end();
+     35| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > the schema's own guards (0017), behind the commands > lets no registration and ending of one sign-in, written at once without the commands' lock, both stand: the guards take it
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/devices.test.ts:562:3
+    560|   });
+    561|
+    562|   it("lets no registration and ending of one sign-in, written at once …
+       |   ^
+    563|     const ben = await db.begin((tx) => account(tx));
+    564|     /** A transaction that writes, then stays open until `commit`, who…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

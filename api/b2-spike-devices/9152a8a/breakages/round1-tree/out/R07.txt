@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/services/api
+
+ ❯ src/logging.test.ts (10 tests | 1 failed) 334ms
+   ❯ the redaction list (T52) (4)
+     × names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  05:17:14
+   Duration  1.12s (import 38%, tests 35%, transform 26%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email
+AssertionError: apns_token: expected [ 'authorization', 'cookie', …(79) ] to include 'apns_token'
+ ❯ src/logging.test.ts:95:38
+     93|       "removal_secret",
+     94|     ]) {
+     95|       expect(REDACTED_FIELDS, field).toContain(field);
+       |                                      ^
+     96|     }
+     97|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

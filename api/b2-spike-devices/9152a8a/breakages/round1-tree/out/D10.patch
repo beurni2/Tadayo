@@ -1,0 +1,10 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -209,7 +209,6 @@
+   // 2. An ended sign-in, or another account's.
+   const [ended] = await bound(tx)`
+     SELECT 1 AS ended FROM app.device_sign_ins_ended WHERE sign_in = pg_catalog.decode(${signIn}, 'hex')`;
+-  if (ended !== undefined) throw new Refused("NOT_FOUND");
+   const [own] = await bound(tx)`
+     SELECT user_id FROM app.device_registrations WHERE sign_in = pg_catalog.decode(${signIn}, 'hex')`;
+   if (own !== undefined && own["user_id"] !== input.userId) throw new Refused("NOT_FOUND");

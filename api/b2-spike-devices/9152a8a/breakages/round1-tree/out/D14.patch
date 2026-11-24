@@ -1,0 +1,11 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -226,7 +226,7 @@
+     VALUES (pg_catalog.decode(${signIn}, 'hex'), ${input.userId}, ${token}, ${input.apnsEnvironment}, ${timezone},
+             ${now}::pg_catalog.timestamptz)
+     ON CONFLICT (sign_in) DO UPDATE
+-      SET apns_token = EXCLUDED.apns_token, apns_environment = EXCLUDED.apns_environment,
++      SET apns_environment = EXCLUDED.apns_environment,
+           timezone = EXCLUDED.timezone, registered_at = EXCLUDED.registered_at`;
+   return { apnsEnvironment: input.apnsEnvironment, timezone, registeredAt: now };
+ }

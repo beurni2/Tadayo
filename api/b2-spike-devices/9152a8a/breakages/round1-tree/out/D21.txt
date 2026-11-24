@@ -1,0 +1,73 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 2 failed) 13464ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (7)
+     × ends a sign-in whose old row another command's purge is deleting, without waiting for that purge 308ms
+     × lets two removals of long-ended sign-ins purge at once, each past more than `PURGE_BATCH` rows, with no deadlock 1030ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  05:05:19
+   Duration  14.05s (tests 99%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts [ src/db/devices.test.ts ]
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".
+ ❯ src/db/devices.test.ts:30:1
+     28| // Twenty-four connections, so twenty commands really are at the datab…
+     29| const db = worldSql(24);
+     30| afterAll(async () => {
+       | ^
+     31|   await db.end();
+     32| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > ends a sign-in whose old row another command's purge is deleting, without waiting for that purge
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/db/devices.test.ts:762:41
+    760|     // The app sends the removal again: it ends at once, with the neut…
+    761|     const removal = removing(secret);
+    762|     expect(await stillWaiting(removal)).toBe(false);
+       |                                         ^
+    763|     expect(await removal).toBe("none");
+    764|     finish();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets two removals of long-ended sign-ins purge at once, each past more than `PURGE_BATCH` rows, with no deadlock
+AssertionError: expected [ 'none', …(1) ] to deeply equal [ 'none', 'none' ]
+
+- Expected
++ Received
+
+  [
+    "none",
+-   "none",
++   "PostgresError: deadlock detected",
+  ]
+
+ ❯ src/db/devices.test.ts:783:99
+    781|                SELECT pg_catalog.decode(h, 'hex'), t::timestamptz FROM…
+    782|       const results = await Promise.allSettled([removing(first), remov…
+    783|       expect(results.map((one) => (one.status === "fulfilled" ? one.va…
+       |                                                                                                   ^
+    784|         "none",
+    785|         "none",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

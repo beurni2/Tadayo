@@ -1,0 +1,12 @@
+--- a/packages/domain/src/identity/devices.ts
++++ b/packages/domain/src/identity/devices.ts
+@@ -145,8 +145,7 @@
+ async function endSignIn(tx: QuerySql, signIn: string, now: Temporal.Instant): Promise<void> {
+   await bound(tx)`
+     INSERT INTO app.device_sign_ins_ended (sign_in, ended_at)
+-    SELECT pg_catalog.decode(${signIn}, 'hex'), ${now}::pg_catalog.timestamptz
+-     WHERE NOT EXISTS (SELECT FROM app.device_sign_ins_ended WHERE sign_in = pg_catalog.decode(${signIn}, 'hex'))
++    VALUES (pg_catalog.decode(${signIn}, 'hex'), ${now}::pg_catalog.timestamptz)
+     ON CONFLICT (sign_in) DO NOTHING`;
+ }
+ 

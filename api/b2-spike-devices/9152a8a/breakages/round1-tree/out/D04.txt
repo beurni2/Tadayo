@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 1 failed) 2107ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × is refused once the account's deletion has begun, and before its profile is finished, changing nothing (T27, FQ69) 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  04:52:48
+   Duration  2.67s (tests 93%, transform 4%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > is refused once the account's deletion has begun, and before its profile is finished, changing nothing (T27, FQ69)
+PostgresError: app.device_registrations: a device is registered only for an active account with a finished profile (T27, FQ69)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ registerDevice ../packages/domain/src/identity/devices.ts:224:18
+    222|
+    223|   // 4. This sign-in's registration.
+    224|   await bound(tx)`
+       |                  ^
+    225|     INSERT INTO app.device_registrations (sign_in, user_id, apns_token…
+    226|     VALUES (pg_catalog.decode(${signIn}, 'hex'), ${input.userId}, ${to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

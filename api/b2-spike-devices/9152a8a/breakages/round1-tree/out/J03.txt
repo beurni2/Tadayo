@@ -1,0 +1,62 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/privacy/device.test.ts (14 tests | 2 failed) 22ms
+   ❯ registerDevice's outcome and answer (4)
+     × moves a token another sign-in holds, whatever its case and whoever's it is 9ms
+   ❯ what a registration must change (5)
+     × refuses a move that left the earlier sign-in its registration, or didn't end it at the instant 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  04:55:11
+   Duration  416ms (import 72%, transform 18%, tests 8%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/device.test.ts > registerDevice's outcome and answer > moves a token another sign-in holds, whatever its case and whoever's it is
+AssertionError: acct_ana: expected { kind: 'registered', …(3) } to match object { kind: 'registered', …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "kind": "registered",
+-   "moved": "d64b93c9f1b60eb338e5cb415d6a36bd920edd0e9b36f7ea5c730d0e10ff147f",
++   "moved": null,
+  }
+
+ ❯ src/privacy/device.test.ts:90:83
+     88|     for (const holder of [ANA, BEN]) {
+     89|       const held = rows([[signInOf(SECOND), row(holder, TOKEN)]]);
+     90|       expect(registerOutcome(held, BEN, ask(FIRST, TOKEN.toLowerCase()…
+       |                                                                                   ^
+     91|         kind: "registered",
+     92|         moved: signInOf(SECOND),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/device.test.ts > what a registration must change > refuses a move that left the earlier sign-in its registration, or didn't end it at the instant
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "a registration changed another sign-in's registration",
++   "a registration ended another sign-in",
++ ]
+
+ ❯ src/privacy/device.test.ts:146:92
+    144|     const outcome = registerOutcome(before, BEN, ask(FIRST));
+    145|     const moved: [string, string] = [signInOf(SECOND), NOW_US];
+    146|     expect(registeredProblems(before, rows([[signIn, want]], [moved]),…
+       |                                                                                            ^
+    147|     expect(
+    148|       registeredProblems(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,101 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/devices.test.ts (26 tests | 4 failed) 1722ms
+   ❯ a registration (TECH-DESIGN section 6) (8)
+     × moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e)) 16ms
+     × moves a token from another account's sign-in, whichever account held it ((a), the move) 12ms
+   ❯ commands at once, committed: no deadlock, and no registration for an ended sign-in (7)
+     × lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock 214ms
+     × lets two sign-ins each take the other's token at once without a deadlock 22ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 22 passed (26)
+   Start at  04:53:16
+   Duration  2.24s (tests 91%, transform 5%, import 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from an earlier sign-in of the same account, which then has ended: its late registration changes nothing ((a), (e))
+AssertionError: expected null to deeply equal Temporal.Instant{}
+
+- Expected:
+Instant {}
+
++ Received:
+null
+
+ ❯ src/db/devices.test.ts:234:42
+    232|       await register(tx, input(ben, later, token));
+    233|       expect((await registrations(tx, { user: ben })).map((row) => row…
+    234|       expect(await endedAt(tx, earlier)).toEqual(Temporal.Instant.from…
+       |                                          ^
+    235|
+    236|       // The earlier sign-in's registration, delayed or sent again, wi…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:226:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/devices.test.ts > a registration (TECH-DESIGN section 6) > moves a token from another account's sign-in, whichever account held it ((a), the move)
+AssertionError: expected null not to be null
+ ❯ src/db/devices.test.ts:253:43
+    251|       expect(await registrations(tx, { token })).toMatchObject([{ user…
+    252|       expect(await registrations(tx, { user: ana })).toEqual([]);
+    253|       expect(await endedAt(tx, anas)).not.toBeNull();
+       |                                           ^
+    254|       expect(await refusal(register(tx, input(ana, anas, token)))).toE…
+    255|       expect(await registrations(tx, { token })).toMatchObject([{ user…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/devices.test.ts:246:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets twenty sign-ins register one token at once: one holds it, the rest ended or refused, none a deadlock
+AssertionError: expected [] to have a length of 19 but got +0
+
+- Expected
++ Received
+
+- 19
++ 0
+
+ ❯ src/db/devices.test.ts:640:47
+    638|     expect(holders).toHaveLength(1);
+    639|     const ended = await Promise.all(secrets.map((secret) => endedAt(db…
+    640|     expect(ended.filter((at) => at !== null)).toHaveLength(19);
+       |                                               ^
+    641|     expect(await orphans()).toBe(0);
+    642|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/devices.test.ts > commands at once, committed: no deadlock, and no registration for an ended sign-in > lets two sign-ins each take the other's token at once without a deadlock
+AssertionError: expected [ 'ok', 'ok' ] to deeply equal [ 'NOT_FOUND', 'ok' ]
+
+- Expected
++ Received
+
+  [
+-   "NOT_FOUND",
++   "ok",
+    "ok",
+  ]
+
+ ❯ src/db/devices.test.ts:658:31
+    656|       const outcomes = settled(await running);
+    657|       // The first to run moves the other's token and ends the other's…
+    658|       expect(outcomes.sort()).toEqual(["NOT_FOUND", "ok"]);
+       |                               ^
+    659|       expect(await orphans()).toBe(0);
+    660|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
