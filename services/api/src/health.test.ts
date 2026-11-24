@@ -245,6 +245,43 @@ describe("the health check when the database doesn't answer (the outside audit's
     expect(warnings().map((line) => line["msg"])).toEqual(["database slow", "database slow"]);
   });
 
+  it("lets go of a probe only for the check that gave up on the current one, or as it settles itself", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const releases: ((rows: unknown) => void)[] = [];
+    const { send, queries, queried } = await appWith(
+      () =>
+        new Promise((resolve) => {
+          releases.push(resolve);
+        }),
+    );
+    // A at 0 s sends the first query; B at 1 s waits on it; A gives up at 2 s and lets it go.
+    const a = send(health());
+    await queried;
+    await vi.advanceTimersByTimeAsync(1_000);
+    const b = send(health());
+    await waiting(2);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(await a).toEqual(UNAVAILABLE);
+    // C at 2 s sends the second; B gives up at 3 s on the first, which isn't the current one, so it keeps C's.
+    const c = send(health());
+    await waiting(2);
+    expect(queries).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(await b).toEqual(UNAVAILABLE);
+    const d = send(health());
+    await waiting(2);
+    expect(queries).toHaveLength(2);
+    // The first query comes back late: it clears only itself, so E still waits on C's.
+    releases[0]?.([{ "?column?": 1 }]);
+    await vi.advanceTimersByTimeAsync(0);
+    const e = send(health());
+    await waiting(3);
+    expect(queries).toHaveLength(2);
+    releases[1]?.([{ "?column?": 1 }]);
+    expect([await c, await d, await e]).toEqual([DONE, DONE, DONE]);
+    expect(queries).toHaveLength(2);
+  });
+
   it("gives up before Fly's own check timeout, so the API's answer is the one Fly reads", () => {
     expect(HEALTH_MS).toBeGreaterThan(0);
     expect(HEALTH_MS).toBeLessThan(FLY_CHECK_TIMEOUT_MS);

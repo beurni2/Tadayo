@@ -47,7 +47,8 @@ kill_timeout = 30
 # is the one read. The check goes to the Machine's internal port in plain HTTP (flyctl's own source names
 # these fields: docs/LIMITATIONS.md). A rolling deploy waits for a new Machine to pass it, and a Machine that
 # fails it is taken out of Fly's routing until it passes again, never restarted: with one Machine, one failed
-# check leaves the API unrouted for up to the 15 s interval, kept on purpose (spec 34; docs/LIMITATIONS.md).
+# check leaves the API unrouted for up to the 15 s interval, kept on purpose: A7 asks that Fly see a stalled
+# API (docs/LIMITATIONS.md).
 [[services]]
   processes = ["api"]
   protocol = "tcp"

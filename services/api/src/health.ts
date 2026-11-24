@@ -6,12 +6,14 @@
 // the wait. The role's statement limit bounds only a statement that runs, never that wait, so the bound is this
 // handler's own timer.
 //
-// One probe at a time: a check that comes while a `SELECT 1` is still out waits on that one, and a check that gives
-// up on it lets it go, so the next check sends a new one. A stall then holds at most one abandoned query per
-// HEALTH_MS, however many checks come, each run when a connection is free and dropped; and a query stuck on one
-// connection (a peer gone without a reset) fails the checks that waited on it, not every check after them. The
-// route is public and has no rate limit yet, so without this a flood during a stall would queue one query per call
-// in postgres.js, with no bound (docs/LIMITATIONS.md, 2026-11-24).
+// One probe at a time: a check that comes while a `SELECT 1` is still out waits on that one, and the check that
+// gives up on the current one lets it go (a probe that settles clears only itself), so the next check sends a new
+// one. A stall then holds at most one abandoned query per HEALTH_MS, however many checks come, each run when a
+// connection is free and dropped; each check waiting on a probe holds only its own few hundred bytes until the
+// probe settles. postgres.js sends a new query to an idle or unopened connection when there is one, so a query
+// stuck on one connection (a peer gone without a reset) fails the checks that waited on it and, while another
+// connection is free, none after them. The route is public and has no rate limit yet, so without this a flood
+// during a stall would queue one query per call in postgres.js, with no bound (docs/LIMITATIONS.md, 2026-11-24).
 //
 // It reads no table and writes nothing, so every caller, signed in or not, gets the same answer from the same
 // database (T14). Each check that sees a failure logs it once, by the error's class and code alone (logging.ts's

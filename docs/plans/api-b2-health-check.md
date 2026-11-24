@@ -13,7 +13,8 @@ the database for nothing but its health; and `docs/LIMITATIONS.md` (2026-11-11) 
 because an HTTP check needs a path, and a path outside the contract would be a route the privacy matrix has no row for
 (T58).
 
-Sources: the audit's A7; spec 34 (prefer disabling the affected part over serving uncertain content); spec 35 (the
+Sources: the audit's A7; spec 34 (jobs reliability; its incident rule, to disable an affected integration or media
+endpoint rather than serve uncertain content, is not what this check rests on: round 2's R2-5); spec 35 (the
 API's p95); T14 (one answer whatever the caller), T52 (logs carry an error's class and code), T58 (every route has a
 row of the matrix); TECH-DESIGN sections 1 (Fly, Supabase's session pooler), 7 and 9 (the deploy).
 
@@ -143,7 +144,9 @@ At the PR's last head, each caught by the test it names:
 - B18: `removeDevice` reads the database before it refuses a body (session.test.ts's public routes: the fake pool
   refuses every query but `SELECT 1`);
 - B19: a check that gives up keeps the probe, as the third commit did, so one stuck query fails every later check
-  (health.test.ts's checks after a stuck query).
+  (health.test.ts's checks after a stuck query);
+- B20: any check that gives up lets the probe go, the current one or not (health.test.ts's stale-probe test);
+- B21: a probe that settles clears the probe, itself or not (the same test).
 
 ## 4. After the merge
 
@@ -155,15 +158,15 @@ purpose); it is recorded as not verified.
 ## 5. Round 1 of the review
 
 Two fresh reviewers, one on engineering and operations, one on privacy and security, at `c678a9f`. No blocker or
-high finding; T14, T52 and T58 hold. Fixed or answered in the second commit:
+high finding; T14, T52 and T58 hold. Fixed or answered in the third and fourth commits:
 
 - **Fly's documented behaviour (engineering, medium).** Fly's documentation is readable from its source on GitHub,
   `raw.githubusercontent.com/superfly/docs/HEAD/reference/health-checks.mdx`: a Machine that fails a service check
   "won't be routed to until its checks start passing", a failing check "won't cause the Machine to restart or stop",
   and top-level `[checks]` "do not affect request routing". flyctl's `ServiceHTTPCheck` has no field for failures to
   tolerate. So on `dev`'s one Machine, one failed check leaves the API unrouted for up to 15 s. Kept as a service check
-  on purpose: spec 34 prefers taking the affected part out over serving it uncertain, A7 asks that Fly see a stalled
-  API, and a rolling deploy waits for it; a top-level check would only report. Recorded in `docs/LIMITATIONS.md`, in
+  on purpose: A7 asks that Fly see a stalled API, and a rolling deploy waits for it; a top-level check would only
+  report. Recorded in `docs/LIMITATIONS.md`, in
   `fly.toml`'s comment and in 0.4, with `prod`'s Machine count to revisit before Gate D.
 - **Abandoned queries pile up (both, low).** postgres.js queues a query with no free connection with no bound, and
   nothing takes it back when the timer wins, so a flood of calls during a stall would queue one `SELECT 1` each. Now
@@ -177,7 +180,8 @@ high finding; T14, T52 and T58 hold. Fixed or answered in the second commit:
   notice) would have failed every later check, and taken `dev`'s only Machine out of Fly's routing, while the rest of
   the pool was fine; the first commit's handler, sending a query per check, would have passed on another connection. A
   check that gives up on the probe now lets it go, so the next check sends a new one: a stall holds at most one
-  abandoned query per 2 s, and a stuck query fails only the checks that waited on it. Test: "sends a new query once
+  abandoned query per 2 s, and a stuck query fails only the checks that waited on it, while another connection is idle
+  or unopened (round 2's R2-2). Test: "sends a new query once
   the checks gave up on the one that is out, so one stuck query fails no check after them" (failed on the third
   commit's handler, its third check waiting on the stuck query).
 - **The session test's fake pool (both, low).** It answered every query, so `session.test.ts`'s public routes no longer
@@ -195,3 +199,29 @@ high finding; T14, T52 and T58 hold. Fixed or answered in the second commit:
 - **The handler's comment (engineering, low).** When every connection runs a statement outside a transaction,
   postgres.js pipelines the query behind one of them rather than queueing it; the comment now says "waits for a
   connection, or behind a statement already running on one".
+
+## 6. Round 2 of the review
+
+One fresh reviewer on the third and fourth commits, at `6f431f6`. No blocker or high finding; the handler right in
+every interleaving it tried (a check arriving as the probe settles, the timer against the settle in either order, a
+probe current for at most 2 s, at most D/2 + 1 abandoned queries in a stall of D seconds, no rejection from the
+shared probe, many checks on a healthy database sharing one). Fixed or answered in the fifth commit:
+
+- **R2-1 (medium, a test gap): the two guards.** `probe === asked` on the give-up and `probe === sent` in the probe's
+  `finally` keep a stale check or a stale probe from letting the current probe go; no test pinned either (each made
+  unconditional, all ten tests passed). Without the first, a flood during a stall goes back to about one query per
+  call. New test, "lets go of a probe only for the check that gave up on the current one, or as it settles itself"
+  (A at 0 s, B at 1 s on A's query, C at 2 s with a new one, B giving up at 3 s, A's query coming back late: two
+  queries in all); each guard dropped fails it (three queries). Breakages B20 and B21.
+- **R2-2 (low): "another connection".** postgres.js sends a query to an idle or unopened connection first, and only
+  then queues it behind a busy one, in turn. So a later probe lands on a connection other than a stuck one while one
+  is idle or unopened, and a probe queued behind a slow statement can fail the check though another connection frees
+  meanwhile. The handler's comment and `docs/LIMITATIONS.md` now say so.
+- **R2-3 (low): memory.** Each check waiting on a shared probe keeps a few hundred bytes (about 257 measured) until it
+  settles, so the bound is on queries, not memory, which grows with callers during a long stall. In
+  `docs/LIMITATIONS.md`'s rate-limit row and the handler's comment.
+- **R2-4 (low): stale records.** The journal's state block still described the first commit's tests and the reason
+  round 1 corrected, and this section said "the second commit": rewritten. `docs/PROGRESS.md` names round 2.
+- **R2-5 (low): spec 34.** Its rule prefers disabling an affected integration or media endpoint in an incident; it
+  isn't why the whole API leaves Fly's routing after one 2 s miss. The reasons are A7's ask and the rolling deploy's
+  wait; `fly.toml`'s comment, `docs/LIMITATIONS.md` and this plan no longer cite spec 34 for it.
