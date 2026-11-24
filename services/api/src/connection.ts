@@ -11,6 +11,15 @@ import postgres from "postgres";
 
 export type ApiSql = postgres.Sql<{ instant: Temporal.Instant }>;
 
+/**
+ * The most connections the API opens; postgres.js queues the rest (the outside audit's A7). Supabase's session
+ * pooler gives each one a server connection of its own from a pool of 15 by default: two APIs during a rolling
+ * deploy, the worker's two (services/worker/src/connection.ts) and one for a migration or an `ops` script
+ * fit in it (docs/plans/api-b2-db-limits.md, section 0.5). Each request holds one for milliseconds, and
+ * every wait on the database is bounded by the role's limits (db/migrations/0018_role_time_limits.sql).
+ */
+export const API_POOL = 6;
+
 export function connect(url: string): ApiSql {
-  return postgres(url, { types: { instant: INSTANT_TYPE }, ...transportOptions(url) });
+  return postgres(url, { max: API_POOL, types: { instant: INSTANT_TYPE }, ...transportOptions(url) });
 }

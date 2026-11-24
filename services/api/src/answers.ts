@@ -106,8 +106,10 @@ export function unauthenticated(reply: FastifyReply): FastifyReply {
 
 /**
  * A service the answer needs can't be reached: sign-in's keys, so no token is believed or refused (token.ts),
- * and never a 401, which the app answers by ending a session (FQ89); or Storage, for an upload's signed URL or
- * its bytes (media/storage.ts). A 503 with no body.
+ * and never a 401, which the app answers by ending a session (FQ89); Storage, for an upload's signed URL or
+ * its bytes (media/storage.ts); or the database, out of time on a lock, a statement or an idle transaction, so
+ * nothing was committed and the same request under the same key may be sent again (app.ts `failed`, the outside
+ * audit's A7). A 503 with no body.
  */
 export function unavailable(reply: FastifyReply): FastifyReply {
   return reply.code(503).header("cache-control", NO_STORE).send();

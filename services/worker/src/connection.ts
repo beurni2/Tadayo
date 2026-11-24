@@ -12,6 +12,18 @@ export type WorkerSql = postgres.Sql<{ instant: Temporal.Instant }>;
 /** A transaction on the worker's connection. */
 export type WorkerTx = postgres.TransactionSql<{ instant: Temporal.Instant }>;
 
+/**
+ * The most connections the worker opens (the outside audit's A7): its two loops, generation and the outbox
+ * (main.ts), each run one transaction at a time. With the API's six it fits Supabase's session pool
+ * (services/api/src/connection.ts `API_POOL`; docs/plans/api-b2-db-limits.md, section 0.5).
+ */
+export const WORKER_POOL = 2;
+
 export function connect(url: string): WorkerSql {
-  return postgres(url, { types: { instant: INSTANT_TYPE }, onnotice: () => undefined, ...transportOptions(url) });
+  return postgres(url, {
+    max: WORKER_POOL,
+    types: { instant: INSTANT_TYPE },
+    onnotice: () => undefined,
+    ...transportOptions(url),
+  });
 }

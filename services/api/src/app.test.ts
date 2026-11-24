@@ -214,6 +214,59 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
   });
 });
 
+describe("a database that ran out of time (the outside audit's A7)", () => {
+  /** An error as postgres.js raises one for `code`, its message quoting what a message can quote. */
+  const postgresError = (code: string) =>
+    Object.assign(new Error(`canceling statement: Ana's row ${code}`), { name: "PostgresError", code });
+
+  /** The answer to `GET /v1/clubs` when the database fails with `code`, and the lines the app logged. */
+  async function failingWith(code: string) {
+    const lines: string[] = [];
+    const failing = {
+      ...sql,
+      begin: () => Promise.reject(postgresError(code)),
+    } as unknown as ApiSql;
+    const other = buildApp({
+      ...deps,
+      sql: failing,
+      log: { level: "info", stream: { write: (line) => void lines.push(line) } },
+    });
+    await other.ready();
+    const response = await other.inject({ method: "GET", url: "/v1/clubs" });
+    await other.close();
+    const headers = Object.fromEntries(Object.entries(response.headers).filter(([name]) => !TRANSPORT.has(name)));
+    return { status: response.statusCode, body: response.body, headers, lines };
+  }
+
+  const EMPTY_503 = { status: 503, body: "", headers: { "cache-control": "private, no-store", "content-length": "0" } };
+
+  it("answers a lock it waited for too long, a statement too slow and a transaction left idle with the bare 503", async () => {
+    // lock_timeout, statement_timeout and idle_in_transaction_session_timeout (db/migrations/0018_role_time_limits.sql).
+    for (const code of ["55P03", "57014", "25P03"]) {
+      const { lines, ...answered } = await failingWith(code);
+      expect(answered, code).toEqual(EMPTY_503);
+      // One warning, with the error's class and code and nothing of its message (T52).
+      const logged = lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+      const warnings = logged.filter((line) => line["msg"] === "database out of time");
+      expect(warnings, code).toHaveLength(1);
+      expect(warnings[0]?.["level"], code).toBe(40);
+      expect(warnings[0]?.["err"], code).toEqual({ type: "PostgresError", code });
+      expect(lines.join("\n"), code).not.toContain("Ana's row");
+    }
+  });
+
+  it("still answers any other failure of the database with the 500 and nothing in it", async () => {
+    for (const code of ["23505", "40001", "08006"]) {
+      const { lines, ...answered } = await failingWith(code);
+      expect(answered, code).toEqual({ ...EMPTY_503, status: 500 });
+      expect(
+        lines.some((line) => line.includes('"msg":"request failed"')),
+        code,
+      ).toBe(true);
+    }
+  });
+});
+
 describe("what Node's parser answers, over a socket of its own (T14)", () => {
   let listening: FastifyInstance;
   let port: number;

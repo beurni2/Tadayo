@@ -22,7 +22,7 @@
 import type { Socket } from "node:net";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { OPERATIONS } from "@tadayo/contracts";
-import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
+import { JSON_TYPE, NO_STORE, problem, unavailable } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
 import { createClubHandler, getClubHandler } from "./clubs/club.ts";
 import { listMembersHandler } from "./clubs/members.ts";
@@ -120,11 +120,27 @@ export function notFound(_request: FastifyRequest, reply: FastifyReply): Fastify
   return problem(reply, "NOT_FOUND");
 }
 
+/**
+ * The SQLSTATEs Postgres raises when a session as `tadayo_app` runs out of time: `lock_not_available` (55P03,
+ * lock_timeout), `query_canceled` (57014, statement_timeout) and `idle_in_transaction_session_timeout` (25P03).
+ * No command waits on a lock by design (no NOWAIT, and `SKIP LOCKED` never waits), so none is a refusal a
+ * command meant to give.
+ */
+const OUT_OF_TIME: ReadonlySet<string> = new Set(["55P03", "57014", "25P03"]);
+
 function failed(error: FastifyError, request: FastifyRequest, reply: FastifyReply): FastifyReply {
   // A body Fastify couldn't read: malformed or empty JSON, `__proto__` or `constructor.prototype`, a
   // type it has no parser for, or over the limit. Never the message, which can echo the request.
   if (typeof error.statusCode === "number" && error.statusCode >= 400 && error.statusCode < 500) {
     return problem(reply, "INVALID_REQUEST");
+  }
+  // A database that ran out of time: a lock waited on, a statement or a transaction left idle past the
+  // role's limits (db/migrations/0018_role_time_limits.sql). Its transaction was rolled back, so nothing was
+  // committed and the same request under the same key commits once later (T19): the bare 503, as for any
+  // service the API needs that is down (the outside audit's A7).
+  if (OUT_OF_TIME.has((error as { code?: unknown }).code as string)) {
+    request.log.warn({ err: error }, "database out of time");
+    return unavailable(reply);
   }
   // A bug, or a database that failed: logged by its class and code alone, since a message can quote rows
   // (T52), and answered with nothing.
