@@ -307,7 +307,7 @@ struct TabsView: View {
     /// PROBE FIX: an accepted invitation's join takes its screen off here, in the same change as
     /// the root's, not from the root's change a draw later.
     private func acceptedAnswered(_ model: InvitationModel) {
-        guard case .opening = model.state else { return }
+        guard shownAccepted === model, case .opening = model.state else { return }
         removeAccepted()
     }
 
