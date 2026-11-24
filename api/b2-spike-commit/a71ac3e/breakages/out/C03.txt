@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 1 failed) 2613ms
+   ❯ nothing for anyone the day or the photo isn't theirs to add (T4, T9, T12, T14) (6)
+     × moves nothing: an upload made for another day, or a reservation_id naming another slot, is not found (T4) 46ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  00:32:36
+   Duration  3.38s (tests 87%, import 8%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > nothing for anyone the day or the photo isn't theirs to add (T4, T9, T12, T14) > moves nothing: an upload made for another day, or a reservation_id naming another slot, is not found (T4)
+PostgresError: app.drops: a drop's photo is its author's ready upload for this day or this drop (T12)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createDrop ../packages/domain/src/drops/commit.ts:348:18
+    346|   const dropId = newId("drp");
+    347|   const caption = keptCaption(input.caption);
+    348|   await bound(tx)`
+       |                  ^
+    349|     INSERT INTO app.drops (id, occurrence_id, club_id, author_interval…
+    350|                            submitted_at, updated_at)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

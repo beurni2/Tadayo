@@ -1,0 +1,76 @@
+
+ RUN  v5.0.5 /home/user/tadayo-commit/tests
+
+ ❯ src/db/create-drop.test.ts (35 tests | 1 failed) 2608ms
+   ❯ nothing for anyone the day or the photo isn't theirs to add (T4, T9, T12, T14) (6)
+     × moves nothing: an upload made for another day, or a reservation_id naming another slot, is not found (T4) 53ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  00:32:40
+   Duration  3.41s (tests 86%, import 9%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-drop.test.ts > nothing for anyone the day or the photo isn't theirs to add (T4, T9, T12, T14) > moves nothing: an upload made for another day, or a reservation_id naming another slot, is not found (T4)
+AssertionError: expected { status: 201, body: { …(7) }, …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "body": {
++     "allowance": {
++       "added": 1,
++       "external_added": 0,
++       "external_limit": 1,
++       "external_reserved": 0,
++       "is_star": false,
++       "limit": 3,
++       "photo_added": 1,
++       "photo_limit": 2,
++       "photo_reserved": 0,
++       "reserved": 0,
++     },
++     "drop_id": "drp_uOAQSx1DTPj0lmuTboUZFw",
++     "highlight": {
++       "version": 0,
++     },
++     "media_class": "photo",
++     "occurrence": {
++       "close_at": "2026-11-08T01:00:00Z",
++       "club_id": "club_-y7mh0Nbyp4MOwJxAE-jKQ",
++       "id": "occ_nYRp-vOMvWpqzJlS765v6g",
++       "local_date": "2026-11-07",
++       "phase": "collecting",
++       "reveal_at": "2026-11-07T07:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "mem_1Dn1H7N9MbfyolwLd271uw",
++       },
++     },
++     "state": "added",
++     "version": 1,
++   },
++   "status": 201,
++   "text": "{\"state\":\"added\",\"drop_id\":\"drp_uOAQSx1DTPj0lmuTboUZFw\",\"version\":1,\"allowance\":{\"added\":1,\"limit\":3,\"is_star\":false,\"reserved\":0,\"photo_added\":1,\"photo_limit\":2,\"external_added\":0,\"external_limit\":1,\"photo_reserved\":0,\"external_reserved\":0},\"highlight\":{\"version\":0},\"occurrence\":{\"id\":\"occ_nYRp-vOMvWpqzJlS765v6g\",\"star\":{\"membership_id\":\"mem_1Dn1H7N9MbfyolwLd271uw\",\"display_name\":\"Ana\"},\"phase\":\"collecting\",\"club_id\":\"club_-y7mh0Nbyp4MOwJxAE-jKQ\",\"close_at\":\"2026-11-08T01:00:00Z\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"local_date\":\"2026-11-07\"},\"media_class\":\"photo\"}",
+  }
+
+ ❯ src/db/create-drop.test.ts:794:90
+    792|       const otherSlot = await slot(tx, d.w.cleo, d.w.day);
+    793|       expect(await commit(tx, d, d.w.ben, nextWeek.upload)).toEqual(ba…
+    794|       expect(await commit(tx, d, d.w.ben, photo.upload, { reservation:…
+       |                                                                                          ^
+    795|       expect(await commit(tx, d, d.w.ben, photo.upload, { reservation:…
+    796|       expect(await commit(tx, d, d.w.ben, photo.upload, { day: d.next …
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-drop.test.ts:788:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

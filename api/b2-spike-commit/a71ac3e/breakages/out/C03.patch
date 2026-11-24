@@ -1,0 +1,10 @@
+--- a/packages/domain/src/authorization/add-target.ts
++++ b/packages/domain/src/authorization/add-target.ts
+@@ -121,7 +121,6 @@
+ ): facts is AddTargetFacts {
+   return (
+     facts !== null &&
+-    facts.day.id === slot.day &&
+     addTargetOutcome(facts, now).kind !== "not_found" &&
+     facts.viewerInterval === slot.interval
+   );
