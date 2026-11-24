@@ -132,11 +132,13 @@ extension Account {
     }
 }
 
-/// Adds the session's access token to every operation but the two public ones, and answers a
-/// 401 once: with the token another process stored since, or a refreshed one.
+/// Adds the session's access token to every operation but the public ones, and answers a 401
+/// once: with the token another process stored since, or a refreshed one.
 struct BearerMiddleware: ClientMiddleware {
     /// The operations the contract marks `security: []`.
-    static let publicOperations: Set<String> = ["previewInvitationWeb", "removeDevice"]
+    static let publicOperations: Set<String> = [
+        "previewInvitationWeb", "removeDevice", "getHealth",
+    ]
 
     let session: SessionManager
 
