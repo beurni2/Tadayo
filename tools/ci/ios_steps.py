@@ -141,8 +141,8 @@ job uploads as the artifact `ios-results` and the evidence job downloads to the 
                   pinned runtime <v>, the runtime simctl gave, its build, the device, its UDID and
                   the pass's result; the snapshot runtime; the tests' overall result
   logs/           toolchain.txt, xcodegen.txt, simulators.txt, build.log, attachments-manifest.json,
-                  runner.txt (the runner's samples), and test-<v>.log and test-summary-<v>.json
-                  for each pinned runtime (LOG_NAMES)
+                  runner.txt (the runner's samples), and test-<v>.log, test-summary-<v>.json
+                  and crashes-<v>.txt for each pinned runtime (LOG_NAMES)
   Tests-<v>.xcresult  each pass's result bundle; collect reads the snapshot runtime's
   artifacts/      swift-snapshot-testing's SNAPSHOT_ARTIFACTS on the snapshot runtime's pass: the
                   images that differ from their committed reference
@@ -315,11 +315,14 @@ SERVICE_LOG_LINES = 200
 # Read over a whole pass, that log didn't finish in SERVICE_LOG_TIMEOUT, twice in two failed
 # passes (`ios` 45392426021 and 45406524807). So it is read only where the pass's own log says a
 # service's connection ended ("The connection to service with pid N … was invalidated", as
-# `_UIRemoteKeyboards` prints it, in UTC): from SERVICE_WINDOW's seconds before the first such
+# `_UIRemoteKeyboards` prints it; SERVICE_ENDED, anywhere in a line, since another write can
+# split a line of the log in two), at the time of the last line before it or of its own that
+# starts with a UTC stamp (SERVICE_STAMP): from SERVICE_WINDOW's seconds before the first such
 # line for each pid to its seconds after, for SERVICE_PIDS pids at most, with that pid's own lines
-# and any that name it. A failed pass with no such line doesn't read it.
-SERVICE_ENDED = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\.\d+\+0000 "
-                           r".*connection to service with pid (\d+)\b")
+# and any that name it, the last SERVICE_LOG_LINES of them, where an exit comes. A failed pass
+# with no such line doesn't read it.
+SERVICE_ENDED = re.compile(r"connection to service with pid (\d+)\b")
+SERVICE_STAMP = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\.\d+\+0000 ")
 SERVICE_WINDOW = (60, 10)
 SERVICE_PIDS = 3
 
@@ -341,13 +344,16 @@ def crash_summary(text):
         return [cut(line) for line in text.splitlines()[:20]]
     lines = [f"{key}: {cut(header[key])}" for key in ("name", "app_name", "bug_type", "timestamp")
              if header.get(key) not in (None, "")]
-    for key in ("procName", "procPath", "parentProc", "coalitionName", "exception",
+    for key in ("pid", "procName", "procPath", "parentProc", "coalitionName", "exception",
                 "termination", "asi", "ktriageinfo", "largestProcess", "reason"):
         if body.get(key) not in (None, "", [], {}):
             lines.append(f"{key}: {cut(body[key])}")
-    killed = [p for p in body.get("processes") or [] if isinstance(p, dict) and p.get("reason")]
+    processes = body.get("processes")
+    killed = [p for p in processes if isinstance(p, dict) and p.get("reason")] \
+        if isinstance(processes, list) else []
     for process in killed[:CRASH_REPORTS]:
-        lines.append(f"killed: {cut(process.get('name', '?'))} ({cut(process['reason'])})")
+        pid = f", pid {cut(process['pid'])}" if process.get("pid") not in (None, "") else ""
+        lines.append(f"killed: {cut(process.get('name', '?'))}{pid} ({cut(process['reason'])})")
     return lines
 
 
@@ -1650,8 +1656,8 @@ class Steps:
                 record(version, "none")
                 continue
             with self.sampling("test", f"the pass on iOS {version}"):
-                code = self.test_pass(version, udid, booted, skipped, snapshot_pass, project,
-                                      artifacts)
+                code, since = self.test_pass(version, udid, booted, skipped, snapshot_pass,
+                                             project, artifacts)
             booted = udid
             if code is None:
                 print(f"ios: test: the iOS {version} simulator {udid} didn't boot "
@@ -1660,6 +1666,9 @@ class Steps:
                 failure = failure or 1
                 continue
             record(version, "passed" if code == 0 else "failed")
+            # After the pass is timed and recorded, so its time and result stand whatever these
+            # take or meet.
+            self.pass_diagnostics(version, udid, since, failed=code != 0)
             if code != 0:
                 failure = failure or code
                 print(f"ios: test: tests failed on iOS {version} (logs/test-{version}.log, "
@@ -1687,14 +1696,14 @@ class Steps:
         """One pass of the tests on iOS `version`: boots its device first when it isn't the one
         booted, shutting that one down when there is one (one simulator at a time on the runner;
         a failed shutdown is logged, not fatal). Returns xcodebuild's exit code, or None when the
-        device didn't boot."""
+        device didn't boot, with the time the pass began (a time.time(), or None)."""
         log = self.log(f"test-{version}.log")
         if udid != booted:
             if booted is not None:
                 self.shell.run(["xcrun", "simctl", "shutdown", booted], env=self.xcode_env(),
                                log=log)
             if self.boot(udid, version, f"test-{version}.log", "test") != 0:
-                return None
+                return None, None
         since = time.time()
         bundle = self.out_path(f"Tests-{version}.xcresult")
         shutil.rmtree(bundle, ignore_errors=True)
@@ -1730,10 +1739,23 @@ class Steps:
             ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
              "--compact"], env=self.xcode_env())
         self.write_log(f"test-summary-{version}.json", summary or err)
-        self.crash_reports(version, since)
-        if code != 0:
-            self.service_exits(version, udid)
-        return code
+        return code, since
+
+    def pass_diagnostics(self, version, udid, since, failed):
+        """The pass's crash and jetsam reports, and after a failed pass the simulator's log
+        around each service that ended (crash_reports, service_exits). Never what decides a
+        step: an error in either is written to logs/crashes-<version>.txt, and the other still
+        runs."""
+        reads = [("the crash reports", lambda: self.crash_reports(version, since))]
+        if failed:
+            reads.append(("the simulator's log", lambda: self.service_exits(version, udid)))
+        for what, read in reads:
+            try:
+                read()
+            except Exception as error:  # a diagnostic never decides a step
+                self.write_log(f"crashes-{version}.txt",
+                               f"--- {what}: stopped by {type(error).__name__}: "
+                               f"{str(error)[:CRASH_FIELD]}")
 
     def service_exits(self, version, udid):
         """Appends the simulator's log lines about services that exited to
@@ -1743,8 +1765,9 @@ class Steps:
         ended = self.ended_services(version)
         if not ended:
             self.write_log(f"crashes-{version}.txt",
-                           f"--- the simulator's log: not read, since logs/test-{version}.log "
-                           f"says no service's connection ended")
+                           f"--- the simulator's log: not read, since no line of "
+                           f"logs/test-{version}.log says a service's connection ended "
+                           f"(SERVICE_ENDED)")
             return
         before, after = SERVICE_WINDOW
         reads = [(f"--- the simulator's log: pid {pid}, whose connection ended at "
@@ -1769,22 +1792,30 @@ class Steps:
                 continue
             else:
                 more = len(lines) - SERVICE_LOG_LINES
-                text = "\n".join(lines[:SERVICE_LOG_LINES]
-                                 + ([f"({more} more line(s) not kept)"] if more > 0 else []))
+                text = "\n".join(([f"({more} earlier line(s) not kept)"] if more > 0 else [])
+                                 + lines[-SERVICE_LOG_LINES:])
             self.write_log(f"crashes-{version}.txt", heading + "\n" + text)
 
     def ended_services(self, version):
         """The services whose connection logs/test-<version>.log says ended: (pid, the time of
         the first line naming it, as a time.time()), in the order they first ended, SERVICE_PIDS
-        at most."""
-        found = {}
+        at most. A line's time is its own UTC stamp, or the last one before it when another
+        write split it (SERVICE_STAMP); a pid named before any stamp, or under one that isn't a
+        real time, is passed over."""
+        found, stamp = {}, None
         try:
             with open(self.log(f"test-{version}.log"), encoding="utf-8", errors="replace") as f:
                 for line in f:
-                    match = SERVICE_ENDED.match(line)
-                    if match and match.group(2) not in found:
-                        found[match.group(2)] = calendar.timegm(
-                            time.strptime(match.group(1), "%Y-%m-%d %H:%M:%S"))
+                    stamped = SERVICE_STAMP.match(line)
+                    if stamped:
+                        try:
+                            stamp = calendar.timegm(
+                                time.strptime(stamped.group(1), "%Y-%m-%d %H:%M:%S"))
+                        except ValueError:
+                            stamp = None
+                    ended = SERVICE_ENDED.search(line)
+                    if ended and stamp is not None and ended.group(1) not in found:
+                        found[ended.group(1)] = stamp
                         if len(found) == SERVICE_PIDS:
                             break
         except OSError:
@@ -1827,8 +1858,8 @@ class Steps:
                 summary = [f"(unreadable: {error.strerror or error})"]
             lines.append(f"--- {stamp} UTC, {full}")
             lines.extend(summary)
-            killed = [line[len("killed: "):].split(" (")[0] for line in summary
-                      if line.startswith("killed: ")]
+            killed = [line[len("killed: "):].split(" (")[0].split(", pid ")[0]
+                      for line in summary if line.startswith("killed: ")]
             named.append(next((line.split(": ", 1)[1] for line in summary
                                if line.startswith(("procName: ", "name: "))),
                               f"jetsam: {' '.join(killed)}" if killed

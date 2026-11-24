@@ -39,14 +39,16 @@ HAS_MAGICK = bool(shutil.which("montage") and shutil.which("identify"))
 # Steps.crash_reports reads and one it leaves out (the threads).
 IPS_CRASH = (json.dumps({"app_name": "kbd", "timestamp": "2026-11-24 04:37:44.00 +0000",
                          "bug_type": "309", "name": "kbd"}) + "\n"
-             + json.dumps({"procName": "kbd", "procPath": "/Library/Developer/CoreSimulator/kbd",
+             + json.dumps({"pid": 25135, "procName": "kbd",
+                           "procPath": "/Library/Developer/CoreSimulator/kbd",
                            "exception": {"type": "EXC_CRASH", "signal": "SIGKILL"},
                            "termination": {"namespace": "JETSAM", "indicator": "Jettisoned"},
                            "threads": [{"frames": [{"symbol": "main"}]}]}, indent=2))
 IPS_JETSAM = (json.dumps({"bug_type": "298", "timestamp": "2026-11-24 04:37:44.00 +0000"}) + "\n"
               + json.dumps({"largestProcess": "Tadayo",
                             "processes": [{"name": "Tadayo", "rpages": 9000},
-                                          {"name": "kbd", "reason": "vm-pageshortage"}]}))
+                                          {"name": "kbd", "pid": 25135,
+                                           "reason": "vm-pageshortage"}]}))
 SHA = "0123456789abcdef0123456789abcdef01234567"
 RENDER = "design/reference/2.1/F02-upcoming.png"
 
@@ -1985,10 +1987,11 @@ class BuildAndTestSteps(StepsTest):
         self.assertNotIn("SpringBoard", text)
         self.assertNotIn("notes.txt", text)
         self.assertIn(f"UTC, {os.path.join(folders[0], 'kbd-2026-11-24-043744.ips')}\n", text)
-        for line in ("name: kbd", "bug_type: 309", "procName: kbd",
+        # Each process's pid, the only name the app's log gives an ended service.
+        for line in ("name: kbd", "bug_type: 309", "pid: 25135", "procName: kbd",
                      'exception: {"signal": "SIGKILL", "type": "EXC_CRASH"}',
                      'termination: {"indicator": "Jettisoned", "namespace": "JETSAM"}',
-                     "largestProcess: Tadayo", "killed: kbd (vm-pageshortage)"):
+                     "largestProcess: Tadayo", "killed: kbd, pid 25135 (vm-pageshortage)"):
             self.assertIn(line + "\n", text)
         self.assertNotIn("killed: Tadayo", text)
         # A thread's frames and registers say nothing of how the process ended: left out.
@@ -2005,14 +2008,28 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual([c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]], [])
         self.assertFalse(os.path.exists(self.log("crashes-27.2.txt")))
         with open(self.log("crashes-26.5.txt")) as f:
-            self.assertEqual(f.read(), "--- the simulator's log: not read, since "
-                                       "logs/test-26.5.log says no service's connection ended\n")
+            self.assertEqual(f.read(), "--- the simulator's log: not read, since no line of "
+                                       "logs/test-26.5.log says a service's connection ended "
+                                       "(SERVICE_ENDED)\n")
 
     def test_a_failed_pass_reads_the_device_s_log_around_each_service_whose_connection_ended(self):
         # Read over the whole pass, the device's log took longer than its 90 seconds (`ios`
         # 45392426021). Where the pass's own log says a service's connection ended, only the
         # minute around the first such line for each pid is read, with that pid's lines, for
-        # three pids at most; repeated lines for a pid don't read again.
+        # three pids at most; repeated lines for a pid don't read again. `log show` reads local
+        # times and the pass's log is UTC, so the runner's zone is set to one that isn't.
+        zone = os.environ.get("TZ")
+        os.environ["TZ"] = "America/Los_Angeles"
+        time.tzset()
+
+        def restore():
+            if zone is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = zone
+            time.tzset()
+        self.addCleanup(restore)
+
         def line(stamp, pid):
             return (f"{stamp}+0000 Tadayo[39331:112420] [Client] -[_UIRemoteKeyboards proxy]"
                     f"_block_invoke Failed to access remote service: Error Domain="
@@ -2081,6 +2098,77 @@ class BuildAndTestSteps(StepsTest):
             else:
                 with open(self.log("crashes-26.5.txt")) as f:
                     self.assertEqual(f.read(), expected_text)
+
+    def test_a_line_split_by_another_write_still_names_its_ended_service(self):
+        # Another write can split a line of the pass's log in two (an item-1 failure's own log,
+        # `ios/b1-create-handoff-9/3a76bdc/ios/logs/test-27.2.log` on `evidence`, lines 5383
+        # and 5384): the pid then comes on a line with no stamp, and takes the last stamp before
+        # it. A stamp that isn't a real time is passed over, as is a pid before any stamp.
+        log = ("connection to service with pid 1 named (null) was invalidated.\n"
+               "2026-11-23 15:48:44.182016+0000 Tadayo[7105:30287] [Client] -[_UIRemoteKeyboards "
+               "proxy]_block_invoke Failed to access remote service: Error Domain=NS"
+               "2026-11-23 15:48:44.182100+0000 Tadayo[7105:30290] [Keyboard] another write\n"
+               "CocoaErrorDomain Code=4099 \"The connection to service with pid 6342 named (null) "
+               "was invalidated.\"\n"
+               "2026-02-30 10:00:00.000000+0000 Tadayo[7105:30287] the connection to service "
+               "with pid 7 named (null) was invalidated.\n")
+        steps = self.steps()
+        os.makedirs(self.repo.out + "/logs", exist_ok=True)
+        with open(self.log("test-27.2.log"), "w") as f:
+            f.write(log)
+        at = calendar.timegm(time.strptime("2026-11-23 15:48:44", "%Y-%m-%d %H:%M:%S"))
+        self.assertEqual(steps.ended_services("27.2"), [("6342", at)])
+
+    def test_a_read_keeps_its_last_lines_where_an_exit_comes(self):
+        # The window ends 10 seconds after the connection ended; what says how the service
+        # ended comes last, so a read with more than SERVICE_LOG_LINES lines keeps the last ones.
+        steps = self.steps()
+        os.makedirs(self.repo.out + "/logs", exist_ok=True)
+        with open(self.log("test-27.2.log"), "w") as f:
+            f.write("2026-11-24 12:46:59.807475+0000 Tadayo[1:2] The connection to service with "
+                    "pid 25135 named (null) was invalidated.\n")
+        many = [f"2026-11-24 12:46:{i % 60:02d}.00 Df kbd[25135:1] line {i}"
+                for i in range(ios_steps.SERVICE_LOG_LINES + 5)]
+        steps.shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"),
+                                          (0, "\n".join(many) + "\n", ""))])
+        steps.service_exits("27.2", UDID)
+        with open(self.log("crashes-27.2.txt")) as f:
+            kept = f.read().splitlines()
+        self.assertEqual(kept[1], "(5 earlier line(s) not kept)")
+        self.assertEqual(kept[2:], many[5:])
+
+    def test_the_diagnostics_come_after_the_pass_is_recorded_and_never_decide_a_step(self):
+        # The reads run after the pass is timed and its result written to run.json, so a step
+        # stopped during them keeps the result; and an error in either is written to
+        # crashes-<v>.txt, the other still runs, and the step's code is the tests'.
+        failing = (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
+                   and UDID_26 in cmd[cmd.index("-destination") + 1])
+        seen = []
+        shell = FakeShell(codes=[(failing, 65)])
+        with mock.patch.object(ios_steps.Steps, "crash_reports",
+                               side_effect=TypeError("'int' object is not iterable")), \
+                mock.patch.object(ios_steps.Steps, "service_exits",
+                                  side_effect=lambda version, udid: seen.append(
+                                      (version, self.read_record().get(f"tests-{version}")))):
+            code, out = self.step("test", shell)
+        self.assertEqual(code, 65, out)
+        # Only the failed pass reads the log, after its result is in run.json, though the crash
+        # reports' read before it stopped.
+        self.assertEqual(seen, [("26.5", "failed")])
+        for version in ("27.2", "26.5"):
+            with open(self.log(f"crashes-{version}.txt")) as f:
+                self.assertIn("--- the crash reports: stopped by TypeError: 'int' object is not "
+                              "iterable\n", f.read())
+        # A pass that passed keeps its code too.
+        shell = FakeShell()
+        with mock.patch.object(ios_steps.Steps, "service_exits", side_effect=ValueError("x")), \
+                mock.patch.object(ios_steps.Steps, "crash_reports", side_effect=ValueError("y")):
+            code, out = self.step("test", shell)
+        self.assertEqual(code, 0, out)
+        # A report whose processes aren't a list is summarised without them.
+        self.assertEqual(ios_steps.crash_summary(json.dumps({"bug_type": "298"}) + "\n"
+                                                 + json.dumps({"processes": 3})),
+                         ["bug_type: 298"])
 
     def test_a_report_that_isn_t_ips_or_can_t_be_read_is_kept_as_it_is(self):
         self.assertEqual(ios_steps.crash_summary("Process: kbd\nException Type: EXC_CRASH\n"),
