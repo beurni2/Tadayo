@@ -66,7 +66,7 @@ failed check leaves the API unrouted for up to the 15 s interval; kept on purpos
 
 0.5. **Who can call it.** Anyone, like the two other public routes, and each call costs one round trip on one of the
 API's pool's connections, or a wait of at most 2 s for one, and a log line. One probe at a time (section 5), so a
-stall holds one abandoned query, not one per call. No route has a rate limit yet (`RATE_LIMITED` is in the contract, not built); the closed trial's
+stall holds at most one abandoned query per 2 s, not one per call. No route has a rate limit yet (`RATE_LIMITED` is in the contract, not built); the closed trial's
 callers are the founder's friends and Fly's check. Recorded beside the other public routes' limits, to revisit with the
 rate limits before Gate D.
 
@@ -102,7 +102,7 @@ their 404; no other operation documents a 503.
 with no `Authorization`; the same with a bad token (the gate passes a public route by); the bare 503 when the query
 rejects, with one warning by class and code and nothing of its message; the bare 503 within the bound when the query
 never answers (fake timers); the query is `SELECT 1` and nothing else; checks that come while a query is out share
-it, and the next check after it comes back sends a new one (section 5).
+it, and the next check after it comes back, or after they gave up on it, sends a new one (section 5).
 
 2.3. `tests/src/db/health.test.ts`, on Postgres through `buildApp` on `connect`: 204; with every one of the API's
 connections held by a transaction that waits, the check answers 503 within the bound and a margin; once they are let
@@ -141,7 +141,9 @@ At the PR's last head, each caught by the test it names:
   a run over every role);
 - B17: every check sends its own query, as the first commit did (health.test.ts's shared query);
 - B18: `removeDevice` reads the database before it refuses a body (session.test.ts's public routes: the fake pool
-  refuses every query but `SELECT 1`).
+  refuses every query but `SELECT 1`);
+- B19: a check that gives up keeps the probe, as the third commit did, so one stuck query fails every later check
+  (health.test.ts's checks after a stuck query).
 
 ## 4. After the merge
 
@@ -166,10 +168,18 @@ high finding; T14, T52 and T58 hold. Fixed or answered in the second commit:
 - **Abandoned queries pile up (both, low).** postgres.js queues a query with no free connection with no bound, and
   nothing takes it back when the timer wins, so a flood of calls during a stall would queue one `SELECT 1` each. Now
   one probe at a time: `getHealthHandler` keeps the one query that is out, every check that comes meanwhile races its
-  own timer against that one, and the probe is let go when it settles, so the next check sends a new one. A stall holds
-  one abandoned query. Test: "sends one query however many checks come while it is out, and a new one once it has come
-  back" (failed on the first commit's handler: the second check sent a query of its own). The `docs/LIMITATIONS.md` row says what a call costs,
-  including its log lines.
+  own timer against that one, and the probe is let go when it settles, so the next check sends a new one (the third
+  commit). Test: "shares one query among the checks that come while it is out, and sends a new one once it has come
+  back" (failed on the first commit's handler: the second check sent a query of its own). The `docs/LIMITATIONS.md`
+  row says what a call costs, including its log lines.
+- **Found while briefing round 2: a stuck probe (fourth commit).** The third commit let the probe go only when it
+  settled, so a query stuck on one connection (a peer gone without a reset: postgres.js's keepalive takes minutes to
+  notice) would have failed every later check, and taken `dev`'s only Machine out of Fly's routing, while the rest of
+  the pool was fine; the first commit's handler, sending a query per check, would have passed on another connection. A
+  check that gives up on the probe now lets it go, so the next check sends a new one: a stall holds at most one
+  abandoned query per 2 s, and a stuck query fails only the checks that waited on it. Test: "sends a new query once
+  the checks gave up on the one that is out, so one stuck query fails no check after them" (failed on the third
+  commit's handler, its third check waiting on the stuck query).
 - **The session test's fake pool (both, low).** It answered every query, so `session.test.ts`'s public routes no longer
   proved that a route refuses its body before reading the database. It now answers `SELECT 1` alone and refuses
   anything else.

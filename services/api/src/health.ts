@@ -6,10 +6,12 @@
 // the wait. The role's statement limit bounds only a statement that runs, never that wait, so the bound is this
 // handler's own timer.
 //
-// One probe at a time: a check that comes while a `SELECT 1` is still out waits on that one, so however many checks
-// time out during a stall, the pool holds one of them, which runs when a connection is free and is then dropped.
-// The route is public and has no rate limit yet, so without this a flood during a stall would queue one query per
-// call in postgres.js, with no bound (docs/LIMITATIONS.md, 2026-11-24).
+// One probe at a time: a check that comes while a `SELECT 1` is still out waits on that one, and a check that gives
+// up on it lets it go, so the next check sends a new one. A stall then holds at most one abandoned query per
+// HEALTH_MS, however many checks come, each run when a connection is free and dropped; and a query stuck on one
+// connection (a peer gone without a reset) fails the checks that waited on it, not every check after them. The
+// route is public and has no rate limit yet, so without this a flood during a stall would queue one query per call
+// in postgres.js, with no bound (docs/LIMITATIONS.md, 2026-11-24).
 //
 // It reads no table and writes nothing, so every caller, signed in or not, gets the same answer from the same
 // database (T14). Each check that sees a failure logs it once, by the error's class and code alone (logging.ts's
@@ -31,15 +33,17 @@ type Outcome = "answered" | { readonly error: unknown };
 export function getHealthHandler(deps: Deps): Handler {
   let probe: Promise<Outcome> | undefined;
   const ask = (): Promise<Outcome> => {
-    probe ??= deps.sql`SELECT 1`
+    if (probe !== undefined) return probe;
+    const sent: Promise<Outcome> = deps.sql`SELECT 1`
       .then(
         (): Outcome => "answered",
         (error: unknown): Outcome => ({ error }),
       )
       .finally(() => {
-        probe = undefined;
+        if (probe === sent) probe = undefined;
       });
-    return probe;
+    probe = sent;
+    return sent;
   };
   return async (request, reply) => {
     let timer: NodeJS.Timeout | undefined;
@@ -48,12 +52,14 @@ export function getHealthHandler(deps: Deps): Handler {
         resolve("late");
       }, HEALTH_MS);
     });
+    const asked = ask();
     let outcome: Outcome | "late";
     try {
-      outcome = await Promise.race([ask(), late]);
+      outcome = await Promise.race([asked, late]);
     } finally {
       clearTimeout(timer);
     }
+    if (outcome === "late" && probe === asked) probe = undefined;
     if (outcome === "answered") return noContent(reply);
     if (outcome === "late") request.log.warn("database slow");
     else request.log.warn({ err: outcome.error }, "database unreachable");
