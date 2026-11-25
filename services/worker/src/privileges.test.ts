@@ -15,6 +15,7 @@ import {
   inImage,
   NO_INSPECTOR,
   photoUserFor,
+  startFactsSaid,
   type StartFacts,
   sweep,
   SweepFailed,
@@ -67,6 +68,23 @@ function startedWith(changed: Readonly<Record<string, string | undefined>> = {})
 /** Started as fly.toml starts the worker, without the image's marker. */
 const AS_FLY = startedWith();
 
+/**
+ * The refusal of a start in the image that isn't fly.toml's worker command, with what it found (startFactsSaid): the
+ * ids, then the four fields of /proc status that startedAsFly reads.
+ */
+const REFUSED =
+  /^worker: in production it starts only as fly\.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone \(it found uid \d+, euid \d+, egid \d+, NoNewPrivs [^,]+, CapBnd [^,]+, CapInh [^,]+, Groups [^,)]+\)$/;
+
+/** The message `call` throws, or "nothing thrown". */
+function thrown(call: () => unknown): string {
+  try {
+    call();
+  } catch (error) {
+    return (error as Error).message;
+  }
+  return "nothing thrown";
+}
+
 /** Started as root, as in the session, without the image's marker. */
 const OUTSIDE = startedWith({
   Uid: "0\t0\t0\t0",
@@ -117,8 +135,6 @@ describe("the photo user (photoUserFor)", () => {
     // command) prepared strangers' photos as root. In the image, no start but fly.toml's worker command goes on,
     // whatever the variable says, and the image sets the variable too (the Dockerfile), so a start that drops it is
     // refused as well.
-    const REFUSED =
-      /^worker: in production it starts only as fly\.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone$/;
     const production = (env: Record<string, string>) => ({ ...env, NODE_ENV: "production" });
     for (const ids of [
       { uid: 0, euid: 0, egid: 0 },
@@ -128,18 +144,21 @@ describe("the photo user (photoUserFor)", () => {
       { uid: 0, euid: 1000, egid: 0 },
     ]) {
       for (const env of [{}, { TADAYO_PHOTO_USER: "" }, named("tadayo-image")]) {
-        expect(
-          () =>
-            photoUserFor(
-              production(env),
-              ids,
-              () => {
-                throw new Error("/etc/passwd isn't read");
-              },
-              AS_FLY,
-            ),
-          JSON.stringify([ids, env]),
-        ).toThrow(REFUSED);
+        const said = thrown(() =>
+          photoUserFor(
+            production(env),
+            ids,
+            () => {
+              throw new Error("/etc/passwd isn't read");
+            },
+            AS_FLY,
+          ),
+        );
+        expect(said, JSON.stringify([ids, env])).toMatch(REFUSED);
+        // The line names the ids it found, and the status as it was.
+        expect(said, JSON.stringify([ids, env])).toContain(
+          `(it found uid ${String(ids.uid)}, euid ${String(ids.euid)}, egid ${String(ids.egid)}, NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 1000)`,
+        );
       }
     }
     // As fly.toml starts it, the image's variable gives the user; without the variable it stops, as outside the image.
@@ -162,10 +181,13 @@ describe("the photo user (photoUserFor)", () => {
       ["Groups", "1000 0"],
       ["Groups", undefined],
     ] as const) {
-      expect(
-        () => photoUserFor(production(named("tadayo-image")), WORKER, () => PASSWD, startedWith({ [field]: value })),
-        `${field}: ${String(value)}`,
-      ).toThrow(REFUSED);
+      const said = thrown(() =>
+        photoUserFor(production(named("tadayo-image")), WORKER, () => PASSWD, startedWith({ [field]: value })),
+      );
+      expect(said, `${field}: ${String(value)}`).toMatch(REFUSED);
+      // The line names what it found in that field, a field left out as missing, and the ids as they were.
+      expect(said, `${field}: ${String(value)}`).toContain(`(it found uid 0, euid 1000, egid 1000, `);
+      expect(said, `${field}: ${String(value)}`).toContain(`${field} ${value ?? "missing"}`);
     }
     // The kernel's own spacing is read as it is: a trailing space, no supplementary group at all.
     for (const groups of ["1000 ", "", " "]) {
@@ -190,6 +212,33 @@ describe("the photo user (photoUserFor)", () => {
         value,
       ).toEqual({ uid: 10001, gid: 10001 });
     }
+  });
+
+  it("says what a refused start was found to be: its ids and the four fields of its status, each kept to what a field holds", () => {
+    // All Fly's log keeps of a refused start is its line (PR #118's merge: refused on Fly, where the same command
+    // passes in the session and in Docker, with nothing said of what it found).
+    const status = (fields: Record<string, string>) => () =>
+      Object.entries(fields)
+        .map(([name, value]) => `${name}:\t${value}\n`)
+        .join("");
+    expect(startFactsSaid(WORKER, AS_FLY().status)).toBe(
+      "uid 0, euid 1000, egid 1000, NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 1000",
+    );
+    expect(startFactsSaid({ uid: 0, euid: 0, egid: 0 }, OUTSIDE().status)).toBe(
+      "uid 0, euid 0, egid 0, NoNewPrivs 0, CapBnd 000001fffeffffff, CapInh 0000000000000000, Groups none",
+    );
+    // A field left out is missing; anything but digits, a to f and spaces is a "?"; a value is cut at 64 characters.
+    expect(startFactsSaid(WORKER, "")).toBe(
+      "uid 0, euid 1000, egid 1000, NoNewPrivs missing, CapBnd missing, CapInh missing, Groups missing",
+    );
+    expect(
+      startFactsSaid(
+        WORKER,
+        status({ NoNewPrivs: "1", CapBnd: "00000000000000E0", CapInh: "0, (x)", Groups: "1000 ".repeat(20) })(),
+      ),
+    ).toBe(
+      `uid 0, euid 1000, egid 1000, NoNewPrivs 1, CapBnd 00000000000000?0, CapInh 0? ???, Groups ${"1000 ".repeat(12)}1000`,
+    );
   });
 
   it("in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same", () => {
@@ -540,17 +589,21 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     expect(started?.["command"]).toBe("found");
     const ended = started?.["ended"] as Record<string, { code: number | null; stderr: string; stdout: string }>;
     expect(ended["fly"]).toEqual({ code: 1, stderr: "worker: DATABASE_URL isn't set\n", stdout: "" });
-    const refused =
-      "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone\n";
-    for (const name of [
-      "withoutNoNewPrivs",
-      "widerBoundingSet",
-      "inheritable",
-      "rootsGroup",
-      "euidAlone",
-      "rootAlone",
-    ]) {
-      expect(ended[name], name).toEqual({ code: 1, stderr: refused, stdout: "" });
+    // Each refused start's line names what the kernel says of the flag it left out or widened.
+    const found: Record<string, RegExp> = {
+      withoutNoNewPrivs: /NoNewPrivs 0, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 64998\)/,
+      widerBoundingSet: /NoNewPrivs 1, CapBnd 00000000000000e1, CapInh 0000000000000000, Groups 64998\)/,
+      inheritable: /NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000020, Groups 64998\)/,
+      rootsGroup: /NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 0 64998\)/,
+      euidAlone: /\(it found uid 0, euid 64998, egid 0, NoNewPrivs 0, /,
+      rootAlone: /\(it found uid 0, euid 0, egid 0, NoNewPrivs 0, /,
+    };
+    for (const [name, what] of Object.entries(found)) {
+      expect(ended[name]?.code, name).toBe(1);
+      expect(ended[name]?.stdout, name).toBe("");
+      expect(ended[name]?.stderr.endsWith("\n"), name).toBe(true);
+      expect(ended[name]?.stderr.slice(0, -1), name).toMatch(REFUSED);
+      expect(ended[name]?.stderr, name).toMatch(what);
     }
     expect(Object.keys(ended)).toHaveLength(7);
   }, 100_000);
