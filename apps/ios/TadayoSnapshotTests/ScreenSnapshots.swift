@@ -145,6 +145,12 @@ enum ScreenSnapshot {
     /// and the tab bar, which draws its glass otherwise, doesn't.
     static let glassFilter = "glassBackground"
 
+    /// The largest a glass button is, in points: a layer drawn with `glassFilter` that is wider or
+    /// taller isn't a bar's button but some larger control, and is left out, so it stays exact.
+    /// Leave sign-in, the widest, is 136 by 44 points at the usual text size (the probe), and its
+    /// drift at the largest text spans x 15 to 174 points (30 to 348 pixels at 2x).
+    static let glassButtonLargest = CGSize(width: 200, height: 60)
+
     /// A rectangle of an image in pixels from its top left, its edges included.
     struct PixelRect: Equatable {
         let left: Int
@@ -235,7 +241,7 @@ enum ScreenSnapshot {
                 }
             }
             if number > 2 || !same {
-                log(warning(name, draws: draws, odd: differing, settled: same))
+                log(warning(name, draws: draws, differing: differing, settled: same))
             }
             var problem: String?
             if !same {
@@ -249,16 +255,17 @@ enum ScreenSnapshot {
     }
 
     /// The line `settled` logs: "warning: ScreenSnapshot <image>: settled after 3 draws, SHA-256
-    /// <each draw's first 4 bytes>; against the last draw, draw 1: <its difference>".
+    /// <each draw's first 4 bytes>; against the last draw, draw 1: <its difference>", for each
+    /// draw whose bytes differ from the last, glass draws among them.
     private static func warning(
-        _ name: String, draws: [Data], odd: [Int], settled: Bool
+        _ name: String, draws: [Data], differing: [Int], settled: Bool
     ) -> String {
         let digests = draws.map { data in
             SHA256.hash(data: data).prefix(4).map { String(format: "%02x", $0) }.joined()
         }
         let what = settled ? "settled after" : "didn't settle in"
         let last = draws[draws.count - 1]
-        let differences = odd.map { "draw \($0 + 1): " + difference(draws[$0], last) }
+        let differences = differing.map { "draw \($0 + 1): " + difference(draws[$0], last) }
         return "warning: ScreenSnapshot \(name): \(what) \(draws.count) draws, SHA-256 "
             + digests.joined(separator: " ") + "; against the last draw, "
             + differences.joined(separator: "; ")
@@ -277,11 +284,12 @@ enum ScreenSnapshot {
 
     /// How two PNGs differ, if they differ only inside `glass` and by at most `glassTolerance` in
     /// any channel, said as `difference` says it: what the founder's allowance passes. Nil if a
-    /// pixel outside `glass` differs, or one inside it by more, or the two can't be compared; two
-    /// PNGs whose pixels are the same give "no pixel differs".
+    /// pixel outside `glass` differs, or one inside it by more, or the two can't be compared, or
+    /// no pixel differs (two PNGs whose bytes differ but not their pixels are left to be told
+    /// apart as before, with or without glass).
     static func glassDrift(_ first: Data, _ second: Data, glass: [PixelRect]) -> String? {
         guard !glass.isEmpty, case .success(let measured) = measure(first, second, glass: glass),
-            measured.outside == 0, measured.largest <= glassTolerance
+            measured.pixels > 0, measured.outside == 0, measured.largest <= glassTolerance
         else { return nil }
         return measured.text
     }
@@ -350,22 +358,33 @@ enum ScreenSnapshot {
     }
 
     /// Where `view` draws the system's glass buttons, in pixels of its image at `scale`: the frame
-    /// of each layer drawn with `glassFilter`, grown by `glassMargin`. A hidden layer, and what it
-    /// holds, draws nothing, so it's left out.
+    /// of each layer drawn with `glassFilter`, as `glassButton` takes it. A hidden layer, and what
+    /// it holds, draws nothing, so it's left out. It reads the layers once the draw has ended and
+    /// SnapshotTesting has taken the host out of the window, with nothing laid out again since:
+    /// the back button's glass is where the probe found it in the window
+    /// (`ScreenSnapshotSettleTests.testAPushedScreensBackButtonIsTheGlass`).
     static func glassButtons(in view: UIView, scale: CGFloat) -> [PixelRect] {
         var found: [PixelRect] = []
         func walk(_ layer: CALayer) {
             guard !layer.isHidden, layer.opacity > 0 else { return }
-            if (layer.filters ?? []).contains(where: { String(describing: $0) == glassFilter }) {
-                let frame = layer.convert(layer.bounds, to: view.layer)
-                if !frame.isEmpty {
-                    found.append(PixelRect(frame, scale: scale, margin: glassMargin))
-                }
+            if (layer.filters ?? []).contains(where: { String(describing: $0) == glassFilter }),
+                let button = glassButton(layer.convert(layer.bounds, to: view.layer), scale: scale)
+            {
+                found.append(button)
             }
             for sublayer in layer.sublayers ?? [] { walk(sublayer) }
         }
         walk(view.layer)
         return found
+    }
+
+    /// A glass layer's `frame`, in points, as a glass button in pixels at `scale`, grown by
+    /// `glassMargin`; nil for an empty frame or one larger than `glassButtonLargest`.
+    static func glassButton(_ frame: CGRect, scale: CGFloat) -> PixelRect? {
+        guard !frame.isEmpty, frame.width <= glassButtonLargest.width,
+            frame.height <= glassButtonLargest.height
+        else { return nil }
+        return PixelRect(frame, scale: scale, margin: glassMargin)
     }
 
     /// The image to compare with the reference: the reference's own, when the drawn image differs

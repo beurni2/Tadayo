@@ -66,8 +66,8 @@ Each step is its own PR. A step that changes the app or its tests updates this r
 
 **What changes** (`apps/ios/TadayoSnapshotTests/ScreenSnapshots.swift`):
 
-- `glassButtons(in:scale:)` finds those frames in the host that drew the image, in pixels, grown by `glassMargin` (4).
-- `glassDrift` says whether two PNGs differ only inside them, by at most `glassTolerance` (26) in any channel.
+- `glassButtons(in:scale:)` finds those frames in the host that drew the image, in pixels, grown by `glassMargin` (4), through `glassButton`, which leaves out a glass layer larger than a bar's button (`glassButtonLargest`, 200 by 60 points), so a larger control drawn with the same filter stays exact.
+- `glassDrift` says whether two PNGs differ only inside them, by at most `glassTolerance` (26) in any channel, and in at least one pixel.
 - In `settled`, two draws like that count as the same: for two in a row, and for a draw against the image the drawing settled on, so such a draw isn't odd. Each is logged: `warning: glass <image>: draw <n> differs from the last only inside the system's glass buttons, <where and by how much>, so it counts as the same`.
 - Against the reference, `glassMatched` gives `assertSnapshot` the reference's own image when the settled image differs from it only that way, logged as `warning: glass <image>: differs from its reference only inside the system's glass buttons, …, so it's compared as its reference`. `referenceURL` finds that reference as SnapshotTesting 1.19.7 does.
 - Unchanged: the comparison's precision (every pixel, perceptual 0.98), one odd draw at most, four draws at most. A difference outside the glass buttons, or larger than 26 inside them, counts in full.
@@ -79,7 +79,9 @@ Each step is its own PR. A step that changes the app or its tests updates this r
 - An odd draw beside a glass draw passes, where with no glass the same draws fail as two odd ones.
 - `glassMatched` gives the reference only for a glass-only difference within 26.
 - `referenceURL` finds `testA02Age.A02-age-xl.png`.
-- Drawing real bars, `glassButtons` finds a pushed screen's back button where the probe found it, and nothing for the bar's blur or the tab bar. Its frames hold every glass-button drift the logs show: the back button's, and Leave sign-in's on A02-age in light and at the largest text, where the 26s were.
+- Through SnapshotTesting's own `verifySnapshot` against a reference written to a temporary folder: 26 inside the glass passes once `glassMatched` has given the reference's image, where the drawn image itself fails; 27 fails.
+- `glassButton` makes a fractional frame whole pixels, out to the pixels it touches, and leaves out one larger than 200 by 60 points, or empty.
+- Drawing real bars, `glassButtons` finds a pushed screen's back button where the probe found it, A02-age's Leave sign-in in light where the probe found it on A03 (x 28 to 307, y 120 to 215 once grown), one glass button on A02-age at the largest text (its frame printed in the run's log), and nothing for the bar's blur or the tab bar. Its frames hold every glass-button drift the logs show: the back button's, and Leave sign-in's on A02-age in light and at the largest text, where the 26s were.
 
 **The evidence job.** `tools/ci/ios_steps.py` lists only `warning: ScreenSnapshot` lines in a run's `index.md`. The glass lines are in the step's console and the run's `logs/test-27.2.log`, as every `warning:` line is. A `warning: ScreenSnapshot` line whose last two draws differ only in the glass (settled by the allowance at the third draw or later) doesn't hold together as `odd_draw_holds` reads it, so it is counted in `odd-draws-unread` rather than listed. Listing the glass lines is a later `tools/ci/` PR if wanted; this branch can't change `tools/ci/` (T58).
 

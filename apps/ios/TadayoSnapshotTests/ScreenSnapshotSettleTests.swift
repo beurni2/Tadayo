@@ -1,3 +1,4 @@
+import SnapshotTesting
 import SwiftUI
 import TadayoCore
 import UIKit
@@ -348,6 +349,16 @@ final class ScreenSnapshotSettleTests: XCTestCase {
         assertTheLastBlackHostsImage(settled)
     }
 
+    /// Two PNGs whose pixels are all the same aren't a glass drift: `settled` tells them apart by
+    /// their bytes, with or without glass, as before.
+    func testPixelsThatAreAllTheSameAreNoGlassDrift() {
+        guard let png = pixels([(button, 26)])?.pngData() else {
+            return XCTFail("the image couldn't be made")
+        }
+        XCTAssertNil(ScreenSnapshot.glassDrift(png, png, glass: [button]))
+        XCTAssertEqual(ScreenSnapshot.difference(png, png), "no pixel differs")
+    }
+
     func testAGlassDifferenceOfTwentySevenIsAnOddDraw() {
         let settled = settle(
             "settle-glass-27", images: [pixels([(button, 27)]), pixels()], glass: [button])
@@ -460,6 +471,35 @@ final class ScreenSnapshotSettleTests: XCTestCase {
         }
     }
 
+    /// Through SnapshotTesting's own comparison, as `assert` makes it, against a reference on
+    /// disk: an image 26 apart from it inside the glass passes once `glassMatched` has given the
+    /// reference's image, where the same image as drawn fails; 27 apart, `glassMatched` gives the
+    /// drawn image, which fails.
+    func testTheComparisonPassesTwentySixInsideTheGlassAndFailsTwentySeven() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("glass-comparison-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let reference = try XCTUnwrap(pixels()?.pngData())
+        try reference.write(to: folder.appendingPathComponent("glassComparison.reference.png"))
+        func compared(_ image: UIImage) -> String? {
+            verifySnapshot(
+                of: image, as: .image(precision: 1, perceptualPrecision: 0.98, scale: 2),
+                named: "reference", record: .never, snapshotDirectory: folder.path,
+                testName: "glassComparison")
+        }
+        let drawn26 = try XCTUnwrap(asDrawn(pixels([(button, 26)]), glass: [button]))
+        let drawn27 = try XCTUnwrap(asDrawn(pixels([(button, 27)]), glass: [button]))
+        let matched26 = ScreenSnapshot.glassMatched(
+            drawn26, reference: reference, scale: 2, name: "glass-26", log: { _ in })
+        let matched27 = ScreenSnapshot.glassMatched(
+            drawn27, reference: reference, scale: 2, name: "glass-27", log: { _ in })
+        XCTAssertNil(compared(matched26))
+        XCTAssertNotNil(compared(drawn26.image))
+        XCTAssertTrue(matched27 === drawn27.image)
+        XCTAssertNotNil(compared(matched27))
+    }
+
     /// The reference `glassMatched` reads is the one `assertSnapshot` compares with: A02-age's
     /// largest text, beside `SignInSnapshotTests`; and a name is made a path's part as the
     /// library makes it.
@@ -493,6 +533,33 @@ final class ScreenSnapshotSettleTests: XCTestCase {
             [ScreenSnapshot.PixelRect(left: 28, top: 120, right: 123, bottom: 215)])
     }
 
+    /// A glass layer's frame in points becomes whole pixels at the scale, out to the pixels it
+    /// touches, then grown by `glassMargin`: at 2x, 16.25 to 60.75 by 62.5 to 106.75 points is
+    /// x 32 to 121, y 125 to 213 in pixels, and grown by 4, x 28 to 125, y 121 to 217.
+    func testAGlassButtonIsItsFrameInWholePixelsGrownByTheMargin() {
+        XCTAssertEqual(ScreenSnapshot.glassMargin, 4)
+        XCTAssertEqual(
+            ScreenSnapshot.glassButton(
+                CGRect(x: 16.25, y: 62.5, width: 44.5, height: 44.25), scale: 2),
+            ScreenSnapshot.PixelRect(left: 28, top: 121, right: 125, bottom: 217))
+        XCTAssertEqual(
+            ScreenSnapshot.glassButton(CGRect(x: 16, y: 62, width: 44, height: 44), scale: 3),
+            ScreenSnapshot.PixelRect(left: 44, top: 182, right: 183, bottom: 321))
+    }
+
+    /// A glass layer larger than a bar's button, 200 by 60 points, or empty, isn't a glass button,
+    /// so no allowance reaches it.
+    func testAGlassLayerLargerThanABarsButtonIsNotAGlassButton() {
+        XCTAssertEqual(ScreenSnapshot.glassButtonLargest, CGSize(width: 200, height: 60))
+        XCTAssertNotNil(
+            ScreenSnapshot.glassButton(CGRect(x: 0, y: 0, width: 200, height: 60), scale: 2))
+        XCTAssertNil(
+            ScreenSnapshot.glassButton(CGRect(x: 0, y: 0, width: 200.5, height: 44), scale: 2))
+        XCTAssertNil(
+            ScreenSnapshot.glassButton(CGRect(x: 0, y: 0, width: 44, height: 60.5), scale: 2))
+        XCTAssertNil(ScreenSnapshot.glassButton(.zero, scale: 2))
+    }
+
     /// The glass `glassButtons` finds holds every drift of the bars' glass buttons the logs show,
     /// up to 2026-11-25: the back button's (x 30 to 121, y 123 to 212, in `A02-code-error` and
     /// others), and Leave sign-in's on A02-age, the 26 the founder's answer allows at the largest
@@ -512,11 +579,16 @@ final class ScreenSnapshotSettleTests: XCTestCase {
             accounts: ScriptedAccounts(updates: []), saved: { _ in }, signedOut: {})
         let light = hosted(AgeScreen(model: age, leave: {}), name: "glass-age")
         XCTAssertNil(light.problem)
+        XCTAssertEqual(
+            light.drawn?.glass, [.init(left: 28, top: 120, right: 307, bottom: 215)],
+            "Leave sign-in's glass, at x 32, y 124, 272 by 88 pixels in the probe, grown by 4")
         XCTAssertTrue(
             holds(light.drawn?.glass, .init(left: 30, top: 123, right: 305, bottom: 214)),
             "\(String(describing: light.drawn?.glass))")
         let largest = hosted(AgeScreen(model: age, leave: {}), in: .xl, name: "glass-age-xl")
         XCTAssertNil(largest.problem)
+        print("glass: AgeScreen at the largest text: \(String(describing: largest.drawn?.glass))")
+        XCTAssertEqual(largest.drawn?.glass.count, 1, "only Leave sign-in")
         XCTAssertTrue(
             holds(largest.drawn?.glass, .init(left: 30, top: 122, right: 348, bottom: 213)),
             "\(String(describing: largest.drawn?.glass))")
