@@ -1,14 +1,30 @@
 // How the privacy matrix fills a request from a cell's world: each Id parameter by its name, in the
 // path and the query alike, required or optional, so `club_id` is the cell's club wherever it
-// appears.
+// appears. A parameter may name more than one object, each in a request of its own: `drop_id` names
+// Ben's photo and Ben's video link, which every role, phase and state meets alike, so neither class of drop
+// hides behind the other (the outside audit's A4). What a binding doesn't reach yet: an id in a request's body.
+// The matrix's tables send each built route's bodies themselves, and the body ids of branches still to be built are
+// each bound to an object of the world by the slice that builds the branch, in its table: createDrop's `source_id`
+// (its link branch answers every source NOT_FOUND until B3 builds resolveSource; the table sends a fresh one),
+// createUpload's `drop_id` for its replacement and photo-message purposes, and createComment's `reply_to_id`, createReport's target,
+// blockMember's, setHighlight's, updateDrop's and searchMemories' ids (docs/plans/api-b2-matrix-built-rows.md,
+// section 0.6). createInvitation's cell request sends a fresh `candidate_id` on purpose: a candidate nobody has, never
+// a link.
 
 import { randomBytes } from "node:crypto";
+import type { ContractOperation } from "./operations.ts";
 
 /** The objects of one cell's world that a request can name. */
 export interface Targets {
   club: string;
   /** The drop the cell's state acts on: Ben's photo. */
   drop: string;
+  /**
+   * Ben's video link to the same day: the same author and audience as the photo, and put in each state as the photo
+   * is (privacy/matrix.test.ts `putInState`), so every row the photo's request has is the video's too, but a
+   * route's own media class.
+   */
+  video: string;
   /** Its day, Ana's Saturday. */
   day: string;
   /** Its author's membership interval. */
@@ -33,13 +49,20 @@ export function freshId(): string {
 }
 
 /**
- * Each Id parameter the contract has, by name. "missing" marks one with no object in the matrix's
- * world yet: it gets a fresh id, so its request names nothing. That's enough while every row is the
- * skeleton's; the slice that builds a route on one puts the object in the world first (rows.ts).
+ * Each Id parameter the contract has, by name: the object, or the objects, of the cell's world it names. "missing"
+ * marks one with no object in the matrix's world yet: it gets a fresh id, so its request names nothing and any
+ * handler, leaking or not, answers it the neutral not-found. A built route may never take one, nor act on one
+ * (`bindingProblems`, ACTS_ON), so the slice that builds a route on one puts the object in the world first.
+ * `comment_id` is the last: a comment on the matrix's open day makes Home refuse its page until B6 builds the fields
+ * that show it (packages/domain/src/clubs/home.ts), so the comment comes with B6's first comment route, which can't
+ * be built without it (ACTS_ON). Until then Home meets a comment in a test of its own, which holds it to that refusal
+ * (REFUSES_COMMENTS).
  */
-export const BINDINGS: Readonly<Record<string, ((targets: Targets) => string) | "missing">> = {
+export const BINDINGS: Readonly<
+  Record<string, ((targets: Targets) => string | readonly [string, ...string[]]) | "missing">
+> = {
   club_id: (targets) => targets.club,
-  drop_id: (targets) => targets.drop,
+  drop_id: (targets) => [targets.drop, targets.video],
   membership_id: (targets) => targets.author,
   occurrence_id: (targets) => targets.day,
   proposal_id: (targets) => targets.proposal,
@@ -51,10 +74,143 @@ export const BINDINGS: Readonly<Record<string, ((targets: Targets) => string) | 
   upload_id: (targets) => targets.upload,
 };
 
-/** The value of Id parameter `name` in a cell whose world is `targets`. */
-export function bind(name: string, targets: Targets): string {
-  const binding = BINDINGS[name];
+/**
+ * Every value of Id parameter `name` in a cell whose world is `targets`: the cell's requests send each (harness.ts
+ * `specsFor`), and the guessed-id and signed-out steps guess another club's of the same place (`elsewhereOf`).
+ */
+export function bindAll(
+  name: string,
+  targets: Targets,
+  bindings: typeof BINDINGS = BINDINGS,
+): readonly [string, ...string[]] {
+  const binding = bindings[name];
   if (binding === undefined)
     throw new Error(`the privacy matrix has no binding for the parameter ${name} (bindings.ts)`);
-  return binding === "missing" ? freshId() : binding(targets);
+  if (binding === "missing") return [freshId()];
+  const values = binding(targets);
+  return typeof values === "string" ? [values] : values;
+}
+
+/**
+ * The objects an operation acts on beyond its own Id parameters, by the binding that names them: a drop's comments
+ * for the routes that list, write and report them, though they take a drop or nothing in their path, and for the
+ * day's page, whose drops carry a reply's preview. The matrix's world must hold one before any of them is built
+ * (`bindingProblems`): a thread or a day asked only while it has no comment passes a handler that shows a removed
+ * comment or a blocked author's message (T24, T63). Every operation whose request or answer can name a comment
+ * takes `comment_id`, is here acting on `comment_id`, or is in REFUSES_COMMENTS: the harness tests find them by
+ * walking the contract, and by the operations whose id, path or parameters name comments or replies.
+ */
+export const ACTS_ON: Readonly<Record<string, readonly string[]>> = {
+  listComments: ["comment_id"],
+  createComment: ["comment_id"],
+  createReport: ["comment_id"],
+  getOccurrence: ["comment_id"],
+};
+
+/**
+ * The built operations whose answer can name a comment, but whose handler refuses to answer while a comment it would
+ * show exists, so the matrix asks them with none: Home, whose open page refuses a drop with a comment, a reaction or
+ * the viewer's favourite until B6 builds the fields that show them. Each is held to its refusal by what it answers:
+ * the matrix asks Home as each role the gate lets through, in a world where a drop of the open day has a comment,
+ * and Home's judge (home.ts `homeFor`, with `pageFor` deciding the refusal) wants the refusal from whoever may see
+ * that drop and their own page or the neutral not-found from everyone else (matrix.test.ts, "Home while a drop of
+ * the open day has a comment"), with the comment on Ben's photo and then on Ben's video link. A handler that answers
+ * such a page fails it, so the slice that lifts the refusal changes that judge and that test, and moves the operation
+ * into ACTS_ON, which then refuses it built until the world holds a comment (`bindingProblems`). The harness tests
+ * also find the refusal's text in its file, which only says where the refusal is. Reactions and favourites have no
+ * binding: the slice that builds them puts them in the world.
+ */
+export const REFUSES_COMMENTS: Readonly<Record<string, { file: string; refusal: string }>> = {
+  getHome: {
+    file: "packages/domain/src/clubs/home.ts",
+    refusal: "home: the open day's drops have reactions or comments, or the viewer's favourite, which B6's page shows",
+  },
+};
+
+/**
+ * The built routes (`built`: the API's BUILT_OPERATIONS) that take an Id parameter still marked "missing", or act on
+ * its objects (`actsOn`): a request that names nothing gets the neutral not-found from a leaking handler too, and a
+ * list asked while it's empty can't show what it should leave out, so every object a built route names or acts on is
+ * one of the world (the outside audit's A4). The matrix checks that each bound value is a row of its table
+ * (TABLES).
+ */
+export function bindingProblems(
+  operations: readonly ContractOperation[],
+  built: ReadonlySet<string>,
+  bindings: typeof BINDINGS = BINDINGS,
+  actsOn: typeof ACTS_ON = ACTS_ON,
+): string[] {
+  return operations
+    .filter((operation) => built.has(operation.id))
+    .flatMap((operation) => [
+      ...operation.parameters
+        .filter(
+          (parameter) => parameter.schema.$ref === "#/components/schemas/Id" && bindings[parameter.name] === "missing",
+        )
+        .map(
+          (parameter) =>
+            `${operation.id} is built and takes ${parameter.name}, which names no object of the matrix's world: the slice that builds it puts one in first`,
+        ),
+      ...(actsOn[operation.id] ?? [])
+        .filter((name) => bindings[name] === "missing")
+        .map(
+          (name) =>
+            `${operation.id} is built and acts on the objects ${name} names, of which the matrix's world has none: the slice that builds it puts one in first`,
+        ),
+    ]);
+}
+
+/**
+ * The table, and its column, whose row each binding's values must be, and the way from that row to its club, which
+ * must be the cell's: a binding that names a fresh id, an object of another kind or another club's object would pass
+ * `bindingProblems` but be asked only for the neutral not-found (the outside audit's A4; the privacy matrix checks
+ * every bound value of every built route against it). `via` is that way, hop by hop: a column of the row before and
+ * the table whose `id` it names (a comment through its drop, a reservation through its day, an upload through its
+ * reservation and that reservation's day, an invitation through its candidate); `club` is the club's column in the
+ * last table reached, the row's own when `via` is empty (review round 3, F5).
+ */
+export const TABLES: Readonly<
+  Record<string, { table: string; column: string; via: readonly (readonly [string, string])[]; club: string }>
+> = {
+  club_id: { table: "app.clubs", column: "id", via: [], club: "id" },
+  drop_id: { table: "app.drops", column: "id", via: [], club: "club_id" },
+  membership_id: { table: "app.memberships", column: "interval_id", via: [], club: "club_id" },
+  occurrence_id: { table: "app.occurrences", column: "id", via: [], club: "club_id" },
+  proposal_id: { table: "app.schedule_proposals", column: "id", via: [], club: "club_id" },
+  invitation_id: { table: "app.invitations", column: "id", via: [["candidate_id", "app.candidates"]], club: "club_id" },
+  revision_id: { table: "app.roster_revisions", column: "id", via: [], club: "club_id" },
+  star: { table: "app.memberships", column: "interval_id", via: [], club: "club_id" },
+  comment_id: { table: "app.comments", column: "id", via: [["drop_id", "app.drops"]], club: "club_id" },
+  reservation_id: {
+    table: "app.reservations",
+    column: "id",
+    via: [["occurrence_id", "app.occurrences"]],
+    club: "club_id",
+  },
+  upload_id: {
+    table: "app.uploads",
+    column: "id",
+    via: [
+      ["reservation_id", "app.reservations"],
+      ["occurrence_id", "app.occurrences"],
+    ],
+    club: "club_id",
+  },
+};
+
+/** The bindings a built route names or acts on: its Id parameters' and ACTS_ON's, each once, in the contract's order. */
+export function boundNames(
+  operations: readonly ContractOperation[],
+  built: ReadonlySet<string>,
+  actsOn: typeof ACTS_ON = ACTS_ON,
+): string[] {
+  const names = operations
+    .filter((operation) => built.has(operation.id))
+    .flatMap((operation) => [
+      ...operation.parameters
+        .filter((parameter) => parameter.schema.$ref === "#/components/schemas/Id")
+        .map((parameter) => parameter.name),
+      ...(actsOn[operation.id] ?? []),
+    ]);
+  return [...new Set(names)];
 }

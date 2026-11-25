@@ -209,16 +209,37 @@ export const FLY_BOUNDING_SET = "00000000000000e0";
  * image's setuid programs and every capability in reserve) stops (round 3 of PR #118's review).
  */
 export function startedAsFly(status: string): boolean {
-  const field = (name: string): string | undefined =>
-    new RegExp(`^${name}:[ \\t]*(.*)$`, "m").exec(status)?.[1]?.trim();
-  const groups = field("Groups");
+  const groups = statusField(status, "Groups");
   return (
-    field("NoNewPrivs") === "1" &&
-    field("CapBnd") === FLY_BOUNDING_SET &&
-    field("CapInh") === "0000000000000000" &&
+    statusField(status, "NoNewPrivs") === "1" &&
+    statusField(status, "CapBnd") === FLY_BOUNDING_SET &&
+    statusField(status, "CapInh") === "0000000000000000" &&
     groups !== undefined &&
     !groups.split(/\s+/).includes("0")
   );
+}
+
+/** One field of a /proc status, its value trimmed, or undefined when the status has no such field. */
+function statusField(status: string, name: string): string | undefined {
+  return new RegExp(`^${name}:[ \\t]*(.*)$`, "m").exec(status)?.[1]?.trim();
+}
+
+/**
+ * What a refused start was found to be, for the refusal's line (photoUserFor), which is all Fly's log keeps of it: the
+ * ids inWorkerMode reads and the four fields startedAsFly reads, none of them secret. A field the status doesn't have
+ * is "missing", an empty one "none"; each value keeps only the digits, the letters a to f and spaces a field's value
+ * is made of (anything else is "?", a tab too), cut at 64 characters with no mark of the cut (the kernel lists groups
+ * in order, so a cut list still shows a 0 first). On PR #118's merge the worker was refused on Fly, where the
+ * same command passes in the session and in Docker, and its line said nothing of what it had found.
+ */
+export function startFactsSaid(ids: Ids, status: string): string {
+  const said = (name: string): string => {
+    const value = statusField(status, name);
+    if (value === undefined) return "missing";
+    return value.replace(/[^0-9a-f ]/g, "?").slice(0, 64) || "none";
+  };
+  const fields = ["NoNewPrivs", "CapBnd", "CapInh", "Groups"].map((name) => `${name} ${said(name)}`);
+  return [`uid ${String(ids.uid)}`, `euid ${String(ids.euid)}`, `egid ${String(ids.egid)}`, ...fields].join(", ");
 }
 
 /** What photoUserFor reads of its start besides its ids: whether the image's marker is there, and its /proc status. */
@@ -275,7 +296,7 @@ export function photoUserFor(
   const { marked, status } = facts();
   if (inImage(env, () => marked) && !(started && startedAsFly(status))) {
     throw new Error(
-      "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone",
+      `worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone (it found ${startFactsSaid(ids, status)})`,
     );
   }
   if (!named && !started) return undefined;

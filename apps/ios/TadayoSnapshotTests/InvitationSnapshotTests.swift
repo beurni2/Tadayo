@@ -197,12 +197,16 @@ final class InvitationSnapshotTests: XCTestCase {
     }
 
     /// A failed Accept's line, which six people's rows with the tag put below the screen's edge,
-    /// is scrolled into view above Accept as it comes, as frame 9 of handoff 8 draws it.
+    /// is scrolled into view above Accept as it comes, as frame 9 of handoff 8 draws it. The read
+    /// waits for the failure to have come, its own scripted state, as
+    /// `SignInReadingTests.testAFailureWithTheKeyboardUpIsScrolledIntoViewAboveContinue` does
+    /// (`docs/plans/ios-b1-intermittents.md`, item 3).
     func testAFailedAcceptsLineIsScrolledIntoViewAboveAccept() {
+        let failed = Failed()
         let layout = AccessibilityElements.layout(
-            of: FailsOnceShown(failure: .network) { failure in
+            of: FailsOnceShown(failure: .network, failed: failed) { failure in
                 self.invitation(.open(Rosters.sunday), failure: failure)
-            })
+            }, until: { failed.came })
         let elements = layout.elements
         let line =
             elements.first {
@@ -308,10 +312,17 @@ final class InvitationSnapshotTests: XCTestCase {
 
     // MARK: Helpers
 
+    /// Whether `FailsOnceShown`'s failure has come, for a read to wait for.
+    @MainActor
+    private final class Failed {
+        var came = false
+    }
+
     /// `content` with no failure, then, a moment after it shows, with `failure`, as an answer
-    /// comes to a screen already on show.
+    /// comes to a screen already on show; `failed` says when it has come.
     private struct FailsOnceShown<Content: View>: View {
         let failure: InvitationModel.Failure
+        let failed: Failed
         @ViewBuilder let content: (InvitationModel.Failure?) -> Content
         @State private var shown: InvitationModel.Failure?
 
@@ -320,6 +331,7 @@ final class InvitationSnapshotTests: XCTestCase {
                 .task {
                     try? await Task.sleep(for: .milliseconds(100))
                     shown = failure
+                    failed.came = true
                 }
         }
     }
