@@ -1,0 +1,53 @@
+--- 22:57:55 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-25-225754.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-25 22:57:54.00 +0000
+pid: 77889
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.D122764B-2522-43CD-8383-EC40B69C5E0D
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 77889, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 23:03:54 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-25-230054_sjc20-bb710-1439e8e6-15ef-453e-ab90-26188c6d52ff-6E9D1C66E57C.diag
+Date/Time:        2026-11-25 22:54:09.422 +0000
+End time:         2026-11-25 22:56:18.034 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: B6CEFDCC-CC71-44C5-8E4A-EC50C84E2039
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x198054000
+
+Command:          STExtractionService
+Path:             /Volumes/VOLUME/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.D122764B-2522-43CD-8383-EC40B69C5E0D"(2708)
+On Behalf Of:     69 samples nsurlsessiond [77022] (69 samples originated by UNKNOWN [76957, 77104])
+Architecture:     arm64
+Parent:           UNKNOWN [76949]
+PID:              77828
+
+--- 23:07:48 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-25-230356_sjc20-bb710-1439e8e6-15ef-453e-ab90-26188c6d52ff-6E9D1C66E57C.diag
+Date/Time:        2026-11-25 22:14:43.954 +0000
+End time:         2026-11-25 22:57:49.286 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 02AC57EA-D5C4-4317-A0FC-F0D8693BEBD1
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x198054000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x182ed8000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(761)
+On Behalf Of:     162 samples UNKNOWN [2087, 40152, 78174] (162 samples originated by UNKNOWN [214, 40152, 78174])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              656
