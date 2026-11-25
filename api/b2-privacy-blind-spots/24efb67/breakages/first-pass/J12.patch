@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..d121b5ac 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -151,7 +151,7 @@ export function mayView(seen: HomeSeen, drop: string): boolean {
+   });
+   const starAsked = world.accounts.get(star.account)?.deletionRequestedAt ?? null;
+   const blocked = home.blocks.some(
+-    ([a, b]) => (a === account && b === author.account) || (a === author.account && b === account),
++    ([a, b]) => (a === account && b === author.account),
+   );
+   return (
+     mine &&

@@ -1,0 +1,26 @@
+diff --git a/packages/domain/src/authorization/read-sql.ts b/packages/domain/src/authorization/read-sql.ts
+index 630c5d2a..b509014c 100644
+--- a/packages/domain/src/authorization/read-sql.ts
++++ b/packages/domain/src/authorization/read-sql.ts
+@@ -74,8 +74,7 @@ export function checkViewer(viewer: unknown): void {
+  * can't drift; it names their aliases: `o` the day, `s` the star's interval, `su` the star's account.
+  */
+ export function starKeepsDay<F>(sql: FragmentSql<F>): F {
+-  return bound(sql)`(s.left_at IS NULL OR s.left_at >= o.reveal_at)
+-       AND (su.deletion_requested_at IS NULL OR su.deletion_requested_at >= o.reveal_at)`;
++  return bound(sql)`(s.left_at IS NULL OR s.left_at >= o.reveal_at)`;
+ }
+ 
+ /**
+diff --git a/packages/domain/src/authorization/read.ts b/packages/domain/src/authorization/read.ts
+index c95642a7..04f48acd 100644
+--- a/packages/domain/src/authorization/read.ts
++++ b/packages/domain/src/authorization/read.ts
+@@ -87,7 +87,6 @@ export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: Server
+     // delete the account is leaving at that instant, so the answer never waits for the worker
+     // that ends the interval (T1, T27).
+     notBeforeReveal(facts.starLeftAt, facts.revealAt) &&
+-    notBeforeReveal(facts.starDeletionRequestedAt, facts.revealAt) &&
+     // The author's account deletion denies at once, before its purge (T23, T27; spec 23), since
+     // no permission waits for the worker (TECH-DESIGN section 5).
+     facts.authorAccount === "active" &&

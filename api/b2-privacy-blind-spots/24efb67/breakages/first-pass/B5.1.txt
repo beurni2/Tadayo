@@ -1,0 +1,68 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/db/home.test.ts (30 tests | 2 failed) 2012ms
+   ❯ the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) (5)
+     × leaves out a drop a block keeps from the viewer (T23) 40ms
+     × leaves out each other's drops when one of two members blocked the other, either way (T9, T23) 29ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  13:26:49
+   Duration  3.09s (tests 92%, transform 4%, import 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home.test.ts > the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) > leaves out a drop a block keeps from the viewer (T23)
+AssertionError: expected [ 'drp_4RdBaEnbvZNK7Li6Nn89HQ', …(1) ] to deeply equal [ 'drp_4RdBaEnbvZNK7Li6Nn89HQ' ]
+
+- Expected
++ Received
+
+  [
+    "drp_4RdBaEnbvZNK7Li6Nn89HQ",
++   "drp_k80h10NLAF3cZcBpedjO0A",
+  ]
+
+ ❯ src/db/home.test.ts:435:81
+    433|       // Ben blocks Ana and leaves by it, keeping the drop: Ana, still…
+    434|       await block(tx, w.ben, "Ben", w.ana, "Ana", STATE_AT);
+    435|       expect((await page(tx, w.ana.user, w.club)).drops.map((card) => …
+       |                                                                                 ^
+    436|       expect((await page(tx, w.cleo.user, w.club)).drops).toHaveLength…
+    437|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home.test.ts:429:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/home.test.ts > the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) > leaves out each other's drops when one of two members blocked the other, either way (T9, T23)
+AssertionError: Cleo: expected [ 'drp_hoCCNVUh5e0rlJYDVMnL8w', …(1) ] to deeply equal [ 'drp_qZFlsIvqddsN45DOR0Ai4w' ]
+
+- Expected
++ Received
+
+  [
++   "drp_hoCCNVUh5e0rlJYDVMnL8w",
+    "drp_qZFlsIvqddsN45DOR0Ai4w",
+  ]
+
+ ❯ src/db/home.test.ts:456:11
+    454|           (await page(tx, w.cleo.user, w.club)).drops.map((card) => ca…
+    455|           blocker,
+    456|         ).toEqual([cleos]);
+       |           ^
+    457|         expect(
+    458|           (await page(tx, w.ben.user, w.club)).drops.map((card) => car…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home.test.ts:445:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

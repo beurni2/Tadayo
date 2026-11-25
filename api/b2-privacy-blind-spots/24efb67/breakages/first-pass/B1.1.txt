@@ -1,0 +1,77 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/db/authorization.test.ts (36 tests | 3 failed) 2848ms
+   ❯ T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day (13)
+     × answers the star by both paths alike 184ms
+     × answers the member in the audience by both paths alike 95ms
+   ❯ T23: a denial beats every grant, once the drop has been read and saved (8)
+     × denies ana, ben, cleo everything after the author's account deletion, before its purge (T27, spec 23), and nobody else 38ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 33 passed (36)
+   Start at  13:18:50
+   Duration  4.16s (tests 93%, transform 4%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike
+ FAIL  src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike
+AssertionError: expected [ …(10) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "its author's account being deleted (T27), collecting, caption: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), open, caption: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), open, media: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), open, reactions: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), past, caption: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), past, media: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), past, reactions: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), past, a year on, caption: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), past, a year on, media: expected false, policy true, SQL true",
++   "its author's account being deleted (T27), past, a year on, reactions: expected false, policy true, SQL true",
++ ]
+
+ ❯ src/db/authorization.test.ts:134:21
+    132|         }
+    133|       });
+    134|       expect(wrong).toEqual([]);
+       |                     ^
+    135|       expect(checked).toBe(STATES.length * (role.phases ?? Object.keys…
+    136|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's account deletion, before its purge (T27, spec 23), and nobody else
+AssertionError: ana, caption: expected { policy: true, sql: true } to deeply equal { policy: false, sql: false }
+
+- Expected
++ Received
+
+  {
+-   "policy": false,
+-   "sql": false,
++   "policy": true,
++   "sql": true,
+  }
+
+ ❯ src/db/authorization.test.ts:218:86
+    216|           const reads = !denial.denies.includes(name);
+    217|           for (const what of READS) {
+    218|             expect(await bothPaths(tx, viewer, drop, what, now), `${na…
+       |                                                                                      ^
+    219|               policy: reads,
+    220|               sql: reads,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/authorization.test.ts:202:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+

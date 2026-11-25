@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (11 tests | 1 failed) 23ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (3)
+     × refuses on each of its conditions alone 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  13:32:54
+   Duration  395ms (import 58%, transform 32%, tests 8%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > refuses on each of its conditions alone
+AssertionError: the star's deletion asked before the reveal: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/privacy/home.test.ts:188:88
+    186|       ["the reveal not reached", seen(world(), "usr_cleo", REVEAL.subt…
+    187|     ];
+    188|     for (const [name, one, id = "drp_ben"] of refusing) expect(mayView…
+       |                                                                                        ^
+    189|   });
+    190|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

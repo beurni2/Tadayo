@@ -1,0 +1,106 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/db/authorization.test.ts (36 tests | 4 failed) 2349ms
+   ❯ T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day (13)
+     × answers the author by both paths alike 288ms
+     × answers the member in the audience by both paths alike 107ms
+   ❯ FQ63: a day whose star left before it opened is held and never opens (5)
+     × serves nothing of it to anyone, the caption included, before or after reveal_at 21ms
+     × holds a day whose star left a microsecond before reveal_at 22ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 32 passed (36)
+   Start at  13:20:49
+   Duration  3.59s (tests 92%, transform 4%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike
+ FAIL  src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike
+AssertionError: expected [ …(10) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "its star gone before the reveal (FQ63), collecting, caption: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), open, caption: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), open, media: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), open, reactions: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), past, caption: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), past, media: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), past, reactions: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), past, a year on, caption: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), past, a year on, media: expected false, policy true, SQL true",
++   "its star gone before the reveal (FQ63), past, a year on, reactions: expected false, policy true, SQL true",
++ ]
+
+ ❯ src/db/authorization.test.ts:134:21
+    132|         }
+    133|       });
+    134|       expect(wrong).toEqual([]);
+       |                     ^
+    135|       expect(checked).toBe(STATES.length * (role.phases ?? Object.keys…
+    136|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > serves nothing of it to anyone, the caption included, before or after reveal_at
+AssertionError: expected { policy: true, sql: true } to deeply equal { policy: false, sql: false }
+
+- Expected
++ Received
+
+  {
+-   "policy": false,
+-   "sql": false,
++   "policy": true,
++   "sql": true,
+  }
+
+ ❯ src/db/authorization.test.ts:285:66
+    283|         for (const viewer of [w.ben.user, w.cleo.user, w.ana.user]) {
+    284|           for (const what of READS)
+    285|             expect(await bothPaths(tx, viewer, drop, what, now)).toEqu…
+       |                                                                  ^
+    286|         }
+    287|       }
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/authorization.test.ts:275:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > holds a day whose star left a microsecond before reveal_at
+AssertionError: expected { policy: true, sql: true } to deeply equal { policy: false, sql: false }
+
+- Expected
++ Received
+
+  {
+-   "policy": false,
+-   "sql": false,
++   "policy": true,
++   "sql": true,
+  }
+
+ ❯ src/db/authorization.test.ts:365:67
+    363|       const now = await fakeClock(PHASES.past).sample(tx);
+    364|       for (const what of READS)
+    365|         expect(await bothPaths(tx, w.cleo.user, drop, what, now)).toEq…
+       |                                                                   ^
+    366|     });
+    367|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/authorization.test.ts:359:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+

@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/packages/domain
+
+ ❯ src/authorization/one-module.test.ts (4 tests | 1 failed) 53ms
+   ❯ only the authorization module reads a drop's audience and the blocks (T9) (4)
+     × finds no other code that names them 34ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  13:27:05
+   Duration  200ms (tests 74%, import 15%, transform 7%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/one-module.test.ts > only the authorization module reads a drop's audience and the blocks (T9) > finds no other code that names them
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "packages/domain/src/clubs/home.ts:201: a drop's audience",
++   "packages/domain/src/clubs/home.ts:215: the blocks",
++ ]
+
+ ❯ src/authorization/one-module.test.ts:85:19
+     83|   it("finds no other code that names them", () => {
+     84|     const found = scannedFiles().flatMap((file) => tableNames(file, re…
+     85|     expect(found).toEqual([]);
+       |                   ^
+     86|   });
+     87|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

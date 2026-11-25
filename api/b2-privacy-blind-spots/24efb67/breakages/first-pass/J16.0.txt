@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (11 tests | 2 failed) 23ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (3)
+     × holds the star's leaving and deletion to the reveal, and a block to its two people 6ms
+   ❯ the open day's page (pageFor; T35; addendum 4) (3)
+     × leaves out what the viewer may not see 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  13:33:03
+   Duration  432ms (import 57%, transform 34%, tests 8%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > holds the star's leaving and deletion to the reveal, and a block to its two people
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/home.test.ts:194:103
+    192|     expect(mayView(seen(withMember("itv_ana", { leftAt: REVEAL })), "d…
+    193|     expect(mayView(seen(withAccount("usr_ana", { deletionRequestedAt: …
+    194|     expect(mayView(seen(world(), "usr_cleo", OPEN, { blocks: [["usr_an…
+       |                                                                                                       ^
+    195|     expect(mayView(seen(world(), "usr_cleo", OPEN, { blocks: [["usr_cl…
+    196|     // Someone else's block of the author, the viewer's block of someo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/home.test.ts > the open day's page (pageFor; T35; addendum 4) > leaves out what the viewer may not see
+AssertionError: expected [] to deeply equal [ 'drp_ana' ]
+
+- Expected
++ Received
+
+- [
+-   "drp_ana",
+- ]
++ []
+
+ ❯ src/privacy/home.test.ts:241:48
+    239|     );
+    240|     if (blocked === "refused") throw new Error("refused");
+    241|     expect(blocked.drops.map((one) => one.id)).toEqual(["drp_ana"]);
+       |                                                ^
+    242|   });
+    243|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

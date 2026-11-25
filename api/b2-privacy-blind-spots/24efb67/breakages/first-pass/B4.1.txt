@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/db/home.test.ts (30 tests | 1 failed) 1920ms
+   ❯ the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) (5)
+     × leaves out each other's drops when one of two members blocked the other, either way (T9, T23) 32ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  13:24:46
+   Duration  2.96s (tests 92%, transform 4%, import 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home.test.ts > the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) > leaves out each other's drops when one of two members blocked the other, either way (T9, T23)
+AssertionError: Cleo: expected [ 'drp_RzSfoKDdf1z7MXEUiW8njg', …(1) ] to deeply equal [ 'drp_RzSfoKDdf1z7MXEUiW8njg' ]
+
+- Expected
++ Received
+
+  [
+    "drp_RzSfoKDdf1z7MXEUiW8njg",
++   "drp_c9Gzoa8mw7V32dIFPS_4tw",
+  ]
+
+ ❯ src/db/home.test.ts:456:11
+    454|           (await page(tx, w.cleo.user, w.club)).drops.map((card) => ca…
+    455|           blocker,
+    456|         ).toEqual([cleos]);
+       |           ^
+    457|         expect(
+    458|           (await page(tx, w.ben.user, w.club)).drops.map((card) => car…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home.test.ts:445:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

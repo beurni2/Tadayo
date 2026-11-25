@@ -1,0 +1,135 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/db/authorization.test.ts (36 tests | 4 failed) 2673ms
+   ❯ T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day (13)
+     × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) by both paths alike 123ms
+     × answers the blocked: Cleo blocked the author, both still members by both paths alike 134ms
+   ❯ T23: a denial beats every grant, once the drop has been read and saved (8)
+     × denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else 44ms
+   ❯ T23 and FQ88: a block denies in every interval after it, whoever made it (1)
+     × hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again 37ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 32 passed (36)
+   Start at  13:27:01
+   Duration  3.86s (tests 93%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) by both paths alike
+AssertionError: expected [ …(9) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "active, open, caption: expected false, policy true, SQL true",
++   "active, open, media: expected false, policy true, SQL true",
++   "active, open, reactions: expected false, policy true, SQL true",
++   "active, past, caption: expected false, policy true, SQL true",
++   "active, past, media: expected false, policy true, SQL true",
++   "active, past, reactions: expected false, policy true, SQL true",
++   "active, past, a year on, caption: expected false, policy true, SQL true",
++   "active, past, a year on, media: expected false, policy true, SQL true",
++   "active, past, a year on, reactions: expected false, policy true, SQL true",
++ ]
+
+ ❯ src/db/authorization.test.ts:134:21
+    132|         }
+    133|       });
+    134|       expect(wrong).toEqual([]);
+       |                     ^
+    135|       expect(checked).toBe(STATES.length * (role.phases ?? Object.keys…
+    136|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the blocked: Cleo blocked the author, both still members by both paths alike
+AssertionError: expected [ …(10) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "active, collecting, caption: expected false, policy true, SQL true",
++   "active, open, caption: expected false, policy true, SQL true",
++   "active, open, media: expected false, policy true, SQL true",
++   "active, open, reactions: expected false, policy true, SQL true",
++   "active, past, caption: expected false, policy true, SQL true",
++   "active, past, media: expected false, policy true, SQL true",
++   "active, past, reactions: expected false, policy true, SQL true",
++   "active, past, a year on, caption: expected false, policy true, SQL true",
++   "active, past, a year on, media: expected false, policy true, SQL true",
++   "active, past, a year on, reactions: expected false, policy true, SQL true",
++ ]
+
+ ❯ src/db/authorization.test.ts:134:21
+    132|         }
+    133|       });
+    134|       expect(wrong).toEqual([]);
+       |                     ^
+    135|       expect(checked).toBe(STATES.length * (role.phases ?? Object.keys…
+    136|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else
+AssertionError: cleo, caption: expected { policy: true, sql: true } to deeply equal { policy: false, sql: false }
+
+- Expected
++ Received
+
+  {
+-   "policy": false,
+-   "sql": false,
++   "policy": true,
++   "sql": true,
+  }
+
+ ❯ src/db/authorization.test.ts:218:86
+    216|           const reads = !denial.denies.includes(name);
+    217|           for (const what of READS) {
+    218|             expect(await bothPaths(tx, viewer, drop, what, now), `${na…
+       |                                                                                      ^
+    219|               policy: reads,
+    220|               sql: reads,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/authorization.test.ts:202:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again
+AssertionError: Cleo, Ben's, collecting, caption: expected { policy: true, sql: true } to deeply equal { policy: false, sql: false }
+
+- Expected
++ Received
+
+  {
+-   "policy": false,
+-   "sql": false,
++   "policy": true,
++   "sql": true,
+  }
+
+ ❯ src/db/authorization.test.ts:253:103
+    251|         for (const what of READS) {
+    252|           const reads = what === "caption" || phase !== "collecting";
+    253|           expect(await bothPaths(tx, w.cleo.user, bens, what, now), `C…
+       |                                                                                                       ^
+    254|             policy: false,
+    255|             sql: false,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/authorization.test.ts:231:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

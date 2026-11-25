@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (11 tests | 2 failed) 30ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (3)
+     × refuses on each of its conditions alone 10ms
+   ❯ the open day's page (pageFor; T35; addendum 4) (3)
+     × leaves out what the viewer may not see 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  13:32:57
+   Duration  513ms (import 60%, transform 29%, tests 9%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > refuses on each of its conditions alone
+AssertionError: the viewer's block of the author: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/privacy/home.test.ts:188:88
+    186|       ["the reveal not reached", seen(world(), "usr_cleo", REVEAL.subt…
+    187|     ];
+    188|     for (const [name, one, id = "drp_ben"] of refusing) expect(mayView…
+       |                                                                                        ^
+    189|   });
+    190|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/home.test.ts > the open day's page (pageFor; T35; addendum 4) > leaves out what the viewer may not see
+AssertionError: expected [ 'drp_ana', 'drp_ben' ] to deeply equal [ 'drp_ana' ]
+
+- Expected
++ Received
+
+  [
+    "drp_ana",
++   "drp_ben",
+  ]
+
+ ❯ src/privacy/home.test.ts:241:48
+    239|     );
+    240|     if (blocked === "refused") throw new Error("refused");
+    241|     expect(blocked.drops.map((one) => one.id)).toEqual(["drp_ana"]);
+       |                                                ^
+    242|   });
+    243|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

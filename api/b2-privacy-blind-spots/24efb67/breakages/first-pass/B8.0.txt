@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/packages/domain
+
+ ❯ src/time/one-clock.test.ts (9 tests | 1 failed) 130ms
+   ❯ only the time module reads a clock (T1) (9)
+     × finds no code outside the time module that makes a ServerNow of its own (the outside audit's A14) 35ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  13:30:47
+   Duration  294ms (tests 86%, import 8%, transform 4%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds no code outside the time module that makes a ServerNow of its own (the outside audit's A14)
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "services/api/src/clubs/home.ts:122: a cast to ServerNow",
++ ]
+
+ ❯ src/time/one-clock.test.ts:277:19
+    275|   it("finds no code outside the time module that makes a ServerNow of …
+    276|     const found = productFiles().flatMap((file) => nowMints(file, read…
+    277|     expect(found).toEqual([]);
+       |                   ^
+    278|   });
+    279|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,24 @@
+diff --git a/packages/domain/src/authorization/read-sql.ts b/packages/domain/src/authorization/read-sql.ts
+index 630c5d2a..f35719f1 100644
+--- a/packages/domain/src/authorization/read-sql.ts
++++ b/packages/domain/src/authorization/read-sql.ts
+@@ -106,7 +106,6 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
+        AND o.status = 'scheduled'
+        AND c.suspended_at IS NULL
+        AND ${starKeepsDay(sql)}
+-       AND au.state = 'active'
+        AND NOT EXISTS (SELECT FROM app.blocks b
+                         WHERE (b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)
+                            OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = m.user_id))
+diff --git a/packages/domain/src/authorization/read.ts b/packages/domain/src/authorization/read.ts
+index c95642a7..b7758c90 100644
+--- a/packages/domain/src/authorization/read.ts
++++ b/packages/domain/src/authorization/read.ts
+@@ -90,7 +90,6 @@ export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: Server
+     notBeforeReveal(facts.starDeletionRequestedAt, facts.revealAt) &&
+     // The author's account deletion denies at once, before its purge (T23, T27; spec 23), since
+     // no permission waits for the worker (TECH-DESIGN section 5).
+-    facts.authorAccount === "active" &&
+     // A block hides each one's drops from the other, whatever the blocker kept (T23, FQ88).
+     // Exactly false: a missing or strange value denies (Object.is, since it is typed boolean).
+     Object.is(facts.blocked, false) &&
