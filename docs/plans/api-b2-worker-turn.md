@@ -54,7 +54,10 @@ no workflow file, nothing the API runs.
   `Uid` and `Gid` `0 <node> 0 <node>`; `node`'s group alone; no capability effective or ambient; setuid, setgid and kill
   permitted (`FLY_BOUNDING_SET`). Linux leaves exactly that as the effective uid leaves 0 with the real one 0, unless a
   start set `SECBIT_NO_SETUID_FIXUP`, which no `/proc` field shows and which would leave the three effective (round 1
-  of PR #135's review); the check catches that too. In the image (Docker on this machine, fly.toml's drop and then the
+  of PR #135's review); the check catches that too. While a thread isn't, it reads them all again, 10 ms apart, up to
+  `TURN_READINGS` (100) readings in all, about a second (`pauseFor`, an `Atomics.wait`), and only a thread still wrong
+  at the last stops the worker: glibc's calls change every thread but one that is ending, which runs none of the
+  worker's code again and leaves `/proc/self/task` once it has gone (section 6). In the image (Docker on this machine, fly.toml's drop and then the
   turn), `/proc/self/status` then reads `Uid: 0 1000 0 1000`, `Gid: 0 1000 0 1000`, `CapPrm 00000000000000e0`,
   `CapEff 0000000000000000` and `NoNewPrivs 1`. The saved ids stay 0, which gives nothing the real ids, 0, don't
   already, and takes one thing away: a process running as `node` can no longer signal the worker, as Linux compares a
@@ -97,6 +100,10 @@ no workflow file, nothing the API runs.
     order; the status after is the worker's mode, which `photoUserFor` then takes, naming `tadayo-image`; a `node`
     whose uid and gid differ (1000 and 1001: the group's id to `setegid`, the user's to `seteuid`); `Groups` with or
     without the kernel's trailing space.
+  - "reads the threads' statuses again while one is ending, as glibc's calls leave it, and turns once it has gone"
+    (the third commit): a second thread with `node`'s effective group and root's effective user, there for 1, 2 and 99
+    readings, then gone, turns, with that many pauses of 10 ms; one there at the 100th reading stops the worker with
+    what it found; and `pauseFor` blocks.
   - "leaves any other start as it is, for photoUserFor to judge, and reads no /etc/passwd for it": 17 starts, none
     calling anything: the worker's mode already; root alone; a user alone; root's real ids with another's effective
     uid or group; a real uid not root's; and root's ids with each of `startedAsFly`'s facts changed or missing
@@ -147,7 +154,10 @@ Then spikes S1's and S2's device runs can go ahead.
 Each run against `privileges.test.ts`, `start.test.ts` and `deploy-files.test.ts`, with the file restored and checked
 after (a script in the session's scratch folder, not committed). All eleven were caught. K12 to K30 are round 1's
 (section 5), run the same way at the second commit; all were caught, K22 only once `turnOrStop` moved into
-`privileges.ts` and had its own test (it survived its first run, when the line's choice was in `turn.ts`).
+`privileges.ts` and had its own test (it survived its first run, when the line's choice was in `turn.ts`). K31 to K34
+are the third commit's (section 6), each caught by the unit tests named; the root harness's tests also failed in those
+runs, but another run of the harness was going on in the session at the same time (round 2's reviewer, with the same
+users), so those failures aren't counted.
 
 | | Breakage | Caught by |
 |---|---|---|
@@ -181,6 +191,10 @@ after (a script in the session's scratch folder, not committed). All eleven were
 | K28 | No check that any thread's status was read | "stops the worker, saying what it found, …" |
 | K29 | `turnOrStop` catches the error and stops nothing | "as the worker's first act, stops it …" and the harness's start with no `node` in `/etc/passwd` |
 | K30 | `turnOrStop`'s fixed line says the error | "as the worker's first act, stops it …" |
+| K31 | No second reading: a thread wrong at the first stops the worker | "reads the threads' statuses again …" and "stops the worker, saying what it found, …" |
+| K32 | One reading more than `TURN_READINGS` | "reads the threads' statuses again …" and "stops the worker, saying what it found, …" |
+| K33 | No pause between readings | "reads the threads' statuses again …" and "stops the worker, saying what it found, …" |
+| K34 | `pauseFor` doesn't block | "reads the threads' statuses again …" (`pauseFor` timed) |
 
 ## 5. Review, round 1 (PR #135, at `0784c35`)
 
@@ -221,3 +235,17 @@ exec of `node` changes no id on any kernel, a photo's process reaches nothing ne
 
 The breakages K12 to K30 are this round's: each a wrong version a finding named, run as K01 to K11 were (section 4).
 
+## 6. `ci` at the second commit (`11b1b75`)
+
+`ci`'s run 45594413681 failed in the root harness's fly start: "worker: it couldn't take node's effective group and
+user as it started (it found Uid 0 0 0 0, Gid 0 64998 0 64998, Groups 64998, NoNewPrivs 1, …, CapEff
+00000000000000e0, …)". One thread had taken `node`'s effective group but not its user. glibc's `setegid` and `seteuid`
+change each thread through a signal, and skip a thread marked as exiting (`nptl/nptl_setxid.c`, `setxid_mark_thread`):
+such a thread runs none of the worker's code again, but keeps its ids, and stays in `/proc/self/task`, until it has
+gone. One that began ending between the two calls is exactly what `ci` found. Reproduced in the image (as root, Node
+26.13.0, threads of `node:worker_threads` started and ending as `setegid` and `seteuid` ran): in 400 rounds two threads
+showed `Uid 0 0 0 0` with `Gid 0 1000 0 1000`, and in 1,500 more, eight threads were wrong at the first reading and each
+was gone by the second, 10 ms later. So the turn reads the statuses again while one is wrong, up to about a second
+(section 1), and K31 to K34 (section 4) hold that. The worker's own threads at the turn are Node's (the main thread,
+`DelayedTaskScheduler` and four `V8Worker`s in the image), none of which is meant to end; which thread ended on `ci`'s
+runner wasn't found. A thread still wrong at the last reading stops the worker, as before.

@@ -296,6 +296,24 @@ export interface TurnCalls {
   readonly seteuid: (id: number) => void;
   /** The /proc status of each of this process's threads (threadStatuses). */
   readonly statuses: () => readonly string[];
+  /** Blocks this thread for so many milliseconds (pauseFor), between two readings of the statuses. */
+  readonly pause: (milliseconds: number) => void;
+}
+
+/**
+ * How many times, TURN_PAUSE_MS apart, the turn reads its threads' statuses again while one isn't the worker's mode:
+ * glibc's `setegid` and `seteuid` change every thread's ids but one that is ending, which runs none of the worker's
+ * code again and leaves /proc/self/task once it has ended (glibc's `setxid_mark_thread` skips a thread marked as
+ * exiting). `ci`'s first run at the second commit of PR #135 found one such thread, its effective group changed and its
+ * effective user not, as it ended between the two calls. A thread that is still wrong after about a second stops the
+ * worker.
+ */
+export const TURN_READINGS = 100;
+export const TURN_PAUSE_MS = 10;
+
+/** Blocks this thread for `milliseconds`: Atomics.wait on a value nothing changes. */
+export function pauseFor(milliseconds: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
 }
 
 /**
@@ -380,18 +398,19 @@ function errorCode(error: unknown): string {
  * to the real one, root's, which is how PR #132's start on Fly found the worker ("uid 0, euid 0, egid 0"), while this
  * session's kernel and Docker's keep it (docs/plans/api-b2-worker-turn.md section 0). As the effective uid leaves 0,
  * Linux empties the effective set and keeps setuid, setgid and kill in the permitted one (the real uid is 0), and the
- * turn reads every thread's status after it to check that it is so (turnedAsFly). Any other start is left as it is,
- * for photoUserFor to judge, and /etc/passwd isn't read for it. Returns whether it turned. Throws, having changed
- * nothing, when /etc/passwd can't be read or WORKER_USER isn't a user in it with an id and group of its own, neither
- * root's, or when its groups aren't that group alone; and throws, saying the failed call's error code or what it found,
- * when a call fails or a thread isn't then as turnedAsFly says. Each line is the worker's own, with no error's words
- * (T52). Its arguments are this process's but in the tests.
+ * turn reads every thread's status after it to check that it is so (turnedAsFly), and reads them again while one isn't,
+ * as a thread that is ending keeps its ids until it has gone (TURN_READINGS). Any other start is left as it is, for
+ * photoUserFor to judge, and /etc/passwd isn't read for it. Returns whether it turned. Throws, having changed nothing,
+ * when /etc/passwd can't be read or WORKER_USER isn't a user in it with an id and group of its own, neither root's, or
+ * when its groups aren't that group alone; and throws, saying the failed call's error code or what it found, when a
+ * call fails or a thread is still not as turnedAsFly says at the last reading. Each line is the worker's own, with no
+ * error's words (T52). Its arguments are this process's but in the tests.
  */
 export function turnToWorkerUser(
   ids: Ids = idsOf(),
   status: string = readFileSync("/proc/self/status", "latin1"),
   passwd: () => string = () => readFileSync("/etc/passwd", "utf8"),
-  calls: TurnCalls = { ...posix(), statuses: threadStatuses },
+  calls: TurnCalls = { ...posix(), statuses: threadStatuses, pause: pauseFor },
 ): boolean {
   if (!(ids.uid === 0 && ids.euid === 0 && ids.egid === 0 && startedAsFly(status))) return false;
   let users: string;
@@ -429,16 +448,19 @@ export function turnToWorkerUser(
       throw new Error(`${failed} (${name} failed: ${errorCode(error)})`, { cause: error });
     }
   }
-  let statuses: readonly string[];
-  try {
-    statuses = calls.statuses();
-  } catch (error) {
-    throw new Error(`${failed} (its threads' status couldn't be read: ${errorCode(error)})`, { cause: error });
+  for (let reading = 1; ; reading += 1) {
+    let statuses: readonly string[];
+    try {
+      statuses = calls.statuses();
+    } catch (error) {
+      throw new Error(`${failed} (its threads' status couldn't be read: ${errorCode(error)})`, { cause: error });
+    }
+    if (statuses.length === 0) throw new Error(`${failed} (it found no thread's status)`);
+    const wrong = statuses.find((each) => !turnedAsFly(each, user));
+    if (wrong === undefined) return true;
+    if (reading === TURN_READINGS) throw new Error(`${failed} (it found ${turnFactsSaid(wrong)})`);
+    calls.pause(TURN_PAUSE_MS);
   }
-  if (statuses.length === 0) throw new Error(`${failed} (it found no thread's status)`);
-  const wrong = statuses.find((each) => !turnedAsFly(each, user));
-  if (wrong !== undefined) throw new Error(`${failed} (it found ${turnFactsSaid(wrong)})`);
-  return true;
 }
 
 /**

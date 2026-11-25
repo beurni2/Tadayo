@@ -17,6 +17,7 @@ import {
   IMAGE_MARKER,
   inImage,
   NO_INSPECTOR,
+  pauseFor,
   photoUserFor,
   startFactsSaid,
   type StartFacts,
@@ -24,6 +25,8 @@ import {
   SweepFailed,
   SWEEP_PROGRAM,
   SWEEP_SECONDS,
+  TURN_PAUSE_MS,
+  TURN_READINGS,
   turnOrStop,
   turnToWorkerUser,
   WORKER_USER,
@@ -331,7 +334,9 @@ const TURN_FAILED = "worker: it couldn't take node's effective group and user as
  * it: the start's fields (`start`, over ROOT_AS_FLY's), with the effective and file system ids each call set, and the
  * effective set emptied once the effective uid isn't 0. With `ignore`, that call changes nothing; with `realToo`,
  * `seteuid` changes the real and saved uid too, as `setuid` would; with `keepEffective`, the effective set stays, as
- * under SECBIT_NO_SETUID_FIXUP; with `stuckThread`, a second thread keeps the start's ids.
+ * under SECBIT_NO_SETUID_FIXUP; with `stuckThread`, a second thread keeps the start's ids; with `endingThread`, a second
+ * thread, as glibc leaves one that ends between the two calls (its effective group changed, its effective user not), is
+ * there for that many readings, then gone. Each pause between readings is recorded too.
  */
 function recordedCalls(
   start: Readonly<Record<string, string | undefined>> = {},
@@ -340,10 +345,12 @@ function recordedCalls(
     readonly realToo?: boolean;
     readonly keepEffective?: boolean;
     readonly stuckThread?: boolean;
+    readonly endingThread?: number;
   } = {},
 ) {
   const asked: string[] = [];
   const ids = { uid: 0, euid: 0, egid: 0 };
+  let readings = 0;
   const statusOf = (now: typeof ids, effective: string) =>
     startedWith({
       ...ROOT_FIELDS,
@@ -370,9 +377,15 @@ function recordedCalls(
           ids,
           ids.euid !== 0 && options.keepEffective !== true ? "0000000000000000" : "00000000000000e0",
         );
-        return options.stuckThread === true
-          ? [turned, statusOf({ uid: 0, euid: 0, egid: 0 }, "00000000000000e0")]
-          : [turned];
+        readings += 1;
+        if (options.stuckThread === true) return [turned, statusOf({ uid: 0, euid: 0, egid: 0 }, "00000000000000e0")];
+        if (readings <= (options.endingThread ?? 0)) {
+          return [turned, statusOf({ uid: 0, euid: 0, egid: ids.egid }, "00000000000000e0")];
+        }
+        return [turned];
+      },
+      pause: (milliseconds: number) => {
+        asked.push(`pause ${String(milliseconds)}`);
       },
     },
   };
@@ -413,6 +426,33 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
       turnToWorkerUser(ROOT, startedWith({ ...ROOT_FIELDS, Groups: "1000" })().status, () => PASSWD, unspaced),
     ).toBe(true);
     expect(bare).toEqual(["setegid 1000", "seteuid 1000"]);
+  });
+
+  it("reads the threads' statuses again while one is ending, as glibc's calls leave it, and turns once it has gone", () => {
+    // `ci`'s first run at PR #135's second commit: a thread that ended between the two calls kept its effective user,
+    // root's, and was still in /proc/self/task when the statuses were first read.
+    for (const ending of [1, 2, TURN_READINGS - 1]) {
+      const { asked, calls } = recordedCalls({}, { endingThread: ending });
+      expect(
+        turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, calls),
+        String(ending),
+      ).toBe(true);
+      expect(asked).toEqual([
+        "setegid 1000",
+        "seteuid 1000",
+        ...Array.from({ length: ending }, () => `pause ${String(TURN_PAUSE_MS)}`),
+      ]);
+    }
+    // One still there at the last reading stops the worker, saying what it found.
+    const { calls } = recordedCalls({}, { endingThread: TURN_READINGS });
+    expect(thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, calls))).toMatch(
+      /^worker: it couldn't take node's effective group and user as it started \(it found Uid 0 0 0 0, Gid 0 1000 0 1000, /,
+    );
+    // About a second in all, and the pause really blocks.
+    expect(TURN_READINGS * TURN_PAUSE_MS).toBe(1000);
+    const started = performance.now();
+    pauseFor(30);
+    expect(performance.now() - started).toBeGreaterThanOrEqual(29);
   });
 
   it("leaves any other start as it is, for photoUserFor to judge, and reads no /etc/passwd for it", () => {
@@ -501,7 +541,12 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
       const line = thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, calls));
       expect(line.startsWith(`${TURN_FAILED} (`), line).toBe(true);
       expect(line.slice(TURN_FAILED.length), JSON.stringify(made)).toMatch(found);
-      expect(asked, JSON.stringify(made)).toEqual(["setegid 1000", "seteuid 1000"]);
+      // The statuses are read TURN_READINGS times, a pause between each two, before a thread still wrong stops it.
+      expect(asked, JSON.stringify(made)).toEqual([
+        "setegid 1000",
+        "seteuid 1000",
+        ...Array.from({ length: TURN_READINGS - 1 }, () => `pause ${String(TURN_PAUSE_MS)}`),
+      ]);
     };
     // A call that changed nothing.
     fails(/^ \(it found Uid 0 1000 0 1000, Gid 0 0 0 0, /, {}, { ignore: "setegid" });
@@ -534,6 +579,9 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
       },
       statuses: () => {
         throw new Error("statuses aren't read");
+      },
+      pause: () => {
+        throw new Error("nothing pauses");
       },
     });
     expect(thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, refusing("EPERM")))).toBe(
