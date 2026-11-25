@@ -1,0 +1,80 @@
+ci: unit: `test` in apps/web, packages/contracts, packages/domain, services/api, services/worker, tools/ops
++ pnpm -r run test
+Scope: 7 of 8 workspace projects
+apps/web test$ vitest run
+packages/domain test$ vitest run
+packages/contracts test$ vitest run
+packages/contracts test: 
+packages/contracts test:  RUN  v5.0.5 /home/user/tadayo-a14/packages/contracts
+packages/contracts test: 
+apps/web test: 
+apps/web test:  RUN  v5.0.5 /home/user/tadayo-a14/apps/web
+apps/web test: 
+packages/domain test: 
+packages/domain test:  RUN  v5.0.5 /home/user/tadayo-a14/packages/domain
+packages/domain test: 
+apps/web test: 
+apps/web test:  Test Files  2 passed (2)
+apps/web test:       Tests  47 passed (47)
+apps/web test:    Start at  21:25:22
+apps/web test:    Duration  1.31s (tests 67%, import 16%, transform 14%, worker 3%)
+apps/web test: 
+apps/web test: Done
+packages/contracts test: 
+packages/contracts test:  Test Files  2 passed (2)
+packages/contracts test:       Tests  251 passed (251)
+packages/contracts test:    Start at  21:25:22
+packages/contracts test:    Duration  7.50s (tests 74%, import 18%, transform 8%)
+packages/contracts test: 
+packages/contracts test: Done
+packages/domain test: 
+packages/domain test:  Test Files  34 passed (34)
+packages/domain test:       Tests  516 passed (516)
+packages/domain test:    Start at  21:25:22
+packages/domain test:    Duration  10.47s (tests 90%, import 6%, transform 3%, worker 1%)
+packages/domain test: 
+packages/domain test:     Isolate  34 workers spawned · ~179ms startup each (spawn + environment, per file)
+packages/domain test:              at least ~1.85s faster with isolate: false — reuses workers across files instead of one per file
+packages/domain test: 
+packages/domain test: Done
+services/api test$ vitest run
+services/worker test$ vitest run
+tools/ops test$ vitest run
+tools/ops test: 
+tools/ops test:  RUN  v5.0.5 /home/user/tadayo-a14/tools/ops
+tools/ops test: 
+services/api test: 
+services/api test:  RUN  v5.0.5 /home/user/tadayo-a14/services/api
+services/api test: 
+services/worker test: 
+services/worker test:  RUN  v5.0.5 /home/user/tadayo-a14/services/worker
+services/worker test: 
+tools/ops test: 
+tools/ops test:  Test Files  24 passed (24)
+tools/ops test:       Tests  494 passed (494)
+tools/ops test:    Start at  21:25:33
+tools/ops test:    Duration  13.67s (tests 79%, import 15%, transform 4%, worker 2%)
+tools/ops test: 
+tools/ops test:     Isolate  24 workers spawned · ~438ms startup each (spawn + environment, per file)
+tools/ops test:              at least ~3.06s faster with isolate: false — reuses workers across files instead of one per file
+tools/ops test: 
+tools/ops test: Done
+services/api test: (node:6795) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+services/api test: (Use `node --trace-warnings ...` to show where the warning was created)
+services/api test: 
+services/api test:  Test Files  24 passed (24)
+services/api test:       Tests  421 passed (421)
+services/api test:    Start at  21:25:33
+services/api test:    Duration  33.80s (tests 72%, import 25%, transform 3%)
+services/api test: 
+services/api test:     Isolate  24 workers spawned · ~365ms startup each (spawn + environment, per file)
+services/api test:              at least ~2.56s faster with isolate: false — reuses workers across files instead of one per file
+services/api test: 
+services/api test: Done
+services/worker test: 
+services/worker test:  Test Files  12 passed (12)
+services/worker test:       Tests  150 passed (150)
+services/worker test:    Start at  21:25:33
+services/worker test:    Duration  205.85s (tests 99%)
+services/worker test: 
+services/worker test: Done

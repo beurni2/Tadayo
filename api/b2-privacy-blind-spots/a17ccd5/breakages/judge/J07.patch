@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..a1b84b0b 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -158,7 +158,6 @@ export function mayView(seen: HomeSeen, drop: string): boolean {
+     found.state === "active" &&
+     day.status === "scheduled" &&
+     world.clubs.get(day.club)?.suspendedAt === null &&
+-    (star.leftAt === null || !before(star.leftAt, day.revealAt)) &&
+     (starAsked === null || !before(starAsked, day.revealAt)) &&
+     world.accounts.get(author.account)?.state === "active" &&
+     !blocked &&

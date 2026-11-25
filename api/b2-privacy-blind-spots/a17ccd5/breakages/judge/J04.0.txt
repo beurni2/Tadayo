@@ -1,0 +1,70 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 3 failed) 34ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (4)
+     × refuses on each of its conditions alone 11ms
+   ❯ the open day's page (pageFor; T35; addendum 4) (3)
+     × leaves out what the viewer may not see 3ms
+     × refuses a page with a reaction or a comment, the viewer's own favourite, or more than 36 drops 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)
+   Start at  21:22:46
+   Duration  409ms (import 67%, transform 18%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > refuses on each of its conditions alone
+AssertionError: the drop held: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/privacy/home.test.ts:201:88
+    199|       ["the reveal not reached", seen(world(), "usr_cleo", REVEAL.subt…
+    200|     ];
+    201|     for (const [name, one, id = "drp_ben"] of refusing) expect(mayView…
+       |                                                                                        ^
+    202|   });
+    203|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/home.test.ts > the open day's page (pageFor; T35; addendum 4) > leaves out what the viewer may not see
+AssertionError: expected [ 'drp_ana', 'drp_ben' ] to deeply equal [ 'drp_ana' ]
+
+- Expected
++ Received
+
+  [
+    "drp_ana",
++   "drp_ben",
+  ]
+
+ ❯ src/privacy/home.test.ts:261:45
+    259|     const page = pageFor(seen(withDrop("drp_ben", { state: "held" })),…
+    260|     if (page === "refused") throw new Error("refused");
+    261|     expect(page.drops.map((one) => one.id)).toEqual(["drp_ana"]);
+       |                                             ^
+    262|     const blocked = pageFor(
+    263|       seen(world(), "usr_cleo", OPEN, { blocks: [["usr_cleo", "usr_ben…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/home.test.ts > the open day's page (pageFor; T35; addendum 4) > refuses a page with a reaction or a comment, the viewer's own favourite, or more than 36 drops
+AssertionError: expected 'refused' not to be 'refused' // Object.is equality
+ ❯ src/privacy/home.test.ts:285:11
+    283|         "itv_cleo",
+    284|       ),
+    285|     ).not.toBe("refused");
+       |           ^
+    286|     const many = (count: number) =>
+    287|       changed((parts) => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

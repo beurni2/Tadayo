@@ -1,0 +1,14 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..783f0e74 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -339,8 +339,8 @@ export function homeFor(seen: HomeSeen, club: string): Record<string, unknown> |
+     club: ref,
+     club_today: now.toZonedDateTimeISO(timezone).toPlainDate().toString(),
+   };
+-  if (row.suspendedAt !== null) return { mode: "unavailable", ...base };
+   if (!roster.activated) return { mode: "awaiting_activation", ...base };
++  if (row.suspendedAt !== null) return { mode: "unavailable", ...base };
+   const days = daysOf(world, club, now);
+   const open = days.open as { id: string; star: { membership_id: string } } | undefined;
+   if (open !== undefined) {

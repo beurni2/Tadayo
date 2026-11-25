@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 1 failed) 23ms
+   ❯ Home's modes (homeFor) (3)
+     × waits for the next day before it opens, and pauses or has no days once none is coming 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  21:23:04
+   Duration  423ms (import 69%, transform 19%, tests 9%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's modes (homeFor) > waits for the next day before it opens, and pauses or has no days once none is coming
+AssertionError: expected { mode: 'paused', …(4) } to match object { mode: 'waiting' }
+(8 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "mode": "waiting",
++   "mode": "paused",
+  }
+
+ ❯ src/privacy/home.test.ts:406:84
+    404|       w.members.set("itv_cleo", member("usr_cleo", "Cleo", { leftAt: C…
+    405|     });
+    406|     expect(homeFor(seen(aloneWithNext, "usr_ana", CLOSE.add({ hours: 1…
+       |                                                                                    ^
+    407|       mode: "waiting",
+    408|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

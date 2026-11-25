@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 1 failed) 21ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (4)
+     × holds the star's leaving and deletion to the reveal, and a block to its two people 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  21:22:57
+   Duration  387ms (import 70%, transform 20%, tests 8%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > holds the star's leaving and deletion to the reveal, and a block to its two people
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/home.test.ts:210:81
+    208|
+    209|   it("holds the star's leaving and deletion to the reveal, and a block…
+    210|     expect(mayView(seen(withMember("itv_ana", { leftAt: REVEAL })), "d…
+       |                                                                                 ^
+    211|     expect(mayView(seen(withAccount("usr_ana", { deletionRequestedAt: …
+    212|     expect(mayView(seen(world(), "usr_cleo", OPEN, { blocks: [["usr_an…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

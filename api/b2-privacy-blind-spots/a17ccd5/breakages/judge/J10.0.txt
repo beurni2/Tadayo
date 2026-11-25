@@ -1,0 +1,169 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 3 failed) 42ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (4)
+     × refuses on each of its conditions alone 11ms
+   ❯ the open day's page (pageFor; T35; addendum 4) (3)
+     × leaves out what the viewer may not see 3ms
+   ❯ the recent days (recentFor; D08) (2)
+     × lists the six newest closed days that hold a drop the viewer may see, newest first 7ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)
+   Start at  21:22:53
+   Duration  435ms (import 67%, transform 18%, tests 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > refuses on each of its conditions alone
+AssertionError: the viewer's block of the author: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/privacy/home.test.ts:201:88
+    199|       ["the reveal not reached", seen(world(), "usr_cleo", REVEAL.subt…
+    200|     ];
+    201|     for (const [name, one, id = "drp_ben"] of refusing) expect(mayView…
+       |                                                                                        ^
+    202|   });
+    203|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/home.test.ts > the open day's page (pageFor; T35; addendum 4) > leaves out what the viewer may not see
+AssertionError: expected [ 'drp_ana', 'drp_ben' ] to deeply equal [ 'drp_ana' ]
+
+- Expected
++ Received
+
+  [
+    "drp_ana",
++   "drp_ben",
+  ]
+
+ ❯ src/privacy/home.test.ts:268:48
+    266|     );
+    267|     if (blocked === "refused") throw new Error("refused");
+    268|     expect(blocked.drops.map((one) => one.id)).toEqual(["drp_ana"]);
+       |                                                ^
+    269|   });
+    270|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/home.test.ts > the recent days (recentFor; D08) > lists the six newest closed days that hold a drop the viewer may see, newest first
+AssertionError: expected [ Array(6) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "cover_drop_id": "drp_1",
++     "occurrence": {
++       "close_at": "2026-11-01T06:00:00Z",
++       "club_id": "clb_here",
++       "id": "occ_1",
++       "local_date": "2026-10-31",
++       "phase": "past",
++       "reveal_at": "2026-10-31T12:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "itv_ana",
++       },
++     },
++   },
++   {
++     "cover_drop_id": "drp_2",
++     "occurrence": {
++       "close_at": "2026-10-25T06:00:00Z",
++       "club_id": "clb_here",
++       "id": "occ_2",
++       "local_date": "2026-10-24",
++       "phase": "past",
++       "reveal_at": "2026-10-24T12:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "itv_ana",
++       },
++     },
++   },
++   {
++     "cover_drop_id": "drp_3",
++     "occurrence": {
++       "close_at": "2026-10-18T06:00:00Z",
++       "club_id": "clb_here",
++       "id": "occ_3",
++       "local_date": "2026-10-17",
++       "phase": "past",
++       "reveal_at": "2026-10-17T12:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "itv_ana",
++       },
++     },
++   },
++   {
++     "cover_drop_id": "drp_4",
++     "occurrence": {
++       "close_at": "2026-10-11T06:00:00Z",
++       "club_id": "clb_here",
++       "id": "occ_4",
++       "local_date": "2026-10-10",
++       "phase": "past",
++       "reveal_at": "2026-10-10T12:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "itv_ana",
++       },
++     },
++   },
++   {
++     "cover_drop_id": "drp_5",
++     "occurrence": {
++       "close_at": "2026-10-04T06:00:00Z",
++       "club_id": "clb_here",
++       "id": "occ_5",
++       "local_date": "2026-10-03",
++       "phase": "past",
++       "reveal_at": "2026-10-03T12:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "itv_ana",
++       },
++     },
++   },
++   {
++     "cover_drop_id": "drp_6",
++     "occurrence": {
++       "close_at": "2026-09-27T06:00:00Z",
++       "club_id": "clb_here",
++       "id": "occ_6",
++       "local_date": "2026-09-26",
++       "phase": "past",
++       "reveal_at": "2026-09-26T12:00:00Z",
++       "star": {
++         "display_name": "Ana",
++         "membership_id": "itv_ana",
++       },
++     },
++   },
++ ]
+
+ ❯ src/privacy/home.test.ts:332:21
+    330|     // A day whose only drop the viewer can't see isn't listed.
+    331|     const blocked = recentFor(seen(past(), "usr_cleo", OPEN, { blocks:…
+    332|     expect(blocked).toEqual([]);
+       |                     ^
+    333|   });
+    334|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

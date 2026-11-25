@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 1 failed) 22ms
+   ❯ Home's modes (homeFor) (3)
+     × is unavailable in a suspended club, awaiting activation before it starts, and the open day's page while one is open 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  21:23:05
+   Duration  448ms (import 60%, transform 32%, tests 7%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's modes (homeFor) > is unavailable in a suspended club, awaiting activation before it starts, and the open day's page while one is open
+AssertionError: expected { mode: 'awaiting_activation', …(3) } to match object { mode: 'unavailable' }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "mode": "unavailable",
++   "mode": "awaiting_activation",
+  }
+
+ ❯ src/privacy/home.test.ts:380:74
+    378|     expect(homeFor({ ...seen(), rows: clubRows(false) }, CLUB)).toMatc…
+    379|     // Suspended comes before awaiting activation, in the contract's o…
+    380|     expect(homeFor({ ...seen(suspended), rows: clubRows(false) }, CLUB…
+       |                                                                          ^
+    381|     const open = homeFor(seen(), CLUB);
+    382|     expect(open).toMatchObject({ mode: "day", day: { stage: "revealed"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

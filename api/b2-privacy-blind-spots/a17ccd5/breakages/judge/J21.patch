@@ -1,0 +1,15 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..b3208e64 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -369,9 +369,9 @@ export function homeFor(seen: HomeSeen, club: string): Record<string, unknown> |
+       recent_days: recentFor(seen, club),
+     };
+   }
+-  if (days.next !== undefined) return { mode: "waiting", ...base, next: days.next, recent_days: recentFor(seen, club) };
+   const active = [...world.members.values()].filter((one) => one.club === club && one.leftAt === null).length;
+   if (active < 2) return { mode: "paused", ...base, recent_days: recentFor(seen, club) };
++  if (days.next !== undefined) return { mode: "waiting", ...base, next: days.next, recent_days: recentFor(seen, club) };
+   return { mode: "no_days", ...base };
+ }
+ 

@@ -1,0 +1,104 @@
+[
+ {
+  "name": "B7",
+  "what": "Home's time from `?t=` by a cast to ServerNow",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B7",
+  "what": "Home's time from `?t=` by a cast to ServerNow",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B8",
+  "what": "Home's time from If-Modified-Since by a cast to ServerNow",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B8",
+  "what": "Home's time from If-Modified-Since by a cast to ServerNow",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B9",
+  "what": "Home's time from `?t=` by a typed query whose row says it holds a ServerNow, with no cast (the instant bound as a Temporal.Instant, which the API's instant type takes)",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B9",
+  "what": "Home's time from `?t=` by a typed query whose row says it holds a ServerNow, with no cast (the instant bound as a Temporal.Instant, which the API's instant type takes)",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B13",
+  "what": "Home's time from `?since=` by a typed query whose row is a named type, so the query's line never says ServerNow (round 2's R2-1)",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B13",
+  "what": "Home's time from `?since=` by a typed query whose row is a named type, so the query's line never says ServerNow (round 2's R2-1)",
+  "run": "matrix: member in the audience (registered as a miss)",
+  "exit": 0,
+  "verdict": "passed, a miss registered beforehand",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B14",
+  "what": "Home's time from `?since=` by a query whose rows are typed by their variable, with no type argument and no cast (round 2's R2-1)",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B14",
+  "what": "Home's time from `?since=` by a query whose rows are typed by their variable, with no type argument and no cast (round 2's R2-1)",
+  "run": "matrix: member in the audience (registered as a miss)",
+  "exit": 0,
+  "verdict": "passed, a miss registered beforehand",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B15",
+  "what": "Home's `server_now` from `?since=`, with no cast: `homeBody` takes a plain Temporal.Instant (round 2's R2-3, out of this slice's reach)",
+  "run": "unit: src/time/one-clock.test.ts (registered as a miss)",
+  "exit": 0,
+  "verdict": "passed, a miss registered beforehand",
+  "missing": []
+ },
+ {
+  "name": "B15",
+  "what": "Home's `server_now` from `?since=`, with no cast: `homeBody` takes a plain Temporal.Instant (round 2's R2-3, out of this slice's reach)",
+  "run": "matrix: member in the audience (registered as a miss)",
+  "exit": 0,
+  "verdict": "passed, a miss registered beforehand",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ }
+]

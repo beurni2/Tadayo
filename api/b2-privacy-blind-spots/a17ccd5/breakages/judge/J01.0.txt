@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 1 failed) 21ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (4)
+     × refuses on each of its conditions alone 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  21:22:43
+   Duration  364ms (import 65%, transform 18%, tests 9%, worker 4%, environment 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > refuses on each of its conditions alone
+AssertionError: the viewer's account being deleted: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/privacy/home.test.ts:201:88
+    199|       ["the reveal not reached", seen(world(), "usr_cleo", REVEAL.subt…
+    200|     ];
+    201|     for (const [name, one, id = "drp_ben"] of refusing) expect(mayView…
+       |                                                                                        ^
+    202|   });
+    203|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

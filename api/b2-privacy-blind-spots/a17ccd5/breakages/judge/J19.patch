@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..1af20745 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -201,7 +201,7 @@ export function pageFor(
+       ([a, x], [b, y]) =>
+         Number(y.author === found.star) - Number(x.author === found.star) ||
+         Temporal.Instant.compare(at(a), at(b)) ||
+-        byBytes(a, b),
++        a.localeCompare(b),
+     );
+   // B6's rows the page would show this viewer: anyone's reaction or comment, and the viewer's own favourite.
+   const later = (id: string) => home.shared.has(id) || (home.favoured.get(id)?.has(viewer) ?? false);

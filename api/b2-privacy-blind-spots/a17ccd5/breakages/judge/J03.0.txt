@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 1 failed) 25ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (4)
+     × refuses on each of its conditions alone 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  21:22:45
+   Duration  399ms (import 67%, transform 22%, tests 9%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > refuses on each of its conditions alone
+AssertionError: the viewer's interval ended: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/privacy/home.test.ts:201:88
+    199|       ["the reveal not reached", seen(world(), "usr_cleo", REVEAL.subt…
+    200|     ];
+    201|     for (const [name, one, id = "drp_ben"] of refusing) expect(mayView…
+       |                                                                                        ^
+    202|   });
+    203|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
