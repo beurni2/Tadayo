@@ -37,6 +37,7 @@ import { LOCK_WAIT_MS, STATEMENT_MS } from "./generation.ts";
 import { prepareIsolated } from "./image-process.ts";
 import type { Prepared } from "./image.ts";
 import { FailedForGood, finishEvent, type Handler, type OutboxEvent } from "./outbox.ts";
+import type { PhotoUser } from "./privileges.ts";
 import type { SafetyProvider } from "./safety.ts";
 import { renditionKey, type WorkerStorage } from "./storage.ts";
 
@@ -58,6 +59,8 @@ export interface PrepareDeps {
   readonly say: (line: string) => void;
   /** The worker's peak memory so far, in bytes; `process.resourceUsage().maxRSS` unless the tests give one. */
   readonly peakBytes?: () => number;
+  /** The user each photo's process runs as (./privileges.ts), or undefined for the worker's own. */
+  readonly photoUser?: PhotoUser | undefined;
 }
 
 /** What a preparation came to, for its line. */
@@ -129,7 +132,9 @@ export async function prepareUpload(deps: PrepareDeps, event: OutboxEvent): Prom
     // Its size alone refuses it (D09), as prepareImage would: no process is started for it (PR #111's round 4, R4-8).
     prepared = { ok: false, rejection: "too_large" };
   } else if (original !== null) {
-    ({ prepared, peakBytes: photoPeakBytes } = await prepareIsolated(original, upload.contentType));
+    ({ prepared, peakBytes: photoPeakBytes } = await prepareIsolated(original, upload.contentType, {
+      user: deps.photoUser,
+    }));
   }
   let outcome: Preparation;
   if (!prepared.ok || original === null) {

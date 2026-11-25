@@ -221,7 +221,7 @@ describe("the worker's process (T1)", () => {
           await new Promise((resolve) => setTimeout(resolve, 50));
         }
         expect(stdout, stderr).toMatch(
-          /^worker: started, making days every minute and preparing uploads\nworker: made \d+ days?\n$/,
+          /^worker: started, making days every minute and preparing uploads, each photo in the worker's own user\nworker: made \d+ days?\n$/,
         );
       } finally {
         child.kill("SIGTERM");

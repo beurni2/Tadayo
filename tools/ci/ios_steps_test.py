@@ -12,6 +12,7 @@ CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
 import base64
+import calendar
 import contextlib
 import hashlib
 import io
@@ -34,6 +35,20 @@ import ios_steps  # noqa: E402
 import toolchain  # noqa: E402
 
 HAS_MAGICK = bool(shutil.which("montage") and shutil.which("identify"))
+# Two reports in macOS's .ips form, a JSON header line and a JSON body, cut to the fields
+# Steps.crash_reports reads and one it leaves out (the threads).
+IPS_CRASH = (json.dumps({"app_name": "kbd", "timestamp": "2026-11-24 04:37:44.00 +0000",
+                         "bug_type": "309", "name": "kbd"}) + "\n"
+             + json.dumps({"pid": 25135, "procName": "kbd",
+                           "procPath": "/Library/Developer/CoreSimulator/kbd",
+                           "exception": {"type": "EXC_CRASH", "signal": "SIGKILL"},
+                           "termination": {"namespace": "JETSAM", "indicator": "Jettisoned"},
+                           "threads": [{"frames": [{"symbol": "main"}]}]}, indent=2))
+IPS_JETSAM = (json.dumps({"bug_type": "298", "timestamp": "2026-11-24 04:37:44.00 +0000"}) + "\n"
+              + json.dumps({"largestProcess": "Tadayo",
+                            "processes": [{"name": "Tadayo", "rpages": 9000},
+                                          {"name": "kbd", "pid": 25135,
+                                           "reason": "vm-pageshortage"}]}))
 SHA = "0123456789abcdef0123456789abcdef01234567"
 RENDER = "design/reference/2.1/F02-upcoming.png"
 
@@ -1939,6 +1954,256 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(code, 0, out)
         self.assertEqual(seen, [(os.path.join(self.repo.out, f"Tests-{v}.xcresult"), False) for v in ("27.2", "26.5")])
 
+    def test_the_crash_and_jetsam_reports_of_a_pass_are_kept(self):
+        # A report macOS writes during a pass (the iOS 27.2 one here) goes to that pass's
+        # logs/crashes-<v>.txt, and the step says which processes they name; one from before
+        # the pass, or not a report, is left out, and a pass with none writes no file.
+        folders = [os.path.join(self.repo.root, "_reports", name) for name in ("user", "system")]
+        for folder in folders:
+            os.makedirs(folder)
+        old = os.path.join(folders[0], "SpringBoard-2026-11-24-040000.ips")
+        with open(old, "w") as f:
+            f.write(IPS_CRASH)
+        os.utime(old, (time.time() - 3600, time.time() - 3600))
+
+        def write_reports(cmd):
+            if UDID in cmd[cmd.index("-destination") + 1]:
+                with open(os.path.join(folders[0], "kbd-2026-11-24-043744.ips"), "w") as f:
+                    f.write(IPS_CRASH)
+                with open(os.path.join(folders[1], "JetsamEvent-2026-11-24-043744.ips"), "w") as f:
+                    f.write(IPS_JETSAM)
+                with open(os.path.join(folders[1], "notes.txt"), "w") as f:
+                    f.write("not a report")
+        shell = FakeShell(effects=[(has("test-without-building"), write_reports)])
+        with mock.patch.object(ios_steps, "CRASH_FOLDERS", tuple(folders)):
+            code, out = self.step("test", shell)
+        self.assertEqual(code, 0, out)
+        self.assertIn("ios: test: 2 crash or jetsam report(s) during the iOS 27.2 pass "
+                      "(logs/crashes-27.2.txt): kbd, jetsam: kbd\n", out)
+        self.assertNotIn("iOS 26.5 pass (logs/crashes", out)
+        self.assertFalse(os.path.exists(self.log("crashes-26.5.txt")))
+        with open(self.log("crashes-27.2.txt")) as f:
+            text = f.read()
+        self.assertNotIn("SpringBoard", text)
+        self.assertNotIn("notes.txt", text)
+        self.assertIn(f"UTC, {os.path.join(folders[0], 'kbd-2026-11-24-043744.ips')}\n", text)
+        # Each process's pid, the only name the app's log gives an ended service.
+        for line in ("name: kbd", "bug_type: 309", "pid: 25135", "procName: kbd",
+                     'exception: {"signal": "SIGKILL", "type": "EXC_CRASH"}',
+                     'termination: {"indicator": "Jettisoned", "namespace": "JETSAM"}',
+                     "largestProcess: Tadayo", "killed: kbd, pid 25135 (vm-pageshortage)"):
+            self.assertIn(line + "\n", text)
+        self.assertNotIn("killed: Tadayo", text)
+        # A thread's frames and registers say nothing of how the process ended: left out.
+        self.assertNotIn("frames", text)
+
+    def test_a_failed_pass_with_no_ended_service_doesn_t_read_the_device_s_log(self):
+        # Read over a whole pass, the device's log never finished in its 90 seconds (`ios`
+        # 45392426021 and 45406524807), so a failed pass whose own log names no ended service
+        # doesn't read it, and says so; a pass that passed doesn't either (iOS 27.2 here).
+        shell = FakeShell(codes=[(lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
+                                  and UDID_26 in cmd[cmd.index("-destination") + 1], 65)])
+        code, out = self.step("test", shell)
+        self.assertEqual(code, 65, out)
+        self.assertEqual([c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]], [])
+        self.assertFalse(os.path.exists(self.log("crashes-27.2.txt")))
+        with open(self.log("crashes-26.5.txt")) as f:
+            self.assertEqual(f.read(), "--- the simulator's log: not read, since "
+                                       "logs/test-26.5.log names no ended service with a UTC "
+                                       "time (SERVICE_ENDED, SERVICE_STAMP)\n")
+
+    def test_a_failed_pass_reads_the_device_s_log_around_each_service_whose_connection_ended(self):
+        # Read over the whole pass, the device's log took longer than its 90 seconds (`ios`
+        # 45392426021). Where the pass's own log says a service's connection ended, only the
+        # minute around the first such line for each pid is read, with that pid's lines, for
+        # three pids at most; repeated lines for a pid don't read again. `log show` reads local
+        # times and the pass's log is UTC, so the runner's zone is set to one that isn't.
+        zone = os.environ.get("TZ")
+        os.environ["TZ"] = "America/Los_Angeles"
+        time.tzset()
+
+        def restore():
+            if zone is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = zone
+            time.tzset()
+        self.addCleanup(restore)
+
+        def line(stamp, pid):
+            return (f"{stamp}+0000 Tadayo[39331:112420] [Client] -[_UIRemoteKeyboards proxy]"
+                    f"_block_invoke Failed to access remote service: Error Domain="
+                    f'NSCocoaErrorDomain Code=4099 "The connection to service with pid {pid} '
+                    f'named (null) was invalidated."\n')
+        ended = ("2026-11-24 12:46:58.617253+0000 Tadayo[39331:112423] [Client] XPC connection "
+                 "invalidated\n" + line("2026-11-24 12:46:59.807475", 25135)
+                 + line("2026-11-24 12:47:30.100000", 25135)
+                 + line("2026-11-24 12:50:01.000001", 777)
+                 + line("2026-11-24 12:51:02.000001", 778)
+                 + line("2026-11-24 12:52:03.000001", 779))
+        failing = (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
+                   and UDID_26 in cmd[cmd.index("-destination") + 1])
+
+        def write_ended(cmd):
+            with open(self.log("test-26.5.log"), "a") as f:
+                f.write(ended)
+        exited = ("2026-11-24 12:46:58.50 Df launchd_sim[1:2] (com.apple.kbd) Service exited due "
+                  "to SIGKILL")
+        shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"),
+                                    (0, "Timestamp               Ty Process[PID:TID]\n"
+                                        + exited + "\n", ""))],
+                          codes=[(failing, 65)], effects=[(failing, write_ended)])
+        code, out = self.step("test", shell)
+        self.assertEqual(code, 65, out)
+
+        def local(stamp, delta):
+            at = calendar.timegm(time.strptime(stamp, "%Y-%m-%d %H:%M:%S")) + delta
+            return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(at))
+        reads = [c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]]
+        expected = [("25135", "2026-11-24 12:46:59"), ("777", "2026-11-24 12:50:01"),
+                     ("778", "2026-11-24 12:51:02")]
+        self.assertEqual(len(reads), len(expected))
+        for read, (pid, stamp) in zip(reads, expected):
+            self.assertEqual(read[3:8], [UDID_26, "log", "show", "--style", "compact"])
+            self.assertEqual(read[8:], [
+                "--start", local(stamp, -60), "--end", local(stamp, 10), "--predicate",
+                f'processIdentifier == {pid} OR eventMessage CONTAINS "{pid}" OR '
+                f"({ios_steps.SERVICE_LOG_PREDICATE})"])
+            self.assertEqual(shell.timeouts[tuple(read)], ios_steps.SERVICE_LOG_TIMEOUT)
+        with open(self.log("crashes-26.5.txt")) as f:
+            text = f.read()
+        self.assertEqual(text, "".join(
+            f"--- the simulator's log: pid {pid}, whose connection ended at {stamp[11:]} UTC, "
+            f"from 60 s before to 10 s after\n{exited}\n" for pid, stamp in expected))
+        # A log that can't be read is said under its heading; a read with no such line writes
+        # nothing.
+        heading = ("--- the simulator's log: pid 25135, whose connection ended at 12:46:59 UTC, "
+                   "from 60 s before to 10 s after")
+        for answer, expected_text in [
+                ((124, "", "xcrun didn't finish in 90 s, so it was stopped"),
+                 f"{heading}\n(the simulator's log couldn't be read: exit 124: xcrun didn't "
+                 f"finish in 90 s, so it was stopped)\n"),
+                ((0, "Timestamp  Ty Process\n", ""), None)]:
+            for name in ("crashes-26.5.txt", "test-26.5.log"):
+                if os.path.exists(self.log(name)):
+                    os.remove(self.log(name))
+            ended = line("2026-11-24 12:46:59.807475", 25135)
+            shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"), answer)],
+                              codes=[(failing, 65)], effects=[(failing, write_ended)])
+            self.step("test", shell)
+            self.assertEqual(
+                len([c for c in shell.commands if c[:3] == ["xcrun", "simctl", "spawn"]]), 1)
+            if expected_text is None:
+                self.assertFalse(os.path.exists(self.log("crashes-26.5.txt")))
+            else:
+                with open(self.log("crashes-26.5.txt")) as f:
+                    self.assertEqual(f.read(), expected_text)
+
+    def test_a_line_split_by_another_write_still_names_its_ended_service(self):
+        # Another write can split a line of the pass's log in two (an item-1 failure's own log,
+        # `ios/b1-create-handoff-9/3a76bdc/ios/logs/test-27.2.log` on `evidence`, lines 5383
+        # and 5384): the pid then comes on a line with no stamp, and takes the last stamp before
+        # it. A stamp that isn't a real time is passed over, as is a pid before any stamp.
+        log = ("connection to service with pid 1 named (null) was invalidated.\n"
+               "2026-11-23 15:48:44.182016+0000 Tadayo[7105:30287] [Client] -[_UIRemoteKeyboards "
+               "proxy]_block_invoke Failed to access remote service: Error Domain=NS"
+               "2026-11-23 15:48:44.182100+0000 Tadayo[7105:30290] [Keyboard] another write\n"
+               "CocoaErrorDomain Code=4099 \"The connection to service with pid 6342 named (null) "
+               "was invalidated.\"\n"
+               "2026-02-30 10:00:00.000000+0000 Tadayo[7105:30287] the connection to service "
+               "with pid 7 named (null) was invalidated.\n")
+        steps = self.steps()
+        os.makedirs(self.repo.out + "/logs", exist_ok=True)
+        with open(self.log("test-27.2.log"), "w") as f:
+            f.write(log)
+        at = calendar.timegm(time.strptime("2026-11-23 15:48:44", "%Y-%m-%d %H:%M:%S"))
+        self.assertEqual(steps.ended_services("27.2"), [("6342", at)])
+        # With only the pids that have no time, nothing is read, and the note says why.
+        with open(self.log("test-27.2.log"), "w") as f:
+            f.write("".join(line for line in log.splitlines(keepends=True)
+                            if "pid 1 " in line or "2026-02-30" in line))
+        steps.shell = FakeShell()
+        steps.service_exits("27.2", UDID)
+        self.assertEqual(steps.shell.commands, [])
+        with open(self.log("crashes-27.2.txt")) as f:
+            self.assertEqual(f.read(), "--- the simulator's log: not read, since "
+                                       "logs/test-27.2.log names no ended service with a UTC "
+                                       "time (SERVICE_ENDED, SERVICE_STAMP)\n")
+
+    def test_a_read_keeps_its_last_lines_where_an_exit_comes(self):
+        # The window ends 10 seconds after the connection ended; what says how the service
+        # ended comes last, so a read with more than SERVICE_LOG_LINES lines keeps the last ones.
+        # A window as busy as item 1's at `ios` 45429690142 (1,853 lines) is kept whole.
+        self.assertGreaterEqual(ios_steps.SERVICE_LOG_LINES, 1853)
+        steps = self.steps()
+        os.makedirs(self.repo.out + "/logs", exist_ok=True)
+        with open(self.log("test-27.2.log"), "w") as f:
+            f.write("2026-11-24 12:46:59.807475+0000 Tadayo[1:2] The connection to service with "
+                    "pid 25135 named (null) was invalidated.\n")
+        many = [f"2026-11-24 12:46:{i % 60:02d}.00 Df kbd[25135:1] line {i}"
+                for i in range(ios_steps.SERVICE_LOG_LINES + 5)]
+        steps.shell = FakeShell(answers=[(starts("xcrun", "simctl", "spawn"),
+                                          (0, "\n".join(many) + "\n", ""))])
+        steps.service_exits("27.2", UDID)
+        with open(self.log("crashes-27.2.txt")) as f:
+            kept = f.read().splitlines()
+        self.assertEqual(kept[1], "(5 earlier line(s) not kept)")
+        self.assertEqual(kept[2:], many[5:])
+
+    def test_the_diagnostics_come_after_the_pass_is_recorded_and_never_decide_a_step(self):
+        # The reads run after the pass is timed and its result written to run.json, so a step
+        # stopped during them keeps the result; and an error in either is written to
+        # crashes-<v>.txt, the other still runs, and the step's code is the tests'.
+        failing = (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"]
+                   and UDID_26 in cmd[cmd.index("-destination") + 1])
+        seen = []
+        shell = FakeShell(codes=[(failing, 65)])
+        with mock.patch.object(ios_steps.Steps, "crash_reports",
+                               side_effect=TypeError("'int' object is not iterable")), \
+                mock.patch.object(ios_steps.Steps, "service_exits",
+                                  side_effect=lambda version, udid: seen.append(
+                                      (version, self.read_record().get(f"tests-{version}")))):
+            code, out = self.step("test", shell)
+        self.assertEqual(code, 65, out)
+        # Only the failed pass reads the log, after its result is in run.json, though the crash
+        # reports' read before it stopped.
+        self.assertEqual(seen, [("26.5", "failed")])
+        for version in ("27.2", "26.5"):
+            with open(self.log(f"crashes-{version}.txt")) as f:
+                self.assertIn("--- the crash reports: stopped by TypeError: 'int' object is not "
+                              "iterable\n", f.read())
+        # A pass that passed keeps its code too.
+        shell = FakeShell()
+        with mock.patch.object(ios_steps.Steps, "service_exits", side_effect=ValueError("x")), \
+                mock.patch.object(ios_steps.Steps, "crash_reports", side_effect=ValueError("y")):
+            code, out = self.step("test", shell)
+        self.assertEqual(code, 0, out)
+        # A report whose processes aren't a list is summarised without them.
+        self.assertEqual(ios_steps.crash_summary(json.dumps({"bug_type": "298"}) + "\n"
+                                                 + json.dumps({"processes": 3})),
+                         ["bug_type: 298"])
+
+    def test_a_report_that_isn_t_ips_or_can_t_be_read_is_kept_as_it_is(self):
+        self.assertEqual(ios_steps.crash_summary("Process: kbd\nException Type: EXC_CRASH\n"),
+                         ["Process: kbd", "Exception Type: EXC_CRASH"])
+        self.assertEqual(ios_steps.crash_summary('{"name":"kbd"}\n{not json'),
+                         ['{"name":"kbd"}', "{not json"])
+        long = "x" * (ios_steps.CRASH_FIELD + 10)
+        self.assertEqual(ios_steps.crash_summary(json.dumps({"name": long}) + "\n{}"),
+                         ["name: " + "x" * ios_steps.CRASH_FIELD + "…"])
+        # A folder that can't be read is said in the log; a missing one is passed over.
+        steps = self.steps()
+        with mock.patch.object(ios_steps, "CRASH_FOLDERS", ("/nonexistent/reports",
+                                                           os.path.join(self.repo.root, "file"))):
+            self.repo.write("file", "not a folder")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                steps.crash_reports("27.2", 0)
+        with open(self.log("crashes-27.2.txt")) as f:
+            text = f.read()
+        self.assertIn("(unreadable folder: " + os.path.join(self.repo.root, "file"), text)
+        self.assertNotIn("nonexistent", text)
+        self.assertEqual(out.getvalue(), "")
+
     def test_an_unpinned_snapshot_runtime_fails_before_any_command(self):
         # Never so with the pins PinsTest checks; were it so, no pass would run the snapshot tests.
         with mock.patch.object(toolchain, "SNAPSHOT_RUNTIME", "27.3"):
@@ -3079,6 +3344,18 @@ class SheetsTest(StepsTest):
         self.assertEqual(montaged, ["F02-upcoming.jpg"])
         # In its own folder, so a push's touched set of the same commit can't replace it.
         self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios-full"})
+
+    def test_a_pass_s_crash_reports_go_up_with_its_logs(self):
+        # The test step's crashes-<v>.txt is a log it writes, not a stray that fails the
+        # evidence job (the first run with it, 45380960480, failed so).
+        for name in ("test-27.2.log", "crashes-27.2.txt", "crashes-26.5.txt"):
+            with open(os.path.join(self.repo.out, "logs", name), "w") as f:
+                f.write("{}\n")
+        code, out, montaged, _ = self.run_sheets([self.entry("A02-email", "new")], shell=FakeShell())
+        self.assertEqual((code, montaged), (0, ["A02-email.jpg"]), out)
+        self.assertNotIn("that no step writes", out)
+        staged = os.listdir(os.path.join(self.stage(), "logs"))
+        self.assertTrue({"crashes-26.5.txt", "crashes-27.2.txt", "test-27.2.log"} <= set(staged))
 
     def test_every_runtime_s_logs_go_up_in_the_run_s_one_folder(self):
         # A stray IOS_VERSION makes no ios-<version>/ folder and drops no sheet.

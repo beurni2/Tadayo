@@ -26,7 +26,8 @@ import TadayoDesign
 /// Retry's hint says what it does.
 struct RootFailure: View {
     enum Kind: Equatable {
-        /// The account couldn't be read, at launch or after a verified code: Retry reads it again.
+        /// The account couldn't be read, at launch or after a verified code, or the keychain
+        /// refused the session's read at launch (FQ89): Retry reads it again.
         case account(RootModel.Failure)
         /// Leave sign-in, the Lab's Log out, or a session the server ended, couldn't remove the
         /// session from this iPhone: Retry leaves again.

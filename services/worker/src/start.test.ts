@@ -10,10 +10,33 @@ import { describe, expect, it } from "vitest";
 
 const ENTRY = join(import.meta.dirname, "main.ts");
 
-/** Runs the entry with `env` alone (and PATH), and returns its exit code and output. */
-function run(env: Record<string, string>): Promise<{ code: number | null; stdout: string; stderr: string }> {
+/**
+ * Runs the entry with `env` alone (and PATH), and returns its exit code and output. With `root`, as root: directly when
+ * this process is root (the session), else through `sudo -n` (CI's runner, whose sudo needs no password), which fails
+ * the test on a runner that can do neither, never skips it.
+ */
+function run(
+  env: Record<string, string>,
+  root = false,
+): Promise<{ code: number | null; stdout: string; stderr: string }> {
+  const settings = { PATH: process.env.PATH ?? "", ...env };
+  const [command, args, given] =
+    !root || process.getuid?.() === 0
+      ? [process.execPath, [ENTRY], settings]
+      : [
+          "sudo",
+          [
+            "-n",
+            "/usr/bin/env",
+            "-i",
+            ...Object.entries(settings).map(([k, v]) => `${k}=${v}`),
+            process.execPath,
+            ENTRY,
+          ],
+          process.env,
+        ];
   return new Promise((done, failed) => {
-    const child = spawn(process.execPath, [ENTRY], { env: { PATH: process.env.PATH ?? "", ...env } });
+    const child = spawn(command, args, { env: given });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));
@@ -71,6 +94,35 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
       expect(result.stderr).toMatch(said);
       expect(result.stdout + result.stderr).not.toContain(marker);
       expect(result.stdout).not.toMatch(/started/);
+    }
+  });
+
+  it("stops before it connects when TADAYO_PHOTO_USER is set but it wasn't started as root with its own user effective", async () => {
+    // This process is root (the session) or the runner's user (CI): neither is the start fly.toml gives the worker.
+    const result = await run({
+      DATABASE_URL: NOWHERE,
+      TADAYO_ENVIRONMENT: "prod",
+      ...SUPABASE,
+      TADAYO_PHOTO_USER: "tadayo-image",
+    });
+    expect(result.code).toBe(1);
+    expect(result.stderr).toBe(
+      "worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root with its own user effective (fly.toml's worker command)\n",
+    );
+    expect(result.stdout).not.toMatch(/started/);
+  });
+
+  it("in the image (NODE_ENV=production), stops before it reads anything when started as root alone", async () => {
+    // The audit's A6: a start as plain root prepared strangers' photos as root. The image sets TADAYO_PHOTO_USER (the
+    // Dockerfile); with it or without it, a start that isn't fly.toml's worker command stops before its first setting
+    // is read, here DATABASE_URL, which isn't given.
+    for (const photo of [{ TADAYO_PHOTO_USER: "tadayo-image" }, {}]) {
+      const result = await run({ NODE_ENV: "production", ...photo }, true);
+      expect(result.code, JSON.stringify(photo)).toBe(1);
+      expect(result.stderr, JSON.stringify(photo)).toBe(
+        "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone\n",
+      );
+      expect(result.stdout).toBe("");
     }
   });
 

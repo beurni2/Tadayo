@@ -242,7 +242,7 @@ final class InvitationUITests: XCTestCase {
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
         app.buttons["Send a code"].tap()
-        XCTAssertTrue(app.textFields["Six-digit code"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.codeFieldCame())
         app.typeText("123456")
         app.buttons["Verify code"].tap()
         XCTAssertTrue(app.buttons["I have an invite"].waitForExistence(timeout: 10))
