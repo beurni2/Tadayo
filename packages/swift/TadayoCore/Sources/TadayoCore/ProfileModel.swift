@@ -93,7 +93,8 @@ import Observation
             await saved(updated)
         } catch .network {
             failure = .network
-        } catch .unavailable {
+        } catch .unavailable, .unreadable {
+            // The server may have saved it: the retry sends the same key.
             failure = .other
         } catch .signedOut {
             pending = nil

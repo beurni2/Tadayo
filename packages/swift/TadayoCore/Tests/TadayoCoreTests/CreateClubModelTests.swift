@@ -110,6 +110,27 @@ import Testing
             clubs.calls.last == "createClub Sunday people America/New_York \(NumberedKeys.key(2))")
     }
 
+    @Test func anUnreadableAnswerKeepsTheKeyForTheRetry() async {
+        // A 2xx this build can't read (a club state it doesn't know yet, say): the server may
+        // have made the club, so the retry sends the same key and makes no second one (T19;
+        // audit A8).
+        let clubs = ScriptedClubs()
+        clubs.createAnswers = [.failure(.unreadable), .success(Sunday.detail())]
+        let create = model(clubs)
+        create.name = "Sunday people"
+        await create.create()
+        #expect(create.failure == .other)
+        #expect(create.name == "Sunday people")
+        #expect(create.canContinue)
+        await create.create()
+        #expect(create.club == Sunday.detail())
+        #expect(
+            clubs.calls
+                == Array(
+                    repeating: "createClub Sunday people America/New_York \(NumberedKeys.key(1))",
+                    count: 2))
+    }
+
     @Test func aSignedOutAnswerEndsTheSession() async {
         let clubs = ScriptedClubs()
         clubs.createAnswers = [.failure(.signedOut)]
@@ -125,7 +146,7 @@ import Testing
     @Test func anAnswerAfterTheSessionEndedIsDropped() async {
         for answer: Result<ClubDetail, APIFailure> in [
             .success(Sunday.detail()), .failure(.network), .failure(.unavailable),
-            .failure(.signedOut), .failure(.refused),
+            .failure(.signedOut), .failure(.refused), .failure(.unreadable),
         ] {
             let clubs = ScriptedClubs()
             clubs.createAnswers = [answer]

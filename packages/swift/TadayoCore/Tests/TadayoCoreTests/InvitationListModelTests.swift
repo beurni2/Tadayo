@@ -299,6 +299,33 @@ import Testing
             ])
     }
 
+    @Test func anUnreadableLinkAnswerKeepsTheKeyForTheRetry() async {
+        // The server answered 2xx and the build couldn't read it: the link may be made, so the
+        // retry sends the same key, and its replay, which has no link, makes one more (T19;
+        // audit A8). Like a busy server's answer, it reads the list no sooner.
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(Sunday.detail())]
+        clubs.memberAnswers = [.success(Sunday.members([Sunday.candidate("cand_sam", "Sam", nil)]))]
+        clubs.linkAnswers = [
+            .failure(.unreadable),
+            .success(Sunday.link("inv_sam", for: "cand_sam", url: nil)),
+            .success(Sunday.link("inv_sam_2", for: "cand_sam", url: Sunday.url(2))),
+        ]
+        let list = model(clubs)
+        await list.load()
+        #expect(await list.linkToShare(for: "cand_sam") == nil)
+        #expect(list.actionFailure == .createLink(name: "Sam", network: false))
+        #expect(clubs.calls.filter { $0.hasPrefix("members") }.count == 1)
+        #expect(await list.linkToShare(for: "cand_sam") == Sunday.url(2))
+        #expect(list.actionFailure == nil)
+        #expect(
+            clubs.calls.filter { $0.hasPrefix("createInvitation") } == [
+                "createInvitation cand_sam club_sunday \(NumberedKeys.key(1))",
+                "createInvitation cand_sam club_sunday \(NumberedKeys.key(1))",
+                "createInvitation cand_sam club_sunday \(NumberedKeys.key(2))",
+            ])
+    }
+
     @Test func createNewLinkMakesOneUnderANewKeyAndReadsTheListAgain() async {
         let clubs = ScriptedClubs()
         clubs.clubAnswers = [.success(Sunday.detail()), .success(Sunday.detail())]
@@ -977,6 +1004,55 @@ import Testing
         #expect(await invite.createLinkAndShare() == nil)
         #expect(invite.failure == .network)
         #expect(invite.failureName == "Sam")
+        #expect(invite.name == "Sam")
+        #expect(await invite.createLinkAndShare() == Sunday.url(1))
+        #expect(
+            clubs.calls.filter { $0.hasPrefix("propose") }
+                == Array(repeating: "propose Sam club_sunday v2 \(NumberedKeys.key(1))", count: 2))
+    }
+
+    @Test func anUnreadableProposalOrLinkKeepsItsKey() async {
+        // Each command answered 2xx and the build couldn't read it: each retry is the same action,
+        // so Sam is proposed once and their link made once (T19; audit A8).
+        let clubs = ScriptedClubs()
+        clubs.proposeAnswers = [.failure(.unreadable), .success(withSam)]
+        clubs.linkAnswers = [
+            .failure(.unreadable),
+            .success(Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1))),
+        ]
+        let invite = model(clubs)
+        invite.name = "Sam"
+        #expect(await invite.createLinkAndShare() == nil)
+        #expect(invite.failure == .other)
+        #expect(invite.name == "Sam")
+        #expect(await invite.createLinkAndShare() == nil)
+        #expect(invite.failure == .other)
+        #expect(invite.candidate?.id == "cand_sam")
+        #expect(await invite.createLinkAndShare() == Sunday.url(1))
+        #expect(
+            clubs.calls == [
+                "propose Sam club_sunday v2 \(NumberedKeys.key(1))",
+                "propose Sam club_sunday v2 \(NumberedKeys.key(1))",
+                "createInvitation cand_sam club_sunday \(NumberedKeys.key(2))",
+                "createInvitation cand_sam club_sunday \(NumberedKeys.key(2))",
+            ])
+    }
+
+    @Test func aProposalAnswerWithoutThePersonKeepsItsKey() async {
+        // The server answered 2xx with a roster that adds no Sam of the caller's: what it did
+        // with the proposal can't be read from it, so the retry sends the same key rather than
+        // propose Sam a second time (T19; audit A8).
+        let clubs = ScriptedClubs()
+        clubs.proposeAnswers = [
+            .success(Sunday.revision([Sunday.candidate("cand_maya", "Maya", .live)])),
+            .success(withSam),
+        ]
+        clubs.linkAnswers = [.success(Sunday.link("inv_sam", for: "cand_sam", url: Sunday.url(1)))]
+        let invite = model(clubs)
+        invite.name = "Sam"
+        #expect(await invite.createLinkAndShare() == nil)
+        #expect(invite.failure == .other)
+        #expect(invite.candidate == nil)
         #expect(invite.name == "Sam")
         #expect(await invite.createLinkAndShare() == Sunday.url(1))
         #expect(
