@@ -1,0 +1,87 @@
+--- 09:45:01 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-25-094501.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-25 09:45:01.00 +0000
+pid: 74634
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.0B5220E2-525A-4A1F-8D22-51AE5C89BCAE
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 74634, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 09:46:31 UTC, /Library/Logs/DiagnosticReports/JetsamEvent-2026-11-25-094627.ips
+bug_type: 298
+timestamp: 2026-11-25 09:46:27.00 +0000
+largestProcess: SimMetalHost (iPhone 17: default
+killed: SetStoreUpdateService, pid 501 (idle-exit)
+killed: MTLCompilerService, pid 508 (idle-exit)
+killed: AppIntentsLiveEntityService, pid 510 (idle-exit)
+killed: SetStoreUpdateService, pid 269 (idle-exit)
+killed: AirPlayXPCHelper, pid 379 (idle-exit)
+killed: SetStoreUpdateService, pid 448 (idle-exit)
+killed: localspeechrecognition, pid 524 (idle-exit)
+killed: SetStoreUpdateService, pid 533 (idle-exit)
+killed: com.apple.ColorSyncXPCAgent, pid 534 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 555 (idle-exit)
+killed: colorsyncd, pid 210 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 556 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 557 (idle-exit)
+killed: findmybeaconingd, pid 260 (idle-exit)
+killed: filederivatived, pid 469 (idle-exit)
+killed: kernelmanager_helper, pid 478 (idle-exit)
+killed: uarpd, pid 101 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 571 (idle-exit)
+killed: CoreThreadCommissionerServiced, pid 573 (idle-exit)
+killed: AudioConverterHardenedService, pid 554 (idle-exit)
+killed: AudioConverterService, pid 553 (idle-exit)
+killed: SetStoreUpdateService, pid 587 (idle-exit)
+killed: assessmentagent, pid 607 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 651 (idle-exit)
+killed: SUCoreHelperService, pid 673 (idle-exit)
+killed: com.apple.Virtualization.AppleVi, pid 630 (idle-exit)
+killed: countryd, pid 282 (idle-exit)
+killed: corerepaird, pid 145 (idle-exit)
+killed: contactsdonationagent, pid 535 (idle-exit)
+killed: localspeechrecognition, pid 543 (idle-exit)
+--- 09:48:46 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-25-094720_sat12-bq155-fbea4b8e-58ca-4faa-a083-3180a082e1f0-E2195E6418B4.diag
+Date/Time:        2026-11-25 09:43:16.745 +0000
+End time:         2026-11-25 09:44:27.031 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: C10842D1-64BC-41D9-8D1D-91616F0A6DBE
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1948d0000
+
+Command:          STExtractionService
+Path:             /Volumes/VOLUME/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.0B5220E2-525A-4A1F-8D22-51AE5C89BCAE"(2902)
+On Behalf Of:     87 samples UNKNOWN [73927] (86 samples originated by UNKNOWN [73872, 74008, 74010], 1 sample originated by trustd [73975])
+Architecture:     arm64
+Parent:           launchd_sim [73865]
+PID:              74599
+
+--- 09:49:25 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-25-094847_sat12-bq155-fbea4b8e-58ca-4faa-a083-3180a082e1f0-E2195E6418B4.diag
+Date/Time:        2026-11-25 09:16:01.793 +0000
+End time:         2026-11-25 09:44:44.411 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 7482BB76-C501-4DE4-8911-B0E63412C0D9
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1948d0000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x19f104000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(769)
+On Behalf Of:     158 samples UNKNOWN [2083, 7688, 20649, 31951, 74819] (158 samples originated by UNKNOWN [222, 20649, 31951, 74819])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              638
