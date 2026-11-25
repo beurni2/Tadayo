@@ -134,7 +134,7 @@ const built: ReadonlySet<string> = new Set(BUILT_OPERATIONS);
 
 describe("a route with no row fails (TECH-DESIGN section 8)", () => {
   it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes'", () => {
-    expect(operations).toHaveLength(67);
+    expect(operations).toHaveLength(68);
     expect(rowProblems(operations, ROWS, { built })).toEqual([]);
   });
 

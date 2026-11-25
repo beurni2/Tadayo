@@ -11,6 +11,7 @@ export { dropReceiptBody, dropRender } from "./drops/drops.ts";
 export { releasedBody, reservationBody } from "./drops/reservations.ts";
 export { uploadBody } from "./media/uploads.ts";
 export { API_POOL, connect, type ApiSql } from "./connection.ts";
+export { HEALTH_MS } from "./health.ts";
 export {
   KeysUnavailable,
   supabaseProject,
