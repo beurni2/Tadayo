@@ -4,9 +4,31 @@
 // with `flyctl`'s own first words and never anything else (docs/plans/api-b0-deploy.md, section 6; T56).
 
 import { describe, expect, it } from "vitest";
-import { FAKE_FLY_TOKEN, fakeSpawn, json, machine, type Reply } from "../test/fake-fly.ts";
-import { flyOf, forDevApp, jsonOf, machineList, machines, why } from "./fly.ts";
+import {
+  eventRow,
+  FAKE_FLY_TOKEN,
+  fakeSpawn,
+  json,
+  logEntries,
+  machine,
+  machineStatus,
+  type Reply,
+  WORKER_ID,
+} from "../test/fake-fly.ts";
+import {
+  exitOf,
+  flyOf,
+  forDevApp,
+  jsonOf,
+  machineEvents,
+  machineList,
+  machineLog,
+  machineReport,
+  machines,
+  why,
+} from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
+import { redactor } from "./output.ts";
 
 const spawned = (over: Partial<Parameters<typeof why>[0]> = {}) => ({
   code: 1,
@@ -309,5 +331,111 @@ describe("jsonOf and machines: what flyctl's list of Machines says", () => {
       expect(message).toMatch(expected);
       expect(message).not.toContain(FAKE_FLY_TOKEN);
     }
+  });
+});
+
+describe("machineReport: what Fly knows of a Machine's last runs, for a run's log", () => {
+  const ENV = { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" };
+  const STATUS = `flyctl machine status ${WORKER_ID} -a tadayo-api-dev`;
+  const LOGS = `flyctl logs -a tadayo-api-dev --machine ${WORKER_ID} --no-tail --json`;
+  const CRASH = eventRow("exited", "exit", "2026-11-25T02:50:12.000Z", { code: 1 });
+  const START = eventRow("started", "start", "2026-11-25T02:50:09.000Z");
+
+  it("asks for the Machine's status and its log by its id, naming the app", async () => {
+    const { spawn, calls } = fakeSpawn([
+      [STATUS, machineStatus(WORKER_ID, [CRASH, START])],
+      [LOGS, logEntries(["worker: the photo user's processes couldn't all be ended as it started"])],
+    ]);
+    const lines = await machineReport(flyOf(spawn, ENV), WORKER_ID, "worker-scale");
+    expect(calls.map((call) => [call.command, ...call.args].join(" "))).toEqual([STATUS, LOGS]);
+    expect(lines).toEqual([
+      `worker-scale: Machine ${WORKER_ID}'s events, as Fly lists them:`,
+      `  ${CRASH}`,
+      `  ${START.trimEnd()}`,
+      `worker-scale: Machine ${WORKER_ID}'s last lines in Fly's log:`,
+      "  2026-11-25T02:50:00.000Z [info] worker: the photo user's processes couldn't all be ended as it started",
+    ]);
+  });
+
+  it("keeps only the event table's rows: not its title, its header, or the VM table's time", async () => {
+    const { spawn } = fakeSpawn([[STATUS, machineStatus(WORKER_ID, [CRASH])]]);
+    expect(await machineEvents(flyOf(spawn, ENV), WORKER_ID)).toEqual([CRASH]);
+  });
+
+  it("reads an exit's code, and whether Fly was asked to stop it or killed it for memory", () => {
+    expect(exitOf(CRASH)).toEqual({ code: 1, requested: false, oomKilled: false });
+    expect(
+      exitOf("exited │ exit │ flyd │ 2026-11-25T02:00:00Z │ exit_code=137,oom_killed=true,requested_stop=false"),
+    ).toEqual({
+      code: 137,
+      requested: false,
+      oomKilled: true,
+    });
+    expect(exitOf(eventRow("stopped", "exit", "2026-11-25T02:00:00Z", { code: 0, requested: true }))?.requested).toBe(
+      true,
+    );
+    expect(exitOf(START)).toBeUndefined();
+  });
+
+  it("reads each entry of the log once, in order, keeping the last 60", async () => {
+    const messages = Array.from({ length: 70 }, (_, index) => `line ${String(index)}`);
+    const { spawn } = fakeSpawn([[LOGS, logEntries(messages)]]);
+    const lines = await machineLog(flyOf(spawn, ENV), WORKER_ID);
+    expect(lines).toHaveLength(60);
+    expect(lines?.[0]).toMatch(/ \[info\] line 10$/);
+    expect(lines?.at(-1)).toMatch(/ \[info\] line 69$/);
+  });
+
+  it("puts each entry on one line, takes out colours and control characters, and cuts a long line", async () => {
+    const { spawn } = fakeSpawn([
+      [LOGS, logEntries(["\x1b[31mred\x1b[0m and a bell\x07", "Error: one\n    at two", "x".repeat(500)])],
+    ]);
+    const lines = (await machineLog(flyOf(spawn, ENV), WORKER_ID)) ?? [];
+    expect(lines[0]).toMatch(/\[info\] red and a bell$/);
+    expect(lines[1]).toMatch(/\[info\] Error: one {5}at two$/);
+    expect(lines[2]?.endsWith("…")).toBe(true);
+    expect(lines[2]?.length).toBe(401);
+  });
+
+  it("leaves a secret a crash printed to the redactor every line an ops script says goes through (main.ts)", async () => {
+    const jwt = ["eyJhbGciOiJIUzI1NiJ9", "eyJyb2xlIjoic2VydmljZV9yb2xlIn0", "c2lnbmF0dXJl"].join(".");
+    const { spawn } = fakeSpawn([
+      [
+        LOGS,
+        logEntries([
+          "Error: connect to postgresql://tadayo_app:hunter2-not-real@db.example.invalid:5432/postgres failed",
+          `apikey ${jwt} refused`,
+          "key sb_secret_abcdefghijklmnop12345 refused",
+        ]),
+      ],
+    ]);
+    const redact = redactor({});
+    const lines = ((await machineLog(flyOf(spawn, ENV), WORKER_ID)) ?? []).map(redact);
+    expect(lines).toHaveLength(3);
+    expect(lines.join("\n")).not.toMatch(/hunter2|tadayo_app|eyJ|sb_secret_/);
+  });
+
+  it("never throws: a call that fails, or prints what it can't read, is a line that says so", async () => {
+    const { spawn } = fakeSpawn([
+      [STATUS, { code: 1, stderr: "Error: unauthorized" }],
+      [LOGS, { stdout: "not json\n}\n" }],
+    ]);
+    expect(await machineReport(flyOf(spawn, ENV), WORKER_ID, "deploy-branch")).toEqual([
+      `deploy-branch: flyctl couldn't say Machine ${WORKER_ID}'s events`,
+      `deploy-branch: Fly's log holds no line of Machine ${WORKER_ID}`,
+    ]);
+    const none = fakeSpawn([]);
+    expect(await machineReport(flyOf(none.spawn, ENV), WORKER_ID, "deploy-branch")).toEqual([
+      `deploy-branch: flyctl couldn't say Machine ${WORKER_ID}'s events`,
+      `deploy-branch: flyctl couldn't read Machine ${WORKER_ID}'s lines in Fly's log`,
+    ]);
+  });
+
+  it("asks nothing for an id that isn't a Machine's", async () => {
+    const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
+    const fly = flyOf(spawn, ENV);
+    expect(await machineEvents(fly, "w1 -a other-app")).toBeUndefined();
+    expect(await machineLog(fly, "--app=other")).toBeUndefined();
+    expect(calls).toEqual([]);
   });
 });

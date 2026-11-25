@@ -201,3 +201,119 @@ export async function machines(fly: Fly): Promise<Machine[]> {
     };
   });
 }
+
+/** A Machine's id, as Fly writes one: 14 hexadecimal digits. */
+export const MACHINE_ID = /^[0-9a-f]{14}$/;
+/** At most this many of a Machine's last lines in Fly's log are printed, and each cut at this length. */
+const LOG_LINES = 60;
+const LINE_CHARS = 400;
+
+// Colours (an escape, `[`, numbers, a letter) and every other control character but the tab. Each regular
+// expression names control characters on purpose, which is what no-control-regex warns of.
+// eslint-disable-next-line no-control-regex
+const COLOURS = /\x1b\[[0-9;]*[A-Za-z]/g;
+// eslint-disable-next-line no-control-regex
+const CONTROLS = /[\x00-\x08\x0b-\x1f\x7f]/g;
+
+/** A line flyctl printed, on one line, with its colours and other control characters taken out and its length cut. */
+function plain(line: string): string {
+  const text = line.replace(COLOURS, "").replace(/\n/g, " ").replace(CONTROLS, "").trimEnd();
+  return text.length > LINE_CHARS ? `${text.slice(0, LINE_CHARS)}…` : text;
+}
+
+/**
+ * The rows of a Machine's "Event Logs" table, as `flyctl machine status <id>` prints it (flyctl 0.5.8's
+ * `internal/command/machine/status.go`): one row an event, its state, kind, source and time, and for an exit
+ * `exit_code=<n>,oom_killed=<bool>,requested_stop=<bool>`. Nothing when flyctl can't say.
+ */
+export async function machineEvents(fly: Fly, id: string): Promise<string[] | undefined> {
+  if (!MACHINE_ID.test(id)) return undefined;
+  let result: Spawned;
+  try {
+    result = await fly.run(["machine", "status", id, "-a", DEV_APP]);
+  } catch {
+    return undefined;
+  }
+  if (result.code !== 0) return undefined;
+  const lines = result.stdout.split("\n").map(plain);
+  const title = lines.findIndex((line) => /^\s*Event Logs\s*$/.test(line));
+  if (title === -1) return undefined;
+  return lines.slice(title + 1).filter((line) => line.trim() !== "" && /\d{4}-\d{2}-\d{2}T/.test(line));
+}
+
+/** An exit among a Machine's events (machineEvents): its code, and whether Fly was asked to stop it. */
+export interface ExitEvent {
+  readonly code: number;
+  readonly requested: boolean;
+  readonly oomKilled: boolean;
+}
+
+export function exitOf(row: string): ExitEvent | undefined {
+  const found = /exit_code=(-?\d+),oom_killed=(true|false),requested_stop=(true|false)/.exec(row);
+  if (found === null) return undefined;
+  return { code: Number(found[1]), oomKilled: found[2] === "true", requested: found[3] === "true" };
+}
+
+/**
+ * A Machine's last lines in Fly's log, oldest first, at most LOG_LINES: `flyctl logs --no-tail --json` prints
+ * what Fly's log buffer holds as one JSON object a line of the log, each indented and closed by a `}` of its own
+ * on a line (flyctl 0.5.8's `logs/entry.go` and `internal/render/render.go`, `json.Encoder` with four spaces).
+ * Each is its time, its level and its message. A secret a crash printed is held back as every line an `ops` script
+ * says is, by the redactor in `main.ts` (output.ts), whose patterns cover a connection string's user and password,
+ * a JSON Web Token and a Supabase secret key, and which holds back the run's own secret values too.
+ */
+export async function machineLog(fly: Fly, id: string): Promise<string[] | undefined> {
+  if (!MACHINE_ID.test(id)) return undefined;
+  let result: Spawned;
+  try {
+    result = await fly.run(["logs", "-a", DEV_APP, "--machine", id, "--no-tail", "--json"]);
+  } catch {
+    return undefined;
+  }
+  if (result.code !== 0) return undefined;
+  const entries: string[] = [];
+  let chunk: string[] = [];
+  for (const line of result.stdout.split("\n")) {
+    chunk.push(line);
+    if (line !== "}") continue;
+    try {
+      const entry = record(JSON.parse(chunk.join("\n")));
+      const message = text(entry?.["message"]);
+      if (message !== undefined) {
+        entries.push(plain(`${text(entry?.["timestamp"]) ?? ""} [${text(entry?.["level"]) ?? ""}] ${message}`));
+      }
+    } catch {
+      // A chunk that isn't one entry is passed over.
+    }
+    chunk = [];
+  }
+  return entries.slice(-LOG_LINES);
+}
+
+/**
+ * What Fly knows of a Machine's last runs, for a run's log once a start or a deploy has gone wrong, or to show one
+ * held: its events (machineEvents) and its last lines in Fly's log (machineLog), each under a line that says what
+ * follows. It never throws: a read that fails is a line that says so, since it is said beside another failure.
+ */
+export async function machineReport(fly: Fly, id: string, label: string): Promise<string[]> {
+  return reportOf(id, label, await machineEvents(fly, id), await machineLog(fly, id));
+}
+
+/** machineReport's lines from events and log lines already read (undefined: flyctl couldn't say). */
+export function reportOf(
+  id: string,
+  label: string,
+  events: readonly string[] | undefined,
+  log: readonly string[] | undefined,
+): string[] {
+  return [
+    ...(events === undefined
+      ? [`${label}: flyctl couldn't say Machine ${id}'s events`]
+      : [`${label}: Machine ${id}'s events, as Fly lists them:`, ...events.map((row) => `  ${row}`)]),
+    ...(log === undefined
+      ? [`${label}: flyctl couldn't read Machine ${id}'s lines in Fly's log`]
+      : log.length === 0
+        ? [`${label}: Fly's log holds no line of Machine ${id}`]
+        : [`${label}: Machine ${id}'s last lines in Fly's log:`, ...log.map((line) => `  ${line}`)]),
+  ];
+}

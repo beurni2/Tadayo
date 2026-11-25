@@ -97,3 +97,59 @@ export const peerList = (names: readonly string[]): Reply =>
       GatewayStatus: null,
     })),
   );
+
+/** A Machine's id as Fly writes one, 14 hexadecimal digits: the worker's on `dev`, as `deploy-dev`'s run printed it. */
+export const WORKER_ID = "84ed273f616468";
+
+/** One event of `flyctl machine status`'s "Event Logs" table: an exit carries its code (flyctl 0.5.8's status.go). */
+export const eventRow = (state: string, kind: string, at: string, exit?: { code: number; requested?: boolean }) =>
+  [
+    state,
+    kind,
+    "flyd",
+    at,
+    exit === undefined
+      ? ""
+      : `exit_code=${String(exit.code)},oom_killed=false,requested_stop=${String(exit.requested ?? false)}`,
+  ].join(" │ ");
+
+/**
+ * What `flyctl machine status <id>` prints, its tables as tablewriter lays them out with no borders: the VM table
+ * (with a time of its own, which isn't an event), then the "Event Logs" table, its title in bold.
+ */
+export const machineStatus = (id: string, rows: readonly string[]): Reply => ({
+  stdout: [
+    `Machine ID: ${id}`,
+    "State: started",
+    "",
+    "\x1b[1mVM\x1b[0m",
+    `  ID      = ${id}`,
+    "  Created = 2026-11-12T03:00:00Z",
+    "",
+    "\x1b[1mEvent Logs\x1b[0m",
+    "STATE │ EVENT │ SOURCE │ TIMESTAMP │ INFO",
+    ...rows,
+    "",
+  ].join("\n"),
+});
+
+/** What `flyctl logs --no-tail --json` prints: each entry by `json.Encoder` with four spaces (render.go). */
+export const logEntries = (messages: readonly string[], id = WORKER_ID): Reply => ({
+  stdout: messages
+    .map((message, index) =>
+      JSON.stringify(
+        {
+          level: "info",
+          instance: id,
+          message,
+          region: "iad",
+          timestamp: `2026-11-25T02:${String(50 + Math.floor(index / 60))}:${String(index % 60).padStart(2, "0")}.000Z`,
+          meta: { instance: id, region: "iad", event: { provider: "app" } },
+        },
+        null,
+        4,
+      ),
+    )
+    .map((text) => `${text}\n`)
+    .join(""),
+});
