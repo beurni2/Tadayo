@@ -1,6 +1,6 @@
 // The root harness of ./privileges.test.ts (docs/plans/api-b2-worker-hardening.md section 3). Run as root, it imports
-// the worker's modules, takes the worker's mode itself as fly.toml's command leaves it (real uid 0; groups, effective
-// group and effective uid an unused id, 64998), and prepares photos with fake children as an unused photo user
+// the worker's modules, takes the worker's mode itself as fly.toml's command and the worker's first module leave it
+// (real uid 0; groups, effective group and effective uid an unused id, 64998), and prepares photos with fake children as an unused photo user
 // (64999). It writes one line of JSON a case to standard output, and asserts nothing: the test says what each must be.
 // With `sweep-timeout`, it gives the sweep a millisecond, and the worker's stop ends it (exit status 1); with
 // `sweep-left`, the photo's user owns a folder holding one of root's, which its sweep can't remove, and the worker's
@@ -9,7 +9,8 @@
 // photo user running, against a database nothing answers for (PR #118's review). It asks for a photo's process with no
 // user in the worker's mode, which must start nothing. With `real-child`, in a mount namespace of its own, it views
 // the checkout read-only from the temporary folder, as the image's /app is read; runs fly.toml's worker command from
-// it, changed only in its user, and the starts short of it, in the image's NODE_ENV (round 3 of PR #118's review);
+// it, exactly as fly.toml has it (its `node` given the worker's unused id in that namespace's /etc/passwd and
+// /etc/group), and the starts short of it, in the image's NODE_ENV (round 3 of PR #118's review);
 // and prepares a real photo with the real child (./image-child.ts) as the photo user (the audit's A6).
 //
 // The fake children are written to a fresh folder under the system's temporary folder, which the photo user can
@@ -441,7 +442,7 @@ function cleanUp() {
 }
 process.on("exit", cleanUp);
 
-/** The worker's mode, as `setpriv --euid --egid --groups` leaves it. */
+/** The worker's mode, with the harness's own ids, as the worker's first module takes it (./turn.ts): in process. */
 function takeWorkersMode() {
   setgroups([WORKER]);
   setegid(WORKER);
@@ -558,11 +559,27 @@ if (process.argv[2] === "real-child-inside") {
     writable = (error as NodeJS.ErrnoException).code === "EROFS" ? "read-only" : `refused: ${String(error)}`;
   }
 
-  // fly.toml's worker command as fly.toml has it, its user `node` (which a runner may not have) made the worker's
-  // unused id, from the view, in the image's NODE_ENV, with no database: it goes past the photo user's check to its
+  // `node`, the user fly.toml's worker command names and the worker turns to (./turn.ts), as the worker's unused id
+  // here: a runner may have no `node`, or one of another id. In this mount namespace alone, /etc/passwd and /etc/group
+  // are copies with any `node` of theirs replaced by one of that id, bound read-only over them, so fly.toml's command
+  // runs exactly as fly.toml has it. The namespace's end takes the binds with it.
+  const withNode = (file: "/etc/passwd" | "/etc/group", line: string | undefined, name: string) => {
+    const copy = join(folder, name);
+    const kept = readFileSync(file, "utf8")
+      .split("\n")
+      .filter((entry) => entry !== "" && !entry.startsWith("node:"));
+    writeFileSync(copy, [...kept, ...(line === undefined ? [] : [line]), ""].join("\n"));
+    chmodSync(copy, 0o644);
+    execFileSync("/usr/bin/mount", ["--bind", "-o", "ro", copy, file]);
+  };
+  withNode("/etc/passwd", `node:x:${String(WORKER)}:${String(WORKER)}::/nonexistent:/usr/sbin/nologin`, "passwd");
+  withNode("/etc/group", `node:x:${String(WORKER)}:`, "group");
+
+  // fly.toml's worker command as fly.toml has it, from the view, in the image's NODE_ENV, with no database: Node starts
+  // as root, the worker's first module takes `node`'s effective ids, and it goes past the photo user's check to its
   // first setting. Each start short of it stops at that check (the audit's A6; round 3 of PR #118's review).
   const command = /^\s*worker\s*=\s*"(.*)"\s*$/m.exec(readFileSync(join(view, "fly.toml"), "utf8"))?.[1] ?? "";
-  const words = command.split(" ").map((word) => word.replace(/=node$/, `=${String(WORKER)}`));
+  const words = command.split(" ");
   const entryAt = words.indexOf("node");
   const entry = words.slice(entryAt);
   const without = (word: string) => words.filter((candidate) => candidate !== word);
@@ -574,9 +591,17 @@ if (process.argv[2] === "real-child-inside") {
     rootsGroup: words.map((word) => (word.startsWith("--groups=") ? `${word},0` : word)),
     euidAlone: ["setpriv", `--euid=${String(WORKER)}`, "--", ...entry],
     rootAlone: entry,
+    // SECBIT_NO_SETUID_FIXUP, which no /proc field shows, keeps the effective set as the effective uid leaves 0: the
+    // turn finds it in each thread's CapEff (turnedAsFly) and stops the worker (round 2 of PR #135's review).
+    keptCapabilities: words.flatMap((word) =>
+      word === "--no-new-privs" ? ["--securebits=+no_setuid_fixup", word] : [word],
+    ),
+    // fly.toml's command before PR #135, which set the effective ids itself: on this kernel, as in Docker, they are
+    // kept, so the worker starts already in its mode, which the turn refuses in the image (round 2 of the review).
+    alreadyTurned: words.flatMap((word) => (word === "--groups=node" ? ["--euid=node", "--egid=node", word] : [word])),
   };
   const ended: Record<string, { code: number | null; stderr: string; stdout: string }> = {};
-  for (const [name, start] of Object.entries(starts)) {
+  const startAs = (name: string, start: readonly string[]) => {
     const [program = "", ...args] = start;
     const run = spawnSync(program, args, {
       cwd: view,
@@ -585,8 +610,16 @@ if (process.argv[2] === "real-child-inside") {
       timeout: 30_000,
     });
     ended[name] = { code: run.status, stderr: run.stderr, stdout: run.stdout };
-  }
-  say({ case: "fly-start", command: entryAt > 0 ? "found" : "missing", ended });
+  };
+  for (const [name, start] of Object.entries(starts)) startAs(name, start);
+  // fly.toml's command once more, with no `node` in /etc/passwd (`setpriv --groups=node` still finds its group in
+  // /etc/group): the worker's first module stops it with its own line (./turn.ts; round 1 of PR #135's review). The
+  // first bind is taken down before, not stacked under it: a bind over a bind's root makes the copy under it a mount
+  // point, which the folder's removal can't then remove.
+  execFileSync("/usr/bin/umount", ["/etc/passwd"]);
+  withNode("/etc/passwd", undefined, "passwd-without-node");
+  startAs("flyWithoutNode", words);
+  say({ case: "fly-start", command: entryAt > 0 ? "found" : "missing", words: starts["fly"], ended });
 
   // A 12-megapixel photo, as a phone's camera makes them: smooth, so it compresses as a photo does.
   const small = await sharp({

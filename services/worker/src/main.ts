@@ -17,7 +17,11 @@
 // (./image-process.ts), and where `sharp` can run only the JPEG, PNG and WebP decoders (./image.ts, spec 33). On Fly
 // that process runs under a user of its own, TADAYO_PHOTO_USER, and every process of that user is ended as the photo's
 // end settles; a sweep that fails stops the worker (./privileges.ts). Its start line says which way photos go.
+//
+// First of all, before any other module of the worker's runs, ./turn.ts takes `node`'s effective group and user when
+// it was started as fly.toml starts it, as root: its import stays first.
 
+import "./turn.ts";
 import { describeFailure, generationPass, passLines } from "./generation.ts";
 import { runLoop } from "./loop.ts";
 import { outboxPass } from "./outbox.ts";
