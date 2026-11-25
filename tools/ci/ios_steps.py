@@ -208,6 +208,20 @@ INVENTORY = "design/reference/INVENTORY.md"
 RENDER_DIRS = ("design/reference/screens", "design/reference/2.1")
 EVIDENCE_BRANCH = "evidence"
 PUSH_ATTEMPTS = 5
+# The evidence job's ImageMagick install (`Steps.imagemagick`), in a step of 5 minutes
+# (`.github/workflows/ios.yml`). Once, an `apt-get update` printed nothing for the whole step
+# (`docs/LIMITATIONS.md`, 2026-11-25, for the runs). The runner's image already bounds each fetch
+# (its /etc/apt/apt.conf.d/zz-retries, from runner-images' configure-apt.sh: a silent fetch
+# given up after 15 seconds and tried once more before the next mirror, on the tags before and
+# after that run's image), so whatever held that update wasn't a fetch apt was timing. An update
+# still going after APT_UPDATE_SECONDS is ended, and the lists and install are tried again. The
+# limit counts time, not silence, so it would also end an update still coming slowly: the
+# slowest of 227 that worked took 112 seconds, and a second try that doesn't pick up the first
+# one's partial lists could be ended the same way. The install isn't capped: its fetches fail
+# over between mirrors on the image's limits, and ending dpkg would leave it interrupted. Two
+# ended updates take at most 290 seconds; an ended update and an install that fails over can
+# still run past the step's 5 minutes, which then end it, as before.
+APT_UPDATE_SECONDS = 140
 FONTS = ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
          "/usr/share/fonts/dejavu/DejaVuSans.ttf")
 AWAITING_RENDER = "built from spec, awaiting render"
@@ -2028,9 +2042,20 @@ class Steps:
         if shutil.which("montage") and shutil.which("convert"):
             code = 0
         else:
-            code = self.shell.run(["sudo", "apt-get", "update", "-q"]) or self.shell.run(
-                ["sudo", "apt-get", "install", "-y", "-q", "--no-install-recommends",
-                 "imagemagick", "fonts-dejavu-core"])
+            # The lists and the install, tried twice: once more after an update that stalled
+            # (APT_UPDATE_SECONDS: 124 when ended, -9 when killed) or failed, and after an
+            # install that failed, since an install can fail when not all the lists came.
+            for attempt in (1, 2):
+                if attempt == 2:
+                    print(f"ios: imagemagick: apt-get ended {code}; once more", flush=True)
+                code = self.shell.run(["sudo", "timeout", "-k", "5", str(APT_UPDATE_SECONDS),
+                                       "apt-get", "update", "-q"])
+                if code == 0:
+                    code = self.shell.run(["sudo", "apt-get", "install", "-y", "-q",
+                                           "--no-install-recommends", "imagemagick",
+                                           "fonts-dejavu-core"])
+                if code == 0:
+                    break
         if code == 0:
             code = self.shell.run(["convert", "-version"])
         if code != 0:
