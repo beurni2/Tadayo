@@ -37,6 +37,15 @@ import XCTest
 /// them as it appears would log its first draw as the odd one. An element that moves, or a model
 /// that changes as it's drawn, has to be made still, as the spinner is (`Spinners`), not left to
 /// the drawing.
+///
+/// The system's glass buttons, the bars' back button and Leave sign-in, draw two ways on iOS 27.2,
+/// a few levels apart, now and then even twice in a row. So, as the founder answered on
+/// 2026-11-25 (`docs/plans/ios-b1-intermittents.md`, row 2), two images that differ only inside
+/// the glass buttons (`glassButtons`), by at most `glassTolerance` in any channel, count as the
+/// same: for the drawing, and against the reference, where such an image is compared as its
+/// reference. Each time, a `warning: glass` line says so, with where and by how much. Every other
+/// pixel is compared as before, and a difference anywhere outside the glass, or larger inside it,
+/// counts in full.
 @MainActor
 enum ScreenSnapshot {
     enum Variant: CaseIterable {
@@ -84,23 +93,31 @@ enum ScreenSnapshot {
     ) {
         for variant in variants {
             let name = state + variant.suffix
-            let shown =
-                view
-                .environment(\.colorScheme, variant == .dark ? .dark : .light)
-                .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
-                .environment(\.locale, Locale(identifier: "en_US"))
-                .environment(\.scenePhase, .active)
+            let screen = shown(view, in: variant)
             let (drawn, problem) = settled(
-                { FramedHost(rootView: shown) }, variant: variant, width: width, name: name)
+                { FramedHost(rootView: screen) }, variant: variant, width: width, name: name)
             if let problem { XCTFail("\(name): \(problem)", file: file, line: line) }
             guard let drawn else { continue }
+            let reference = referenceURL(file: "\(file)", testName: testName, name: name)
             assertSnapshot(
-                of: drawn.image,
+                of: glassMatched(
+                    drawn, reference: try? Data(contentsOf: reference),
+                    scale: variant.traits.displayScale, name: name),
                 as: .image(
                     precision: 1, perceptualPrecision: 0.98, scale: variant.traits.displayScale),
                 named: name, file: file, testName: testName, line: line)
             Spinners.check(drawn.host.view, busy: busy, name, file: file, line: line)
         }
+    }
+
+    /// `view` as `assert` draws it in `variant`: its colour scheme and text size, in English, the
+    /// app in the foreground.
+    static func shown(_ view: some View, in variant: Variant) -> some View {
+        view
+            .environment(\.colorScheme, variant == .dark ? .dark : .light)
+            .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
+            .environment(\.locale, Locale(identifier: "en_US"))
+            .environment(\.scenePhase, .active)
     }
 
     /// The most draws made for one image. With at most one odd draw (above), four is enough for
@@ -110,10 +127,58 @@ enum ScreenSnapshot {
     /// How long one draw may take, SnapshotTesting's own `assertSnapshot` timeout.
     static let drawTimeout: TimeInterval = 5
 
-    /// An image to compare with its reference, and the host that drew it.
+    /// The most a draw may differ from another inside the system's glass buttons, in any channel
+    /// out of 255, and still count as the same: the founder's answers of 2026-11-25, 21 and then
+    /// 26. The logs on `evidence` to that day hold the glass buttons' two drawings 2 to 21 apart,
+    /// and at the largest text, Leave sign-in's, 20 and twice 26.
+    static let glassTolerance = 26
+
+    /// How far past a glass button's frame its two drawings differ, in pixels at 2x: up to 2 to
+    /// each side and above, and 3 below, in the logs (the back button's glass at x 32 to 119, y
+    /// 124 to 211, differing in x 30 to 121, y 123 to 212; Leave sign-in's at x 32 to 303, in x
+    /// 30 to 305, y 123 to 214, and at the largest text in y 122 to 213), the edge the glass
+    /// softens and its shadow.
+    static let glassMargin = 4
+
+    /// The name of the filter iOS 27.2 draws a glass button's glass with, on a backdrop layer in
+    /// the bar's platter (the probe `ios/b1-glass-probe`, `14bc1fc`): the bars' buttons have it,
+    /// and the tab bar, which draws its glass otherwise, doesn't.
+    static let glassFilter = "glassBackground"
+
+    /// A rectangle of an image in pixels from its top left, its edges included.
+    struct PixelRect: Equatable {
+        let left: Int
+        let top: Int
+        let right: Int
+        let bottom: Int
+
+        /// `frame`, in points, in pixels at `scale`, grown by `margin` pixels on each side.
+        init(_ frame: CGRect, scale: CGFloat, margin: Int) {
+            left = Int((frame.minX * scale).rounded(.down)) - margin
+            top = Int((frame.minY * scale).rounded(.down)) - margin
+            right = Int((frame.maxX * scale).rounded(.up)) - 1 + margin
+            bottom = Int((frame.maxY * scale).rounded(.up)) - 1 + margin
+        }
+
+        init(left: Int, top: Int, right: Int, bottom: Int) {
+            self.left = left
+            self.top = top
+            self.right = right
+            self.bottom = bottom
+        }
+
+        func contains(x: Int, y: Int) -> Bool {
+            x >= left && x <= right && y >= top && y <= bottom
+        }
+    }
+
+    /// An image to compare with its reference, the host that drew it, the image as a PNG, and
+    /// where that host drew the system's glass buttons.
     struct Drawn {
         let image: UIImage
         let host: UIViewController
+        let png: Data
+        let glass: [PixelRect]
     }
 
     /// Draws a fresh host from `make` again and again, each as SnapshotTesting draws a view
@@ -125,9 +190,15 @@ enum ScreenSnapshot {
     /// `log`, one `warning:` line naming the image, with the start of each draw's SHA-256 in
     /// order and, for each draw that differs from the last, how (`difference`). `drawing` stands
     /// in for `draw` in `ScreenSnapshotSettleTests`, to make a draw give no image or no PNG.
+    ///
+    /// Two draws that differ only inside the system's glass buttons, as the later one's host drew
+    /// them, by at most `glassTolerance` (`glassDrift`), count as the same, both for two in a row
+    /// and for a draw against the image it settled on, so such a draw isn't odd; each is logged
+    /// as a `warning: glass` line. `glass` stands in for `glassButtons` in the tests.
     static func settled(
         _ make: () -> UIViewController, variant: Variant, width: CGFloat, name: String,
-        log: (String) -> Void = { print($0) }, drawing: ((UIViewController) -> UIImage?)? = nil
+        log: (String) -> Void = { print($0) }, drawing: ((UIViewController) -> UIImage?)? = nil,
+        glass: ((UIViewController) -> [PixelRect])? = nil
     ) -> (drawn: Drawn?, problem: String?) {
         var draws: [Data] = []
         for number in 1...maximumDraws {
@@ -144,12 +215,27 @@ enum ScreenSnapshot {
             guard let data = image.pngData() else {
                 return (nil, "draw \(number) couldn't be made a PNG")
             }
-            let same = data == draws.last
+            let rects =
+                glass?(host) ?? glassButtons(in: host.view, scale: variant.traits.displayScale)
+            let same =
+                data == draws.last
+                || draws.last.map { glassDrift($0, data, glass: rects) != nil } ?? false
             draws.append(data)
             guard same || number == maximumDraws else { continue }
-            let odd = draws.indices.filter { draws[$0] != data }
+            let differing = draws.indices.filter { draws[$0] != data }
+            var odd: [Int] = []
+            for index in differing {
+                if let drift = glassDrift(draws[index], data, glass: rects) {
+                    log(
+                        "warning: glass \(name): draw \(index + 1) differs from the last "
+                            + "only inside the system's glass buttons, \(drift), so it counts "
+                            + "as the same")
+                } else {
+                    odd.append(index)
+                }
+            }
             if number > 2 || !same {
-                log(warning(name, draws: draws, odd: odd, settled: same))
+                log(warning(name, draws: draws, odd: differing, settled: same))
             }
             var problem: String?
             if !same {
@@ -157,7 +243,7 @@ enum ScreenSnapshot {
             } else if odd.count > 1 {
                 problem = "\(odd.count) draws differed from the image it settled on, where one may"
             }
-            return (Drawn(image: image, host: host), problem)
+            return (Drawn(image: image, host: host, png: data, glass: rects), problem)
         }
         return (nil, "no draw was made")
     }
@@ -183,16 +269,54 @@ enum ScreenSnapshot {
     /// out of 255. Enough to tell the glass, a bar's button or the tab bar, from the app's own
     /// content.
     static func difference(_ first: Data, _ second: Data) -> String {
-        guard let a = raster(first), let b = raster(second) else { return "not readable" }
-        guard a.width == b.width, a.height == b.height else {
-            return "sizes differ, \(a.width) by \(a.height) and \(b.width) by \(b.height)"
+        switch measure(first, second, glass: []) {
+        case .failure(let why): why.description
+        case .success(let measured): measured.text
         }
+    }
+
+    /// How two PNGs differ, if they differ only inside `glass` and by at most `glassTolerance` in
+    /// any channel, said as `difference` says it: what the founder's allowance passes. Nil if a
+    /// pixel outside `glass` differs, or one inside it by more, or the two can't be compared; two
+    /// PNGs whose pixels are the same give "no pixel differs".
+    static func glassDrift(_ first: Data, _ second: Data, glass: [PixelRect]) -> String? {
+        guard !glass.isEmpty, case .success(let measured) = measure(first, second, glass: glass),
+            measured.outside == 0, measured.largest <= glassTolerance
+        else { return nil }
+        return measured.text
+    }
+
+    /// What `measure` finds: how many pixels differ, the rectangle that holds them, the largest
+    /// difference in any channel, and how many of those pixels lie outside the glass it's given.
+    private struct Measured {
         var pixels = 0
         var largest = 0
-        var left = a.width
-        var top = a.height
+        var left = Int.max
+        var top = Int.max
         var right = -1
         var bottom = -1
+        var outside = 0
+
+        var text: String {
+            guard pixels > 0 else { return "no pixel differs" }
+            return "\(pixels) pixels in x \(left) to \(right), y \(top) to \(bottom), "
+                + "by at most \(largest)/255"
+        }
+    }
+
+    /// Compares two PNGs pixel by pixel, decoded in sRGB, or says why it can't.
+    private static func measure(
+        _ first: Data, _ second: Data, glass: [PixelRect]
+    ) -> Result<Measured, MeasureFailure> {
+        guard let a = raster(first), let b = raster(second) else {
+            return .failure(MeasureFailure("not readable"))
+        }
+        guard a.width == b.width, a.height == b.height else {
+            return .failure(
+                MeasureFailure(
+                    "sizes differ, \(a.width) by \(a.height) and \(b.width) by \(b.height)"))
+        }
+        var measured = Measured()
         a.bytes.withUnsafeBufferPointer { a8 in
             b.bytes.withUnsafeBufferPointer { b8 in
                 for y in 0..<a.height {
@@ -203,19 +327,80 @@ enum ScreenSnapshot {
                             gap = max(gap, abs(Int(a8[channel]) - Int(b8[channel])))
                         }
                         guard gap > 0 else { continue }
-                        pixels += 1
-                        largest = max(largest, gap)
-                        left = min(left, x)
-                        right = max(right, x)
-                        top = min(top, y)
-                        bottom = max(bottom, y)
+                        measured.pixels += 1
+                        measured.largest = max(measured.largest, gap)
+                        measured.left = min(measured.left, x)
+                        measured.right = max(measured.right, x)
+                        measured.top = min(measured.top, y)
+                        measured.bottom = max(measured.bottom, y)
+                        if !glass.contains(where: { $0.contains(x: x, y: y) }) {
+                            measured.outside += 1
+                        }
                     }
                 }
             }
         }
-        guard pixels > 0 else { return "no pixel differs" }
-        return "\(pixels) pixels in x \(left) to \(right), y \(top) to \(bottom), "
-            + "by at most \(largest)/255"
+        return .success(measured)
+    }
+
+    /// Why two PNGs couldn't be compared, as `difference` says it.
+    private struct MeasureFailure: Error, CustomStringConvertible {
+        let description: String
+        init(_ description: String) { self.description = description }
+    }
+
+    /// Where `view` draws the system's glass buttons, in pixels of its image at `scale`: the frame
+    /// of each layer drawn with `glassFilter`, grown by `glassMargin`. A hidden layer, and what it
+    /// holds, draws nothing, so it's left out.
+    static func glassButtons(in view: UIView, scale: CGFloat) -> [PixelRect] {
+        var found: [PixelRect] = []
+        func walk(_ layer: CALayer) {
+            guard !layer.isHidden, layer.opacity > 0 else { return }
+            if (layer.filters ?? []).contains(where: { String(describing: $0) == glassFilter }) {
+                let frame = layer.convert(layer.bounds, to: view.layer)
+                if !frame.isEmpty {
+                    found.append(PixelRect(frame, scale: scale, margin: glassMargin))
+                }
+            }
+            for sublayer in layer.sublayers ?? [] { walk(sublayer) }
+        }
+        walk(view.layer)
+        return found
+    }
+
+    /// The image to compare with the reference: the reference's own, when the drawn image differs
+    /// from it only inside the glass buttons its host drew, by at most `glassTolerance`, which is
+    /// logged as a `warning: glass` line; otherwise the drawn image, compared as ever. With no
+    /// reference, or one that can't be read, it's the drawn image, for `assertSnapshot` to say so.
+    static func glassMatched(
+        _ drawn: Drawn, reference: Data?, scale: CGFloat, name: String,
+        log: (String) -> Void = { print($0) }
+    ) -> UIImage {
+        guard let reference, reference != drawn.png,
+            let drift = glassDrift(reference, drawn.png, glass: drawn.glass),
+            let image = UIImage(data: reference, scale: scale)
+        else { return drawn.image }
+        log(
+            "warning: glass \(name): differs from its reference only inside the system's glass "
+                + "buttons, \(drift), so it's compared as its reference")
+        return image
+    }
+
+    /// Where SnapshotTesting 1.19.7 keeps the reference `assertSnapshot(…, named: name, file:
+    /// file, testName: testName)` compares with: beside the test's file, in `__Snapshots__/<its
+    /// name>/<test>.<name>.png`, each part made a path's part as the library makes it
+    /// (`sanitizePathComponent`: every run of non-word characters a hyphen, none at either end).
+    static func referenceURL(file: String, testName: String, name: String) -> URL {
+        func part(_ string: String) -> String {
+            string
+                .replacingOccurrences(of: "\\W+", with: "-", options: .regularExpression)
+                .replacingOccurrences(of: "^-|-$", with: "", options: .regularExpression)
+        }
+        let fileURL = URL(fileURLWithPath: file, isDirectory: false)
+        return fileURL.deletingLastPathComponent()
+            .appendingPathComponent("__Snapshots__")
+            .appendingPathComponent(fileURL.deletingPathExtension().lastPathComponent)
+            .appendingPathComponent("\(part(testName)).\(part(name)).png")
     }
 
     /// A PNG's pixels as 8-bit RGBA in sRGB, row by row from the top.
