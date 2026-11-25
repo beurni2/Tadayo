@@ -113,8 +113,9 @@ enum AccessibilityElements {
         {}
     }
 
-    /// Shows the view, waits for `ready` and then for its elements to settle (`settle`), gathers
-    /// them in VoiceOver's order, and hands them and the window to `use` before the window goes.
+    /// Shows the view, waits for `ready` and then a few turns of the run loop, gathers its
+    /// elements in VoiceOver's order, and hands them and the window to `use` before the window
+    /// goes.
     private static func show<Result>(
         _ view: some View, until ready: () -> Bool = { true },
         _ use: ([NSObject], UIWindow) -> Result
@@ -141,55 +142,18 @@ enum AccessibilityElements {
             window.isHidden = true
             window.rootViewController = nil
         }
+        // The test's own scripted state first, when it names one, such as a save that fails a
+        // moment after the screen shows (`docs/plans/ios-b1-intermittents.md`, item 3).
         let scripted = Date().addingTimeInterval(30)
         while !ready(), Date() < scripted {
             RunLoop.main.run(until: Date().addingTimeInterval(0.02))
         }
-        settle(window)
+        // A few turns of the run loop, so a navigation stack has put up its screen, and the
+        // screen has answered the state.
+        let settled = Date().addingTimeInterval(0.5)
+        while Date() < settled { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
         window.layoutIfNeeded()
         return use(gather(window), window)
-    }
-
-    /// Turns the run loop until the window's elements, their labels, values, hints, traits,
-    /// custom actions and frames, have stayed the same through 10 slices of 0.05 seconds, each
-    /// holding one turn of the run loop at least, half a second in all at the least, as the fixed
-    /// wait this replaced; past 10 seconds the read goes ahead, and the test's assertions decide.
-    /// Counted in slices, not only in time, because SwiftUI makes each update of a screen on a
-    /// turn of the main run loop, and a loaded runner can let a half second pass in a few turns.
-    /// A navigation stack putting up its screen is waited for this way too. A screen that is
-    /// still while it waits for something scripted is read as before: a test names that with
-    /// `layout(of:until:)`. The fixed half second wasn't always enough:
-    /// `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` read A03's
-    /// column not yet scrolled above Continue (Continue's top 314 points above the field's
-    /// bottom) in four runs on iOS 26.5, the last `main`'s `ios` 45523314156 at `12b3d8a`
-    /// (`docs/plans/ios-b1-intermittents.md`, item 3). `ProfileForm` asks for that scroll at its
-    /// first update (`onChange(of: keyboardRise, initial: true)`, the test's keyboard rising 1
-    /// from the start); when it lands wasn't traced, and this wait helps only if it lands late.
-    private static func settle(_ window: UIWindow) {
-        func state() -> [String] {
-            window.layoutIfNeeded()
-            return gather(window).map {
-                [
-                    $0.accessibilityLabel ?? "", $0.accessibilityValue ?? "",
-                    $0.accessibilityHint ?? "", "\($0.accessibilityTraits.rawValue)",
-                    ($0.accessibilityCustomActions ?? []).map(\.name).joined(separator: ","),
-                    "\($0.accessibilityFrame)",
-                ].joined(separator: "|")
-            }
-        }
-        var last = state()
-        var still = 0
-        let deadline = Date().addingTimeInterval(10)
-        while still < 10, Date() < deadline {
-            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-            let now = state()
-            if now == last {
-                still += 1
-            } else {
-                last = now
-                still = 0
-            }
-        }
     }
 
     private static func read(_ view: some View, until ready: () -> Bool = { true }) -> Layout {
