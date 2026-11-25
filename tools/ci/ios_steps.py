@@ -1610,7 +1610,8 @@ class Steps:
         except ValueError as error:
             print(f"ios: test: {error}")
             return 1
-        pinned = toolchain.IOS_RUNTIMES
+        # Probe (never merged): iOS 27.2 alone, ArrivalFocusTests alone, many iterations.
+        pinned = tuple(v for v in toolchain.IOS_RUNTIMES if v == "27.2")
         try:
             project = self.project()
             udids = {version: self.udid(version) for version in pinned}
@@ -1671,6 +1672,7 @@ class Steps:
             # After the pass is timed and recorded, so its time and result stand whatever these
             # take or meet.
             self.pass_diagnostics(version, udid, since, failed=code != 0)
+            self.probe_keyboard_log(version, udid, since)
             if code != 0:
                 failure = failure or code
                 print(f"ios: test: tests failed on iOS {version} (logs/test-{version}.log, "
@@ -1712,7 +1714,8 @@ class Steps:
         cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
                "-destination", self.destination(version),
                "-derivedDataPath", self.derived_data(), "-resultBundlePath", bundle,
-               "-skipPackagePluginValidation"]
+               "-skipPackagePluginValidation",
+               "-only-testing:TadayoTests/ArrivalFocusTests", "-test-iterations", "40"]
         for target in skipped:
             cmd += ["-skip-testing", target]
         env = {"TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never"}
@@ -1758,6 +1761,29 @@ class Steps:
                 self.write_log(f"crashes-{version}.txt",
                                f"--- {what}: stopped by {type(error).__name__}: "
                                f"{str(error)[:CRASH_FIELD]}")
+
+    def probe_keyboard_log(self, version, udid, since):
+        """Probe (never merged): every keyboard-service line of the whole pass that says a
+        keyboard message's assertion was taken or timed out, or the arbiter disconnected a
+        client, into logs/crashes-<version>.txt."""
+        try:
+            start = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(since))
+            predicate = ('eventMessage CONTAINS "KeyboardManagement.message" OR '
+                         'eventMessage CONTAINS "invalidate due to timeout" OR '
+                         'eventMessage CONTAINS "assertions remaining" OR '
+                         'eventMessage CONTAINS "lostConnection" OR '
+                         '(process == "InputUI" AND eventMessage CONTAINS "signalKeyboardChanged") OR '
+                         '(process == "kbd" AND eventMessage CONTAINS "connection")')
+            code, out, err = self.shell.capture(
+                ["xcrun", "simctl", "spawn", udid, "log", "show", "--style", "compact",
+                 "--start", start, "--predicate", predicate],
+                env=self.xcode_env(), timeout=1200)
+            lines = [line[:400] for line in out.splitlines() if line.strip()]
+            self.write_log(f"crashes-{version}.txt",
+                           f"--- probe: the keyboard service's lines of the pass (exit {code}, "
+                           f"{len(lines)} lines) {err.strip()[:300]}\n" + "\n".join(lines[-4000:]))
+        except Exception as error:
+            self.write_log(f"crashes-{version}.txt", f"--- probe: stopped by {error!r}"[:500])
 
     def service_exits(self, version, udid):
         """Appends the simulator's log lines about services that exited to

@@ -11,6 +11,14 @@ import XCTest
 /// screen alone in a fresh window. A hosted test, not a snapshot test, so iOS 26.5 reads it too.
 @MainActor
 final class ArrivalFocusTests: XCTestCase {
+    /// Probe (never merged): each step's time and the runner's one-minute load average.
+    private func probe(_ step: String) {
+        var load = [Double](repeating: 0, count: 3)
+        _ = getloadavg(&load, 3)
+        let stamp = ISO8601DateFormatter().string(from: Date())
+        print("probe: \(stamp) load \(Int(load[0])) \(name) \(step)")
+    }
+
     /// A03 takes the focus as it replaces A02-age (IMPLEMENTATION.md: "A03-profile-empty is
     /// focused on arrival"; `authForm.profileArrivalFocus`). The root shows it in a navigation
     /// stack of its own in place of A02-age's, in a window already on screen, which is where the
@@ -21,6 +29,8 @@ final class ArrivalFocusTests: XCTestCase {
     /// ended, for 2.5 seconds, past the 2 seconds the asking can last, so the asking stops once
     /// the field has it and never takes it back. What is then typed goes into the name.
     func testA03TakesTheFocusAsItReplacesA02Age() throws {
+        probe("start")
+        defer { probe("end") }
         let root = UITestLaunch.fakeGraph().root
         let shown = Shown(RoutedView(root: root))
         defer { shown.close() }
@@ -30,11 +40,13 @@ final class ArrivalFocusTests: XCTestCase {
         let profile = try XCTUnwrap(root.profile)
         drive({ await profile.confirmAge() }, until: { root.route == .profile })
         XCTAssertTrue(spin(for: 3) { shown.focusedField != nil }, "no field took the focus on A03")
+        probe("focused")
         let field = try XCTUnwrap(shown.focusedField)
         let ended = XCTNSNotificationExpectation(
             name: UITextField.textDidEndEditingNotification, object: field)
         ended.isInverted = true
         wait(for: [ended], timeout: 2.5)
+        probe("held \(field.isFirstResponder)")
         XCTAssertTrue(field.isFirstResponder, "the name's field lost the focus")
         field.insertText("Ben")
         XCTAssertTrue(spin(for: 1) { profile.name == "Ben" }, "the name is \"\(profile.name)\"")
@@ -46,6 +58,8 @@ final class ArrivalFocusTests: XCTestCase {
     /// once. VoiceOver can't run in a test: `ProfileScreen.voiceOver` stands in for it, as
     /// `CodeScreen.voiceOver` does. Whether VoiceOver then says the screen is a device check.
     func testA03AsksForNoFocusWhileVoiceOverRuns() {
+        probe("start")
+        defer { probe("end") }
         for voiceOver in [true, false] {
             let model = ProfileModel(
                 account: Account(
