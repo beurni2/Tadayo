@@ -1,10 +1,14 @@
 # api/b2-privacy-blind-spots: the outside audit's A14, part 1: T9's conditions in the matrix, and one module
 
 The outside audit of 2026-11-24, finding A14 (Medium): "Four blind spots in the privacy tests". This slice closes
-two of them: T9's conditions that have no matrix cell, with Home's judge untested and the predicate's "one module"
-only a convention (the audit's second point), and a device time under a name the harness doesn't send (its fourth).
-The other two, the scanner's whitelist stopping at the card and nothing reading the real routes' logs, are the
-second slice, `api/b2-scanner-blind-spots` (section 5).
+the second of them, T9's conditions that have no matrix cell, with Home's judge untested and the predicate's "one
+module" only a convention, and the fourth, a device time under a name the harness doesn't send, for the code that
+decides who sees what and where an add goes by the time: the read predicate, the day choice and the add-target
+policy, which take only the clock's sample. The fourth stays open for the functions that take a plain instant
+(`server_now`'s builders, the slot counter, the leave's withdrawal check, generation, devices): a request's time
+reaches those with no cast, so the third slice, `api/b2-server-time-types`, makes them take the clock's sample too
+(round 2, R2-3; section 5). The other two points, the scanner's whitelist stopping at the card and nothing reading
+the real routes' logs, are the second slice, `api/b2-scanner-blind-spots` (section 5).
 
 Sources: the audit's A14; T1 (server time), T9 (one read predicate, in one authorization module), T10, T14, T16
 (the client's clock and parameters move nothing), T27 (a deleting account); FQ63 (a day whose star left before it
@@ -106,12 +110,35 @@ P3). `app.blocks` is caught in any case; a bare `blocks` only after an uppercase
 `UPDATE`, `TABLE`), so prose about blocks isn't (G5). It catches the ordinary ways of naming them, not a deliberate
 way round it (a table name built from parts).
 
-1.5. **Server time only from the time module** (`packages/domain/src/time/one-clock.test.ts`, a new test beside the
-clock reads): no product file outside the time module makes a `ServerNow` the ordinary ways: a cast (`as ServerNow`,
-`as unknown as ServerNow`, qualified as `as clock.ServerNow` or `as import(...).ServerNow`, in parentheses, or
-`<ServerNow>` after a keyword or an arrow), a guard (`is ServerNow`), a typed query or call whose row or answer says
-it holds one (`` tx<{ now: ServerNow }[]>`...` ``, `query<{ at: ServerNow }>(`), and `as never`, which fits any type
-(round 1, P1 and G2). Naming the type (an import, a field, a parameter, a return type) is left alone. Tests may.
+1.5. **Server time only from the time module, for the code that decides by it** (`packages/domain/src/time/one-clock.test.ts`,
+three tests beside the clock reads): the read predicate, the day choice and the add-target policy take only a
+`ServerNow`, and no product file outside the time module makes one without a clock. Since round 2 the check reads the
+server's TypeScript (packages, services, `tools/ops`; `apps/web` is the browser's and runs none of it) through the
+TypeScript compiler, as one program with `tsconfig.base.json`'s settings, so it follows a type through its names
+however the code is laid out (`nowMints`). It reports:
+- a cast (`as`, or angle brackets, which `erasableSyntaxOnly` refuses anyway) to a type a value of which, or a part of
+  which, is a `ServerNow`: through an alias, a renamed import or the module's namespace, a wrapper (`Readonly<…>`,
+  `NonNullable<…>`), a union, a promise or an array, a function's answer, and the fields of a type the server's code
+  declares; and a cast to `any` or `never`;
+- a guard (`is`, `asserts … is`) that says a value is one;
+- a call, a `new` or a tagged template whose answer holds one through a type parameter none of its parameters names:
+  a typed query, whether its row type is written inline, named, laid across lines by prettier, or given by the
+  variable the rows go into with no type argument at all, and a generic cast (`function cast<T>(value: unknown): T`),
+  a class's included;
+- a signature with no body that answers one (an overload, a method's overload, a `declare function`), which the
+  compiler doesn't hold to an implementation, and an ambient variable (`declare const`, `declare global`) that holds
+  one;
+- `@ts-expect-error`, `@ts-ignore` or `@ts-nocheck` anywhere.
+
+A first test checks that the program compiles without an error, so no type the check follows is an unknown one. The
+"catches" test compiles 32 planted files beside the server's, each of which must compile cleanly (but the
+angle-bracket cast, which the compiler refuses) and be reported; the "leaves alone" test 7 more, which name the type
+for a parameter, a field and an answer, keep the clock's samples in containers and pass them on, type a query that
+holds none, give the predicate the clock's sample, and cast to other types. Left to others: a value typed `any` is the
+lint's (`strictTypeChecked`'s `no-unsafe-*` rules); TypeScript's unsound corners (a write through a wider alias of a
+mutable field or array; a call through `Function`, as `Reflect.apply` makes) are a deliberate way round. Tests may make
+a `ServerNow`. Until round 2 it read lines (round 1, P1 and G2), which missed a named row type and one laid across
+lines (R2-1), an alias, an overload, a wrapper and a silenced line (R2-2).
 
 1.6. **Two more names in the harness** (`manipulations`): the query parameter `t` and the header
 `If-Modified-Since`, beside the others, so the audit's two survivors are sent to every route.
@@ -122,8 +149,9 @@ Each new test is run against `main`'s code first:
 - the matrix with the new role and states: it must pass on `main` (the predicate is right) once the judges model
   the conditions; it fails on the breakages of section 3;
 - `home.test.ts` and the Home case in `db/home.test.ts`: pass on `main`, fail on the breakages;
-- `one-module.test.ts` and the cast test: pass on `main`, and each catches the planted lines of its own "catches"
-  test (a `FROM app.blocks` in a route, a `JOIN app.drop_audience` in Home, an `as ServerNow` in a route).
+- `one-module.test.ts` and the `ServerNow` check: pass on `main`, and each catches the planted code of its own
+  "catches" test (a `FROM app.blocks` in a route, a `JOIN app.drop_audience` in Home; for the time, section 1.5's
+  32 planted files).
 
 ## 3. Breakages
 
@@ -142,6 +170,12 @@ Each run against the suites that should catch it, with the file restored and che
   `starKeepsDay` (B12; `db/authorization.test.ts`, the matrix registered as missing it, since Home reads drops only
   from days the day choice keeps, which holds the clause itself: P6); and the judge's rejoined case, recentFor's
   order, pageFor's byte order, and the modes' order (J17 to J21; `home.test.ts`).
+- Added in round 2: Home's time from `?since=` by a typed query whose row is a named type, so the query's line never
+  says `ServerNow` (B13), and by a query whose rows are typed by the variable they go into, with no type argument
+  (B14), each caught by `one-clock.test.ts`, the matrix registered beforehand as missing both, since no manipulation
+  sends `since`; Home's `server_now` from `?since=`, with no cast, registered beforehand as missed by both, since
+  `homeBody` takes a plain instant (B15: R2-3, the third slice's); and the modes' order with a suspended club that
+  hasn't started (J22; `home.test.ts`). B9's words now name the check's own message for a typed query.
 
 As run, on the slice's tree and freshly made databases: every breakage caught by every suite registered for it, with
 the words registered for it (B1 to B8, J01 to J16). B7's matrix run failed on the first pass with the manipulation
@@ -164,17 +198,36 @@ the query's string, which the API's instant type refuses, so the route answered 
 `Temporal.Instant`, the matrix fails on the moved time itself (Home's `club_today`, `next`, `recent_days` and
 `server_now`), and `one-clock.test.ts` names the line. Under `main`'s tests, B9 and B10 passed (missed).
 
+As run at the third commit (round 2), with the compiler check: B7 to B9, B13 and B14 each caught by `one-clock.test.ts`,
+only its scan test failing (the patched code still compiles without an error; B9's words now name the check's message
+for a typed query), and B7 to B9 by the matrix as before; B13's and B14's matrix runs and both of B15's, registered
+beforehand as misses, passed; J01 to J22 each caught by `home.test.ts`. Round 1's line scan (a worktree at `a43d484`)
+and `main`'s tests each missed B13 and B14. B1 to B6 and B10 to B12 stand as run at the second commit, since the third
+changes nothing they run.
+
 ## 4. What this gives up, and what it costs
 
 - The new role and states run every table of the matrix: 13 roles in 10 states where there were 12 in 7, about 55%
   more cells. The `privacy` step of `ci`'s `postgres` job took 12m26s at the first commit (run 45628657560), against
   6m51s on `main` at `4c0ef93` (run 45596123033), about 81% longer; here, on the session's machine, a whole run takes
   about 22 minutes.
-- The static checks read lines, like `one-clock.test.ts`: they catch the ordinary ways, not a deliberate way round.
-  A check at run time would catch more for the time: the time module keeping each instant its clocks return in a
-  private `WeakSet`, and `checkNow` (which `readableDrops`, `mayReadDrop`, `daysByClub` and `recentDays` call)
-  refusing any other. It would change the predicate's entry points and about 58 casts to `ServerNow` in 23 test files,
-  so it is left out of this slice (round 1, P1); the line scan and the harness's time names stand meanwhile.
+- The one-module scan reads lines, like the clock reads: it catches the ordinary ways, not a deliberate way round.
+  The `ServerNow` check reads through the compiler (section 1.5); it compiles the server's 161 TypeScript files once,
+  and the file's tests take about 5 seconds on the session's machine. A check at run time would catch the corners the
+  compiler can't see: the time module keeping each instant its clocks return in a private `WeakSet`, and `checkNow`
+  (which `readableDrops`, `mayReadDrop`, `daysByClub` and `recentDays` call) refusing any other. It would change the
+  predicate's entry points and about 58 casts to `ServerNow` in 23 test files, so it is left out (round 1, P1).
+- The fourth point is closed only where the code takes a `ServerNow`. A function that takes a plain
+  `Temporal.Instant` and decides by it takes a request's time with no cast at all: `server_now`, which the app's
+  countdowns run from (T1), is built from one in `services/api/src/clubs/home.ts` `homeBody`, `list.ts`
+  `clubListBody`, `members.ts` `membersBody`, `club.ts` `withServerNow` and `schedule/routes.ts` `scheduleBody`; and
+  `packages/domain/src/drops/counter.ts` `settleLapsed` and `freeSlot` (whether a slot lapsed), `clubs/leave-club.ts`
+  `settleContributions` (whether a withdrawal falls before the reveal, T18), `schedule/generate.ts` `daysToMake`, `identity/devices.ts`
+  `purgeEnded` and `endSignIn`, and `services/worker/src/outbox.ts` `finishEvent` take one. None takes a request's
+  time today; B15 shows the matrix and the check both missing one that did (round 2, R2-3). The third slice gives each
+  a `ServerNow` (section 5), which the check then covers, rather than R2-3's other choice, a harness that records which
+  query keys and headers a handler reads: the type holds every caller, a job's and a script's included, and not only
+  the routes the matrix sends.
 - The viewer's own account is still the only denial in no cell: the gate (`services/api/src/session.ts`) refuses a
   viewer whose account isn't active before any route runs, so only `db/authorization.test.ts` holds the predicate's
   `u.state = 'active'`. That is harmless for routes behind the gate; the job, push and widget slices (B5 onwards),
@@ -188,15 +241,22 @@ the query's string, which the API's instant type refuses, so the route answered 
   the matrix's other tables see of Ben, so a block made in another club is held on Postgres, on both paths of the
   predicate and on Home's page (section 1.3), and not in the matrix (round 1, P2).
 
-## 5. The second slice (`api/b2-scanner-blind-spots`)
+## 5. The later slices
 
-The audit's first and third points, each re-checked on `main` before it is built:
+The second slice, `api/b2-scanner-blind-spots`: the audit's first and third points, each re-checked on `main` before
+it is built:
 - the scanner's own key lists for every schema reachable before the reveal (the contract's tests pin `UpcomingDay`,
   `ViewerDay`, `Occurrence` and `ClubRef` since, but the scanner's own whitelist still stops at the caption card),
   and camelCase-aware never-words, with the audit's additions where they don't name a key the contract already
   serves for a reason (`reveal_at`, `close_at`, `expires_at`, `member_count`, `position`);
 - the matrix's app logging at its production level into a capture, each line scanned as the scanner scans answers,
   and redaction made recursive.
+
+The third slice, `api/b2-server-time-types`: the rest of the audit's fourth point (section 4). Each function there
+that decides by the server's time takes a `ServerNow`, the clock's sample, and each caller is read again to give it
+one, so the compiler check of section 1.5 covers it: a request's time reaches it only through a mint the check reports. A time
+derived from the sample, such as `uploadExpiry` or `reservationExpiry`, stays a plain instant, computed from one. Done
+when B15 is caught by `one-clock.test.ts` and every suite is green.
 
 ## 6. Review
 
@@ -227,3 +287,28 @@ the records (G1 to G6). Each finding fixed or answered in the second commit:
 - **G6 (nit): the author's deletion against FQ88's role, and "alone".** Answered in a comment on the state in
   `tests/src/matrix.ts` (both deny; no condition rests on that cell alone); the wording fixed in section 1.1 and
   `matrix.test.ts`.
+
+Round 2, at `a43d484`, a fresh reviewer at full depth (R2-1 to R2-7). Each finding fixed or answered in the third
+commit:
+- **R2-1 (medium): the `ServerNow` scan missed the usual ways of writing a typed query**: a named row type
+  (`interface Asked { readonly now: ServerNow }`, then `` tx<Asked[]>`…` `` or a cast to `Asked`), and a long inline
+  row type, which prettier lays across lines. Fixed: the check reads the code through the compiler (section 1.5),
+  which follows a row type through its name and catches a query typed by its variable, with no type argument;
+  breakages B13 and B14, which round 1's line scan missed (its control, at `a43d484`).
+- **R2-2 (low): other forms with no token the scan looked for**: an overload signature, an alias or a renamed import,
+  a wrapper (`Readonly<ServerNow>`), `@ts-expect-error`. Fixed by the same check; each is one of the 32 planted files.
+- **R2-3 (medium): a request's time reaches the functions that take a plain instant with no cast.** Answered: the
+  claim narrowed to the code that takes a `ServerNow` (the opening paragraph, section 1.5, section 4, the test's
+  header, the journal's T1 row, `PROGRESS.md`); the rest is the third slice's (section 5); B15 registered as missed by
+  both suites.
+- **R2-4 (low): P5's follow-up was only in this plan.** Fixed: the journal's T9 row ("Still to come") and the api
+  lane's Next, and `PROGRESS.md`, say that the job, push and widget slices each owe a check where the viewer's own
+  account is the only denial.
+- **R2-5 (nit): the rejoined fixture contradicted T8**: Cleo left before the drops were committed, yet the audience
+  held Cleo's interval. Fixed: Cleo leaves after the commits and before the reveal (`2026-11-06T22:00Z`), and the
+  comment says the audience holds the interval Cleo held at commit.
+- **R2-6 (nit): `intervalElsewhere`'s comment said the club was one the two shared.** Fixed in the comment: the club
+  holds only the blocked person, which the schema allows (`app.blocks`' foreign key asks only that the interval be the
+  blocked person's) and the predicate never reads.
+- **R2-7 (nit): the order of `unavailable` before `awaiting_activation` was untested.** Fixed: a club both suspended
+  and not started is unavailable (`home.test.ts`, Home's modes); breakage J22.

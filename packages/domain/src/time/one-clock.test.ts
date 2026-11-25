@@ -9,14 +9,20 @@
 // clock, not a deliberate way round it such as `const D = Date; new D()`. The app's own clock, the
 // device half of T1, is the ios lane's: Swift isn't scanned here.
 //
-// Nor does code outside the time module make a `ServerNow` of its own: the read predicate and the add-target policy
-// take only a `ServerNow`, so a time a route read from a request (`?t=`, a header) reaches them only through
-// something that says it is one without the clock: a cast, a guard, a typed query's row, or `as never`, which fits
-// any type (the outside audit's A14). The scan catches those ways as they are ordinarily written, on one line;
-// TypeScript's own escape hatches, written across lines or built from parts, are a deliberate way round. Tests may.
+// Nor does code outside the time module make a `ServerNow` of its own (the outside audit's A14). The read predicate,
+// the day choice and the add-target policy take only a `ServerNow`, so a time a route read from a request (`?t=`, a
+// header) reaches them only through something that says it is one without the clock. That check reads the server's
+// TypeScript through the compiler, not a line at a time, so it follows a type through its names, aliases, wrappers
+// and fields however the code is laid out (`nowMints`, below). It leaves three things to others: a value typed `any`
+// is the lint's (strictTypeChecked's no-unsafe-* rules); the browser's pages (apps/web) run none of the server's
+// code; and TypeScript's unsound corners, a write through a wider alias of a mutable field or array, or a call made
+// through `Function` (`Reflect.apply`), are a deliberate way round. A function that takes a plain `Temporal.Instant`
+// is outside it: a request's time reaches one of those with no cast at all (docs/plans/api-b2-privacy-blind-spots.md,
+// section 6, round 2). Tests may make a ServerNow.
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..", "..");
@@ -57,36 +63,157 @@ const READS = [
   { what: "the tests' fake clock", pattern: /\bfakeClock\b|@tadayo\/domain\/testing/ },
 ] as const;
 
-/** The ways code could make a `ServerNow` of its own, as they are ordinarily written. */
-const MINTS = [
-  {
-    what: "a cast to ServerNow",
-    // `as ServerNow`, and the type named through a namespace, an import type or parentheses.
-    pattern: /\bas\s*\(?\s*(?:import\s*\([^)]*\)\s*\.\s*)?(?:[\w$]+\s*\.\s*)*ServerNow\b/,
-  },
-  {
-    what: "a cast to ServerNow in angle brackets",
-    // `<ServerNow>x` wherever it stands (after `return`, `=>`, `(` or `=`), but not a type's own argument,
-    // `Promise<ServerNow>`, whose type name starts with a capital.
-    pattern: /(?<![A-Z][\w$]*\s*)<\s*ServerNow\s*>/,
-  },
-  { what: "a guard that makes a ServerNow", pattern: /\bis\s+ServerNow\b/ },
-  {
-    what: "a typed query or call whose answer says it holds a ServerNow",
-    // tx<{ now: ServerNow }[]>`SELECT …`, or query<{ at: ServerNow }>(…): the row is whatever the database or the
-    // function gave back, a request's time included, typed as the clock's.
-    pattern: /\bServerNow\b[^`]*>\s*`|\b[a-z_$][\w$]*\s*<[^()]*\bServerNow\b[^()]*>\s*\(/,
-  },
-  // `as any` is the lint's (no-explicit-any), and the word is prose's ("answers as any ended proposal does").
-  { what: "`as never`, which fits any type, a ServerNow's included", pattern: /\bas\s+never\b/ },
-] as const;
+/** What each way of making a `ServerNow` is called in a failure. */
+const MINT = {
+  cast: "a cast to a type that holds a ServerNow, or to any or never",
+  guard: "a guard that makes a ServerNow",
+  answer:
+    "a call whose answer holds a ServerNow through a type parameter none of its parameters names (a typed query's row, a generic cast)",
+  bodiless: "a signature with no body whose answer holds a ServerNow (an overload or an ambient function)",
+  ambient: "an ambient declaration that holds a ServerNow",
+  silenced: "a comment that silences the compiler",
+} as const;
 
-/** Each line of `text` that makes a `ServerNow`, as "file:line: what". */
-export function nowMints(file: string, text: string): string[] {
+/** The settings every package's tsconfig extends. */
+function baseOptions(): ts.CompilerOptions {
+  const read = ts.readConfigFile(join(ROOT, "tsconfig.base.json"), (path) => ts.sys.readFile(path));
+  return ts.parseJsonConfigFileContent(read.config, ts.sys, ROOT).options;
+}
+
+/**
+ * One program of the server's TypeScript, and of `extra`, files that exist only in memory, beside it. The browser's
+ * pages (apps/web) are left out: they compile with the DOM's types, and they run none of the server's code.
+ */
+function compile(roots: readonly string[], extra: ReadonlyMap<string, string>): ts.Program {
+  const options = baseOptions();
+  const host = ts.createCompilerHost(options, true);
+  const getSourceFile = host.getSourceFile.bind(host);
+  const fileExists = host.fileExists.bind(host);
+  const readFile = host.readFile.bind(host);
+  host.getSourceFile = (name, version, onError, create) => {
+    const text = extra.get(name);
+    return text === undefined
+      ? getSourceFile(name, version, onError, create)
+      : ts.createSourceFile(name, text, version, true);
+  };
+  host.fileExists = (name) => extra.has(name) || fileExists(name);
+  host.readFile = (name) => extra.get(name) ?? readFile(name);
+  return ts.createProgram({ rootNames: [...roots.map((file) => join(ROOT, file)), ...extra.keys()], options, host });
+}
+
+function isReference(type: ts.Type): type is ts.TypeReference {
+  return (
+    (type.flags & ts.TypeFlags.Object) !== 0 && ((type as ts.ObjectType).objectFlags & ts.ObjectFlags.Reference) !== 0
+  );
+}
+
+/**
+ * Each place in `file` where code makes a `ServerNow` without the clock, as "file:line: what", read by the compiler,
+ * so a type is followed through its names, aliases, wrappers and fields, however the code is laid out:
+ * - a cast (`as`, or angle brackets) to a type a value of which, or a part of which, is a ServerNow, or to any or never;
+ * - a guard (`is`, `asserts … is`) that says a value is one;
+ * - a call, a `new` or a tagged template whose answer holds one through a type parameter none of its parameters
+ *   names, which is what a typed query is (`tx<Row[]>` and `const rows: Row[] = await tx…` alike) and what a generic
+ *   cast is (`function as<T>(value: unknown): T`);
+ * - a signature with no body whose answer holds one, which the compiler doesn't hold to an implementation (an overload,
+ *   a `declare function`), and an ambient variable that holds one;
+ * - a comment that silences the compiler (`@ts-expect-error`, `@ts-ignore`, `@ts-nocheck`).
+ */
+export function nowMints(program: ts.Program, file: string): string[] {
+  const source = program.getSourceFile(join(ROOT, file));
+  if (source === undefined) throw new Error(`time: ${file} isn't in the program`);
+  const checker = program.getTypeChecker();
+  const clock = program.getSourceFile(join(ROOT, TIME_MODULE, "clock.ts"));
+  const alias = clock?.statements.find(
+    (statement): statement is ts.TypeAliasDeclaration =>
+      ts.isTypeAliasDeclaration(statement) && statement.name.text === "ServerNow",
+  );
+  if (alias === undefined) throw new Error("time: clock.ts declares no ServerNow");
+  const now = checker.getTypeAtLocation(alias.name);
+
+  const inProduct = (symbol: ts.Symbol | undefined): boolean =>
+    symbol?.declarations?.some((declaration) => {
+      const file = declaration.getSourceFile();
+      return !program.isSourceFileDefaultLibrary(file) && !file.fileName.split("/").includes("node_modules");
+    }) ?? false;
+
+  // A value of `type` is a ServerNow, or a part of one is: a member of a union, a type's argument (an array's
+  // element, a promise's answer), an index's value, or, in a type the server's code declares, a field or an answer.
+  // `any` and `never` count only as the whole type: anywhere else, `any` is the lint's (no-unsafe-*).
+  const holds = (type: ts.Type, whole: boolean, seen: Set<ts.Type>): boolean => {
+    if ((type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Never)) !== 0) return whole;
+    if (seen.has(type)) return false;
+    seen.add(type);
+    if (checker.isTypeAssignableTo(type, now)) return true;
+    const parts: ts.Type[] = [...(type.aliasTypeArguments ?? [])];
+    if (type.isUnionOrIntersection()) parts.push(...type.types);
+    if (isReference(type)) parts.push(...checker.getTypeArguments(type));
+    for (const index of checker.getIndexInfosOfType(type)) parts.push(index.type);
+    if (inProduct(type.getSymbol())) {
+      for (const property of type.getProperties()) parts.push(checker.getTypeOfSymbol(property));
+      for (const signature of type.getCallSignatures()) parts.push(signature.getReturnType());
+    }
+    return parts.some((part) => holds(part, false, seen));
+  };
+  const holdsNow = (type: ts.Type, whole = true) => holds(type, whole, new Set());
+
+  // Whether any of `nodes` names the type parameter.
+  const names = (nodes: readonly ts.Node[], parameter: ts.TypeParameter): boolean => {
+    const symbol = parameter.getSymbol();
+    const look = (node: ts.Node): boolean =>
+      (ts.isTypeReferenceNode(node) && checker.getSymbolAtLocation(node.typeName) === symbol) ||
+      (ts.forEachChild(node, look) ?? false);
+    return nodes.some(look);
+  };
+
+  const answersNow = (node: ts.CallLikeExpression): boolean => {
+    const signature = checker.getResolvedSignature(node);
+    if (signature === undefined) return false;
+    const given = checker.getTypeArgumentsForResolvedSignature(signature) ?? [];
+    // A class with no constructor of its own is made by a signature the compiler writes, with no parameters at all.
+    const declaration = signature.getDeclaration() as ts.SignatureDeclaration | undefined;
+    if (declaration === undefined) return given.some((argument) => holdsNow(argument, false));
+    const parameters = checker.getSignatureFromDeclaration(declaration)?.getTypeParameters() ?? [];
+    return parameters.some((parameter, index) => {
+      const argument = given[index];
+      return argument !== undefined && !names(declaration.parameters, parameter) && holdsNow(argument, false);
+    });
+  };
+
+  // Whether `node` is in an ambient declaration (`declare const`, `declare global`, `declare module`).
+  const declared = (node: ts.Node | undefined): boolean =>
+    node !== undefined &&
+    ((ts.canHaveModifiers(node) &&
+      (ts.getModifiers(node) ?? []).some((modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword)) ||
+      declared(node.parent));
+
   const found: string[] = [];
-  text.split("\n").forEach((line, index) => {
-    for (const mint of MINTS) if (mint.pattern.test(line)) found.push(`${file}:${String(index + 1)}: ${mint.what}`);
-  });
+  const report = (position: number, what: string) => {
+    found.push(`${file}:${String(source.getLineAndCharacterOfPosition(position).line + 1)}: ${what}`);
+  };
+  for (const comment of source.text.matchAll(/@ts-(?:expect-error|ignore|nocheck)\b/g))
+    report(comment.index, MINT.silenced);
+  const visit = (node: ts.Node): void => {
+    if (ts.isAsExpression(node) || ts.isTypeAssertionExpression(node)) {
+      const isConst =
+        ts.isTypeReferenceNode(node.type) && ts.isIdentifier(node.type.typeName) && node.type.typeName.text === "const";
+      if (!isConst && holdsNow(checker.getTypeFromTypeNode(node.type))) report(node.type.getStart(source), MINT.cast);
+    } else if (ts.isTypePredicateNode(node)) {
+      if (node.type !== undefined && holdsNow(checker.getTypeFromTypeNode(node.type))) {
+        report(node.getStart(source), MINT.guard);
+      }
+    } else if (ts.isCallExpression(node) || ts.isNewExpression(node) || ts.isTaggedTemplateExpression(node)) {
+      if (answersNow(node)) report(node.getStart(source), MINT.answer);
+    } else if ((ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) && node.body === undefined) {
+      const answer = checker.getSignatureFromDeclaration(node)?.getReturnType();
+      const abstract = (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Abstract) !== 0;
+      if (!abstract && answer !== undefined && holdsNow(answer)) report(node.getStart(source), MINT.bodiless);
+    } else if (ts.isVariableDeclaration(node) && declared(node)) {
+      if (holdsNow(checker.getTypeAtLocation(node.name))) report(node.getStart(source), MINT.ambient);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
   return found;
 }
 
@@ -159,6 +286,256 @@ export function clockReads(file: string, text: string): string[] {
     }
   });
   return found;
+}
+
+/** The server's TypeScript: every product file the compiler reads but the browser's pages (apps/web). */
+function serverTypeScript(): string[] {
+  return productFiles().filter((file) => /\.(?:ts|mts|cts)$/.test(file) && !file.startsWith(join("apps", "web") + sep));
+}
+
+const HEAD = '/// <reference lib="esnext.temporal" />\n';
+const NOW = 'import type { ServerNow } from "@tadayo/domain";\n';
+const PREDICATE = 'import { readableDrops, type FragmentSql } from "@tadayo/domain";\n';
+const QUERY = 'import type postgres from "postgres";\n' + NOW + "interface Asked {\n  readonly now: ServerNow;\n}\n";
+
+/** Code that makes a ServerNow without the clock, each way as it would ordinarily be written, laid out by prettier. */
+const MAKES: readonly (readonly [what: string, text: string, refused?: string])[] = [
+  ["a cast", NOW + "export const nowOf = (t: Temporal.Instant): ServerNow => t as ServerNow;"],
+  [
+    "a cast through unknown",
+    NOW + "export const nowOf = (t: Temporal.Instant): ServerNow => t as unknown as ServerNow;",
+  ],
+  [
+    "a cast in angle brackets, which the compiler refuses too",
+    NOW + "export const nowOf = (t: Temporal.Instant): ServerNow => <ServerNow>t;",
+    "This syntax is not allowed when 'erasableSyntaxOnly' is enabled.",
+  ],
+  [
+    "a cast to the type through its module",
+    'import type * as domain from "@tadayo/domain";\n' +
+      "export const nowOf = (t: Temporal.Instant): domain.ServerNow => t as domain.ServerNow;",
+  ],
+  ["a cast to an alias", NOW + "type Now = ServerNow;\nexport const nowOf = (t: Temporal.Instant): Now => t as Now;"],
+  [
+    "a cast to the type imported under another name",
+    'import type { ServerNow as Now } from "@tadayo/domain";\nexport const nowOf = (t: Temporal.Instant): Now => t as Now;',
+  ],
+  [
+    "a cast to a wrapper of it",
+    NOW + "export const nowOf = (t: Temporal.Instant): Readonly<ServerNow> => t as Readonly<ServerNow>;",
+  ],
+  [
+    "a cast to another wrapper",
+    NOW + "export const nowOf = (t: Temporal.Instant): ServerNow => t as NonNullable<ServerNow>;",
+  ],
+  [
+    "a cast to a union",
+    NOW + "export const nowOf = (t: Temporal.Instant | null): ServerNow | null => t as ServerNow | null;",
+  ],
+  [
+    "a cast to a promise of one",
+    NOW + "export const nowOf = (t: Temporal.Instant): Promise<ServerNow> => Promise.resolve(t) as Promise<ServerNow>;",
+  ],
+  [
+    "a cast to a function that answers one",
+    NOW + "export const nowOf = ((t: Temporal.Instant) => t) as (t: Temporal.Instant) => ServerNow;",
+  ],
+  [
+    "a cast to never",
+    PREDICATE +
+      'export const page = (sql: FragmentSql<string>, t: Temporal.Instant): string =>\n  readableDrops(sql, "usr_1", t as never, "media");',
+  ],
+  [
+    "a cast to any",
+    PREDICATE +
+      'export const page = (sql: FragmentSql<string>, t: Temporal.Instant): string =>\n  readableDrops(sql, "usr_1", t as any, "media");',
+  ],
+  [
+    "a guard",
+    NOW + "export function isNow(t: Temporal.Instant): t is ServerNow {\n  return t.epochNanoseconds > 0n;\n}",
+  ],
+  [
+    "a guard that asserts",
+    NOW +
+      'export function assertNow(t: Temporal.Instant): asserts t is ServerNow {\n  if (t.epochNanoseconds < 0n) throw new Error("before 1970");\n}',
+  ],
+  [
+    "a typed query's named row",
+    QUERY +
+      "export async function askedNow(tx: postgres.TransactionSql, since: string): Promise<ServerNow | undefined> {\n" +
+      "  const [row] = await tx<Asked[]>`SELECT ${since}::pg_catalog.timestamptz AS now`;\n" +
+      "  return row?.now;\n}",
+  ],
+  [
+    "a typed query's row across lines",
+    'import type postgres from "postgres";\n' +
+      NOW +
+      "export async function askedNow(tx: postgres.TransactionSql, since: string): Promise<ServerNow | undefined> {\n" +
+      "  const [row] = await tx<\n" +
+      "    { id: string; occurrence_id: string; reveal_at: Temporal.Instant; close_at: Temporal.Instant; at: ServerNow }[]\n" +
+      "  >`SELECT o.id, o.id AS occurrence_id, o.reveal_at, o.close_at, ${since}::pg_catalog.timestamptz AS at FROM app.occurrences o`;\n" +
+      "  return row?.at;\n}",
+  ],
+  [
+    "a query's row typed by its variable",
+    QUERY +
+      "export async function askedNow(tx: postgres.TransactionSql, since: string): Promise<ServerNow | undefined> {\n" +
+      "  const rows: readonly Asked[] = await tx`SELECT ${since}::pg_catalog.timestamptz AS now`;\n" +
+      "  return rows[0]?.now;\n}",
+  ],
+  [
+    "a query's rows cast to a named row",
+    QUERY +
+      "export async function askedNow(tx: postgres.TransactionSql, since: string): Promise<ServerNow | undefined> {\n" +
+      "  const rows = (await tx`SELECT ${since}::pg_catalog.timestamptz AS now`) as unknown as readonly Asked[];\n" +
+      "  return rows[0]?.now;\n}",
+  ],
+  [
+    "a query's row cast to a named row",
+    QUERY +
+      "export async function askedNow(tx: postgres.TransactionSql, since: string): Promise<ServerNow | undefined> {\n" +
+      "  const [row] = await tx`SELECT ${since}::pg_catalog.timestamptz AS now`;\n" +
+      "  return (row as Asked | undefined)?.now;\n}",
+  ],
+  [
+    "an overload",
+    NOW +
+      "export function nowOf(t: Temporal.Instant): ServerNow;\nexport function nowOf(t: Temporal.Instant): Temporal.Instant {\n  return t;\n}",
+  ],
+  [
+    "an ambient function",
+    NOW + "declare function sampled(): ServerNow;\nexport const nowOf = (): ServerNow => sampled();",
+  ],
+  ["an ambient variable", NOW + "declare const sampled: ServerNow;\nexport const nowOf = (): ServerNow => sampled;"],
+  [
+    "a global declared to hold one",
+    NOW +
+      "declare global {\n  var sampledNow: ServerNow;\n}\nexport const nowOf = (): ServerNow => globalThis.sampledNow;",
+  ],
+  [
+    "a generic cast",
+    NOW +
+      "function cast<T>(value: unknown): T {\n  return value as T;\n}\nexport const nowOf = (t: Temporal.Instant): ServerNow => cast<ServerNow>(t);",
+  ],
+  [
+    "a generic cast, its type inferred",
+    NOW +
+      "function cast<T>(value: unknown): T {\n  return value as T;\n}\nexport const nowOf = (t: Temporal.Instant): ServerNow => cast(t);",
+  ],
+  [
+    "a class whose type parameter only its answer names",
+    NOW +
+      "class Held<T> {\n  readonly #value: unknown;\n  constructor(value: unknown) {\n    this.#value = value;\n  }\n" +
+      "  get(): T {\n    return this.#value as T;\n  }\n}\n" +
+      "export const nowOf = (t: Temporal.Instant): ServerNow => new Held<ServerNow>(t).get();",
+  ],
+  [
+    "a class with no constructor of its own whose type parameter only its answer names",
+    NOW +
+      "class Held<T> {\n  value: unknown = undefined;\n  get(): T {\n    return this.value as T;\n  }\n}\n" +
+      "export function nowOf(t: Temporal.Instant): ServerNow {\n  const held = new Held<ServerNow>();\n  held.value = t;\n  return held.get();\n}",
+  ],
+  [
+    "a method's overload",
+    NOW +
+      "class Times {\n  nowOf(t: Temporal.Instant): ServerNow;\n  nowOf(t: Temporal.Instant): Temporal.Instant {\n    return t;\n  }\n}\n" +
+      "export const nowOf = (t: Temporal.Instant): ServerNow => new Times().nowOf(t);",
+  ],
+  [
+    "the compiler told to expect an error",
+    PREDICATE +
+      "export function page(sql: FragmentSql<string>, t: Temporal.Instant): string {\n" +
+      "  // @ts-expect-error the request's time, taken as the server's\n" +
+      '  return readableDrops(sql, "usr_1", t, "media");\n}',
+  ],
+  [
+    "the compiler told to ignore a line",
+    PREDICATE +
+      "export function page(sql: FragmentSql<string>, t: Temporal.Instant): string {\n" +
+      "  // @ts-ignore the request's time, taken as the server's\n" +
+      '  return readableDrops(sql, "usr_1", t, "media");\n}',
+  ],
+  [
+    "the compiler told to leave a file alone",
+    "// @ts-nocheck\n" +
+      PREDICATE +
+      'export const page = (sql: FragmentSql<string>, t: Temporal.Instant): string => readableDrops(sql, "usr_1", t, "media");',
+  ],
+];
+
+/** Code that names the type, keeps the clock's samples and passes them on, and casts to other types: none makes one. */
+const LEAVES: readonly (readonly [string, string])[] = [
+  [
+    "the type named for a parameter, a field and an answer",
+    NOW +
+      "export interface Made {\n  readonly at: ServerNow;\n  readonly recorded: boolean;\n}\n" +
+      "export function made(at: ServerNow): Made {\n  return { at, recorded: true };\n}\n" +
+      "export function keep(now: ServerNow): ServerNow {\n  return now;\n}",
+  ],
+  [
+    "containers of the clock's samples",
+    NOW +
+      "export function kept(now: ServerNow): Map<string, ServerNow> {\n" +
+      "  const seen = new Map<string, ServerNow>();\n  const at: ServerNow[] = [];\n  at.push(now);\n" +
+      '  for (const each of at) seen.set("usr_1", each);\n  return seen;\n}',
+  ],
+  [
+    "the samples passed on",
+    NOW +
+      "export async function first(rows: readonly { readonly at: ServerNow }[]): Promise<ServerNow | undefined> {\n" +
+      "  const ats = rows.map((row) => row.at);\n  return Promise.resolve(ats.find((at) => at.epochNanoseconds > 0n));\n}",
+  ],
+  [
+    "a typed query that holds none",
+    'import type postgres from "postgres";\n' +
+      "export async function days(tx: postgres.TransactionSql): Promise<number> {\n" +
+      "  const rows = await tx<{ id: string; reveal_at: Temporal.Instant }[]>`SELECT id, reveal_at FROM app.occurrences`;\n" +
+      "  return rows.length;\n}",
+  ],
+  [
+    "the predicate given the clock's sample",
+    'import { readableDrops, type Clock, type ClockSql, type FragmentSql } from "@tadayo/domain";\n' +
+      "export async function page(clock: Clock, tx: ClockSql, sql: FragmentSql<string>): Promise<string> {\n" +
+      '  const now = await clock.sample(tx);\n  return readableDrops(sql, "usr_1", now, "media");\n}',
+  ],
+  [
+    "casts to other types",
+    "export function first(rows: readonly Record<string, unknown>[]): { id: string } | undefined {\n" +
+      '  const kinds = ["photo", "video"] as const;\n' +
+      "  return kinds.length > 0 ? (rows[0] as { id: string } | undefined) : undefined;\n}",
+  ],
+  [
+    "prose about the compiler",
+    "// A ServerNow comes only from the clock, with no cast and no ts-expect-error.\nexport const one = 1;",
+  ],
+];
+
+function caseFile(kind: "makes" | "leaves", index: number): string {
+  return join("services", "worker", "src", `now-${kind}-${String(index)}.ts`);
+}
+
+const TIMEOUT = 300_000;
+
+let compiled: ts.Program | undefined;
+
+/** The server's TypeScript, compiled once, with each case above beside it as a file of the worker's. */
+function server(): ts.Program {
+  const cases = new Map([
+    ...MAKES.map(([, text], index) => [join(ROOT, caseFile("makes", index)), HEAD + text + "\n"] as const),
+    ...LEAVES.map(([, text], index) => [join(ROOT, caseFile("leaves", index)), HEAD + text + "\n"] as const),
+  ]);
+  compiled ??= compile([...serverTypeScript(), join(TIME_MODULE, "clock.ts")], cases);
+  return compiled;
+}
+
+/** The compiler's errors in `file`, as "file:line: message". */
+function problems(program: ts.Program, file: string): string[] {
+  const source = program.getSourceFile(join(ROOT, file));
+  if (source === undefined) return [`${file}: not in the program`];
+  return ts.getPreEmitDiagnostics(program, source).map((diagnostic) => {
+    const line = diagnostic.start === undefined ? 0 : source.getLineAndCharacterOfPosition(diagnostic.start).line + 1;
+    return `${file}:${String(line)}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`;
+  });
 }
 
 describe("only the time module reads a clock (T1)", () => {
@@ -290,51 +667,42 @@ describe("only the time module reads a clock (T1)", () => {
     }
   });
 
-  it("finds no code outside the time module that makes a ServerNow of its own (the outside audit's A14)", () => {
-    const found = productFiles().flatMap((file) => nowMints(file, readFileSync(join(ROOT, file), "utf8")));
-    expect(found).toEqual([]);
-  });
+  it(
+    "compiles the server's TypeScript without an error, so the check below follows every type to its end",
+    () => {
+      const program = server();
+      const errors = serverTypeScript().flatMap((file) => problems(program, file));
+      expect(errors).toEqual([]);
+    },
+    TIMEOUT,
+  );
 
-  it("catches the ordinary ways of making one, and leaves the type alone", () => {
-    for (const line of [
-      "const now = Temporal.Instant.from(request.query.t) as ServerNow;",
-      'const now = request.headers["if-modified-since"] as unknown as ServerNow;',
-      'readableDrops(sql, viewer, parsed as  ServerNow, "media")',
-      "const now = parsed as clock.ServerNow;",
-      'const now = parsed as import("../time/clock.ts").ServerNow;',
-      "const now = parsed as (ServerNow);",
-      "const now = <ServerNow>parsed;",
-      "const now = (< ServerNow >parsed);",
-      "return <ServerNow>Temporal.Instant.from(query.t);",
-      "const toNow = (t: Temporal.Instant) => <ServerNow>t;",
-      "yield <ServerNow>t;",
-      "case <ServerNow>t:",
-      "function isNow(value: Temporal.Instant): value is ServerNow {",
-      "function assertNow(value: unknown): asserts value is ServerNow {",
-      "const [row] = await tx<{ now: ServerNow }[]>`SELECT ${request.query.since}::pg_catalog.timestamptz AS now`;",
-      "const rows = await sql<{ at: ServerNow }[]>`",
-      "const row = await query<{ at: ServerNow }>(tx, request.query.since);",
-      'readableDrops(sql, viewer, Temporal.Instant.from(query.t) as never, "media")',
-    ])
-      expect(nowMints("x.ts", line), line).not.toEqual([]);
-    for (const line of [
-      'import type { ServerNow } from "../time/clock.ts";',
-      "  type ServerNow,",
-      'export { prepareClock, type Clock, type ClockSql, type ServerNow } from "./time/clock.ts";',
-      "export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow, what: ReadWhat): F {",
-      "  readonly at: ServerNow;",
-      "): Promise<{ readonly at: ServerNow; readonly recorded: boolean }> {",
-      "sample(tx: ClockSql): Promise<ServerNow>;",
-      "const seen = new Map<string, ServerNow>();",
-      "const at: Array<ServerNow> = [];",
-      "const rows = await tx<{ id: string; reveal_at: Temporal.Instant }[]>`",
-      "// a ServerNow comes only from the clock",
-      "const nowIsServerNow = true;",
-      "const nevertheless = true;",
-      '"anyone else it answers as any ended proposal does (FQ126)."',
-    ])
-      expect(nowMints("x.ts", line), line).toEqual([]);
-  });
+  it(
+    "finds no code outside the time module that makes a ServerNow of its own (the outside audit's A14)",
+    () => {
+      const program = server();
+      expect(serverTypeScript().flatMap((file) => nowMints(program, file))).toEqual([]);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "catches each way of making one, however it is laid out or named, and leaves the type alone",
+    () => {
+      const program = server();
+      for (const [index, [what, , refused]] of MAKES.entries()) {
+        const file = caseFile("makes", index);
+        expect(problems(program, file), what).toEqual(refused === undefined ? [] : [`${file}:3: ${refused}`]);
+        expect(nowMints(program, file), what).not.toEqual([]);
+      }
+      for (const [index, [what]] of LEAVES.entries()) {
+        const file = caseFile("leaves", index);
+        expect(problems(program, file), what).toEqual([]);
+        expect(nowMints(program, file), what).toEqual([]);
+      }
+    },
+    TIMEOUT,
+  );
 
   it("leaves the dev clock's table out of every numbered migration, which prod runs too (ADR-013)", () => {
     const migrations = walk("db").filter((file) => file.startsWith(MIGRATIONS) && file.endsWith(".sql"));

@@ -150,13 +150,14 @@ const withAccount = (id: string, more: Partial<WorldAccount>) =>
 const withDay = (id: string, more: Partial<WorldDay>) =>
   changed((w) => w.days.set(id, { ...(w.days.get(id) as WorldDay), ...more }));
 /**
- * Cleo left before the day's drops were committed and came back under a new interval, `itv_cleo2`: the drops'
- * audience holds her ended interval and not the new one (T8 seals it at commit), so she's an active member who isn't
- * in it, and a judge that asked "an active member, and in the audience" of two different intervals would let her in.
+ * Cleo was an active member when the day's drops were committed, so their audience holds Cleo's interval then,
+ * `itv_cleo` (T8 seals it at commit). Cleo left before the reveal and came back under a new interval, `itv_cleo2`,
+ * which the audience doesn't hold: an active member who isn't in it, whom a judge that asked "an active member, and in
+ * the audience" of two different intervals would let in.
  */
 const rejoined = (audience: ReadonlySet<string> = EVERYONE) =>
   changed((w) => {
-    w.members.set("itv_cleo", member("usr_cleo", "Cleo", { leftAt: at("2026-11-05T21:00:00Z") }));
+    w.members.set("itv_cleo", member("usr_cleo", "Cleo", { leftAt: at("2026-11-06T22:00:00Z") }));
     w.members.set("itv_cleo2", member("usr_cleo", "Cleo", { joinedAt: at("2026-11-07T13:00:00Z") }));
     w.drops.set("drp_ben", drop("itv_ben", "occ_sat", { audience }));
   });
@@ -375,6 +376,8 @@ describe("Home's modes (homeFor)", () => {
     );
     expect(homeFor(seen(suspended), CLUB)).toMatchObject({ mode: "unavailable" });
     expect(homeFor({ ...seen(), rows: clubRows(false) }, CLUB)).toMatchObject({ mode: "awaiting_activation" });
+    // Suspended comes before awaiting activation, in the contract's order: a club that is both is unavailable.
+    expect(homeFor({ ...seen(suspended), rows: clubRows(false) }, CLUB)).toMatchObject({ mode: "unavailable" });
     const open = homeFor(seen(), CLUB);
     expect(open).toMatchObject({ mode: "day", day: { stage: "revealed", viewer: { is_star: false } } });
     expect((open as { day: { drops: { id: string }[] } }).day.drops.map((one) => one.id)).toEqual([
