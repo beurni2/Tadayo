@@ -149,6 +149,17 @@ const withAccount = (id: string, more: Partial<WorldAccount>) =>
   changed((w) => w.accounts.set(id, { ...(w.accounts.get(id) as WorldAccount), ...more }));
 const withDay = (id: string, more: Partial<WorldDay>) =>
   changed((w) => w.days.set(id, { ...(w.days.get(id) as WorldDay), ...more }));
+/**
+ * Cleo left before the day's drops were committed and came back under a new interval, `itv_cleo2`: the drops'
+ * audience holds her ended interval and not the new one (T8 seals it at commit), so she's an active member who isn't
+ * in it, and a judge that asked "an active member, and in the audience" of two different intervals would let her in.
+ */
+const rejoined = (audience: ReadonlySet<string> = EVERYONE) =>
+  changed((w) => {
+    w.members.set("itv_cleo", member("usr_cleo", "Cleo", { leftAt: at("2026-11-05T21:00:00Z") }));
+    w.members.set("itv_cleo2", member("usr_cleo", "Cleo", { joinedAt: at("2026-11-07T13:00:00Z") }));
+    w.drops.set("drp_ben", drop("itv_ben", "occ_sat", { audience }));
+  });
 
 describe("Home's statement of the read predicate (mayView; T9, T27; FQ63)", () => {
   it("lets a member in the audience see a drop's media once its day has opened", () => {
@@ -165,6 +176,7 @@ describe("Home's statement of the read predicate (mayView; T9, T27; FQ63)", () =
       ["the viewer's account deleted", seen(withAccount("usr_cleo", { state: "deleted" }))],
       ["the viewer outside the audience", seen(withDrop("drp_ben", { audience: new Set(["itv_ana", "itv_ben"]) }))],
       ["the viewer's interval ended", seen(withMember("itv_cleo", { leftAt: at("2026-11-06T21:00:00Z") }))],
+      ["the viewer back in the club under an interval the audience doesn't hold", seen(rejoined())],
       ["the drop held", seen(withDrop("drp_ben", { state: "held" }))],
       ["the drop withdrawn", seen(withDrop("drp_ben", { state: "withdrawn", endedAt: REVEAL }))],
       ["the drop removed", seen(withDrop("drp_ben", { state: "removed", endedAt: REVEAL }))],
@@ -188,6 +200,11 @@ describe("Home's statement of the read predicate (mayView; T9, T27; FQ63)", () =
     for (const [name, one, id = "drp_ben"] of refusing) expect(mayView(one, id), name).toBe(false);
   });
 
+  it("lets the viewer back in the club see a drop whose audience holds the interval they hold now", () => {
+    // The refusal above is the audience's, not the rejoining's: the same world with the new interval in it reads.
+    expect(mayView(seen(rejoined(new Set([...EVERYONE, "itv_cleo2"]))), "drp_ben")).toBe(true);
+  });
+
   it("holds the star's leaving and deletion to the reveal, and a block to its two people", () => {
     expect(mayView(seen(withMember("itv_ana", { leftAt: REVEAL })), "drp_ben")).toBe(true);
     expect(mayView(seen(withAccount("usr_ana", { deletionRequestedAt: REVEAL })), "drp_ben")).toBe(true);
@@ -201,10 +218,17 @@ describe("Home's statement of the read predicate (mayView; T9, T27; FQ63)", () =
 });
 
 describe("the open day's page (pageFor; T35; addendum 4)", () => {
-  it("puts the star's drops first, then friends', each by commit time and then id", () => {
+  it("puts the star's drops first, then friends', each by commit time and then id, byte by byte", () => {
+    // The world's order disagrees with the page's at every step: friends before the star, the later before the
+    // earlier, and each tie's larger id first. "drp_Zed" comes before "drp_cleo" byte by byte, as Postgres orders
+    // under COLLATE "C", and after it in a locale's order.
     const w = changed((parts) => {
+      parts.drops.clear();
+      parts.drops.set("drp_ben", drop("itv_ben", "occ_sat"));
       parts.drops.set("drp_cleo", drop("itv_cleo", "occ_sat"));
+      parts.drops.set("drp_Zed", drop("itv_cleo", "occ_sat"));
       parts.drops.set("drp_ana_b", drop("itv_ana", "occ_sat"));
+      parts.drops.set("drp_ana", drop("itv_ana", "occ_sat"));
     });
     const same = at("2026-11-06T20:00:00Z");
     const page = pageFor(
@@ -212,8 +236,9 @@ describe("the open day's page (pageFor; T35; addendum 4)", () => {
         submitted: new Map([
           ["drp_ben", same.add({ minutes: 2 })],
           ["drp_cleo", same],
-          ["drp_ana", same.add({ minutes: 5 })],
+          ["drp_Zed", same],
           ["drp_ana_b", same.add({ minutes: 5 })],
+          ["drp_ana", same.add({ minutes: 5 })],
         ]),
       }),
       "occ_sat",
@@ -223,6 +248,7 @@ describe("the open day's page (pageFor; T35; addendum 4)", () => {
     expect(page.drops.map((one) => [one.id, one.section])).toEqual([
       ["drp_ana", "star"],
       ["drp_ana_b", "star"],
+      ["drp_Zed", "friends"],
       ["drp_cleo", "friends"],
       ["drp_ben", "friends"],
     ]);
@@ -268,10 +294,13 @@ describe("the open day's page (pageFor; T35; addendum 4)", () => {
 });
 
 describe("the recent days (recentFor; D08)", () => {
-  /** Seven closed Saturdays of Ana's before this one, each with Ben's photo; the newest has more. */
+  /**
+   * Seven closed Saturdays of Ana's before this one, each with Ben's photo, written oldest first, so the world's
+   * order is the reverse of the list's.
+   */
   function past(): WorldFacts {
     return changed((parts) => {
-      for (let week = 1; week <= 7; week += 1) {
+      for (let week = 7; week >= 1; week -= 1) {
         const reveal = REVEAL.subtract({ hours: 24 * 7 * week });
         const id = `occ_${String(week)}`;
         parts.days.set(
@@ -328,6 +357,10 @@ describe("the recent days (recentFor; D08)", () => {
 });
 
 describe("Home's modes (homeFor)", () => {
+  /** Ana's next Saturday, 14 November 2026, at 7 AM in New York. */
+  const NEXT = REVEAL.add({ hours: 24 * 7 });
+  const withNext = () => changed((w) => w.days.set("occ_next", day("itv_ana", "2026-11-14", NEXT)));
+
   it("gives the neutral not-found to anyone not an active member with an active account", () => {
     expect(homeFor(seen(world(), null), CLUB)).toBeUndefined();
     expect(homeFor(seen(world(), "usr_zed"), CLUB)).toBeUndefined();
@@ -348,6 +381,8 @@ describe("Home's modes (homeFor)", () => {
       "drp_ana",
       "drp_ben",
     ]);
+    // With the next Saturday already coming, the open day still comes first.
+    expect(homeFor(seen(withNext()), CLUB)).toMatchObject({ mode: "day", day: { stage: "revealed" } });
   });
 
   it("waits for the next day before it opens, and pauses or has no days once none is coming", () => {
@@ -359,6 +394,15 @@ describe("Home's modes (homeFor)", () => {
       w.members.set("itv_ben", member("usr_ben", "Ben", { leftAt: CLOSE }));
     });
     expect(homeFor(seen(alone, "usr_cleo", CLOSE.add({ hours: 1 })), CLUB)).toMatchObject({ mode: "paused" });
+    // A day coming is waited for even by a member left alone: Ana, whose next Saturday it is, after Ben and Cleo left.
+    const aloneWithNext = changed((w) => {
+      w.days.set("occ_next", day("itv_ana", "2026-11-14", NEXT));
+      w.members.set("itv_ben", member("usr_ben", "Ben", { leftAt: CLOSE }));
+      w.members.set("itv_cleo", member("usr_cleo", "Cleo", { leftAt: CLOSE }));
+    });
+    expect(homeFor(seen(aloneWithNext, "usr_ana", CLOSE.add({ hours: 1 })), CLUB)).toMatchObject({
+      mode: "waiting",
+    });
     // A day whose star left before it opened never opens, and isn't waited for (FQ63).
     const gone = withMember("itv_ana", { leftAt: REVEAL.subtract({ hours: 2 }) });
     expect(homeFor(seen(gone, "usr_cleo", REVEAL.subtract({ hours: 1 })), CLUB)).toMatchObject({ mode: "no_days" });

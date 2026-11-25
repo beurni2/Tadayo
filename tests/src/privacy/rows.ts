@@ -159,7 +159,7 @@
 //   two photos with the drop just added counted (review rounds 3 and 4). The star adds no link to the matrix's
 //   day, so the star's links are met by slots alone; with a committed link counted they are held on Postgres
 //   (tests/src/db/reservations.test.ts, "counts Ana's committed drops with Ana's live slots"). Each role's test counts
-//   the slots it held, gave back and saw lapse, and one test names the five roles that held any, with the
+//   the slots it held, gave back and saw lapse, and one test names the six roles that held any, with the
 //   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"), as one counts
 //   who got Cleo's slot back. No matrix role joins after the day closes: Q06's not-found for a day that closed
 //   before the caller's interval began is held on Postgres and by the judge's tests. What passes
@@ -214,14 +214,20 @@
 //   row's hash is of (scanner.ts). A later phase of a cell may find the club full of the candidates
 //   carried, and then its proposal is CLUB_FULL and the rest of its table isn't run: each role's test
 //   counts the revisions, links and other member's answers its table made and asserts them, and one test
-//   names the six roles that made any (matrix.test.ts, "the roster's table ran"). Since the invitation's
+//   names the seven roles that made any (matrix.test.ts, "the roster's table ran"). Since the invitation's
 //   table (below) ends each phase's revision by a decline, its candidates end with it, so a later phase no
-//   longer finds the club full of them; the judge still says CLUB_FULL should the rows ever hold six;
+//   longer finds the club full of them, except in the cells where that table stops at the second link
+//   (below); the judge still says CLUB_FULL should the rows ever hold six;
 // - for the invitation's three routes and the roster's two decisions (B1's third slice, done): in every
 //   cell, each with a body the contract accepts that changes nothing (a token nobody made, a version no
 //   revision is at), judged by invitation.ts and roster.ts's `decisionOutcome`: the neutral not-found, or
 //   VERSION_CONFLICT to the one member who reads the world's own revision. Then, in every phase, for the
-//   revision the roster's table made: a second link for its candidate, held by someone of another club.
+//   revision the roster's table made: a second link for its candidate, held by someone of another club,
+//   its token kept back from every later answer of the cell. The rest of the table needs another member
+//   of the club with a session and an active account, to decline at the end: in the six cells with none
+//   (FQ88's role, the author having blocked Cleo and left, in the two states that take the star away)
+//   it stops at the second link, which stays live, and its revision open, for the rest of the cell; the
+//   cells are counted and pinned (matrix.test.ts, "the roster's table ran"). Elsewhere:
 //   The signed-out page reads the inviter's name, and nothing once the link is used; the holder previews
 //   the exact roster (`open`), is refused a stale version, accepts under their own name (`changed`: a new
 //   revision under that name with no approval and no acceptance, FQ66, FQ84; its retry the same bytes),

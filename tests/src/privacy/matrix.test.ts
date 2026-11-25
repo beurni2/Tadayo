@@ -1,7 +1,8 @@
 /// <reference lib="esnext.temporal" />
 // The privacy matrix over the API's app (TECH-DESIGN section 8; T9, T10, T14, T16, T27, T53, T55; Q05 to Q09),
-// generated from the contract's operations: every route, as every role, in each of the drop's six states and a
-// cancelled day, at each phase of the day by the server's clock. Each cell is checked against its row (rows.ts,
+// generated from the contract's operations: every route, as every role, in each of the matrix's ten states (the
+// drop's six, a cancelled day, its author's account being deleted, and its star gone or deleting before the reveal),
+// at each phase of the day by the server's clock. Each cell is checked against its row (rows.ts,
 // account.ts), and every answer it gets goes through the leak scanner (scanner.ts). Then each request again
 // with the client's clock and parameters moved past the reveal (T16, Q09), and with each id and cursor guessed
 // or malformed (T14); and each request from callers without a session, with the cell's ids, ids that name
@@ -1763,17 +1764,22 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             await judged(link, relinked, second.problems, "a new link after the revoke");
             const token = second.token;
             const linkId = second.id;
+            // The second link's token is kept back from every later answer from here on, whether or not the table
+            // runs: where it doesn't, the link stays live, and its revision open, for the rest of the cell.
+            if (token !== undefined) {
+              secrets.push(token);
+              facts = await load();
+            }
             if (other === undefined) {
-              // Nobody else in the club has a session and an active account (the author left by a block, and the
-              // star is gone or deleting): the table needs another member to decline at the end, so it doesn't run
-              // here, and the cells where it doesn't are counted and pinned after the roles.
+              // Nobody else in the club has a session and an active account: the author left by a block, and the
+              // star is gone, or has asked to delete their account and so has no session, though Ana's membership
+              // is still active. The table needs another member to decline at the end, so it doesn't run here, and
+              // the cells where it doesn't are counted and pinned after the roles.
               roster.alone += 1;
             } else if (token === undefined || linkId === undefined) {
               wrong.push(`${where}: no second link to run it with`);
             } else {
-              secrets.push(token);
               roster.invitations += 1;
-              facts = await load();
               const linkSeen = () => ({ schedule, roster: rosterWorld, now });
               const web = json(byId("previewInvitationWeb"), { token });
               const preview = json(byId("previewInvitation"), { token });
@@ -3071,7 +3077,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
 });
 
 describe("the roster's table ran (tests/src/privacy/roster.ts)", () => {
-  it("made revisions and links for the six roles who are members the club answers, and for no other role", () => {
+  it("made revisions and links for the seven roles who are members the club answers, and for no other role", () => {
     // Counted here apart from the judges: a table skipped whole would balance every other count. This reads
     // what the role tests above left, so it holds only when the whole file runs, in its order: under `-t`
     // for one role, or after a role's test failed before it stored its table, it fails too.
@@ -3088,8 +3094,9 @@ describe("the roster's table ran (tests/src/privacy/roster.ts)", () => {
     ]);
     // The cells where nobody else in the club has a session and an active account, so the invitation's table, which
     // needs another member to decline at the end, didn't run: once the author has blocked Cleo and left by the block,
-    // the two states that take the star away (gone, or deleting, before the reveal) leave Cleo alone in the club, in
-    // each of the role's three phases. Every other role, and that role in every other state, ran it.
+    // the two states that take the star away leave nobody else with a session and an active account, in each of the
+    // role's three phases. The star gone has left; the star deleting has no session, though Ana's membership is still
+    // active. Every other role, and that role in every other state, ran it.
     expect(
       [...ROSTER_TABLES].filter(([, table]) => table.alone > 0).map(([name, table]) => [name, table.alone]),
     ).toEqual([

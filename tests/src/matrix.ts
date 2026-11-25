@@ -243,9 +243,12 @@ export const ROLES: Role[] = [
     phases: ["open", "past", "past, a year on"],
   },
   {
-    // A block has no unblock and outlives the clubs it ended (D11), so the two may be members of a club together
-    // later; no command lets them yet, but the schema does, and T9 denies the drop either way. Nobody leaves here,
-    // so the block is the only thing that denies (the outside audit's A14).
+    // A block ends every club the two shared (D11) and stands in every club after it (FQ88); whether it can be
+    // undone is FQ72's, and no command puts the two in a club together after it yet. The schema allows it, and T9
+    // denies the drop either way. Nobody leaves here, so the block is the only thing that denies (the outside audit's
+    // A14). The block names Ben's interval in this club; one made in another club, which a predicate keyed by the
+    // interval rather than the account would miss, is db/home.test.ts' and db/authorization.test.ts' (a second club
+    // here would change what the matrix's other tables see of Ben).
     name: "blocked: Cleo blocked the author, both still members",
     reads: false,
     make: async (tx, w) => {
@@ -327,6 +330,9 @@ export const STATES: {
     make: (tx, w) => tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${w.day}`,
   },
   {
+    // Against FQ88's role, Ben's deletion is asked here, at STATE_AT, and Ben then blocks Cleo at the reveal: an account
+    // acting after its deletion began, which no command would let it do (T27). Both deny, and no condition rests on
+    // that cell alone, so the matrix keeps it rather than give one role a world of its own.
     name: "its author's account being deleted (T27)",
     denies: true,
     endsTheDrop: false,

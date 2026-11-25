@@ -2,11 +2,12 @@
 // The read predicate on real rows (T9; TECH-DESIGN section 5, one authorization module), through
 // both of its paths: the TypeScript policy on the facts loaded for one drop (`mayReadDrop`), and
 // the SQL that filters lists (`readableDrops`). Every role of TECH-DESIGN section 8's privacy
-// matrix, each of its six drop states and a cancelled day, collecting, open and past by the time
+// matrix, each of its ten states (the drop's six, a cancelled day, its author's account being deleted, and its
+// star gone or deleting before the reveal), collecting, open and past by the time
 // module's fake clock, and the three reads: both paths must give the expected answer, so the
 // policy and the SQL can't drift apart. Then T23's denials after the drop was read and saved, a
-// block made before a later shared interval, a held day (FQ63), an author who leaves (spec 22),
-// and T14's missing ids.
+// block made before a later shared interval, a block made in another club with both still members
+// here, a held day (FQ63), an author who leaves (spec 22), and T14's missing ids.
 //
 // The rows are built as the commands will write them (world.ts), each role in its own world, so a
 // role's rows never touch another's. The clock then visits each instant over the same rows: the
@@ -34,6 +35,7 @@ import {
   AT,
   checkAsAtCommit,
   commitDrop,
+  intervalElsewhere,
   joinByRoster,
   leave,
   newId,
@@ -98,7 +100,7 @@ async function leaveAt(
   `;
 }
 
-describe("T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day", () => {
+describe("T9: every role of the privacy matrix, before, during and after the day, in each of the matrix's ten states", () => {
   for (const role of ROLES) {
     it(`answers the ${role.name} by both paths alike`, async () => {
       const wrong: string[] = [];
@@ -267,6 +269,48 @@ describe("T23 and FQ88: a block denies in every interval after it, whoever made 
         }
       }
     });
+  });
+  it("hides each one's drops from the other when the block was made in another club, both still members here", async () => {
+    // The block names the blocked person's interval in a club of their own (D11 lists every club the two shared):
+    // nobody leaves this one, so the block is the only denial, and a predicate keyed by this club's interval rather
+    // than by the account would miss it. No command makes these rows today (FQ72); the predicate denies them anyway.
+    for (const blocker of ["Cleo", "Ben"] as const) {
+      await rolledBack(db, async (tx) => {
+        const w = await newWorld(plain(tx));
+        const [from, to, name] = blocker === "Cleo" ? [w.cleo, w.ben, "Ben"] : [w.ben, w.cleo, "Cleo"];
+        const elsewhere = await intervalElsewhere(plain(tx), w, to.user);
+        await tx`
+          INSERT INTO app.blocks (id, blocker_user_id, blocked_user_id, blocked_interval_id, blocked_name, created_at)
+          VALUES (${newId("blk")}, ${from.user}, ${to.user}, ${elsewhere}, ${name}, ${AFTER})`;
+        const at = new Date("2026-11-06T20:40:00Z");
+        const bens = await commitDrop(plain(tx), w, w.ben, { caption: "From Ben", at });
+        const cleos = await commitDrop(plain(tx), w, w.cleo, { caption: "From Cleo", at });
+        await checkAsAtCommit(plain(tx));
+        const clock = fakeClock(REVEAL);
+        for (const [phase, instant] of Object.entries(PHASES) as [Phase, Temporal.Instant][]) {
+          clock.set(instant);
+          const now = await clock.sample(tx);
+          for (const what of READS) {
+            const reads = what === "caption" || phase !== "collecting";
+            const label = `${blocker} blocked, ${phase}, ${what}`;
+            expect(await bothPaths(tx, w.cleo.user, bens, what, now), `Cleo, Ben's, ${label}`).toEqual({
+              policy: false,
+              sql: false,
+            });
+            expect(await bothPaths(tx, w.ben.user, cleos, what, now), `Ben, Cleo's, ${label}`).toEqual({
+              policy: false,
+              sql: false,
+            });
+            for (const drop of [bens, cleos]) {
+              expect(await bothPaths(tx, w.ana.user, drop, what, now), `Ana, ${label}`).toEqual({
+                policy: reads,
+                sql: reads,
+              });
+            }
+          }
+        }
+      });
+    }
   });
 });
 

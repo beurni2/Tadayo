@@ -9,9 +9,11 @@
 // clock, not a deliberate way round it such as `const D = Date; new D()`. The app's own clock, the
 // device half of T1, is the ios lane's: Swift isn't scanned here.
 //
-// Nor does code outside the time module make a `ServerNow` of its own, by a cast or a guard: the read predicate
-// and the add-target policy take only a `ServerNow`, so a time a route read from a request (`?t=`, a header) can
-// reach them only that way (the outside audit's A14). Tests may.
+// Nor does code outside the time module make a `ServerNow` of its own: the read predicate and the add-target policy
+// take only a `ServerNow`, so a time a route read from a request (`?t=`, a header) reaches them only through
+// something that says it is one without the clock: a cast, a guard, a typed query's row, or `as never`, which fits
+// any type (the outside audit's A14). The scan catches those ways as they are ordinarily written, on one line;
+// TypeScript's own escape hatches, written across lines or built from parts, are a deliberate way round. Tests may.
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
@@ -55,12 +57,28 @@ const READS = [
   { what: "the tests' fake clock", pattern: /\bfakeClock\b|@tadayo\/domain\/testing/ },
 ] as const;
 
-/** The ways code could make a `ServerNow` of its own: a cast, with `as` or angle brackets, or a guard that says so. */
+/** The ways code could make a `ServerNow` of its own, as they are ordinarily written. */
 const MINTS = [
-  { what: "a cast to ServerNow", pattern: /\bas\s+ServerNow\b/ },
-  // `<ServerNow>x`, but not a type argument, `Promise<ServerNow>`, which a name or a bracket comes before.
-  { what: "a cast to ServerNow in angle brackets", pattern: /(?<![\w$)\]>]\s*)<\s*ServerNow\s*>/ },
+  {
+    what: "a cast to ServerNow",
+    // `as ServerNow`, and the type named through a namespace, an import type or parentheses.
+    pattern: /\bas\s*\(?\s*(?:import\s*\([^)]*\)\s*\.\s*)?(?:[\w$]+\s*\.\s*)*ServerNow\b/,
+  },
+  {
+    what: "a cast to ServerNow in angle brackets",
+    // `<ServerNow>x` wherever it stands (after `return`, `=>`, `(` or `=`), but not a type's own argument,
+    // `Promise<ServerNow>`, whose type name starts with a capital.
+    pattern: /(?<![A-Z][\w$]*\s*)<\s*ServerNow\s*>/,
+  },
   { what: "a guard that makes a ServerNow", pattern: /\bis\s+ServerNow\b/ },
+  {
+    what: "a typed query or call whose answer says it holds a ServerNow",
+    // tx<{ now: ServerNow }[]>`SELECT …`, or query<{ at: ServerNow }>(…): the row is whatever the database or the
+    // function gave back, a request's time included, typed as the clock's.
+    pattern: /\bServerNow\b[^`]*>\s*`|\b[a-z_$][\w$]*\s*<[^()]*\bServerNow\b[^()]*>\s*\(/,
+  },
+  // `as any` is the lint's (no-explicit-any), and the word is prose's ("answers as any ended proposal does").
+  { what: "`as never`, which fits any type, a ServerNow's included", pattern: /\bas\s+never\b/ },
 ] as const;
 
 /** Each line of `text` that makes a `ServerNow`, as "file:line: what". */
@@ -277,25 +295,43 @@ describe("only the time module reads a clock (T1)", () => {
     expect(found).toEqual([]);
   });
 
-  it("catches each way of making one, and leaves the type alone", () => {
+  it("catches the ordinary ways of making one, and leaves the type alone", () => {
     for (const line of [
       "const now = Temporal.Instant.from(request.query.t) as ServerNow;",
       'const now = request.headers["if-modified-since"] as unknown as ServerNow;',
       'readableDrops(sql, viewer, parsed as  ServerNow, "media")',
+      "const now = parsed as clock.ServerNow;",
+      'const now = parsed as import("../time/clock.ts").ServerNow;',
+      "const now = parsed as (ServerNow);",
       "const now = <ServerNow>parsed;",
       "const now = (< ServerNow >parsed);",
+      "return <ServerNow>Temporal.Instant.from(query.t);",
+      "const toNow = (t: Temporal.Instant) => <ServerNow>t;",
+      "yield <ServerNow>t;",
+      "case <ServerNow>t:",
       "function isNow(value: Temporal.Instant): value is ServerNow {",
       "function assertNow(value: unknown): asserts value is ServerNow {",
+      "const [row] = await tx<{ now: ServerNow }[]>`SELECT ${request.query.since}::pg_catalog.timestamptz AS now`;",
+      "const rows = await sql<{ at: ServerNow }[]>`",
+      "const row = await query<{ at: ServerNow }>(tx, request.query.since);",
+      'readableDrops(sql, viewer, Temporal.Instant.from(query.t) as never, "media")',
     ])
       expect(nowMints("x.ts", line), line).not.toEqual([]);
     for (const line of [
       'import type { ServerNow } from "../time/clock.ts";',
+      "  type ServerNow,",
+      'export { prepareClock, type Clock, type ClockSql, type ServerNow } from "./time/clock.ts";',
       "export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow, what: ReadWhat): F {",
+      "  readonly at: ServerNow;",
+      "): Promise<{ readonly at: ServerNow; readonly recorded: boolean }> {",
       "sample(tx: ClockSql): Promise<ServerNow>;",
       "const seen = new Map<string, ServerNow>();",
       "const at: Array<ServerNow> = [];",
+      "const rows = await tx<{ id: string; reveal_at: Temporal.Instant }[]>`",
       "// a ServerNow comes only from the clock",
       "const nowIsServerNow = true;",
+      "const nevertheless = true;",
+      '"anyone else it answers as any ended proposal does (FQ126)."',
     ])
       expect(nowMints("x.ts", line), line).toEqual([]);
   });
