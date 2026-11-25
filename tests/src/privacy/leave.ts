@@ -24,9 +24,21 @@
 //   includes is left (with new first days only then, and only for two or more), and otherwise exactly as
 //   it was, at the same version (T33). With no first days open, a leave changes no proposal.
 //
+// - What it does to the leaver's contributions (`contributionProblems`, since `api/b2-leave-withdraw`, the
+//   outside audit's A3; spec 22, T18, T22, T23, T24, T26, FQ142), from the drops' (with their content columns and
+//   audiences), removals', reservations', counters' and highlights' rows before and after: with `withdraw`, each
+//   of the leaving interval's drops in the club that was active or held is `withdrawn` at the instant, its pending
+//   replacement gone, with one removal, reason `leave`, by the interval at the instant, everything else of it as
+//   it was (its caption and media stay for B6's purge), its highlight cleared, and, before its day's reveal, its
+//   slot off the counter; with `keep`, every drop as it was. Either way each live reservation of the interval in
+//   the club has ended (`released` at the instant, or `expired` at its own `expires_at` when that had come) and
+//   left the counts; no other row of those changed, another interval's or the same account's elsewhere; and none
+//   is gone and none appeared. It doesn't read the uploads, which the leave doesn't write.
+//
 // The leak scanner reads the same answer for the club's id (scanner.ts's BARE: a club the caller has an
 // interval in); it can't judge an instant, a choice or a row, so this file does.
 
+import type { WorldTx } from "../db/harness.ts";
 import type { ClubRows } from "./club.ts";
 import { NEUTRAL, pinned } from "./harness.ts";
 import { sameAnswer, type RosterWorld } from "./roster.ts";
@@ -392,5 +404,348 @@ export function firstDaysJoinProblems(
   if (now.replacedBy !== null) problems.push("the first days name a successor");
   problems.push(...weekProblems(was, now, active, joined, revised));
   if (fresh.length > 0) problems.push("a join opened new first days beside the open ones");
+  return problems;
+}
+
+/** A drop's row, as the leave's contributions judge reads it. */
+export interface ContributionDrop {
+  club: string;
+  day: string;
+  author: string;
+  mediaClass: string;
+  /** Its content, which a withdrawal leaves for the purge (T27): the caption, the upload or source, the key. */
+  caption: string | null;
+  upload: string | null;
+  source: string | null;
+  dedupe: string | null;
+  submittedAt: Temporal.Instant;
+  sealedAt: Temporal.Instant | null;
+  /** Its audience's intervals, sealed at commit (T8). */
+  audience: string;
+  state: string;
+  revealAt: Temporal.Instant;
+  endedAt: Temporal.Instant | null;
+  updatedAt: Temporal.Instant;
+  version: number;
+  pending: string | null;
+  removal: { reason: string; actor: string | null; at: Temporal.Instant } | null;
+}
+
+/** A reservation's row. */
+export interface ContributionSlot {
+  day: string;
+  interval: string;
+  mediaClass: string;
+  state: string;
+  expiresAt: Temporal.Instant;
+  endedAt: Temporal.Instant | null;
+  drop: string | null;
+}
+
+/** A counter's counts. */
+export interface ContributionCounter {
+  committedTotal: number;
+  committedExternal: number;
+  reservedTotal: number;
+  reservedExternal: number;
+}
+
+/** A highlight's row. */
+export interface ContributionHighlight {
+  drop: string | null;
+  version: number;
+  updatedAt: Temporal.Instant;
+}
+
+/** The rows of the clubs' contributions: drops by id, reservations by id, counters and highlights by "day interval". */
+export interface ContributionRows {
+  drops: Map<string, ContributionDrop>;
+  slots: Map<string, ContributionSlot>;
+  counters: Map<string, ContributionCounter>;
+  highlights: Map<string, ContributionHighlight>;
+}
+
+/** The contributions' rows of `clubs`, read with the test's own statements. */
+export async function contributionRowsOf(db: WorldTx, clubs: readonly string[]): Promise<ContributionRows> {
+  const drops = await db<
+    {
+      id: string;
+      club_id: string;
+      occurrence_id: string;
+      author_interval_id: string;
+      media_class: string;
+      caption: string | null;
+      upload_id: string | null;
+      source_id: string | null;
+      dedupe: string | null;
+      submitted_at: Temporal.Instant;
+      audience_sealed_at: Temporal.Instant | null;
+      audience: string | null;
+      state: string;
+      reveal_at: Temporal.Instant;
+      ended_at: Temporal.Instant | null;
+      updated_at: Temporal.Instant;
+      version: number;
+      pending_upload_id: string | null;
+      reason: string | null;
+      actor_interval_id: string | null;
+      removed_at: Temporal.Instant | null;
+    }[]
+  >`
+    SELECT d.id, d.club_id, d.occurrence_id, d.author_interval_id, d.media_class, d.caption, d.upload_id, d.source_id,
+           pg_catalog.encode(d.dedupe_key, 'hex') AS dedupe, d.submitted_at, d.audience_sealed_at,
+           (SELECT pg_catalog.string_agg(a.interval_id, ' ' ORDER BY a.interval_id COLLATE "C")
+              FROM app.drop_audience a WHERE a.drop_id = d.id) AS audience,
+           d.state, o.reveal_at, d.ended_at, d.updated_at, d.version, d.pending_upload_id,
+           r.reason, r.actor_interval_id, r.removed_at
+      FROM app.drops d JOIN app.occurrences o ON o.id = d.occurrence_id
+      LEFT JOIN app.drop_removals r ON r.drop_id = d.id
+     WHERE d.club_id IN ${db(clubs)}`;
+  const slots = await db<
+    {
+      id: string;
+      occurrence_id: string;
+      interval_id: string;
+      media_class: string;
+      state: string;
+      expires_at: Temporal.Instant;
+      ended_at: Temporal.Instant | null;
+      drop_id: string | null;
+    }[]
+  >`
+    SELECT r.id, r.occurrence_id, r.interval_id, r.media_class, r.state, r.expires_at, r.ended_at, r.drop_id
+      FROM app.reservations r JOIN app.occurrences o ON o.id = r.occurrence_id
+     WHERE o.club_id IN ${db(clubs)}`;
+  const counters = await db<
+    {
+      occurrence_id: string;
+      interval_id: string;
+      committed_total: number;
+      committed_external: number;
+      reserved_total: number;
+      reserved_external: number;
+    }[]
+  >`
+    SELECT occurrence_id, interval_id, committed_total, committed_external, reserved_total, reserved_external
+      FROM app.contribution_counters WHERE club_id IN ${db(clubs)}`;
+  const highlights = await db<
+    {
+      occurrence_id: string;
+      interval_id: string;
+      drop_id: string | null;
+      version: number;
+      updated_at: Temporal.Instant;
+    }[]
+  >`
+    SELECT h.occurrence_id, h.interval_id, h.drop_id, h.version, h.updated_at
+      FROM app.highlights h JOIN app.occurrences o ON o.id = h.occurrence_id
+     WHERE o.club_id IN ${db(clubs)}`;
+  return {
+    drops: new Map(
+      drops.map((row) => [
+        row.id,
+        {
+          club: row.club_id,
+          day: row.occurrence_id,
+          author: row.author_interval_id,
+          mediaClass: row.media_class,
+          caption: row.caption,
+          upload: row.upload_id,
+          source: row.source_id,
+          dedupe: row.dedupe,
+          submittedAt: row.submitted_at,
+          sealedAt: row.audience_sealed_at,
+          audience: row.audience ?? "",
+          state: row.state,
+          revealAt: row.reveal_at,
+          endedAt: row.ended_at,
+          updatedAt: row.updated_at,
+          version: row.version,
+          pending: row.pending_upload_id,
+          removal:
+            row.reason === null || row.removed_at === null
+              ? null
+              : { reason: row.reason, actor: row.actor_interval_id, at: row.removed_at },
+        },
+      ]),
+    ),
+    slots: new Map(
+      slots.map((row) => [
+        row.id,
+        {
+          day: row.occurrence_id,
+          interval: row.interval_id,
+          mediaClass: row.media_class,
+          state: row.state,
+          expiresAt: row.expires_at,
+          endedAt: row.ended_at,
+          drop: row.drop_id,
+        },
+      ]),
+    ),
+    counters: new Map(
+      counters.map((row) => [
+        `${row.occurrence_id} ${row.interval_id}`,
+        {
+          committedTotal: row.committed_total,
+          committedExternal: row.committed_external,
+          reservedTotal: row.reserved_total,
+          reservedExternal: row.reserved_external,
+        },
+      ]),
+    ),
+    highlights: new Map(
+      highlights.map((row) => [
+        `${row.occurrence_id} ${row.interval_id}`,
+        { drop: row.drop_id, version: row.version, updatedAt: row.updated_at },
+      ]),
+    ),
+  };
+}
+
+/** A row as one text, its instants as ISO strings, to compare a row with what it must be. */
+const said = (row: unknown): string =>
+  JSON.stringify(row, (_key, value: unknown) => (value instanceof Temporal.Instant ? value.toString() : value));
+
+/** How many drops a withdrawing leave withdrew and how many reservations it ended: the judge's own counts. */
+export interface Settled {
+  withdrawn: number;
+  slotsEnded: number;
+}
+
+/**
+ * What is wrong with the contributions' rows after `interval` left `club` at `now` with `choice`, given the rows
+ * before. Empty when the leave changed what it must and nothing else. `settled`, when given, counts what it ended.
+ */
+export function contributionProblems(
+  before: ContributionRows,
+  after: ContributionRows,
+  club: string,
+  interval: string,
+  now: Temporal.Instant,
+  choice: Choice,
+  settled?: Settled,
+): string[] {
+  const problems: string[] = [];
+  const freed = new Map<string, { total: number; external: number; reserved: number; reservedExternal: number }>();
+  const freeing = (key: string) => {
+    const one = freed.get(key) ?? { total: 0, external: 0, reserved: 0, reservedExternal: 0 };
+    freed.set(key, one);
+    return one;
+  };
+  const withdrawnHere = new Set<string>();
+  for (const [id, was] of before.drops) {
+    const then = after.drops.get(id);
+    if (then === undefined) {
+      problems.push(`the drop ${id} is gone`);
+      continue;
+    }
+    const leavers = was.club === club && was.author === interval && (was.state === "active" || was.state === "held");
+    if (!leavers || choice === "keep") {
+      if (said(then) !== said(was))
+        problems.push(
+          leavers
+            ? `the leaver's drop ${id} changed though they kept their drops (T26)`
+            : `the drop ${id}, not the leaver's to withdraw, changed`,
+        );
+      continue;
+    }
+    withdrawnHere.add(id);
+    if (settled !== undefined) settled.withdrawn += 1;
+    const expected: ContributionDrop = {
+      ...was,
+      state: "withdrawn",
+      endedAt: now,
+      updatedAt: now,
+      pending: null,
+      removal: { reason: "leave", actor: interval, at: now },
+    };
+    if (said(then) !== said(expected)) {
+      if (then.state !== "withdrawn")
+        problems.push(`the leaver's drop ${id} is ${then.state}, not withdrawn (T26, A3)`);
+      else problems.push(`the leaver's withdrawn drop ${id} isn't as a leave at the instant leaves it (T23, T24)`);
+    }
+    if (Temporal.Instant.compare(was.revealAt, now) > 0) {
+      const one = freeing(`${was.day} ${was.author}`);
+      one.total += 1;
+      if (was.mediaClass === "external_video") one.external += 1;
+    }
+  }
+  for (const id of after.drops.keys()) {
+    if (!before.drops.has(id)) problems.push(`a drop ${id} appeared with the leave`);
+  }
+
+  for (const [id, was] of before.slots) {
+    const then = after.slots.get(id);
+    if (then === undefined) {
+      problems.push(`the reservation ${id} is gone`);
+      continue;
+    }
+    // A membership interval is one club's, so the leaver's reservations are all in the club left.
+    const leavers = was.interval === interval && was.state === "live";
+    if (!leavers) {
+      if (said(then) !== said(was)) problems.push(`the reservation ${id}, not the leaver's live one, changed`);
+      continue;
+    }
+    if (settled !== undefined) settled.slotsEnded += 1;
+    const lapsed = Temporal.Instant.compare(was.expiresAt, now) <= 0;
+    const expected: ContributionSlot = lapsed
+      ? { ...was, state: "expired", endedAt: was.expiresAt }
+      : { ...was, state: "released", endedAt: now };
+    if (said(then) !== said(expected))
+      problems.push(
+        lapsed
+          ? `the leaver's lapsed reservation ${id} isn't expired at its own expires_at (T18)`
+          : `the leaver's live reservation ${id} isn't released at the instant (T18: no phantom slots)`,
+      );
+    const one = freeing(`${was.day} ${was.interval}`);
+    one.reserved += 1;
+    if (was.mediaClass === "external_video") one.reservedExternal += 1;
+  }
+  for (const id of after.slots.keys()) {
+    if (!before.slots.has(id)) problems.push(`a reservation ${id} appeared with the leave`);
+  }
+
+  for (const [key, was] of before.counters) {
+    const then = after.counters.get(key);
+    if (then === undefined) {
+      problems.push(`the counter ${key} is gone`);
+      continue;
+    }
+    const one = freed.get(key) ?? { total: 0, external: 0, reserved: 0, reservedExternal: 0 };
+    const expected: ContributionCounter = {
+      committedTotal: was.committedTotal - one.total,
+      committedExternal: was.committedExternal - one.external,
+      reservedTotal: was.reservedTotal - one.reserved,
+      reservedExternal: was.reservedExternal - one.reservedExternal,
+    };
+    if (said(then) !== said(expected))
+      problems.push(
+        key.endsWith(` ${interval}`)
+          ? `the leaver's counter ${key} isn't its drops' and live slots' after the leave (T18)`
+          : `the counter ${key}, not the leaver's, changed`,
+      );
+  }
+  for (const key of after.counters.keys()) {
+    if (!before.counters.has(key)) problems.push(`a counter ${key} appeared with the leave`);
+  }
+  for (const [key, was] of before.highlights) {
+    const then = after.highlights.get(key);
+    if (then === undefined) {
+      problems.push(`the highlight ${key} is gone`);
+      continue;
+    }
+    const cleared = was.drop !== null && withdrawnHere.has(was.drop);
+    const expected: ContributionHighlight = cleared ? { drop: null, version: was.version + 1, updatedAt: now } : was;
+    if (said(then) !== said(expected))
+      problems.push(
+        cleared
+          ? `the leaver's highlight ${key} on a withdrawn drop isn't cleared at the instant (T22)`
+          : `the highlight ${key} changed though its drop wasn't withdrawn`,
+      );
+  }
+  for (const key of after.highlights.keys()) {
+    if (!before.highlights.has(key)) problems.push(`a highlight ${key} appeared with the leave`);
+  }
   return problems;
 }

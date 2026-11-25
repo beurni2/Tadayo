@@ -10,8 +10,9 @@ import TadayoCore
 
 /// The Tadayo API, as the app calls it. The generated `Client` stays internal and this is all the
 /// app sees: the account here, the clubs in `TadayoAPIClient+Clubs.swift`, in `TadayoCore`'s
-/// types, with every failure as an `APIFailure`, which carries nothing of the answer (T52). It
-/// grows with each slice.
+/// types, with every failure as an `APIFailure`, which carries nothing of the answer (T52). A
+/// refusal the contract documents is `refused`; an answer this build can't read is `unreadable`,
+/// since the server may have acted on it (audit A8). It grows with each slice.
 public struct TadayoAPIClient: AccountService {
     let client: Client
     let now: @Sendable () -> ContinuousClock.Instant
@@ -102,16 +103,31 @@ public struct TadayoAPIClient: AccountService {
         }
     }
 
-    /// A status the contract doesn't list for the operation.
+    /// A status read without its contract body: one the contract doesn't list for the operation,
+    /// or one it lists whose body or header this build couldn't read (`failure(_:)`). A 5xx is a
+    /// failing server, `unavailable`; a 2xx is a success the build can't read, whose command the
+    /// server may have carried out, `unreadable`; anything else is a refusal.
     static func failure(status: Int) -> APIFailure {
-        status >= 500 ? .unavailable : .refused
+        switch status {
+        case 500...: .unavailable
+        case 200..<300: .unreadable
+        default: .refused
+        }
     }
 
     /// A call that threw: no session, no answer, or an answer that doesn't match the contract (a
-    /// missing or changed `Cache-Control` among them), which is refused rather than trusted.
+    /// value it added after this build, or a missing or changed `Cache-Control`, among them).
+    /// Such an answer isn't trusted, but its status still says what the server did: a 401 ends
+    /// the session and a 429 is a busy server, as every operation documents them; any other
+    /// status is read as `failure(status:)` reads one the contract doesn't list. So a refusal
+    /// whose body this build can't read is still `refused`, and of the answers that came, only a
+    /// success, whose command the server may have carried out, is `unreadable` (audit A8). A
+    /// throw with no answer that is neither a session's, a `URLError` nor a cancellation (the
+    /// transport's `noResponse`, say) is `unreadable` too: whether the request reached the server
+    /// can't be told, so a command keeps its key, as it does for no answer (T19).
     static func failure(_ error: any Error) -> APIFailure {
-        let cause = (error as? ClientError)?.underlyingError ?? error
-        switch cause {
+        let answered = error as? ClientError
+        switch answered?.underlyingError ?? error {
         case let session as SessionError:
             switch session {
             case .signedOut: return .signedOut
@@ -119,7 +135,13 @@ public struct TadayoAPIClient: AccountService {
             case .unavailable: return .unavailable
             }
         case is URLError, is CancellationError: return .network
-        default: return .refused
+        default:
+            switch answered?.response?.status.code {
+            case 401: return .signedOut
+            case 429: return .unavailable
+            case let status?: return failure(status: status)
+            case nil: return .unreadable
+            }
         }
     }
 }

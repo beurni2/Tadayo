@@ -603,6 +603,33 @@ describe("upload.prepare with nothing to prepare, or nothing it can (T54)", () =
   });
 });
 
+describe("upload.prepare as the photo user it is given (ADR-038)", () => {
+  it("prepares the photo as that user: a worker not started as root can take none, so the photo fails, to be tried again", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const one = await handed(tx, w, w.ben);
+      r.storage.originals.set(one.objectKey, await testImage(300, 200));
+      const event = await eventOf(tx, one.id);
+      // These tests run in the worker's own user (or as plain root), never in the worker's mode, so asRoot refuses
+      // to start the photo's process as the user given (services/worker/src/privileges.ts): nothing is prepared.
+      expect(await pass(tx, r.deps(tx, { photoUser: { uid: 64999, gid: 64999 } }))).toEqual({
+        handled: 0,
+        err: [`worker: an event failed: upload.prepare ${event.id}, attempt 1: image.process_failed`],
+      });
+      expect(r.storage.puts).toEqual([]);
+      expect(await renditionRows(tx, one.id)).toEqual([]);
+      expect((await uploadRow(tx, one.id)).state).toBe("preparing");
+      expect(await eventRow(tx, event.id)).toMatchObject({
+        state: "pending",
+        attempts: 1,
+        last_error: "image.process_failed",
+      });
+    });
+  });
+});
+
 describe("upload.prepare when Storage is away, or another run gets there first (T54)", () => {
   it("tries again after its backoff, and the retry writes over the same keys, leaving one row of each rendition", async () => {
     await rolledBack(db, async (tx) => {

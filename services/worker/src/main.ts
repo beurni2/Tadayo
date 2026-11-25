@@ -14,7 +14,9 @@
 // and not a clean exit.
 //
 // The worker decodes no photo itself: each is prepared in a process of its own, which it watches and ends
-// (./image-process.ts), and where `sharp` can run only the JPEG, PNG and WebP decoders (./image.ts, spec 33).
+// (./image-process.ts), and where `sharp` can run only the JPEG, PNG and WebP decoders (./image.ts, spec 33). On Fly
+// that process runs under a user of its own, TADAYO_PHOTO_USER, and every process of that user is ended as the photo's
+// end settles; a sweep that fails stops the worker (./privileges.ts). Its start line says which way photos go.
 
 import { describeFailure, generationPass, passLines } from "./generation.ts";
 import { runLoop } from "./loop.ts";
@@ -29,7 +31,7 @@ const PASS_EVERY_MS = 60_000;
 const OUTBOX_EVERY_MS = 1_000;
 
 try {
-  const { sql, clock, storage } = await startWorker(process.env);
+  const { sql, clock, storage, photoUser } = await startWorker(process.env);
   let stopping = false;
   const stopped = new Promise<string>((resolve) => {
     for (const signal of ["SIGTERM", "SIGINT"] as const) {
@@ -46,9 +48,12 @@ try {
       storage,
       safety: noSafetyProvider,
       say: (line) => process.stdout.write(`${line}\n`),
+      photoUser,
     }),
   };
-  process.stdout.write("worker: started, making days every minute and preparing uploads\n");
+  process.stdout.write(
+    `worker: started, making days every minute and preparing uploads, ${photoUser === undefined ? "each photo in the worker's own user" : "each photo under a user of its own"}\n`,
+  );
   await Promise.all([
     runLoop({
       pass: async () => {

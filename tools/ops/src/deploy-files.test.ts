@@ -14,6 +14,8 @@ import { describe, expect, it } from "vitest";
 import { DEV_APP, DEV_HOST, MACHINE_MAIN } from "./environment.ts";
 import { projectUrl } from "./supabase.ts";
 
+/** The file the Dockerfile writes, which both entries read (services/worker/src/privileges.ts, services/api/src/start.ts). */
+const IMAGE_MARKER = "/etc/tadayo-built-image";
 const ROOT = join(import.meta.dirname, "..", "..", "..");
 const read = (path: string) => readFileSync(join(ROOT, path), "utf8");
 
@@ -99,6 +101,15 @@ const copies = (stage: "deps" | "runtime") => {
     });
 };
 
+// How each group drops root (fly.toml's [processes]; ADR-038): the API for good, the worker in effect only, keeping
+// setuid, setgid and kill to start and end each photo's process as TADAYO_PHOTO_USER and no inheritable capability,
+// with no core dump of any kind (a limit of 1 byte), no POSIX message queue and the photo user's processes capped
+// first. Node runs with its inspector off in both (PR #118's review, both rounds).
+const API_DROP = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs";
+const WORKER_DROP =
+  "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
+const NODE = "node --disable-sigusr1";
+
 // ---- The Dockerfile.
 
 describe("Dockerfile", () => {
@@ -124,7 +135,8 @@ describe("Dockerfile", () => {
     const packages = workspace();
     const commands = table(table(flyToml()["processes"], "[processes]"), "[processes]");
     const running = Object.values(commands).map((command) => {
-      const file = /^node (\S+)$/.exec(String(command))?.[1] ?? "";
+      // Each command drops root first (fly.toml; ADR-038), the worker's after its limits, then runs `node` on a file.
+      const file = /^(?:prlimit .*? -- )?setpriv .*? -- node --disable-sigusr1 (\S+)$/.exec(String(command))?.[1] ?? "";
       const dir = [...packages.keys()].find((candidate) => file.startsWith(`${candidate}/`));
       expect(dir, String(command)).toBeDefined();
       return packages.get(dir ?? "")?.name ?? "";
@@ -179,11 +191,15 @@ describe("Dockerfile", () => {
     expect(JSON.parse(cmd?.args ?? "[]")).toEqual(api);
   });
 
-  it("runs, in the stage that is the image, as an unprivileged user and in production, with the dependencies copied once as pnpm laid them", () => {
+  it("starts, in the stage that is the image, as root only to drop, in production, with the dependencies copied once as pnpm laid them", () => {
     expect(stages()).toHaveLength(2);
     // The second stage is what Fly runs; the first only builds node_modules.
     const image = stages().at(-1) ?? [];
-    expect(image.filter((instruction) => instruction.name === "USER").at(-1)?.args).toBe("node");
+    // No USER: each group's command drops with setpriv before any Node code runs (fly.toml; ADR-038).
+    expect(image.filter((instruction) => instruction.name === "USER")).toEqual([]);
+    const processes = table(flyToml()["processes"], "[processes]");
+    expect(String(processes["api"]).startsWith(`${API_DROP} -- ${NODE} `)).toBe(true);
+    expect(String(processes["worker"]).startsWith(`${WORKER_DROP} -- ${NODE} `)).toBe(true);
     expect(image.filter((instruction) => instruction.name === "ENV").map((instruction) => instruction.args)).toContain(
       "NODE_ENV=production",
     );
@@ -192,6 +208,34 @@ describe("Dockerfile", () => {
       (instruction) => instruction.name === "COPY" && instruction.args.startsWith("--from="),
     );
     expect(fromDeps.map((instruction) => instruction.args)).toEqual(["--from=deps /app/ ./"]);
+  });
+
+  it("makes the photo user, tadayo-image, with uid and gid 10001, no home, no shell and no password, nothing else, and names it", () => {
+    const image = stages().at(-1) ?? [];
+    const runs = image.filter((instruction) => instruction.name === "RUN").map((instruction) => instruction.args);
+    expect(runs).toEqual([
+      "groupadd --system --gid 10001 tadayo-image && useradd --system --uid 10001 --gid tadayo-image --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin tadayo-image",
+      `touch ${IMAGE_MARKER}`,
+    ]);
+    // useradd leaves the password locked unless one is given; none is.
+    expect(runs[0]).not.toMatch(/--password|-p |chpasswd/);
+    // And names it, after it is made, so a worker started as root alone refuses for that alone, whatever fly.toml's
+    // [env] says or leaves out (the audit's A6), and nothing else sets it.
+    const env = image.filter((instruction) => instruction.name === "ENV").map((instruction) => instruction.args);
+    expect(env).toEqual(["NODE_ENV=production", "TADAYO_PHOTO_USER=tadayo-image"]);
+    const made = image.findIndex((instruction) => instruction.name === "RUN");
+    const named = image.findIndex((instruction) => instruction.args === "TADAYO_PHOTO_USER=tadayo-image");
+    expect(named).toBeGreaterThan(made);
+    expect(Object.keys(table(flyToml()["env"], "[env]"))).not.toContain("TADAYO_PHOTO_USER");
+  });
+
+  it("writes the image's marker, the file each entry reads to know it is in the image whatever NODE_ENV says", () => {
+    // Round 3 of PR #118's review: NODE_ENV alone is a setting, which a start can clear; a file in the image isn't.
+    const image = stages().at(-1) ?? [];
+    expect(image.filter((instruction) => instruction.args === `touch ${IMAGE_MARKER}`)).toHaveLength(1);
+    for (const entry of ["services/worker/src/privileges.ts", "services/api/src/start.ts"]) {
+      expect(read(entry), entry).toContain(`export const IMAGE_MARKER = "${IMAGE_MARKER}";`);
+    }
   });
 
   it("names no secret, key, password or environment file in what it sets or copies", () => {
@@ -287,11 +331,14 @@ describe("fly.toml", () => {
     expect(Object.keys(deploy)).toEqual(["strategy"]);
   });
 
-  it("has the two process groups, each running a file that is there, and no other", () => {
+  it("has the two process groups, each dropping root with its setpriv line and running a file that is there, and no other", () => {
     const processes = table(flyToml()["processes"], "[processes]");
-    expect(processes).toEqual({ api: "node services/api/src/main.ts", worker: "node services/worker/src/main.ts" });
+    expect(processes).toEqual({
+      api: `${API_DROP} -- ${NODE} services/api/src/main.ts`,
+      worker: `${WORKER_DROP} -- ${NODE} services/worker/src/main.ts`,
+    });
     for (const command of Object.values(processes)) {
-      expect(existsSync(join(ROOT, String(command).split(" ")[1] ?? "")), String(command)).toBe(true);
+      expect(existsSync(join(ROOT, String(command).split(" ").at(-1) ?? "")), String(command)).toBe(true);
     }
   });
 

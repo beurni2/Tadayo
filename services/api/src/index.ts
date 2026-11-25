@@ -10,7 +10,7 @@ export { leftClubBody } from "./clubs/leave.ts";
 export { dropReceiptBody, dropRender } from "./drops/drops.ts";
 export { releasedBody, reservationBody } from "./drops/reservations.ts";
 export { uploadBody } from "./media/uploads.ts";
-export { connect, type ApiSql } from "./connection.ts";
+export { API_POOL, connect, type ApiSql } from "./connection.ts";
 export {
   KeysUnavailable,
   supabaseProject,

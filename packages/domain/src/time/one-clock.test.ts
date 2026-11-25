@@ -51,6 +51,10 @@ const READS = [
   { what: "the tests' fake clock", pattern: /\bfakeClock\b|@tadayo\/domain\/testing/ },
 ] as const;
 
+/** Why the root harness of the photo user's tests reads a clock (KEPT). */
+const HARNESS =
+  "the root harness of services/worker/src/privileges.test.ts, which only that test starts, as root: it times how soon the worker killed a fake photo process (past its memory, past its deadline), and no request, job or rule of a day reads it";
+
 /**
  * Lines that read a clock and decide nothing by it, each with its reason. The match is the whole
  * line, trimmed, so any change to one is scanned again.
@@ -65,6 +69,21 @@ const KEPT: readonly { file: string; line: string; why: string }[] = [
     file: join("tools", "ops", "src", "dev-clock.ts"),
     line: "SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) OPERATOR(pg_catalog.*) 1000000)",
     why: "the dev clock's own tool: an instant becomes an offset only by Postgres's own clock, which the offset is from; it runs by hand on dev only (environment.ts), and no request, job or rule of a day reads it",
+  },
+  {
+    file: join("services", "worker", "src", "privileges-harness.ts"),
+    line: 'appendFileSync(out + "memory.log", String(Date.now()) + "\\n");',
+    why: HARNESS,
+  },
+  {
+    file: join("services", "worker", "src", "privileges-harness.ts"),
+    line: "const started = Date.now();",
+    why: HARNESS,
+  },
+  {
+    file: join("services", "worker", "src", "privileges-harness.ts"),
+    line: "const settledAt = Date.now();",
+    why: HARNESS,
   },
 ];
 
