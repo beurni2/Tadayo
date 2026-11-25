@@ -6,12 +6,14 @@
 // a module's imports in their order, each one's own first, so no other module of the worker's, and no package it
 // uses, runs before the turn. turnToWorkerUser takes `node`'s effective group and user when the start is fly.toml's,
 // and leaves any other start as it is, for photoUserFor to judge as the worker starts (./start.ts). A turn that fails
-// writes its message alone and exits 1, before the worker reads anything.
+// writes the worker's own line alone, never an error's words (T52), and exits 1, before the worker reads anything
+// (turnOrStop).
+//
+// Until the turn, Node runs as root: setuid, setgid and kill effective, under no new privileges. As no id changed at
+// its exec, Node honours the settings it reads from its environment (NODE_OPTIONS among them, which could load code
+// before this module), as glibc does its own: the image's ENV and fly.toml's [env] set none of them, each held to its
+// names by tools/ops/src/deploy-files.test.ts, and the rest of the environment is Fly's secrets, which the founder sets.
 
-import { stopWorker, turnToWorkerUser } from "./privileges.ts";
+import { turnOrStop } from "./privileges.ts";
 
-try {
-  turnToWorkerUser();
-} catch (error) {
-  stopWorker(error instanceof Error ? error.message : "worker: it couldn't take its own user as it started");
-}
+turnOrStop();

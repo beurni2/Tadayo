@@ -1,6 +1,6 @@
 // The root harness of ./privileges.test.ts (docs/plans/api-b2-worker-hardening.md section 3). Run as root, it imports
-// the worker's modules, takes the worker's mode itself as fly.toml's command leaves it (real uid 0; groups, effective
-// group and effective uid an unused id, 64998), and prepares photos with fake children as an unused photo user
+// the worker's modules, takes the worker's mode itself as fly.toml's command and the worker's first module leave it
+// (real uid 0; groups, effective group and effective uid an unused id, 64998), and prepares photos with fake children as an unused photo user
 // (64999). It writes one line of JSON a case to standard output, and asserts nothing: the test says what each must be.
 // With `sweep-timeout`, it gives the sweep a millisecond, and the worker's stop ends it (exit status 1); with
 // `sweep-left`, the photo's user owns a folder holding one of root's, which its sweep can't remove, and the worker's
@@ -442,7 +442,7 @@ function cleanUp() {
 }
 process.on("exit", cleanUp);
 
-/** The worker's mode, as `setpriv --euid --egid --groups` leaves it. */
+/** The worker's mode, with the harness's own ids, as the worker's first module takes it (./turn.ts): in process. */
 function takeWorkersMode() {
   setgroups([WORKER]);
   setegid(WORKER);
@@ -563,18 +563,17 @@ if (process.argv[2] === "real-child-inside") {
   // here: a runner may have no `node`, or one of another id. In this mount namespace alone, /etc/passwd and /etc/group
   // are copies with any `node` of theirs replaced by one of that id, bound read-only over them, so fly.toml's command
   // runs exactly as fly.toml has it. The namespace's end takes the binds with it.
-  for (const [file, line] of [
-    ["/etc/passwd", `node:x:${String(WORKER)}:${String(WORKER)}::/nonexistent:/usr/sbin/nologin`],
-    ["/etc/group", `node:x:${String(WORKER)}:`],
-  ] as const) {
-    const copy = join(folder, file.slice("/etc/".length));
+  const withNode = (file: "/etc/passwd" | "/etc/group", line: string | undefined, name: string) => {
+    const copy = join(folder, name);
     const kept = readFileSync(file, "utf8")
       .split("\n")
       .filter((entry) => entry !== "" && !entry.startsWith("node:"));
-    writeFileSync(copy, [...kept, line, ""].join("\n"));
+    writeFileSync(copy, [...kept, ...(line === undefined ? [] : [line]), ""].join("\n"));
     chmodSync(copy, 0o644);
     execFileSync("/usr/bin/mount", ["--bind", "-o", "ro", copy, file]);
-  }
+  };
+  withNode("/etc/passwd", `node:x:${String(WORKER)}:${String(WORKER)}::/nonexistent:/usr/sbin/nologin`, "passwd");
+  withNode("/etc/group", `node:x:${String(WORKER)}:`, "group");
 
   // fly.toml's worker command as fly.toml has it, from the view, in the image's NODE_ENV, with no database: Node starts
   // as root, the worker's first module takes `node`'s effective ids, and it goes past the photo user's check to its
@@ -594,7 +593,7 @@ if (process.argv[2] === "real-child-inside") {
     rootAlone: entry,
   };
   const ended: Record<string, { code: number | null; stderr: string; stdout: string }> = {};
-  for (const [name, start] of Object.entries(starts)) {
+  const startAs = (name: string, start: readonly string[]) => {
     const [program = "", ...args] = start;
     const run = spawnSync(program, args, {
       cwd: view,
@@ -603,8 +602,16 @@ if (process.argv[2] === "real-child-inside") {
       timeout: 30_000,
     });
     ended[name] = { code: run.status, stderr: run.stderr, stdout: run.stdout };
-  }
-  say({ case: "fly-start", command: entryAt > 0 ? "found" : "missing", ended });
+  };
+  for (const [name, start] of Object.entries(starts)) startAs(name, start);
+  // fly.toml's command once more, with no `node` in /etc/passwd (`setpriv --groups=node` still finds its group in
+  // /etc/group): the worker's first module stops it with its own line (./turn.ts; round 1 of PR #135's review). The
+  // first bind is taken down before, not stacked under it: a bind over a bind's root makes the copy under it a mount
+  // point, which the folder's removal can't then remove.
+  execFileSync("/usr/bin/umount", ["/etc/passwd"]);
+  withNode("/etc/passwd", undefined, "passwd-without-node");
+  startAs("flyWithoutNode", words);
+  say({ case: "fly-start", command: entryAt > 0 ? "found" : "missing", words: starts["fly"], ended });
 
   // A 12-megapixel photo, as a phone's camera makes them: smooth, so it compresses as a photo does.
   const small = await sharp({

@@ -36,7 +36,7 @@ kill_timeout = 30
   SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5kJcQ8JCyWiHHMGjucf00w_8ehpABvL"
   LOG_LEVEL = "info"
 
-# Each command starts as root and drops at once with `setpriv` (the Dockerfile's header; ADR-038). The API becomes
+# Each command starts as root and drops with `setpriv` (the Dockerfile's header; ADR-038). The API, at once, becomes
 # `node` for good: real, effective and saved ids, no capability, no way to gain one. The worker becomes `node` in
 # effect only, its real user root, so its /proc files are root's, and it keeps setuid, setgid and kill, which it uses
 # only for an instant at a time to start each photo's process as TADAYO_PHOTO_USER and end it; its inheritable set is

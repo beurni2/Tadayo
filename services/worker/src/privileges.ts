@@ -4,8 +4,8 @@
 // process of its own user, so on Fly it is started as root and turned to `node` at once (fly.toml's worker command,
 // `setpriv`, drops all but root's ids, and the worker's first module takes `node`'s effective group and user,
 // turnToWorkerUser, as Fly's kernel undoes an effective id `setpriv` sets under no new privileges): its real user
-// stays root, which makes it non-dumpable, so its `/proc` files are the
-// kernel's and no process of another user can read its environment or memory, open its pipes, attach to it or signal
+// stays root, and taking other effective ids makes it non-dumpable (Linux's `commit_creds`), so its `/proc` files are
+// root's and no process of another user can read its environment or memory, open its pipes, attach to it or signal
 // it, and it keeps three capabilities (setuid, setgid, kill) that it can use only by taking effective uid 0. Each
 // photo's process is then started as `TADAYO_PHOTO_USER` (`tadayo-image` in the image), with no group but its own.
 //
@@ -54,7 +54,7 @@
 //   for the next one, whether or not the Machine's restart ended it (./start.ts).
 
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 /** The user and group a photo's process runs as. */
 export interface PhotoUser {
@@ -287,37 +287,120 @@ const isId = (value: string | undefined): boolean => value !== undefined && /^\d
 /** The user fly.toml's worker command names (`--groups=node`), whose effective ids the worker takes itself (turnToWorkerUser). */
 export const WORKER_USER = "node";
 
-/** The identity calls turnToWorkerUser makes: Node's, but in the tests. */
+/** An empty capability set, as /proc/self/status writes it. */
+const NO_CAPABILITY = "0000000000000000";
+
+/** The identity calls turnToWorkerUser makes, and what it reads after them: Node's and Linux's, but in the tests. */
 export interface TurnCalls {
   readonly setegid: (id: number) => void;
   readonly seteuid: (id: number) => void;
-  readonly ids: () => Ids;
+  /** The /proc status of each of this process's threads (threadStatuses). */
+  readonly statuses: () => readonly string[];
+}
+
+/**
+ * The /proc status of each thread of this process, from /proc/self/task: glibc's `setegid` and `seteuid` change every
+ * thread's ids, and turnToWorkerUser checks that they did. A thread that ends while they are read is left out.
+ */
+export function threadStatuses(): string[] {
+  const statuses: string[] = [];
+  for (const thread of readdirSync("/proc/self/task")) {
+    try {
+      statuses.push(readFileSync(`/proc/self/task/${thread}/status`, "latin1"));
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOENT" && code !== "ESRCH") throw error;
+    }
+  }
+  return statuses;
+}
+
+/** A field of a /proc status as its words (an id or a group each), or undefined when the status has no such field. */
+const words = (status: string, name: string): string[] | undefined =>
+  statusField(status, name)
+    ?.split(/\s+/)
+    .filter((word) => word !== "");
+
+const same = (found: readonly string[] | undefined, wanted: readonly string[]): boolean =>
+  found !== undefined && found.length === wanted.length && found.every((word, at) => word === wanted[at]);
+
+/**
+ * Whether a thread's /proc status is the worker's mode exactly as the turn should leave it, for WORKER_USER's `user`:
+ * startedAsFly's facts still; real and saved uid and gid 0, effective (and file system) uid and gid `user`'s; `user`'s
+ * group its only group; no capability effective or ambient, and setuid, setgid and kill permitted (FLY_BOUNDING_SET),
+ * which Linux leaves when the effective uid leaves 0 with the real one 0, unless a start set SECBIT_NO_SETUID_FIXUP,
+ * which no /proc field shows (round 1 of PR #135's review).
+ */
+function turnedAsFly(status: string, user: { readonly uid: number; readonly gid: number }): boolean {
+  const [uid, gid] = [String(user.uid), String(user.gid)];
+  return (
+    startedAsFly(status) &&
+    same(words(status, "Uid"), ["0", uid, "0", uid]) &&
+    same(words(status, "Gid"), ["0", gid, "0", gid]) &&
+    same(words(status, "Groups"), [gid]) &&
+    statusField(status, "CapEff") === NO_CAPABILITY &&
+    statusField(status, "CapAmb") === NO_CAPABILITY &&
+    statusField(status, "CapPrm") === FLY_BOUNDING_SET
+  );
+}
+
+/**
+ * What a turn that failed found, for its line, which is all Fly's log keeps of it (startFactsSaid's rule: each value
+ * keeps digits, the letters a to f and spaces, a tab as a space, anything else "?", cut at 64 characters).
+ */
+function turnFactsSaid(status: string): string {
+  return ["Uid", "Gid", "Groups", "NoNewPrivs", "CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"]
+    .map((name) => {
+      const value = statusField(status, name);
+      if (value === undefined) return `${name} missing`;
+      return `${name} ${
+        value
+          .replace(/\t/g, " ")
+          .replace(/[^0-9a-f ]/g, "?")
+          .slice(0, 64) || "none"
+      }`;
+    })
+    .join(", ");
+}
+
+/** A failed call's error code, such as EPERM, for the turn's line: nothing else of the error. */
+function errorCode(error: unknown): string {
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === "string" && /^E[A-Z0-9]{1,15}$/.test(code) ? code : "no error code";
 }
 
 /**
  * Turns a worker started as fly.toml starts it to WORKER_USER's effective group, then its effective user, its real
  * user left root: the worker's mode (inWorkerMode), which photoUserFor then reads. fly.toml's worker command leaves it
  * root, its ids all 0, with startedAsFly's facts (no new privileges, setuid, setgid and kill alone in its bounding set,
- * no inheritable capability, WORKER_USER's group its only group), and the worker takes the two effective ids here, at
- * its first statement (./turn.ts). `setpriv --euid --egid` can't: at an exec under no new privileges, a kernel without
- * "security/commoncap: don't assume "setid" if all ids are identical" takes an effective id other than the real one
- * for a set-id program's and puts it back to the real one, root's, which is how PR #132's start on Fly found the
- * worker ("uid 0, euid 0, egid 0"), while this session's kernel and Docker's keep it
- * (docs/plans/api-b2-worker-turn.md section 0). As the effective uid leaves 0, Linux empties the effective set and
- * keeps setuid, setgid and kill in the permitted one (the real uid is 0), as setpriv's flags left it on a later kernel.
- * Any other start is left as it is, for photoUserFor to judge, and /etc/passwd isn't read for it. Returns whether it
- * turned. Throws, having changed nothing, when WORKER_USER isn't a user in /etc/passwd with an id and group of its own,
- * neither root's; and throws when a call fails or the ids after aren't the real uid 0 and WORKER_USER's effective uid
- * and group. Its arguments are this process's but in the tests.
+ * no inheritable capability, no group of root's), and `--groups=node` leaves WORKER_USER's group its only group, which
+ * the turn requires. The worker takes the two effective ids here, at its first statement (./turn.ts). `setpriv --euid
+ * --egid` can't: at an exec under no new privileges, a kernel without "security/commoncap: don't assume "setid" if all
+ * ids are identical" (Linux 6.17) takes an effective id other than the real one for a set-id program's and puts it back
+ * to the real one, root's, which is how PR #132's start on Fly found the worker ("uid 0, euid 0, egid 0"), while this
+ * session's kernel and Docker's keep it (docs/plans/api-b2-worker-turn.md section 0). As the effective uid leaves 0,
+ * Linux empties the effective set and keeps setuid, setgid and kill in the permitted one (the real uid is 0), and the
+ * turn reads every thread's status after it to check that it is so (turnedAsFly). Any other start is left as it is,
+ * for photoUserFor to judge, and /etc/passwd isn't read for it. Returns whether it turned. Throws, having changed
+ * nothing, when /etc/passwd can't be read or WORKER_USER isn't a user in it with an id and group of its own, neither
+ * root's, or when its groups aren't that group alone; and throws, saying the failed call's error code or what it found,
+ * when a call fails or a thread isn't then as turnedAsFly says. Each line is the worker's own, with no error's words
+ * (T52). Its arguments are this process's but in the tests.
  */
 export function turnToWorkerUser(
   ids: Ids = idsOf(),
   status: string = readFileSync("/proc/self/status", "latin1"),
   passwd: () => string = () => readFileSync("/etc/passwd", "utf8"),
-  calls: TurnCalls = { ...posix(), ids: idsOf },
+  calls: TurnCalls = { ...posix(), statuses: threadStatuses },
 ): boolean {
   if (!(ids.uid === 0 && ids.euid === 0 && ids.egid === 0 && startedAsFly(status))) return false;
-  const entry = passwd()
+  let users: string;
+  try {
+    users = passwd();
+  } catch {
+    throw new Error("worker: it couldn't read /etc/passwd as it started");
+  }
+  const entry = users
     .split("\n")
     .map((line) => line.split(":"))
     .find((fields) => fields.length === 7 && fields[0] === WORKER_USER);
@@ -330,16 +413,49 @@ export function turnToWorkerUser(
   }
   const user = { uid: Number(uid), gid: Number(gid) };
   if (user.uid === 0 || user.gid === 0) throw new Error(`worker: ${WORKER_USER} is root, or in root's group`);
-  const failed = `worker: it couldn't take ${WORKER_USER}'s effective group and user as it started`;
-  try {
-    calls.setegid(user.gid);
-    calls.seteuid(user.uid);
-  } catch {
-    throw new Error(failed);
+  if (!same(words(status, "Groups"), [String(user.gid)])) {
+    throw new Error(
+      `worker: its groups aren't ${WORKER_USER}'s group alone, as fly.toml's worker command leaves them (it found ${turnFactsSaid(status)})`,
+    );
   }
-  const after = calls.ids();
-  if (after.uid !== 0 || after.euid !== user.uid || after.egid !== user.gid) throw new Error(failed);
+  const failed = `worker: it couldn't take ${WORKER_USER}'s effective group and user as it started`;
+  for (const [name, call, id] of [
+    ["setegid", calls.setegid, user.gid],
+    ["seteuid", calls.seteuid, user.uid],
+  ] as const) {
+    try {
+      call(id);
+    } catch (error) {
+      throw new Error(`${failed} (${name} failed: ${errorCode(error)})`, { cause: error });
+    }
+  }
+  let statuses: readonly string[];
+  try {
+    statuses = calls.statuses();
+  } catch (error) {
+    throw new Error(`${failed} (its threads' status couldn't be read: ${errorCode(error)})`, { cause: error });
+  }
+  if (statuses.length === 0) throw new Error(`${failed} (it found no thread's status)`);
+  const wrong = statuses.find((each) => !turnedAsFly(each, user));
+  if (wrong !== undefined) throw new Error(`${failed} (it found ${turnFactsSaid(wrong)})`);
   return true;
+}
+
+/**
+ * The worker's first act (./turn.ts): the turn (turnToWorkerUser), or, when it throws, the worker stopped (stopWorker)
+ * with the turn's own line, or with this fixed line for any other error (a read of /proc/self/status that failed, say),
+ * never an error's words (T52). Its arguments are the worker's own but in the tests.
+ */
+export function turnOrStop(turn: () => unknown = turnToWorkerUser, stop: (line: string) => void = stopWorker): void {
+  try {
+    turn();
+  } catch (error) {
+    stop(
+      error instanceof Error && error.message.startsWith("worker: ")
+        ? error.message
+        : "worker: it couldn't take its own user as it started",
+    );
+  }
 }
 
 /**

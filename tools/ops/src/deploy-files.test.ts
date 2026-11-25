@@ -224,6 +224,8 @@ describe("Dockerfile", () => {
     expect(runs[0]).not.toMatch(/--password|-p |chpasswd/);
     // And names it, after it is made, so a worker started as root alone refuses for that alone, whatever fly.toml's
     // [env] says or leaves out (the audit's A6), and nothing else sets it.
+    // These two alone: no NODE_OPTIONS, nor any other setting Node or glibc reads as it starts, which the worker's Node
+    // would honour as root until its first module turns it (services/worker/src/turn.ts; round 1 of PR #135's review).
     const env = image.filter((instruction) => instruction.name === "ENV").map((instruction) => instruction.args);
     expect(env).toEqual(["NODE_ENV=production", "TADAYO_PHOTO_USER=tadayo-image"]);
     const made = image.findIndex((instruction) => instruction.name === "RUN");
@@ -415,6 +417,8 @@ describe("fly.toml", () => {
 
   it("has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them", () => {
     const env = table(flyToml()["env"], "[env]");
+    // These names alone: no NODE_OPTIONS, nor any other setting Node or glibc reads as it starts, which the worker's
+    // Node would honour as root until its first module turns it (services/worker/src/turn.ts; PR #135's review).
     expect(Object.keys(env).sort()).toEqual([...ENV_NAMES].sort());
     expect(env["TADAYO_ENVIRONMENT"]).toBe("dev");
     expect(env["LOG_LEVEL"]).toBe("info");
