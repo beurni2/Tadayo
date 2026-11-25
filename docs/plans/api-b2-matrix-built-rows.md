@@ -40,8 +40,9 @@ a removed comment or a blocked author's message, so `bindings.ts` `ACTS_ON` name
 the refusal covers them too (review round 1, P2 and E1; round 2, F2). Home's page carries the same preview and is
 built, but its handler refuses a page with a comment (0.4), so `REFUSES_COMMENTS` names it, and the matrix holds it to
 that refusal by what it answers: a test of its own puts Ana's comment on Ben's photo as the day opens and asks Home, in
-the open phase, as each role the gate lets through, each in a world of its own; Home's judge wants the refusal from
-whoever may see the photo and their own page from everyone else (round 3, F1). A handler that lifts the refusal fails
+the open phase, as each role the gate lets through, each in a world of its own, and again with the comment on Ben's
+video link (round 4, R4-5); Home's judge wants the refusal from whoever may see the commented drop and their own page
+or the neutral not-found from everyone else (round 3, F1). A handler that lifts the refusal fails
 it, so the slice that lifts it changes that test and its judge, moves Home into `ACTS_ON` and puts a comment in the
 world first (round 2, F2; round 3, F1). The harness tests find every operation whose request or answer can name a
 comment by walking the contract and by round 1's rule, the operations named for comments (round 3, F2); each takes
@@ -116,7 +117,7 @@ purpose. The matrix is where a built route meets its row.
    saying which value it holds (`Spec.which`); the guessed-id and signed-out steps guess another club's object of the
    same place (`elsewhereOf`, which throws for a value another club's binding hasn't).
 5. `tests/src/privacy/matrix.test.ts`: Ben's video link in each world (`twoContributors`), put in every state with the
-   photo (`putInState`); every bound value checked as a row of its table in the cell's club (`checkBoundRows`) in every world; the limits each
+   photo (`putInState`); every bound value checked as a row of its table in the cell's club (`checkBoundRows`) in every cell's world and the other club's; the limits each
    role met in the reservations' table pinned (`LIMITS`), and the uploads' table's requests under a link's slot
    (`linkSlots`; round 2); the row
    check with the built set and the binding check; `REQUESTS_PER_WORLD` 88, for the requests the drop's second value
@@ -130,6 +131,10 @@ purpose. The matrix is where a built route meets its row.
    friend's one link and two photos with drops already in the day counted (F3, F4); `clubsOf` follows `TABLES`' hops,
    which `bindings.ts` now spells out, and reports a row in no club (F5). In `harness.test.ts`, the walk also takes a
    kind that can be a comment (a report's target) and round 1's rule beside it (F2).
+10. Round 4: in `harness.test.ts`, each entry of `ACTS_ON` held to `comment_id` (R4-1), and the rule beside the walk
+   reads the path and each parameter too (R4-3); in `matrix.test.ts`, Home asked again with the comment on Ben's video
+   link, and the test renamed for the commented drop (R4-5); `rows.ts`'s header rewritten to the requests after the
+   commit's table (R4-2).
 
 ## 2. Tests first
 
@@ -221,6 +226,15 @@ Round 3 adds, at the PR's last head:
   setup (F5).
 B16's anchor follows `TABLES`' new shape.
 
+Round 4 adds, at the PR's last head:
+- B31: `ACTS_ON`'s entry for `getOccurrence` emptied, the review's probe: harness.test.ts's walk (R4-1);
+- B32: an operation `hideThread` added to the contract, with no comment in its id or its bodies, only in its path: the
+  same (R4-3);
+- B33: `getClub` given a query parameter whose kinds hold `comment`: the same (R4-3);
+- B34: Home's refusal looking at photos alone: the matrix's test of Home with a comment, on Ben's video link (R4-5).
+B25's anchor follows the widened rule's new name, and the matrix's test of Home with a comment is renamed (B21m, B24,
+B34).
+
 Since round 1's fixes, a breakage that `checkBoundRows` catches in the other club's world fails the matrix file in its
 setup, before any test runs: the script registers that error's words for B1, B2, B9, B10 and B11, and B1c, B2c and
 B9c undo `checkBoundRows`'s throw to show the row test still catches B1, B2 and B9.
@@ -275,7 +289,7 @@ One fresh reviewer of the third commit (`aa3ba4a`) at full depth. Each finding f
   Deleting only the comment from the refusal's statement kept the words and passed the harness; only
   `tests/src/db/home.test.ts`'s refusal test caught it, which the slice that lifts the refusal rewrites anyway. Fixed:
   the matrix's test "refuses the open page to each role that may see the commented photo, and gives every other role
-  its own" (0.3; B21m, B24). Its pins, counted by hand: the author, the star and the member in the audience get the
+  its own", renamed in round 4 for the commented drop (0.3; B21m, B24). Its pins, counted by hand: the author, the star and the member in the audience get the
   refusal; the member who joined after the commit, the rejoined member and Cleo once the author has blocked Cleo and
   left by the block get their page (the refusal tells nobody a drop they can't see has a comment); the former member,
   the invited person, the stranger and Cleo once Cleo has left by Cleo's own block get the neutral not-found. The two
@@ -299,3 +313,33 @@ One fresh reviewer of the third commit (`aa3ba4a`) at full depth. Each finding f
 - Nits: `checkBoundRows`'s doc comment back above it; the limits test's "Nobody else is asked" rewritten (everyone is
   asked); round 2's breakage script to go on `evidence` with its run, which step (z) points to; two inferred pronouns
   in `tests/src/privacy/drop.test.ts`'s comments ("his") replaced by Ben's name.
+
+## 8. Review round 4
+
+One fresh reviewer of the fourth commit (`6fbf183`) at full depth. Fixed or answered in the fifth commit:
+- R4-1 (medium to low, T58): the walk's check of `ACTS_ON` compared only its keys, so an entry could be emptied
+  (`getOccurrence: []`) and pass, where the third head's check refused it. Fixed: each entry must act on `comment_id`,
+  beside the keys' equality (B31).
+- R4-2 (records): `tests/src/privacy/rows.ts`'s header said the requests after the commit's table were two photos and
+  that no friend meets a friend's one link. Rewritten to the code: a link given back at once, then two photos; the
+  star's links met by slots alone, and with a committed link counted on Postgres (`tests/src/db/reservations.test.ts`,
+  "counts Ana's committed drops with Ana's live slots").
+- R4-3 (low): an operation with a comment only in its path, or in a parameter, slipped past the walk and the name rule.
+  Fixed: the rule also reads the path and each parameter's name, kinds and schema, for comments or replies; the union
+  stays at eight operations (B32, B33).
+- R4-4 (low, answered): `main`'s author cells met `PHOTO_LIMIT` with a removed and a held photo counted; with Ben's
+  link in the world, `QUOTA_FULL` comes first in those states. The counter keeps one count of committed drops and one of
+  links, and a photo is the difference (`packages/domain/src/drops/allowance.ts` `allowanceOf`), so a path that stopped
+  counting a removed or held photo would stop counting it toward the whole. The author's requests in the removed and
+  held states are judged with both of Ben's drops counted and meet `QUOTA_FULL` there (pinned in `LIMITS`), so such a
+  path fails the author's cells. A separate count of photos would need its own test. The star's link limit is met by
+  slots alone in the matrix, and with a committed link counted on Postgres.
+- R4-5 (nit): the test of Home with a comment put it on Ben's photo alone, so a refusal reading photos alone passed.
+  Fixed: each role is asked again with the comment on Ben's video link, and the test is renamed "refuses the open page
+  to each role that may see the commented drop, and gives every other role its own" (B34). A comment on a removed drop
+  isn't met: the cells have none, and which drop states the refusal reads is B6's to change with the page.
+- Nits: the comment above the requests after the commit's table said the table's refusals counted slots alone (only
+  its photo and link limits did); "the star all three (four drops of six, …)" (at most three of six at once); the
+  test's "made as a cell's" (the cells' slots, avatars and bound rows are left out, and Home reads none of them), and
+  block 1.2's "in every world" for `checkBoundRows` (the cells' worlds and the other club's); "their own page from
+  everyone else" in `bindings.ts` and 0.3 (or the neutral not-found).

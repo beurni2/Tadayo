@@ -112,8 +112,9 @@ export const ACTS_ON: Readonly<Record<string, readonly string[]>> = {
  * show exists, so the matrix asks them with none: Home, whose open page refuses a drop with a comment, a reaction or
  * the viewer's favourite until B6 builds the fields that show them. Each is held to its refusal by what it answers:
  * the matrix asks Home as each role the gate lets through, in a world where a drop of the open day has a comment,
- * and Home's judge (home.ts `pageFor`) wants the refusal from whoever may see that drop and their own page from
- * everyone else (matrix.test.ts, "Home while a drop of the open day has a comment"). A handler that answers such a
+ * and Home's judge (home.ts `pageFor`) wants the refusal from whoever may see that drop and their own page or the
+ * neutral not-found from everyone else (matrix.test.ts, "Home while a drop of the open day has a comment"), with the
+ * comment on Ben's photo and then on Ben's video link. A handler that answers such a
  * page fails it, so the slice that lifts the refusal changes that judge and that test, and moves the operation into
  * ACTS_ON, which then refuses it built until the world holds a comment (`bindingProblems`). The harness tests also
  * find the refusal's text in its file, which only says where the refusal is. Reactions and favourites have no

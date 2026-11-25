@@ -149,10 +149,11 @@
 //   between them (the star its two links and its six, a friend its two photos and its three; addendum 2, T17),
 //   QUOTA_FULL first, and one test pins which limits each role met; the first one's retry under its key (the
 //   same bytes) and another body under it (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back
-//   while live. After the commit's table, while the day collects, a photo and a photo again, so a friend meets
-//   the friend's two photos with the drop just added counted (review round 3, F3). No friend meets a friend's one
-//   link, which a second link meets only after two photos have filled the three (QUOTA_FULL first): that limit
-//   is held on Postgres (tests/src/db/reservations.test.ts). Each role's test counts
+//   while live. After the commit's table, while the day collects, a link given back at once, then a photo and a
+//   photo again, so a friend meets the friend's one link with a link already in the day counted and the friend's
+//   two photos with the drop just added counted (review rounds 3 and 4). The star adds no link to the matrix's
+//   day, so the star's links are met by slots alone; with a committed link counted they are held on Postgres
+//   (tests/src/db/reservations.test.ts, "counts Ana's committed drops with Ana's live slots"). Each role's test counts
 //   the slots it held, gave back and saw lapse, and one test names the five roles that held any, with the
 //   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"), as one counts
 //   who got Cleo's slot back. No matrix role joins after the day closes: Q06's not-found for a day that closed

@@ -208,8 +208,9 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
   it("has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one", () => {
     // Walked from the contract: a request body or an answer that reaches a schema of a comment or a reply, a
     // property naming one, or a kind that can be one (a report's target). The review's round 2: Home's and the
-    // day's drops carry a reply's preview. Round 1's rule stays beside the walk (round 3, F2): an operation named
-    // for comments is one, whatever its schemas say.
+    // day's drops carry a reply's preview. Round 1's rule stays beside the walk (round 3, F2), widened in round 4
+    // (R4-3): an operation named for comments or replies, on a path that names them, or with a parameter that
+    // names one or can be one, is one, whatever its bodies say.
     const document = readDocument();
     const reaches = (node: Json, seen: Set<string>): boolean => {
       if (Array.isArray(node)) return node.some((one) => reaches(one, seen));
@@ -253,8 +254,21 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
       "listComments",
       "updateComment",
     ]);
-    const byName = operations.filter((found) => /comment/i.test(found.id)).map((found) => found.id);
-    const canName = [...new Set([...walked, ...byName])].sort();
+    const names = /comment|repl(?:y|ies)/i;
+    const named = operations
+      .filter(
+        (found) =>
+          names.test(found.id) ||
+          names.test(found.path) ||
+          found.parameters.some(
+            (parameter) =>
+              names.test(parameter.name) ||
+              (parameter.values ?? []).includes("comment") ||
+              reaches(parameter.schema, new Set()),
+          ),
+      )
+      .map((found) => found.id);
+    const canName = [...new Set([...walked, ...named])].sort();
     expect(canName).toEqual([
       "createComment",
       "createReport",
@@ -272,9 +286,11 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
       Object.keys(ACTS_ON).sort(),
     );
     expect(Object.keys(ACTS_ON).sort()).toEqual(["createComment", "createReport", "getOccurrence", "listComments"]);
-    for (const [id, names] of Object.entries(ACTS_ON)) {
+    for (const [id, bindings] of Object.entries(ACTS_ON)) {
       expect(operations.some((found) => found.id === id)).toBe(true);
-      for (const name of names) expect(BINDINGS[name]).toBeDefined();
+      // Each acts on the comments it can name (round 4, R4-1: the keys alone let an entry be emptied).
+      expect(bindings, id).toContain("comment_id");
+      for (const name of bindings) expect(BINDINGS[name]).toBeDefined();
     }
     // Home is held while its handler refuses a page with a comment. Its refusal's text says where the refusal is;
     // what holds its behaviour is the matrix's test of Home while a drop of the open day has a comment
