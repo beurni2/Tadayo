@@ -1,0 +1,53 @@
+--- 11:27:14 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-25-112714.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-25 11:27:14.00 +0000
+pid: 80003
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.D7F51949-0E5E-4079-A157-E676189EFA44
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 80003, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 11:31:29 UTC, /Library/Logs/DiagnosticReports/iconservicesagent_2026-11-25-112958_sjc22-bm213-f8dd6554-adaf-49f9-ba2d-dde7f062173b-42372E51484C.diag
+Date/Time:        2026-11-25 11:21:57.460 +0000
+End time:         2026-11-25 11:24:22.259 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 02473135-B397-4ABE-86B9-313AB6B5A112
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1814cc000
+
+Command:          iconservicesagent
+Path:             /Volumes/VOLUME/*/iconservicesagent
+Codesigning ID:   com.apple.iconservicesagent
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.D7F51949-0E5E-4079-A157-E676189EFA44"(2727)
+On Behalf Of:     1 sample UNKNOWN [79048] (1 sample originated by UNKNOWN [79048])
+Architecture:     arm64
+Parent:           UNKNOWN [78972]
+PID:              79129
+
+Event:            disk writes
+--- 11:38:59 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-25-113134_sjc22-bm213-f8dd6554-adaf-49f9-ba2d-dde7f062173b-42372E51484C.diag
+Date/Time:        2026-11-25 10:36:02.172 +0000
+End time:         2026-11-25 11:26:50.369 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: E2AAFC78-407E-4679-AE41-9BB10C5FBD0D
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1814cc000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x19a348000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(746)
+On Behalf Of:     160 samples UNKNOWN [2263, 29136, 38661, 78877, 80415] (160 samples originated by UNKNOWN [216, 29136, 38661, 78877, 80415])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              602
