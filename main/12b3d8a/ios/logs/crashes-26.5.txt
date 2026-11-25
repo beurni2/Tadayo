@@ -1,0 +1,54 @@
+--- 01:46:58 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-25-014657.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-25 01:46:57.00 +0000
+pid: 9525
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.56CEFDDD-C495-47B3-BE1E-373472658D2C
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 9525, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 01:54:41 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-25-015200_sat12-bq159-ffbb1583-73aa-4f4d-bf04-fdf4842791b8-EA5F748136C4.diag
+Date/Time:        2026-11-25 01:44:14.422 +0000
+End time:         2026-11-25 01:46:15.610 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 3E3EA0E6-2269-4FBA-B456-438259CA6D32
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1807b8000
+
+Command:          STExtractionService
+Path:             /private/var/run/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.56CEFDDD-C495-47B3-BE1E-373472658D2C"(2560)
+On Behalf Of:     68 samples nsurlsessiond [8528] (67 samples originated by UNKNOWN [8462, 8607, 8628, 8629], 1 sample originated by trustd [8573])
+Architecture:     arm64
+Parent:           UNKNOWN [8205]
+PID:              9488
+
+--- 01:57:04 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-25-015441_sat12-bq159-ffbb1583-73aa-4f4d-bf04-fdf4842791b8-EA5F748136C4.diag
+Date/Time:        2026-11-25 00:50:39.742 +0000
+End time:         2026-11-25 01:46:50.716 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: DB9C7B17-72B0-4518-83A9-9A4DBB3199DC
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1807b8000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x188d48000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(770)
+On Behalf Of:     162 samples UNKNOWN [543, 9587, 59488, 64521, 65177] (162 samples originated by UNKNOWN [225, 9587, 59488, 64521, 65177])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              633
+--- the simulator's log: not read, since logs/test-26.5.log names no ended service with a UTC time (SERVICE_ENDED, SERVICE_STAMP)
