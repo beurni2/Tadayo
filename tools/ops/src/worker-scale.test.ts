@@ -209,29 +209,62 @@ describe("workerScale to started", () => {
     expect(result.said.some((line) => line.includes("wasn't started as root"))).toBe(true);
   });
 
-  it("can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so", async () => {
-    const unread = { code: 1, stderr: "Error: unauthorized" };
-    const before = await run("started", [
+  it("asks for the events again when flyctl can't say them, and starts nothing when it still can't", async () => {
+    const unread = { code: 1, stderr: "Error: timeout" };
+    // One failed read before the start, then an answer: the start goes ahead and is judged (round 2, L1).
+    const once = await run("started", [
       realWorker("stopped", "started"),
-      [STATUS, (_call, earlier) => (earlier === 0 ? unread : machineStatus(WORKER_ID, [STARTED, ...OLD]))],
+      [
+        STATUS,
+        (_call, earlier) =>
+          earlier === 0 ? unread : machineStatus(WORKER_ID, earlier === 1 ? OLD : [STARTED, ...OLD]),
+      ],
       [START, {}],
-      [LOGS, logEntries(["worker: started"])],
     ]);
-    expect((before.outcome as OpsError).message).toBe(
-      "worker-scale: the worker Machine shows as started, but flyctl couldn't say its events before the start, so whether its process stayed up can't be told, and it is left started; its events and its lines in Fly's log are above",
+    expect(once.outcome).toBeUndefined();
+    expect(once.calls.slice(0, 4)).toEqual([LIST, STATUS, STATUS, START]);
+    expect(once.slept[0]).toBe(3000);
+    expect(once.said.at(-1)).toBe("worker-scale: the worker Machine is started, and stayed started for 30 seconds");
+    // No answer at all before the start: nothing is started, so the founder's run isn't spent on a start that
+    // can't be judged, and running it again gets one that is watched.
+    const never = await run("started", [realWorker("stopped", "started"), [STATUS, unread], [START, {}]]);
+    expect((never.outcome as OpsError).message).toBe(
+      "worker-scale: flyctl couldn't say the worker Machine's events, so its start couldn't be judged: nothing was changed",
     );
-    expect(before.said).toContain("  2026-11-25T02:50:00.000Z [info] worker: started");
+    expect(never.calls).toEqual([LIST, STATUS, STATUS, STATUS]);
+    expect(never.slept).toEqual([3000, 3000]);
+    const notAMachine = await run("started", [worker("stopped", "started"), ["flyctl machine start", {}]]);
+    expect((notAMachine.outcome as OpsError).message).toMatch(/couldn't be judged: nothing was changed$/);
+    expect(notAMachine.calls).toEqual([LIST]);
+  });
+
+  it("can't judge a start whose events flyctl can't say after the watch, and fails saying so, the worker left started", async () => {
+    const unread = { code: 1, stderr: "Error: unauthorized" };
     const after = await run("started", [
       realWorker("stopped", "started"),
       [STATUS, (_call, earlier) => (earlier === 0 ? machineStatus(WORKER_ID, OLD) : unread)],
       [START, {}],
-      [LOGS, logEntries([])],
+      [LOGS, logEntries(["worker: started"])],
     ]);
-    expect((after.outcome as OpsError).message).toMatch(/couldn't say its events after the watch, so whether/);
+    expect((after.outcome as OpsError).message).toBe(
+      "worker-scale: the worker Machine shows as started, but flyctl couldn't say its events after the watch, so whether its process stayed up can't be told, and it is left started; its lines in Fly's log are above",
+    );
+    expect(after.calls.filter((call) => call === STATUS)).toHaveLength(4);
+    expect(after.calls.filter((call) => call.startsWith("flyctl machine stop"))).toEqual([]);
     expect(after.said).toContain(`worker-scale: flyctl couldn't say Machine ${WORKER_ID}'s events`);
-    const notAMachine = await run("started", [worker("stopped", "started"), ["flyctl machine start", {}]]);
-    expect((notAMachine.outcome as OpsError).message).toMatch(/couldn't say its events before the start/);
-    expect(notAMachine.calls.filter((call) => call !== LIST)).toEqual(["flyctl machine start w1 -a tadayo-api-dev"]);
+    expect(after.said).toContain("  2026-11-25T02:50:00.000Z [info] worker: started");
+    // One failed read after the watch, then an answer: the start is judged by it.
+    const again = await run("started", [
+      realWorker("stopped", "started"),
+      [
+        STATUS,
+        (_call, earlier) =>
+          earlier === 1 ? unread : machineStatus(WORKER_ID, earlier === 0 ? OLD : [STARTED, ...OLD]),
+      ],
+      [START, {}],
+    ]);
+    expect(again.outcome).toBeUndefined();
+    expect(again.said.at(-1)).toBe("worker-scale: the worker Machine is started, and stayed started for 30 seconds");
   });
 
   it("passes over a look at the state that fails, and judges the start by the others and its events", async () => {
@@ -252,6 +285,26 @@ describe("workerScale to started", () => {
     expect(result.outcome).toBeUndefined();
     expect(result.said).toContain("worker-scale: flyctl couldn't list the Machines at 1 of the looks");
     expect(result.said.at(-1)).toBe("worker-scale: the worker Machine is started, and stayed started for 30 seconds");
+    // No look answers at all: the events alone judge the start, and the run says so (round 2, N1).
+    const blind = await run("started", [
+      [
+        LIST,
+        (_call, earlier) =>
+          earlier >= 2
+            ? { code: 1, stderr: "Error: timeout" }
+            : json([
+                machine("a1", "api", "started"),
+                machine(WORKER_ID, "worker", earlier === 0 ? "stopped" : "started"),
+              ]),
+      ],
+      events([STARTED, ...OLD]),
+      [START, {}],
+    ]);
+    expect(blind.outcome).toBeUndefined();
+    expect(blind.said).toContain("worker-scale: flyctl couldn't list the Machines at 6 of the looks");
+    expect(blind.said.at(-1)).toBe(
+      "worker-scale: the worker Machine showed as started, and no look at it answered for 30 seconds after; its events hold no exit Fly wasn't asked for",
+    );
   });
 
   it("prints the events and the log when the Machine never shows as started", async () => {

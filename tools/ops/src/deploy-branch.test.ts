@@ -445,7 +445,7 @@ describe("deployBranch when GitHub or Fly doesn't answer as it should", () => {
     const result = await run({
       deploy: ["flyctl deploy", { code: 1, stderr: failure }],
       more: [
-        [STATUS, machineStatus(WORKER_ID, [eventRow("exited", "exit", "2026-11-25T02:50:12.000Z", { code: 1 })])],
+        [STATUS, machineStatus(WORKER_ID, [eventRow("stopped", "exit", "2026-11-25T02:50:12.31Z", { code: 1 })])],
         [LOGS, logEntries(["worker: what the photo user left couldn't all be removed as it started"])],
       ],
     });

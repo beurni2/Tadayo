@@ -379,7 +379,7 @@ describe("machineReport: what Fly knows of a Machine's last runs, for a run's lo
   it("reads an exit's code, and whether Fly was asked to stop it or killed it for memory", () => {
     expect(exitOf(shown(CRASH))).toEqual({ code: 1, requested: false, oomKilled: false });
     expect(
-      exitOf("exited │ exit │ flyd │ 2026-11-25T02:00:00Z │ exit_code=137,oom_killed=true,requested_stop=false"),
+      exitOf("stopped │ exit │ flyd │ 2026-11-25T02:00:00Z │ exit_code=137,oom_killed=true,requested_stop=false"),
     ).toEqual({
       code: 137,
       requested: false,
