@@ -1,0 +1,77 @@
+K01 caught: an exit Fly was asked for counts as a failed start
+    × doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start 7ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start
+K02 caught: the exits from before the start count too
+    × starts a stopped worker Machine, watches it for 30 seconds, and prints its events but no log line 8ms
+    × counts only the start's own exits, however flyctl's table pads the old ones 1ms
+    × doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start 1ms
+    × passes over a look at the state that fails, and judges the start by the others and its events 1ms
+K03 caught: the watch is 5 seconds, not 30
+    × starts a stopped worker Machine, watches it for 30 seconds, and prints its events but no log line 9ms
+    × fails a start whose process exits by itself and is started again, though the Machine shows as started 3ms
+    × doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start 1ms
+    × fails a start that stops within the watch, saying the state it found, after the events and the log 3ms
+K04 caught: the watch doesn't look at the state
+    × fails a start that stops within the watch, saying the state it found, after the events and the log 10ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > fails a start that stops within the watch, saying the state it found, after the events and the log
+K05 caught: a start never seen as started prints no report
+    × prints the events and the log when the Machine never shows as started 7ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > prints the events and the log when the Machine never shows as started
+K06 caught: a failed start prints no report
+    × fails a start whose process exits by itself and is started again, though the Machine shows as started 7ms
+    × fails a start that stops within the watch, saying the state it found, after the events and the log 5ms
+    × can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so 1ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > fails a start whose process exits by itself and is started again, though the Machine shows as started
+K07 caught: a fresh crash and restart passes
+    × fails a start whose process exits by itself and is started again, though the Machine shows as started 5ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > fails a start whose process exits by itself and is started again, though the Machine shows as started
+K08 caught: an exit is never read as asked for
+    × doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start 6ms
+    × reads an exit's code, and whether Fly was asked to stop it or killed it for memory 12ms
+    FAIL  src/fly.test.ts > machineReport: what Fly knows of a Machine's last runs, for a run's log > reads an exit's code, and whether Fly was asked to stop it or killed it for memory
+    FAIL  src/worker-scale.test.ts > workerScale to started > doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start
+K09 caught: an id that isn't a Machine's is passed to flyctl
+    × asks nothing for an id that isn't a Machine's 12ms
+    × can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so 15ms
+    FAIL  src/fly.test.ts > machineReport: what Fly knows of a Machine's last runs, for a run's log > asks nothing for an id that isn't a Machine's
+    FAIL  src/worker-scale.test.ts > workerScale to started > can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so
+K10 caught: the log keeps more than its last 60 lines
+    × reads each entry of the log once, in order, keeping the last 60 16ms
+    FAIL  src/fly.test.ts > machineReport: what Fly knows of a Machine's last runs, for a run's log > reads each entry of the log once, in order, keeping the last 60
+K11 caught: every Machine a deploy names is reported, not only those whose line failed
+    × prints the events and the log lines of each Machine a failed deploy names, as flyctl printed none 11ms
+    FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > prints the events and the log lines of each Machine a failed deploy names, as flyctl printed none
+K12 caught: a failed deploy prints no report
+    × prints the events and the log lines of each Machine a failed deploy names, as flyctl printed none 9ms
+    FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > prints the events and the log lines of each Machine a failed deploy names, as flyctl printed none
+K13 caught: an entry with a line break in it is printed on two lines
+    × puts each entry on one line, takes out colours and control characters, and cuts a long line 8ms
+    FAIL  src/fly.test.ts > machineReport: what Fly knows of a Machine's last runs, for a run's log > puts each entry on one line, takes out colours and control characters, and cuts a long line
+K14 caught: a long line isn't cut
+    × puts each entry on one line, takes out colours and control characters, and cuts a long line 13ms
+    FAIL  src/fly.test.ts > machineReport: what Fly knows of a Machine's last runs, for a run's log > puts each entry on one line, takes out colours and control characters, and cuts a long line
+K15 caught: a log line's colours and control characters reach the run's log
+    × puts each entry on one line, takes out colours and control characters, and cuts a long line 7ms
+    FAIL  src/fly.test.ts > machineReport: what Fly knows of a Machine's last runs, for a run's log > puts each entry on one line, takes out colours and control characters, and cuts a long line
+K16 caught: control characters reach the run's log
+    × puts each entry on one line, takes out colours and control characters, and cuts a long line 9ms
+    FAIL  src/fly.test.ts > machineReport: what Fly knows of a Machine's last runs, for a run's log > puts each entry on one line, takes out colours and control characters, and cuts a long line
+K17 caught: the VM table's time is taken for an event
+    × starts a stopped worker Machine, watches it for 30 seconds, and prints its events but no log line 7ms
+    × asks for the Machine's status and its log by its id, naming the app 8ms
+    × keeps only the event table's rows: not its title, its header, or the VM table's time 3ms
+    × gives a row the same however flyctl's table pads it, as another row widens or narrows a column 1ms
+K18 caught: an event row is kept as flyctl padded it (round 1, F1)
+    × starts a stopped worker Machine, watches it for 30 seconds, and prints its events but no log line 7ms
+    × counts only the start's own exits, however flyctl's table pads the old ones 1ms
+    × doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start 2ms
+    × passes over a look at the state that fails, and judges the start by the others and its events 1ms
+K19 caught: events unread before the start count as none, so old exits fail the start (round 1, F2)
+    × can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so 16ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so
+K20 caught: a failed look fails the run (round 1, F3)
+    × passes over a look at the state that fails, and judges the start by the others and its events 6ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > passes over a look at the state that fails, and judges the start by the others and its events
+K21 caught: a start that held prints its log lines (round 1, F6)
+    × starts a stopped worker Machine, watches it for 30 seconds, and prints its events but no log line 11ms
+    FAIL  src/worker-scale.test.ts > workerScale to started > starts a stopped worker Machine, watches it for 30 seconds, and prints its events but no log line
