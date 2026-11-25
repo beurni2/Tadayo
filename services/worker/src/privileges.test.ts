@@ -6,7 +6,7 @@
 // case. A runner that can do neither fails here: it never skips.
 
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -19,12 +19,15 @@ import {
   NO_INSPECTOR,
   pauseFor,
   photoUserFor,
+  processTurnCalls,
   startFactsSaid,
   type StartFacts,
   sweep,
   SweepFailed,
   SWEEP_PROGRAM,
   SWEEP_SECONDS,
+  threadCount,
+  threadStatuses,
   TURN_PAUSE_MS,
   TURN_READINGS,
   turnOrStop,
@@ -334,9 +337,14 @@ const TURN_FAILED = "worker: it couldn't take node's effective group and user as
  * it: the start's fields (`start`, over ROOT_AS_FLY's), with the effective and file system ids each call set, and the
  * effective set emptied once the effective uid isn't 0. With `ignore`, that call changes nothing; with `realToo`,
  * `seteuid` changes the real and saved uid too, as `setuid` would; with `keepEffective`, the effective set stays, as
- * under SECBIT_NO_SETUID_FIXUP; with `stuckThread`, a second thread keeps the start's ids; with `endingThread`, a second
- * thread, as glibc leaves one that ends between the two calls (its effective group changed, its effective user not), is
- * there for that many readings, then gone. Each pause between readings is recorded too.
+ * under SECBIT_NO_SETUID_FIXUP; with `fileSystemRoot`, the file system uid or gid stays 0; with `stuckThread`, a second
+ * thread keeps the start's ids; with `endingThread`, a second thread, as glibc leaves one that ends between the two calls
+ * (its effective group changed, its effective user not), is there for that many readings, then gone. The kernel's count
+ * of threads (`threads`, asked before and after each listing) is the threads there; with `unlisted`, for that many
+ * readings one of them, already the worker's mode, is left out of the listing, as a listing can leave out a live thread
+ * when one ahead of it is released; with `exitsDuring`, for that many readings one of them, already the worker's mode,
+ * ends while the listing is read, after it was counted and before it was listed. Each pause between readings is
+ * recorded too.
  */
 function recordedCalls(
   start: Readonly<Record<string, string | undefined>> = {},
@@ -344,19 +352,23 @@ function recordedCalls(
     readonly ignore?: "setegid" | "seteuid";
     readonly realToo?: boolean;
     readonly keepEffective?: boolean;
+    readonly fileSystemRoot?: "uid" | "gid";
     readonly stuckThread?: boolean;
     readonly endingThread?: number;
+    readonly unlisted?: number;
+    readonly exitsDuring?: number;
   } = {},
 ) {
   const asked: string[] = [];
   const ids = { uid: 0, euid: 0, egid: 0 };
   let readings = 0;
+  let counted = 0;
   const statusOf = (now: typeof ids, effective: string) =>
     startedWith({
       ...ROOT_FIELDS,
       ...start,
-      Uid: [now.uid, now.euid, now.uid, now.euid].join("\t"),
-      Gid: ["0", now.egid, "0", now.egid].join("\t"),
+      Uid: [now.uid, now.euid, now.uid, options.fileSystemRoot === "uid" ? 0 : now.euid].join("\t"),
+      Gid: ["0", now.egid, "0", options.fileSystemRoot === "gid" ? 0 : now.egid].join("\t"),
       CapEff: effective,
     })().status;
   return {
@@ -383,6 +395,20 @@ function recordedCalls(
           return [turned, statusOf({ uid: 0, euid: 0, egid: ids.egid }, "00000000000000e0")];
         }
         return [turned];
+      },
+      threads: () => {
+        // Asked twice a reading, before its listing and after.
+        const reading = Math.floor(counted / 2) + 1;
+        const before = counted % 2 === 0;
+        counted += 1;
+        const there = (until: number | undefined) => (reading <= (until ?? 0) ? 1 : 0);
+        return (
+          1 +
+          (options.stuckThread === true ? 1 : 0) +
+          there(options.endingThread) +
+          there(options.unlisted) +
+          (before ? there(options.exitsDuring) : 0)
+        );
       },
       pause: (milliseconds: number) => {
         asked.push(`pause ${String(milliseconds)}`);
@@ -448,6 +474,36 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     expect(thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, calls))).toMatch(
       /^worker: it couldn't take node's effective group and user as it started \(it found Uid 0 0 0 0, Gid 0 1000 0 1000, /,
     );
+    // A listing that holds fewer statuses than the kernel counts threads, before it or after, is read again too: one
+    // may have left out a live thread, whose ids it never showed (round 2 of PR #135's review).
+    for (const [option, short] of [
+      ["unlisted", [1, 2, TURN_READINGS - 1]],
+      ["exitsDuring", [1, 3]],
+    ] as const) {
+      for (const readings of short) {
+        const { asked, calls: listing } = recordedCalls({}, { [option]: readings });
+        expect(
+          turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, listing),
+          `${option} ${String(readings)}`,
+        ).toBe(true);
+        expect(asked, `${option} ${String(readings)}`).toEqual([
+          "setegid 1000",
+          "seteuid 1000",
+          ...Array.from({ length: readings }, () => `pause ${String(TURN_PAUSE_MS)}`),
+        ]);
+      }
+    }
+    // Still short at the last reading, it stops the worker, saying the counts.
+    for (const [option, counts] of [
+      ["unlisted", "2, then 2"],
+      ["exitsDuring", "2, then 1"],
+    ] as const) {
+      const { calls: listing } = recordedCalls({}, { [option]: TURN_READINGS });
+      expect(
+        thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, listing)),
+        option,
+      ).toBe(`${TURN_FAILED} (it read 1 threads' statuses where the process had ${counts} threads)`);
+    }
     // About a second in all, and the pause really blocks.
     expect(TURN_READINGS * TURN_PAUSE_MS).toBe(1000);
     const started = performance.now();
@@ -455,7 +511,7 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     expect(performance.now() - started).toBeGreaterThanOrEqual(29);
   });
 
-  it("leaves any other start as it is, for photoUserFor to judge, and reads no /etc/passwd for it", () => {
+  it("leaves any other start as it is, for photoUserFor to judge, and reads no /etc/passwd for it, but in the image one already in the worker's mode", () => {
     const unread = () => {
       throw new Error("/etc/passwd isn't read");
     };
@@ -486,8 +542,87 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     }
     for (const [name, ids, status] of starts) {
       const { asked, calls } = recordedCalls();
-      expect(turnToWorkerUser(ids, status, unread, calls), name).toBe(false);
+      expect(
+        turnToWorkerUser(ids, status, unread, calls, () => false),
+        name,
+      ).toBe(false);
       expect(asked, name).toEqual([]);
+    }
+    // In the image, every one of them is still left to photoUserFor, which refuses it there, but a start already in the
+    // worker's mode: it would pass photoUserFor's check, startedAsFly's facts and all, without the turn's (turnedAsFly:
+    // its effective set empty, its groups node's alone), as fly.toml's old command left it on a kernel that keeps the
+    // ids setpriv sets (round 2 of PR #135's review). Whether it is the image is asked of that start alone.
+    for (const [name, ids, status] of starts) {
+      const { asked, calls } = recordedCalls();
+      const looked: string[] = [];
+      const image = () => {
+        looked.push(name);
+        return true;
+      };
+      if (name === "the worker's mode") {
+        expect(
+          thrown(() => turnToWorkerUser(ids, status, unread, calls, image)),
+          name,
+        ).toBe(
+          "worker: in production it starts as root, as fly.toml's worker command leaves it, and takes node's effective group and user itself, never started with them (it found uid 0, euid 1000, egid 1000, NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 1000)",
+        );
+        expect(looked, name).toEqual([name]);
+      } else {
+        expect(turnToWorkerUser(ids, status, unread, calls, image), name).toBe(false);
+        expect(looked, name).toEqual([]);
+      }
+      expect(asked, name).toEqual([]);
+    }
+  });
+
+  it("reads each thread's status from the task folder, leaving out a thread that has gone and throwing on anything else, and the kernel's count of them", () => {
+    // This process's own threads, as the turn reads them: one status for each, each its own (its Pid is the thread's
+    // id, its Tgid this process's). Node runs several threads of its own, so there is more than one.
+    const tasks = readdirSync("/proc/self/task");
+    const own = threadStatuses();
+    expect(own.length).toBeGreaterThan(1);
+    const pids = own.map((status) => /^Pid:\t(\d+)$/m.exec(status)?.[1]);
+    for (const pid of pids) expect(tasks, String(pid)).toContain(pid);
+    expect(new Set(pids).size).toBe(own.length);
+    for (const status of own) expect(status).toMatch(new RegExp(`^Tgid:\\t${String(process.pid)}$`, "m"));
+    // A folder made as /proc/self/task is: a thread whose status is gone (ENOENT, as one that ended after the folder was
+    // read) is left out; a status that can't be read for any other reason (EISDIR here) throws, as does a missing folder.
+    const folder = mkdtempSync(join(tmpdir(), "tadayo-tasks-"));
+    try {
+      for (const [thread, status] of [
+        ["101", "Pid:\t101\n"],
+        ["102", undefined],
+        ["103", "Pid:\t103\n"],
+      ] as const) {
+        mkdirSync(join(folder, thread));
+        if (status !== undefined) writeFileSync(join(folder, thread, "status"), status);
+      }
+      expect(threadStatuses(folder).sort()).toEqual(["Pid:\t101\n", "Pid:\t103\n"]);
+      mkdirSync(join(folder, "102", "status"));
+      expect(() => threadStatuses(folder)).toThrow(expect.objectContaining({ code: "EISDIR" }));
+      expect(() => threadStatuses(join(folder, "none"))).toThrow(expect.objectContaining({ code: "ENOENT" }));
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+    // The calls the turn makes in the worker are these, Node's own and the kernel's count (round 2 of PR #135's review).
+    expect(processTurnCalls()).toEqual({
+      setegid: process.setegid,
+      seteuid: process.seteuid,
+      statuses: threadStatuses,
+      threads: threadCount,
+      pause: pauseFor,
+    });
+    // The kernel's count, which the turn holds each listing to: this process's own, the number of its statuses.
+    expect(threadCount()).toBe(threadStatuses().length);
+    expect(threadCount("Name:\tnode\nThreads:\t7\nSigQ:\t0/1\n")).toBe(7);
+    for (const status of [
+      "Name:\tnode\n",
+      "Threads:\t\n",
+      "Threads:\t12345678\n",
+      "Threads:\t-1\n",
+      "Threads:\t7a\n",
+    ]) {
+      expect(() => threadCount(status), JSON.stringify(status)).toThrow(/^worker: its status has no thread count$/);
     }
   });
 
@@ -562,12 +697,21 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     );
     // A thread whose ids didn't change.
     fails(/^ \(it found Uid 0 0 0 0, Gid 0 0 0 0, Groups 1000, /, {}, { stuckThread: true });
+    // File system ids left root's, which Linux sets with the effective ones (round 2 of PR #135's review).
+    fails(/^ \(it found Uid 0 1000 0 0, Gid 0 1000 0 1000, /, {}, { fileSystemRoot: "uid" });
+    fails(/^ \(it found Uid 0 1000 0 1000, Gid 0 1000 0 0, /, {}, { fileSystemRoot: "gid" });
+    // One of startedAsFly's facts changed in a thread after the turn: turnedAsFly reads them again in each.
+    fails(/, NoNewPrivs 0, /, { NoNewPrivs: "0" });
+    fails(/, CapInh 0000000000000020, /, { CapInh: "0000000000000020" });
+    fails(/, CapBnd 00000000000000e1, /, { CapBnd: "00000000000000e1" });
     // A permitted set other than the bounding set, or an ambient capability.
     fails(/, CapPrm 00000000000000c0, /, { CapPrm: "00000000000000c0" });
     fails(/, CapAmb 0000000000000020\)$/, { CapAmb: "0000000000000020" });
     fails(/, CapAmb missing\)$/, { CapAmb: undefined });
     // A value with other characters in it: kept to what a field holds.
     fails(/, Groups 1000 \?\?\?, /, { Groups: "1000 x;y" });
+    // A value longer than 64 characters: cut at 64, with no mark of the cut.
+    fails(/, Groups 1000( 1001){12}, NoNewPrivs 1, /, { Groups: `1000${" 1001".repeat(20)}` });
     // A call the kernel refuses, by its error code alone; one with no code; and threads that can't be read or aren't
     // there.
     const refusing = (code?: string) => ({
@@ -579,6 +723,9 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
       },
       statuses: () => {
         throw new Error("statuses aren't read");
+      },
+      threads: () => {
+        throw new Error("threads aren't counted");
       },
       pause: () => {
         throw new Error("nothing pauses");
@@ -602,6 +749,15 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     };
     expect(thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, unreadable))).toBe(
       `${TURN_FAILED} (its threads' status couldn't be read: EACCES)`,
+    );
+    const uncounted = {
+      ...calls,
+      threads: () => {
+        throw new Error("worker: its status has no thread count");
+      },
+    };
+    expect(thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, uncounted))).toBe(
+      `${TURN_FAILED} (its threads' status couldn't be read: no error code)`,
     );
     expect(
       thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, { ...calls, statuses: () => [] })),
@@ -644,8 +800,8 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
 
   it("is the worker's first act: main.ts imports turn.ts before any other module, and turn.ts reaches only Node's own", () => {
     // Node evaluates a module's imports in their order, each one's own imports first, so nothing of the worker's, and
-    // no package it uses, runs as root before the turn. Every static module request counts: an import, a re-export,
-    // one with attributes (round 1 of PR #135's review).
+    // no package it uses, runs as root before the turn (Node's own modules, which it loads as it links, do: ./turn.ts).
+    // Every static module request counts: an import, a re-export, one with attributes (round 1 of PR #135's review).
     const source = (file: string) => readFileSync(join(import.meta.dirname, file), "utf8");
     const requests = (file: string) =>
       [
@@ -656,6 +812,11 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     expect(requests("main.ts")[0]).toBe("./turn.ts");
     expect(source("main.ts")).toMatch(/^import "\.\/turn\.ts";$/m);
     expect(requests("turn.ts")).toEqual(["./privileges.ts"]);
+    // And its code, past its comments, is that import and the turn's call alone, so the turn has ended when its last
+    // line has run, where the order test below records it (round 2 of PR #135's review).
+    expect(source("turn.ts").replace(/^\/\/.*\n/gm, "")).toBe(
+      '\nimport { turnOrStop } from "./privileges.ts";\n\nturnOrStop();\n',
+    );
     const reached = requests("privileges.ts");
     expect(reached.length).toBeGreaterThan(0);
     for (const specifier of reached) expect(specifier, specifier).toMatch(/^node:/);
@@ -708,6 +869,67 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
       const seen = JSON.parse(run.stdout) as string[];
       expect(seen.filter((url) => !url.startsWith("node:"))).toEqual([own("turn.ts"), own("privileges.ts")]);
       expect(seen.filter((url) => url.startsWith("node:")).length).toBeGreaterThan(0);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("and as main.ts runs, no code of the worker's or of its packages' but privileges.ts's and turn.ts's runs before the turn has ended", () => {
+    // The order as Node runs it (round 2 of PR #135's review): a load hook in the same process puts a line first in
+    // each module it loads, which records the module as its code starts to run, and one last in turn.ts, which records
+    // that the turn has ended. Node runs a module's code once each of its imports has run, so the entry's own line
+    // comes after all of theirs. Every module of the worker's and of its packages is recorded: one Node loads with no
+    // source to change is listed apart, and there is none. Run here, the start isn't fly.toml's, so the turn leaves it
+    // as it is, and the entry then stops at its first setting, with no DATABASE_URL.
+    const folder = mkdtempSync(join(tmpdir(), "tadayo-turn-order-"));
+    try {
+      const own = (file: string) => pathToFileURL(join(import.meta.dirname, file)).href;
+      const hook = join(folder, "hook.mjs");
+      writeFileSync(
+        hook,
+        [
+          'import { writeSync } from "node:fs";',
+          'import { registerHooks } from "node:module";',
+          `const turn = ${JSON.stringify(own("turn.ts"))};`,
+          'const formats = ["module", "module-typescript", "commonjs", "commonjs-typescript"];',
+          "const ran = (globalThis.tadayoRan = []);",
+          "const unchanged = [];",
+          "registerHooks({",
+          "  load: (url, context, next) => {",
+          "    const found = next(url, context);",
+          '    if (url.startsWith("node:")) return found;',
+          "    if (found.source == null || !formats.includes(found.format)) {",
+          "      unchanged.push([url, found.format]);",
+          "      return found;",
+          "    }",
+          '    const source = typeof found.source === "string" ? found.source : Buffer.from(found.source).toString("utf8");',
+          '    const last = url === turn ? "\\nglobalThis.tadayoRan.push(\\"turned\\");\\n" : "";',
+          "    return { ...found, source: `globalThis.tadayoRan.push(${JSON.stringify(url)});\\n${source}${last}` };",
+          "  },",
+          "});",
+          'process.on("exit", () => writeSync(1, JSON.stringify({ ran, unchanged })));',
+          "",
+        ].join("\n"),
+      );
+      const run = spawnSync(
+        process.execPath,
+        ["--import", pathToFileURL(hook).href, join(import.meta.dirname, "main.ts")],
+        {
+          encoding: "utf8",
+          env: { PATH: process.env["PATH"] ?? "" },
+          timeout: 30_000,
+        },
+      );
+      expect(run.status).toBe(1);
+      expect(run.stderr).toBe("worker: DATABASE_URL isn't set\n");
+      const { ran, unchanged } = JSON.parse(run.stdout) as { ran: string[]; unchanged: [string, string][] };
+      expect(unchanged).toEqual([]);
+      expect(ran.slice(0, ran.indexOf("turned") + 1)).toEqual([own("privileges.ts"), own("turn.ts"), "turned"]);
+      // The rest ran after it: the worker's other modules, its packages', and the entry's own last of all.
+      expect(ran.filter((url) => url === "turned")).toHaveLength(1);
+      expect(ran).toContain(own("start.ts"));
+      expect(ran.at(-1)).toBe(own("main.ts"));
+      expect(ran.some((url) => url.includes("/node_modules/"))).toBe(true);
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
@@ -1037,7 +1259,23 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
       expect(ended[name]?.stderr.slice(0, -1), name).toMatch(REFUSED);
       expect(ended[name]?.stderr, name).toMatch(what);
     }
-    expect(Object.keys(ended)).toHaveLength(8);
+    // Round 2 of PR #135's review. fly.toml's command with SECBIT_NO_SETUID_FIXUP set, which no /proc field shows: the
+    // turn takes node's ids, finds setuid, setgid and kill still effective in a thread, reads again for about a second
+    // and stops the worker, saying what it found.
+    expect(ended["keptCapabilities"]).toEqual({
+      code: 1,
+      stderr: `${TURN_FAILED} (it found Uid 0 64998 0 64998, Gid 0 64998 0 64998, Groups 64998, NoNewPrivs 1, CapInh 0000000000000000, CapPrm 00000000000000e0, CapEff 00000000000000e0, CapBnd 00000000000000e0, CapAmb 0000000000000000)\n`,
+      stdout: "",
+    });
+    // fly.toml's command before PR #135, which set node's effective ids itself: kept on this kernel, so the worker
+    // starts in its mode, startedAsFly's facts and all, which the turn refuses in the image.
+    expect(ended["alreadyTurned"]).toEqual({
+      code: 1,
+      stderr:
+        "worker: in production it starts as root, as fly.toml's worker command leaves it, and takes node's effective group and user itself, never started with them (it found uid 0, euid 64998, egid 64998, NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 64998)\n",
+      stdout: "",
+    });
+    expect(Object.keys(ended)).toHaveLength(10);
   }, 100_000);
 
   it("a sweep that doesn't finish in time stops the worker: a process of the photo's user may be alive", async () => {

@@ -591,6 +591,14 @@ if (process.argv[2] === "real-child-inside") {
     rootsGroup: words.map((word) => (word.startsWith("--groups=") ? `${word},0` : word)),
     euidAlone: ["setpriv", `--euid=${String(WORKER)}`, "--", ...entry],
     rootAlone: entry,
+    // SECBIT_NO_SETUID_FIXUP, which no /proc field shows, keeps the effective set as the effective uid leaves 0: the
+    // turn finds it in each thread's CapEff (turnedAsFly) and stops the worker (round 2 of PR #135's review).
+    keptCapabilities: words.flatMap((word) =>
+      word === "--no-new-privs" ? ["--securebits=+no_setuid_fixup", word] : [word],
+    ),
+    // fly.toml's command before PR #135, which set the effective ids itself: on this kernel, as in Docker, they are
+    // kept, so the worker starts already in its mode, which the turn refuses in the image (round 2 of the review).
+    alreadyTurned: words.flatMap((word) => (word === "--groups=node" ? ["--euid=node", "--egid=node", word] : [word])),
   };
   const ended: Record<string, { code: number | null; stderr: string; stdout: string }> = {};
   const startAs = (name: string, start: readonly string[]) => {

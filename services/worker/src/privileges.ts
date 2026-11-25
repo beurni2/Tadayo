@@ -3,11 +3,13 @@
 // took over one of its decoders must find nothing of the worker's within reach. The worker can't make that so for a
 // process of its own user, so on Fly it is started as root and turned to `node` at once (fly.toml's worker command,
 // `setpriv`, drops all but root's ids, and the worker's first module takes `node`'s effective group and user,
-// turnToWorkerUser, as Fly's kernel undoes an effective id `setpriv` sets under no new privileges): its real user
-// stays root, and taking other effective ids makes it non-dumpable (Linux's `commit_creds`), so its `/proc` files are
-// root's and no process of another user can read its environment or memory, open its pipes, attach to it or signal
-// it, and it keeps three capabilities (setuid, setgid, kill) that it can use only by taking effective uid 0. Each
-// photo's process is then started as `TADAYO_PHOTO_USER` (`tadayo-image` in the image), with no group but its own.
+// turnToWorkerUser, as Fly's kernel undoes an effective id `setpriv` sets under no new privileges): its real user stays
+// root, so no process of another user can read its environment or memory, open its pipes or attach to it (Linux's
+// `ptrace_may_access` compares the caller's ids with every one of the worker's, its real and saved uid 0) or signal it
+// (`kill_ok_by_cred`), and its `/proc` files are root's where `fs.suid_dumpable` is 0, as in the image (taking other
+// effective ids makes it non-dumpable then, `commit_creds`; round 2 of PR #135's review); it keeps three capabilities
+// (setuid, setgid, kill) that it can use only by taking effective uid 0. Each photo's process is then started as
+// `TADAYO_PHOTO_USER` (`tadayo-image` in the image), with no group but its own.
 //
 // - The worker's mode: real uid 0, effective uid and group not 0. photoUserFor reads it at the start, with the
 //   variable: both isolate each photo; neither prepares photos in the worker's own user, as the tests, CI's runner and
@@ -296,17 +298,24 @@ export interface TurnCalls {
   readonly seteuid: (id: number) => void;
   /** The /proc status of each of this process's threads (threadStatuses). */
   readonly statuses: () => readonly string[];
+  /** How many threads this process has, as the kernel counts them (threadCount). */
+  readonly threads: () => number;
   /** Blocks this thread for so many milliseconds (pauseFor), between two readings of the statuses. */
   readonly pause: (milliseconds: number) => void;
 }
 
 /**
- * How many times, TURN_PAUSE_MS apart, the turn reads its threads' statuses again while one isn't the worker's mode:
- * glibc's `setegid` and `seteuid` change every thread's ids but one that is ending, which runs none of the worker's
- * code again and leaves /proc/self/task once it has ended (glibc's `setxid_mark_thread` skips a thread marked as
- * exiting). `ci`'s first run at the second commit of PR #135 found one such thread, its effective group changed and its
- * effective user not, as it ended between the two calls. A thread that is still wrong after about a second stops the
- * worker.
+ * How many times, TURN_PAUSE_MS apart, the turn reads its threads' statuses again while one isn't the worker's mode, or
+ * the listing doesn't hold as many as the kernel counts (threadCount): glibc's `setegid` and `seteuid` change every
+ * thread's ids but one that is ending, which leaves /proc/self/task once it has ended (glibc's `setxid_mark_thread`
+ * skips a thread marked as exiting). Once a thread has returned from its work, glibc marks it so only after its own
+ * destructors have run, and it runs nothing more of its own; a thread ended by `pthread_exit` or cancelled is marked
+ * before its cleanup runs, which would run with the ids it had, and no such thread is there at the turn. `ci`'s first
+ * run at the second commit of PR #135 found one ending, its effective group changed and its effective user not: Node's
+ * thread that reads the system's root certificates, which `node:tls` starts as it is loaded, and Node loads every
+ * module of its own the worker's modules name, `node:tls` among them through `postgres`, before any of theirs runs, so
+ * before the turn (round 2 of the review). A thread still wrong, or a listing still short, after about a second stops
+ * the worker.
  */
 export const TURN_READINGS = 100;
 export const TURN_PAUSE_MS = 10;
@@ -317,20 +326,39 @@ export function pauseFor(milliseconds: number): void {
 }
 
 /**
- * The /proc status of each thread of this process, from /proc/self/task: glibc's `setegid` and `seteuid` change every
- * thread's ids, and turnToWorkerUser checks that they did. A thread that ends while they are read is left out.
+ * The /proc status of each thread of this process, from `tasks` (/proc/self/task but in the tests): glibc's `setegid`
+ * and `seteuid` change every thread's ids, and turnToWorkerUser checks that they did. A thread that ends while they are
+ * read (its status gone, ENOENT, or its thread, ESRCH) is left out; any other failure throws.
  */
-export function threadStatuses(): string[] {
+export function threadStatuses(tasks = "/proc/self/task"): string[] {
   const statuses: string[] = [];
-  for (const thread of readdirSync("/proc/self/task")) {
+  for (const thread of readdirSync(tasks)) {
     try {
-      statuses.push(readFileSync(`/proc/self/task/${thread}/status`, "latin1"));
+      statuses.push(readFileSync(`${tasks}/${thread}/status`, "latin1"));
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
       if (code !== "ENOENT" && code !== "ESRCH") throw error;
     }
   }
   return statuses;
+}
+
+/**
+ * How many threads this process has, from the `Threads` field of its /proc status, which the kernel keeps with the
+ * list /proc/self/task reads. A listing of that folder can leave out a live thread when one ahead of it is released
+ * while it is read, so the turn takes a listing only when it holds that many statuses, the count read before and after
+ * it (round 2 of PR #135's review). Throws when the status has no such count.
+ */
+export function threadCount(status: string = readFileSync("/proc/self/status", "latin1")): number {
+  const count = statusField(status, "Threads");
+  if (count === undefined || !/^\d{1,7}$/.test(count)) throw new Error("worker: its status has no thread count");
+  return Number(count);
+}
+
+/** This process's TurnCalls: Node's `setegid` and `seteuid`, threadStatuses, threadCount and pauseFor. */
+export function processTurnCalls(): TurnCalls {
+  const { setegid, seteuid } = posix();
+  return { setegid, seteuid, statuses: threadStatuses, threads: threadCount, pause: pauseFor };
 }
 
 /** A field of a /proc status as its words (an id or a group each), or undefined when the status has no such field. */
@@ -388,30 +416,40 @@ function errorCode(error: unknown): string {
 }
 
 /**
- * Turns a worker started as fly.toml starts it to WORKER_USER's effective group, then its effective user, its real
- * user left root: the worker's mode (inWorkerMode), which photoUserFor then reads. fly.toml's worker command leaves it
- * root, its ids all 0, with startedAsFly's facts (no new privileges, setuid, setgid and kill alone in its bounding set,
- * no inheritable capability, no group of root's), and `--groups=node` leaves WORKER_USER's group its only group, which
- * the turn requires. The worker takes the two effective ids here, at its first statement (./turn.ts). `setpriv --euid
+ * Turns a worker started as fly.toml starts it to WORKER_USER's effective group, then its effective user, its real user
+ * left root: the worker's mode (inWorkerMode), which photoUserFor then reads. fly.toml's worker command leaves it root,
+ * its ids all 0, with startedAsFly's facts (no new privileges, setuid, setgid and kill alone in its bounding set, no
+ * inheritable capability, no group of root's), and `--groups=node` leaves WORKER_USER's group its only group, which the
+ * turn requires. The worker takes the two effective ids here, at its first statement (./turn.ts). `setpriv --euid
  * --egid` can't: at an exec under no new privileges, a kernel without "security/commoncap: don't assume "setid" if all
  * ids are identical" (Linux 6.17) takes an effective id other than the real one for a set-id program's and puts it back
  * to the real one, root's, which is how PR #132's start on Fly found the worker ("uid 0, euid 0, egid 0"), while this
  * session's kernel and Docker's keep it (docs/plans/api-b2-worker-turn.md section 0). As the effective uid leaves 0,
  * Linux empties the effective set and keeps setuid, setgid and kill in the permitted one (the real uid is 0), and the
  * turn reads every thread's status after it to check that it is so (turnedAsFly), and reads them again while one isn't,
- * as a thread that is ending keeps its ids until it has gone (TURN_READINGS). Any other start is left as it is, for
- * photoUserFor to judge, and /etc/passwd isn't read for it. Returns whether it turned. Throws, having changed nothing,
- * when /etc/passwd can't be read or WORKER_USER isn't a user in it with an id and group of its own, neither root's, or
- * when its groups aren't that group alone; and throws, saying the failed call's error code or what it found, when a
- * call fails or a thread is still not as turnedAsFly says at the last reading. Each line is the worker's own, with no
- * error's words (T52). Its arguments are this process's but in the tests.
+ * as a thread that is ending keeps its ids until it has gone, or while the listing holds fewer than the kernel's count
+ * of threads, before it and after (threadCount; TURN_READINGS). Any other start is left as it is, for photoUserFor to
+ * judge, and /etc/passwd isn't read for it, but in the image one already in the worker's mode (below). Returns whether
+ * it turned. Throws, having changed nothing, when /etc/passwd can't be read or WORKER_USER isn't a user in it with an
+ * id and group of its own, neither root's, or when its groups aren't that group alone; and throws, saying the failed
+ * call's error code or what it found, when a call fails, or a thread is still not as turnedAsFly says, or the listing
+ * still short, at the last reading. In the image (inImage), it also throws for a start already in the worker's mode, as
+ * `setpriv --euid --egid` leaves it on a kernel that keeps them: it would pass photoUserFor's check without the turn's
+ * (turnedAsFly's capabilities among them; round 2 of PR #135's review). Each line is the worker's own, with no error's
+ * words (T52). Its arguments are this process's but in the tests.
  */
 export function turnToWorkerUser(
   ids: Ids = idsOf(),
   status: string = readFileSync("/proc/self/status", "latin1"),
   passwd: () => string = () => readFileSync("/etc/passwd", "utf8"),
-  calls: TurnCalls = { ...posix(), statuses: threadStatuses, pause: pauseFor },
+  calls: TurnCalls = processTurnCalls(),
+  image: () => boolean = () => inImage(),
 ): boolean {
+  if (inWorkerMode(ids) && image()) {
+    throw new Error(
+      `worker: in production it starts as root, as fly.toml's worker command leaves it, and takes ${WORKER_USER}'s effective group and user itself, never started with them (it found ${startFactsSaid(ids, status)})`,
+    );
+  }
   if (!(ids.uid === 0 && ids.euid === 0 && ids.egid === 0 && startedAsFly(status))) return false;
   let users: string;
   try {
@@ -450,15 +488,25 @@ export function turnToWorkerUser(
   }
   for (let reading = 1; ; reading += 1) {
     let statuses: readonly string[];
+    let counts: readonly number[];
     try {
+      const before = calls.threads();
       statuses = calls.statuses();
+      counts = [before, calls.threads()];
     } catch (error) {
       throw new Error(`${failed} (its threads' status couldn't be read: ${errorCode(error)})`, { cause: error });
     }
     if (statuses.length === 0) throw new Error(`${failed} (it found no thread's status)`);
     const wrong = statuses.find((each) => !turnedAsFly(each, user));
-    if (wrong === undefined) return true;
-    if (reading === TURN_READINGS) throw new Error(`${failed} (it found ${turnFactsSaid(wrong)})`);
+    const whole = counts.every((count) => count === statuses.length);
+    if (wrong === undefined && whole) return true;
+    if (reading === TURN_READINGS) {
+      throw new Error(
+        wrong === undefined
+          ? `${failed} (it read ${String(statuses.length)} threads' statuses where the process had ${counts.map(String).join(", then ")} threads)`
+          : `${failed} (it found ${turnFactsSaid(wrong)})`,
+      );
+    }
     calls.pause(TURN_PAUSE_MS);
   }
 }
