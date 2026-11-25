@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (26 tests | 1 failed | 25 skipped) 346ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 67ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 skipped (26)
+   Start at  03:50:38
+   Duration  2.20s (transform 46%, import 32%, tests 22%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+Error: the cell's bindings name nothing of its world: upload_id's value upl_4mOBvryF1n2i7H28uuscuQ is a row of app.uploads in another club than the cell's
+ ❯ checkBoundRows src/privacy/matrix.test.ts:478:34
+    476|   )
+    477|     problems.push("drop_id doesn't name Ben's photo and then Ben's vid…
+    478|   if (problems.length > 0) throw new Error(`the cell's bindings name n…
+       |                                  ^
+    479| }
+    480|
+ ❯ src/privacy/matrix.test.ts:1113:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/privacy/matrix.test.ts:1085:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

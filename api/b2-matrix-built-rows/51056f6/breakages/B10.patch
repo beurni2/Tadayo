@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/bindings.ts
++++ b/tests/src/privacy/bindings.ts
+@@ -71,7 +71,7 @@
+   star: (targets) => targets.star,
+   comment_id: "missing",
+   reservation_id: (targets) => targets.reservation,
+-  upload_id: (targets) => targets.upload,
++  upload_id: (targets) => targets.reservation,
+ };
+ 
+ /**

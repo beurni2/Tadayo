@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/harness.test.ts
++++ b/tests/src/privacy/harness.test.ts
+@@ -268,7 +268,7 @@
+           ),
+       )
+       .map((found) => found.id);
+-    const canName = [...new Set([...walked, ...named])].sort();
++    const canName = [...new Set([...walked])].sort();
+     expect(canName).toEqual([
+       "createComment",
+       "createReport",

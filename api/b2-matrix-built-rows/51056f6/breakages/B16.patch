@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/bindings.ts
++++ b/tests/src/privacy/bindings.ts
+@@ -179,7 +179,6 @@
+   proposal_id: { table: "app.schedule_proposals", column: "id", via: [], club: "club_id" },
+   invitation_id: { table: "app.invitations", column: "id", via: [["candidate_id", "app.candidates"]], club: "club_id" },
+   revision_id: { table: "app.roster_revisions", column: "id", via: [], club: "club_id" },
+-  star: { table: "app.memberships", column: "interval_id", via: [], club: "club_id" },
+   comment_id: { table: "app.comments", column: "id", via: [["drop_id", "app.drops"]], club: "club_id" },
+   reservation_id: {
+     table: "app.reservations",

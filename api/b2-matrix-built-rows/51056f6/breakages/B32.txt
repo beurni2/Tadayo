@@ -1,0 +1,129 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (93 tests | 5 failed) 1662ms
+   ❯ a route with no row fails (TECH-DESIGN section 8) (4)
+     × gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes' 12ms
+     × reports a route added to the contract without a row 3ms
+     × reports a row whose operation is gone, a row that isn't NONE and that nothing judges, and a judged operation's NONE 1ms
+     × ties the built routes to the judged rows both ways (the outside audit's A4) 1ms
+   ❯ a built route names objects of the world (the outside audit's A4) (5)
+     × has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one 167ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 88 passed (93)
+   Start at  04:05:35
+   Duration  2.98s (tests 58%, transform 25%, import 16%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes'
+AssertionError: expected [ Array(68) ] to have a length of 67 but got 68
+
+- Expected
++ Received
+
+- 67
++ 68
+
+ ❯ src/privacy/harness.test.ts:137:24
+    135| describe("a route with no row fails (TECH-DESIGN section 8)", () => {
+    136|   it("gives every operation of the contract its row, and every row an …
+    137|     expect(operations).toHaveLength(67);
+       |                        ^
+    138|     expect(rowProblems(operations, ROWS, { built })).toEqual([]);
+    139|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a route added to the contract without a row
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "hideThread has no row in the privacy matrix",
+    "getDropTwice has no row in the privacy matrix",
+  ]
+
+ ❯ src/privacy/harness.test.ts:143:49
+    141|   it("reports a route added to the contract without a row", () => {
+    142|     const added = [...operations, { ...operation("getDrop"), id: "getD…
+    143|     expect(rowProblems(added, ROWS, { built })).toEqual(["getDropTwice…
+       |                                                 ^
+    144|   });
+    145|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a row whose operation is gone, a row that isn't NONE and that nothing judges, and a judged operation's NONE
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "hideThread has no row in the privacy matrix",
+    "getDropTwice has a row but no operation in the contract",
+  ]
+
+ ❯ src/privacy/harness.test.ts:147:81
+    145|
+    146|   it("reports a row whose operation is gone, a row that isn't NONE and…
+    147|     expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE }, { …
+       |                                                                                 ^
+    148|       "getDropTwice has a row but no operation in the contract",
+    149|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > ties the built routes to the judged rows both ways (the outside audit's A4)
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "hideThread has no row in the privacy matrix",
+    "deleteComment is built but its row is NONE: a built route's row is judged, never the skeleton's",
+  ]
+
+ ❯ src/privacy/harness.test.ts:166:92
+    164|   it("ties the built routes to the judged rows both ways (the outside …
+    165|     // The audit's leaking handler: built, and its row left the skelet…
+    166|     expect(rowProblems(operations, ROWS, { built: new Set([...built, "…
+       |                                                                                            ^
+    167|       "deleteComment is built but its row is NONE: a built route's row…
+    168|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one
+AssertionError: expected [ 'createComment', …(8) ] to deeply equal [ 'createComment', …(7) ]
+
+- Expected
++ Received
+
+@@ -3,8 +3,9 @@
+    "createReport",
+    "deleteComment",
+    "getCommentMedia",
+    "getHome",
+    "getOccurrence",
++   "hideThread",
+    "listComments",
+    "updateComment",
+  ]
+
+ ❯ src/privacy/harness.test.ts:272:21
+    270|       .map((found) => found.id);
+    271|     const canName = [...new Set([...walked, ...named])].sort();
+    272|     expect(canName).toEqual([
+       |                     ^
+    273|       "createComment",
+    274|       "createReport",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

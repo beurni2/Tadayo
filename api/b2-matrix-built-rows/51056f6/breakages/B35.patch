@@ -1,0 +1,17 @@
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -591,6 +591,14 @@
+       summary: Club information
+       description: G05-club-details (spec 03, book p24).
+       parameters:
++        - name: include
++          in: query
++          required: false
++          schema:
++            type: string
++            enum:
++              - comments
++              - reactions
+         - name: club_id
+           in: path
+           required: true

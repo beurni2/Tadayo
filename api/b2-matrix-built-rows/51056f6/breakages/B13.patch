@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -412,7 +412,6 @@
+   ben: { drop: string; video: string },
+ ): Promise<void> {
+   await state.make(tx, w, ben.drop);
+-  await state.make(tx, w, ben.video);
+   const rows = await tx<{ state: string }[]>`
+     SELECT DISTINCT state FROM app.drops WHERE id IN (${ben.drop}, ${ben.video})`;
+   if (rows.length !== 1)

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (93 tests | 1 failed) 1650ms
+   ❯ a built route names objects of the world (the outside audit's A4) (5)
+     × has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one 175ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 92 passed (93)
+   Start at  04:05:31
+   Duration  2.94s (tests 58%, transform 25%, import 16%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one
+AssertionError: getOccurrence: expected [] to include 'comment_id'
+ ❯ src/privacy/harness.test.ts:292:28
+    290|       expect(operations.some((found) => found.id === id)).toBe(true);
+    291|       // Each acts on the comments it can name (round 4, R4-1: the key…
+    292|       expect(bindings, id).toContain("comment_id");
+       |                            ^
+    293|       for (const name of bindings) expect(BINDINGS[name]).toBeDefined(…
+    294|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

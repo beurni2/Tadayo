@@ -1,0 +1,22 @@
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -4516,6 +4516,19 @@
+                   value:
+                     code: RATE_LIMITED
+                     retry_after_seconds: 30
++  /v1/drops/{drop_id}/comments/hidden:
++    put:
++      operationId: hideThread
++      summary: Hides a drop's thread
++      parameters:
++        - name: drop_id
++          in: path
++          required: true
++          schema:
++            $ref: "#/components/schemas/Id"
++      responses:
++        "204":
++          description: Hidden
+   /v1/drops/{drop_id}/comments:
+     get:
+       operationId: listComments

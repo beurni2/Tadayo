@@ -1,0 +1,13 @@
+--- a/tests/src/privacy/bindings.ts
++++ b/tests/src/privacy/bindings.ts
+@@ -121,10 +121,6 @@
+  * binding: the slice that builds them puts them in the world.
+  */
+ export const REFUSES_COMMENTS: Readonly<Record<string, { file: string; refusal: string }>> = {
+-  getHome: {
+-    file: "packages/domain/src/clubs/home.ts",
+-    refusal: "home: the open day's drops have reactions or comments, or the viewer's favourite, which B6's page shows",
+-  },
+ };
+ 
+ /**

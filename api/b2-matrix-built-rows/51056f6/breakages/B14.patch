@@ -1,0 +1,12 @@
+--- a/tests/src/privacy/rows.ts
++++ b/tests/src/privacy/rows.ts
+@@ -633,9 +633,6 @@
+   const ids = new Set(operations.map((operation) => operation.id));
+   return [
+     ...[...ids].filter((id) => !Object.hasOwn(rows, id)).map((id) => `${id} has no row in the privacy matrix`),
+-    ...[...built]
+-      .filter((id) => !ids.has(id))
+-      .map((id) => `${id} is built but isn't an operation of the contract: buildApp never routes it`),
+     ...Object.keys(rows)
+       .filter((id) => !ids.has(id))
+       .map((id) => `${id} has a row but no operation in the contract`),

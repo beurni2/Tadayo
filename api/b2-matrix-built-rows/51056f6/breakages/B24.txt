@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (26 tests | 1 failed | 25 skipped) 2068ms
+   ❯ Home while a drop of the open day has a comment (B6's reply previews; the outside audit's A4) (1)
+     × refuses the open page to each role that may see the commented drop, and gives every other role its own 1779ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 skipped (26)
+   Start at  03:50:52
+   Duration  4.16s (tests 60%, transform 23%, import 17%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > Home while a drop of the open day has a comment (B6's reply previews; the outside audit's A4) > refuses the open page to each role that may see the commented drop, and gives every other role its own
+AssertionError: expected [ …(6) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "author, open, a comment on Ben's photo: getHome: status 200, not the server's empty 500 for a page later stages build",
++   "star, open, a comment on Ben's photo: getHome: status 200, not the server's empty 500 for a page later stages build",
++   "member in the audience, open, a comment on Ben's photo: getHome: status 200, not the server's empty 500 for a page later stages build",
++   "author, open, a comment on Ben's video link: getHome: status 200, not the server's empty 500 for a page later stages build",
++   "star, open, a comment on Ben's video link: getHome: status 200, not the server's empty 500 for a page later stages build",
++   "member in the audience, open, a comment on Ben's video link: getHome: status 200, not the server's empty 500 for a page later stages build",
++ ]
+
+ ❯ src/privacy/matrix.test.ts:3366:19
+    3364|         wrong.push(...found.filter((finding) => !(want === "refused" &…
+    3365|       }
+    3366|     expect(wrong).toEqual([]);
+       |                   ^
+    3367|     expect(counted.answers).toBe(targets.length * passing.length);
+    3368|     const refused = ["author", "star", "member in the audience"];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

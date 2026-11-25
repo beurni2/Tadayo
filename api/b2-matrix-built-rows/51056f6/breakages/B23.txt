@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (93 tests | 1 failed) 1814ms
+   ❯ each step of the matrix reports a planted wrong answer (40)
+     × guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4) 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 92 passed (93)
+   Start at  03:50:41
+   Duration  3.17s (tests 60%, transform 23%, import 17%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4)
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/privacy/harness.test.ts:651:90
+    649|     );
+    650|     // A request holding a value another club's binding hasn't is a br…
+    651|     expect(() => elsewhereOf({ ...video, which: { drop_id: 2 } }, "dro…
+       |                                                                                          ^
+    652|       "another club has no value 3 for drop_id: its binding gives 2",
+    653|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

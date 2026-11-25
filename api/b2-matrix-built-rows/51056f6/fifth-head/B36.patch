@@ -1,0 +1,19 @@
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -11238,6 +11238,16 @@
+           type: boolean
+         open_revision_id:
+           $ref: "#/components/schemas/Id"
++        recent_comments:
++          maxItems: 5
++          type: array
++          items:
++            type: object
++            properties:
++              id:
++                $ref: "#/components/schemas/Id"
++              body:
++                type: string
+       required:
+         - server_now
+         - club
