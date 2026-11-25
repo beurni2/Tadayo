@@ -3310,8 +3310,8 @@ class SheetsTest(StepsTest):
             self.assertEqual(code, 0)
             self.assertEqual(shell.commands, [update, update, install, version])
             self.assertIn("ios: imagemagick: apt-get ended 124; once more", out)
-            # An update killed 5 seconds on (-9: timeout(1)'s kill reaches its own process
-            # group, so sudo ends by the signal too): once more.
+            # An update killed 5 seconds on (-9: timeout(1)'s kill takes timeout itself too, and
+            # sudo then ends by its command's signal): once more.
             updates = iter([-9, 0])
             shell = FakeShell(codes=[(lambda c: c == update, lambda c: next(updates))])
             code, out = self.step("imagemagick", shell)

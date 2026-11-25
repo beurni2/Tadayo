@@ -209,19 +209,18 @@ RENDER_DIRS = ("design/reference/screens", "design/reference/2.1")
 EVIDENCE_BRANCH = "evidence"
 PUSH_ATTEMPTS = 5
 # The evidence job's ImageMagick install (`Steps.imagemagick`), in a step of 5 minutes
-# (`.github/workflows/ios.yml`). One `apt-get update` used them all, printing nothing after its
-# third second (`ios` 45321177704, attempt 1, at `d624a08`, 2026-11-24), once in 231 evidence
-# jobs from 2026-11-18 to 2026-11-25. The runner's image already bounds each fetch: its
-# /etc/apt/apt.conf.d/zz-retries (runner-images' configure-apt.sh, on x64) gives up on one silent
-# for 15 seconds and tries it once more before the next mirror, so what stalled that update
-# wasn't a fetch apt was timing. An update still going after APT_UPDATE_SECONDS is ended,
-# whatever holds it, which leaves a second try over 2 minutes of the step; of the 227 updates
-# that worked, the slowest took 112 seconds (13.4 MB, its lines coming at most about 20 seconds
-# apart). The install isn't capped: the image's limits and its mirrors already bound each of
-# its fetches (the slowest that worked, 143 seconds, was three silent fetches from one mirror
-# before another gave both packages in seconds), and ending dpkg would leave it interrupted.
-# So an update ended and an install that fails over can still run past the step's 5 minutes,
-# which then end it, as before.
+# (`.github/workflows/ios.yml`). Once, an `apt-get update` printed nothing for the whole step
+# (`docs/LIMITATIONS.md`, 2026-11-25, for the runs). The runner's image already bounds each fetch
+# (its /etc/apt/apt.conf.d/zz-retries, from runner-images' configure-apt.sh: a silent fetch
+# given up after 15 seconds and tried once more before the next mirror, on the tags before and
+# after that run's image), so whatever held that update wasn't a fetch apt was timing. An update
+# still going after APT_UPDATE_SECONDS is ended, and the lists and install are tried again. The
+# limit counts time, not silence, so it would also end an update still coming slowly: the
+# slowest of 227 that worked took 112 seconds, and a second try that doesn't pick up the first
+# one's partial lists could be ended the same way. The install isn't capped: its fetches fail
+# over between mirrors on the image's limits, and ending dpkg would leave it interrupted. Two
+# ended updates take at most 290 seconds; an ended update and an install that fails over can
+# still run past the step's 5 minutes, which then end it, as before.
 APT_UPDATE_SECONDS = 140
 FONTS = ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
          "/usr/share/fonts/dejavu/DejaVuSans.ttf")
