@@ -24,7 +24,7 @@ migration, no contract change, no workflow file, nothing the API runs.
   --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1
   services/worker/src/main.ts`. The same command passes the check in the session (`privileges.test.ts`, "in the
   image, fly.toml's worker command itself goes past the photo user's check", run as root) and in Docker with the
-  image (`docs/LIMITATIONS.md`, 2026-11-25). So something on Fly's Machine makes one of the seven facts differ, and
+  image (`docs/plans/api-b2-worker-crash-report.md`, its opening: "Docker, run as Fly runs it"). So something on Fly's Machine makes one of the seven facts differ, and
   the line doesn't say which. The stop run (`ops` run 45564522345) found the worker Machine already stopped.
 
 ## 1. The change
@@ -70,7 +70,22 @@ Each run against `privileges.test.ts` and `start.test.ts`, each restored after:
 - K05: a missing field said as `none`.
 - K06: `euid` and `egid` swapped in the clause.
 - K07: `statusField` returns its value untrimmed (the rule itself).
+- K08: a sanitiser that lets any blank through (`[^0-9a-f\s]`) (round 1's R1).
+- K09: the cut at 64 characters on `Groups` alone (round 1's R1).
 
 ## 5. Review
 
-One fresh subagent, at the first commit (section 6 once it reports).
+Round 1, one fresh subagent at `82226e3`, against `main` at `b39dd02`: nothing high or medium. The rule is unchanged;
+the clause reads every input the refusal reads, from the same status; nothing in it goes beyond ids, capability masks
+and gids; a typical line is about 300 characters, under `ops`' cut at 400. Each finding, fixed or answered in the
+second commit:
+
+- R1 (low, tests): two plausible wrong versions passed every test: a sanitiser that lets any blank through (`[^0-9a-f\s]`, so a tab, `\v`, `\f` or U+00A0 reaches the log) and a cut at 64 characters on `Groups` alone. Fixed: the test of `startFactsSaid` adds a status with a vertical tab, a form feed, a tab and a no-break space in its fields (each a `?`) and a 70-character `CapBnd` (cut at 64); breakages K08 and K09 are those two versions, each caught.
+- R2 (low, records): the first entry's Did and Verified called the test of fly.toml's start "the real-child test", a name that is another test's ("the real child prepares a real photo …"). Fixed in this entry: that test is "in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there" (the log is append-only, so the first entry stays as it is).
+- R3 (low, records): T52's audit row, which tracks what every worker log line carries, wasn't updated. Fixed: T52's row names the refusal's clause and its test.
+- R4 (nit): a tab inside `Groups` and any other character both become `?`, so `1000?0` can't tell a tab (which `startedAsFly` splits on, so a group 0) from a letter; and the cut has no mark. Answered: the kernel separates groups with spaces, and the rule stated is digits, `a` to `f` and spaces, anything else a `?`, which R1's test now pins; a cut list can't hide a 0, since the kernel lists groups in order. `startFactsSaid`'s comment says both.
+- R5 (nit): the first entry's Not verified line left unclear whether `format`, `lint`, `typecheck`, `unit` and `guards` had run. Answered here: they ran and passed before the push, and `ci` is green at `82226e3` (run 45566768618).
+- R6 (nit): the plan's section 0 cited `docs/LIMITATIONS.md` for the start passing in Docker; that row says only that the image starts and runs in the session. Fixed: it cites `docs/plans/api-b2-worker-crash-report.md`'s opening, which says it was Docker, run as Fly runs it.
+- R7 (nit): `startedAsFly`'s `field` was a wrapper left over from moving `statusField` out. Fixed: it calls `statusField` itself.
+
+The review stops at one round: the start rule is unchanged, and only its message is new.

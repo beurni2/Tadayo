@@ -239,6 +239,13 @@ describe("the photo user (photoUserFor)", () => {
     ).toBe(
       `uid 0, euid 1000, egid 1000, NoNewPrivs 1, CapBnd 00000000000000?0, CapInh 0? ???, Groups ${"1000 ".repeat(12)}1000`,
     );
+    // A tab, or any other blank but a space, is a "?" too, inside any field; and each field is cut, not Groups alone.
+    expect(
+      startFactsSaid(
+        WORKER,
+        status({ NoNewPrivs: "1\v1", CapBnd: "0".repeat(70), CapInh: "0\f0", Groups: "1000\t0\u00a00" })(),
+      ),
+    ).toBe(`uid 0, euid 1000, egid 1000, NoNewPrivs 1?1, CapBnd ${"0".repeat(64)}, CapInh 0?0, Groups 1000?0?0`);
   });
 
   it("in the image by its marker alone, whatever NODE_ENV says, stops the worker just the same", () => {

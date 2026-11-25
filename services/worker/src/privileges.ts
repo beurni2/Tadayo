@@ -209,12 +209,11 @@ export const FLY_BOUNDING_SET = "00000000000000e0";
  * image's setuid programs and every capability in reserve) stops (round 3 of PR #118's review).
  */
 export function startedAsFly(status: string): boolean {
-  const field = (name: string): string | undefined => statusField(status, name);
-  const groups = field("Groups");
+  const groups = statusField(status, "Groups");
   return (
-    field("NoNewPrivs") === "1" &&
-    field("CapBnd") === FLY_BOUNDING_SET &&
-    field("CapInh") === "0000000000000000" &&
+    statusField(status, "NoNewPrivs") === "1" &&
+    statusField(status, "CapBnd") === FLY_BOUNDING_SET &&
+    statusField(status, "CapInh") === "0000000000000000" &&
     groups !== undefined &&
     !groups.split(/\s+/).includes("0")
   );
@@ -229,7 +228,8 @@ function statusField(status: string, name: string): string | undefined {
  * What a refused start was found to be, for the refusal's line (photoUserFor), which is all Fly's log keeps of it: the
  * ids inWorkerMode reads and the four fields startedAsFly reads, none of them secret. A field the status doesn't have
  * is "missing", an empty one "none"; each value keeps only the digits, the letters a to f and spaces a field's value
- * is made of (anything else is "?"), cut at 64 characters. On PR #118's merge the worker was refused on Fly, where the
+ * is made of (anything else is "?", a tab too), cut at 64 characters with no mark of the cut (the kernel lists groups
+ * in order, so a cut list still shows a 0 first). On PR #118's merge the worker was refused on Fly, where the
  * same command passes in the session and in Docker, and its line said nothing of what it had found.
  */
 export function startFactsSaid(ids: Ids, status: string): string {
