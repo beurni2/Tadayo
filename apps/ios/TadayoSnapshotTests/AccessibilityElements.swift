@@ -141,9 +141,6 @@ enum AccessibilityElements {
             window.isHidden = true
             window.rootViewController = nil
         }
-        // A few turns of the run loop, so a navigation stack has put up its screen.
-        let shown = Date().addingTimeInterval(0.5)
-        while Date() < shown { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
         let scripted = Date().addingTimeInterval(30)
         while !ready(), Date() < scripted {
             RunLoop.main.run(until: Date().addingTimeInterval(0.02))
@@ -154,13 +151,17 @@ enum AccessibilityElements {
     }
 
     /// Turns the run loop until the window's elements, their labels, values and frames, have
-    /// stayed the same for 0.3 seconds, for up to 10 seconds; past that the read goes ahead, and
-    /// the test's own expectations decide. A fixed half second wasn't always enough on a loaded
-    /// runner: `ProfileForm` scrolls its column above Continue only after the keyboard's room has
-    /// been read and `onChange(of: keyboardRise, initial: true)` has asked for the scroll, a few
-    /// updates later, and `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea`
-    /// read the column not yet scrolled (Continue's top 314 points above the field's bottom) in
-    /// four runs on iOS 26.5, the last `main`'s `ios` 45523314156 at `12b3d8a`
+    /// stayed the same through 10 turns of 0.05 seconds, half a second at the least, for up to 10
+    /// seconds; past that the read goes ahead, and the test's own expectations decide. Counted in
+    /// turns, not only in time, because SwiftUI makes each update of a screen on a turn of the
+    /// main run loop, and a loaded runner can let a half second pass in a few turns. A navigation
+    /// stack putting up its screen is waited for this way too. A fixed half second, which this
+    /// replaced, wasn't always enough: `ProfileForm` scrolls its column above Continue only after
+    /// the keyboard's room has been read and `onChange(of: keyboardRise, initial: true)` has
+    /// asked for the scroll, a few updates later, and
+    /// `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` read the
+    /// column not yet scrolled (Continue's top 314 points above the field's bottom) in four runs
+    /// on iOS 26.5, the last `main`'s `ios` 45523314156 at `12b3d8a`
     /// (`docs/plans/ios-b1-intermittents.md`, item 3). What is asserted is unchanged; a screen
     /// that never settles still fails as it did.
     private static func settle(_ window: UIWindow) {
@@ -171,16 +172,16 @@ enum AccessibilityElements {
             }
         }
         var last = state()
-        var still = Date()
+        var still = 0
         let deadline = Date().addingTimeInterval(10)
-        while Date() < deadline {
+        while still < 10, Date() < deadline {
             RunLoop.main.run(until: Date().addingTimeInterval(0.05))
             let now = state()
-            if now != last {
+            if now == last {
+                still += 1
+            } else {
                 last = now
-                still = Date()
-            } else if Date().timeIntervalSince(still) >= 0.3 {
-                return
+                still = 0
             }
         }
     }
