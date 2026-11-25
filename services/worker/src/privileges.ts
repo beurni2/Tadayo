@@ -6,9 +6,10 @@
 // turnToWorkerUser, as Fly's kernel undoes an effective id `setpriv` sets under no new privileges): its real user stays
 // root, so no process of another user can read its environment or memory, open its pipes or attach to it (Linux's
 // `ptrace_may_access` compares the caller's ids with every one of the worker's, its real and saved uid 0) or signal it
-// (`kill_ok_by_cred`), and its `/proc` files are root's where `fs.suid_dumpable` is 0, as in the image (taking other
-// effective ids makes it non-dumpable then, `commit_creds`; round 2 of PR #135's review); it keeps three capabilities
-// (setuid, setgid, kill) that it can use only by taking effective uid 0. Each photo's process is then started as
+// (`kill_ok_by_cred`). Its `/proc` files are root's too unless `fs.suid_dumpable` is 1: taking other effective ids
+// makes it non-dumpable then (`commit_creds`), and Linux gives a non-dumpable process's files to root
+// (`task_dump_owner`). That setting is the kernel's, 0 in the session and in Docker here, and Fly's isn't read (PR
+// #135's review). It keeps three capabilities (setuid, setgid, kill) that it can use only by taking effective uid 0. Each photo's process is then started as
 // `TADAYO_PHOTO_USER` (`tadayo-image` in the image), with no group but its own.
 //
 // - The worker's mode: real uid 0, effective uid and group not 0. photoUserFor reads it at the start, with the
@@ -343,15 +344,21 @@ export function threadStatuses(tasks = "/proc/self/task"): string[] {
   return statuses;
 }
 
+/** What threadCount throws for a status with no thread count. */
+export const NO_THREAD_COUNT = "worker: its status has no thread count";
+
 /**
  * How many threads this process has, from the `Threads` field of its /proc status, which the kernel keeps with the
  * list /proc/self/task reads. A listing of that folder can leave out a live thread when one ahead of it is released
  * while it is read, so the turn takes a listing only when it holds that many statuses, the count read before and after
- * it (round 2 of PR #135's review). Throws when the status has no such count.
+ * it (round 2 of PR #135's review). A release during the reading lowers the count read after it, so this finds every
+ * live thread while none is created during the reading; one missed could hide only behind as many created as released.
+ * None is at the turn: Node starts its threads as it loads the worker's modules, before turn.ts runs (under strace, in
+ * the fresh check of PR #135's fourth commit). Throws NO_THREAD_COUNT when the status has no such count.
  */
 export function threadCount(status: string = readFileSync("/proc/self/status", "latin1")): number {
   const count = statusField(status, "Threads");
-  if (count === undefined || !/^\d{1,7}$/.test(count)) throw new Error("worker: its status has no thread count");
+  if (count === undefined || !/^\d{1,7}$/.test(count)) throw new Error(NO_THREAD_COUNT);
   return Number(count);
 }
 
@@ -494,7 +501,11 @@ export function turnToWorkerUser(
       statuses = calls.statuses();
       counts = [before, calls.threads()];
     } catch (error) {
-      throw new Error(`${failed} (its threads' status couldn't be read: ${errorCode(error)})`, { cause: error });
+      const said =
+        error instanceof Error && error.message === NO_THREAD_COUNT
+          ? "its status had no thread count"
+          : `its threads' status couldn't be read: ${errorCode(error)}`;
+      throw new Error(`${failed} (${said})`, { cause: error });
     }
     if (statuses.length === 0) throw new Error(`${failed} (it found no thread's status)`);
     const wrong = statuses.find((each) => !turnedAsFly(each, user));

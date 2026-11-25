@@ -750,14 +750,10 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     expect(thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, unreadable))).toBe(
       `${TURN_FAILED} (its threads' status couldn't be read: EACCES)`,
     );
-    const uncounted = {
-      ...calls,
-      threads: () => {
-        throw new Error("worker: its status has no thread count");
-      },
-    };
+    // A status with no thread count says so (the fresh check of PR #135's fourth commit).
+    const uncounted = { ...calls, threads: () => threadCount("Name:\tnode\nPid:\t1\n") };
     expect(thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, uncounted))).toBe(
-      `${TURN_FAILED} (its threads' status couldn't be read: no error code)`,
+      `${TURN_FAILED} (its status had no thread count)`,
     );
     expect(
       thrown(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, { ...calls, statuses: () => [] })),
@@ -878,9 +874,11 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
     // The order as Node runs it (round 2 of PR #135's review): a load hook in the same process puts a line first in
     // each module it loads, which records the module as its code starts to run, and one last in turn.ts, which records
     // that the turn has ended. Node runs a module's code once each of its imports has run, so the entry's own line
-    // comes after all of theirs. Every module of the worker's and of its packages is recorded: one Node loads with no
-    // source to change is listed apart, and there is none. Run here, the start isn't fly.toml's, so the turn leaves it
-    // as it is, and the entry then stops at its first setting, with no DATABASE_URL.
+    // comes after all of theirs. Every module of the worker's and of its packages is an ES module, and recorded (after
+    // a `#!` line, where one comes first). One the hook can't record is listed apart, and there is none: one with no
+    // source to change, or a CommonJS one, whose "use strict" a line put first would undo (the fresh check of PR #135's
+    // fourth commit). Run here, the start isn't fly.toml's, so the turn leaves it as it is, and the entry then stops at
+    // its first setting, with no DATABASE_URL.
     const folder = mkdtempSync(join(tmpdir(), "tadayo-turn-order-"));
     try {
       const own = (file: string) => pathToFileURL(join(import.meta.dirname, file)).href;
@@ -891,7 +889,7 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
           'import { writeSync } from "node:fs";',
           'import { registerHooks } from "node:module";',
           `const turn = ${JSON.stringify(own("turn.ts"))};`,
-          'const formats = ["module", "module-typescript", "commonjs", "commonjs-typescript"];',
+          'const formats = ["module", "module-typescript"];',
           "const ran = (globalThis.tadayoRan = []);",
           "const unchanged = [];",
           "registerHooks({",
@@ -904,7 +902,9 @@ describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
           "    }",
           '    const source = typeof found.source === "string" ? found.source : Buffer.from(found.source).toString("utf8");',
           '    const last = url === turn ? "\\nglobalThis.tadayoRan.push(\\"turned\\");\\n" : "";',
-          "    return { ...found, source: `globalThis.tadayoRan.push(${JSON.stringify(url)});\\n${source}${last}` };",
+          '    const at = source.startsWith("#!") ? source.indexOf("\\n") + 1 : 0;',
+          "    const first = `globalThis.tadayoRan.push(${JSON.stringify(url)});\\n`;",
+          "    return { ...found, source: `${source.slice(0, at)}${first}${source.slice(at)}${last}` };",
           "  },",
           "});",
           'process.on("exit", () => writeSync(1, JSON.stringify({ ran, unchanged })));',

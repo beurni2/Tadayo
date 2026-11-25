@@ -70,8 +70,9 @@ no workflow file, nothing the API runs.
   sender's ids with the target's real and saved uid (`kernel/signal.c` `kill_ok_by_cred`). Nor can it read the worker's
   environment or memory, or attach to it: Linux's `ptrace_may_access` compares the caller's ids with every one of
   the worker's, its real and saved uid 0 among them, whatever `fs.suid_dumpable` says. `/proc/self/environ` is
-  also root's where that setting is 0, as in the image and the session (Linux makes a process whose effective ids
-  change non-dumpable then, `commit_creds`); Fly's isn't read (round 2 of the review, section 7). The
+  also root's unless that setting is 1: Linux makes a process whose effective ids change non-dumpable then
+  (`commit_creds`) and gives a non-dumpable process's `/proc` files to root (`task_dump_owner`). The setting is the
+  kernel's, 0 in the session and in Docker here; Fly's isn't read (round 2 of the review, section 7; section 8). The
   root harness has always taken the worker's mode this way, in process (`privileges-harness.ts` `takeWorkersMode`),
   and there a photo's process finds the worker's environment, memory and standard output `EACCES` ("a photo's process
   is the photo's user alone, with no capability, and can't reach the worker"). Any other start is left as it is, for
@@ -164,7 +165,10 @@ no workflow file, nothing the API runs.
     records the module as its code starts) and one last in `turn.ts` (the turn's end), then `main.ts`, which stops at
     `DATABASE_URL`: the records before the turn's end are `privileges.ts` and `turn.ts`, in that order; every module
     loaded had a source to change; the rest include `start.ts` and packages, with `main.ts` last. Node's own modules
-    aren't recorded, as they load as Node links the graph (section 1).
+    aren't recorded, as they load as Node links the graph (section 1). Since the fifth commit (section 8, N4) the hook
+    changes ES modules alone, putting its line after a `#!` line where one comes first; a CommonJS module, whose
+    `"use strict"` a line put first would undo, is listed apart with any module that has no source, and none is (a
+    scratch run of the same hook lists a `.cjs` module apart and records an ES module that starts with `#!`).
 - The root harness (`privileges-harness.ts`, `real-child-inside`): fly.toml's worker command runs exactly as fly.toml
   has it, with `/etc/passwd` and `/etc/group` given a `node` of the harness's unused id (64998), each bound read-only
   over the original in its own mount namespace, where it changed the command's user name before. "in the image,
@@ -199,7 +203,8 @@ are the third commit's (section 6), each caught by the unit tests named; the roo
 runs, but another run of the harness was going on in the session at the same time (round 2's reviewer, with the same
 users), so those failures aren't counted. K35 to K50 are round 2's (section 7), run at the fourth commit's tree with no
 other harness running: all were caught, K43 only once the file system uid and gid had a case each (it survived its
-first run, when one case left both at 0 and the gid's check caught it alone).
+first run, when one case left both at 0 and the gid's check caught it alone). K51 is the fifth commit's (section 8),
+run with K35 to K50 again at its tree, with no other harness running: all seventeen were caught.
 
 | | Breakage | Caught by |
 |---|---|---|
@@ -253,6 +258,7 @@ first run, when one case left both at 0 and the gid's check caught it alone).
 | K48 | The count read after the listing alone | "reads the threads' statuses again …" (a thread that ended while it was read) |
 | K49 | The worker's count taken from the listing itself | "reads each thread's status from the task folder, …" (`processTurnCalls`) |
 | K50 | `turnedAsFly` doesn't check the file system gid | "stops the worker, saying what it found, …" |
+| K51 | A status with no thread count stopped with the line for a status that couldn't be read | "stops the worker, saying what it found, …" (`threadCount` on a status with no `Threads`) |
 
 ## 5. Review, round 1 (PR #135, at `0784c35`)
 
@@ -353,3 +359,36 @@ fourth commit; K35 to K50 (section 4) are its breakages.
   which would run with the ids glibc skipped; Node's binary uses `pthread_exit`, but no such thread is there at the
   turn. Recorded at `TURN_READINGS`. And section 6 named the session's Node for the image's: 26.13.1. Fixed.
 
+## 8. Fresh check of the fourth commit (PR #135, at `1e263d7`)
+
+A fresh reviewer read `git diff ff9c85f..1e263d7` for the worker, the Dockerfile and fly.toml: the count check, the
+refusal in the image, the new tests and the lines the worker writes (T52). No high or medium finding; four nits, each
+fixed in the fifth commit, with K51 (section 4) its breakage.
+
+- N1 (nit): the count check finds every live thread while none is created during a reading. A release during it lowers
+  the count read after it, so a missed thread could hide only behind as many threads created as released (two
+  released, one as the listing passed it, and two created after the first count). None is created at the turn: under
+  `strace`, the last thread `main.ts`'s start creates before the turn's reads comes as Node links `postgres`, and a
+  25-second churn of threads made and ended (`node:worker_threads`) gave no reading taken that missed one. Fixed:
+  `threadCount`'s comment says the bound and why it holds at the turn. No change to the code.
+- N2 (nit): `privileges.ts`'s header said the worker's `/proc` files are root's where `fs.suid_dumpable` is 0 "as in
+  the image". The setting is the kernel's, not the image's, and `task_dump_owner` gives a non-dumpable process's files
+  to root for 2 as for 0. Fixed there, in section 1 and in ADR-038's note: root's unless the setting is 1 (0 in the
+  session and in Docker here; Fly's isn't read). R2-5's words in section 7 stay as round 2 left them.
+- N3 (nit): a status with no thread count stopped the worker with "its threads' status couldn't be read: no error
+  code". Fixed: `threadCount` throws `NO_THREAD_COUNT`, and the turn's line then says "its status had no thread
+  count"; the unit test runs the real `threadCount` on a status with no `Threads` field (K51).
+- N4 (nit): the order test's hook put its line first in CommonJS modules too, which would undo a `"use strict"`, and
+  before a `#!` line, which would not parse. Neither happens today (every module before the stop is an ES module: 76
+  TypeScript ones and 10 of `postgres`'s). Fixed: section 2.
+- What held, as the reviewer checked it: `Threads` is the kernel's `signal->nr_threads`, changed with the thread list
+  under the same locks and read under `siglock`; a listing stops or skips only when a thread is released and never
+  lists one twice; a normal start can't be refused forever (live threads' statuses are readable, and Node 26 makes no
+  `iou-wrk` threads by default); the refusal in the image comes first and asks the image only of a start already in
+  the worker's mode, and every other start there is left to `photoUserFor`, which refuses it; in Docker
+  (`tadayo-api-dev:wturn3`) fly.toml's command reached `DATABASE_URL` three times in three, and the old command met the
+  refusal; nothing else in the repository starts `main.ts` with `--euid` or `--egid`; Vitest 5.0.5's `toEqual` holds
+  functions by identity; the order test caught a `main.ts` that imports `./safety.ts` before `./turn.ts`; the
+  `unlisted` and `exitsDuring` cases reach the count check; no assertion was weakened; `alreadyTurned` needs a kernel
+  that keeps the ids `setpriv` sets (Linux 6.17 or later) and fails, not skips, on an older one; and the new lines
+  carry only the status's facts or numbers (T52).
