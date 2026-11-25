@@ -3289,6 +3289,46 @@ class SheetsTest(StepsTest):
         self.assertIn("| `F02-upcoming` | new | `XTests/testX.F02-upcoming.png` | design/reference/2.1/F02-upcoming.png | "
                       "ImageMagick couldn't make its sheet |", index)
 
+    def test_imagemagick_gives_up_on_a_silent_fetch_and_tries_twice(self):
+        # Not installed: every apt-get gives up on a fetch silent for 20 seconds, and the update
+        # is ended after APT_UPDATE_SECONDS under timeout(1), inside sudo so apt-get itself gets
+        # the signal (the workflow's test checks what that leaves the second try).
+        options = ["-o", "Acquire::http::Timeout=20", "-o", "Acquire::https::Timeout=20"]
+        update = ["sudo", "timeout", "-k", "5", "140", "apt-get", *options, "update", "-q"]
+        install = ["sudo", "apt-get", *options, "install", "-y", "-q", "--no-install-recommends",
+                   "imagemagick", "fonts-dejavu-core"]
+        version = ["convert", "-version"]
+        with mock.patch.object(ios_steps.shutil, "which", return_value=None):
+            # Lists that come at once: one update, the install, ImageMagick's version.
+            shell = FakeShell()
+            code, out = self.step("imagemagick", shell)
+            self.assertEqual(code, 0)
+            self.assertEqual(shell.commands, [update, install, version])
+            # An update that was ended (124, as timeout(1) answers): once more.
+            updates = iter([124, 0])
+            shell = FakeShell(codes=[(lambda c: c == update, lambda c: next(updates))])
+            code, out = self.step("imagemagick", shell)
+            self.assertEqual(code, 0)
+            self.assertEqual(shell.commands, [update, update, install, version])
+            self.assertIn("ios: imagemagick: apt-get ended 124; once more", out)
+            # An install that failed, as after lists that didn't all come: both again.
+            installs = iter([100, 0])
+            shell = FakeShell(codes=[(lambda c: c == install, lambda c: next(installs))])
+            code, out = self.step("imagemagick", shell)
+            self.assertEqual(code, 0)
+            self.assertEqual(shell.commands, [update, install, update, install, version])
+            # Twice not: the step fails and says so, with no third try.
+            shell = FakeShell(codes=[(lambda c: c == update, 124)])
+            code, out = self.step("imagemagick", shell)
+            self.assertEqual(code, 124)
+            self.assertEqual(shell.commands, [update, update])
+            self.assertIn("ios: imagemagick: couldn't install ImageMagick", out)
+        # Already installed: no apt-get at all.
+        with mock.patch.object(ios_steps.shutil, "which", return_value="/usr/bin/montage"):
+            shell = FakeShell()
+            self.assertEqual(self.step("imagemagick", shell)[0], 0)
+            self.assertEqual(shell.commands, [version])
+
     def test_screens_wins_over_2_1(self):
         self.repo.copy(os.path.join(ROOT, *RENDER.split("/")), "design/reference/screens/F02-upcoming.png")
         self.assertEqual(ios_steps.render_for(self.repo.root, "F02-upcoming"),
@@ -3787,6 +3827,11 @@ class WorkflowFileTest(unittest.TestCase):
             # The build's checkout and upload, or the evidence's checkout, download, sheets and
             # publish, fit after them.
             self.assertLessEqual(total + 10, job, job_id)
+        # The evidence job's ImageMagick install (`Steps.imagemagick`): an update ended at its
+        # limit, with its kill 5 seconds on, leaves the second try at least 2 minutes of the step.
+        block = self.step_block("ios_steps.py imagemagick\n")
+        minutes = int(re.search(r"timeout-minutes: ([0-9]+)", block).group(1))
+        self.assertGreaterEqual(minutes * 60 - (ios_steps.APT_UPDATE_SECONDS + 5), 120)
 
     def test_each_step_has_its_timeout_and_the_job_its_backstop(self):
         # The values the change set: the simulator step downloads iOS 26.5 on every run, and the

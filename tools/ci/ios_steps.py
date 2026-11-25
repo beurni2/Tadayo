@@ -208,6 +208,17 @@ INVENTORY = "design/reference/INVENTORY.md"
 RENDER_DIRS = ("design/reference/screens", "design/reference/2.1")
 EVIDENCE_BRANCH = "evidence"
 PUSH_ATTEMPTS = 5
+# The evidence job's ImageMagick install (`Steps.imagemagick`), in a step of 5 minutes
+# (`.github/workflows/ios.yml`). One `apt-get update` used them all, printing nothing after its
+# third second (`ios` 45321177704, attempt 1, at `d624a08`, 2026-11-24), once in 231 evidence
+# jobs from 2026-11-18 to 2026-11-25. apt waits 120 seconds for a fetch that hears nothing, and
+# tries it again; APT_OPTIONS gives up on one after 20, so apt tries again, or another mirror,
+# sooner. A fetch that is slow but still hears something goes on: of the 227 installs that
+# worked, the slowest update took 112 seconds (13.4 MB at 130 kB/s) and the slowest install 143
+# (268 kB at 1.9 kB/s). An update still going after APT_UPDATE_SECONDS is ended, whatever held
+# it, which leaves a second try over 2 minutes of the step.
+APT_UPDATE_SECONDS = 140
+APT_OPTIONS = ("-o", "Acquire::http::Timeout=20", "-o", "Acquire::https::Timeout=20")
 FONTS = ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
          "/usr/share/fonts/dejavu/DejaVuSans.ttf")
 AWAITING_RENDER = "built from spec, awaiting render"
@@ -2028,9 +2039,20 @@ class Steps:
         if shutil.which("montage") and shutil.which("convert"):
             code = 0
         else:
-            code = self.shell.run(["sudo", "apt-get", "update", "-q"]) or self.shell.run(
-                ["sudo", "apt-get", "install", "-y", "-q", "--no-install-recommends",
-                 "imagemagick", "fonts-dejavu-core"])
+            # The lists and the install, tried twice: once more after an update that stalled
+            # (APT_UPDATE_SECONDS) or failed, or an install that failed, as one after lists that
+            # didn't all come does.
+            for attempt in (1, 2):
+                if attempt == 2:
+                    print(f"ios: imagemagick: apt-get ended {code}; once more", flush=True)
+                code = self.shell.run(["sudo", "timeout", "-k", "5", str(APT_UPDATE_SECONDS),
+                                       "apt-get", *APT_OPTIONS, "update", "-q"])
+                if code == 0:
+                    code = self.shell.run(["sudo", "apt-get", *APT_OPTIONS, "install", "-y", "-q",
+                                           "--no-install-recommends", "imagemagick",
+                                           "fonts-dejavu-core"])
+                if code == 0:
+                    break
         if code == 0:
             code = self.shell.run(["convert", "-version"])
         if code != 0:
