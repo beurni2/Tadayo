@@ -285,15 +285,36 @@ describe("the document", () => {
     ]);
   });
 
-  it("needs no session for exactly the signed-out page and a logged-out device's removal", () => {
+  it("needs no session for exactly the signed-out page, a logged-out device's removal and the health check", () => {
     expect(
       OPERATIONS.filter((op) => op.public)
         .map((op) => op.id)
         .sort(),
-    ).toEqual(["previewInvitationWeb", "removeDevice"]);
+    ).toEqual(["getHealth", "previewInvitationWeb", "removeDevice"]);
     for (const op of OPERATIONS) {
       const operation = ((document.paths as JsonObject)[op.path] as JsonObject)[op.method] as JsonObject;
       expect(operation.security, op.id).toEqual(op.public ? [] : undefined);
+    }
+  });
+
+  it("documents a 503 only for the health check, with nothing in it, and no 404 where nothing is named (the outside audit's A7)", () => {
+    const health = ((document.paths as JsonObject)["/v1/health"] as JsonObject).get as JsonObject;
+    expect(health.operationId).toBe("getHealth");
+    const responses = health.responses as JsonObject;
+    expect(Object.keys(responses).sort()).toEqual(["204", "400", "429", "503"]);
+    const unavailable = responses["503"] as JsonObject;
+    expect(unavailable.content).toBeUndefined();
+    expect(unavailable.headers).toEqual({ "Cache-Control": { $ref: "#/components/headers/CacheControl" } });
+    expect(health.parameters).toEqual([]);
+    expect(health.requestBody).toBeUndefined();
+    for (const operation of operations) {
+      const id = operation.operationId as string;
+      if (id !== "getHealth") expect((operation.responses as JsonObject)["503"], id).toBeUndefined();
+    }
+    // The public operations that name something in their body keep the neutral not-found (T14).
+    for (const id of ["previewInvitationWeb", "removeDevice"]) {
+      const op = OPERATIONS.find((candidate) => candidate.id === id);
+      expect(op && standardErrors(op), id).toContain("NOT_FOUND");
     }
   });
 

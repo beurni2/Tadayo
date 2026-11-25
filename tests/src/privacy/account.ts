@@ -34,7 +34,7 @@ export function sessionOf(row: { state: string; ageConfirmed: boolean; name: str
 }
 
 /** The operations that need no session: the contract's `public` (the gate reads no header for them). */
-export const PUBLIC: ReadonlySet<string> = new Set(["removeDevice", "previewInvitationWeb"]);
+export const PUBLIC: ReadonlySet<string> = new Set(["removeDevice", "previewInvitationWeb", "getHealth"]);
 
 /** The operations an account can use before its profile is finished: the contract's `beforeProfile` (FQ13, FQ69). */
 export const BEFORE_PROFILE: ReadonlySet<string> = new Set([

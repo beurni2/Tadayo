@@ -149,6 +149,19 @@ const ACCOUNT: Operation[] = [
     ok: { status: 204 },
   },
   {
+    id: "getHealth",
+    method: "get",
+    path: "/v1/health",
+    summary: "Whether the API can reach its database",
+    description:
+      "Fly's health check (fly.toml), not the app's: one round trip to the database through the API's own pool, " +
+      "reading no table and naming nothing, so every caller gets the same answer (T14). 204 when the database " +
+      "answers within two seconds; the 503, with nothing in it, when it fails or doesn't (the outside audit's A7).",
+    public: true,
+    unavailable: true,
+    ok: { status: 204 },
+  },
+  {
     id: "getConfig",
     method: "get",
     path: "/v1/config",

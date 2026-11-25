@@ -652,13 +652,13 @@ export const SIGNED_OUT: readonly Caller[] = [
  * server issued: the same answer, byte for byte, whatever the ids and the cursor name, so a route
  * that looks an object up before it checks the session tells no one which objects exist (T14). Each
  * gets `expected`: the neutral not-found for a route the gate lets anyone reach (a `public` one, and
- * the skeleton's), the gate's one 401 for every other.
+ * the skeleton's), the gate's one 401 for every other, or a row's judge (the health check's 204).
  */
 export async function signedOutStep(
   app: FastifyInstance,
   spec: Spec,
   elsewhere: Targets,
-  expected: Answer = NEUTRAL,
+  expected: Expected = NEUTRAL,
   callers: readonly Caller[] = SIGNED_OUT,
 ): Promise<Step> {
   const step: Step = { problems: [], answers: [] };
@@ -684,7 +684,7 @@ export async function signedOutStep(
       const sent = { ...variant, headers };
       const answer = await answerOf(app, render(sent));
       step.answers.push({ spec: sent, answer });
-      for (const problem of pinnedProblems(answer, expected))
+      for (const problem of problemsOf(answer, expected))
         step.problems.push(`${spec.operation.id}, ${caller.name}, ${ids} ids: ${problem}`);
       const text = said(answer);
       if (first === undefined) first = text;
