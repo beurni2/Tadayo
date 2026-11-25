@@ -117,6 +117,11 @@
 //   the order that deadlocked, the purge of ended
 //   sign-ins after eight days, an unresolvable zone, the app's order of sign-ins, and the schema's own guards,
 //   their race among them;
+// - for the health check (the outside audit's A7: getHealth; docs/plans/api-b2-health-check.md): in every cell,
+//   to every role and to every caller without a session, 204 with nothing in it (health.ts). It is public and
+//   its one statement is `SELECT 1` (services/api/src/health.test.ts), so no cell's world changes it; its 503,
+//   when the database doesn't answer, passes through no cell and is held by that test and on Postgres
+//   (tests/src/db/health.test.ts);
 // - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
@@ -262,6 +267,7 @@ import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";
 import { DEVICE_JUDGED } from "./device.ts";
 import { DROP_JUDGED } from "./drop.ts";
+import { HEALTH_JUDGED } from "./health.ts";
 import { HOME_JUDGED } from "./home.ts";
 import { INVITATION_JUDGED } from "./invitation.ts";
 import { LEAVE_JUDGED } from "./leave.ts";
@@ -276,7 +282,8 @@ import { UPLOAD_JUDGED } from "./upload.ts";
  * the roster (B2's generation slice), the club's two routes (B1's first slice), the roster's four (B1's
  * second slice) and its two decisions and the invitation's three (B1's third slice), Home (B2's Home slice),
  * the leave (B1's fourth slice), the reservations' two (B2's reservations slice), the uploads' three (spike
- * S1's server part), the commit (step (w), for a photo) and the devices' two (spike S4's server part).
+ * S1's server part), the commit (step (w), for a photo), the devices' two (spike S4's server part) and the health
+ * check (the outside audit's A7).
  */
 export const JUDGED: ReadonlySet<string> = new Set([
   ...ACCOUNT_JUDGED,
@@ -291,6 +298,7 @@ export const JUDGED: ReadonlySet<string> = new Set([
   ...UPLOAD_JUDGED,
   ...DROP_JUDGED,
   ...DEVICE_JUDGED,
+  ...HEALTH_JUDGED,
 ]);
 
 const GATE =
@@ -546,6 +554,14 @@ export const REMOVE_DEVICE = Object.freeze({
     "route is public, so the gate reads no session for it (TECH-DESIGN section 6 (a), (c) to (e))",
 });
 
+/** getHealth (the outside audit's A7): health.ts's healthExpected. */
+export const HEALTH = Object.freeze({
+  answer:
+    "204 with nothing in it and `private, no-store`, to every caller, in every state and phase, the same whoever " +
+    "asks: the route is public, so the gate reads no session for it, and its one statement is `SELECT 1`, so it " +
+    "names nothing and changes nothing (T14)",
+});
+
 export const ROWS: Readonly<Record<string, unknown>> = {
   acceptInvitation: INVITATION_ACCEPT,
   approveRoster: ROSTER_DECISION,
@@ -573,6 +589,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getDrop: NONE,
   getDropMedia: NONE,
   getEmbed: NONE,
+  getHealth: HEALTH,
   getHome: HOME,
   getMe: ME,
   getMemberAvatar: NONE,

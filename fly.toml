@@ -51,8 +51,15 @@ kill_timeout = 30
   worker = "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1 services/worker/src/main.ts"
 
 # The API's service. It listens only after the database and the clock are ready, so an open port is a
-# started API. The check is on the port and not on a route: a route to ask would be one outside the
-# contract, which the privacy matrix would have to cover (T58).
+# started API; the check asks more than that. It is the contract's `getHealth`, which the privacy matrix
+# has a row for (T58): one `SELECT 1` through the API's own pool, so the API answers 503 when the database
+# can't be reached or every connection is held, the stall the outside audit's A7 proved while a check on
+# the port kept saying healthy. The API gives up after 2 s, under the check's 3 s timeout, so its own answer
+# is the one read. The check goes to the Machine's internal port in plain HTTP (flyctl's own source names
+# these fields: docs/LIMITATIONS.md). A rolling deploy waits for a new Machine to pass it, and a Machine that
+# fails it is taken out of Fly's routing until it passes again, never restarted: with one Machine, one failed
+# check leaves the API unrouted for up to the 15 s interval, kept on purpose: A7 asks that Fly see a stalled
+# API (docs/LIMITATIONS.md).
 [[services]]
   processes = ["api"]
   protocol = "tcp"
@@ -68,10 +75,13 @@ kill_timeout = 30
     port = 443
     handlers = ["tls", "http"]
 
-  [[services.tcp_checks]]
+  [[services.http_checks]]
     grace_period = "20s"
     interval = "15s"
     timeout = "3s"
+    method = "GET"
+    path = "/v1/health"
+    protocol = "http"
 
 # A group is restarted only when it failed: a clean exit, which is what a stop is, leaves it stopped, so
 # the worker stays down across deploys until `ops` worker-scale starts it.

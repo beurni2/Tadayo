@@ -92,7 +92,7 @@ describe("the skeleton's routes (T14)", () => {
     // The browser's preflight before tadayo.app's request (web-origin.ts), pinned here by its method and path:
     // a preflight isn't an operation of the contract, and it is the only route that isn't one.
     expect([...routesOf(app)].sort()).toEqual([...contract, "OPTIONS /v1/invitations/web-preview"].sort());
-    expect(routesOf(app)).toHaveLength(68);
+    expect(routesOf(app)).toHaveLength(69);
   });
 
   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
