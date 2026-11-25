@@ -55,7 +55,7 @@ enum AccessibilityElements {
     /// The elements with their frames, and the window's size and safe areas: for a screen's
     /// geometry, such as where a title sits or how far a button is above the safe area. `ready`
     /// is the test's own scripted state, such as a save that has failed, which the read waits
-    /// for first, up to 30 seconds, as `drive` does; what is asserted once it holds is the test's.
+    /// for first, up to 30 seconds; the test's own assertions then say whether it came.
     static func layout(of view: some View, until ready: () -> Bool = { true }) -> Layout {
         prepare()
         return read(view, until: ready)
@@ -150,25 +150,31 @@ enum AccessibilityElements {
         return use(gather(window), window)
     }
 
-    /// Turns the run loop until the window's elements, their labels, values and frames, have
-    /// stayed the same through 10 turns of 0.05 seconds, half a second at the least, for up to 10
-    /// seconds; past that the read goes ahead, and the test's own expectations decide. Counted in
-    /// turns, not only in time, because SwiftUI makes each update of a screen on a turn of the
-    /// main run loop, and a loaded runner can let a half second pass in a few turns. A navigation
-    /// stack putting up its screen is waited for this way too. A fixed half second, which this
-    /// replaced, wasn't always enough: `ProfileForm` scrolls its column above Continue only after
-    /// the keyboard's room has been read and `onChange(of: keyboardRise, initial: true)` has
-    /// asked for the scroll, a few updates later, and
-    /// `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` read the
-    /// column not yet scrolled (Continue's top 314 points above the field's bottom) in four runs
-    /// on iOS 26.5, the last `main`'s `ios` 45523314156 at `12b3d8a`
-    /// (`docs/plans/ios-b1-intermittents.md`, item 3). What is asserted is unchanged; a screen
-    /// that never settles still fails as it did.
+    /// Turns the run loop until the window's elements, their labels, values, hints, traits,
+    /// custom actions and frames, have stayed the same through 10 slices of 0.05 seconds, each
+    /// holding one turn of the run loop at least, half a second in all at the least, as the fixed
+    /// wait this replaced; past 10 seconds the read goes ahead, and the test's assertions decide.
+    /// Counted in slices, not only in time, because SwiftUI makes each update of a screen on a
+    /// turn of the main run loop, and a loaded runner can let a half second pass in a few turns.
+    /// A navigation stack putting up its screen is waited for this way too. A screen that is
+    /// still while it waits for something scripted is read as before: a test names that with
+    /// `layout(of:until:)`. The fixed half second wasn't always enough:
+    /// `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea` read A03's
+    /// column not yet scrolled above Continue (Continue's top 314 points above the field's
+    /// bottom) in four runs on iOS 26.5, the last `main`'s `ios` 45523314156 at `12b3d8a`
+    /// (`docs/plans/ios-b1-intermittents.md`, item 3). `ProfileForm` asks for that scroll at its
+    /// first update (`onChange(of: keyboardRise, initial: true)`, the test's keyboard rising 1
+    /// from the start); when it lands wasn't traced, and this wait helps only if it lands late.
     private static func settle(_ window: UIWindow) {
         func state() -> [String] {
             window.layoutIfNeeded()
             return gather(window).map {
-                "\($0.accessibilityLabel ?? "")|\($0.accessibilityValue ?? "")|\($0.accessibilityFrame)"
+                [
+                    $0.accessibilityLabel ?? "", $0.accessibilityValue ?? "",
+                    $0.accessibilityHint ?? "", "\($0.accessibilityTraits.rawValue)",
+                    ($0.accessibilityCustomActions ?? []).map(\.name).joined(separator: ","),
+                    "\($0.accessibilityFrame)",
+                ].joined(separator: "|")
             }
         }
         var last = state()
