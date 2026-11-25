@@ -13,13 +13,27 @@
 // since a worker that stops itself as it starts shows as started first, and Fly restarts it on a failure
 // (fly.toml's `[[restart]]`), so it may show as started again by the next look. So the start is judged by
 // the Machine's events as well: an exit that wasn't asked for, among the events that weren't there before
-// the start, is a failed start. Either way it prints those events and the Machine's last lines in Fly's
-// log (fly.ts `machineReport`), which no other step shows: on PR #118's merge the worker stopped itself as
-// it started, `deploy-dev`'s smoke check said only that the app appeared to be crashing, and flyctl
-// printed none of its lines (`docs/LIMITATIONS.md`, 2026-11-25).
+// the start, is a failed start. A start whose events can't be read, before it or after the watch, can't be
+// judged, and the run fails saying so, with the worker left started: an old crash can't be told from the
+// start's own, nor a crash that Fly restarted between two looks from a start that held. A look at the state
+// that fails is passed over. The run prints the Machine's events, and on a failure its last lines in Fly's log
+// too (fly.ts), which no other step shows: on PR #118's merge the worker stopped itself as it started,
+// `deploy-dev`'s smoke check said only that the app appeared to be crashing, and flyctl printed none of its
+// lines (`docs/LIMITATIONS.md`, 2026-11-25). A start that held prints no log line: what the worker says is
+// kept to Fly's log unless something went wrong.
 
 import { DEV_APP } from "./environment.ts";
-import { exitOf, machineEvents, machineLog, machineReport, machines, reportOf, type Fly, why } from "./fly.ts";
+import {
+  eventLines,
+  exitOf,
+  machineEvents,
+  machineLog,
+  machineReport,
+  machines,
+  reportOf,
+  type Fly,
+  why,
+} from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 
 export interface WorkerScaleInput {
@@ -65,7 +79,7 @@ export async function workerScale(input: WorkerScaleInput): Promise<void> {
     throw new OpsError(`worker-scale: the worker Machine is ${worker.state}: nothing was changed`);
   }
   // The events before the start, so that the watch below knows which are the start's own.
-  const before = stopping ? undefined : new Set((await machineEvents(fly, worker.id)) ?? []);
+  const before = stopping ? undefined : await machineEvents(fly, worker.id);
   if (moves) {
     say(`worker-scale: ${verb === "stop" ? "stopping" : "starting"} the worker Machine`);
     const command = stopping
@@ -86,7 +100,7 @@ export async function workerScale(input: WorkerScaleInput): Promise<void> {
         say(`worker-scale: the worker Machine is ${input.to}`);
         return;
       }
-      await watchStart(input, worker.id, before ?? new Set());
+      await watchStart(input, worker.id, before);
       return;
     }
     await input.sleep(POLL_MS);
@@ -98,34 +112,46 @@ export async function workerScale(input: WorkerScaleInput): Promise<void> {
 }
 
 /**
- * A start watched for WATCH_POLLS × WATCH_MS once the Machine shows as started (the header): it fails when the
- * Machine is then in any other state, or when an exit Fly wasn't asked for is among the events that weren't in
- * `before`. Either way it prints the Machine's events and its last lines in Fly's log first.
+ * A start watched for WATCH_POLLS × WATCH_MS once the Machine shows as started (the header). It fails when the
+ * Machine is then in any other state, when an exit Fly wasn't asked for is among the events that weren't in
+ * `before`, or when the events can't be read before the start or after the watch; each failure prints the
+ * Machine's events and its last lines in Fly's log first. A start that held prints its events alone.
  */
-async function watchStart(input: WorkerScaleInput, id: string, before: ReadonlySet<string>): Promise<void> {
+async function watchStart(input: WorkerScaleInput, id: string, before: readonly string[] | undefined): Promise<void> {
   const { fly, say } = input;
   let state = "started";
+  let missed = 0;
   for (let poll = 0; poll < WATCH_POLLS && state === "started"; poll += 1) {
     await input.sleep(WATCH_MS);
-    state = (await machines(fly)).find((machine) => machine.id === id)?.state ?? "gone";
+    try {
+      state = (await machines(fly)).find((machine) => machine.id === id)?.state ?? "gone";
+    } catch {
+      missed += 1; // A look that fails is passed over: the others and the events judge the start.
+    }
   }
+  if (missed > 0) say(`worker-scale: flyctl couldn't list the Machines at ${String(missed)} of the looks`);
   const seconds = String((WATCH_POLLS * WATCH_MS) / 1000);
   const events = await machineEvents(fly, id);
-  const exits = (events ?? [])
-    .filter((row) => !before.has(row))
+  const failed = async (reason: string): Promise<never> => {
+    for (const line of reportOf(id, LABEL, events, await machineLog(fly, id))) say(line);
+    throw new OpsError(`worker-scale: ${reason}; its events and its lines in Fly's log are above`);
+  };
+  if (state !== "started") return failed(`the worker Machine started, then was ${state} within ${seconds} seconds`);
+  if (before === undefined || events === undefined) {
+    return failed(
+      `the worker Machine shows as started, but flyctl couldn't say its events ${before === undefined ? "before the start" : "after the watch"}, so whether its process stayed up can't be told, and it is left started`,
+    );
+  }
+  const old = new Set(before);
+  const [first] = events
+    .filter((row) => !old.has(row))
     .map(exitOf)
     .filter((exit) => exit !== undefined && !exit.requested);
-  for (const line of reportOf(id, LABEL, events, await machineLog(fly, id))) say(line);
-  if (state !== "started") {
-    throw new OpsError(
-      `worker-scale: the worker Machine started, then was ${state} within ${seconds} seconds; its events and its lines in Fly's log are above`,
-    );
-  }
-  const [first] = exits;
   if (first !== undefined) {
-    throw new OpsError(
-      `worker-scale: the worker Machine started, but its process exited by itself within ${seconds} seconds (exit code ${String(first.code)}${first.oomKilled ? ", killed for memory" : ""}) and Fly started it again; its events and its lines in Fly's log are above`,
+    return failed(
+      `the worker Machine started, but its process exited by itself within ${seconds} seconds (exit code ${String(first.code)}${first.oomKilled ? ", killed for memory" : ""}) and Fly started it again`,
     );
   }
+  for (const line of eventLines(id, LABEL, events)) say(line);
   say(`worker-scale: the worker Machine is started, and stayed started for ${seconds} seconds`);
 }

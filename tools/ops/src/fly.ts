@@ -224,7 +224,9 @@ function plain(line: string): string {
 /**
  * The rows of a Machine's "Event Logs" table, as `flyctl machine status <id>` prints it (flyctl 0.5.8's
  * `internal/command/machine/status.go`): one row an event, its state, kind, source and time, and for an exit
- * `exit_code=<n>,oom_killed=<bool>,requested_stop=<bool>`. Nothing when flyctl can't say.
+ * `exit_code=<n>,oom_killed=<bool>,requested_stop=<bool>`. Nothing when flyctl can't say. Each row is its cells
+ * trimmed and joined by " │ ": tablewriter pads every cell to its column's width, so the same event is padded
+ * differently once another row widens or narrows a column, and a row is compared by what it says (worker-scale).
  */
 export async function machineEvents(fly: Fly, id: string): Promise<string[] | undefined> {
   if (!MACHINE_ID.test(id)) return undefined;
@@ -238,7 +240,14 @@ export async function machineEvents(fly: Fly, id: string): Promise<string[] | un
   const lines = result.stdout.split("\n").map(plain);
   const title = lines.findIndex((line) => /^\s*Event Logs\s*$/.test(line));
   if (title === -1) return undefined;
-  return lines.slice(title + 1).filter((line) => line.trim() !== "" && /\d{4}-\d{2}-\d{2}T/.test(line));
+  return lines
+    .slice(title + 1)
+    .filter((line) => line.trim() !== "" && /\d{4}-\d{2}-\d{2}T/.test(line))
+    .map((line) => {
+      const cells = line.split("│").map((cell) => cell.trim());
+      while (cells.at(-1) === "") cells.pop();
+      return cells.join(" │ ");
+    });
 }
 
 /** An exit among a Machine's events (machineEvents): its code, and whether Fly was asked to stop it. */
@@ -255,9 +264,11 @@ export function exitOf(row: string): ExitEvent | undefined {
 }
 
 /**
- * A Machine's last lines in Fly's log, oldest first, at most LOG_LINES: `flyctl logs --no-tail --json` prints
- * what Fly's log buffer holds as one JSON object a line of the log, each indented and closed by a `}` of its own
- * on a line (flyctl 0.5.8's `logs/entry.go` and `internal/render/render.go`, `json.Encoder` with four spaces).
+ * A Machine's last lines in Fly's log, oldest first, at most LOG_LINES: `flyctl logs --no-tail --json` asks Fly's
+ * log API for one page and returns after the first page that holds an entry, or the first that holds none (flyctl
+ * 0.5.8's `logs/polling.go`), so these are the last of that page, not of all Fly holds. It prints each entry as one
+ * JSON object, indented and closed by a `}` of its own on a line (`logs/entry.go`, `internal/render/render.go`,
+ * `json.Encoder` with four spaces).
  * Each is its time, its level and its message. A secret a crash printed is held back as every line an `ops` script
  * says is, by the redactor in `main.ts` (output.ts), whose patterns cover a connection string's user and password,
  * a JSON Web Token and a Supabase secret key, and which holds back the run's own secret values too.
@@ -306,14 +317,21 @@ export function reportOf(
   events: readonly string[] | undefined,
   log: readonly string[] | undefined,
 ): string[] {
-  return [
-    ...(events === undefined
-      ? [`${label}: flyctl couldn't say Machine ${id}'s events`]
-      : [`${label}: Machine ${id}'s events, as Fly lists them:`, ...events.map((row) => `  ${row}`)]),
-    ...(log === undefined
-      ? [`${label}: flyctl couldn't read Machine ${id}'s lines in Fly's log`]
-      : log.length === 0
-        ? [`${label}: Fly's log holds no line of Machine ${id}`]
-        : [`${label}: Machine ${id}'s last lines in Fly's log:`, ...log.map((line) => `  ${line}`)]),
-  ];
+  return [...eventLines(id, label, events), ...logLines(id, label, log)];
+}
+
+/** The lines that show a Machine's events (undefined: flyctl couldn't say). */
+export function eventLines(id: string, label: string, events: readonly string[] | undefined): string[] {
+  return events === undefined
+    ? [`${label}: flyctl couldn't say Machine ${id}'s events`]
+    : [`${label}: Machine ${id}'s events, as Fly lists them:`, ...events.map((row) => `  ${row}`)];
+}
+
+/** The lines that show a Machine's last lines in Fly's log (undefined: flyctl couldn't read them). */
+function logLines(id: string, label: string, log: readonly string[] | undefined): string[] {
+  return log === undefined
+    ? [`${label}: flyctl couldn't read Machine ${id}'s lines in Fly's log`]
+    : log.length === 0
+      ? [`${label}: Fly's log holds no line of Machine ${id}`]
+      : [`${label}: Machine ${id}'s last lines in Fly's log:`, ...log.map((line) => `  ${line}`)];
 }

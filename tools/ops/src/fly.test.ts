@@ -338,8 +338,10 @@ describe("machineReport: what Fly knows of a Machine's last runs, for a run's lo
   const ENV = { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" };
   const STATUS = `flyctl machine status ${WORKER_ID} -a tadayo-api-dev`;
   const LOGS = `flyctl logs -a tadayo-api-dev --machine ${WORKER_ID} --no-tail --json`;
-  const CRASH = eventRow("exited", "exit", "2026-11-25T02:50:12.000Z", { code: 1 });
-  const START = eventRow("started", "start", "2026-11-25T02:50:09.000Z");
+  const CRASH = eventRow("stopped", "exit", "2026-11-25T02:50:12.31Z", { code: 1 });
+  const START = eventRow("started", "start", "2026-11-25T02:50:09.5Z");
+  /** A row as machineEvents gives it: its cells, trimmed, between " │ ". */
+  const shown = (row: readonly string[]) => row.join(" │ ");
 
   it("asks for the Machine's status and its log by its id, naming the app", async () => {
     const { spawn, calls } = fakeSpawn([
@@ -350,8 +352,8 @@ describe("machineReport: what Fly knows of a Machine's last runs, for a run's lo
     expect(calls.map((call) => [call.command, ...call.args].join(" "))).toEqual([STATUS, LOGS]);
     expect(lines).toEqual([
       `worker-scale: Machine ${WORKER_ID}'s events, as Fly lists them:`,
-      `  ${CRASH}`,
-      `  ${START.trimEnd()}`,
+      `  ${shown(CRASH)}`,
+      `  ${shown(START)}`,
       `worker-scale: Machine ${WORKER_ID}'s last lines in Fly's log:`,
       "  2026-11-25T02:50:00.000Z [info] worker: the photo user's processes couldn't all be ended as it started",
     ]);
@@ -359,11 +361,23 @@ describe("machineReport: what Fly knows of a Machine's last runs, for a run's lo
 
   it("keeps only the event table's rows: not its title, its header, or the VM table's time", async () => {
     const { spawn } = fakeSpawn([[STATUS, machineStatus(WORKER_ID, [CRASH])]]);
-    expect(await machineEvents(flyOf(spawn, ENV), WORKER_ID)).toEqual([CRASH]);
+    expect(await machineEvents(flyOf(spawn, ENV), WORKER_ID)).toEqual([shown(CRASH)]);
+  });
+
+  it("gives a row the same however flyctl's table pads it, as another row widens or narrows a column", async () => {
+    const wide = eventRow("launched", "launch", "2026-11-25T05:00:01.123Z", undefined, "user");
+    const { spawn } = fakeSpawn([
+      [STATUS, (_call, earlier) => machineStatus(WORKER_ID, earlier === 0 ? [CRASH] : [wide, CRASH])],
+    ]);
+    const fly = flyOf(spawn, ENV);
+    const alone = await machineEvents(fly, WORKER_ID);
+    const beside = await machineEvents(fly, WORKER_ID);
+    expect(alone).toEqual([shown(CRASH)]);
+    expect(beside).toEqual([shown(wide), shown(CRASH)]);
   });
 
   it("reads an exit's code, and whether Fly was asked to stop it or killed it for memory", () => {
-    expect(exitOf(CRASH)).toEqual({ code: 1, requested: false, oomKilled: false });
+    expect(exitOf(shown(CRASH))).toEqual({ code: 1, requested: false, oomKilled: false });
     expect(
       exitOf("exited │ exit │ flyd │ 2026-11-25T02:00:00Z │ exit_code=137,oom_killed=true,requested_stop=false"),
     ).toEqual({
@@ -371,10 +385,10 @@ describe("machineReport: what Fly knows of a Machine's last runs, for a run's lo
       requested: false,
       oomKilled: true,
     });
-    expect(exitOf(eventRow("stopped", "exit", "2026-11-25T02:00:00Z", { code: 0, requested: true }))?.requested).toBe(
-      true,
-    );
-    expect(exitOf(START)).toBeUndefined();
+    expect(
+      exitOf(shown(eventRow("stopped", "exit", "2026-11-25T02:00:00Z", { code: 0, requested: true })))?.requested,
+    ).toBe(true);
+    expect(exitOf(shown(START))).toBeUndefined();
   });
 
   it("reads each entry of the log once, in order, keeping the last 60", async () => {

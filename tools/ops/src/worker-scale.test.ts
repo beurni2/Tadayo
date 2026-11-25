@@ -64,15 +64,19 @@ const realWorker = (...states: string[]): Route => [
 const STATUS = `flyctl machine status ${WORKER_ID} -a tadayo-api-dev`;
 const LOGS = `flyctl logs -a tadayo-api-dev --machine ${WORKER_ID} --no-tail --json`;
 const START = `flyctl machine start ${WORKER_ID} -a tadayo-api-dev`;
-/** The worker's events before the start: stopped by hand, and an old crash, both from before. */
+/**
+ * The worker's events before the start: stopped by hand, and PR #118's crash, both from before. Their times are
+ * as Go's RFC3339Nano prints them, so they differ in length, and the start's own row below is longer than both.
+ */
 const OLD = [
-  eventRow("stopped", "exit", "2026-11-25T02:52:00.000Z", { code: 0, requested: true }),
-  eventRow("exited", "exit", "2026-11-25T02:50:12.000Z", { code: 1 }),
+  eventRow("stopped", "exit", "2026-11-25T02:52:00.4Z", { code: 0, requested: true }, "user"),
+  eventRow("stopped", "exit", "2026-11-25T02:50:12.31Z", { code: 1 }),
 ];
-/** The Machine's events, the first answer before the start and the second after it. */
-const events = (after: readonly string[]): Route => [
+const STARTED = eventRow("started", "start", "2026-11-25T05:00:01.123Z", undefined, "user");
+/** The Machine's events: `first` before the start (OLD unless given), then each later answer. */
+const events = (after: readonly (readonly string[])[], first: readonly (readonly string[])[] = OLD): Route => [
   STATUS,
-  (_call, earlier) => machineStatus(WORKER_ID, earlier === 0 ? OLD : [...after, ...OLD]),
+  (_call, earlier) => machineStatus(WORKER_ID, earlier === 0 ? first : after),
 ];
 
 describe("workerScale to stopped", () => {
@@ -123,36 +127,45 @@ describe("workerScale to stopped", () => {
 });
 
 describe("workerScale to started", () => {
-  it("starts a stopped worker Machine, watches it for 30 seconds, and prints its events and its log", async () => {
-    const result = await run("started", [
-      realWorker("stopped", "started"),
-      events([eventRow("started", "start", "2026-11-25T05:00:01.000Z")]),
-      [START, {}],
-      [
-        LOGS,
-        logEntries([
-          "worker: started, making days every minute and preparing uploads, each photo under a user of its own",
-        ]),
-      ],
-    ]);
+  it("starts a stopped worker Machine, watches it for 30 seconds, and prints its events but no log line", async () => {
+    const result = await run("started", [realWorker("stopped", "started"), events([STARTED, ...OLD]), [START, {}]]);
     expect(result.outcome).toBeUndefined();
-    expect(result.calls).toEqual([LIST, STATUS, START, LIST, LIST, LIST, LIST, LIST, LIST, LIST, STATUS, LOGS]);
+    expect(result.calls).toEqual([LIST, STATUS, START, LIST, LIST, LIST, LIST, LIST, LIST, LIST, STATUS]);
     expect(result.slept).toEqual([5000, 5000, 5000, 5000, 5000, 5000]);
-    expect(result.said[0]).toBe("worker-scale: starting the worker Machine");
-    expect(result.said).toContain(`worker-scale: Machine ${WORKER_ID}'s last lines in Fly's log:`);
-    expect(result.said).toContain(
-      "  2026-11-25T02:50:00.000Z [info] worker: started, making days every minute and preparing uploads, each photo under a user of its own",
-    );
-    expect(result.said.at(-1)).toBe("worker-scale: the worker Machine is started, and stayed started for 30 seconds");
+    expect(result.said).toEqual([
+      "worker-scale: starting the worker Machine",
+      `worker-scale: Machine ${WORKER_ID}'s events, as Fly lists them:`,
+      "  started │ start │ user │ 2026-11-25T05:00:01.123Z",
+      "  stopped │ exit │ user │ 2026-11-25T02:52:00.4Z │ exit_code=0,oom_killed=false,requested_stop=true",
+      "  stopped │ exit │ flyd │ 2026-11-25T02:50:12.31Z │ exit_code=1,oom_killed=false,requested_stop=false",
+      "worker-scale: the worker Machine is started, and stayed started for 30 seconds",
+    ]);
+  });
+
+  it("counts only the start's own exits, however flyctl's table pads the old ones", async () => {
+    // The start's row widens the time column, so every old row is padded anew (round 1 of the review, F1);
+    // and Fly lists a few events only, so an old row may drop off and narrow a column again.
+    const widened = await run("started", [realWorker("stopped", "started"), events([STARTED, ...OLD]), [START, {}]]);
+    expect(widened.outcome).toBeUndefined();
+    const dropped = await run("started", [
+      realWorker("stopped", "started"),
+      events(
+        [eventRow("started", "start", "2026-11-25T05:00:01Z", undefined, "user"), ...OLD],
+        [eventRow("launched", "launch", "2026-11-12T03:00:00.987Z"), ...OLD],
+      ),
+      [START, {}],
+    ]);
+    expect(dropped.outcome).toBeUndefined();
   });
 
   it("fails a start whose process exits by itself and is started again, though the Machine shows as started", async () => {
     const result = await run("started", [
       realWorker("stopped", "started"),
       events([
-        eventRow("started", "start", "2026-11-25T05:00:04.000Z"),
-        eventRow("exited", "exit", "2026-11-25T05:00:03.000Z", { code: 1 }),
-        eventRow("started", "start", "2026-11-25T05:00:01.000Z"),
+        eventRow("started", "start", "2026-11-25T05:00:04.002Z"),
+        eventRow("stopped", "exit", "2026-11-25T05:00:03.5Z", { code: 1 }),
+        STARTED,
+        ...OLD,
       ]),
       [START, {}],
       [LOGS, logEntries(["worker: the photo user's processes couldn't all be ended as it started"])],
@@ -167,27 +180,16 @@ describe("workerScale to started", () => {
     expect(result.said).not.toContain("worker-scale: the worker Machine is started, and stayed started for 30 seconds");
   });
 
-  it("counts only the start's own exits: an old crash and a stop asked for, from before, don't fail it", async () => {
-    const result = await run("started", [
-      realWorker("stopped", "started"),
-      events([]),
-      [START, {}],
-      [LOGS, logEntries([])],
-    ]);
-    expect(result.outcome).toBeUndefined();
-    expect(result.said).toContain(`worker-scale: Fly's log holds no line of Machine ${WORKER_ID}`);
-  });
-
   it("doesn't count an exit Fly was asked for, such as a restart asked for during the watch, as a failed start", async () => {
     const result = await run("started", [
       realWorker("stopped", "started"),
       events([
-        eventRow("started", "start", "2026-11-25T05:00:09.000Z"),
-        eventRow("exited", "exit", "2026-11-25T05:00:08.000Z", { code: 0, requested: true }),
-        eventRow("started", "start", "2026-11-25T05:00:01.000Z"),
+        eventRow("started", "start", "2026-11-25T05:00:09Z"),
+        eventRow("stopped", "exit", "2026-11-25T05:00:08.25Z", { code: 0, requested: true }, "user"),
+        STARTED,
+        ...OLD,
       ]),
       [START, {}],
-      [LOGS, logEntries([])],
     ]);
     expect(result.outcome).toBeUndefined();
     expect(result.said.at(-1)).toBe("worker-scale: the worker Machine is started, and stayed started for 30 seconds");
@@ -196,7 +198,7 @@ describe("workerScale to started", () => {
   it("fails a start that stops within the watch, saying the state it found, after the events and the log", async () => {
     const result = await run("started", [
       realWorker("stopped", "started", "started", "stopped"),
-      events([eventRow("exited", "exit", "2026-11-25T05:00:03.000Z", { code: 1 })]),
+      events([eventRow("stopped", "exit", "2026-11-25T05:00:03.5Z", { code: 1 }), STARTED, ...OLD]),
       [START, {}],
       [LOGS, logEntries(["worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root"])],
     ]);
@@ -207,10 +209,55 @@ describe("workerScale to started", () => {
     expect(result.said.some((line) => line.includes("wasn't started as root"))).toBe(true);
   });
 
+  it("can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so", async () => {
+    const unread = { code: 1, stderr: "Error: unauthorized" };
+    const before = await run("started", [
+      realWorker("stopped", "started"),
+      [STATUS, (_call, earlier) => (earlier === 0 ? unread : machineStatus(WORKER_ID, [STARTED, ...OLD]))],
+      [START, {}],
+      [LOGS, logEntries(["worker: started"])],
+    ]);
+    expect((before.outcome as OpsError).message).toBe(
+      "worker-scale: the worker Machine shows as started, but flyctl couldn't say its events before the start, so whether its process stayed up can't be told, and it is left started; its events and its lines in Fly's log are above",
+    );
+    expect(before.said).toContain("  2026-11-25T02:50:00.000Z [info] worker: started");
+    const after = await run("started", [
+      realWorker("stopped", "started"),
+      [STATUS, (_call, earlier) => (earlier === 0 ? machineStatus(WORKER_ID, OLD) : unread)],
+      [START, {}],
+      [LOGS, logEntries([])],
+    ]);
+    expect((after.outcome as OpsError).message).toMatch(/couldn't say its events after the watch, so whether/);
+    expect(after.said).toContain(`worker-scale: flyctl couldn't say Machine ${WORKER_ID}'s events`);
+    const notAMachine = await run("started", [worker("stopped", "started"), ["flyctl machine start", {}]]);
+    expect((notAMachine.outcome as OpsError).message).toMatch(/couldn't say its events before the start/);
+    expect(notAMachine.calls.filter((call) => call !== LIST)).toEqual(["flyctl machine start w1 -a tadayo-api-dev"]);
+  });
+
+  it("passes over a look at the state that fails, and judges the start by the others and its events", async () => {
+    const result = await run("started", [
+      [
+        LIST,
+        (_call, earlier) =>
+          earlier === 3
+            ? { code: 1, stderr: "Error: timeout" }
+            : json([
+                machine("a1", "api", "started"),
+                machine(WORKER_ID, "worker", earlier === 0 ? "stopped" : "started"),
+              ]),
+      ],
+      events([STARTED, ...OLD]),
+      [START, {}],
+    ]);
+    expect(result.outcome).toBeUndefined();
+    expect(result.said).toContain("worker-scale: flyctl couldn't list the Machines at 1 of the looks");
+    expect(result.said.at(-1)).toBe("worker-scale: the worker Machine is started, and stayed started for 30 seconds");
+  });
+
   it("prints the events and the log when the Machine never shows as started", async () => {
     const result = await run("started", [
       realWorker("stopped", "starting"),
-      events([]),
+      events([...OLD]),
       [START, {}],
       [LOGS, logEntries(["Machine is restarting"])],
     ]);
@@ -218,18 +265,6 @@ describe("workerScale to started", () => {
       "worker-scale: the worker Machine is starting, 30 seconds after it was told to start",
     );
     expect(result.said).toContain("  2026-11-25T02:50:00.000Z [info] Machine is restarting");
-  });
-
-  it("still starts and watches when flyctl can't say the events or read the log, and says so", async () => {
-    const result = await run("started", [worker("stopped", "started"), ["flyctl machine start", {}]]);
-    expect(result.outcome).toBeUndefined();
-    expect(result.calls.filter((call) => call !== LIST)).toEqual(["flyctl machine start w1 -a tadayo-api-dev"]);
-    expect(result.said).toEqual([
-      "worker-scale: starting the worker Machine",
-      "worker-scale: flyctl couldn't say Machine w1's events",
-      "worker-scale: flyctl couldn't read Machine w1's lines in Fly's log",
-      "worker-scale: the worker Machine is started, and stayed started for 30 seconds",
-    ]);
   });
 
   it("does nothing to one that is started already", async () => {

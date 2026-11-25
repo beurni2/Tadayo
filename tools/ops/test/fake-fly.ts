@@ -101,34 +101,64 @@ export const peerList = (names: readonly string[]): Reply =>
 /** A Machine's id as Fly writes one, 14 hexadecimal digits: the worker's on `dev`, as `deploy-dev`'s run printed it. */
 export const WORKER_ID = "84ed273f616468";
 
-/** One event of `flyctl machine status`'s "Event Logs" table: an exit carries its code (flyctl 0.5.8's status.go). */
-export const eventRow = (state: string, kind: string, at: string, exit?: { code: number; requested?: boolean }) =>
-  [
-    state,
-    kind,
-    "flyd",
-    at,
-    exit === undefined
-      ? ""
-      : `exit_code=${String(exit.code)},oom_killed=false,requested_stop=${String(exit.requested ?? false)}`,
-  ].join(" │ ");
+/**
+ * One event of `flyctl machine status`'s "Event Logs" table, as its cells (flyctl 0.5.8's status.go): its state,
+ * kind, source and time, and for an exit its code. The time is printed as Go's RFC3339Nano prints a time in whole
+ * milliseconds, trailing zeros dropped, so its length varies from row to row (`…:00Z`, `…:00.4Z`, `…:01.123Z`).
+ */
+export const eventRow = (
+  state: string,
+  kind: string,
+  at: string,
+  exit?: { code: number; requested?: boolean },
+  source = "flyd",
+): string[] => [
+  state,
+  kind,
+  source,
+  at,
+  ...(exit === undefined
+    ? []
+    : [`exit_code=${String(exit.code)},oom_killed=false,requested_stop=${String(exit.requested ?? false)}`]),
+];
 
 /**
- * What `flyctl machine status <id>` prints, its tables as tablewriter lays them out with no borders: the VM table
- * (with a time of its own, which isn't an event), then the "Event Logs" table, its title in bold.
+ * A table as flyctl's `render.Table` and `render.VerticalTable` draw one with tablewriter v1.1.5 and no borders,
+ * as it rendered in the session for round 1 of this change's review (docs/plans/api-b2-worker-crash-report.md, section 5): each cell padded to its column's width, with a
+ * space either side, and "│" between; the header, if any, in capitals.
  */
-export const machineStatus = (id: string, rows: readonly string[]): Reply => ({
+function table(header: readonly string[] | undefined, rows: readonly (readonly string[])[]): string[] {
+  const all = header === undefined ? rows : [header.map((cell) => cell.toUpperCase()), ...rows];
+  const columns = Math.max(...all.map((row) => row.length));
+  const widths = Array.from({ length: columns }, (_, column) =>
+    Math.max(...all.map((row) => (row[column] ?? "").length)),
+  );
+  return all.map((row) => widths.map((width, column) => ` ${(row[column] ?? "").padEnd(width)} `).join("│"));
+}
+
+/**
+ * What `flyctl machine status <id>` prints (status.go): four lines about the Machine, the VM table (with times of
+ * its own, which aren't events), then the "Event Logs" table, each title in bold.
+ */
+export const machineStatus = (id: string, rows: readonly (readonly string[])[]): Reply => ({
   stdout: [
     `Machine ID: ${id}`,
+    "Version: 01JD0000000000000000000000",
     "State: started",
+    "HostStatus: ok",
     "",
     "\x1b[1mVM\x1b[0m",
-    `  ID      = ${id}`,
-    "  Created = 2026-11-12T03:00:00Z",
+    ...table(undefined, [
+      ["ID", id],
+      ["State", "started"],
+      ["Process Group", "worker"],
+      ["Created", "2026-11-12T03:00:00Z"],
+      ["Updated", "2026-11-25T02:40:00Z"],
+    ]),
     "",
     "\x1b[1mEvent Logs\x1b[0m",
-    "STATE │ EVENT │ SOURCE │ TIMESTAMP │ INFO",
-    ...rows,
+    ...table(["State", "Event", "Source", "Timestamp", "Info"], rows),
+    "",
     "",
   ].join("\n"),
 });
@@ -144,7 +174,15 @@ export const logEntries = (messages: readonly string[], id = WORKER_ID): Reply =
           message,
           region: "iad",
           timestamp: `2026-11-25T02:${String(50 + Math.floor(index / 60))}:${String(index % 60).padStart(2, "0")}.000Z`,
-          meta: { instance: id, region: "iad", event: { provider: "app" } },
+          // logs.Meta has no JSON names of its own, so its fields print as Go names them, zero values too.
+          meta: {
+            Instance: id,
+            Region: "iad",
+            Event: { Provider: "app" },
+            HTTP: { Request: { ID: "", Method: "", Version: "" }, Response: { status_code: 0 } },
+            Error: { Code: 0, Message: "" },
+            URL: { Full: "" },
+          },
         },
         null,
         4,
