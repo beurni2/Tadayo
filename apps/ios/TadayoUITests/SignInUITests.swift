@@ -102,13 +102,13 @@ final class SignInUITests: XCTestCase {
         app.buttons["Send a code"].tap()
 
         let code = app.textFields["Six-digit code"]
-        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.codeFieldCame())
         // The system's back button is Change email address.
         app.navigationBars["Sign in"].buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.staticTexts["What’s your email?"].waitForExistence(timeout: 5))
         XCTAssertEqual(email.value as? String, "ben@example.com")
         app.buttons["Send a code"].tap()
-        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.codeFieldCame())
         app.buttons["Change email address"].tap()
         XCTAssertTrue(app.staticTexts["What’s your email?"].waitForExistence(timeout: 5))
         XCTAssertEqual(email.value as? String, "ben@example.com")
@@ -345,7 +345,7 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com\n")
         let code = app.textFields["Six-digit code"]
-        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.codeFieldCame())
         app.typeText("529614")
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let verify = app.buttons["Verify code"]
@@ -645,7 +645,7 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
         app.buttons["Send a code"].tap()
-        XCTAssertTrue(app.textFields["Six-digit code"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.codeFieldCame())
         app.typeText("123456")
         app.buttons["Verify code"].tap()
         XCTAssertTrue(app.buttons["I’m 18 or older"].waitForExistence(timeout: 5))

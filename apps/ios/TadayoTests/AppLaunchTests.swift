@@ -114,9 +114,8 @@ final class AppLaunchTests: XCTestCase {
         XCTAssertEqual(configuration.requestCachePolicy, .reloadIgnoringLocalCacheData)
     }
 
-    func testLeavingForgetsTheInvitationLinks() async throws {
-        // ADR-037, T11: Leave sign-in is both logout and the way to another account.
-        let vault = InMemoryInvitationLinkVault(
+    private func keptLinks() -> InMemoryInvitationLinkVault {
+        InMemoryInvitationLinkVault(
             InvitationLinkFile(
                 accountID: "acct_ben",
                 links: [
@@ -126,11 +125,29 @@ final class AppLaunchTests: XCTestCase {
                             string: "https://tadayo.app/i#" + String(repeating: "A", count: 43))!,
                         shared: false)
                 ]))
+    }
+
+    func testLeavingForgetsTheInvitationLinks() async throws {
+        // ADR-037, T11: Leave sign-in is both logout and the way to another account. The root
+        // isn't started first: a launch with no session forgets the links itself (the next
+        // test), and this one is about Leave.
+        let vault = keptLinks()
         let graph = try XCTUnwrap(
             AppGraph.make(info: settings, store: InMemorySessionStore(), links: vault))
         XCTAssertNotNil(graph.links.link(for: "cand_sam", club: "club_sunday", account: "acct_ben"))
-        await graph.root.start()
         await graph.root.leave()
+        XCTAssertNil(try vault.load())
+        XCTAssertNil(graph.links.link(for: "cand_sam", club: "club_sunday", account: "acct_ben"))
+    }
+
+    func testALaunchWithNoSessionForgetsTheInvitationLinks() async throws {
+        // A session can end out of the app's sight; what its account kept goes before sign-in
+        // shows (ADR-037, T11; audit B3).
+        let vault = keptLinks()
+        let graph = try XCTUnwrap(
+            AppGraph.make(info: settings, store: InMemorySessionStore(), links: vault))
+        await graph.root.start()
+        XCTAssertEqual(graph.root.route, .signIn)
         XCTAssertNil(try vault.load())
         XCTAssertNil(graph.links.link(for: "cand_sam", club: "club_sunday", account: "acct_ben"))
     }

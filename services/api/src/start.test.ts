@@ -7,13 +7,37 @@ import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { IMAGE_MARKER, refuseRoot } from "./start.ts";
 
 const ENTRY = join(import.meta.dirname, "main.ts");
 
-/** Runs the entry with `env` alone (and PATH), and returns its exit code and output. */
-function run(env: Record<string, string>): Promise<{ code: number | null; stdout: string; stderr: string }> {
+/**
+ * Runs the entry with `env` alone (and PATH), and returns its exit code and output. With `root`, as root: directly when
+ * this process is root (the session), else through `sudo -n` (CI's runner, whose sudo needs no password), which fails
+ * the test on a runner that can do neither, never skips it.
+ */
+function run(
+  env: Record<string, string>,
+  root = false,
+): Promise<{ code: number | null; stdout: string; stderr: string }> {
+  const settings = { PATH: process.env.PATH ?? "", PORT: "0", ...env };
+  const [command, args, given] =
+    !root || process.getuid?.() === 0
+      ? [process.execPath, [ENTRY], settings]
+      : [
+          "sudo",
+          [
+            "-n",
+            "/usr/bin/env",
+            "-i",
+            ...Object.entries(settings).map(([k, v]) => `${k}=${v}`),
+            process.execPath,
+            ENTRY,
+          ],
+          process.env,
+        ];
   return new Promise((done, failed) => {
-    const child = spawn(process.execPath, [ENTRY], { env: { PATH: process.env.PATH ?? "", PORT: "0", ...env } });
+    const child = spawn(command, args, { env: given });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));
@@ -127,6 +151,52 @@ describe("the API's entry (ADR-013)", { timeout: 60_000 }, () => {
       expect(result.code, JSON.stringify(level)).toBe(1);
       expect(result.stderr, JSON.stringify(level)).toMatch(/LOG_LEVEL isn't a log level/);
       expect(result.stdout, JSON.stringify(level)).not.toMatch(/listening/);
+    }
+  });
+
+  it("in the image (NODE_ENV=production), stops before it reads anything when started as root", async () => {
+    // The audit's A6: the image has no USER, and fly.toml's command and the image's own drop to `node` before any Node
+    // code runs. A start that skips the drop stops before its first setting is read, here DATABASE_URL, not given.
+    const result = await run({ NODE_ENV: "production" }, true);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toBe(
+      "api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root\n",
+    );
+    expect(result.stdout).toBe("");
+  });
+
+  it("refuses root in the image only, by NODE_ENV or the image's marker, by its real user or its effective one", () => {
+    const production = { NODE_ENV: "production" };
+    const unmarked = () => false;
+    const marked = () => true;
+    expect(IMAGE_MARKER).toBe("/etc/tadayo-built-image");
+    for (const ids of [
+      { uid: 0, euid: 0 },
+      { uid: 0, euid: 1000 },
+      { uid: 1000, euid: 0 },
+    ]) {
+      expect(() => {
+        refuseRoot(production, ids, unmarked);
+      }, JSON.stringify(ids)).toThrow(/never as root/);
+      for (const value of [undefined, "", "test", "Production"]) {
+        const env = value === undefined ? {} : { NODE_ENV: value };
+        // Outside the image (the session's tests run as root), nothing is refused.
+        expect(() => {
+          refuseRoot(env, ids, unmarked);
+        }).not.toThrow();
+        // In the image, by its marker, whatever NODE_ENV says: no setting takes a file away.
+        expect(
+          () => {
+            refuseRoot(env, ids, marked);
+          },
+          JSON.stringify([ids, env]),
+        ).toThrow(/never as root/);
+      }
+    }
+    for (const isMarked of [unmarked, marked]) {
+      expect(() => {
+        refuseRoot(production, { uid: 1000, euid: 1000 }, isMarked);
+      }).not.toThrow();
     }
   });
 

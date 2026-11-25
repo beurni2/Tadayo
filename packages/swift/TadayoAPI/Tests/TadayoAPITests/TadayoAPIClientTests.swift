@@ -187,6 +187,9 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
             ("me", .json(429, error("RATE_LIMITED"), ["Retry-After": "30"]), .unavailable),
             ("me", .response(status: 503, body: "", headers: [:]), .unavailable),
             ("me", .response(status: 418, body: "", headers: [:]), .refused),
+            // A success the contract doesn't list: the server may have acted (audit A8).
+            ("me", .response(status: 202, body: "", headers: [:]), .unreadable),
+            ("update", .response(status: 204, body: "", headers: [:]), .unreadable),
             ("me", .failure, .network),
             ("clubs", .json(403, error("PROFILE_INCOMPLETE")), .profileIncomplete),
             ("clubs", .json(403, error("NOT_ALLOWED")), .refused),
@@ -204,7 +207,9 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
         }
     }
 
-    @Test func anAnswerThatBreaksTheContractIsRefusedNotTrusted() async {
+    @Test func anAnswerThatBreaksTheContractIsUnreadableNotTrusted() async {
+        // Unreadable, not refused: the server answered 2xx, so it may have acted, and a command's
+        // retry keeps its key (T19; audit A8).
         let answers: [CannedTransport.Answer] = [
             .response(status: 200, body: ben, headers: ["Content-Type": "application/json"]),
             .json(200, ben, ["Cache-Control": "max-age=60"]),
@@ -213,9 +218,42 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
             .json(200, ben, ["Content-Type": "text/html"]),
         ]
         for answer in answers {
-            await #expect(throws: APIFailure.refused) {
+            await #expect(throws: APIFailure.unreadable) {
                 try await api(CannedTransport([answer])).me()
             }
+        }
+    }
+
+    @Test func anAnswerWhoseBodyCannotBeReadIsReadByItsStatus() async {
+        // A refusal whose body this build can't read is still a refusal: only a success, whose
+        // command the server may have carried out, is unreadable (audit A8).
+        let json = ["Content-Type": "application/json"]
+        let cases: [(String, CannedTransport.Answer, APIFailure)] = [
+            // A code the contract added after this build.
+            ("update", .json(409, #"{"code":"SOMETHING_NEW"}"#), .refused),
+            ("clubs", .json(403, #"{"code":"SOMETHING_NEW"}"#), .refused),
+            // A body that isn't the contract's, or no `Cache-Control`.
+            (
+                "me",
+                .response(status: 400, body: "<html/>", headers: ["Content-Type": "text/html"]),
+                .refused
+            ),
+            (
+                "update", .response(status: 404, body: #"{"code":"NOT_FOUND"}"#, headers: json),
+                .refused
+            ),
+            ("me", .json(429, "not json", ["Retry-After": "30"]), .unavailable),
+        ]
+        for (operation, answer, failure) in cases {
+            await #expect(throws: failure, "\(operation) \(answer)") {
+                try await call(operation, on: api(CannedTransport([answer])))
+            }
+        }
+        // A second 401 still ends the session, as `aSecondRejectionSignsOut` does.
+        let unreadable = CannedTransport.Answer.json(401, "not json")
+        let auth = RefreshingAuth([.success(session(2, expiresIn: 7200))])
+        await #expect(throws: APIFailure.signedOut) {
+            try await api(CannedTransport([unreadable, unreadable]), auth: auth).me()
         }
     }
 
@@ -331,6 +369,7 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
         for failure in [
             APIFailure.network, .signedOut, .profileIncomplete, .versionConflict, .notFound,
             .notAllowed, .rosterChanged, .clubFull, .invitationExpired, .unavailable, .refused,
+            .unreadable,
         ] {
             #expect(String(describing: failure).allSatisfy { $0.isLetter })
         }

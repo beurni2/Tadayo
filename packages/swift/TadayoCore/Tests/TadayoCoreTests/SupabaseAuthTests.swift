@@ -217,6 +217,31 @@ final class ScriptedTransport: HTTPTransport, @unchecked Sendable {
         }
     }
 
+    @Test func anAnswerThatDoesntSayTheSessionEndedKeepsIt() async {
+        // Only GoTrue's own codes for a refresh token it won't take end the session. A 409 for
+        // two refreshes at once (the app and the share extension, say), an OAuth error, a
+        // gateway's or a captive portal's page, a success with no tokens, and a code this build
+        // doesn't know are a hiccup, and keep it (FQ89).
+        let old = AuthSession(accessToken: "a", refreshToken: "r", expiresAt: now)
+        for answer in [
+            ScriptedTransport.Answer.response(
+                status: 409, body: #"{"code":"conflict","message":"m"}"#,
+                headers: ["x-sb-error-code": "conflict"]),
+            .response(status: 400, body: #"{"error":"invalid_request"}"#),
+            .response(status: 401, body: ""),
+            .response(status: 403, body: "<html>Access denied</html>"),
+            .response(status: 200, body: "<html>Sign in to the Wi-Fi</html>"),
+            .response(status: 200, body: #"{"user":{}}"#),
+            .response(status: 302, body: ""),
+            .response(status: 400, body: #"{"code":"something_new","message":"m"}"#),
+            .response(status: 404, body: #"{"code":"session_expired"}"#),
+        ] {
+            await #expect(throws: AuthFailure.unavailable) {
+                try await auth(ScriptedTransport([answer])).refresh(old)
+            }
+        }
+    }
+
     @Test func readsTheErrorCodeFromTheHeaderFirst() async {
         let transport = ScriptedTransport([
             .response(

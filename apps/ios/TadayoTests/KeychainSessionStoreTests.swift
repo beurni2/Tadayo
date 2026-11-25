@@ -76,6 +76,19 @@ final class KeychainSessionStoreTests: XCTestCase {
         XCTAssertEqual(Set(fields.keys), ["accessToken", "refreshToken", "expiresAt"])
     }
 
+    func testAnItemThatDoesntDecodeIsAnUnusableSession() throws {
+        // Bytes that don't decode never will: `UnusableSession`, which the session manager reads
+        // as no session, so sign-in writes over them, where any other refusal ends nothing (FQ89).
+        try store.save(session)
+        var query = query
+        query[kSecAttrAccount as String] = "dev"
+        let update = [kSecValueData as String: Data("not a session".utf8)]
+        XCTAssertEqual(SecItemUpdate(query as CFDictionary, update as CFDictionary), errSecSuccess)
+        XCTAssertThrowsError(try store.load()) { XCTAssertTrue($0 is UnusableSession) }
+        try store.save(session)
+        XCTAssertEqual(try store.load(), session)
+    }
+
     func testAFailureCarriesItsStatusOnly() {
         // T52: nothing of the session reaches a log through an error.
         let failure = KeychainFailure(status: errSecInteractionNotAllowed)

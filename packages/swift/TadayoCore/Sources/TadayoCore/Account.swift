@@ -59,8 +59,17 @@ public enum APIFailure: Error, Sendable, Equatable {
     case invitationExpired
     /// The server is busy or failing (429, 5xx): try again later.
     case unavailable
-    /// Any other answer, including one that doesn't match the contract.
+    /// A refusal: an error status the caller has no case of its own for, whether the contract
+    /// documents it, doesn't list it, or sends a body this build can't read with it. Nothing was
+    /// carried out, so a command's next tap is a new action.
     case refused
+    /// An answer this build couldn't read: a success the contract doesn't list, a body or header
+    /// that doesn't match it (a value the contract added after this build, among them), or one
+    /// that doesn't answer what was asked; or a call that ended with no answer the network's
+    /// failure doesn't cover (the transport's `noResponse`, say), where whether the request
+    /// reached the server can't be told. The server may have carried a command out, so, as for
+    /// `unavailable`, its retry sends the same key (T19; audit A8).
+    case unreadable
 }
 
 /// The account's calls to the API, as `TadayoAPI` makes them.

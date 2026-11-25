@@ -95,8 +95,9 @@ import Observation
         } catch .network {
             guard current() else { return }
             failure = .network
-        } catch .unavailable {
-            // The server may have made it: the retry sends the same key, so it's made once.
+        } catch .unavailable, .unreadable {
+            // The server may have made it (a busy server, or an answer this build couldn't
+            // read): the retry sends the same key, so it's made once.
             guard current() else { return }
             failure = .other
         } catch .signedOut {

@@ -10,13 +10,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import sharp from "sharp";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
+  baselineJpeg,
   DEADLINE_SECONDS,
   DECODE_SECONDS,
   GRACE_MS,
   ImageProcessFailed,
   ImageTimeout,
+  killGroupOf,
+  NoPhotoUser,
   outcomeOf,
   PEAK_BYTES,
   peakOf,
@@ -27,6 +30,57 @@ import { prepareImage } from "./image.ts";
 import { pattern, testImage, textBombPng } from "./testing.ts";
 
 const MiB = 1024 * 1024;
+
+/** A marker segment: the marker, its length, its body. */
+const segment = (marker: number, body: readonly number[]): number[] => [
+  0xff,
+  marker,
+  (body.length + 2) >> 8,
+  (body.length + 2) & 0xff,
+  ...body,
+];
+
+/**
+ * The smallest baseline JPEG of `width` by `height` that baselineJpeg takes, as `prepareImage` lays one out: its
+ * start, a quantization table, its frame, a Huffman table, one scan of one byte, its end. `before` goes before the
+ * table, `scan` replaces the scan's data, and `after` follows the end.
+ */
+function baselineOf(
+  width: number,
+  height: number,
+  parts: { before?: number[]; frame?: number[]; scan?: number[]; after?: number[] } = {},
+): Uint8Array {
+  const frame = parts.frame ?? [
+    8,
+    height >> 8,
+    height & 0xff,
+    width >> 8,
+    width & 0xff,
+    3,
+    1,
+    0x11,
+    0,
+    2,
+    0x11,
+    1,
+    3,
+    0x11,
+    1,
+  ];
+  return new Uint8Array([
+    0xff,
+    0xd8,
+    ...(parts.before ?? []),
+    ...segment(0xdb, new Array<number>(65).fill(1)),
+    ...segment(0xc0, frame),
+    ...segment(0xc4, new Array<number>(29).fill(0)),
+    ...segment(0xda, [3, 1, 0, 2, 0x11, 3, 0x11, 0, 0x3f, 0]),
+    ...(parts.scan ?? [0x12]),
+    0xff,
+    0xd9,
+    ...(parts.after ?? []),
+  ]);
+}
 
 const PROCESS_MODULE = new URL("./image-process.ts", import.meta.url).pathname;
 
@@ -109,6 +163,20 @@ describe("a photo's own process", () => {
     expect(peakBytes).toBeLessThan(PEAK_BYTES);
   }, 60_000);
 
+  it("in the image (NODE_ENV=production), never starts a photo's process without the photo's user (the audit's A6)", async () => {
+    // Outside the worker's mode, the image refuses too: a start that slipped past photoUserFor would otherwise prepare a
+    // stranger's photo in the worker's own user, root's if it was started as root.
+    const before = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    try {
+      await expect(prepareIsolated(await testImage(16, 16), "image/jpeg")).rejects.toBeInstanceOf(NoPhotoUser);
+    } finally {
+      if (before === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = before;
+    }
+    expect((await prepareIsolated(await testImage(16, 16), "image/jpeg")).prepared.ok).toBe(true);
+  }, 20_000);
+
   it("passes a rejection on as it is", async () => {
     expect((await prepareIsolated(await testImage(64, 48, "png"), "image/jpeg")).prepared).toEqual({
       ok: false,
@@ -121,8 +189,10 @@ describe("a photo's own process", () => {
     try {
       const answer = await prepareIsolated(await testImage(64, 48), "image/jpeg");
       expect(answer.oomScoreAdj).toBe(1000);
-      // Node's own channel to the worker, and nothing else.
-      expect(answer.environment).toBeLessThanOrEqual(1);
+      // The one variable `sharp` sets in its own process as it loads (`VIPSHOME`), and none of the worker's. There is no
+      // Node channel either now (Node took its variables out of a forked child's environment as it started, so the
+      // one this test counted before was `VIPSHOME` too, not the channel's, as its comment said).
+      expect(answer.environment).toBe(1);
     } finally {
       delete process.env["TADAYO_TEST_SECRET"];
     }
@@ -214,43 +284,93 @@ describe("a photo's own process", () => {
 });
 
 /**
- * Children that misbehave, as one could whose decoder a stranger's bytes took over (PR #111's round 4, R4-3): each
- * says it is ready, reads the photo, then does as its name says. A well-formed answer's renditions end with the byte
- * given, so the test can tell two answers apart.
+ * Children that misbehave, as one could whose decoder a stranger's bytes took over (PR #111's round 4, R4-3; the check
+ * of its fifth commit, C5-1): each writes its messages to fd 3 as ./image-frames.ts frames them, with a framing of its
+ * own here, says it is ready, reads the photo, then does as its name says. A well-formed answer's renditions are the
+ * smallest baseline JPEGs of 2 by 1 the worker takes (baselineJpeg), whose one byte of scan data is the byte given,
+ * so the test can tell two answers apart.
  */
 const PRELUDE = `
 import { spawn } from "node:child_process";
-const answer = (tag) => ({
-  kind: "prepared",
-  prepared: {
-    ok: true,
-    renditions: [
-      { kind: "full", bytes: new Uint8Array([0xff, 0xd8, 0xff, tag]), width: 2, height: 1 },
-      { kind: "display", bytes: new Uint8Array([0xff, 0xd8, 0xff, tag]), width: 2, height: 1 },
-    ],
+import { Socket } from "node:net";
+const worker = new Socket({ fd: 3, readable: true, writable: true });
+worker.on("error", () => {});
+const write = (bytes) => new Promise((resolve) => worker.write(bytes, () => resolve()));
+const frame = (header, bodies = []) => {
+  const json = Buffer.from(typeof header === "string" ? header : JSON.stringify(header));
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(json.length);
+  return Buffer.concat([length, json, ...bodies]);
+};
+const send = (header, bodies) => write(frame(header, bodies));
+const segment = (marker, body) => [0xff, marker, (body.length + 2) >> 8, (body.length + 2) & 0xff, ...body];
+const baseline = (tag) => Buffer.from([
+  0xff, 0xd8,
+  ...segment(0xdb, new Array(65).fill(1)),
+  ...segment(0xc0, [8, 0, 1, 0, 2, 3, 1, 0x11, 0, 2, 0x11, 1, 3, 0x11, 1]),
+  ...segment(0xc4, new Array(29).fill(0)),
+  ...segment(0xda, [3, 1, 0, 2, 0x11, 3, 0x11, 0, 0x3f, 0]),
+  tag, 0xff, 0xd9,
+]);
+const answer = (tag) => frame(
+  {
+    kind: "prepared",
+    prepared: {
+      ok: true,
+      renditions: [
+        { kind: "full", width: 2, height: 1, length: baseline(tag).length },
+        { kind: "display", width: 2, height: 1, length: baseline(tag).length },
+      ],
+    },
+    peakBytes: 1,
+    oomScoreAdj: 0,
+    environment: 0,
   },
-  peakBytes: 1,
-  oomScoreAdj: 0,
-  environment: 0,
-});
-const send = (message) => new Promise((resolve) => process.send(message, undefined, undefined, resolve));
-process.on("disconnect", () => process.kill(process.pid, "SIGKILL"));
+  [baseline(tag), baseline(tag)],
+);
 await send({ kind: "ready" });
 for await (const chunk of process.stdin) void chunk;
 `;
+/**
+ * A process in a session of its own, outside the group the worker kills, that holds the child's fd 3 for 3 s and then
+ * exits: the worker settles a child's end at once only if it has closed its own end of that pipe.
+ */
+const HOLDS = `spawn(process.execPath, ["-e", "setTimeout(() => {}, 3000)"], { detached: true, stdio: ["ignore", "ignore", "ignore", 3] });`;
 const MISBEHAVING = {
-  // Sends what isn't one of the child's messages, a second ready, then two answers.
-  stray: `for (const message of [null, 42, "prepared", [], { kind: "bogus" }, { kind: "ready" }]) await send(message);
-await send(answer(1));
-await send(answer(2));
+  // A message of no kind of the child's, after ready.
+  bogus: `await send({ kind: "bogus" });
+setInterval(() => {}, 1000);`,
+  // A second ready.
+  twice: `await send({ kind: "ready" });
+setInterval(() => {}, 1000);`,
+  // Starts a process in a session of its own that holds fd 3 for 3 s, then sends a header that isn't JSON.
+  garbled: `${HOLDS}
+await send("not json at all");
+setInterval(() => {}, 1000);`,
+  // A header that declares 4 GiB, then a megabyte at a time for as long as it can write: Node's channel would have
+  // buffered all of it (C5-1).
+  huge: `const length = Buffer.alloc(4);
+length.writeUInt32BE(0xffffffff);
+await write(length);
+const megabyte = Buffer.alloc(1024 * 1024, 0x61);
+for (;;) await write(megabyte);`,
+  // An answer whose renditions declare more than the message's cap, then their bytes for as long as it can write.
+  overlong: `await send({ kind: "prepared", prepared: { ok: true, renditions: [{ length: 2 ** 31 }, { length: 2 ** 31 }] } });
+const megabyte = Buffer.alloc(1024 * 1024, 0x61);
+for (;;) await write(megabyte);`,
+  // Starts a process in a session of its own that holds fd 3 for 3 s, answers, writes a second answer and more after
+  // it, and exits.
+  trailing: `${HOLDS}
+await write(Buffer.concat([answer(1), Buffer.from("trailing bytes"), answer(2)]));
+await new Promise((resolve) => setTimeout(resolve, 100));
 process.exit(0);`,
-  // Starts a process that holds its channel open, answers and exits.
-  holder: `spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: ["ignore", "ignore", "ignore", 3] });
-await send(answer(1));
+  // Starts a process in its group that holds its pipes open, answers 0.3 s later and exits.
+  holder: `spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: [0, "ignore", "ignore", 3] });
 await new Promise((resolve) => setTimeout(resolve, 300));
+await write(answer(1));
 process.exit(0);`,
   // Answers, and never exits.
-  lingers: `await send(answer(1));
+  lingers: `await write(answer(1));
 setInterval(() => {}, 1000);`,
   // Exits with a code of its own, without answering.
   exits: `process.exit(3);`,
@@ -258,30 +378,57 @@ setInterval(() => {}, 1000);`,
   aborts: `process.abort();`,
 } as const;
 
+/** A child that sends its answer before it is ready. */
+const EARLY = `
+import { Socket } from "node:net";
+const worker = new Socket({ fd: 3, readable: true, writable: true });
+const json = Buffer.from(JSON.stringify({ kind: "failed" }));
+const length = Buffer.alloc(4);
+length.writeUInt32BE(json.length);
+worker.write(Buffer.concat([length, json]));
+setInterval(() => {}, 1000);
+`;
+
 /**
  * A child that never reads the photo, and starts a process in a session of its own, outside the group the worker
- * kills, which keeps the child's standard input and channel open (the fifth commit's check, C5-2). It says it is
- * ready, and exits without answering.
+ * kills, which keeps the child's standard input and fd 3 open (the fifth commit's check, C5-1 and C5-2). It says it is
+ * ready, and exits without answering; once it has, the process it started begins a message on fd 3 and writes it a
+ * byte at a time, as a holder mid-frame would.
  */
+const TRICKLE = `
+const { writeSync } = require("node:fs");
+setTimeout(() => {
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(4096);
+  try { writeSync(3, length); } catch {}
+  setInterval(() => { try { writeSync(3, "x"); } catch {} }, 20);
+}, 500);
+setInterval(() => {}, 1000);
+`;
 const ESCAPES = `
 import { spawn } from "node:child_process";
-spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
+import { Socket } from "node:net";
+spawn(process.execPath, ["-e", ${JSON.stringify(TRICKLE)}], {
   detached: true,
   env: {},
   stdio: [0, "ignore", "ignore", 3],
 });
-await new Promise((resolve) => process.send({ kind: "ready" }, undefined, undefined, resolve));
+const worker = new Socket({ fd: 3, readable: true, writable: true });
+const json = Buffer.from(JSON.stringify({ kind: "ready" }));
+const length = Buffer.alloc(4);
+length.writeUInt32BE(json.length);
+await new Promise((resolve) => worker.write(Buffer.concat([length, json]), () => resolve()));
 await new Promise((resolve) => setTimeout(resolve, 300));
 process.exit(0);
 `;
 
-describe("a photo's process that misbehaves (R4-3)", () => {
+describe("a photo's process that misbehaves (R4-3, C5-1)", () => {
   let folder = "";
-  const fake = (name: keyof typeof MISBEHAVING) => pathToFileURL(join(folder, `${name}.mjs`));
+  const fake = (name: keyof typeof MISBEHAVING | "early" | "escapes") => pathToFileURL(join(folder, `${name}.mjs`));
   const tagOf = (answer: { readonly prepared: { readonly ok: boolean } }) =>
     answer.prepared.ok && "renditions" in answer.prepared
       ? (answer.prepared as { readonly renditions: readonly { readonly bytes: Uint8Array }[] }).renditions.map(
-          (rendition) => rendition.bytes[3],
+          (rendition) => rendition.bytes.at(-3),
         )
       : [];
   const photo = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
@@ -293,6 +440,7 @@ describe("a photo's process that misbehaves (R4-3)", () => {
     for (const [name, body] of Object.entries(MISBEHAVING)) {
       await writeFile(join(folder, `${name}.mjs`), PRELUDE + body);
     }
+    await writeFile(join(folder, "early.mjs"), EARLY);
     await writeFile(join(folder, "escapes.mjs"), ESCAPES);
   });
   afterAll(async () => {
@@ -302,48 +450,72 @@ describe("a photo's process that misbehaves (R4-3)", () => {
     for (const pid of started.splice(0)) if (!ended(pid)) process.kill(pid, "SIGKILL");
   });
 
-  it("ignores a message that isn't one of the child's, and a second ready, and keeps the first answer", async () => {
-    const answer = await prepareIsolated(photo, "image/jpeg", { child: fake("stray") });
-    expect(tagOf(answer)).toEqual([1, 1]);
+  it("fails, to be tried again, when the child sends anything but ready and then its answer, and ends it at once", async () => {
+    for (const name of ["bogus", "twice", "garbled", "early"] as const) {
+      const from = performance.now();
+      await expect(prepareIsolated(photo, "image/jpeg", { child: fake(name) }), name).rejects.toBeInstanceOf(
+        ImageProcessFailed,
+      );
+      // Each never exits of itself: the worker ended it as its message broke the order, long before its deadline.
+      expect(performance.now() - from, name).toBeLessThan(GRACE_MS);
+    }
+  }, 30_000);
+
+  it("fails at once on a length past its cap, the worker holding none of what the child goes on writing (C5-1)", async () => {
+    const before = peakOf("self") ?? 0;
+    for (const name of ["huge", "overlong"] as const) {
+      const from = performance.now();
+      await expect(prepareIsolated(photo, "image/jpeg", { child: fake(name) }), name).rejects.toBeInstanceOf(
+        ImageProcessFailed,
+      );
+      expect(performance.now() - from, name).toBeLessThan(GRACE_MS);
+    }
+    // Node's channel took the worker from 66 to 468 MiB in 10 s on the first (the fifth commit's check).
+    expect((peakOf("self") ?? 0) - before).toBeLessThan(8 * MiB);
+  }, 30_000);
+
+  it("keeps the first answer, and reads nothing after it", async () => {
+    const from = performance.now();
+    expect(tagOf(await prepareIsolated(photo, "image/jpeg", { child: fake("trailing") }))).toEqual([1, 1]);
+    // A process outside the group holds fd 3, so the end settles at once only because the worker closed its own end.
+    expect(performance.now() - from).toBeLessThan(GRACE_MS);
   }, 20_000);
 
-  it("settles when the child ends though a process it started holds its channel, and ends that process", async () => {
+  it("settles when the child ends though a process it started holds its pipes, and ends that process", async () => {
     const run = prepareIsolated(photo, "image/jpeg", { child: fake("holder") });
     const child = await until(() => childrenOf(process.pid).find((pid) => commandOf(pid).includes("holder.mjs")), 300);
     const holder = await until(() => childrenOf(child)[0], 300);
     started.push(holder);
     const from = performance.now();
     expect(tagOf(await run)).toEqual([1, 1]);
-    // The child exits 0.3 s after it started its holder: then the grace, and no more.
-    expect(performance.now() - from).toBeLessThan(GRACE_MS + 1500);
+    // The worker ends the group once the answer is in: no grace to wait.
+    expect(performance.now() - from).toBeLessThan(GRACE_MS);
     await until(() => (ended(holder) ? true : undefined), 100);
   }, 20_000);
 
-  it("closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them", async () => {
+  it("closes its ends of the child's pipes as it settles, though a process the child started outside its group holds them mid-message", async () => {
     const before = pipesHeld();
     // A megabyte, more than a pipe holds: the worker's write waits on a child that never reads it.
-    const run = prepareIsolated(Buffer.alloc(MiB, 0xff), "image/jpeg", {
-      child: pathToFileURL(join(folder, "escapes.mjs")),
-    });
+    const run = prepareIsolated(Buffer.alloc(MiB, 0xff), "image/jpeg", { child: fake("escapes") });
     const child = await until(() => childrenOf(process.pid).find((pid) => commandOf(pid).includes("escapes.mjs")), 300);
     const escaped = await until(() => childrenOf(child)[0], 300);
     started.push(escaped);
-    // The child's standard input and its channel, as the worker holds them. Node closes the first itself as the child
-    // exits; the second only the worker's own disconnect closes.
+    // The child's standard input and fd 3, as the worker holds them.
     const opened = [...pipesHeld()].filter((pipe) => !before.has(pipe));
     expect(opened.length).toBeGreaterThanOrEqual(2);
     await expect(run).rejects.toBeInstanceOf(ImageProcessFailed);
-    // Outside the group, the process the child started outlives the child's end, holding the other ends.
+    // Outside the group, the process the child started outlives the child's end, holding the other ends and writing
+    // its message a byte at a time; the worker's ends are closed all the same.
     expect(ended(escaped)).toBe(false);
     await until(() => (opened.some((pipe) => pipesHeld().has(pipe)) ? undefined : true), 100);
   }, 20_000);
 
-  it("ends a child that answered but never exits at its deadline, and keeps its answer", async () => {
-    const started = performance.now();
-    expect(tagOf(await prepareIsolated(photo, "image/jpeg", { child: fake("lingers"), deadlineSeconds: 1 }))).toEqual([
+  it("ends a child that answered at once, though it would never exit, and keeps its answer", async () => {
+    const from = performance.now();
+    expect(tagOf(await prepareIsolated(photo, "image/jpeg", { child: fake("lingers"), deadlineSeconds: 10 }))).toEqual([
       1, 1,
     ]);
-    expect(performance.now() - started).toBeLessThan(1000 + GRACE_MS);
+    expect(performance.now() - from).toBeLessThan(GRACE_MS);
   }, 20_000);
 
   it("fails, to be tried again, when the child exits with a code of its own without answering (R4-5)", async () => {
@@ -361,14 +533,13 @@ describe("a photo's process that misbehaves (R4-3)", () => {
 });
 
 describe("what a child's end comes to", () => {
-  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
   const prepared = {
     kind: "prepared" as const,
     prepared: {
       ok: true as const,
       renditions: [
-        { kind: "full" as const, bytes: jpeg, width: 2560, height: 2560 },
-        { kind: "display" as const, bytes: jpeg, width: 1290, height: 1290 },
+        { kind: "full" as const, bytes: baselineOf(2560, 2560), width: 2560, height: 2560 },
+        { kind: "display" as const, bytes: baselineOf(1290, 1290), width: 1290, height: 1290 },
       ],
     },
     peakBytes: 90 * MiB,
@@ -389,7 +560,7 @@ describe("what a child's end comes to", () => {
     expect(answer.prepared.ok).toBe(true);
     if (!answer.prepared.ok) return;
     expect(Buffer.isBuffer(answer.prepared.renditions[0]?.bytes)).toBe(true);
-    expect([...(answer.prepared.renditions[0]?.bytes ?? [])]).toEqual([0xff, 0xd8, 0xff, 0xe0]);
+    expect([...(answer.prepared.renditions[0]?.bytes ?? [])]).toEqual([...baselineOf(2560, 2560)]);
     expect(outcomeOf(end({ answer: { ...prepared, prepared: refused("unreadable") } })).prepared).toEqual(
       refused("unreadable"),
     );
@@ -418,6 +589,9 @@ describe("what a child's end comes to", () => {
 
   it("throws ImageProcessFailed when it ended before it was ready, of its own accord or by another signal without answering, or its code threw", () => {
     expect(() => outcomeOf(end({ ready: false, signal: "SIGSEGV" }))).toThrow(ImageProcessFailed);
+    // Killed for a broken answer, whatever signal that left (the worker's SIGKILL is a memory kill's too).
+    expect(() => outcomeOf(end({ killed: "broken", signal: "SIGKILL" }))).toThrow(ImageProcessFailed);
+    expect(() => outcomeOf(end({ killed: "broken", signal: "SIGKILL", ready: false }))).toThrow(ImageProcessFailed);
     expect(() => outcomeOf(end({ answer: { kind: "failed" } }))).toThrow(ImageProcessFailed);
     // Exited with a code, or ended by a signal that isn't a crash, after it was given the photo (R4-5).
     expect(() => outcomeOf(end({}))).toThrow(ImageProcessFailed);
@@ -425,8 +599,8 @@ describe("what a child's end comes to", () => {
   });
 
   it("throws ImageProcessFailed for an answer that isn't one rendition of each kind, a JPEG inside its box, or a rejection's code", () => {
-    const full = { kind: "full", bytes: jpeg, width: 2560, height: 2560 };
-    const display = { kind: "display", bytes: jpeg, width: 1290, height: 2560 };
+    const full = { kind: "full", bytes: baselineOf(2560, 2560), width: 2560, height: 2560 };
+    const display = { kind: "display", bytes: baselineOf(1290, 2560), width: 1290, height: 2560 };
     for (const renditions of [
       [],
       [full],
@@ -437,6 +611,9 @@ describe("what a child's end comes to", () => {
       [full, { ...display, bytes: "not bytes" }],
       [full, { ...display, bytes: new Uint8Array(0) }],
       [full, { ...display, bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]) }],
+      [full, { ...display, bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0]) }],
+      // A JPEG whose frame is another size than the one stated (PR #118's review: a decode bomb recorded as small).
+      [full, { ...display, bytes: baselineOf(65500, 65500) }],
       [full, { ...display, width: 0 }],
       [full, { ...display, width: 1.5 }],
       [full, { ...display, width: 1291 }],
@@ -453,6 +630,136 @@ describe("what a child's end comes to", () => {
     for (const rejection of ["no_such_code", 42, undefined]) {
       const malformed = { ...prepared, prepared: { ok: false, rejection } } as unknown as typeof prepared;
       expect(() => outcomeOf(end({ answer: malformed }))).toThrow(ImageProcessFailed);
+    }
+  });
+});
+
+describe("a rendition as prepareImage writes it, whatever the child sent (baselineJpeg; PR #118's review)", () => {
+  it("takes prepareImage's own renditions, and the baseline JPEG they are laid out as, restarts and stuffed bytes in its scan", async () => {
+    for (const [image, type] of [
+      [await testImage(64, 48), "image/jpeg"],
+      [await testImage(3000, 2000, "webp"), "image/webp"],
+      [await pattern(640, 480, 4).png().toBuffer(), "image/png"],
+    ] as const) {
+      const prepared = await prepareImage(image, type);
+      expect(prepared.ok).toBe(true);
+      if (!prepared.ok) continue;
+      for (const rendition of prepared.renditions) {
+        expect(baselineJpeg(rendition.bytes, rendition.width, rendition.height)).toBe(true);
+      }
+    }
+    expect(baselineJpeg(baselineOf(2, 1), 2, 1)).toBe(true);
+    expect(baselineJpeg(baselineOf(2, 1, { scan: [0x12, 0xff, 0x00, 0x34, 0xff, 0xd0, 0x56, 0xff, 0xd7] }), 2, 1)).toBe(
+      true,
+    );
+    const gray = [8, 0, 1, 0, 2, 1, 1, 0x11, 0];
+    expect(baselineJpeg(baselineOf(2, 1, { frame: gray }), 2, 1)).toBe(true);
+  }, 30_000);
+
+  it("refuses metadata, a thumbnail or a comment, another kind of frame, another size, a second frame or scan, and anything after its end", () => {
+    const exif = segment(0xe1, [...Buffer.from("Exif\0\0"), 0x4d, 0x4d, 0, 0x2a]);
+    const progressive = [0xff, 0xd8, ...segment(0xc2, [8, 0, 1, 0, 2, 1, 1, 0x11, 0])];
+    for (const [why, bytes] of [
+      ["EXIF", baselineOf(2, 1, { before: exif })],
+      [
+        "JFIF, which can hold a thumbnail",
+        baselineOf(2, 1, { before: segment(0xe0, [...Buffer.from("JFIF\0"), 1, 1, 0, 0, 1, 0, 1, 0, 0]) }),
+      ],
+      ["an ICC profile", baselineOf(2, 1, { before: segment(0xe2, [...Buffer.from("ICC_PROFILE\0"), 1, 1]) })],
+      ["a comment", baselineOf(2, 1, { before: segment(0xfe, [...Buffer.from("hello")]) })],
+      ["a restart interval", baselineOf(2, 1, { before: segment(0xdd, [0, 1]) })],
+      ["a progressive frame first", new Uint8Array([...progressive, ...baselineOf(2, 1).subarray(2)])],
+      ["a second frame", baselineOf(2, 1, { before: segment(0xc0, [8, 0, 1, 0, 2, 1, 1, 0x11, 0]) })],
+      ["12-bit samples", baselineOf(2, 1, { frame: [12, 0, 1, 0, 2, 1, 1, 0x11, 0] })],
+      [
+        "four components",
+        baselineOf(2, 1, { frame: [8, 0, 1, 0, 2, 4, 1, 0x11, 0, 2, 0x11, 1, 3, 0x11, 1, 4, 0x11, 1] }),
+      ],
+      ["a frame whose length isn't its components'", baselineOf(2, 1, { frame: [8, 0, 1, 0, 2, 1, 1, 0x11, 0, 0] })],
+      ["a scan before its frame", baselineOf(2, 1, { before: [...segment(0xda, [1, 1, 0, 0, 0x3f, 0]), 0x12] })],
+      [
+        "a second scan",
+        baselineOf(2, 1, { scan: [0x12, ...segment(0xc4, [0]), ...segment(0xda, [1, 1, 0, 0, 0x3f, 0]), 0x34] }),
+      ],
+      ["a fill byte before its end", baselineOf(2, 1, { scan: [0x12, 0xff] })],
+      ["bytes after its end", baselineOf(2, 1, { after: [0] })],
+      ["another JPEG after its end", baselineOf(2, 1, { after: [...baselineOf(2, 1)] })],
+      ["no end", baselineOf(2, 1).subarray(0, -2)],
+      ["a segment longer than the bytes", new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x40, 0x00, 1, 1])],
+      [
+        "a segment shorter than its length's own bytes",
+        new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x01, 0xff, 0xd9]),
+      ],
+      [
+        "a scan's length shorter than its length's own bytes",
+        new Uint8Array([
+          0xff,
+          0xd8,
+          ...segment(0xdb, new Array<number>(65).fill(1)),
+          ...segment(0xc0, [8, 0, 1, 0, 2, 1, 1, 0x11, 0]),
+          ...segment(0xc4, new Array<number>(29).fill(0)),
+          0xff,
+          0xda,
+          0x00,
+          0x01,
+          0x12,
+          0xff,
+          0xd9,
+        ]),
+      ],
+      ["no start", baselineOf(2, 1).subarray(2)],
+      ["a start without its 0xFF", new Uint8Array([0x00, 0xd8, ...baselineOf(2, 1).subarray(2)])],
+      ["another marker for its start", new Uint8Array([0xff, 0xd9, ...baselineOf(2, 1).subarray(2)])],
+      [
+        "no frame",
+        new Uint8Array([
+          0xff,
+          0xd8,
+          ...segment(0xdb, new Array<number>(65).fill(1)),
+          ...segment(0xc4, new Array<number>(29).fill(0)),
+          ...segment(0xda, [1, 1, 0, 0, 0x3f, 0]),
+          0x12,
+          0xff,
+          0xd9,
+        ]),
+      ],
+    ] as const) {
+      expect(baselineJpeg(bytes, 2, 1), why).toBe(false);
+    }
+    // The size the header states, and no other.
+    expect(baselineJpeg(baselineOf(2, 1), 1, 2)).toBe(false);
+    expect(baselineJpeg(baselineOf(65500, 65500), 1, 1)).toBe(false);
+  });
+});
+
+describe("a photo's process group, ended (killGroupOf; PR #118's review)", () => {
+  it("is done when the group has ended, and stops the worker when the kill is refused, as the processes may still run", () => {
+    const kill = vi.spyOn(process, "kill");
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("the worker stopped");
+    });
+    const written = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      kill.mockImplementation(() => {
+        throw Object.assign(new Error("no such process"), { code: "ESRCH" });
+      });
+      killGroupOf(4242, (fn) => fn());
+      expect(kill).toHaveBeenCalledWith(-4242, "SIGKILL");
+      expect(exit).not.toHaveBeenCalled();
+      kill.mockImplementation(() => {
+        throw Object.assign(new Error("not permitted"), { code: "EPERM" });
+      });
+      expect(() => {
+        killGroupOf(4242, (fn) => fn());
+      }).toThrow("the worker stopped");
+      expect(exit).toHaveBeenCalledWith(1);
+      expect(written).toHaveBeenCalledWith(
+        "worker: a photo's process group couldn't be ended, so the worker stops, and its Machine restarts without it\n",
+      );
+    } finally {
+      kill.mockRestore();
+      exit.mockRestore();
+      written.mockRestore();
     }
   });
 });

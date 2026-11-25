@@ -466,7 +466,9 @@ public struct InvitationList: Sendable, Equatable {
         } catch .network {
             guard current() else { return nil }
             failLink(candidate, replacing: replacing, network: true)
-        } catch .unavailable {
+        } catch .unavailable, .unreadable {
+            // The server may have made it: the retry sends the same key, and its replay, with
+            // no link, makes one more under a new one.
             guard current() else { return nil }
             failLink(candidate, replacing: replacing, network: false)
         } catch .signedOut {
@@ -650,7 +652,9 @@ extension Result {
         } catch .network {
             guard current() else { return nil }
             failure = .network
-        } catch .unavailable {
+        } catch .unavailable, .unreadable {
+            // The server may have proposed the person or made the link: each retry sends its
+            // command's same key.
             guard current() else { return nil }
             failure = .other
         } catch .signedOut {
@@ -689,12 +693,14 @@ extension Result {
         proposal = attempt
         let revision = try await service.propose(
             [attempt.name], in: club.id, expectedRosterVersion: attempt.version, key: attempt.key)
-        proposal = nil
         let added = revision.candidates.filter {
             !known.contains($0.id) && $0.name == name
                 && $0.proposedBy.membershipID == club.myMembershipID
         }
-        guard added.count == 1 else { throw .refused }
+        // An answer that doesn't add exactly this person doesn't say what the server did with
+        // the proposal: the retry sends the same key rather than propose them again.
+        guard added.count == 1 else { throw .unreadable }
+        proposal = nil
         candidate = added[0]
         return added[0]
     }
