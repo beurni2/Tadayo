@@ -1730,38 +1730,41 @@ class Steps:
             place = self.runtime_place(*where)
             self.write_log(f"test-{version}.log", f"iOS {version} before the pass: "
                                                   f"{place or 'unreadable'}")
-        # Probes 3 and 4 (never merged): 16 launches of the test host, each running ArrivalFocusTests'
-        # first test and then one variant of the second, as a full pass runs them, early in a
-        # fresh host: A (as on main) or B (the sign-in at a person's pace), in the order ABBA
-        # four times, so the runner's falling load weighs on both alike.
+        # Probe 5 (never merged): the full pass's own order, again and again: one xcodebuild
+        # running the snapshot tests and then ArrivalFocusTests' first test and one variant of
+        # the second, A (as on main) or B (the sign-in at a person's pace), in the order ABBA,
+        # with the keyboard daemon kbd ended before each, so each meets it cold as a full pass
+        # does. No new run starts 65 minutes after the first, so the step's 90 stand.
         test = "-only-testing:TadayoTests/ArrivalFocusTests/"
         code = 0
-        for index, variant in enumerate("ABBA" * 4):
+        began = time.time()
+        for index, variant in enumerate("ABBAABBAAB"):
+            if time.time() - began > 65 * 60:
+                self.write_log(f"test-{version}.log", f"probe: no run {index}: 65 minutes gone")
+                break
             name = ("testA03TakesTheFocusAsItReplacesA02Age" if variant == "A" else
                     "testA03TakesTheFocusAsItReplacesA02AgeAtAPersonsPace")
-            launch = list(cmd)
-            launch[launch.index(bundle)] = self.out_path(f"Tests-{version}-{index}.xcresult")
-            shutil.rmtree(launch[launch.index("-resultBundlePath") + 1], ignore_errors=True)
-            launch += [test + "testA03AsksForNoFocusWhileVoiceOverRuns", test + name]
-            # Probe 4: the keyboard daemon kbd ended before each launch, so each starts it cold,
-            # as a full pass's first keyboard does after the snapshot tests.
             _, listing, _ = self.shell.capture(["ps", "-axo", "pid=,command="])
             ended = []
             for row in listing.splitlines():
                 pid, _, command = row.strip().partition(" ")
-                if command.split(" ")[0].endswith("/kbd") and pid.isdigit():
+                if pid.isdigit() and (command.strip().endswith("/kbd") or "/kbd " in command):
                     ended.append(pid)
                     self.shell.capture(["kill", "-9", pid])
-            self.write_log(f"test-{version}.log", f"probe: launch {index} variant {variant} "
-                                                  f"at {time.strftime('%H:%M:%S')}, kbd ended: "
+            launch = list(cmd)
+            launch[launch.index(bundle)] = self.out_path(f"Tests-{version}-{index}.xcresult")
+            shutil.rmtree(launch[launch.index("-resultBundlePath") + 1], ignore_errors=True)
+            launch += ["-only-testing:TadayoSnapshotTests",
+                       test + "testA03AsksForNoFocusWhileVoiceOverRuns", test + name]
+            self.write_log(f"test-{version}.log", f"probe: run {index} variant {variant} at "
+                                                  f"{time.strftime('%H:%M:%S')}, kbd ended: "
                                                   f"{' '.join(ended) or 'none running'}")
             result = self.shell.run(launch, env=self.xcode_env(env), log=log)
-            self.write_log(f"test-{version}.log", f"probe: launch {index} variant {variant} "
+            self.write_log(f"test-{version}.log", f"probe: run {index} variant {variant} "
                                                   f"exit {result}")
             code = code or result
-            if index == 15:
-                shutil.rmtree(bundle, ignore_errors=True)
-                shutil.copytree(launch[launch.index("-resultBundlePath") + 1], bundle)
+            shutil.rmtree(bundle, ignore_errors=True)
+            shutil.copytree(launch[launch.index("-resultBundlePath") + 1], bundle)
         if version in toolchain.IOS_DOWNLOADS:
             after = self.runtime_place(*where)
             self.write_log(f"test-{version}.log", f"iOS {version} after the pass: "
@@ -1807,7 +1810,7 @@ class Steps:
             code, out, err = self.shell.capture(
                 ["xcrun", "simctl", "spawn", udid, "log", "show", "--style", "compact",
                  "--start", start, "--predicate", predicate],
-                env=self.xcode_env(), timeout=1200)
+                env=self.xcode_env(), timeout=600)
             lines = [line[:400] for line in out.splitlines() if line.strip()]
             self.write_log(f"crashes-{version}.txt",
                            f"--- probe: the keyboard service's lines of the pass (exit {code}, "
