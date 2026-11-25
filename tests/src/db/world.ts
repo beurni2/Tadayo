@@ -208,6 +208,28 @@ export async function newWorld(tx: Tx, suffix = ""): Promise<World> {
   };
 }
 
+/**
+ * An interval for `user` in a club of their own, outside the world, made the way `newWorld` makes
+ * Ana's. A block names the blocked person's interval in the club it was made in (D11), which can be
+ * another club than the world's, so a predicate that keyed a block by the world's interval rather
+ * than by the account (T9, T23, FQ88) would miss it. The club here holds only `user`: the schema asks
+ * only that the interval be the blocked person's (app.blocks' foreign key), not that the blocker
+ * shared it, and the predicate reads a block by the two accounts, never by the club.
+ */
+export async function intervalElsewhere(tx: Tx, w: Pick<World, "suffix">, user: string): Promise<string> {
+  const club = newId("club");
+  const interval = newId("mem");
+  await tx`
+    INSERT INTO app.clubs (id, name, timezone, creator_interval_id, created_at)
+    VALUES (${club}, ${named(w, "Another club")}, 'Europe/London', ${interval}, ${AT.created})
+  `;
+  await tx`
+    INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
+    VALUES (${interval}, ${club}, ${user}, 'creator', ${AT.created})
+  `;
+  return interval;
+}
+
 export interface DropOptions {
   media?: "photo" | "external_video";
   caption?: string | null;

@@ -243,6 +243,23 @@ export const ROLES: Role[] = [
     phases: ["open", "past", "past, a year on"],
   },
   {
+    // A block ends every club the two shared (D11) and stands in every club after it (FQ88); whether it can be
+    // undone is FQ72's, and no command puts the two in a club together after it yet. The schema allows it, and T9
+    // denies the drop either way. Nobody leaves here, so the block is the only thing that denies (the outside audit's
+    // A14). The block names Ben's interval in this club; one made in another club, which a predicate keyed by the
+    // interval rather than the account would miss, is db/home.test.ts' and db/authorization.test.ts' (a second club
+    // here would change what the matrix's other tables see of Ben).
+    name: "blocked: Cleo blocked the author, both still members",
+    reads: false,
+    make: async (tx, w) => {
+      await tx`
+        INSERT INTO app.blocks (id, blocker_user_id, blocked_user_id, blocked_interval_id, blocked_name, created_at)
+        VALUES (${newId("blk")}, ${w.cleo.user}, ${w.ben.user}, ${w.ben.interval}, ${named(w, "Ben")}, ${AFTER})
+      `;
+      return w.cleo.user;
+    },
+  },
+  {
     name: "deletion pending, the membership not yet ended (T27)",
     reads: false,
     session: "deleting",
@@ -260,17 +277,25 @@ export const ROLES: Role[] = [
   },
 ];
 
+/** Puts `member`'s account in deletion, asked at `at`, its membership not yet ended (spec 23, T27). */
+async function askToDelete(tx: WorldTx, member: Member, at: Date) {
+  await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${at} WHERE id = ${member.user}`;
+}
+
 /**
- * TECH-DESIGN section 8's six states of the drop, each made in a way the schema accepts, and a
- * cancelled day, which no trial command makes yet but the schema allows and T9 denies. `endsTheDrop` marks the
- * three that change the drop's own row, rather than its day's or its club's; the privacy matrix checks that each
- * leaves no drop it acts on active.
+ * TECH-DESIGN section 8's six states of the drop, each made in a way the schema accepts, a cancelled day, which no
+ * trial command makes yet but the schema allows and T9 denies, and T9's three conditions on others than the viewer
+ * (the outside audit's A14): the author's account being deleted, and the day's star gone, or asking to delete, before
+ * the reveal (FQ63, T27). `endsTheDrop` marks the three that change the drop's own row, rather than its day's or its
+ * club's; the privacy matrix checks that each leaves no drop it acts on active. `deleting` names the account a state
+ * puts in deletion, whose session the gate then refuses: the viewer's own, when the role is that person.
  */
 export const STATES: {
   name: string;
   denies: boolean;
   endsTheDrop: boolean;
   make(tx: WorldTx, w: World, drop: string): Promise<unknown>;
+  deleting?: (w: World) => string;
 }[] = [
   { name: "active", denies: false, endsTheDrop: false, make: () => Promise.resolve() },
   { name: "withdrawn", denies: true, endsTheDrop: true, make: (tx, w, drop) => withdraw(tx, w, drop, STATE_AT) },
@@ -303,5 +328,28 @@ export const STATES: {
     denies: true,
     endsTheDrop: false,
     make: (tx, w) => tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${w.day}`,
+  },
+  {
+    // Against FQ88's role, Ben's deletion is asked here, at STATE_AT, and Ben then blocks Cleo at the reveal: an account
+    // acting after its deletion began, which no command would let it do (T27). Both deny, and no condition rests on
+    // that cell alone, so the matrix keeps it rather than give one role a world of its own.
+    name: "its author's account being deleted (T27)",
+    denies: true,
+    endsTheDrop: false,
+    make: (tx, w) => askToDelete(tx, w.ben, STATE_AT),
+    deleting: (w) => w.ben.user,
+  },
+  {
+    name: "its star gone before the reveal (FQ63)",
+    denies: true,
+    endsTheDrop: false,
+    make: (tx, w) => leave(plain(tx), w.ana, named(w, "Ana"), STATE_AT),
+  },
+  {
+    name: "its star's account deletion asked before the reveal (FQ63, T27)",
+    denies: true,
+    endsTheDrop: false,
+    make: (tx, w) => askToDelete(tx, w.ana, STATE_AT),
+    deleting: (w) => w.ana.user,
   },
 ];

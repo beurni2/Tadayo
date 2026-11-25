@@ -15,6 +15,7 @@ import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
 import {
   AT,
   commitDrop,
+  intervalElsewhere,
   joinByRoster,
   leave,
   newAvatar,
@@ -435,6 +436,41 @@ describe("the open day's page: the star's own drops, then friends' (spec 15; T9,
       expect((await page(tx, w.ana.user, w.club)).drops.map((card) => card.id)).toEqual([video]);
       expect((await page(tx, w.cleo.user, w.club)).drops).toHaveLength(2);
     });
+  });
+
+  // A block row with both still members. No command makes this today: a block ends every club the two shared (D11),
+  // and whether a block can be undone is FQ72's. But the schema allows it, a block made in another club stands in
+  // every club after it (FQ88), and the predicate denies it either way. The outside audit's A14 rewrote this page
+  // with a one-way block, and Cleo, who had blocked Ben, got Ben's drop. The block names the blocked person's
+  // interval here and, in turn, in another club, so a block keyed by this club's interval rather than by the
+  // account misses the second.
+  it("leaves out each other's drops when one of two members blocked the other, either way, made here or in another club (T9, T23, FQ88)", async () => {
+    for (const blocker of ["Cleo", "Ben"] as const) {
+      for (const where of ["here", "in another club"] as const) {
+        await rolledBack(db, async (tx) => {
+          const w = await newWorld(plain(tx));
+          const bens = await commitDrop(plain(tx), w, w.ben, { at: AT.added });
+          const cleos = await commitDrop(plain(tx), w, w.cleo, { media: "external_video", at: AT.added });
+          const [from, to, name] = blocker === "Cleo" ? [w.cleo, w.ben, "Ben"] : [w.ben, w.cleo, "Cleo"];
+          const interval = where === "here" ? to.interval : await intervalElsewhere(plain(tx), w, to.user);
+          await tx`
+            INSERT INTO app.blocks (id, blocker_user_id, blocked_user_id, blocked_interval_id, blocked_name, created_at)
+            VALUES (${newId("blk")}, ${from.user}, ${to.user}, ${interval}, ${name}, ${STATE_AT})`;
+          const label = `${blocker} blocked, ${where}`;
+          expect(
+            (await page(tx, w.cleo.user, w.club)).drops.map((card) => card.id),
+            label,
+          ).toEqual([cleos]);
+          expect(
+            (await page(tx, w.ben.user, w.club)).drops.map((card) => card.id),
+            label,
+          ).toEqual([bens]);
+          expect((await page(tx, w.ana.user, w.club)).drops.map((card) => card.id).sort(), label).toEqual(
+            [bens, cleos].sort(),
+          );
+        });
+      }
+    }
   });
 });
 
