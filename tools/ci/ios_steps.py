@@ -1610,7 +1610,8 @@ class Steps:
         except ValueError as error:
             print(f"ios: test: {error}")
             return 1
-        pinned = toolchain.IOS_RUNTIMES
+        # Glass probe (never merged): iOS 27.2 alone, four snapshot tests alone.
+        pinned = tuple(v for v in toolchain.IOS_RUNTIMES if v == "27.2")
         try:
             project = self.project()
             udids = {version: self.udid(version) for version in pinned}
@@ -1728,6 +1729,10 @@ class Steps:
             place = self.runtime_place(*where)
             self.write_log(f"test-{version}.log", f"iOS {version} before the pass: "
                                                   f"{place or 'unreadable'}")
+        # Glass probe (never merged): the four states whose glass drew two ways.
+        cmd += ["-only-testing:TadayoSnapshotTests/" + t for t in (
+            "SignInSnapshotTests/testA02CodeError", "SignInSnapshotTests/testA03ProfileRefused",
+            "TabsSnapshotTests/testH01ErrorNoClub", "InvitationSnapshotTests/testG02Changed")]
         code = self.shell.run(cmd, env=self.xcode_env(env), log=log)
         if version in toolchain.IOS_DOWNLOADS:
             after = self.runtime_place(*where)

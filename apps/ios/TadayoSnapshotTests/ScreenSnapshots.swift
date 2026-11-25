@@ -94,6 +94,7 @@ enum ScreenSnapshot {
                 { FramedHost(rootView: shown) }, variant: variant, width: width, name: name)
             if let problem { XCTFail("\(name): \(problem)", file: file, line: line) }
             guard let drawn else { continue }
+            if variant == .light { GlassProbe.dump(drawn.host, name) }
             assertSnapshot(
                 of: drawn.image,
                 as: .image(
@@ -350,5 +351,60 @@ extension UIActivityIndicatorView {
     /// `startAnimating` in this test process, once `Spinners.neverTurn` has run: shown, not turning.
     @objc fileprivate func tadayoKeepStill() {
         hidesWhenStopped = false
+    }
+}
+
+/// Glass probe (never merged): every view and layer the drawn host holds, with its frame in the
+/// image's pixels, so the glass's views can be told from where its odd draws fell.
+@MainActor
+enum GlassProbe {
+    static let names: Set<String> = [
+        "A02-code-error", "A03-profile-refused", "H01-error-no-club", "G02-changed",
+    ]
+
+    static func dump(_ host: UIViewController, _ name: String) {
+        guard names.contains(name) else { return }
+        let root: UIView = host.view
+        var lines: [String] = []
+        func px(_ rect: CGRect) -> String {
+            "\(Int((rect.minX * 2).rounded())),\(Int((rect.minY * 2).rounded())) "
+                + "\(Int((rect.width * 2).rounded()))x\(Int((rect.height * 2).rounded()))"
+        }
+        func walkLayer(_ layer: CALayer, _ depth: Int, _ owned: Set<ObjectIdentifier>) {
+            for sub in layer.sublayers ?? [] where !owned.contains(ObjectIdentifier(sub)) {
+                let frame = sub.convert(sub.bounds, to: root.layer)
+                var extra = ""
+                if let filters = sub.filters, !filters.isEmpty {
+                    extra += " filters=\(filters.map { String(describing: $0) }.joined(separator: "|"))"
+                }
+                if sub.isHidden || sub.opacity == 0 { extra += " hidden" }
+                lines.append(
+                    "probe: \(name) \(String(repeating: ".", count: depth))[layer "
+                        + "\(String(describing: type(of: sub)))] px \(px(frame))\(extra)")
+                if depth < 40 { walkLayer(sub, depth + 1, owned) }
+            }
+        }
+        func walk(_ view: UIView, _ depth: Int) {
+            let frame = view.convert(view.bounds, to: root)
+            var extra = ""
+            if let effectView = view as? UIVisualEffectView {
+                extra += " effect=" + (effectView.effect.map { String(describing: type(of: $0)) } ?? "nil")
+            }
+            let layerClass = String(describing: type(of: view.layer))
+            if layerClass != "CALayer" { extra += " layer=\(layerClass)" }
+            if let filters = view.layer.filters, !filters.isEmpty {
+                extra += " filters=\(filters.map { String(describing: $0) }.joined(separator: "|"))"
+            }
+            if view.isHidden || view.alpha == 0 { extra += " hidden" }
+            lines.append(
+                "probe: \(name) \(String(repeating: ".", count: depth))"
+                    + "\(String(describing: type(of: view))) px \(px(frame))\(extra)")
+            let owned = Set(view.subviews.map { ObjectIdentifier($0.layer) })
+            walkLayer(view.layer, depth + 1, owned)
+            for sub in view.subviews { walk(sub, depth + 1) }
+        }
+        walk(root, 0)
+        print("probe: \(name) window \(root.window != nil), \(lines.count) lines")
+        for line in lines.prefix(1500) { print(line) }
     }
 }
