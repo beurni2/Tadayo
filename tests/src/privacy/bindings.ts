@@ -55,7 +55,8 @@ export function freshId(): string {
  * (`bindingProblems`, ACTS_ON), so the slice that builds a route on one puts the object in the world first.
  * `comment_id` is the last: a comment on the matrix's open day makes Home refuse its page until B6 builds the fields
  * that show it (packages/domain/src/clubs/home.ts), so the comment comes with B6's first comment route, which can't
- * be built without it (ACTS_ON), nor can Home's page that shows one (REFUSES_COMMENTS).
+ * be built without it (ACTS_ON). Until then Home meets a comment in a test of its own, which holds it to that refusal
+ * (REFUSES_COMMENTS).
  */
 export const BINDINGS: Readonly<
   Record<string, ((targets: Targets) => string | readonly [string, ...string[]]) | "missing">
@@ -96,7 +97,8 @@ export function bindAll(
  * day's page, whose drops carry a reply's preview. The matrix's world must hold one before any of them is built
  * (`bindingProblems`): a thread or a day asked only while it has no comment passes a handler that shows a removed
  * comment or a blocked author's message (T24, T63). Every operation whose request or answer can name a comment
- * takes `comment_id`, is here, or is in REFUSES_COMMENTS (the harness tests walk the contract for them).
+ * takes `comment_id`, is here, or is in REFUSES_COMMENTS: the harness tests find them by walking the contract, and
+ * by the operations named for comments.
  */
 export const ACTS_ON: Readonly<Record<string, readonly string[]>> = {
   listComments: ["comment_id"],
@@ -108,10 +110,14 @@ export const ACTS_ON: Readonly<Record<string, readonly string[]>> = {
 /**
  * The built operations whose answer can name a comment, but whose handler refuses to answer while a comment it would
  * show exists, so the matrix asks them with none: Home, whose open page refuses a drop with a comment, a reaction or
- * the viewer's favourite until B6 builds the fields that show them. Each is held to its refusal's text in its file
- * (the harness tests): the slice that lifts the refusal moves the operation into ACTS_ON, which then refuses it
- * built until the world holds a comment (`bindingProblems`). Reactions and favourites have no binding: the slice
- * that builds them puts them in the world.
+ * the viewer's favourite until B6 builds the fields that show them. Each is held to its refusal by what it answers:
+ * the matrix asks Home as each role the gate lets through, in a world where a drop of the open day has a comment,
+ * and Home's judge (home.ts `pageFor`) wants the refusal from whoever may see that drop and their own page from
+ * everyone else (matrix.test.ts, "Home while a drop of the open day has a comment"). A handler that answers such a
+ * page fails it, so the slice that lifts the refusal changes that judge and that test, and moves the operation into
+ * ACTS_ON, which then refuses it built until the world holds a comment (`bindingProblems`). The harness tests also
+ * find the refusal's text in its file, which only says where the refusal is. Reactions and favourites have no
+ * binding: the slice that builds them puts them in the world.
  */
 export const REFUSES_COMMENTS: Readonly<Record<string, { file: string; refusal: string }>> = {
   getHome: {
@@ -157,31 +163,38 @@ export function bindingProblems(
  * The table, and its column, whose row each binding's values must be, and the way from that row to its club, which
  * must be the cell's: a binding that names a fresh id, an object of another kind or another club's object would pass
  * `bindingProblems` but be asked only for the neutral not-found (the outside audit's A4; the privacy matrix checks
- * every bound value of every built route against it). `club` is the row's own club column, or the table it reaches
- * its club through: a comment through its drop, a reservation through its day, an upload through its reservation's
- * day, an invitation through its candidate.
+ * every bound value of every built route against it). `via` is that way, hop by hop: a column of the row before and
+ * the table whose `id` it names (a comment through its drop, a reservation through its day, an upload through its
+ * reservation and that reservation's day, an invitation through its candidate); `club` is the club's column in the
+ * last table reached, the row's own when `via` is empty (review round 3, F5).
  */
 export const TABLES: Readonly<
-  Record<
-    string,
-    {
-      table: string;
-      column: string;
-      club: "id" | "club_id" | "app.drops" | "app.occurrences" | "app.reservations" | "app.candidates";
-    }
-  >
+  Record<string, { table: string; column: string; via: readonly (readonly [string, string])[]; club: string }>
 > = {
-  club_id: { table: "app.clubs", column: "id", club: "id" },
-  drop_id: { table: "app.drops", column: "id", club: "club_id" },
-  membership_id: { table: "app.memberships", column: "interval_id", club: "club_id" },
-  occurrence_id: { table: "app.occurrences", column: "id", club: "club_id" },
-  proposal_id: { table: "app.schedule_proposals", column: "id", club: "club_id" },
-  invitation_id: { table: "app.invitations", column: "id", club: "app.candidates" },
-  revision_id: { table: "app.roster_revisions", column: "id", club: "club_id" },
-  star: { table: "app.memberships", column: "interval_id", club: "club_id" },
-  comment_id: { table: "app.comments", column: "id", club: "app.drops" },
-  reservation_id: { table: "app.reservations", column: "id", club: "app.occurrences" },
-  upload_id: { table: "app.uploads", column: "id", club: "app.reservations" },
+  club_id: { table: "app.clubs", column: "id", via: [], club: "id" },
+  drop_id: { table: "app.drops", column: "id", via: [], club: "club_id" },
+  membership_id: { table: "app.memberships", column: "interval_id", via: [], club: "club_id" },
+  occurrence_id: { table: "app.occurrences", column: "id", via: [], club: "club_id" },
+  proposal_id: { table: "app.schedule_proposals", column: "id", via: [], club: "club_id" },
+  invitation_id: { table: "app.invitations", column: "id", via: [["candidate_id", "app.candidates"]], club: "club_id" },
+  revision_id: { table: "app.roster_revisions", column: "id", via: [], club: "club_id" },
+  star: { table: "app.memberships", column: "interval_id", via: [], club: "club_id" },
+  comment_id: { table: "app.comments", column: "id", via: [["drop_id", "app.drops"]], club: "club_id" },
+  reservation_id: {
+    table: "app.reservations",
+    column: "id",
+    via: [["occurrence_id", "app.occurrences"]],
+    club: "club_id",
+  },
+  upload_id: {
+    table: "app.uploads",
+    column: "id",
+    via: [
+      ["reservation_id", "app.reservations"],
+      ["occurrence_id", "app.occurrences"],
+    ],
+    club: "club_id",
+  },
 };
 
 /** The bindings a built route names or acts on: its Id parameters' and ACTS_ON's, each once, in the contract's order. */

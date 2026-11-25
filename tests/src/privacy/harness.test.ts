@@ -206,8 +206,10 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
   });
 
   it("has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one", () => {
-    // Walked from the contract: a request body or an answer that reaches a schema of a comment or a reply, or a
-    // property naming one. The review's round 2: Home's and the day's drops carry a reply's preview.
+    // Walked from the contract: a request body or an answer that reaches a schema of a comment or a reply, a
+    // property naming one, or a kind that can be one (a report's target). The review's round 2: Home's and the
+    // day's drops carry a reply's preview. Round 1's rule stays beside the walk (round 3, F2): an operation named
+    // for comments is one, whatever its schemas say.
     const document = readDocument();
     const reaches = (node: Json, seen: Set<string>): boolean => {
       if (Array.isArray(node)) return node.some((one) => reaches(one, seen));
@@ -225,11 +227,13 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
       }
       const properties = node["properties"];
       if (isObject(properties) && ("comment_id" in properties || "reply_to_id" in properties)) return true;
+      const kinds = node["enum"];
+      if (Array.isArray(kinds) && kinds.includes("comment")) return true;
       return Object.values(node).some((value) => reaches(value, seen));
     };
     const paths = document["paths"];
     if (!isObject(paths)) throw new Error("the contract has no paths");
-    const canName = Object.values(paths)
+    const walked = Object.values(paths)
       .flatMap((item) => (isObject(item) ? Object.values(item) : []))
       .filter(isObject)
       .filter(
@@ -241,20 +245,40 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
         return id;
       })
       .sort();
-    expect(canName).toEqual(["createComment", "getHome", "getOccurrence", "listComments", "updateComment"]);
+    expect(walked).toEqual([
+      "createComment",
+      "createReport",
+      "getHome",
+      "getOccurrence",
+      "listComments",
+      "updateComment",
+    ]);
+    const byName = operations.filter((found) => /comment/i.test(found.id)).map((found) => found.id);
+    const canName = [...new Set([...walked, ...byName])].sort();
+    expect(canName).toEqual([
+      "createComment",
+      "createReport",
+      "deleteComment",
+      "getCommentMedia",
+      "getHome",
+      "getOccurrence",
+      "listComments",
+      "updateComment",
+    ]);
     const takes = (id: string) =>
       operations.find((found) => found.id === id)?.parameters.some((parameter) => parameter.name === "comment_id");
-    expect(
-      canName.filter((id) => !takes(id) && !ACTS_ON[id]?.includes("comment_id") && REFUSES_COMMENTS[id] === undefined),
-    ).toEqual([]);
-    // createReport too, whose target may be a comment though its body names it by `id`.
+    // ACTS_ON is exactly the rest: each operation that can name a comment, takes no comment_id and isn't refused.
+    expect(canName.filter((id) => !takes(id) && REFUSES_COMMENTS[id] === undefined)).toEqual(
+      Object.keys(ACTS_ON).sort(),
+    );
     expect(Object.keys(ACTS_ON).sort()).toEqual(["createComment", "createReport", "getOccurrence", "listComments"]);
     for (const [id, names] of Object.entries(ACTS_ON)) {
       expect(operations.some((found) => found.id === id)).toBe(true);
       for (const name of names) expect(BINDINGS[name]).toBeDefined();
     }
-    // Home is held only while its handler refuses a page with a comment, word for word: the slice that lifts the
-    // refusal fails this, moves getHome into ACTS_ON and puts a comment in the world first.
+    // Home is held while its handler refuses a page with a comment. Its refusal's text says where the refusal is;
+    // what holds its behaviour is the matrix's test of Home while a drop of the open day has a comment
+    // (matrix.test.ts), which fails once the handler answers such a page (round 3, F1).
     expect(Object.keys(REFUSES_COMMENTS)).toEqual(["getHome"]);
     for (const [id, { file, refusal }] of Object.entries(REFUSES_COMMENTS)) {
       expect(canName).toContain(id);

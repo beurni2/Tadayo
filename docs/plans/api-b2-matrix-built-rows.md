@@ -38,10 +38,14 @@ name an object of the world. A route can act on comments without taking `comment
 whose drops carry a reply's preview. A thread or a day asked only while it has no comment passes a handler that shows
 a removed comment or a blocked author's message, so `bindings.ts` `ACTS_ON` names the objects those four act on, and
 the refusal covers them too (review round 1, P2 and E1; round 2, F2). Home's page carries the same preview and is
-built, but its handler refuses a page with a comment (0.4): `REFUSES_COMMENTS` holds it to that refusal word for word,
-so the slice that lifts it moves Home into `ACTS_ON` and puts a comment in the world first (round 2, F2). The harness
-tests walk the contract: every operation whose request or answer can name a comment takes `comment_id`, is in
-`ACTS_ON`, or is in `REFUSES_COMMENTS`. `comment_id` is the one still missing (0.4); the refusal makes the slice that
+built, but its handler refuses a page with a comment (0.4), so `REFUSES_COMMENTS` names it, and the matrix holds it to
+that refusal by what it answers: a test of its own puts Ana's comment on Ben's photo as the day opens and asks Home, in
+the open phase, as each role the gate lets through, each in a world of its own; Home's judge wants the refusal from
+whoever may see the photo and their own page from everyone else (round 3, F1). A handler that lifts the refusal fails
+it, so the slice that lifts it changes that test and its judge, moves Home into `ACTS_ON` and puts a comment in the
+world first (round 2, F2; round 3, F1). The harness tests find every operation whose request or answer can name a
+comment by walking the contract and by round 1's rule, the operations named for comments (round 3, F2); each takes
+`comment_id`, is in `ACTS_ON`, or is in `REFUSES_COMMENTS`. `comment_id` is the one still missing (0.4); the refusal makes the slice that
 builds any of those routes put the comment in the world, and guards the next Id parameter the contract adds. And a
 binding that's a function but names nothing, an object of another kind or another club's object is caught in every
 cell: each value a cell binds must be a row of its binding's table whose club is the cell's (`bindings.ts` `TABLES`,
@@ -56,7 +60,7 @@ another day would need a revealed day of its own in every world, which changes w
 answer, for no route that reads comments yet. So the comment comes with B6's first comment route, as Home's fields
 for it do; 0.3's refusal means no comment route (the three that take `comment_id`, and the three in `ACTS_ON` that
 list, write and report comments), nor `getOccurrence`, can be built without it, and Home's refusal can't be lifted
-without it. A departure from the audit's literal fix, raised in the PR; the audit's
+without changing the matrix's test of Home with a comment (0.3). A departure from the audit's literal fix, raised in the PR; the audit's
 `deleteComment` is still caught twice, by the row check and by the binding check, and a thread route built before the
 comment by the binding check (section 3, B9).
 
@@ -121,6 +125,11 @@ purpose. The matrix is where a built route meets its row.
 7. `rows.ts`'s header: the tie to the built set, the refusal and the video.
 8. `tests/src/privacy/reservation.ts` `RESERVE_TABLE`: three photos, three links, two photos (round 2, F1), and
    `reservation.test.ts`'s pin of it.
+9. Round 3: in `matrix.test.ts`, the test of Home while a drop of the open day has a comment (F1); after the commit's
+   table, while the day collects, a link given back at once, then a photo and a photo again, so a friend meets the
+   friend's one link and two photos with drops already in the day counted (F3, F4); `clubsOf` follows `TABLES`' hops,
+   which `bindings.ts` now spells out, and reports a row in no club (F5). In `harness.test.ts`, the walk also takes a
+   kind that can be a comment (a report's target) and round 1's rule beside it (F2).
 
 ## 2. Tests first
 
@@ -146,9 +155,12 @@ value, with `which`; the video's request guesses another club's video and the ph
 guessed-id and signed-out steps, and a video route that leaks another club's video is caught on the video's request
 only; a built id that isn't an operation is named.
 
-2.5. Round 2: `harness.test.ts` walks the contract for every operation whose request or answer can name a comment
-(`createComment`, `getHome`, `getOccurrence`, `listComments`, `updateComment`) and holds each to `comment_id`, `ACTS_ON`
-or `REFUSES_COMMENTS`, and Home's refusal to its words in `packages/domain/src/clubs/home.ts`; `elsewhereOf` throws for a
+2.5. Round 2: `harness.test.ts` walks the contract for the operations whose request or answer reaches a comment's or
+a reply's schema or a property naming one (`createComment`, `getHome`, `getOccurrence`, `listComments`,
+`updateComment`; round 3 adds a kind that can be a comment, so `createReport`, and round 1's rule of operations named
+for comments beside the walk, so `deleteComment` and `getCommentMedia`) and holds each to `comment_id`, `ACTS_ON`
+or `REFUSES_COMMENTS`, `ACTS_ON` being exactly the ones left; it finds Home's refusal's words in
+`packages/domain/src/clubs/home.ts`, which only says where the refusal is (round 3: the matrix holds what it answers); `elsewhereOf` throws for a
 value another club hasn't; the matrix pins the limits each role met in the reservations' table and the uploads'
 table's requests under a link's slot.
 
@@ -193,6 +205,21 @@ Round 2 adds, at the PR's last head:
   `REFUSES_COMMENTS` to its words (F2);
 - B22: a role cell's `upload` taken from another club's world: the matrix's cells (`checkBoundRows`'s club, F3);
 - B23: `elsewhereOf` gives the first value for one another club lacks: harness.test.ts's guess test (nit).
+
+Round 3 adds, at the PR's last head:
+- B21m: B21 on the matrix's test of Home with a comment (F1);
+- B24: Home's refusal without the comment, its words kept, the review's probe: the matrix's test of Home with a comment
+  (F1). The harness test that finds the words passes it;
+- B25: the walk without round 1's rule of operations named for comments: harness.test.ts's walk (F2);
+- B26: an operation `hideComments` added to the contract, the review's probe: the same (F2);
+- B27: the server counts only slots against a friend's photos (`packages/domain/src/drops/allowance.ts`
+  `limitRefusal`), the review's scenario: the matrix's author cells (F3). Run on the third head too;
+- B28: the server counts only slots against a friend's link: the cells of the member in the audience (F4). Run on the
+  third head too;
+- B29: the requests after the commit's table left out: the whole matrix's pin of the limits each role met (F3, F4);
+- B30: `upload_id` bound to an avatar, an upload with no slot and so in no club: `checkBoundRows`, in the file's
+  setup (F5).
+B16's anchor follows `TABLES`' new shape.
 
 Since round 1's fixes, a breakage that `checkBoundRows` catches in the other club's world fails the matrix file in its
 setup, before any test runs: the script registers that error's words for B1, B2, B9, B10 and B11, and B1c, B2c and
@@ -240,3 +267,35 @@ One fresh reviewer of the second commit (`7b39998`) at full depth. Each finding 
 - Nits: `ACTS_ON`'s names checked; `elsewhereOf` throws rather than giving the first value (B23).
 
 Also fixed: five inferred pronouns in the matrix's comments and one cell's note ("the slot he gave back", "as hers").
+
+## 7. Review round 3
+
+One fresh reviewer of the third commit (`aa3ba4a`) at full depth. Each finding fixed in the fourth commit:
+- F1 (medium, latent, A4's shape): `REFUSES_COMMENTS` held Home to its refusal's words, not to what it answers.
+  Deleting only the comment from the refusal's statement kept the words and passed the harness; only
+  `tests/src/db/home.test.ts`'s refusal test caught it, which the slice that lifts the refusal rewrites anyway. Fixed:
+  the matrix's test "refuses the open page to each role that may see the commented photo, and gives every other role
+  its own" (0.3; B21m, B24). Its pins, counted by hand: the author, the star and the member in the audience get the
+  refusal; the member who joined after the commit, the rejoined member and Cleo once the author has blocked Cleo and
+  left by the block get their page (the refusal tells nobody a drop they can't see has a comment); the former member,
+  the invited person, the stranger and Cleo once Cleo has left by Cleo's own block get the neutral not-found. The two
+  roles the gate stops never reach the handler, and the cells hold them to the gate. The scanner's one finding on a
+  refused answer, its empty 500 undeclared by the contract, is set aside for those answers alone and pinned to the
+  three roles. The records that said the slice that lifts the refusal fails the harness are rewritten.
+- F2 (low to medium, T58): the walk replaced round 1's rule rather than joining it, and missed `createReport`, whose
+  body names a comment as a report's target. Fixed: the walk takes a kind that can be a comment, and the operations
+  named for comments join it; `ACTS_ON` must be exactly what is left (2.5; B25, B26). "Walks the contract for every
+  operation that can name a comment" was more than the walk did, and is rewritten.
+- F3 (low to medium, T58 against `main`): `PHOTO_LIMIT` came back as a code but with no committed photo counted, as
+  `main`'s author cells had met it. Fixed: after the commit's table, while the day collects, a photo and a photo again,
+  so a friend with the photo just added meets the friend's two (B27, B29).
+- F4 (records): "every allowance limit met" and "each role meets its own limits" were false: no friend met a friend's
+  one link. Fixed in the code rather than the claim: a link before those photos, given back at once, so the member in
+  the audience, with Cleo's link in the day, is refused another at the friend's one with the three not full (B28). The
+  star's photo limit is the star's six, which `QUOTA_FULL` always meets first; every other limit is met, a friend's
+  three each with a drop already in the day counted. The records say so.
+- F5 (low): `clubsOf` hard-coded each joined path's child table, and a row in no club read as another club's. Fixed:
+  `TABLES` gives each binding's hops and `clubsOf` follows them; a row in no club says so (B30).
+- Nits: `checkBoundRows`'s doc comment back above it; the limits test's "Nobody else is asked" rewritten (everyone is
+  asked); round 2's breakage script to go on `evidence` with its run, which step (z) points to; two inferred pronouns
+  in `tests/src/privacy/drop.test.ts`'s comments ("his") replaced by Ben's name.

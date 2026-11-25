@@ -30,7 +30,9 @@
 //   B6's first comment route (bindings.ts). Since the outside audit's A4, a built route may neither take a `missing`
 //   binding nor act on its objects, as the thread routes and the day's page act on comments (bindings.ts
 //   `bindingProblems`, ACTS_ON), and Home, whose page can show a reply, is held to its refusal of a page with a
-//   comment (REFUSES_COMMENTS) until the slice that lifts it puts one in the world; every value a cell binds is a
+//   comment (REFUSES_COMMENTS) by a matrix test of its own, where a drop of the open day has one and whoever may
+//   see that drop must get the refusal (matrix.test.ts, "Home while a drop of the open day has a comment"), until
+//   the slice that lifts it changes that test and puts a comment in the world; every value a cell binds is a
 //   row of its table in the cell's club (matrix.test.ts `checkBoundRows`); the routes the app builds are
 //   exactly the rows that aren't NONE (`rowProblems`, against the API's BUILT_OPERATIONS), so a built route can't
 //   keep the skeleton's row; and `drop_id` names Ben's photo and Ben's video link, each in a request of its own,
@@ -143,10 +145,14 @@
 //   back, whose row still says live though it lapsed before any phase, given back by every role (only Cleo's
 //   first interval gets it back, expired; Cleo rejoined in a new interval and everyone else get the neutral
 //   NOT_FOUND, with nothing settled; T9, T14); the slot held in the phase before given back after it lapsed
-//   at the reveal (expired), twice; three photos, three links and two photos, so each role meets
-//   its own limits (the star's six and two, anyone else's three, two and one; addendum 2, T17), QUOTA_FULL
-//   first, and one test pins which limits each role met; the first one's retry under its key (the same bytes) and another body under it
-//   (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back while live. Each role's test counts
+//   at the reveal (expired), twice; three photos, three links and two photos, so the roles meet the limits
+//   between them (the star its two links and its six, a friend its two photos and its three; addendum 2, T17),
+//   QUOTA_FULL first, and one test pins which limits each role met; the first one's retry under its key (the
+//   same bytes) and another body under it (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back
+//   while live. After the commit's table, while the day collects, a photo and a photo again, so a friend meets
+//   the friend's two photos with the drop just added counted (review round 3, F3). No friend meets a friend's one
+//   link, which a second link meets only after two photos have filled the three (QUOTA_FULL first): that limit
+//   is held on Postgres (tests/src/db/reservations.test.ts). Each role's test counts
 //   the slots it held, gave back and saw lapse, and one test names the five roles that held any, with the
 //   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"), as one counts
 //   who got Cleo's slot back. No matrix role joins after the day closes: Q06's not-found for a day that closed
