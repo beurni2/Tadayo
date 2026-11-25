@@ -211,14 +211,18 @@ PUSH_ATTEMPTS = 5
 # The evidence job's ImageMagick install (`Steps.imagemagick`), in a step of 5 minutes
 # (`.github/workflows/ios.yml`). One `apt-get update` used them all, printing nothing after its
 # third second (`ios` 45321177704, attempt 1, at `d624a08`, 2026-11-24), once in 231 evidence
-# jobs from 2026-11-18 to 2026-11-25. apt waits 120 seconds for a fetch that hears nothing, and
-# tries it again; APT_OPTIONS gives up on one after 20, so apt tries again, or another mirror,
-# sooner. A fetch that is slow but still hears something goes on: of the 227 installs that
-# worked, the slowest update took 112 seconds (13.4 MB at 130 kB/s) and the slowest install 143
-# (268 kB at 1.9 kB/s). An update still going after APT_UPDATE_SECONDS is ended, whatever held
-# it, which leaves a second try over 2 minutes of the step.
+# jobs from 2026-11-18 to 2026-11-25. The runner's image already bounds each fetch: its
+# /etc/apt/apt.conf.d/zz-retries (runner-images' configure-apt.sh, on x64) gives up on one silent
+# for 15 seconds and tries it once more before the next mirror, so what stalled that update
+# wasn't a fetch apt was timing. An update still going after APT_UPDATE_SECONDS is ended,
+# whatever holds it, which leaves a second try over 2 minutes of the step; of the 227 updates
+# that worked, the slowest took 112 seconds (13.4 MB, its lines coming at most about 20 seconds
+# apart). The install isn't capped: the image's limits and its mirrors already bound each of
+# its fetches (the slowest that worked, 143 seconds, was three silent fetches from one mirror
+# before another gave both packages in seconds), and ending dpkg would leave it interrupted.
+# So an update ended and an install that fails over can still run past the step's 5 minutes,
+# which then end it, as before.
 APT_UPDATE_SECONDS = 140
-APT_OPTIONS = ("-o", "Acquire::http::Timeout=20", "-o", "Acquire::https::Timeout=20")
 FONTS = ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
          "/usr/share/fonts/dejavu/DejaVuSans.ttf")
 AWAITING_RENDER = "built from spec, awaiting render"
@@ -2040,15 +2044,15 @@ class Steps:
             code = 0
         else:
             # The lists and the install, tried twice: once more after an update that stalled
-            # (APT_UPDATE_SECONDS) or failed, or an install that failed, as one after lists that
-            # didn't all come does.
+            # (APT_UPDATE_SECONDS: 124 when ended, -9 when killed) or failed, and after an
+            # install that failed, since an install can fail when not all the lists came.
             for attempt in (1, 2):
                 if attempt == 2:
                     print(f"ios: imagemagick: apt-get ended {code}; once more", flush=True)
                 code = self.shell.run(["sudo", "timeout", "-k", "5", str(APT_UPDATE_SECONDS),
-                                       "apt-get", *APT_OPTIONS, "update", "-q"])
+                                       "apt-get", "update", "-q"])
                 if code == 0:
-                    code = self.shell.run(["sudo", "apt-get", *APT_OPTIONS, "install", "-y", "-q",
+                    code = self.shell.run(["sudo", "apt-get", "install", "-y", "-q",
                                            "--no-install-recommends", "imagemagick",
                                            "fonts-dejavu-core"])
                 if code == 0:

@@ -3289,13 +3289,12 @@ class SheetsTest(StepsTest):
         self.assertIn("| `F02-upcoming` | new | `XTests/testX.F02-upcoming.png` | design/reference/2.1/F02-upcoming.png | "
                       "ImageMagick couldn't make its sheet |", index)
 
-    def test_imagemagick_gives_up_on_a_silent_fetch_and_tries_twice(self):
-        # Not installed: every apt-get gives up on a fetch silent for 20 seconds, and the update
-        # is ended after APT_UPDATE_SECONDS under timeout(1), inside sudo so apt-get itself gets
-        # the signal (the workflow's test checks what that leaves the second try).
-        options = ["-o", "Acquire::http::Timeout=20", "-o", "Acquire::https::Timeout=20"]
-        update = ["sudo", "timeout", "-k", "5", "140", "apt-get", *options, "update", "-q"]
-        install = ["sudo", "apt-get", *options, "install", "-y", "-q", "--no-install-recommends",
+    def test_imagemagick_ends_a_stalled_update_and_tries_twice(self):
+        # Not installed: the update is ended after APT_UPDATE_SECONDS under timeout(1), inside
+        # sudo so apt-get itself gets the signal (the workflow's test checks what that leaves the
+        # second try); apt's own limits on each fetch are the runner image's.
+        update = ["sudo", "timeout", "-k", "5", "140", "apt-get", "update", "-q"]
+        install = ["sudo", "apt-get", "install", "-y", "-q", "--no-install-recommends",
                    "imagemagick", "fonts-dejavu-core"]
         version = ["convert", "-version"]
         with mock.patch.object(ios_steps.shutil, "which", return_value=None):
@@ -3311,6 +3310,14 @@ class SheetsTest(StepsTest):
             self.assertEqual(code, 0)
             self.assertEqual(shell.commands, [update, update, install, version])
             self.assertIn("ios: imagemagick: apt-get ended 124; once more", out)
+            # An update killed 5 seconds on (-9: timeout(1)'s kill reaches its own process
+            # group, so sudo ends by the signal too): once more.
+            updates = iter([-9, 0])
+            shell = FakeShell(codes=[(lambda c: c == update, lambda c: next(updates))])
+            code, out = self.step("imagemagick", shell)
+            self.assertEqual(code, 0)
+            self.assertEqual(shell.commands, [update, update, install, version])
+            self.assertIn("ios: imagemagick: apt-get ended -9; once more", out)
             # An install that failed, as after lists that didn't all come: both again.
             installs = iter([100, 0])
             shell = FakeShell(codes=[(lambda c: c == install, lambda c: next(installs))])
