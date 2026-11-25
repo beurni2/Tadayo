@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
 import { describe, expect, it, vi } from "vitest";
-import { connect } from "./connection.ts";
+import { connect, WORKER_POOL } from "./connection.ts";
 
 const POOLER = "aws-0-us-east-1.pooler.supabase.com";
 const POOLER_URL = `postgresql://tadayo_app.abcdefghijklmnopqrst:a-password-of-the-made-up-string@${POOLER}:5432/postgres`;
@@ -24,6 +24,14 @@ async function optionsOf(url: string) {
 }
 
 describe("connect", () => {
+  it("opens at most two connections, one for each of its loops, a size set on purpose for the session pooler (the outside audit's A7)", async () => {
+    // Generation and the outbox each run one transaction at a time (main.ts; docs/plans/api-b2-db-limits.md, section 0.5).
+    expect(WORKER_POOL).toBe(2);
+    const sql = connect(POOLER_URL);
+    expect(sql.options.max).toBe(2);
+    await sql.end();
+  });
+
   it("prints no notice Postgres sends: a notice can quote a row's values (T52)", async () => {
     const sql = connect("postgres://tadayo_app:a-password@127.0.0.1:5432/postgres");
     const printed = vi.spyOn(console, "log").mockImplementation(() => undefined);

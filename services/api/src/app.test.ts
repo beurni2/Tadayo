@@ -214,6 +214,68 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
   });
 });
 
+describe("a database that ran out of time (the outside audit's A7)", () => {
+  /**
+   * An error as postgres.js raises one for `code`, its message quoting what a message can quote: a PostgresError
+   * for a SQLSTATE, a plain Error for the driver's own codes (a connection the server closed is `CONNECTION_CLOSED`).
+   */
+  const postgresError = (code: string) =>
+    Object.assign(new Error(`canceling statement: Ana's row ${code}`), {
+      name: /^[0-9A-Z]{5}$/.test(code) ? "PostgresError" : "Error",
+      code,
+    });
+
+  /** The answer to `GET /v1/clubs` when the database fails with `code`, and the lines the app logged. */
+  async function failingWith(code: string) {
+    const lines: string[] = [];
+    const failing = {
+      ...sql,
+      begin: () => Promise.reject(postgresError(code)),
+    } as unknown as ApiSql;
+    const other = buildApp({
+      ...deps,
+      sql: failing,
+      log: { level: "info", stream: { write: (line) => void lines.push(line) } },
+    });
+    await other.ready();
+    const response = await other.inject({ method: "GET", url: "/v1/clubs" });
+    await other.close();
+    const headers = Object.fromEntries(Object.entries(response.headers).filter(([name]) => !TRANSPORT.has(name)));
+    return { status: response.statusCode, body: response.body, headers, lines };
+  }
+
+  const EMPTY_503 = { status: 503, body: "", headers: { "cache-control": "private, no-store", "content-length": "0" } };
+
+  it("answers a lock it waited for too long and a statement too slow with the bare 503", async () => {
+    // lock_timeout and statement_timeout (connection.ts TRANSACTION_LIMITS, db/migrations/0018_role_time_limits.sql).
+    for (const code of ["55P03", "57014"]) {
+      const { lines, ...answered } = await failingWith(code);
+      expect(answered, code).toEqual(EMPTY_503);
+      // One warning, with the error's class and code and nothing of its message (T52).
+      const logged = lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+      const warnings = logged.filter((line) => line["msg"] === "database out of time");
+      expect(warnings, code).toHaveLength(1);
+      expect(warnings[0]?.["level"], code).toBe(40);
+      expect(warnings[0]?.["err"], code).toEqual({ type: "PostgresError", code });
+      expect(lines.join("\n"), code).not.toContain("Ana's row");
+    }
+  });
+
+  it("still answers any other failure of the database with the 500 and nothing in it", async () => {
+    // Among them the idle limit's two forms: 25P03 if a query were in flight as the session ended, and the
+    // closed connection postgres.js reports when none is (docs/LIMITATIONS.md, 2026-11-24). The API never
+    // leaves a transaction idle, so either is a failure to look at, not a wait to retry.
+    for (const code of ["23505", "40001", "08006", "25P03", "CONNECTION_CLOSED"]) {
+      const { lines, ...answered } = await failingWith(code);
+      expect(answered, code).toEqual({ ...EMPTY_503, status: 500 });
+      expect(
+        lines.some((line) => line.includes('"msg":"request failed"')),
+        code,
+      ).toBe(true);
+    }
+  });
+});
+
 describe("what Node's parser answers, over a socket of its own (T14)", () => {
   let listening: FastifyInstance;
   let port: number;

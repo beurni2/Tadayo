@@ -13,6 +13,13 @@
 // for nothing from its `expires_at` on, whether or not anyone has asked since (createDrop's "a reservation
 // that has lapsed counts as none"). A job that purges lapsed uploads (B3) settles through it too.
 //
+// Every writer of a counter, a reservation, a drop or a highlight takes the club's row `FOR SHARE` first
+// (./reserve.ts `lockDay`), and so must any later one, that job included, and any later writer of a row whose
+// foreign key names a drop (a comment, a reaction, a favourite, a replacement upload: B5), whose check waits on
+// the leave's lock of that drop. A leave (../clubs/leave-club.ts) holds
+// that row `FOR UPDATE` and samples its clock under it, before it takes the leaver's counters, so its instant is
+// right only while nothing else can reach them without the club's row.
+//
 // The counter's limits are written once, by its own BEFORE INSERT trigger, from the day's star interval and
 // the row's (0010), never from here.
 

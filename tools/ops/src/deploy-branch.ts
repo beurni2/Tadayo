@@ -11,13 +11,16 @@
 //     the head is the one commit that is sure to have a whole run, and it is the only candidate.
 // Then it builds on Fly's builder, tags the image `sha-<commit>`, and, once `flyctl` says it is done,
 // reads the Machines back and checks that the started ones run that image, instead of taking
-// `flyctl`'s word. A Machine that is stopped stays as it is, and is `worker-scale`'s.
+// `flyctl`'s word. A Machine that is stopped stays as it is, and is `worker-scale`'s. When `flyctl`
+// fails a deploy, each Machine a line of its failure names (`smoke checks for <id> failed`, `failed to
+// update machine <id>`) gets its events and its last lines in Fly's log printed (fly.ts
+// `machineReport`): flyctl 0.5.8 says it will show them, and printed none on PR #118's merge.
 //
 // GitHub's answers are read for the status and the fields it needs, and its words are never printed:
 // a refusal says the status, which is what the person can act on.
 
 import { DEV_APP, GITHUB_REPOSITORY } from "./environment.ts";
-import { machineList, machines, why, type Fly } from "./fly.ts";
+import { machineList, machineReport, machines, why, type Fly } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 import type { Spawn } from "./spawn.ts";
 
@@ -46,6 +49,16 @@ const record = (value: unknown): Record<string, unknown> | undefined =>
   typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 
 const linesOf = (text: string): string[] => (text === "" ? [] : text.replace(/\n$/, "").split("\n"));
+
+/** The Machines a failed deploy's lines name: each id in a line that says something failed, once, in order. */
+export function failedMachines(text: string): string[] {
+  const ids: string[] = [];
+  for (const line of text.split("\n")) {
+    if (!/fail/i.test(line)) continue;
+    for (const [id] of line.matchAll(/\b[0-9a-f]{14}\b/g)) if (!ids.includes(id)) ids.push(id);
+  }
+  return ids;
+}
 
 /** A branch's name as the repository uses them: parts of letters, digits and . _ - between single slashes. */
 function checkBranch(branch: string): void {
@@ -181,7 +194,12 @@ export async function deployBranch(input: DeployBranchInput): Promise<void> {
   );
   // What the build and the update printed is the log of the deploy, and the only one there is.
   for (const text of [deployed.stdout, deployed.stderr]) for (const line of linesOf(text)) say(line);
-  if (deployed.code !== 0) throw new OpsError(`deploy-branch: flyctl couldn't deploy the commit: ${why(deployed)}`);
+  if (deployed.code !== 0) {
+    for (const id of failedMachines(`${deployed.stdout}\n${deployed.stderr}`)) {
+      for (const line of await machineReport(fly, id, "deploy-branch")) say(line);
+    }
+    throw new OpsError(`deploy-branch: flyctl couldn't deploy the commit: ${why(deployed)}`);
+  }
 
   const now = await machines(fly);
   const started = now.filter((machine) => machine.state === "started");

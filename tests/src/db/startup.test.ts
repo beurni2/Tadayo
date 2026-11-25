@@ -225,7 +225,10 @@ describe("the worker's entry against the test database", () => {
   it("starts with prod and stays up, making days, until it is told to stop", async () => {
     const worker = start("worker", "prod");
     expect(
-      await waitFor(worker, /worker: started, making days every minute and preparing uploads\n/),
+      await waitFor(
+        worker,
+        /worker: started, making days every minute and preparing uploads, each photo in the worker's own user\n/,
+      ),
       worker.output.stderr,
     ).not.toBeNull();
     // Nothing ends it: a worker that exited would leave its Machine stopped (a clean exit isn't restarted).
@@ -256,7 +259,7 @@ describe("the worker's entry against the test database", () => {
       // may come between the two, and nothing else may.
       expect(worker.output.stdout).toMatch(
         new RegExp(
-          `^worker: started, making days every minute and preparing uploads\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
+          `^worker: started, making days every minute and preparing uploads, each photo in the worker's own user\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
         ),
       );
       expect(worker.output.stderr).toBe("");

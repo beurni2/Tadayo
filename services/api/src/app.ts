@@ -22,7 +22,7 @@
 import type { Socket } from "node:net";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { OPERATIONS } from "@tadayo/contracts";
-import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
+import { JSON_TYPE, NO_STORE, problem, unavailable } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
 import { createClubHandler, getClubHandler } from "./clubs/club.ts";
 import { listMembersHandler } from "./clubs/members.ts";
@@ -120,11 +120,30 @@ export function notFound(_request: FastifyRequest, reply: FastifyReply): Fastify
   return problem(reply, "NOT_FOUND");
 }
 
+/**
+ * The SQLSTATEs Postgres raises when a request's transaction runs out of time (connection.ts
+ * `TRANSACTION_LIMITS`, and the role's own limits): `lock_not_available` (55P03, lock_timeout) and
+ * `query_canceled` (57014, statement_timeout). No command uses a lock it couldn't get as a refusal: none
+ * asks for NOWAIT, the two `SKIP LOCKED` queries never wait, and nothing catches either code. The role's idle
+ * limit isn't here: it ends only a session left idle inside a transaction for 15 s, which the API never does;
+ * if it ever did, postgres.js would report the closed connection (`CONNECTION_CLOSED`), a failure like any
+ * other (docs/LIMITATIONS.md, 2026-11-24).
+ */
+const OUT_OF_TIME: ReadonlySet<string> = new Set(["55P03", "57014"]);
+
 function failed(error: FastifyError, request: FastifyRequest, reply: FastifyReply): FastifyReply {
   // A body Fastify couldn't read: malformed or empty JSON, `__proto__` or `constructor.prototype`, a
   // type it has no parser for, or over the limit. Never the message, which can echo the request.
   if (typeof error.statusCode === "number" && error.statusCode >= 400 && error.statusCode < 500) {
     return problem(reply, "INVALID_REQUEST");
+  }
+  // A database that couldn't answer in time: a lock waited on or a statement run past its limit. Its
+  // transaction was rolled back, so nothing was committed and the same request under the same key commits
+  // once later (T19): the bare 503, the answer for a service the API needs that can't give one now (the
+  // outside audit's A7). A database that can't be reached at all is still the 500 below.
+  if (OUT_OF_TIME.has((error as { code?: unknown }).code as string)) {
+    request.log.warn({ err: error }, "database out of time");
+    return unavailable(reply);
   }
   // A bug, or a database that failed: logged by its class and code alone, since a message can quote rows
   // (T52), and answered with nothing.
