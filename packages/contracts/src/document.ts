@@ -203,6 +203,13 @@ function failures(op: Operation): JsonObject {
       content: { "application/json": { schema: { $ref: "#/components/schemas/Error" }, examples } },
     };
   }
+  // The bare 503: no body, so nothing to describe but that it holds nothing (the ios lane, 2026-11-24).
+  if (op.unavailable) {
+    out["503"] = {
+      description: "The database can't be reached, or didn't answer in time. Nothing in it.",
+      headers: { "Cache-Control": headerRef("CacheControl") },
+    };
+  }
   return out;
 }
 

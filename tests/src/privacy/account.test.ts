@@ -56,7 +56,7 @@ describe("the gate's classes are this file's own copy of the contract's (T58)", 
         .map((one) => one.id)
         .sort(),
     );
-    expect(PUBLIC.size).toBe(2);
+    expect(PUBLIC.size).toBe(3);
     expect(BEFORE_PROFILE.size).toBe(9);
   });
 });

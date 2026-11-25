@@ -359,7 +359,7 @@ describe("fly.toml", () => {
     expect(config["http_service"]).toBeUndefined();
   });
 
-  it("serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and checks the port, not a route", () => {
+  it("serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and asks the health route, not the port", () => {
     const service = table(list(flyToml()["services"], "[[services]]")[0], "[[services]]");
     const port = /if \(value === undefined\) return (\d+);/.exec(read("services/api/src/start.ts"))?.[1];
     expect(service["internal_port"]).toBe(Number(port));
@@ -370,11 +370,21 @@ describe("fly.toml", () => {
       { port: 80, handlers: ["http"], force_https: true },
       { port: 443, handlers: ["tls", "http"] },
     ]);
-    // A route to ask would be one outside the contract, which the privacy matrix would have to cover (T58).
-    const checks = list(service["tcp_checks"], "[[services.tcp_checks]]").map((entry) => table(entry, "tcp check"));
-    expect(checks).toHaveLength(1);
-    expect(Object.keys(checks[0] ?? {}).sort()).toEqual(["grace_period", "interval", "timeout"]);
-    expect(service["http_checks"]).toBeUndefined();
+    // The check asks the contract's getHealth, which makes one round trip through the API's own pool: an open
+    // port said nothing of a pool whose every connection was held, the stall the outside audit's A7 proved. It
+    // goes to the Machine's internal port in plain HTTP, the fields flyctl's own source reads (docs/LIMITATIONS.md).
+    expect(service["tcp_checks"]).toBeUndefined();
+    const checks = list(service["http_checks"], "[[services.http_checks]]").map((entry) => table(entry, "http check"));
+    expect(checks).toEqual([
+      { grace_period: "20s", interval: "15s", timeout: "3s", method: "GET", path: "/v1/health", protocol: "http" },
+    ]);
+    // The path is the contract's public GET of that name, which the privacy matrix has a row for (T58).
+    expect(read("packages/contracts/openapi.yaml")).toMatch(
+      /^ {2}\/v1\/health:\n {4}get:\n {6}operationId: getHealth\n(?: {6}(?:summary|description): .*\n)*? {6}security: \[\]\n/m,
+    );
+    // The API answers the check itself before Fly's timeout speaks for it (services/api/src/health.ts).
+    const bound = /export const HEALTH_MS = ([\d_]+);/.exec(read("services/api/src/health.ts"))?.[1];
+    expect(Number(bound?.replaceAll("_", ""))).toBeLessThan(3_000);
   });
 
   it("stops each group with SIGTERM and time to finish, and restarts one only when it failed", () => {

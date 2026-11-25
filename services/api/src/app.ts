@@ -40,6 +40,7 @@ import { leaveClubHandler } from "./clubs/leave.ts";
 import type { Deps, Handler } from "./deps.ts";
 import { createDropHandler } from "./drops/drops.ts";
 import { createReservationHandler, releaseReservationHandler } from "./drops/reservations.ts";
+import { getHealthHandler } from "./health.ts";
 import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./media/uploads.ts";
 import { registerDeviceHandler, removeDeviceHandler } from "./identity/devices.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
@@ -213,6 +214,7 @@ const HANDLERS: Readonly<Record<string, (deps: Deps) => Handler>> = {
   completeUpload: completeUploadHandler,
   registerDevice: registerDeviceHandler,
   removeDevice: removeDeviceHandler,
+  getHealth: getHealthHandler,
 };
 
 /** The operations the app builds a route for, in the table's order. */
