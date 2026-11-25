@@ -6,6 +6,7 @@
 // case. A runner that can do neither fails here: it never skips.
 
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { GRACE_MS, PEAK_BYTES } from "./image-process.ts";
@@ -21,6 +22,8 @@ import {
   SweepFailed,
   SWEEP_PROGRAM,
   SWEEP_SECONDS,
+  turnToWorkerUser,
+  WORKER_USER,
 } from "./privileges.ts";
 
 const HARNESS = join(import.meta.dirname, "privileges-harness.ts");
@@ -307,6 +310,166 @@ describe("the photo user (photoUserFor)", () => {
   });
 });
 
+/** Root's ids, as fly.toml's worker command leaves them on every kernel: its `setpriv` sets no user or group id. */
+const ROOT = { uid: 0, euid: 0, egid: 0 };
+
+/** /proc/self/status as fly.toml's worker command leaves it: root's ids, the rest as AS_FLY's. */
+const ROOT_AS_FLY = startedWith({
+  Uid: "0\t0\t0\t0",
+  Gid: "0\t0\t0\t0",
+  CapEff: "00000000000000e0",
+});
+
+/**
+ * Identity calls that record what is asked of them, in order, and change the ids they give back as the kernel would;
+ * with `ignore`, the call of that name changes nothing.
+ */
+function recordedCalls(start: { uid: number; euid: number; egid: number }, ignore?: "setegid" | "seteuid") {
+  const ids = { ...start };
+  const asked: string[] = [];
+  return {
+    asked,
+    calls: {
+      setegid: (id: number) => {
+        asked.push(`setegid ${String(id)}`);
+        if (ignore !== "setegid") ids.egid = id;
+      },
+      seteuid: (id: number) => {
+        asked.push(`seteuid ${String(id)}`);
+        if (ignore !== "seteuid") ids.euid = id;
+      },
+      ids: () => ({ ...ids }),
+    },
+  };
+}
+
+describe("the worker's own user, taken as it starts (turnToWorkerUser)", () => {
+  it("takes node's effective group, then its effective user, when started as fly.toml starts it", () => {
+    // PR #132's start on `dev`: on Fly's kernel, `setpriv --euid=node --egid=node --no-new-privs` left uid 0, euid 0,
+    // egid 0, as an exec under no new privileges puts back effective ids that differ from the real one. So fly.toml's
+    // command sets none, and the worker takes them itself, here, before any other module of its own runs (./turn.ts).
+    const { asked, calls } = recordedCalls(ROOT);
+    expect(turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, calls)).toBe(true);
+    expect(asked).toEqual(["setegid 1000", "seteuid 1000"]);
+    // What the turn leaves is the worker's mode, which photoUserFor takes, as setpriv's --euid and --egid left it.
+    const after = calls.ids();
+    expect(after).toEqual(WORKER);
+    expect(photoUserFor({ NODE_ENV: "production", ...named("tadayo-image") }, after, () => PASSWD, AS_FLY)).toEqual({
+      uid: 10001,
+      gid: 10001,
+    });
+    // The kernel's own spacing of Groups, as startedAsFly reads it.
+    for (const groups of ["1000 ", "1000", "", " "]) {
+      const { asked: turned, calls: given } = recordedCalls(ROOT);
+      const status = startedWith({ Uid: "0\t0\t0\t0", Gid: "0\t0\t0\t0", Groups: groups })().status;
+      expect(
+        turnToWorkerUser(ROOT, status, () => PASSWD, given),
+        JSON.stringify(groups),
+      ).toBe(true);
+      expect(turned, JSON.stringify(groups)).toEqual(["setegid 1000", "seteuid 1000"]);
+    }
+  });
+
+  it("leaves any other start as it is, for photoUserFor to judge, and reads no /etc/passwd for it", () => {
+    const unread = () => {
+      throw new Error("/etc/passwd isn't read");
+    };
+    const starts: [string, { uid: number; euid: number; egid: number }, string][] = [
+      // Already in the worker's mode: setpriv's --euid and --egid on a kernel that keeps them, as in Docker.
+      ["the worker's mode", WORKER, AS_FLY().status],
+      ["root alone", ROOT, OUTSIDE().status],
+      ["a user alone", { uid: 1000, euid: 1000, egid: 1000 }, startedWith({ Uid: "1000\t1000\t1000\t1000" })().status],
+      ["root's real ids, another's effective uid", { uid: 0, euid: 1000, egid: 0 }, ROOT_AS_FLY().status],
+      ["root's real ids, another's effective group", { uid: 0, euid: 0, egid: 1000 }, ROOT_AS_FLY().status],
+      ["a real uid not root's", { uid: 1000, euid: 0, egid: 0 }, ROOT_AS_FLY().status],
+    ];
+    // Root's ids with one of startedAsFly's facts changed or missing.
+    for (const [field, value] of [
+      ["NoNewPrivs", "0"],
+      ["NoNewPrivs", undefined],
+      ["CapBnd", "000001ffffffffff"],
+      ["CapBnd", "00000000000000c0"],
+      ["CapBnd", "00000000000000e1"],
+      ["CapBnd", undefined],
+      ["CapInh", "00000000000000e0"],
+      ["CapInh", undefined],
+      ["Groups", "0 1000"],
+      ["Groups", "1000 0"],
+      ["Groups", undefined],
+    ] as const) {
+      starts.push([
+        `${field}: ${String(value)}`,
+        ROOT,
+        startedWith({ Uid: "0\t0\t0\t0", Gid: "0\t0\t0\t0", [field]: value })().status,
+      ]);
+    }
+    for (const [name, ids, status] of starts) {
+      const { asked, calls } = recordedCalls(ids);
+      expect(turnToWorkerUser(ids, status, unread, calls), name).toBe(false);
+      expect(asked, name).toEqual([]);
+    }
+  });
+
+  it("stops the worker, changing nothing, when node isn't a user of its own in /etc/passwd", () => {
+    const without = PASSWD.split("\n")
+      .filter((line) => !line.startsWith("node:"))
+      .join("\n");
+    for (const [passwd, said] of [
+      [without, /node, the user fly\.toml's worker command names, isn't in \/etc\/passwd/],
+      [`${without}node:x:0:1000::/home/node:/bin/bash\n`, /node is root, or in root's group/],
+      [`${without}node:x:1000:0::/home/node:/bin/bash\n`, /node is root, or in root's group/],
+      [
+        `${without}node:x:abc:1000::/home/node:/bin/bash\n`,
+        /node's entry in \/etc\/passwd isn't a user's id and group/,
+      ],
+      [`${without}node:x:1000:-1::/home/node:/bin/bash\n`, /node's entry in \/etc\/passwd isn't a user's id and group/],
+      [`${without}node:x:1000:1000::/home/node\n`, /isn't in \/etc\/passwd/],
+    ] as const) {
+      const { asked, calls } = recordedCalls(ROOT);
+      expect(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => passwd, calls), passwd).toThrow(said);
+      expect(asked, passwd).toEqual([]);
+    }
+  });
+
+  it("stops the worker when the ids after aren't the real uid 0 and node's effective uid and group", () => {
+    for (const ignore of ["setegid", "seteuid"] as const) {
+      const { asked, calls } = recordedCalls(ROOT, ignore);
+      expect(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, calls), ignore).toThrow(
+        /^worker: it couldn't take node's effective group and user as it started$/,
+      );
+      expect(asked, ignore).toEqual(["setegid 1000", "seteuid 1000"]);
+    }
+    // A call the kernel refuses (no capability to use: on Fly's kernel, setpriv --euid's start had none) stops it too.
+    const refusing = {
+      setegid: () => {
+        throw Object.assign(new Error("EPERM, Operation not permitted"), { code: "EPERM" });
+      },
+      seteuid: () => {
+        throw new Error("seteuid isn't reached");
+      },
+      ids: () => ROOT,
+    };
+    expect(() => turnToWorkerUser(ROOT, ROOT_AS_FLY().status, () => PASSWD, refusing)).toThrow(
+      /^worker: it couldn't take node's effective group and user as it started$/,
+    );
+  });
+
+  it("is the worker's first act: main.ts imports turn.ts before any other module, and turn.ts reaches only Node's own", () => {
+    // Node evaluates a module's imports in their order, each one's own imports first, so nothing of the worker's, and
+    // no package it uses, runs as root before the turn.
+    const source = (file: string) => readFileSync(join(import.meta.dirname, file), "utf8");
+    const imports = (file: string) =>
+      [...source(file).matchAll(/^import\s[^;]*?["']([^"']+)["'];/gms)].map((m) => m[1]);
+    expect(imports("main.ts")[0]).toBe("./turn.ts");
+    expect(source("main.ts")).toMatch(/^import "\.\/turn\.ts";$/m);
+    expect(imports("turn.ts")).toEqual(["./privileges.ts"]);
+    const reached = imports("privileges.ts");
+    expect(reached.length).toBeGreaterThan(0);
+    for (const specifier of reached) expect(specifier, specifier).toMatch(/^node:/);
+    expect(WORKER_USER).toBe("node");
+  });
+});
+
 describe("outside the worker's mode", () => {
   it("asRoot refuses, and runs nothing", () => {
     let ran = false;
@@ -588,8 +751,11 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
   it("in the image, fly.toml's worker command itself goes past the photo user's check, and each start short of it stops there", async () => {
     // Round 3 of PR #118's review: the worker's mode by its ids alone let `setpriv --euid` through, which keeps root's
     // group, every capability in reserve and the image's setuid programs. Here fly.toml's own command runs, read from
-    // fly.toml and changed only in its user, then each start that leaves out or widens one of its flags. None is given
-    // a database, so the one that goes on stops at DATABASE_URL, its first setting.
+    // fly.toml and run exactly as it is there, then each start that leaves out or widens one of its flags. None is given
+    // a database, so the one that goes on stops at DATABASE_URL, its first setting. fly.toml's command starts Node as
+    // root and sets no user or group id (PR #132's start: Fly's kernel puts back effective ids setpriv sets), so the one
+    // that goes on shows the worker's first module took `node`'s effective ids (./turn.ts): photoUserFor takes only the
+    // worker's mode. The starts short of it are left as root, and refused.
     const real = await realChild();
     expect(real.code).toBe(0);
     const started = real.cases.get("fly-start");
@@ -598,10 +764,14 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     expect(ended["fly"]).toEqual({ code: 1, stderr: "worker: DATABASE_URL isn't set\n", stdout: "" });
     // Each refused start's line names what the kernel says of the flag it left out or widened.
     const found: Record<string, RegExp> = {
-      withoutNoNewPrivs: /NoNewPrivs 0, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 64998\)/,
-      widerBoundingSet: /NoNewPrivs 1, CapBnd 00000000000000e1, CapInh 0000000000000000, Groups 64998\)/,
-      inheritable: /NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000020, Groups 64998\)/,
-      rootsGroup: /NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 0 64998\)/,
+      withoutNoNewPrivs:
+        /\(it found uid 0, euid 0, egid 0, NoNewPrivs 0, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 64998\)/,
+      widerBoundingSet:
+        /\(it found uid 0, euid 0, egid 0, NoNewPrivs 1, CapBnd 00000000000000e1, CapInh 0000000000000000, Groups 64998\)/,
+      inheritable:
+        /\(it found uid 0, euid 0, egid 0, NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000020, Groups 64998\)/,
+      rootsGroup:
+        /\(it found uid 0, euid 0, egid 0, NoNewPrivs 1, CapBnd 00000000000000e0, CapInh 0000000000000000, Groups 0 64998\)/,
       euidAlone: /\(it found uid 0, euid 64998, egid 0, NoNewPrivs 0, /,
       rootAlone: /\(it found uid 0, euid 0, egid 0, NoNewPrivs 0, /,
     };

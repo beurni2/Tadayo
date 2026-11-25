@@ -1,8 +1,10 @@
 // Each photo under a user of its own (docs/plans/api-b2-worker-hardening.md section 2; ADR-038, which the founder
 // approved at 21:09 UTC on 2026-11-23). A photo's process (./image-process.ts) parses a stranger's bytes, so code that
 // took over one of its decoders must find nothing of the worker's within reach. The worker can't make that so for a
-// process of its own user, so on Fly it is started as root and turned to `node` at once (fly.toml's worker command:
-// `setpriv --euid=node ...`): its real user stays root, which makes it non-dumpable, so its `/proc` files are the
+// process of its own user, so on Fly it is started as root and turned to `node` at once (fly.toml's worker command,
+// `setpriv`, drops all but root's ids, and the worker's first module takes `node`'s effective group and user,
+// turnToWorkerUser, as Fly's kernel undoes an effective id `setpriv` sets under no new privileges): its real user
+// stays root, which makes it non-dumpable, so its `/proc` files are the
 // kernel's and no process of another user can read its environment or memory, open its pipes, attach to it or signal
 // it, and it keeps three capabilities (setuid, setgid, kill) that it can use only by taking effective uid 0. Each
 // photo's process is then started as `TADAYO_PHOTO_USER` (`tadayo-image` in the image), with no group but its own.
@@ -163,12 +165,19 @@ function posix(): {
   geteuid: () => number;
   getegid: () => number;
   seteuid: (id: number) => void;
+  setegid: (id: number) => void;
 } {
-  const { getuid, geteuid, getegid, seteuid } = process;
-  if (getuid === undefined || geteuid === undefined || getegid === undefined || seteuid === undefined) {
+  const { getuid, geteuid, getegid, seteuid, setegid } = process;
+  if (
+    getuid === undefined ||
+    geteuid === undefined ||
+    getegid === undefined ||
+    seteuid === undefined ||
+    setegid === undefined
+  ) {
     throw new Error("worker: this platform has no user ids");
   }
-  return { getuid, geteuid, getegid, seteuid };
+  return { getuid, geteuid, getegid, seteuid, setegid };
 }
 
 /** This process's ids. */
@@ -274,6 +283,64 @@ export function stopWorker(line: string = stopLineFor(undefined)): never {
 }
 
 const isId = (value: string | undefined): boolean => value !== undefined && /^\d{1,10}$/.test(value);
+
+/** The user fly.toml's worker command names (`--groups=node`), whose effective ids the worker takes itself (turnToWorkerUser). */
+export const WORKER_USER = "node";
+
+/** The identity calls turnToWorkerUser makes: Node's, but in the tests. */
+export interface TurnCalls {
+  readonly setegid: (id: number) => void;
+  readonly seteuid: (id: number) => void;
+  readonly ids: () => Ids;
+}
+
+/**
+ * Turns a worker started as fly.toml starts it to WORKER_USER's effective group, then its effective user, its real
+ * user left root: the worker's mode (inWorkerMode), which photoUserFor then reads. fly.toml's worker command leaves it
+ * root, its ids all 0, with startedAsFly's facts (no new privileges, setuid, setgid and kill alone in its bounding set,
+ * no inheritable capability, WORKER_USER's group its only group), and the worker takes the two effective ids here, at
+ * its first statement (./turn.ts). `setpriv --euid --egid` can't: at an exec under no new privileges, a kernel without
+ * "security/commoncap: don't assume "setid" if all ids are identical" takes an effective id other than the real one
+ * for a set-id program's and puts it back to the real one, root's, which is how PR #132's start on Fly found the
+ * worker ("uid 0, euid 0, egid 0"), while this session's kernel and Docker's keep it
+ * (docs/plans/api-b2-worker-turn.md section 0). As the effective uid leaves 0, Linux empties the effective set and
+ * keeps setuid, setgid and kill in the permitted one (the real uid is 0), as setpriv's flags left it on a later kernel.
+ * Any other start is left as it is, for photoUserFor to judge, and /etc/passwd isn't read for it. Returns whether it
+ * turned. Throws, having changed nothing, when WORKER_USER isn't a user in /etc/passwd with an id and group of its own,
+ * neither root's; and throws when a call fails or the ids after aren't the real uid 0 and WORKER_USER's effective uid
+ * and group. Its arguments are this process's but in the tests.
+ */
+export function turnToWorkerUser(
+  ids: Ids = idsOf(),
+  status: string = readFileSync("/proc/self/status", "latin1"),
+  passwd: () => string = () => readFileSync("/etc/passwd", "utf8"),
+  calls: TurnCalls = { ...posix(), ids: idsOf },
+): boolean {
+  if (!(ids.uid === 0 && ids.euid === 0 && ids.egid === 0 && startedAsFly(status))) return false;
+  const entry = passwd()
+    .split("\n")
+    .map((line) => line.split(":"))
+    .find((fields) => fields.length === 7 && fields[0] === WORKER_USER);
+  if (entry === undefined) {
+    throw new Error(`worker: ${WORKER_USER}, the user fly.toml's worker command names, isn't in /etc/passwd`);
+  }
+  const [, , uid, gid] = entry;
+  if (!isId(uid) || !isId(gid)) {
+    throw new Error(`worker: ${WORKER_USER}'s entry in /etc/passwd isn't a user's id and group`);
+  }
+  const user = { uid: Number(uid), gid: Number(gid) };
+  if (user.uid === 0 || user.gid === 0) throw new Error(`worker: ${WORKER_USER} is root, or in root's group`);
+  const failed = `worker: it couldn't take ${WORKER_USER}'s effective group and user as it started`;
+  try {
+    calls.setegid(user.gid);
+    calls.seteuid(user.uid);
+  } catch {
+    throw new Error(failed);
+  }
+  const after = calls.ids();
+  if (after.uid !== 0 || after.euid !== user.uid || after.egid !== user.gid) throw new Error(failed);
+  return true;
+}
 
 /**
  * The user each photo's process runs as, or undefined when photos are prepared in the worker's own user (the rules

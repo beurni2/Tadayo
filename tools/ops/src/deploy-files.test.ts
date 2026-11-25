@@ -104,10 +104,12 @@ const copies = (stage: "deps" | "runtime") => {
 // How each group drops root (fly.toml's [processes]; ADR-038): the API for good, the worker in effect only, keeping
 // setuid, setgid and kill to start and end each photo's process as TADAYO_PHOTO_USER and no inheritable capability,
 // with no core dump of any kind (a limit of 1 byte), no POSIX message queue and the photo user's processes capped
-// first. Node runs with its inspector off in both (PR #118's review, both rounds).
+// first. Node runs with its inspector off in both (PR #118's review, both rounds). The worker's setpriv sets no user or
+// group id, and its first module takes `node`'s effective ones (services/worker/src/turn.ts): on Fly's kernel, an exec
+// under no new privileges puts an effective id that differs from the real one back to the real one (PR #132's start).
 const API_DROP = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs";
 const WORKER_DROP =
-  "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
+  "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs";
 const NODE = "node --disable-sigusr1";
 
 // ---- The Dockerfile.
@@ -195,7 +197,8 @@ describe("Dockerfile", () => {
     expect(stages()).toHaveLength(2);
     // The second stage is what Fly runs; the first only builds node_modules.
     const image = stages().at(-1) ?? [];
-    // No USER: each group's command drops with setpriv before any Node code runs (fly.toml; ADR-038).
+    // No USER: each group's command drops with setpriv as it starts, the API before any Node code runs and the worker
+    // all but its effective ids, which its first module takes (fly.toml; ADR-038, its note "As found on Fly").
     expect(image.filter((instruction) => instruction.name === "USER")).toEqual([]);
     const processes = table(flyToml()["processes"], "[processes]");
     expect(String(processes["api"]).startsWith(`${API_DROP} -- ${NODE} `)).toBe(true);
@@ -340,6 +343,22 @@ describe("fly.toml", () => {
     for (const command of Object.values(processes)) {
       expect(existsSync(join(ROOT, String(command).split(" ").at(-1) ?? "")), String(command)).toBe(true);
     }
+  });
+
+  it("changes no id at the exec of either group's Node, so no kernel puts one back under no new privileges", () => {
+    // PR #132's start on `dev`: Fly's kernel took the worker's `setpriv --euid=node --egid=node --no-new-privs`, whose
+    // effective ids differed from its real ones, for a set-id exec, and put them back to root's. The API's setpriv sets
+    // its real, effective and saved ids together; the worker's sets none (its first module takes them, turn.ts).
+    const processes = table(flyToml()["processes"], "[processes]");
+    const flags = (group: string) => {
+      const words = String(processes[group]).split(" ");
+      return words.slice(words.indexOf("setpriv") + 1, words.indexOf("--", words.indexOf("setpriv")));
+    };
+    const ids = /^--(e|r|re)?(uid|gid)=/;
+    expect(flags("api").filter((flag) => ids.test(flag))).toEqual(["--reuid=node", "--regid=node"]);
+    expect(flags("worker").filter((flag) => ids.test(flag))).toEqual([]);
+    expect(flags("worker")).toContain("--no-new-privs");
+    expect(flags("worker")).toContain("--groups=node");
   });
 
   it("scopes every section that binds to a group to its group: flyctl refuses an unscoped service, and the others go to one group only", () => {

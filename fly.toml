@@ -40,7 +40,10 @@ kill_timeout = 30
 # `node` for good: real, effective and saved ids, no capability, no way to gain one. The worker becomes `node` in
 # effect only, its real user root, so its /proc files are root's, and it keeps setuid, setgid and kill, which it uses
 # only for an instant at a time to start each photo's process as TADAYO_PHOTO_USER and end it; its inheritable set is
-# emptied too, as what it keeps is its bounding set and that set together. Before it drops, the worker's `prlimit`
+# emptied too, as what it keeps is its bounding set and that set together. Its `setpriv` sets no user or group id:
+# on Fly's kernel an exec under no new privileges puts an effective id that differs from the real one back to the
+# real one, root's (PR #132's start on `dev`), so Node starts as root and the worker's first module takes `node`'s
+# effective group and user (services/worker/src/turn.ts). Before it drops, the worker's `prlimit`
 # lets no process of it or of a photo's process dump core (each holds a photo, or the worker's keys: a limit of 1 byte
 # stops a dump to a file and one to a program alike, where 0 stops only the first), lets none make a POSIX message
 # queue (one could outlast the sweep where /dev/mqueue isn't mounted), and lets the photo's user have 256 processes at
@@ -48,7 +51,7 @@ kill_timeout = 30
 # open it, with no password, to anyone on the Machine (PR #118's review).
 [processes]
   api = "setpriv --reuid=node --regid=node --init-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- node --disable-sigusr1 services/api/src/main.ts"
-  worker = "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --euid=node --egid=node --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1 services/worker/src/main.ts"
+  worker = "prlimit --core=1 --msgqueue=0 --nproc=256 -- setpriv --groups=node --inh-caps=-all --bounding-set=-all,+setuid,+setgid,+kill --no-new-privs -- node --disable-sigusr1 services/worker/src/main.ts"
 
 # The API's service. It listens only after the database and the clock are ready, so an open port is a
 # started API. The check is on the port and not on a route: a route to ask would be one outside the

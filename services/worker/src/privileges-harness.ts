@@ -9,7 +9,8 @@
 // photo user running, against a database nothing answers for (PR #118's review). It asks for a photo's process with no
 // user in the worker's mode, which must start nothing. With `real-child`, in a mount namespace of its own, it views
 // the checkout read-only from the temporary folder, as the image's /app is read; runs fly.toml's worker command from
-// it, changed only in its user, and the starts short of it, in the image's NODE_ENV (round 3 of PR #118's review);
+// it, exactly as fly.toml has it (its `node` given the worker's unused id in that namespace's /etc/passwd and
+// /etc/group), and the starts short of it, in the image's NODE_ENV (round 3 of PR #118's review);
 // and prepares a real photo with the real child (./image-child.ts) as the photo user (the audit's A6).
 //
 // The fake children are written to a fresh folder under the system's temporary folder, which the photo user can
@@ -558,11 +559,28 @@ if (process.argv[2] === "real-child-inside") {
     writable = (error as NodeJS.ErrnoException).code === "EROFS" ? "read-only" : `refused: ${String(error)}`;
   }
 
-  // fly.toml's worker command as fly.toml has it, its user `node` (which a runner may not have) made the worker's
-  // unused id, from the view, in the image's NODE_ENV, with no database: it goes past the photo user's check to its
+  // `node`, the user fly.toml's worker command names and the worker turns to (./turn.ts), as the worker's unused id
+  // here: a runner may have no `node`, or one of another id. In this mount namespace alone, /etc/passwd and /etc/group
+  // are copies with any `node` of theirs replaced by one of that id, bound read-only over them, so fly.toml's command
+  // runs exactly as fly.toml has it. The namespace's end takes the binds with it.
+  for (const [file, line] of [
+    ["/etc/passwd", `node:x:${String(WORKER)}:${String(WORKER)}::/nonexistent:/usr/sbin/nologin`],
+    ["/etc/group", `node:x:${String(WORKER)}:`],
+  ] as const) {
+    const copy = join(folder, file.slice("/etc/".length));
+    const kept = readFileSync(file, "utf8")
+      .split("\n")
+      .filter((entry) => entry !== "" && !entry.startsWith("node:"));
+    writeFileSync(copy, [...kept, line, ""].join("\n"));
+    chmodSync(copy, 0o644);
+    execFileSync("/usr/bin/mount", ["--bind", "-o", "ro", copy, file]);
+  }
+
+  // fly.toml's worker command as fly.toml has it, from the view, in the image's NODE_ENV, with no database: Node starts
+  // as root, the worker's first module takes `node`'s effective ids, and it goes past the photo user's check to its
   // first setting. Each start short of it stops at that check (the audit's A6; round 3 of PR #118's review).
   const command = /^\s*worker\s*=\s*"(.*)"\s*$/m.exec(readFileSync(join(view, "fly.toml"), "utf8"))?.[1] ?? "";
-  const words = command.split(" ").map((word) => word.replace(/=node$/, `=${String(WORKER)}`));
+  const words = command.split(" ");
   const entryAt = words.indexOf("node");
   const entry = words.slice(entryAt);
   const without = (word: string) => words.filter((candidate) => candidate !== word);

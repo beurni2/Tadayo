@@ -11,7 +11,9 @@
 #
 # The image starts as root only to drop (docs/plans/api-b2-worker-hardening.md section 2; ADR-038): it has no
 # `USER`, and each process group's command in fly.toml begins with `setpriv` (the worker's after `prlimit`, which
-# sets its limits as root), which turns it to `node` before any Node code runs. The API keeps no way back. The worker keeps root as its real user, which makes it non-dumpable,
+# sets its limits as root), which turns the API to `node` before any Node code runs and takes everything from the
+# worker but root's ids, whose effective ones its first module turns to `node`'s (services/worker/src/turn.ts; Fly's
+# kernel undoes an effective id `setpriv` sets under no new privileges). The API keeps no way back. The worker keeps root as its real user, which makes it non-dumpable,
 # and starts each photo's process as `tadayo-image`, a user with no home, no shell and no password, so code that took
 # over a decoder runs as neither the worker's user nor root (services/worker/src/privileges.ts). A start that skips
 # the drop fails closed (the audit's A6): the image names its photo user here, beside the user it makes, so the worker
