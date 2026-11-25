@@ -268,7 +268,11 @@ export const CLUB_OPERATIONS: Operation[] = [
     method: "post",
     path: "/v1/clubs/{club_id}/leave",
     summary: "Leave the club",
-    description: "With an explicit keep or withdraw (spec 22, T26). B6 builds the withdrawal.",
+    description:
+      "With an explicit keep or withdraw (spec 22, T26). Withdraw takes every drop the caller added during this " +
+      "membership, revealed or not, out of every view at once, giving back the slots of days not yet open (T18, " +
+      "T23, T24); drops kept when leaving an earlier membership of the club stay kept (FQ142). Either way the " +
+      "caller's live reservations in the club are given back.",
     idempotent: true,
     body: LeaveClubRequest,
     ok: { status: 200, json: LeftClub },

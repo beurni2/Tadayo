@@ -97,6 +97,8 @@ import {
 } from "./device.ts";
 import { INVITATION_JUDGED, acceptOutcome, freshToken, previewExpected, webPreviewExpected } from "./invitation.ts";
 import {
+  contributionProblems,
+  contributionRowsOf,
   firstDaysJoinProblems,
   firstDaysProblems,
   LEAVE_NO_BODY,
@@ -219,6 +221,8 @@ const ROSTER_TABLES = new Map<
 const LEAVES = new Map<string, number>();
 /** By role: the leaves after which the leaver lost a revision that listed them, read until then. */
 const REVISIONS_LOST = new Map<string, number>();
+/** By role: the drops the leaves withdrew and the reservations they ended (leave.ts's `contributionProblems`). */
+const CONTRIBUTIONS_SETTLED = new Map<string, { withdrawn: number; slotsEnded: number }>();
 /** By role: the slots the reservations' table held, and those given back (the role's test fills it; a later test reads it). */
 const SLOTS = new Map<string, { held: number; released: number; expired: number; consumed: number }>();
 /**
@@ -933,7 +937,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       };
       const memberStates = new Set<string>();
       // What the leave's step did for this role: the states it asked in, and those the judge said it left in.
-      const left = { asked: 0, left: 0, revisions: 0 };
+      const left = { asked: 0, left: 0, revisions: 0, withdrawn: 0, slotsEnded: 0 };
       // What the reservations' table did for this role: the slots it held, and those it gave back that came
       // back released (still live), expired (lapsed at the reveal with no drop) and consumed (by the drop the
       // commit's table added under it). Asserted in the test after the roles.
@@ -1053,6 +1057,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         let homeRows = await loadHomeRows();
         // The roster's rows (roster.ts), read again after each request that may change them.
         const loadRoster = () => rosterWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
+        // The drops', reservations', counters' and highlights' rows (leave.ts), read around the leave alone.
+        const loadContributions = () => contributionRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club]);
         let rosterWorld = await loadRoster();
         const startVersion = schedule.proposals.get(cell.targets.proposal)?.version ?? -1;
         // A schedule command's generic request carries a body the contract accepts and every rule refuses
@@ -2734,8 +2740,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 (problem) => !problem.startsWith("the headers in another order"),
               ).length > 0;
             const key = randomUUID();
+            const contributionsBefore = await loadContributions();
             const first = await ask(key);
             left.asked += 1;
+            const contributionsAfter = await loadContributions();
             facts = await load();
             schedule = await loadSchedule();
             clubRows = await loadClubRows();
@@ -2747,6 +2755,16 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 wrong.push(`${state.name}, ${phase}: a refused leave changed the club's rows`);
               if (rowsSeen(after.schedule.members) !== rowsSeen(before.schedule.members))
                 wrong.push(`${state.name}, ${phase}: a refused leave changed a membership`);
+              // Judged as a leave by nobody that kept everything: no row may change.
+              for (const problem of contributionProblems(
+                contributionsBefore,
+                contributionsAfter,
+                cell.w.club,
+                "",
+                now,
+                "keep",
+              ))
+                wrong.push(`${state.name}, ${phase}: a refused leave changed a contribution: ${problem}`);
             } else {
               left.left += 1;
               if (readRevision) left.revisions += 1;
@@ -2764,6 +2782,15 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 [
                   ...leftExpected(cell.w.club, now, choice)(first),
                   ...leaveProblems(before, after, cell.w.club, outcome, membership, now, choice),
+                  ...contributionProblems(
+                    contributionsBefore,
+                    contributionsAfter,
+                    cell.w.club,
+                    outcome,
+                    now,
+                    choice,
+                    left,
+                  ),
                   ...firstDaysProblems(before.schedule, after.schedule, cell.w.club, outcome),
                   ...weekChangeProblems(
                     before.schedule,
@@ -2777,15 +2804,34 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               const again = await ask(key);
               tell(
                 again,
-                said(again) === said(first) ? [] : ["a retry under its key got another answer than the first (T19)"],
+                [
+                  ...(said(again) === said(first)
+                    ? []
+                    : ["a retry under its key got another answer than the first (T19)"]),
+                  ...contributionProblems(
+                    contributionsAfter,
+                    await loadContributions(),
+                    cell.w.club,
+                    "",
+                    now,
+                    "keep",
+                  ).map((problem) => `the retry changed a contribution: ${problem}`),
+                ],
                 "the same leave again under its key",
               );
             }
-            // Whoever asked, the club now answers them as the rows say: nothing, to someone who left.
+            // Whoever asked, the club now answers them as the rows say: nothing, to someone who left, and the
+            // refused leave changes no contribution.
+            const beforeAfresh = await loadContributions();
             const afresh = await ask(randomUUID());
             tell(
               afresh,
-              pinnedProblems(afresh, leaveGate ?? (typeof outcome === "string" ? NEUTRAL : outcome)),
+              [
+                ...pinnedProblems(afresh, leaveGate ?? (typeof outcome === "string" ? NEUTRAL : outcome)),
+                ...contributionProblems(beforeAfresh, await loadContributions(), cell.w.club, "", now, "keep").map(
+                  (problem) => `the leave under a new key changed a contribution: ${problem}`,
+                ),
+              ],
               "a leave under a new key afterwards",
             );
             for (const [id, expected] of [
@@ -2839,6 +2885,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       expect(left.asked).toBe(STATES.length);
       LEAVES.set(role.name, left.left);
       REVISIONS_LOST.set(role.name, left.revisions);
+      CONTRIBUTIONS_SETTLED.set(role.name, { withdrawn: left.withdrawn, slotsEnded: left.slotsEnded });
       console.log(`${role.name}, the leave: ${JSON.stringify(left)}`);
       SLOTS.set(role.name, slots);
       CLEOS_SLOT.set(role.name, cleosSlot);
@@ -2893,6 +2940,39 @@ describe("the leave ran (tests/src/privacy/leave.ts)", () => {
     ]);
     // The world's revision lists the star alone: the star read it until the leave, and nothing after.
     expect([...REVISIONS_LOST].filter(([, states]) => states > 0)).toEqual([["star", 6]]);
+  });
+
+  it("withdrew the leaver's own drops on withdraw, and settled the leaver's slots left live, as the world has them", () => {
+    // What each leave did to the leaver's own contributions, which contributionProblems judged row by row, counted
+    // by hand from the world (../matrix.ts), apart from the judge (spec 22, T18; the outside audit's A3). The
+    // choice is keep in the even states and withdraw in the odd ones, and the suspended club refuses the leave,
+    // so withdraw is chosen twice: where the world's drop was withdrawn, and where it is held. By the last phase
+    // the photo the viewer added while collecting (the commit's table, below) is active in both, one each for
+    // the five roles that add. The author's world drop is still held in the held state, so the author withdraws
+    // three. Cleo's link in the day is Cleo's first interval's, so the member in the audience withdraws it too
+    // (four), and so does Cleo once the author has blocked Cleo, who adds nothing (two); Cleo rejoined in a new
+    // interval keeps the link the first interval added (FQ142). No slot of the viewer's own is live by then (each
+    // given back or consumed while collecting), but Cleo's lapsed slot, given back to Cleo where the day and the
+    // club answer a release, is still unsettled where the day is suspended or cancelled, both keep: the leave
+    // settles it as expired, twice for each role whose viewer is Cleo's first interval.
+    // What the matrix doesn't reach: the leave runs only in the last phase, a year on, so every withdrawal here is
+    // after its day's reveal and gives no slot back, and every slot it ends had lapsed. The withdrawal before the
+    // reveal with its slots given back, and a live reservation released, are tests/src/db/leave-withdraw.test.ts's,
+    // and leave.test.ts shows the judge catches each of them wrong.
+    expect(CONTRIBUTIONS_SETTLED.size).toBe(ROLES.length);
+    expect([...CONTRIBUTIONS_SETTLED].filter(([, settled]) => settled.withdrawn > 0 || settled.slotsEnded > 0)).toEqual(
+      [
+        ["author", { withdrawn: 3, slotsEnded: 0 }],
+        ["star", { withdrawn: 2, slotsEnded: 0 }],
+        ["member in the audience", { withdrawn: 4, slotsEnded: 2 }],
+        ["member who joined after the commit (T8)", { withdrawn: 2, slotsEnded: 0 }],
+        ["rejoined member, a new interval (T8)", { withdrawn: 2, slotsEnded: 0 }],
+        [
+          "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
+          { withdrawn: 2, slotsEnded: 2 },
+        ],
+      ],
+    );
   });
 });
 
