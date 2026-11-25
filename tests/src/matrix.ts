@@ -262,31 +262,46 @@ export const ROLES: Role[] = [
 
 /**
  * TECH-DESIGN section 8's six states of the drop, each made in a way the schema accepts, and a
- * cancelled day, which no trial command makes yet but the schema allows and T9 denies.
+ * cancelled day, which no trial command makes yet but the schema allows and T9 denies. `endsTheDrop` marks the
+ * three that change the drop's own row, rather than its day's or its club's; the privacy matrix checks that each
+ * leaves no drop it acts on active.
  */
-export const STATES: { name: string; denies: boolean; make(tx: WorldTx, w: World, drop: string): Promise<unknown> }[] =
-  [
-    { name: "active", denies: false, make: () => Promise.resolve() },
-    { name: "withdrawn", denies: true, make: (tx, w, drop) => withdraw(tx, w, drop, STATE_AT) },
-    { name: "removed by moderation", denies: true, make: (tx, _w, drop) => removeByModeration(tx, drop, STATE_AT) },
-    {
-      name: "held (T29)",
-      denies: true,
-      make: (tx, _w, drop) => tx`UPDATE app.drops SET state = 'held', updated_at = ${STATE_AT} WHERE id = ${drop}`,
-    },
-    {
-      name: "its day suspended",
-      denies: true,
-      make: (tx, w) => tx`UPDATE app.occurrences SET status = 'suspended' WHERE id = ${w.day}`,
-    },
-    {
-      name: "its club suspended",
-      denies: true,
-      make: (tx, w) => tx`UPDATE app.clubs SET suspended_at = ${STATE_AT} WHERE id = ${w.club}`,
-    },
-    {
-      name: "its day cancelled",
-      denies: true,
-      make: (tx, w) => tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${w.day}`,
-    },
-  ];
+export const STATES: {
+  name: string;
+  denies: boolean;
+  endsTheDrop: boolean;
+  make(tx: WorldTx, w: World, drop: string): Promise<unknown>;
+}[] = [
+  { name: "active", denies: false, endsTheDrop: false, make: () => Promise.resolve() },
+  { name: "withdrawn", denies: true, endsTheDrop: true, make: (tx, w, drop) => withdraw(tx, w, drop, STATE_AT) },
+  {
+    name: "removed by moderation",
+    denies: true,
+    endsTheDrop: true,
+    make: (tx, _w, drop) => removeByModeration(tx, drop, STATE_AT),
+  },
+  {
+    name: "held (T29)",
+    denies: true,
+    endsTheDrop: true,
+    make: (tx, _w, drop) => tx`UPDATE app.drops SET state = 'held', updated_at = ${STATE_AT} WHERE id = ${drop}`,
+  },
+  {
+    name: "its day suspended",
+    denies: true,
+    endsTheDrop: false,
+    make: (tx, w) => tx`UPDATE app.occurrences SET status = 'suspended' WHERE id = ${w.day}`,
+  },
+  {
+    name: "its club suspended",
+    denies: true,
+    endsTheDrop: false,
+    make: (tx, w) => tx`UPDATE app.clubs SET suspended_at = ${STATE_AT} WHERE id = ${w.club}`,
+  },
+  {
+    name: "its day cancelled",
+    denies: true,
+    endsTheDrop: false,
+    make: (tx, w) => tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${w.day}`,
+  },
+];

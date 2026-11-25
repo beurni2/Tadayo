@@ -43,14 +43,19 @@ export const RESERVE_NO_BODY: Answer = pinned(400, "Bad Request", '{"code":"INVA
 /** A day whose star has gone before its reveal: the person's membership changed, with no fact (FQ63). */
 export const MEMBERSHIP_CHANGED: Answer = pinned(409, "Conflict", '{"code":"MEMBERSHIP_CHANGED"}');
 
-/** The table each cell sends to its day, in order: two photos, three links, three photos (the plan's section 3). */
+/**
+ * The table each cell sends to its day, in order: three photos, three links, two photos (the reservations plan's
+ * section 3, reordered by docs/plans/api-b2-matrix-built-rows.md section 6, review round 2). A friend with room asks a third
+ * photo before any link, so meets PHOTO_LIMIT; the star asks a third link before its last photos, so meets
+ * EXTERNAL_LIMIT; and anyone whose room runs out meets QUOTA_FULL (the matrix pins which each role met).
+ */
 export const RESERVE_TABLE: readonly MediaClass[] = [
   "photo",
   "photo",
-  "external_video",
-  "external_video",
-  "external_video",
   "photo",
+  "external_video",
+  "external_video",
+  "external_video",
   "photo",
   "photo",
 ];

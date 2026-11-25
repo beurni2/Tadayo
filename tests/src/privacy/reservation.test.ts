@@ -179,15 +179,15 @@ const counts = (added: [number, number], reserved: [number, number]) => ({
 });
 
 describe("the operations this file judges, and its table", () => {
-  it("judges the two reservation routes, and sends two photos, three links and three photos", () => {
+  it("judges the two reservation routes, and sends three photos, three links and two photos", () => {
     expect([...RESERVATION_JUDGED].sort()).toEqual(["createReservation", "releaseReservation"]);
     expect(RESERVE_TABLE).toEqual([
       "photo",
       "photo",
-      "external_video",
-      "external_video",
-      "external_video",
       "photo",
+      "external_video",
+      "external_video",
+      "external_video",
       "photo",
       "photo",
     ]);
