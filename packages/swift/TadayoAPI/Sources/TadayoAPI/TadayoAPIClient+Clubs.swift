@@ -3,10 +3,14 @@ import OpenAPIRuntime
 import TadayoCore
 
 /// Stage B1's club calls (docs/plans/ios-b1-clubs.md section 3). Each answer the contract
-/// documents becomes `TadayoCore`'s type or an `APIFailure`. An answer it doesn't is refused:
-/// an undocumented status, an error code the operation doesn't document for that status (as
-/// `clubs()` and `update()` refuse one), or content that breaks it (a date that isn't one, a link
-/// that isn't exactly an invitation link).
+/// documents becomes `TadayoCore`'s type or an `APIFailure`. An error answer it doesn't is
+/// refused: an undocumented error status, an error code the operation doesn't document for that
+/// status (as `clubs()` and `update()` refuse one), or an error status whose body this build
+/// can't read (`TadayoAPIClient.failure(_:)`); a 401, a 429 and a 5xx keep their own meanings. A
+/// success it doesn't is unreadable, since the server may have carried the command out (audit
+/// A8): an undocumented 2xx, or content that breaks it (a value this build doesn't know, a date
+/// that isn't one, a link that isn't exactly an invitation link, an answer for another candidate
+/// or invitation).
 extension TadayoAPIClient: ClubService {
     public func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
         async throws(APIFailure) -> ClubDetail
@@ -109,7 +113,7 @@ extension TadayoAPIClient: ClubService {
             {
             case .created(let answer):
                 let link = try InvitationLink(answer.body.json)
-                guard link.candidateID == candidateID else { throw APIFailure.refused }
+                guard link.candidateID == candidateID else { throw APIFailure.unreadable }
                 return link
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
@@ -130,7 +134,7 @@ extension TadayoAPIClient: ClubService {
             switch try await client.revokeInvitation(path: .init(invitationId: invitationID)) {
             case .ok(let answer):
                 guard try answer.body.json.invitationId == invitationID else {
-                    throw APIFailure.refused
+                    throw APIFailure.unreadable
                 }
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
@@ -280,10 +284,10 @@ extension Person {
 }
 
 extension Occurrence {
-    /// Refused when `local_date` isn't a date: the app never guesses a day (T41).
+    /// Unreadable when `local_date` isn't a date: the app never guesses a day (T41).
     init(_ day: Components.Schemas.Occurrence) throws(APIFailure) {
         guard let date = LocalDate(iso: day.localDate), let phase = OccurrencePhase(day.phase)
-        else { throw .refused }
+        else { throw .unreadable }
         self.init(
             id: day.id, clubID: day.clubId, star: Person(day.star), localDate: date,
             revealAt: day.revealAt, closeAt: day.closeAt, phase: phase)
@@ -300,7 +304,7 @@ extension ClubRef {
 
 extension ClubSummary {
     init(_ club: Components.Schemas.ClubSummary) throws(APIFailure) {
-        guard let state = ClubState(club.state) else { throw .refused }
+        guard let state = ClubState(club.state) else { throw .unreadable }
         self.init(
             ref: ClubRef(
                 id: club.id, name: club.name, timezone: club.timezone,
@@ -313,7 +317,7 @@ extension ClubSummary {
 
 extension MyInvitation {
     init(_ invitation: Components.Schemas.MyInvitation) throws(APIFailure) {
-        guard let state = MyInvitationState(invitation.state) else { throw .refused }
+        guard let state = MyInvitationState(invitation.state) else { throw .unreadable }
         self.init(
             invitationID: invitation.invitationId, clubName: invitation.clubName,
             inviterName: invitation.inviterName, state: state)
@@ -377,7 +381,7 @@ extension ClubWeek {
         var assignments: [WeekdayAssignment] = []
         for assignment in schedule.current?.assignments ?? [] {
             guard let weekday = Weekday(rawValue: assignment.weekday.rawValue) else {
-                throw .refused
+                throw .unreadable
             }
             assignments.append(
                 WeekdayAssignment(weekday: weekday, person: Person(assignment.person)))
@@ -392,12 +396,12 @@ extension RosterRevision {
     init(_ revision: Components.Schemas.RosterRevision) throws(APIFailure) {
         guard let state = RosterRevisionState(revision.state),
             let decision = RosterDecision(revision.myDecision)
-        else { throw .refused }
+        else { throw .unreadable }
         var candidates: [Candidate] = []
         for candidate in revision.candidates {
             var invitation: CandidateInvitation?
             if let link = candidate.invitation {
-                guard let linkState = CandidateLinkState(link.state) else { throw .refused }
+                guard let linkState = CandidateLinkState(link.state) else { throw .unreadable }
                 invitation = CandidateInvitation(
                     id: link.id, state: linkState, expiresAt: link.expiresAt)
             }
@@ -416,7 +420,7 @@ extension RosterRevision {
 }
 
 extension InvitationLink {
-    /// Refused when the URL isn't exactly an invitation link with a token, character for
+    /// Unreadable when the URL isn't exactly an invitation link with a token, character for
     /// character as the contract's pattern has it (`^https://tadayo\.app/i#[A-Za-z0-9_-]{43,128}$`):
     /// the app never stores or shares anything else, not even the leniencies `InvitationToken`
     /// allows a pasted link.
@@ -425,7 +429,7 @@ extension InvitationLink {
         if let text = link.url {
             guard let token = InvitationToken(link: text),
                 text == "https://tadayo.app/i#\(token.secret)", let parsed = URL(string: text)
-            else { throw .refused }
+            else { throw .unreadable }
             url = parsed
         }
         self.init(

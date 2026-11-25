@@ -247,6 +247,26 @@ import Testing
             ])
     }
 
+    @Test func anUnreadableAnswerKeepsTheKey() async {
+        // A 2xx this build can't read: the account may have joined or be waiting, so the retry
+        // sends the same key and the server answers it as the first (T19; audit A8).
+        let service = ScriptedClubs()
+        service.previewAnswers = [.success(.open(Kitchen.roster()))]
+        service.acceptAnswers = [.failure(.unreadable), .success(.waiting)]
+        let invitation = model(service)
+        await invitation.check()
+        await invitation.accept()
+        #expect(invitation.acceptFailure == .other)
+        #expect(invitation.state == .open(Kitchen.roster()))
+        await invitation.accept()
+        #expect(invitation.acceptFailure == nil)
+        let key = Keys.key(1)
+        #expect(
+            service.calls == [
+                "preview 01", "accept 01 rev_1 v1 \(key)", "accept 01 rev_1 v1 \(key)",
+            ])
+    }
+
     @Test func aRefusalMakesTheNextTapANewAction() async {
         let service = ScriptedClubs()
         service.previewAnswers = [.success(.open(Kitchen.roster()))]
