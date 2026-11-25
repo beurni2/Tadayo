@@ -647,7 +647,10 @@ final class SignInReadingTests: XCTestCase {
     /// IMPLEMENTATION.md: "The body scrolls to keep the field and error reachable above
     /// Continue"). At this size, with the column at its top, the field would be under
     /// Continue. The save starts a moment after the screen shows, so the line comes as it does
-    /// in the app, after the column is laid out.
+    /// in the app, after the column is laid out; the read waits for the save to have failed, its
+    /// own scripted state, which on iOS 26.5 in `ios` 44696252066 and #114's 45494638281 hadn't
+    /// come within the half second the read then waited (`docs/plans/ios-b1-intermittents.md`,
+    /// item 3).
     func testAFailureWithTheKeyboardUpIsScrolledIntoViewAboveContinue() {
         let model = profile(updates: [.fail(.network)])
         model.name = "Ben"
@@ -661,7 +664,7 @@ final class SignInReadingTests: XCTestCase {
                         try? await Task.sleep(for: .milliseconds(100))
                         await model.saveName()
                     }
-            })
+            }, until: { model.failure != nil })
         let elements = layout.elements
         let network = "Couldn’t save your profile. Check your connection and try again."
         XCTAssertEqual(model.failure, .network, "\(elements)")

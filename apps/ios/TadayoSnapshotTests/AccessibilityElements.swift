@@ -53,10 +53,12 @@ enum AccessibilityElements {
     }
 
     /// The elements with their frames, and the window's size and safe areas: for a screen's
-    /// geometry, such as where a title sits or how far a button is above the safe area.
-    static func layout(of view: some View) -> Layout {
+    /// geometry, such as where a title sits or how far a button is above the safe area. `ready`
+    /// is the test's own scripted state, such as a save that has failed, which the read waits
+    /// for first, up to 30 seconds, as `drive` does; what is asserted once it holds is the test's.
+    static func layout(of view: some View, until ready: () -> Bool = { true }) -> Layout {
         prepare()
-        return read(view)
+        return read(view, until: ready)
     }
 
     /// Activates the element labelled `label`, while the view is still on screen, as a double tap
@@ -111,10 +113,11 @@ enum AccessibilityElements {
         {}
     }
 
-    /// Shows the view, gathers its elements in VoiceOver's order, and hands them and the window
-    /// to `use` before the window goes.
+    /// Shows the view, waits for `ready` and then for its elements to settle (`settle`), gathers
+    /// them in VoiceOver's order, and hands them and the window to `use` before the window goes.
     private static func show<Result>(
-        _ view: some View, _ use: ([NSObject], UIWindow) -> Result
+        _ view: some View, until ready: () -> Bool = { true },
+        _ use: ([NSObject], UIWindow) -> Result
     ) -> Result {
         let scene = UIApplication.shared.connectedScenes.lazy.compactMap { $0 as? UIWindowScene }
             .first
@@ -139,14 +142,51 @@ enum AccessibilityElements {
             window.rootViewController = nil
         }
         // A few turns of the run loop, so a navigation stack has put up its screen.
-        let settled = Date().addingTimeInterval(0.5)
-        while Date() < settled { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
+        let shown = Date().addingTimeInterval(0.5)
+        while Date() < shown { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
+        let scripted = Date().addingTimeInterval(30)
+        while !ready(), Date() < scripted {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        }
+        settle(window)
         window.layoutIfNeeded()
         return use(gather(window), window)
     }
 
-    private static func read(_ view: some View) -> Layout {
-        show(view) { objects, window in
+    /// Turns the run loop until the window's elements, their labels, values and frames, have
+    /// stayed the same for 0.3 seconds, for up to 10 seconds; past that the read goes ahead, and
+    /// the test's own expectations decide. A fixed half second wasn't always enough on a loaded
+    /// runner: `ProfileForm` scrolls its column above Continue only after the keyboard's room has
+    /// been read and `onChange(of: keyboardRise, initial: true)` has asked for the scroll, a few
+    /// updates later, and `SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea`
+    /// read the column not yet scrolled (Continue's top 314 points above the field's bottom) in
+    /// four runs on iOS 26.5, the last `main`'s `ios` 45523314156 at `12b3d8a`
+    /// (`docs/plans/ios-b1-intermittents.md`, item 3). What is asserted is unchanged; a screen
+    /// that never settles still fails as it did.
+    private static func settle(_ window: UIWindow) {
+        func state() -> [String] {
+            window.layoutIfNeeded()
+            return gather(window).map {
+                "\($0.accessibilityLabel ?? "")|\($0.accessibilityValue ?? "")|\($0.accessibilityFrame)"
+            }
+        }
+        var last = state()
+        var still = Date()
+        let deadline = Date().addingTimeInterval(10)
+        while Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            let now = state()
+            if now != last {
+                last = now
+                still = Date()
+            } else if Date().timeIntervalSince(still) >= 0.3 {
+                return
+            }
+        }
+    }
+
+    private static func read(_ view: some View, until ready: () -> Bool = { true }) -> Layout {
+        show(view, until: ready) { objects, window in
             Layout(
                 elements: objects.map {
                     Element(
