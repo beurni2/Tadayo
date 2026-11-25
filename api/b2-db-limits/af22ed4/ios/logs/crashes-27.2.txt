@@ -1,0 +1,102 @@
+--- 04:16:57 UTC, /Library/Logs/DiagnosticReports/intelligenceplatformd_2026-11-25-041506_iad20-gt1022-8cea186a-9b03-4582-9b6d-4864d32ef817-BEAF4DD5C034.diag
+Date/Time:        2026-11-25 04:07:24.640 +0000
+End time:         2026-11-25 04:11:32.373 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 81C9C646-8410-47BF-A89C-B45E5E58DCE6
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18a618000
+
+Command:          intelligenceplatformd
+Path:             /Volumes/VOLUME/*/IntelligencePlatformCore.framework/intelligenceplatformd
+Codesigning ID:   com.apple.intelligenceplatformd
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74"(2134)
+Architecture:     arm64
+Parent:           UNKNOWN [27642]
+PID:              27896
+
+Event:            disk writes
+Action taken:     none
+--- 04:19:51 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-25-041940.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-25 04:19:40.00 +0000
+pid: 38339
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 38339, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 04:19:51 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-25-041937.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-25 04:19:37.00 +0000
+pid: 38038
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 38038, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 04:20:25 UTC, /Library/Logs/DiagnosticReports/JetsamEvent-2026-11-25-042021.ips
+bug_type: 298
+timestamp: 2026-11-25 04:20:21.00 +0000
+largestProcess: SimRenderServer
+killed: frauddefensed, pid 524 (idle-exit)
+killed: com.apple.hiservices-xpcservice, pid 3234 (idle-exit)
+killed: SecuritySubscriber, pid 3511 (idle-exit)
+killed: InteractiveLegacyProfilesSubscri, pid 3648 (idle-exit)
+killed: ScreenSharingSubscriber, pid 3856 (idle-exit)
+killed: LegacyProfilesSubscriber, pid 3864 (idle-exit)
+killed: PasscodeSettingsSubscriber, pid 3873 (idle-exit)
+killed: DiskManagementSubscriber, pid 3877 (idle-exit)
+killed: audioanalyticsd, pid 3868 (idle-exit)
+killed: ManagedPreferencesSubscriber, pid 3882 (idle-exit)
+killed: SoftwareUpdateSubscriber, pid 4112 (idle-exit)
+killed: MigrationSubscriber, pid 4118 (idle-exit)
+killed: deviceconfigurationd, pid 326 (idle-exit)
+killed: DeviceConfigurationSubscriber, pid 4357 (idle-exit)
+killed: appstored, pid 761 (idle-exit)
+killed: SetStoreUpdateService, pid 2734 (idle-exit)
+killed: intelligencetasksd, pid 2520 (idle-exit)
+killed: iconservicesagent, pid 4356 (idle-exit)
+killed: containermanagerd, pid 316 (idle-exit)
+killed: ManagedAppsSubscriber, pid 4651 (idle-exit)
+killed: managedappdistributiond, pid 2203 (idle-exit)
+killed: STExtractionService.privileged, pid 1928 (idle-exit)
+killed: AppleIntelligenceReportingProces, pid 5458 (idle-exit)
+killed: SetStoreUpdateService, pid 5990 (idle-exit)
+killed: NetworkExtensionSubscriber, pid 5334 (idle-exit)
+killed: ManagementTestSubscriber, pid 6237 (idle-exit)
+killed: com.apple.MobileAsset.DownloadSe, pid 259 (idle-exit)
+killed: ReportCrashService, pid 38368 (per-process-limit)
+killed: ReportCrashService, pid 38325 (per-process-limit)
+--- 04:26:40 UTC, /Users/runner/Library/Logs/DiagnosticReports/SettingsSearchReindexService-2026-11-25-042640.ips
+name: SettingsSearchReindexService
+app_name: SettingsSearchReindexService
+bug_type: 309
+timestamp: 2026-11-25 04:26:40.00 +0000
+pid: 51874
+procName: SettingsSearchReindexService
+procPath: /Volumes/VOLUME/*/SettingsServices.framework/XPCServices/SettingsSearchReindexService.xpc/SettingsSearchReindexService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 51874, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 04:26:57 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-25-042657.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-25 04:26:57.00 +0000
+pid: 49724
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 49724, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
