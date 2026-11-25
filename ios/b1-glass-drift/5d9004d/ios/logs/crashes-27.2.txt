@@ -1,0 +1,78 @@
+--- 21:50:49 UTC, /Library/Logs/DiagnosticReports/SWBBuildService_2026-11-25-214012_sjc22-bm213-716f62ed-dd13-487f-becb-1d6b2071dab1-22DB4DC621DC.diag
+Date/Time:        2026-11-25 21:28:10.124 +0000
+End time:         2026-11-25 21:38:08.895 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 66D62122-698C-4A77-8986-143CE4976E55
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x19e744000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18352c000
+
+Command:          SWBBuildService
+Path:             /Applications/Xcode_27.2.app/Contents/SharedFrameworks/SwiftBuild.framework/Versions/A/PlugIns/SWBBuildService.bundle/Contents/MacOS/SWBBuildService
+Identifier:       com.apple.dt.SWBBuildService
+Version:          27.2 (25400.0.25)
+Build Version:    83
+Product Build Version: 27B52
+Project Name:     XCBuild
+Source Version:   25400000025000000
+Team ID:          59GAB85EFG
+--- 21:51:33 UTC, /Library/Logs/DiagnosticReports/intelligenceplatformd_2026-11-25-215049_sjc22-bm213-716f62ed-dd13-487f-becb-1d6b2071dab1-22DB4DC621DC.diag
+Date/Time:        2026-11-25 21:40:46.259 +0000
+End time:         2026-11-25 21:44:31.311 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 7EA3A587-52B5-4D7A-B828-4DFA52FCA4D1
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x19e744000
+
+Command:          intelligenceplatformd
+Path:             /Volumes/VOLUME/*/IntelligencePlatformCore.framework/intelligenceplatformd
+Codesigning ID:   com.apple.intelligenceplatformd
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74"(1618)
+Architecture:     arm64
+Parent:           UNKNOWN [24540]
+PID:              24764
+
+Event:            disk writes
+Action taken:     none
+--- 21:53:02 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-25-215249.000.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-25 21:52:49.00 +0000
+pid: 36374
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36374, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 21:53:03 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-25-215249.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-25 21:52:49.00 +0000
+pid: 36350
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36350, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 22:09:10 UTC, /Users/runner/Library/Logs/DiagnosticReports/SettingsSearchReindexService-2026-11-25-220910.ips
+name: SettingsSearchReindexService
+app_name: SettingsSearchReindexService
+bug_type: 309
+timestamp: 2026-11-25 22:09:10.00 +0000
+pid: 65301
+procName: SettingsSearchReindexService
+procPath: /Volumes/VOLUME/*/SettingsServices.framework/XPCServices/SettingsSearchReindexService.xpc/SettingsSearchReindexService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.4AD2086B-7B8F-4608-A742-AA422A0B8D74
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 65301, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
