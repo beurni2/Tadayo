@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/allowance.ts
++++ b/packages/domain/src/drops/allowance.ts
+@@ -115,7 +115,7 @@
+   if (media === "external_video" && allowance.externalAdded + allowance.externalReserved >= allowance.externalLimit) {
+     return "EXTERNAL_LIMIT";
+   }
+-  if (media === "photo" && allowance.photoAdded + allowance.photoReserved >= allowance.photoLimit) {
++  if (media === "photo" && allowance.photoReserved >= allowance.photoLimit) {
+     return "PHOTO_LIMIT";
+   }
+   return null;

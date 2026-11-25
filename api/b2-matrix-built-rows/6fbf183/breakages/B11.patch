@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/bindings.ts
++++ b/tests/src/privacy/bindings.ts
+@@ -69,7 +69,7 @@
+   invitation_id: (targets) => targets.invitation,
+   revision_id: (targets) => targets.revision,
+   star: (targets) => targets.star,
+-  comment_id: "missing",
++  comment_id: (targets) => targets.drop,
+   reservation_id: (targets) => targets.reservation,
+   upload_id: (targets) => targets.upload,
+ };

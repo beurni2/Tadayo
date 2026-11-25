@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/harness.test.ts
++++ b/tests/src/privacy/harness.test.ts
+@@ -254,7 +254,7 @@
+       "updateComment",
+     ]);
+     const byName = operations.filter((found) => /comment/i.test(found.id)).map((found) => found.id);
+-    const canName = [...new Set([...walked, ...byName])].sort();
++    const canName = [...new Set([...walked])].sort();
+     expect(canName).toEqual([
+       "createComment",
+       "createReport",

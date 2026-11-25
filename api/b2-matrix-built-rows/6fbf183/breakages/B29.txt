@@ -1,0 +1,154 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (26 tests | 2 failed) 853619ms
+   ❯ the reservations' table ran (tests/src/privacy/reservation.ts) (3)
+     × held, gave back and saw lapse the slots each role's allowance gives, and none for any other role 13ms
+     × refused each role at the limits its allowance reaches: a friend's link and photos, the star's links, and the whole 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  01:27:26
+   Duration  855.69s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > held, gave back and saw lapse the slots each role's allowance gives, and none for any other role
+AssertionError: expected [ …(5) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+@@ -2,46 +2,46 @@
+    [
+      "author",
+      {
+        "consumed": 4,
+        "expired": 0,
+-       "held": 8,
+-       "released": 4,
++       "held": 6,
++       "released": 2,
+      },
+    ],
+    [
+      "star",
+      {
+        "consumed": 4,
+        "expired": 0,
+-       "held": 36,
+-       "released": 32,
++       "held": 24,
++       "released": 20,
+      },
+    ],
+    [
+      "member in the audience",
+      {
+        "consumed": 4,
+        "expired": 0,
+-       "held": 12,
+-       "released": 8,
++       "held": 8,
++       "released": 4,
+      },
+    ],
+    [
+      "member who joined after the commit (T8)",
+      {
+        "consumed": 4,
+        "expired": 0,
+-       "held": 20,
+-       "released": 16,
++       "held": 12,
++       "released": 8,
+      },
+    ],
+    [
+      "rejoined member, a new interval (T8)",
+      {
+        "consumed": 4,
+        "expired": 0,
+-       "held": 20,
+-       "released": 16,
++       "held": 12,
++       "released": 8,
+      },
+    ],
+  ]
+
+ ❯ src/privacy/matrix.test.ts:3068:62
+    3066|     // nothing in the three states that keep them, where the drop adde…
+    3067|     expect(SLOTS.size).toBe(ROLES.length);
+    3068|     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
+       |                                                              ^
+    3069|       ["author", { held: 6 + 2, released: 2 + 2, expired: 0, consumed:…
+    3070|       ["star", { held: 24 + 3 * 4, released: 20 + 3 * 4, expired: 0, c…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > refused each role at the limits its allowance reaches: a friend's link and photos, the star's links, and the whole
+AssertionError: expected [ [ 'author', …(1) ], …(4) ] to deeply equal [ [ 'author', …(1) ], …(4) ]
+
+- Expected
++ Received
+
+@@ -1,12 +1,12 @@
+  [
+    [
+      "author",
+      {
+        "EXTERNAL_LIMIT": 0,
+-       "PHOTO_LIMIT": 2,
+-       "QUOTA_FULL": 34,
++       "PHOTO_LIMIT": 1,
++       "QUOTA_FULL": 25,
+      },
+    ],
+    [
+      "star",
+      {
+@@ -16,27 +16,27 @@
+      },
+    ],
+    [
+      "member in the audience",
+      {
+-       "EXTERNAL_LIMIT": 4,
++       "EXTERNAL_LIMIT": 0,
+        "PHOTO_LIMIT": 0,
+-       "QUOTA_FULL": 28,
++       "QUOTA_FULL": 24,
+      },
+    ],
+    [
+      "member who joined after the commit (T8)",
+      {
+        "EXTERNAL_LIMIT": 0,
+-       "PHOTO_LIMIT": 8,
++       "PHOTO_LIMIT": 4,
+        "QUOTA_FULL": 16,
+      },
+    ],
+    [
+      "rejoined member, a new interval (T8)",
+      {
+        "EXTERNAL_LIMIT": 0,
+-       "PHOTO_LIMIT": 8,
++       "PHOTO_LIMIT": 4,
+        "QUOTA_FULL": 16,
+      },
+    ],
+  ]
+
+ ❯ src/privacy/matrix.test.ts:3104:84
+    3102|     // day counted.
+    3103|     expect(LIMITS.size).toBe(ROLES.length);
+    3104|     expect([...LIMITS].filter(([, met]) => Object.values(met).some((n)…
+       |                                                                                    ^
+    3105|       ["author", { QUOTA_FULL: 3 * 7 + 4 + 3 * 3, PHOTO_LIMIT: 1 + 1, …
+    3106|       ["star", { QUOTA_FULL: 4, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 4 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

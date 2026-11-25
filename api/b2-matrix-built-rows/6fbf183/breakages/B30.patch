@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -611,6 +611,7 @@
+       proposal,
+       ...(await rosterTargets(tx, w)),
+       ...(await releasedSlot(tx, w)),
++      upload: avatar.id,
+       avatar: avatar.id,
+       subject: subject.auth_subject,
+       account: w.ben.user,

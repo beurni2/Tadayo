@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (26 tests | 1 failed | 25 skipped) 1527ms
+   ❯ Home while a drop of the open day has a comment (B6's reply previews; the outside audit's A4) (1)
+     × refuses the open page to each role that may see the commented photo, and gives every other role its own 1243ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 skipped (26)
+   Start at  01:24:09
+   Duration  3.66s (tests 51%, transform 30%, import 19%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > Home while a drop of the open day has a comment (B6's reply previews; the outside audit's A4) > refuses the open page to each role that may see the commented photo, and gives every other role its own
+AssertionError: expected [ …(3) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "author, open, a comment on Ben's photo: getHome: status 200, not the server's empty 500 for a page later stages build",
++   "star, open, a comment on Ben's photo: getHome: status 200, not the server's empty 500 for a page later stages build",
++   "member in the audience, open, a comment on Ben's photo: getHome: status 200, not the server's empty 500 for a page later stages build",
++ ]
+
+ ❯ src/privacy/matrix.test.ts:3356:19
+    3354|       wrong.push(...found.filter((finding) => !(want === "refused" && …
+    3355|     }
+    3356|     expect(wrong).toEqual([]);
+       |                   ^
+    3357|     expect(counted.answers).toBe(passing.length);
+    3358|     expect(undeclared).toEqual(["author", "star", "member in the audie…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

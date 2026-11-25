@@ -1,0 +1,12 @@
+--- a/packages/domain/src/clubs/home.ts
++++ b/packages/domain/src/clubs/home.ts
+@@ -245,8 +245,7 @@
+      WHERE x.occurrence_id = (h.open_day OPERATOR(pg_catalog.->>) 'id')
+        AND x.id IN (${readableDrops(sql, viewer, now, "media")})
+        AND (EXISTS (SELECT FROM app.reactions re WHERE re.drop_id = x.id)
+-            OR EXISTS (SELECT FROM app.favourites fa WHERE fa.drop_id = x.id AND fa.interval_id = lm.interval_id)
+-            OR EXISTS (SELECT FROM app.comments co WHERE co.drop_id = x.id)))`;
++            OR EXISTS (SELECT FROM app.favourites fa WHERE fa.drop_id = x.id AND fa.interval_id = lm.interval_id)))`;
+ }
+ 
+ function record(value: unknown): Record<string, unknown> {

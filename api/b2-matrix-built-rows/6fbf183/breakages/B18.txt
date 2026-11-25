@@ -1,0 +1,84 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (26 tests | 1 failed) 836382ms
+   ❯ the uploads' table ran (tests/src/privacy/upload.ts) (1)
+     × made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  01:09:44
+   Duration  838.57s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > the uploads' table ran (tests/src/privacy/upload.ts) > made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed
+AssertionError: expected [ …(6) ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+@@ -2,11 +2,11 @@
+    [
+      "author",
+      {
+        "closed": 16,
+        "later": 10,
+-       "linkSlots": 1,
++       "linkSlots": 0,
+        "made": 5,
+        "preparing": 4,
+        "ready": 4,
+        "replayed": 15,
+        "signedLater": 2,
+@@ -16,11 +16,11 @@
+    [
+      "star",
+      {
+        "closed": 4,
+        "later": 16,
+-       "linkSlots": 4,
++       "linkSlots": 0,
+        "made": 8,
+        "preparing": 4,
+        "ready": 4,
+        "replayed": 24,
+        "signedLater": 8,
+@@ -44,11 +44,11 @@
+    [
+      "member who joined after the commit (T8)",
+      {
+        "closed": 4,
+        "later": 16,
+-       "linkSlots": 4,
++       "linkSlots": 0,
+        "made": 8,
+        "preparing": 4,
+        "ready": 4,
+        "replayed": 24,
+        "signedLater": 8,
+@@ -58,11 +58,11 @@
+    [
+      "rejoined member, a new interval (T8)",
+      {
+        "closed": 4,
+        "later": 16,
+-       "linkSlots": 4,
++       "linkSlots": 0,
+        "made": 8,
+        "preparing": 4,
+        "ready": 4,
+        "replayed": 24,
+        "signedLater": 8,
+
+ ❯ src/privacy/matrix.test.ts:3216:89
+    3214|       signedLater: 2 * 4,
+    3215|     };
+    3216|     expect([...UPLOADS].filter(([, table]) => Object.values(table).som…
+       |                                                                                         ^
+    3217|       ["author", { ...one, closed: 4 + 12, linkSlots: 1 }],
+    3218|       ["star", { ...two, closed: 4, linkSlots: 4 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

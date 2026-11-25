@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/bindings.ts
++++ b/tests/src/privacy/bindings.ts
+@@ -150,7 +150,7 @@
+           (parameter) =>
+             `${operation.id} is built and takes ${parameter.name}, which names no object of the matrix's world: the slice that builds it puts one in first`,
+         ),
+-      ...(actsOn[operation.id] ?? [])
++      ...([] as string[])
+         .filter((name) => bindings[name] === "missing")
+         .map(
+           (name) =>

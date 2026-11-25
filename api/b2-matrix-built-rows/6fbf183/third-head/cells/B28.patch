@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/allowance.ts
++++ b/packages/domain/src/drops/allowance.ts
+@@ -112,7 +112,7 @@
+ export function limitRefusal(allowance: Allowance, media: MediaClass): LimitCode | null {
+   if (!MEDIA_CLASSES.includes(media)) throw new TypeError("allowance: not a media class");
+   if (allowance.added + allowance.reserved >= allowance.limit) return "QUOTA_FULL";
+-  if (media === "external_video" && allowance.externalAdded + allowance.externalReserved >= allowance.externalLimit) {
++  if (media === "external_video" && allowance.externalReserved >= allowance.externalLimit) {
+     return "EXTERNAL_LIMIT";
+   }
+   if (media === "photo" && allowance.photoAdded + allowance.photoReserved >= allowance.photoLimit) {
