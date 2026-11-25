@@ -168,6 +168,31 @@ import Testing
         #expect(history.routes == [.signInNotKept, .starting, .signIn])
     }
 
+    @Test func aRetryWhoseReadIsRefusedStillSaysTheSessionWasntKept() async throws {
+        // A keychain that refuses the read on this Retry read no account, since none was kept:
+        // the line stays "Couldn’t keep you signed in." (T43), not the account's, and the address
+        // typed stays for the Retry after it (FQ89).
+        let store = UnwritableStore()
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(me: [.success(account())])
+        let root = root(accounts, auth: auth, store: store)
+        await root.start()
+        let signIn = try #require(root.signIn)
+        signIn.email = "ben@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        #expect(root.route == .signInNotKept)
+        store.refuseNextLoad()
+        await root.retry()
+        #expect(root.route == .signInNotKept)
+        await root.retry()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.step == .email)
+        #expect(root.signIn?.email == "ben@example.com")
+        #expect(accounts.calls.isEmpty)
+    }
+
     @Test func onlyAcceptedInvitationsAreNoClubWithTheirRows() async {
         // Handoff 9's `acceptedInvitations.noClub`: Home with no club, its invitations first. A
         // list with a club is `.listed` (`RootModelClubsTests`).
@@ -771,10 +796,26 @@ import Testing
     }
 }
 
-/// A keychain that won't take a session: `save` throws, as a full or locked keychain can.
+/// A keychain that won't take a session: `save` throws, as a full or locked keychain can; and,
+/// once told, its next load throws too.
 final class UnwritableStore: SessionStore, @unchecked Sendable {
     struct Refused: Error {}
-    func load() throws -> AuthSession? { nil }
+    private let lock = NSLock()
+    private var loadFailures = 0
+
+    func load() throws -> AuthSession? {
+        let refuse = lock.withLock {
+            guard loadFailures > 0 else { return false }
+            loadFailures -= 1
+            return true
+        }
+        if refuse { throw Refused() }
+        return nil
+    }
+
     func save(_ session: AuthSession) throws { throw Refused() }
     func delete() throws {}
+
+    /// Makes the next load throw, as a keychain read can once.
+    func refuseNextLoad() { lock.withLock { loadFailures += 1 } }
 }

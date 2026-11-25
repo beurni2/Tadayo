@@ -160,6 +160,35 @@ final class StubbornStore: SessionStore, @unchecked Sendable {
     }
 }
 
+/// A store holding a session that can never be used, as a keychain item whose bytes don't decode
+/// is: its load throws `UnusableSession` until a sign-in writes over it or a sign-out deletes it.
+final class UnusableStore: SessionStore, @unchecked Sendable {
+    private let lock = NSLock()
+    private var session: AuthSession?
+    private var unusable = true
+
+    func load() throws -> AuthSession? {
+        try lock.withLock {
+            if unusable { throw UnusableSession() }
+            return session
+        }
+    }
+
+    func save(_ session: AuthSession) throws {
+        lock.withLock {
+            unusable = false
+            self.session = session
+        }
+    }
+
+    func delete() throws {
+        lock.withLock {
+            unusable = false
+            session = nil
+        }
+    }
+}
+
 /// Yields until `condition` holds, and records a failure after 10,000 tries rather than spin
 /// forever when a change breaks it.
 func eventually(_ condition: () async -> Bool) async {
@@ -194,10 +223,45 @@ final class ManualClock: @unchecked Sendable {
         SessionManager(auth: auth, store: store, now: { clock.now })
     }
 
-    @Test func withNoSessionThereIsNoToken() async {
+    @Test func withNoSessionThereIsNoToken() async throws {
         let manager = manager(FakeAuth(), InMemorySessionStore(), ManualClock(start))
         await #expect(throws: SessionError.signedOut) { try await manager.accessToken() }
-        #expect(await manager.isSignedIn == false)
+        #expect(try await manager.isSignedIn == false)
+    }
+
+    @Test func aKeychainReadThatFailsEndsNothing() async throws {
+        // A read the keychain refuses for a moment (before the first unlock after a restart,
+        // say) isn't "nothing stored": no token is handed out, the session stays kept, and
+        // neither says signed out (FQ89: a hiccup never signs anyone out). The next read that
+        // works uses it.
+        let auth = FakeAuth()
+        let store = StubbornStore(session(1), loadFailures: 2)
+        let manager = manager(auth, store, ManualClock(start))
+        await #expect(throws: SessionError.unavailable) { try await manager.accessToken() }
+        await #expect(throws: SessionError.unavailable) { try await manager.isSignedIn }
+        #expect(try await manager.accessToken() == "access-1")
+        #expect(try await manager.isSignedIn)
+        store.refuseNextLoad()
+        await #expect(throws: SessionError.unavailable) {
+            try await manager.accessToken(afterRejecting: "access-1")
+        }
+        #expect(try store.load() == session(1))
+        #expect(store.deletes == 0)
+        #expect(auth.calls.isEmpty)
+    }
+
+    @Test func aSessionThatCanNeverBeReadIsNoSession() async throws {
+        // Bytes that don't decode never will: that reads as signed out, so sign-in can start
+        // and write over them, where waiting would show Retry forever.
+        let store = UnusableStore()
+        let manager = manager(FakeAuth(), store, ManualClock(start))
+        await #expect(throws: SessionError.signedOut) { try await manager.accessToken() }
+        await #expect(throws: SessionError.signedOut) {
+            try await manager.accessToken(afterRejecting: "access-1")
+        }
+        #expect(try await manager.isSignedIn == false)
+        try await manager.begin(session(2))
+        #expect(try await manager.accessToken() == "access-2")
     }
 
     @Test func beginningASessionStoresIt() async throws {
@@ -205,7 +269,7 @@ final class ManualClock: @unchecked Sendable {
         let manager = manager(FakeAuth(), store, ManualClock(start))
         try await manager.begin(session(1))
         #expect(try store.load() == session(1))
-        #expect(await manager.isSignedIn)
+        #expect(try await manager.isSignedIn)
     }
 
     @Test func aFreshTokenIsUsedAsItIs() async throws {
@@ -334,13 +398,13 @@ final class ManualClock: @unchecked Sendable {
         let token = Task { try await manager.accessToken() }
         await gate.reached()
         let signOut = Task { await manager.signOut() }
-        await eventually { await !manager.isSignedIn }
+        await eventually { (try? await manager.isSignedIn) == false }
         gate.open()
         #expect(await signOut.value)
         #expect(try await token.value == "access-2")
         #expect(auth.calls == ["refresh refresh-1", "signOut access-2"])
         #expect(try store.load() == nil)
-        #expect(await manager.isSignedIn == false)
+        #expect(try await manager.isSignedIn == false)
     }
 
     @Test func aRefreshThatLandsAfterASignInLeavesTheNewSession() async throws {
@@ -384,7 +448,7 @@ final class ManualClock: @unchecked Sendable {
         await #expect(throws: SessionError.signedOut) {
             try await manager.accessToken(afterRejecting: "access-1")
         }
-        #expect(await manager.isSignedIn == false)
+        #expect(try await manager.isSignedIn == false)
         gate.open()
         #expect(await signOut.value)
         #expect(try store.load() == nil)
@@ -437,7 +501,7 @@ final class ManualClock: @unchecked Sendable {
         gate.open()
         await #expect(throws: SessionError.signedOut) { try await token.value }
         #expect(try store.load() == nil)
-        #expect(await app.isSignedIn == false)
+        #expect(try await app.isSignedIn == false)
     }
 
     @Test func aRefreshThatFindsAnotherProcessesNewerSessionKeepsIt() async throws {
@@ -463,7 +527,7 @@ final class ManualClock: @unchecked Sendable {
         let token = Task { try await manager.accessToken() }
         await gate.reached()
         let signOut = Task { await manager.signOut() }
-        await eventually { await !manager.isSignedIn }
+        await eventually { (try? await manager.isSignedIn) == false }
         try await manager.begin(session(9))
         gate.open()
         _ = try? await token.value
@@ -504,6 +568,25 @@ final class ManualClock: @unchecked Sendable {
         #expect(try store.load() == session(2, expiresIn: 7200))
     }
 
+    @Test func aRefreshTokenAlreadyUsedWithAStoreThatCantBeReadEndsNothing() async throws {
+        // "Already used" ends the session only when the store, read again, still holds the
+        // token sent: the share extension may have refreshed it first. A read the keychain
+        // refuses can't say, so nothing is deleted, and the next read finds what it holds (FQ89).
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.failure(.refreshTokenAlreadyUsed)])
+        auth.duringRefresh = { await gate.wait() }
+        let store = StubbornStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        store.refuseNextLoad()
+        gate.open()
+        await #expect(throws: SessionError.unavailable) { try await token.value }
+        #expect(try store.load() == session(1, expiresIn: 20))
+        #expect(store.deletes == 0)
+        #expect(try await manager.isSignedIn)
+    }
+
     @Test func aSignOutAskedForAfterANewerSignInEndsThatOneToo() async throws {
         // A sign-out that began before a sign-in can't stand in for one asked for after it.
         let gate = Gate()
@@ -514,7 +597,7 @@ final class ManualClock: @unchecked Sendable {
         let token = Task { try await manager.accessToken() }
         await gate.reached()
         let first = Task { await manager.signOut() }
-        await eventually { await !manager.isSignedIn }
+        await eventually { (try? await manager.isSignedIn) == false }
         try await manager.begin(session(9))
         let second = Task { await manager.signOut() }
         for _ in 0..<50 { await Task.yield() }
@@ -524,7 +607,7 @@ final class ManualClock: @unchecked Sendable {
         #expect(await second.value)
         #expect(auth.calls == ["refresh refresh-1", "signOut access-9"])
         #expect(try store.load() == nil)
-        #expect(await manager.isSignedIn == false)
+        #expect(try await manager.isSignedIn == false)
     }
 
     @Test func aStoreThatCantBeReadIsStillForgotten() async throws {

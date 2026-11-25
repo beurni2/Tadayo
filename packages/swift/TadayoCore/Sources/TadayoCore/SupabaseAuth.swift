@@ -18,7 +18,10 @@ public struct SupabaseConfiguration: Sendable, Equatable {
 
 /// A signed-in session: the tokens and when the access token runs out, by the device's clock. The
 /// expiry only times the next refresh; the server decides whether a token is still good. Nothing
-/// of the user Supabase sends (it holds the address) is kept.
+/// of the user Supabase sends (it holds the address) is kept. Its stored shape is read by later
+/// builds and by earlier ones (a tester can install an older build over a newer one): a field
+/// added later must decode when it's absent, or every kept session reads as `UnusableSession`,
+/// which signs its person out.
 public struct AuthSession: Sendable, Equatable, Codable {
     public let accessToken: String
     public let refreshToken: String
@@ -51,12 +54,14 @@ public enum AuthFailure: Error, Sendable, Equatable {
     /// The refresh token was already used, perhaps by the share extension: read the stored
     /// session again before giving up.
     case refreshTokenAlreadyUsed
-    /// The session can't be refreshed: sign in again.
+    /// The server said the session can't be refreshed, with one of GoTrue's own codes for it:
+    /// sign in again.
     case sessionEnded
     /// Signing out, the server refused the access token itself (`bad_jwt`): refresh it and try
     /// once more, since the session behind it may still be live.
     case accessTokenRejected
-    /// The server is busy or failing (429 or 5xx): keep the session, or the code, and try later.
+    /// The server is busy or failing (429 or 5xx), or a refresh's answer didn't say the session
+    /// ended: keep the session, or the code, and try later.
     case unavailable
 }
 
@@ -138,16 +143,27 @@ public struct SupabaseAuth: Sendable {
         throw .codeNotVerified
     }
 
-    /// Exchanges the refresh token for a new session.
+    /// The codes GoTrue's refresh grant answers with a 400 when it won't take the refresh token:
+    /// not found, its user banned, no session behind it, the session expired or revoked, or not
+    /// issued by this server (`RefreshTokenGrant` in `internal/tokens/service.go`, and the
+    /// grant's parameter check in `internal/api/token_refresh.go`, of `supabase/auth`).
+    static let sessionEndingCodes: Set<String> = [
+        "refresh_token_not_found", "user_banned", "session_not_found", "session_expired",
+        "validation_failed",
+    ]
+
+    /// Exchanges the refresh token for a new session. Only a 400 with one of GoTrue's codes for a
+    /// refresh token it won't take ends the session. Anything else is a hiccup that keeps it
+    /// (FQ89): two refreshes at once (409 `conflict`), a gateway's or a captive portal's page, a
+    /// success with no tokens, a code this build doesn't know.
     public func refresh(_ session: AuthSession) async throws(AuthFailure) -> AuthSession {
         let (status, data, response) = try await call(
             "token", query: [URLQueryItem(name: "grant_type", value: "refresh_token")],
             body: RefreshRequest(refreshToken: session.refreshToken))
         if (200..<300).contains(status), let fresh = self.session(from: data) { return fresh }
-        if status == 429 || status >= 500 { throw .unavailable }
-        if errorCode(data, response) == "refresh_token_already_used" {
-            throw .refreshTokenAlreadyUsed
-        }
+        guard status == 400, let code = errorCode(data, response) else { throw .unavailable }
+        if code == "refresh_token_already_used" { throw .refreshTokenAlreadyUsed }
+        guard Self.sessionEndingCodes.contains(code) else { throw .unavailable }
         throw .sessionEnded
     }
 

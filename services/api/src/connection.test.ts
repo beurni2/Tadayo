@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { connect } from "./connection.ts";
+import { API_POOL, connect } from "./connection.ts";
 
 const POOLER = "aws-0-us-east-1.pooler.supabase.com";
 const REF = "abcdefghijklmnopqrst";
@@ -32,6 +32,15 @@ afterEach(() => {
 });
 
 describe("connect", () => {
+  it("opens at most six connections, a size set on purpose for the session pooler (the outside audit's A7)", async () => {
+    // Two APIs during a rolling deploy, the worker's two and one for a migration or an `ops` script fit in
+    // Supabase's default session pool of 15 (docs/plans/api-b2-db-limits.md, section 0.5).
+    expect(API_POOL).toBe(6);
+    const sql = connect(POOLER_URL);
+    expect(sql.options.max).toBe(6);
+    await sql.end();
+  });
+
   it("requires TLS checked against Supabase's root for the pooler, though the string says nothing of it", async () => {
     expect(await optionsOf(POOLER_URL)).toEqual({ ssl: PINNED, host: [POOLER], port: [5432] });
   });
