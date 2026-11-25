@@ -2822,12 +2822,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           }
           // After the commit's table, while the day collects, each request judged from the rows before it as the
           // reservations' table's are, and each slot it holds given back while it is live: a link, given back at once,
-          // then a photo and a photo again. The table met a friend's photo and link limits with slots alone, and
-          // counted the drops already in the day only toward the whole (Ben's two for the author, Cleo's link for the
-          // member in the audience); here they count toward those limits too, the one the commit's table added among
-          // them (review round 3, F3 and F4). So a friend with a link in the day is refused another at the friend's
-          // one (EXTERNAL_LIMIT) though the three aren't full, and a friend with the photo just added and room left
-          // holds one more and is refused the next at the friend's two (PHOTO_LIMIT).
+          // then a photo and a photo again. The table met a friend's photo limit and the star's link limit with slots
+          // alone, and counted the drops already in the day only toward the whole (Ben's two for the author, Cleo's
+          // link for the member in the audience); here they count toward a friend's limits too, the one the commit's
+          // table added among them (review round 3, F3 and F4). So a friend with a link in the day is refused another
+          // at the friend's one (EXTERNAL_LIMIT) though the three aren't full, and a friend with the photo just added
+          // and room left holds one more and is refused the next at the friend's two (PHOTO_LIMIT).
           if (phase === "collecting") {
             const link = await reserveStep("external_video", randomUUID(), "a link after the commit's table");
             if (link.slot !== undefined) {

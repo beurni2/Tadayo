@@ -45,8 +45,9 @@ video link (round 4, R4-5); Home's judge wants the refusal from whoever may see 
 or the neutral not-found from everyone else (round 3, F1). A handler that lifts the refusal fails
 it, so the slice that lifts it changes that test and its judge, moves Home into `ACTS_ON` and puts a comment in the
 world first (round 2, F2; round 3, F1). The harness tests find every operation whose request or answer can name a
-comment by walking the contract and by round 1's rule, the operations named for comments (round 3, F2); each takes
-`comment_id`, is in `ACTS_ON`, or is in `REFUSES_COMMENTS`. `comment_id` is the one still missing (0.4); the refusal makes the slice that
+comment by walking the contract and by round 1's rule (round 3, F2), widened to the operations whose id, path or
+parameters name comments or replies (round 4, R4-3); each takes `comment_id`, is in `ACTS_ON` acting on `comment_id`,
+or is in `REFUSES_COMMENTS`. `comment_id` is the one still missing (0.4); the refusal makes the slice that
 builds any of those routes put the comment in the world, and guards the next Id parameter the contract adds. And a
 binding that's a function but names nothing, an object of another kind or another club's object is caught in every
 cell: each value a cell binds must be a row of its binding's table whose club is the cell's (`bindings.ts` `TABLES`,
@@ -135,6 +136,8 @@ purpose. The matrix is where a built route meets its row.
    reads the path and each parameter too (R4-3); in `matrix.test.ts`, Home asked again with the comment on Ben's video
    link, and the test renamed for the commented drop (R4-5); `rows.ts`'s header rewritten to the requests after the
    commit's table (R4-2).
+11. The fresh check of the fifth commit: in `harness.test.ts`, the walk and the rule beside it read a property or a
+   kind that names comments or replies, not only `comment_id`, `reply_to_id` and the kind `comment` (section 9, C1).
 
 ## 2. Tests first
 
@@ -234,6 +237,12 @@ Round 4 adds, at the PR's last head:
 - B34: Home's refusal looking at photos alone: the matrix's test of Home with a comment, on Ben's video link (R4-5).
 B25's anchor follows the widened rule's new name, and the matrix's test of Home with a comment is renamed (B21m, B24,
 B34).
+
+The fresh check of the fifth commit adds, at the PR's last head:
+- B35: `getClub` given a query parameter `include` whose kinds are `comments` and `reactions`, the check's probe A:
+  harness.test.ts's walk (C1);
+- B36: `ClubDetail` given `recent_comments`, an inline array of objects with an id and a body, the check's probe B:
+  the same (C1).
 
 Since round 1's fixes, a breakage that `checkBoundRows` catches in the other club's world fails the matrix file in its
 setup, before any test runs: the script registers that error's words for B1, B2, B9, B10 and B11, and B1c, B2c and
@@ -343,3 +352,27 @@ One fresh reviewer of the fourth commit (`6fbf183`) at full depth. Fixed or answ
   test's "made as a cell's" (the cells' slots, avatars and bound rows are left out, and Home reads none of them), and
   block 1.2's "in every world" for `checkBoundRows` (the cells' worlds and the other club's); "their own page from
   everyone else" in `bindings.ts` and 0.3 (or the neutral not-found).
+
+## 9. A fresh check of the fifth commit
+
+One fresh reviewer of the fifth commit (`6209ccf`) alone. Fixed in the sixth commit:
+- C1 (low, R4-3's remainder): the words for comments and replies were tested against ids, paths and parameters' names
+  only. A kind matched only the exact `comment`, and a body's property only `comment_id` and `reply_to_id`, so a query
+  parameter whose kinds are `comments` and `reactions`, or a club's answer given `recent_comments` inline, passed the
+  whole harness file. Fixed: the walk and the rule test every property's name and every kind against the same words;
+  the walk and the union keep their pins (six and eight operations), and `replacement` (an upload's purpose) isn't
+  one (B35, B36).
+- C2 (records): the comment above the requests after the commit's table said the reservations' table met a friend's
+  link limit with slots alone. It meets a friend's photo limit and the star's link limit; a friend's link limit is met
+  after it.
+- C3 (records): `bindings.ts`' doc of `ACTS_ON` and 0.3 still named round 1's rule "the operations named for
+  comments". Both now say the id, path or parameters, and `ACTS_ON` acting on `comment_id`.
+- C4 (nit): `bindings.ts` credited the neutral not-found to `pageFor`, which decides only the refusal; `homeFor`
+  decides the not-found.
+
+The check also named two limits, recorded here. A refusal of Home that reads only the friends' section still passes,
+since the open day has no drop by Ana; like a comment on a removed drop, which drops the refusal reads is B6's to
+change, with the page. And the removed and held states are written by fixtures, never by a server command
+(`removeDrop` and `hideDrop` aren't built), so R4-4's answer is about the read side: there, each refusal's and each
+held slot's allowance, `photo_added` among its fields, is compared field by field (`reservation.ts`
+`reserveExpected`), and a removal command that changes the counter will need its own test.

@@ -97,8 +97,8 @@ export function bindAll(
  * day's page, whose drops carry a reply's preview. The matrix's world must hold one before any of them is built
  * (`bindingProblems`): a thread or a day asked only while it has no comment passes a handler that shows a removed
  * comment or a blocked author's message (T24, T63). Every operation whose request or answer can name a comment
- * takes `comment_id`, is here, or is in REFUSES_COMMENTS: the harness tests find them by walking the contract, and
- * by the operations named for comments.
+ * takes `comment_id`, is here acting on `comment_id`, or is in REFUSES_COMMENTS: the harness tests find them by
+ * walking the contract, and by the operations whose id, path or parameters name comments or replies.
  */
 export const ACTS_ON: Readonly<Record<string, readonly string[]>> = {
   listComments: ["comment_id"],
@@ -112,12 +112,12 @@ export const ACTS_ON: Readonly<Record<string, readonly string[]>> = {
  * show exists, so the matrix asks them with none: Home, whose open page refuses a drop with a comment, a reaction or
  * the viewer's favourite until B6 builds the fields that show them. Each is held to its refusal by what it answers:
  * the matrix asks Home as each role the gate lets through, in a world where a drop of the open day has a comment,
- * and Home's judge (home.ts `pageFor`) wants the refusal from whoever may see that drop and their own page or the
- * neutral not-found from everyone else (matrix.test.ts, "Home while a drop of the open day has a comment"), with the
- * comment on Ben's photo and then on Ben's video link. A handler that answers such a
- * page fails it, so the slice that lifts the refusal changes that judge and that test, and moves the operation into
- * ACTS_ON, which then refuses it built until the world holds a comment (`bindingProblems`). The harness tests also
- * find the refusal's text in its file, which only says where the refusal is. Reactions and favourites have no
+ * and Home's judge (home.ts `homeFor`, with `pageFor` deciding the refusal) wants the refusal from whoever may see
+ * that drop and their own page or the neutral not-found from everyone else (matrix.test.ts, "Home while a drop of
+ * the open day has a comment"), with the comment on Ben's photo and then on Ben's video link. A handler that answers
+ * such a page fails it, so the slice that lifts the refusal changes that judge and that test, and moves the operation
+ * into ACTS_ON, which then refuses it built until the world holds a comment (`bindingProblems`). The harness tests
+ * also find the refusal's text in its file, which only says where the refusal is. Reactions and favourites have no
  * binding: the slice that builds them puts them in the world.
  */
 export const REFUSES_COMMENTS: Readonly<Record<string, { file: string; refusal: string }>> = {

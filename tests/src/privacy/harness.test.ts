@@ -210,8 +210,11 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
     // property naming one, or a kind that can be one (a report's target). The review's round 2: Home's and the
     // day's drops carry a reply's preview. Round 1's rule stays beside the walk (round 3, F2), widened in round 4
     // (R4-3): an operation named for comments or replies, on a path that names them, or with a parameter that
-    // names one or can be one, is one, whatever its bodies say.
+    // names one or can be one, is one, whatever its bodies say. The fifth commit's check: a property or a kind
+    // that names comments or replies, not only `comment_id`, `reply_to_id` and the kind `comment`, is one too.
     const document = readDocument();
+    const names = /comment|repl(?:y|ies)/i;
+    const naming = (values: readonly Json[]) => values.some((value) => typeof value === "string" && names.test(value));
     const reaches = (node: Json, seen: Set<string>): boolean => {
       if (Array.isArray(node)) return node.some((one) => reaches(one, seen));
       if (!isObject(node)) return false;
@@ -227,9 +230,9 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
         return reaches(target, seen);
       }
       const properties = node["properties"];
-      if (isObject(properties) && ("comment_id" in properties || "reply_to_id" in properties)) return true;
+      if (isObject(properties) && naming(Object.keys(properties))) return true;
       const kinds = node["enum"];
-      if (Array.isArray(kinds) && kinds.includes("comment")) return true;
+      if (Array.isArray(kinds) && naming(kinds)) return true;
       return Object.values(node).some((value) => reaches(value, seen));
     };
     const paths = document["paths"];
@@ -254,7 +257,6 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
       "listComments",
       "updateComment",
     ]);
-    const names = /comment|repl(?:y|ies)/i;
     const named = operations
       .filter(
         (found) =>
@@ -262,9 +264,7 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
           names.test(found.path) ||
           found.parameters.some(
             (parameter) =>
-              names.test(parameter.name) ||
-              (parameter.values ?? []).includes("comment") ||
-              reaches(parameter.schema, new Set()),
+              names.test(parameter.name) || naming(parameter.values ?? []) || reaches(parameter.schema, new Set()),
           ),
       )
       .map((found) => found.id);
