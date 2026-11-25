@@ -1714,8 +1714,7 @@ class Steps:
         cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
                "-destination", self.destination(version),
                "-derivedDataPath", self.derived_data(), "-resultBundlePath", bundle,
-               "-skipPackagePluginValidation",
-               "-only-testing:TadayoTests/ArrivalFocusTests", "-test-iterations", "20"]
+               "-skipPackagePluginValidation"]
         for target in skipped:
             cmd += ["-skip-testing", target]
         env = {"TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never"}
@@ -1731,18 +1730,28 @@ class Steps:
             place = self.runtime_place(*where)
             self.write_log(f"test-{version}.log", f"iOS {version} before the pass: "
                                                   f"{place or 'unreadable'}")
-        # Probe 2 (never merged): the snapshot tests once first, in their own host, as the
-        # full pass runs them before TadayoTests; then ArrivalFocusTests 20 times.
-        first = self.out_path(f"Snapshots-{version}.xcresult")
-        shutil.rmtree(first, ignore_errors=True)
-        before = [c for c in cmd if not c.startswith("-only-testing") and c not in
-                  ("-test-iterations", "20")]
-        before[before.index(bundle)] = first
-        self.write_log(f"test-{version}.log", "probe: the snapshot tests first")
-        self.shell.run(before + ["-only-testing:TadayoSnapshotTests"], env=self.xcode_env(env),
-                       log=log)
-        self.write_log(f"test-{version}.log", "probe: then ArrivalFocusTests 20 times")
-        code = self.shell.run(cmd, env=self.xcode_env(env), log=log)
+        # Probe 3 (never merged): 16 launches of the test host, each running ArrivalFocusTests'
+        # first test and then one variant of the second, as a full pass runs them, early in a
+        # fresh host: A (as on main) or B (the sign-in at a person's pace), in the order ABBA
+        # four times, so the runner's falling load weighs on both alike.
+        test = "-only-testing:TadayoTests/ArrivalFocusTests/"
+        code = 0
+        for index, variant in enumerate("ABBA" * 4):
+            name = ("testA03TakesTheFocusAsItReplacesA02Age" if variant == "A" else
+                    "testA03TakesTheFocusAsItReplacesA02AgeAtAPersonsPace")
+            launch = list(cmd)
+            launch[launch.index(bundle)] = self.out_path(f"Tests-{version}-{index}.xcresult")
+            shutil.rmtree(launch[launch.index("-resultBundlePath") + 1], ignore_errors=True)
+            launch += [test + "testA03AsksForNoFocusWhileVoiceOverRuns", test + name]
+            self.write_log(f"test-{version}.log", f"probe: launch {index} variant {variant} "
+                                                  f"at {time.strftime('%H:%M:%S')}")
+            result = self.shell.run(launch, env=self.xcode_env(env), log=log)
+            self.write_log(f"test-{version}.log", f"probe: launch {index} variant {variant} "
+                                                  f"exit {result}")
+            code = code or result
+            if index == 15:
+                shutil.rmtree(bundle, ignore_errors=True)
+                shutil.copytree(launch[launch.index("-resultBundlePath") + 1], bundle)
         if version in toolchain.IOS_DOWNLOADS:
             after = self.runtime_place(*where)
             self.write_log(f"test-{version}.log", f"iOS {version} after the pass: "

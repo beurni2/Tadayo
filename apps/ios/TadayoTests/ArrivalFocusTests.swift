@@ -29,27 +29,70 @@ final class ArrivalFocusTests: XCTestCase {
     /// ended, for 2.5 seconds, past the 2 seconds the asking can last, so the asking stops once
     /// the field has it and never takes it back. What is then typed goes into the name.
     func testA03TakesTheFocusAsItReplacesA02Age() throws {
-        probe("start")
-        defer { probe("end") }
+        try arrive(paced: false)
+    }
+
+    /// Probe 3 (never merged): the same, with the sign-in driven at a person's pace: each next
+    /// step only once the keyboard has come up for the screen's field, or gone for A02-age, and
+    /// no keyboard notification has come for a second.
+    func testA03TakesTheFocusAsItReplacesA02AgeAtAPersonsPace() throws {
+        try arrive(paced: true)
+    }
+
+    private func arrive(paced: Bool) throws {
+        let variant = paced ? "B" : "A"
+        let began = Date()
+        probe("start \(variant)")
+        defer {
+            probe("end \(variant) \(String(format: "%.1f", Date().timeIntervalSince(began)))s")
+        }
+        let watch = KeyboardWatch()
         let root = UITestLaunch.fakeGraph().root
         let shown = Shown(RoutedView(root: root))
         defer { shown.close() }
-        try signInToTheAge(root)
+        drive({ await root.start() }, until: { root.route == .signIn })
+        if paced { settle(watch, shown, up: true, after: nil, "email") }
+        let signIn = try XCTUnwrap(root.signIn)
+        signIn.email = "ben@example.com"
+        let email = shown.focusedField
+        drive({ await signIn.sendCode() }, until: { signIn.step == .code })
+        if paced { settle(watch, shown, up: true, after: email, "code") }
+        signIn.code = UITestLaunch.rightCode
+        drive({ await signIn.verify() }, until: { root.route == .confirmAge })
+        if paced { settle(watch, shown, up: false, after: nil, "age") }
         XCTAssertTrue(
             spin(for: 2) { shown.focusedField == nil }, "A02-age has no field to hold the focus")
         let profile = try XCTUnwrap(root.profile)
         drive({ await profile.confirmAge() }, until: { root.route == .profile })
         XCTAssertTrue(spin(for: 3) { shown.focusedField != nil }, "no field took the focus on A03")
-        probe("focused")
+        probe("focused \(variant)")
         let field = try XCTUnwrap(shown.focusedField)
         let ended = XCTNSNotificationExpectation(
             name: UITextField.textDidEndEditingNotification, object: field)
         ended.isInverted = true
         wait(for: [ended], timeout: 2.5)
-        probe("held \(field.isFirstResponder)")
+        probe("held \(variant) \(field.isFirstResponder)")
         XCTAssertTrue(field.isFirstResponder, "the name's field lost the focus")
         field.insertText("Ben")
         XCTAssertTrue(spin(for: 1) { profile.name == "Ben" }, "the name is \"\(profile.name)\"")
+    }
+
+    /// Probe 3: turns the run loop until the keyboard is up (with a field focused other than
+    /// `after`) or down (with none), and no keyboard notification has come for a second; 15
+    /// seconds at most. Prints how long it took and whether it settled.
+    private func settle(
+        _ watch: KeyboardWatch, _ shown: Shown, up: Bool, after previous: UITextField?,
+        _ step: String
+    ) {
+        let began = Date()
+        let settled = spin(for: 15) {
+            let field = shown.focusedField
+            let focus = up ? (field != nil && field !== previous) : field == nil
+            return focus && watch.up == up && Date().timeIntervalSince(watch.last) >= 1
+        }
+        probe(
+            "settle \(step) \(settled) \(String(format: "%.1f", Date().timeIntervalSince(began)))s"
+                + " notes \(watch.count)")
     }
 
     /// While VoiceOver runs, A03 asks for no focus on arrival, and VoiceOver's own is left to the
@@ -71,15 +114,6 @@ final class ArrivalFocusTests: XCTestCase {
             shown.close()
             XCTAssertEqual(took, !voiceOver, "VoiceOver \(voiceOver ? "on" : "off")")
         }
-    }
-
-    private func signInToTheAge(_ root: RootModel) throws {
-        drive({ await root.start() }, until: { root.route == .signIn })
-        let signIn = try XCTUnwrap(root.signIn)
-        signIn.email = "ben@example.com"
-        drive({ await signIn.sendCode() }, until: { signIn.step == .code })
-        signIn.code = UITestLaunch.rightCode
-        drive({ await signIn.verify() }, until: { root.route == .confirmAge })
     }
 
     /// Turns the main run loop until `done`, for `seconds` at most, and says whether it held.
@@ -129,5 +163,37 @@ private final class Shown {
     private static func fields(in view: UIView) -> [UITextField] {
         let own = view as? UITextField
         return (own.map { [$0] } ?? []) + view.subviews.flatMap { fields(in: $0) }
+    }
+}
+
+/// Probe 3 (never merged): the keyboard's own notifications, as they come: whether it was last
+/// shown or hidden, when the last of them came, and how many have.
+@MainActor
+private final class KeyboardWatch {
+    private(set) var up = false
+    private(set) var last = Date.distantPast
+    private(set) var count = 0
+    private var tokens: [NSObjectProtocol] = []
+
+    init() {
+        let names: [(Notification.Name, Bool?)] = [
+            (UIResponder.keyboardWillShowNotification, nil),
+            (UIResponder.keyboardDidShowNotification, true),
+            (UIResponder.keyboardWillHideNotification, nil),
+            (UIResponder.keyboardDidHideNotification, false),
+            (UIResponder.keyboardDidChangeFrameNotification, nil),
+        ]
+        for (name, shown) in names {
+            tokens.append(
+                NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) {
+                    [weak self] _ in
+                    MainActor.assumeIsolated {
+                        guard let self else { return }
+                        self.last = Date()
+                        self.count += 1
+                        if let shown { self.up = shown }
+                    }
+                })
+        }
     }
 }
