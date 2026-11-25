@@ -1730,7 +1730,7 @@ class Steps:
             place = self.runtime_place(*where)
             self.write_log(f"test-{version}.log", f"iOS {version} before the pass: "
                                                   f"{place or 'unreadable'}")
-        # Probe 3 (never merged): 16 launches of the test host, each running ArrivalFocusTests'
+        # Probes 3 and 4 (never merged): 16 launches of the test host, each running ArrivalFocusTests'
         # first test and then one variant of the second, as a full pass runs them, early in a
         # fresh host: A (as on main) or B (the sign-in at a person's pace), in the order ABBA
         # four times, so the runner's falling load weighs on both alike.
@@ -1743,8 +1743,18 @@ class Steps:
             launch[launch.index(bundle)] = self.out_path(f"Tests-{version}-{index}.xcresult")
             shutil.rmtree(launch[launch.index("-resultBundlePath") + 1], ignore_errors=True)
             launch += [test + "testA03AsksForNoFocusWhileVoiceOverRuns", test + name]
+            # Probe 4: the keyboard daemon kbd ended before each launch, so each starts it cold,
+            # as a full pass's first keyboard does after the snapshot tests.
+            _, listing, _ = self.shell.capture(["ps", "-axo", "pid=,command="])
+            ended = []
+            for row in listing.splitlines():
+                pid, _, command = row.strip().partition(" ")
+                if command.split(" ")[0].endswith("/kbd") and pid.isdigit():
+                    ended.append(pid)
+                    self.shell.capture(["kill", "-9", pid])
             self.write_log(f"test-{version}.log", f"probe: launch {index} variant {variant} "
-                                                  f"at {time.strftime('%H:%M:%S')}")
+                                                  f"at {time.strftime('%H:%M:%S')}, kbd ended: "
+                                                  f"{' '.join(ended) or 'none running'}")
             result = self.shell.run(launch, env=self.xcode_env(env), log=log)
             self.write_log(f"test-{version}.log", f"probe: launch {index} variant {variant} "
                                                   f"exit {result}")
