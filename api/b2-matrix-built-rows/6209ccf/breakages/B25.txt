@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (93 tests | 1 failed) 1744ms
+   ❯ a built route names objects of the world (the outside audit's A4) (5)
+     × has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one 250ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 92 passed (93)
+   Start at  02:28:07
+   Duration  3.14s (tests 58%, transform 25%, import 17%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one
+AssertionError: expected [ 'createComment', …(5) ] to deeply equal [ 'createComment', …(7) ]
+
+- Expected
++ Received
+
+  [
+    "createComment",
+    "createReport",
+-   "deleteComment",
+-   "getCommentMedia",
+    "getHome",
+    "getOccurrence",
+    "listComments",
+    "updateComment",
+  ]
+
+ ❯ src/privacy/harness.test.ts:272:21
+    270|       .map((found) => found.id);
+    271|     const canName = [...new Set([...walked])].sort();
+    272|     expect(canName).toEqual([
+       |                     ^
+    273|       "createComment",
+    274|       "createReport",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

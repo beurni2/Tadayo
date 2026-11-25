@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -2828,7 +2828,7 @@
+           // them (review round 3, F3 and F4). So a friend with a link in the day is refused another at the friend's
+           // one (EXTERNAL_LIMIT) though the three aren't full, and a friend with the photo just added and room left
+           // holds one more and is refused the next at the friend's two (PHOTO_LIMIT).
+-          if (phase === "collecting") {
++          if (phase !== phase) {
+             const link = await reserveStep("external_video", randomUUID(), "a link after the commit's table");
+             if (link.slot !== undefined) {
+               const given = await giveBack(link.slot, "the link's slot after the commit's table, given back at once");

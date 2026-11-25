@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/services/api
+
+ ❯ src/app.test.ts (13 tests | 1 failed) 275ms
+   ❯ the skeleton's routes (T14) (2)
+     × answers every operation nobody has built yet with the neutral not-found, and nothing else 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  02:01:34
+   Duration  1.31s (transform 52%, import 25%, tests 23%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app.test.ts > the skeleton's routes (T14) > answers every operation nobody has built yet with the neutral not-found, and nothing else
+AssertionError: expected [ …(40) ] to have a length of 39 but got 40
+
+- Expected
++ Received
+
+- 39
++ 40
+
+ ❯ src/app.test.ts:100:21
+     98|   it("answers every operation nobody has built yet with the neutral no…
+     99|     const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operat…
+    100|     expect(unbuilt).toHaveLength(39);
+       |                     ^
+    101|     for (const operation of unbuilt) {
+    102|       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,10 @@
+--- a/packages/domain/src/clubs/home.ts
++++ b/packages/domain/src/clubs/home.ts
+@@ -244,6 +244,7 @@
+     SELECT FROM app.drops x
+      WHERE x.occurrence_id = (h.open_day OPERATOR(pg_catalog.->>) 'id')
+        AND x.id IN (${readableDrops(sql, viewer, now, "media")})
++       AND x.media_class = 'photo'
+        AND (EXISTS (SELECT FROM app.reactions re WHERE re.drop_id = x.id)
+             OR EXISTS (SELECT FROM app.favourites fa WHERE fa.drop_id = x.id AND fa.interval_id = lm.interval_id)
+             OR EXISTS (SELECT FROM app.comments co WHERE co.drop_id = x.id)))`;

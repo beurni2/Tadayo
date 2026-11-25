@@ -1,0 +1,13 @@
+--- a/packages/domain/src/clubs/home.ts
++++ b/packages/domain/src/clubs/home.ts
+@@ -394,10 +394,6 @@
+     case "day": {
+       if (open === null) throw shape();
+       // Reactions, favourites and reply previews are B6's (the header): a page that left out one would be false.
+-      if (flag(row["open_page_later"]))
+-        throw new Error(
+-          "home: the open day's drops have reactions or comments, or the viewer's favourite, which B6's page shows",
+-        );
+       const page = openPage(row["open_drops"], row["open_rail"], open.star.membershipId);
+       const addTarget = ownDay(chosenDay(row["add_target"], "collecting"), clubId);
+       if (addTarget !== null && addTarget.star.membershipId !== open.star.membershipId) throw shape();

@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/harness.ts
++++ b/tests/src/privacy/harness.ts
+@@ -249,7 +249,7 @@
+ 
+ /** Each of `parts` once for each value `name` binds to in `targets`, in a request of its own. */
+ function eachValue(parts: Part[], name: string, targets: Targets): Part[] {
+-  const values = bindAll(name, targets);
++  const values = bindAll(name, targets).slice(0, 1);
+   return parts.flatMap((part) =>
+     values.map((value, index) => ({
+       values: { ...part.values, [name]: value },

@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/harness.ts
++++ b/tests/src/privacy/harness.ts
+@@ -312,7 +312,7 @@
+ export function elsewhereOf(spec: Spec, name: string, elsewhere: Targets): string {
+   const values = bindAll(name, elsewhere);
+   const at = spec.which?.[name] ?? 0;
+-  const value = values[at];
++  const value = values[0];
+   if (value === undefined)
+     throw new Error(
+       `another club has no value ${String(at + 1)} for ${name}: its binding gives ${String(values.length)}`,
