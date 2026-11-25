@@ -13,7 +13,7 @@ import { OPERATIONS } from "@tadayo/contracts";
 import type { Account, Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { BODY_LIMIT, bodyLimitOf, buildApp, routesOf, type Deps } from "./app.ts";
+import { BODY_LIMIT, BUILT_OPERATIONS, bodyLimitOf, buildApp, routesOf, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { END_SECONDS } from "./shutdown.ts";
 import { noStorage } from "./testing.ts";
@@ -64,37 +64,8 @@ const deps: Deps = {
   storage: noStorage,
   log: { level: "silent" },
 };
-/** The operations slice 8 builds; every other answers the neutral not-found (T14). */
-const BUILT = new Set([
-  "getMe",
-  "updateMe",
-  "listClubs",
-  "createClub",
-  "getClub",
-  "listMembers",
-  "proposeRoster",
-  "getRosterRevision",
-  "createInvitation",
-  "revokeInvitation",
-  "previewInvitationWeb",
-  "previewInvitation",
-  "acceptInvitation",
-  "approveRoster",
-  "declineRoster",
-  "leaveClub",
-  "getHome",
-  "getSchedule",
-  "chooseScheduleDays",
-  "confirmScheduleDays",
-  "createReservation",
-  "releaseReservation",
-  "createDrop",
-  "createUpload",
-  "getUpload",
-  "completeUpload",
-  "registerDevice",
-  "removeDevice",
-]);
+/** The operations the app builds (app.ts's own table); every other answers the neutral not-found (T14). */
+const BUILT: ReadonlySet<string> = new Set(BUILT_OPERATIONS);
 let app: FastifyInstance;
 
 beforeAll(async () => {
