@@ -53,10 +53,12 @@ enum AccessibilityElements {
     }
 
     /// The elements with their frames, and the window's size and safe areas: for a screen's
-    /// geometry, such as where a title sits or how far a button is above the safe area.
-    static func layout(of view: some View) -> Layout {
+    /// geometry, such as where a title sits or how far a button is above the safe area. `ready`
+    /// is the test's own scripted state, such as a save that has failed, which the read waits
+    /// for first, up to 30 seconds; the test's own assertions then say whether it came.
+    static func layout(of view: some View, until ready: () -> Bool = { true }) -> Layout {
         prepare()
-        return read(view)
+        return read(view, until: ready)
     }
 
     /// Activates the element labelled `label`, while the view is still on screen, as a double tap
@@ -111,10 +113,12 @@ enum AccessibilityElements {
         {}
     }
 
-    /// Shows the view, gathers its elements in VoiceOver's order, and hands them and the window
-    /// to `use` before the window goes.
+    /// Shows the view, waits for `ready` and then a few turns of the run loop, gathers its
+    /// elements in VoiceOver's order, and hands them and the window to `use` before the window
+    /// goes.
     private static func show<Result>(
-        _ view: some View, _ use: ([NSObject], UIWindow) -> Result
+        _ view: some View, until ready: () -> Bool = { true },
+        _ use: ([NSObject], UIWindow) -> Result
     ) -> Result {
         let scene = UIApplication.shared.connectedScenes.lazy.compactMap { $0 as? UIWindowScene }
             .first
@@ -138,15 +142,22 @@ enum AccessibilityElements {
             window.isHidden = true
             window.rootViewController = nil
         }
-        // A few turns of the run loop, so a navigation stack has put up its screen.
+        // The test's own scripted state first, when it names one, such as a save that fails a
+        // moment after the screen shows (`docs/plans/ios-b1-intermittents.md`, item 3).
+        let scripted = Date().addingTimeInterval(30)
+        while !ready(), Date() < scripted {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        }
+        // A few turns of the run loop, so a navigation stack has put up its screen, and the
+        // screen has answered the state.
         let settled = Date().addingTimeInterval(0.5)
         while Date() < settled { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
         window.layoutIfNeeded()
         return use(gather(window), window)
     }
 
-    private static func read(_ view: some View) -> Layout {
-        show(view) { objects, window in
+    private static func read(_ view: some View, until ready: () -> Bool = { true }) -> Layout {
+        show(view, until: ready) { objects, window in
             Layout(
                 elements: objects.map {
                     Element(

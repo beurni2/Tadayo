@@ -119,8 +119,9 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
     for (const photo of [{ TADAYO_PHOTO_USER: "tadayo-image" }, {}]) {
       const result = await run({ NODE_ENV: "production", ...photo }, true);
       expect(result.code, JSON.stringify(photo)).toBe(1);
-      expect(result.stderr, JSON.stringify(photo)).toBe(
-        "worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone\n",
+      // As root alone: root's ids, with what the kernel says of the rest after them (privileges.ts, startFactsSaid).
+      expect(result.stderr, JSON.stringify(photo)).toMatch(
+        /^worker: in production it starts only as fly\.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone \(it found uid 0, euid 0, egid 0, NoNewPrivs [01], CapBnd [0-9a-f]{16}, CapInh [0-9a-f]{16}, Groups (?:[0-9 ]+|none)\)\n$/,
       );
       expect(result.stdout).toBe("");
     }
