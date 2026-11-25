@@ -5,10 +5,22 @@
 
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { describe, expect, it } from "vitest";
-import { BINDINGS, freshId, type Targets } from "./bindings.ts";
+import { BUILT_OPERATIONS } from "@tadayo/api";
+import { readFileSync } from "node:fs";
+import {
+  ACTS_ON,
+  BINDINGS,
+  bindingProblems,
+  boundNames,
+  freshId,
+  REFUSES_COMMENTS,
+  TABLES,
+  type Targets,
+} from "./bindings.ts";
 import {
   answerOf,
   cellStep,
+  elsewhereOf,
   guessCount,
   guessStep,
   malformedProblems,
@@ -29,7 +41,7 @@ import {
   type Caller,
   type Spec,
 } from "./harness.ts";
-import { contractOperations, readDocument, type ContractOperation } from "./operations.ts";
+import { contractOperations, isObject, readDocument, type ContractOperation, type Json } from "./operations.ts";
 import { JUDGED, NONE, ROWS, rowProblems } from "./rows.ts";
 import { transportProblem } from "./scanner.ts";
 
@@ -45,6 +57,7 @@ function operation(id: string): ContractOperation {
 const here: Targets = {
   club: "clb_here",
   drop: "drp_here",
+  video: "drp_video_here",
   day: "occ_here",
   author: "itv_here",
   star: "itv_star_here",
@@ -57,6 +70,7 @@ const here: Targets = {
 const elsewhere: Targets = {
   club: "clb_there",
   drop: "drp_there",
+  video: "drp_video_there",
   day: "occ_there",
   author: "itv_there",
   star: "itv_star_there",
@@ -116,29 +130,208 @@ function spec(id: string): Spec {
   return first;
 }
 
+const built: ReadonlySet<string> = new Set(BUILT_OPERATIONS);
+
 describe("a route with no row fails (TECH-DESIGN section 8)", () => {
-  it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the account routes'", () => {
+  it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes'", () => {
     expect(operations).toHaveLength(68);
-    expect(rowProblems(operations, ROWS)).toEqual([]);
+    expect(rowProblems(operations, ROWS, { built })).toEqual([]);
   });
 
   it("reports a route added to the contract without a row", () => {
     const added = [...operations, { ...operation("getDrop"), id: "getDropTwice" }];
-    expect(rowProblems(added, ROWS)).toEqual(["getDropTwice has no row in the privacy matrix"]);
+    expect(rowProblems(added, ROWS, { built })).toEqual(["getDropTwice has no row in the privacy matrix"]);
   });
 
   it("reports a row whose operation is gone, a row that isn't NONE and that nothing judges, and a judged operation's NONE", () => {
-    expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE })).toEqual([
+    expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE }, { built })).toEqual([
       "getDropTwice has a row but no operation in the contract",
     ]);
-    expect(rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } })).toEqual([
+    expect(rowProblems(operations, { ...ROWS, getMe: NONE }, { built })).toEqual([
+      "getMe is judged but its row is NONE",
+      "getMe is built but its row is NONE: a built route's row is judged, never the skeleton's",
+    ]);
+    // The slice that builds a route builds its handler, names it among the judged, and its row is no longer NONE.
+    expect(
+      rowProblems(
+        operations,
+        { ...ROWS, getDrop: { grants: "everyone" } },
+        { built: new Set([...built, "getDrop"]), judged: new Set([...JUDGED, "getDrop"]) },
+      ),
+    ).toEqual([]);
+  });
+
+  it("ties the built routes to the judged rows both ways (the outside audit's A4)", () => {
+    // The audit's leaking handler: built, and its row left the skeleton's.
+    expect(rowProblems(operations, ROWS, { built: new Set([...built, "deleteComment"]) })).toEqual([
+      "deleteComment is built but its row is NONE: a built route's row is judged, never the skeleton's",
+    ]);
+    // A row judged for a route the app doesn't build.
+    expect(rowProblems(operations, ROWS, { built: new Set([...built].filter((id) => id !== "getMe")) })).toEqual([
+      "getMe isn't built but its row isn't NONE: only a built route has a row of its own",
+    ]);
+    // A row judged and built, but nothing judges it.
+    expect(
+      rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } }, { built: new Set([...built, "getDrop"]) }),
+    ).toEqual([
       "getDrop's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
     ]);
-    expect(rowProblems(operations, { ...ROWS, getMe: NONE })).toEqual(["getMe is judged but its row is NONE"]);
-    // The slice that builds a route names it among the judged, and its row is no longer NONE.
+    // A handler under a key that isn't an operation (the review's mistyped key): buildApp never routes it.
+    expect(rowProblems(operations, ROWS, { built: new Set([...built, "getDrops"]) })).toEqual([
+      "getDrops is built but isn't an operation of the contract: buildApp never routes it",
+    ]);
+  });
+});
+
+describe("a built route names objects of the world (the outside audit's A4)", () => {
+  it("binds every Id parameter of every built route to an object of the world", () => {
+    expect(bindingProblems(operations, built)).toEqual([]);
+    // The one still missing, until B6's first comment route puts a comment in the world (bindings.ts).
+    expect(Object.entries(BINDINGS).filter(([, binding]) => binding === "missing")).toEqual([
+      ["comment_id", "missing"],
+    ]);
+  });
+
+  it("refuses a built route that acts on comments while the world has none, though it takes no comment_id", () => {
+    // The review's scenario: B6's thread routes built first, each keyed by a drop or by nothing.
+    expect(bindingProblems(operations, new Set([...built, "listComments", "createComment", "createReport"]))).toEqual([
+      "listComments is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+      "createComment is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+      "createReport is built and acts on the objects comment_id names, of which the matrix's world has none: the slice that builds it puts one in first",
+    ]);
+    // Once a comment is in the world, nothing holds them.
     expect(
-      rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } }, new Set([...JUDGED, "getDrop"])),
+      bindingProblems(operations, new Set([...built, "listComments"]), { ...BINDINGS, comment_id: () => "cmt_here" }),
     ).toEqual([]);
+  });
+
+  it("has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one", () => {
+    // Walked from the contract: a request body or an answer that reaches a schema of a comment or a reply, a
+    // property naming one, or a kind that can be one (a report's target). The review's round 2: Home's and the
+    // day's drops carry a reply's preview. Round 1's rule stays beside the walk (round 3, F2), widened in round 4
+    // (R4-3): an operation named for comments or replies, on a path that names them, or with a parameter that
+    // names one or can be one, is one, whatever its bodies say. The fifth commit's check: a property or a kind
+    // that names comments or replies, not only `comment_id`, `reply_to_id` and the kind `comment`, is one too.
+    const document = readDocument();
+    const names = /comment|repl(?:y|ies)/i;
+    const naming = (values: readonly Json[]) => values.some((value) => typeof value === "string" && names.test(value));
+    const reaches = (node: Json, seen: Set<string>): boolean => {
+      if (Array.isArray(node)) return node.some((one) => reaches(one, seen));
+      if (!isObject(node)) return false;
+      const ref = node["$ref"];
+      if (typeof ref === "string") {
+        const name = ref.split("/").at(-1) ?? "";
+        if (/^(Comment|Reply)/.test(name)) return true;
+        if (seen.has(ref)) return false;
+        seen.add(ref);
+        let target: Json = document;
+        for (const part of ref.replace(/^#\//, "").split("/"))
+          target = isObject(target) ? (target[part] ?? null) : null;
+        return reaches(target, seen);
+      }
+      const properties = node["properties"];
+      if (isObject(properties) && naming(Object.keys(properties))) return true;
+      const kinds = node["enum"];
+      if (Array.isArray(kinds) && naming(kinds)) return true;
+      return Object.values(node).some((value) => reaches(value, seen));
+    };
+    const paths = document["paths"];
+    if (!isObject(paths)) throw new Error("the contract has no paths");
+    const walked = Object.values(paths)
+      .flatMap((item) => (isObject(item) ? Object.values(item) : []))
+      .filter(isObject)
+      .filter(
+        (found) => reaches(found["requestBody"] ?? null, new Set()) || reaches(found["responses"] ?? null, new Set()),
+      )
+      .map((found) => {
+        const id = found["operationId"];
+        if (typeof id !== "string") throw new Error("an operation of the contract has no operationId");
+        return id;
+      })
+      .sort();
+    expect(walked).toEqual([
+      "createComment",
+      "createReport",
+      "getHome",
+      "getOccurrence",
+      "listComments",
+      "updateComment",
+    ]);
+    const named = operations
+      .filter(
+        (found) =>
+          names.test(found.id) ||
+          names.test(found.path) ||
+          found.parameters.some(
+            (parameter) =>
+              names.test(parameter.name) || naming(parameter.values ?? []) || reaches(parameter.schema, new Set()),
+          ),
+      )
+      .map((found) => found.id);
+    const canName = [...new Set([...walked, ...named])].sort();
+    expect(canName).toEqual([
+      "createComment",
+      "createReport",
+      "deleteComment",
+      "getCommentMedia",
+      "getHome",
+      "getOccurrence",
+      "listComments",
+      "updateComment",
+    ]);
+    const takes = (id: string) =>
+      operations.find((found) => found.id === id)?.parameters.some((parameter) => parameter.name === "comment_id");
+    // ACTS_ON is exactly the rest: each operation that can name a comment, takes no comment_id and isn't refused.
+    expect(canName.filter((id) => !takes(id) && REFUSES_COMMENTS[id] === undefined)).toEqual(
+      Object.keys(ACTS_ON).sort(),
+    );
+    expect(Object.keys(ACTS_ON).sort()).toEqual(["createComment", "createReport", "getOccurrence", "listComments"]);
+    for (const [id, bindings] of Object.entries(ACTS_ON)) {
+      expect(operations.some((found) => found.id === id)).toBe(true);
+      // Each acts on the comments it can name (round 4, R4-1: the keys alone let an entry be emptied).
+      expect(bindings, id).toContain("comment_id");
+      for (const name of bindings) expect(BINDINGS[name]).toBeDefined();
+    }
+    // Home is held while its handler refuses a page with a comment. Its refusal's text says where the refusal is;
+    // what holds its behaviour is the matrix's test of Home while a drop of the open day has a comment
+    // (matrix.test.ts), which fails once the handler answers such a page (round 3, F1).
+    expect(Object.keys(REFUSES_COMMENTS)).toEqual(["getHome"]);
+    for (const [id, { file, refusal }] of Object.entries(REFUSES_COMMENTS)) {
+      expect(canName).toContain(id);
+      expect(built.has(id)).toBe(true);
+      expect(readFileSync(new URL(`../../../${file}`, import.meta.url), "utf8")).toContain(`"${refusal}"`);
+    }
+  });
+
+  it("names a table for every binding, and the bindings each built route names or acts on", () => {
+    expect(Object.keys(TABLES).sort()).toEqual(Object.keys(BINDINGS).sort());
+    expect(boundNames(operations, built).sort()).toEqual([
+      "club_id",
+      "invitation_id",
+      "occurrence_id",
+      "proposal_id",
+      "reservation_id",
+      "revision_id",
+      "upload_id",
+    ]);
+    expect(boundNames(operations, new Set(["listComments", "getMemberAvatar"]))).toEqual([
+      "club_id",
+      "membership_id",
+      "drop_id",
+      "comment_id",
+    ]);
+  });
+
+  it("refuses a built route that takes a parameter still marked missing, and lets an unbuilt one keep it", () => {
+    // The audit's deleteComment, built while comment_id names nothing.
+    expect(bindingProblems(operations, new Set([...built, "deleteComment"]))).toEqual([
+      "deleteComment is built and takes comment_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+    ]);
+    // A built route's parameter put back to missing.
+    expect(bindingProblems(operations, built, { ...BINDINGS, upload_id: "missing" })).toEqual([
+      "getUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+      "completeUpload is built and takes upload_id, which names no object of the matrix's world: the slice that builds it puts one in first",
+    ]);
   });
 });
 
@@ -161,6 +354,52 @@ describe("the requests a cell makes, from the contract's parameters", () => {
     expect(spec("listMemories").query).toEqual({ club_id: "clb_here" });
   });
 
+  it("names each drop once as Ben's photo and once as Ben's video link (the outside audit's A4)", () => {
+    expect(specsFor(operation("getDrop"), here, "Bearer planted").map((made) => made.path)).toEqual([
+      { drop_id: "drp_here" },
+      { drop_id: "drp_video_here" },
+    ]);
+    expect(specsFor(operation("getEmbed"), here, "Bearer planted").map((made) => made.path)).toEqual([
+      { drop_id: "drp_here" },
+      { drop_id: "drp_video_here" },
+    ]);
+    expect(
+      specsFor(operation("getDropMedia"), here, "Bearer planted").map((made) => [
+        made.path.drop_id,
+        made.query.rendition,
+      ]),
+    ).toEqual([
+      ["drp_here", "display"],
+      ["drp_here", "full"],
+      ["drp_video_here", "display"],
+      ["drp_video_here", "full"],
+    ]);
+  });
+
+  it("sends each value of an Id parameter in the query too, required or optional, and knows which it sent", () => {
+    const getDrop = operation("getDrop");
+    const [path] = getDrop.parameters;
+    if (path === undefined) throw new Error("getDrop has no parameter");
+    const planted = (required: boolean) =>
+      ({
+        ...getDrop,
+        path: "/v1/drops",
+        parameters: [{ ...path, in: "query", required }],
+      }) as ContractOperation;
+    expect(specsFor(planted(true), here, "Bearer planted").map((made) => [made.query, made.which])).toEqual([
+      [{ drop_id: "drp_here" }, { drop_id: 0 }],
+      [{ drop_id: "drp_video_here" }, { drop_id: 1 }],
+    ]);
+    expect(specsFor(planted(false), here, "Bearer planted").map((made) => [made.query, made.which])).toEqual([
+      [{}, {}],
+      [{ drop_id: "drp_here" }, { drop_id: 0 }],
+      [{ drop_id: "drp_video_here" }, { drop_id: 1 }],
+    ]);
+    expect(specsFor(operation("getMemberAvatar"), here, "Bearer planted").map((made) => made.which)).toEqual([
+      { club_id: 0, membership_id: 0 },
+    ]);
+  });
+
   it("sends each optional Id parameter too, filled from the world, in a request of its own", () => {
     expect(specsFor(operation("listMemories"), here, "Bearer planted").map((made) => made.query)).toEqual([
       { club_id: "clb_here" },
@@ -178,8 +417,12 @@ describe("the requests a cell makes, from the contract's parameters", () => {
     expect(specsFor(operation("getDropMedia"), here, "Bearer planted").map((made) => made.query)).toEqual([
       { rendition: "display" },
       { rendition: "full" },
+      { rendition: "display" },
+      { rendition: "full" },
     ]);
     expect(specsFor(operation("removeDrop"), here, "Bearer planted").map((made) => made.query)).toEqual([
+      { reason: "withdraw" },
+      { reason: "pictured" },
       { reason: "withdraw" },
       { reason: "pictured" },
     ]);
@@ -371,6 +614,45 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     expect(step.problems).toContainEqual(expect.stringMatching(/^getDrop, drop_id guessed: status 403$/));
     expect(step.problems.filter((problem) => !problem.includes("drop_id guessed"))).toEqual([]);
     await app.close();
+  });
+
+  it("guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4)", async () => {
+    const sent: string[] = [];
+    const app = await plantedApp("getEmbed", (request, reply) => {
+      sent.push((request.params as { drop_id: string }).drop_id);
+      return neutral(reply);
+    });
+    const [photo, video] = specsFor(operation("getEmbed"), here, "Bearer planted");
+    if (photo === undefined || video === undefined) throw new Error("getEmbed has one request, not two");
+    for (const [made, own, other] of [
+      [photo, "drp_there", "drp_video_there"],
+      [video, "drp_video_there", "drp_there"],
+    ] as const) {
+      sent.length = 0;
+      await guessStep(app, made, elsewhere);
+      expect(sent).toContain(own);
+      expect(sent).not.toContain(other);
+      sent.length = 0;
+      await signedOutStep(app, made, elsewhere);
+      expect(sent).toContain(own);
+      expect(sent).not.toContain(other);
+    }
+    // A video route that refuses a photo for its class alone, and leaks another club's video: the guess finds it.
+    const leaky = await plantedApp("getEmbed", (request, reply) =>
+      (request.params as { drop_id: string }).drop_id === elsewhere.video
+        ? reply.code(200).header("cache-control", "private, no-store").send({ embed: "theirs" })
+        : neutral(reply),
+    );
+    expect((await guessStep(leaky, photo, elsewhere)).problems).toEqual([]);
+    expect((await guessStep(leaky, video, elsewhere)).problems).toContainEqual(
+      expect.stringMatching(/^getEmbed, drop_id guessed: status 200$/),
+    );
+    // A request holding a value another club's binding hasn't is a broken harness, never the first value instead.
+    expect(() => elsewhereOf({ ...video, which: { drop_id: 2 } }, "drop_id", elsewhere)).toThrow(
+      "another club has no value 3 for drop_id: its binding gives 2",
+    );
+    await app.close();
+    await leaky.close();
   });
 
   it("reports a router that answers a long id or a broken escape in its own words, echoing the path", async () => {

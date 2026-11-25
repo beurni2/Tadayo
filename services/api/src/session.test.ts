@@ -8,7 +8,7 @@ import { OPERATIONS } from "@tadayo/contracts";
 import type { Account, Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildApp, type Deps } from "./app.ts";
+import { BUILT_OPERATIONS, buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { KeysUnavailable } from "./identity/token.ts";
 import { bearerToken, sessions, type Authenticate } from "./session.ts";
@@ -98,37 +98,8 @@ async function appWith(authenticate: Authenticate) {
 
 /** An operation's own path, with a made-up id where it takes one. */
 const urlOf = (path: string) => path.replace(/\{[a-z_]+\}/g, "drp_x");
-const BUILT = new Set([
-  "getMe",
-  "updateMe",
-  "listClubs",
-  "createClub",
-  "getClub",
-  "listMembers",
-  "proposeRoster",
-  "getRosterRevision",
-  "createInvitation",
-  "revokeInvitation",
-  "previewInvitationWeb",
-  "previewInvitation",
-  "acceptInvitation",
-  "approveRoster",
-  "declineRoster",
-  "leaveClub",
-  "getHome",
-  "getSchedule",
-  "chooseScheduleDays",
-  "confirmScheduleDays",
-  "createReservation",
-  "releaseReservation",
-  "createDrop",
-  "createUpload",
-  "getUpload",
-  "completeUpload",
-  "registerDevice",
-  "removeDevice",
-  "getHealth",
-]);
+/** The operations the app builds (app.ts's own table). */
+const BUILT: ReadonlySet<string> = new Set(BUILT_OPERATIONS);
 const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
 /**
  * The public operations, all built: each that reads a body is sent `{}`, which its handler refuses by its first

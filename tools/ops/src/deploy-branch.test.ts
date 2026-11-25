@@ -4,8 +4,19 @@
 // it to put server code on `dev` before it merges.
 
 import { describe, expect, it, vi } from "vitest";
-import { FAKE_FLY_TOKEN, fakeSpawn, json, lineOf, machine, type Route } from "../test/fake-fly.ts";
-import { deployBranch } from "./deploy-branch.ts";
+import {
+  eventRow,
+  FAKE_FLY_TOKEN,
+  fakeSpawn,
+  json,
+  lineOf,
+  logEntries,
+  machine,
+  machineStatus,
+  type Route,
+  WORKER_ID,
+} from "../test/fake-fly.ts";
+import { deployBranch, failedMachines } from "./deploy-branch.ts";
 import { flyOf } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 
@@ -39,6 +50,8 @@ interface Scene {
   github?: Record<string, { status: number; body?: unknown }>;
   deploy?: Route;
   machines?: unknown[];
+  /** Routes for what a failed deploy reads of a Machine: its status and its log. */
+  more?: Route[];
 }
 
 async function run(scene: Scene = {}, branch = BRANCH) {
@@ -46,6 +59,7 @@ async function run(scene: Scene = {}, branch = BRANCH) {
     ["git rev-parse HEAD", { stdout: `${scene.head ?? SHA}\n` }],
     ["git status --porcelain", { stdout: scene.porcelain ?? "" }],
     scene.deploy ?? ["flyctl deploy", {}],
+    ...(scene.more ?? []),
     [
       "flyctl machine list",
       json(scene.machines ?? [machine("a1", "api", "started", LABEL), machine("w1", "worker", "started", LABEL)]),
@@ -416,6 +430,35 @@ describe("deployBranch when GitHub or Fly doesn't answer as it should", () => {
       "deploy-branch: flyctl couldn't deploy the commit: exit code 1: Error: failed to fetch an image or build from source",
     );
     expect(result.said.some((line) => line.includes("is deployed"))).toBe(false);
+  });
+
+  it("prints the events and the log lines of each Machine a failed deploy names, as flyctl printed none", async () => {
+    const STATUS = `flyctl machine status ${WORKER_ID} -a tadayo-api-dev`;
+    const LOGS = `flyctl logs -a tadayo-api-dev --machine ${WORKER_ID} --no-tail --json`;
+    const failure = [
+      "✔ [1/2] Machine 8744534a1d7068 is now in a good state",
+      `> [2/2] Machine ${WORKER_ID} reached started state`,
+      `Error: failed to update machine ${WORKER_ID}: Unrecoverable error: smoke checks for ${WORKER_ID} failed: the app appears to be crashing`,
+      `Smoke checks for ${WORKER_ID} failed: the app appears to be crashing`,
+      `Check its logs: here's the last lines below, or run 'fly logs -i ${WORKER_ID}':`,
+    ].join("\n");
+    const result = await run({
+      deploy: ["flyctl deploy", { code: 1, stderr: failure }],
+      more: [
+        [STATUS, machineStatus(WORKER_ID, [eventRow("stopped", "exit", "2026-11-25T02:50:12.31Z", { code: 1 })])],
+        [LOGS, logEntries(["worker: what the photo user left couldn't all be removed as it started"])],
+      ],
+    });
+    expect(message(result.outcome)).toMatch(/^deploy-branch: flyctl couldn't deploy the commit: exit code 1: /);
+    expect(
+      result.calls.filter((line) => line.startsWith("flyctl machine status") || line.startsWith("flyctl logs")),
+    ).toEqual([STATUS, LOGS]);
+    expect(result.said).toContain(`deploy-branch: Machine ${WORKER_ID}'s last lines in Fly's log:`);
+    expect(result.said).toContain(
+      "  2026-11-25T02:50:00.000Z [info] worker: what the photo user left couldn't all be removed as it started",
+    );
+    expect(failedMachines(failure)).toEqual([WORKER_ID]);
+    expect(failedMachines(`deploying ${SHA}\nfailed: no Machine named`)).toEqual([]);
   });
 
   it("doesn't take flyctl's word that it deployed: the Machines have to run the commit's image", async () => {

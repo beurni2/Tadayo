@@ -125,7 +125,7 @@ function bare(one: WorldDrop & { row?: DropRowOver }): WorldDrop {
 }
 
 /**
- * Ana, Ben and Cleo's club, Ana's Saturday and the next, and Zed, who is in no club; Ben's live photo slot and his
+ * Ana, Ben and Cleo's club, Ana's Saturday and the next, and Zed, who is in no club; Ben's live photo slot and Ben's
  * ready upload under it, upl_ben, whose hash is HASH; changed by `over`.
  */
 function world(
@@ -215,7 +215,7 @@ const occurrence = (id: string, phase: string, reveal: string, close: string, lo
 const SAT_AS = (phase: string) => occurrence(SAT, phase, "2026-11-07T12:00:00Z", "2026-11-08T06:00:00Z", "2026-11-07");
 const NEXT_COLLECTING = occurrence(NEXT, "collecting", "2026-11-14T12:00:00Z", "2026-11-15T06:00:00Z", "2026-11-14");
 
-/** Ben's ordinary ask: his upload, in Ana's Saturday. */
+/** Ben's ordinary ask: Ben's upload, in Ana's Saturday. */
 const BENS: CommitAsk = { day: SAT, media: { kind: "photo", upload: "upl_ben" } };
 const outcome = (w: DropWorld, who: string | null, ask: CommitAsk = BENS, now = NOW) => commitOutcome(w, who, ask, now);
 const neutral = { kind: "pinned", answer: NEUTRAL };

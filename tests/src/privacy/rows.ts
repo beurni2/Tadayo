@@ -24,8 +24,19 @@
 //   a deleting account, a block) are the row's to judge: the leak scanner knows only the audience,
 //   the author and the reveal. getHome (B2) is the first, for the revealed form (below); the caption and
 //   own forms come with the first routes that answer them (B3, B4);
-// - a body, with its Id fields bound through bindings.ts and replaced in the guessed-id step;
-// - an object in the world for each binding still marked `missing`;
+// - a body, with its Id fields bound through bindings.ts and replaced in the guessed-id step, by the slice that
+//   builds each branch that reads one (bindings.ts, its header, lists them);
+// - an object in the world for each binding still marked `missing`, the last being `comment_id`, which comes with
+//   B6's first comment route (bindings.ts). Since the outside audit's A4, a built route may neither take a `missing`
+//   binding nor act on its objects, as the thread routes and the day's page act on comments (bindings.ts
+//   `bindingProblems`, ACTS_ON), and Home, whose page can show a reply, is held to its refusal of a page with a
+//   comment (REFUSES_COMMENTS) by a matrix test of its own, where a drop of the open day has one and whoever may
+//   see that drop must get the refusal (matrix.test.ts, "Home while a drop of the open day has a comment"), until
+//   the slice that lifts it changes that test and puts a comment in the world; every value a cell binds is a
+//   row of its table in the cell's club (matrix.test.ts `checkBoundRows`); the routes the app builds are
+//   exactly the rows that aren't NONE (`rowProblems`, against the API's BUILT_OPERATIONS), so a built route can't
+//   keep the skeleton's row; and `drop_id` names Ben's photo and Ben's video link, each in a request of its own,
+//   the video put in every state the photo is;
 // - for the first route that pages (getOccurrence, B2; listComments, listFavourites, listMemories and
 //   listMyDrops, B6), a cursor issued to another role and one issued before a removal, each answered
 //   as the row says (T14), beside the forged and malformed cursors the harness sends now, and a
@@ -45,7 +56,7 @@
 //   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS, ownTextKey);
 // - for the uploads' three routes (spike S1's server part, done for a drop's photo: createUpload, getUpload and
 //   completeUpload; docs/plans/api-b2-spike-uploads.md): in every cell, createUpload with no body (the contract
-//   refuses it), and getUpload and completeUpload of the photo's upload Ben started under the slot he gave back
+//   refuses it), and getUpload and completeUpload of the photo's upload Ben started under the slot Ben gave back
 //   (bindings.ts), pending with no bytes in Storage and living until the Saturday's evening: Ben's alone, so Ben
 //   reads it and gets MEDIA_NOT_READY completing it while it lives, and everyone else, and Ben once it lapsed, the
 //   neutral NOT_FOUND. Then, in every phase, a table judged by upload.ts from the world's rows before each request
@@ -68,7 +79,7 @@
 //   uploaded. Then, in every phase, a table judged by drop.ts from the world's rows before each request and held to
 //   its answer in the rows after it: each drop the viewer added in an earlier phase, again under its key (the first
 //   answer, byte for byte but for the day's star, named as the world names them then, the day revealed or closed:
-//   T19, FQ139); Ben's upload still pending under the slot he gave
+//   T19, FQ139); Ben's upload still pending under the slot Ben gave
 //   back, the world's drop's photo, the viewer's two avatars, another club's upload, an upload nobody has and a
 //   link; each upload the viewer made in an earlier phase and the one left pending in this one; and, in the phase
 //   the worker made the viewer's upload ready, that upload under its slot with a caption and the slot's id, added
@@ -139,10 +150,15 @@
 //   back, whose row still says live though it lapsed before any phase, given back by every role (only Cleo's
 //   first interval gets it back, expired; Cleo rejoined in a new interval and everyone else get the neutral
 //   NOT_FOUND, with nothing settled; T9, T14); the slot held in the phase before given back after it lapsed
-//   at the reveal (expired), twice; two photos, three links and three photos, so each role meets
-//   its own limits (the star's six and two, anyone else's three, two and one; addendum 2, T17), QUOTA_FULL
-//   first; the first one's retry under its key (the same bytes) and another body under it
-//   (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back while live. Each role's test counts
+//   at the reveal (expired), twice; three photos, three links and two photos, so the roles meet the limits
+//   between them (the star its two links and its six, a friend its two photos and its three; addendum 2, T17),
+//   QUOTA_FULL first, and one test pins which limits each role met; the first one's retry under its key (the
+//   same bytes) and another body under it (IDEMPOTENCY_CONFLICT; T19); and every slot but the first given back
+//   while live. After the commit's table, while the day collects, a link given back at once, then a photo and a
+//   photo again, so a friend meets the friend's one link with a link already in the day counted and the friend's
+//   two photos with the drop just added counted (review rounds 3 and 4). The star adds no link to the matrix's
+//   day, so the star's links are met by slots alone; with a committed link counted they are held on Postgres
+//   (tests/src/db/reservations.test.ts, "counts Ana's committed drops with Ana's live slots"). Each role's test counts
 //   the slots it held, gave back and saw lapse, and one test names the five roles that held any, with the
 //   counts worked out by hand from the world (matrix.test.ts, "the reservations' table ran"), as one counts
 //   who got Cleo's slot back. No matrix role joins after the day closes: Q06's not-found for a day that closed
@@ -619,17 +635,24 @@ export const ROWS: Readonly<Record<string, unknown>> = {
 
 /**
  * What's wrong with `rows` for `operations`: an operation with no row, a row with no operation, a row that
- * isn't NONE and that nothing judges (JUDGED: the operations account.ts and schedule.ts answer), and an
- * operation it judges whose row is NONE, which would leave its judge unasked.
+ * isn't NONE and that nothing judges (`judged`: JUDGED, the operations account.ts and the others answer), an
+ * operation it judges whose row is NONE, which would leave its judge unasked, a route the app builds (`built`: the
+ * API's BUILT_OPERATIONS) that the contract doesn't have or whose row is NONE, and a row of its own for a route the app
+ * doesn't build. The built routes and the rows that aren't NONE are the same set (the outside audit's A4): a built
+ * route with the skeleton's row would be asked only for the neutral not-found its own request may well get from a
+ * handler that leaks. The two sets are named, so a call can't swap them.
  */
 export function rowProblems(
   operations: readonly { id: string }[],
   rows: Readonly<Record<string, unknown>>,
-  judged: ReadonlySet<string> = JUDGED,
+  { built, judged = JUDGED }: { built: ReadonlySet<string>; judged?: ReadonlySet<string> },
 ): string[] {
   const ids = new Set(operations.map((operation) => operation.id));
   return [
     ...[...ids].filter((id) => !Object.hasOwn(rows, id)).map((id) => `${id} has no row in the privacy matrix`),
+    ...[...built]
+      .filter((id) => !ids.has(id))
+      .map((id) => `${id} is built but isn't an operation of the contract: buildApp never routes it`),
     ...Object.keys(rows)
       .filter((id) => !ids.has(id))
       .map((id) => `${id} has a row but no operation in the contract`),
@@ -642,5 +665,11 @@ export function rowProblems(
     ...Object.entries(rows)
       .filter(([id, row]) => row === NONE && judged.has(id))
       .map(([id]) => `${id} is judged but its row is NONE`),
+    ...[...built]
+      .filter((id) => rows[id] === NONE)
+      .map((id) => `${id} is built but its row is NONE: a built route's row is judged, never the skeleton's`),
+    ...Object.entries(rows)
+      .filter(([id, row]) => row !== NONE && !built.has(id))
+      .map(([id]) => `${id} isn't built but its row isn't NONE: only a built route has a row of its own`),
   ];
 }
