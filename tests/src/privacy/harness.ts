@@ -339,15 +339,17 @@ export function render(spec: Spec): Request {
 /**
  * `spec` with the client's clock and parameters moved past the reveal (T16, Q09): each query
  * parameter a client might hope the server reads, set over any already there, `viewer` naming the
- * author by the membership id every caption card gives out; then the two headers that carry a
+ * author by the membership id every caption card gives out; then the three headers that carry a
  * device's time, and the two that ask a media route for a short answer before it has checked the
- * caller (a 304 for any version, a 206 for one byte).
+ * caller (a 304 for any version, a 206 for one byte). `t` and `If-Modified-Since` since the outside
+ * audit's A14, whose reviewer had Home read its time from each and pass.
  */
 export function manipulations(spec: Spec, author: string, later: Temporal.Instant): Spec[] {
   const at = later.toString({ smallestUnit: "second" });
   const date = new Date(later.epochMilliseconds).toUTCString();
   const query: Record<string, string> = {
     now: at,
+    t: at,
     at,
     as_of: at,
     server_now: at,
@@ -360,6 +362,7 @@ export function manipulations(spec: Spec, author: string, later: Temporal.Instan
   return [
     ...Object.entries(query).map(([name, value]) => ({ ...spec, query: { ...spec.query, [name]: value } })),
     { ...spec, headers: { ...spec.headers, date } },
+    { ...spec, headers: { ...spec.headers, "if-modified-since": date } },
     { ...spec, headers: { ...spec.headers, "x-client-time": at } },
     { ...spec, headers: { ...spec.headers, "if-none-match": "*" } },
     { ...spec, headers: { ...spec.headers, range: "bytes=0-0" } },

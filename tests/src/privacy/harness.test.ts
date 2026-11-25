@@ -475,7 +475,7 @@ describe("each step of the matrix reports a planted wrong answer", () => {
       expect(signedOutCount(spec(id)), id).toBe(signedOutAnswers);
       await app.close();
     }
-    expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(13);
+    expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(15);
   });
 
   // Each wrong answer with the problem cellStep must name for it, so a problem found for another
@@ -581,9 +581,11 @@ describe("each step of the matrix reports a planted wrong answer", () => {
 
   const tells: [string, (request: FastifyRequest) => boolean][] = [
     ["`now` in the query", (request) => Object.hasOwn(request.query as object, "now")],
+    ["`t` in the query", (request) => Object.hasOwn(request.query as object, "t")],
     ["`rendition=full` in the query", (request) => (request.query as Record<string, string>).rendition === "full"],
     ["a client time header", (request) => request.headers["x-client-time"] !== undefined],
     ["a Date header", (request) => request.headers.date !== undefined],
+    ["If-Modified-Since", (request) => request.headers["if-modified-since"] !== undefined],
     ["If-None-Match", (request) => request.headers["if-none-match"] !== undefined],
     ["Range", (request) => request.headers.range !== undefined],
     [

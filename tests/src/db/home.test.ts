@@ -436,6 +436,34 @@ describe("the open day's page: the star's own drops, then friends' (spec 15; T9,
       expect((await page(tx, w.cleo.user, w.club)).drops).toHaveLength(2);
     });
   });
+
+  // A block row with both still members: no command makes this today (a block ends every club the two shared, D11),
+  // but the schema allows it and the predicate denies it either way. The outside audit's A14 rewrote this page with
+  // a one-way block, and Cleo, who had blocked Ben, got Ben's drop.
+  it("leaves out each other's drops when one of two members blocked the other, either way (T9, T23)", async () => {
+    for (const blocker of ["Cleo", "Ben"] as const) {
+      await rolledBack(db, async (tx) => {
+        const w = await newWorld(plain(tx));
+        const bens = await commitDrop(plain(tx), w, w.ben, { at: AT.added });
+        const cleos = await commitDrop(plain(tx), w, w.cleo, { media: "external_video", at: AT.added });
+        const [from, to, name] = blocker === "Cleo" ? [w.cleo, w.ben, "Ben"] : [w.ben, w.cleo, "Cleo"];
+        await tx`
+          INSERT INTO app.blocks (id, blocker_user_id, blocked_user_id, blocked_interval_id, blocked_name, created_at)
+          VALUES (${newId("blk")}, ${from.user}, ${to.user}, ${to.interval}, ${name}, ${STATE_AT})`;
+        expect(
+          (await page(tx, w.cleo.user, w.club)).drops.map((card) => card.id),
+          blocker,
+        ).toEqual([cleos]);
+        expect(
+          (await page(tx, w.ben.user, w.club)).drops.map((card) => card.id),
+          blocker,
+        ).toEqual([bens]);
+        expect((await page(tx, w.ana.user, w.club)).drops.map((card) => card.id).sort(), blocker).toEqual(
+          [bens, cleos].sort(),
+        );
+      });
+    }
+  });
 });
 
 describe("the open day's highlight rail (T22; FQ26)", () => {

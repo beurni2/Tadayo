@@ -8,6 +8,10 @@
 // The scan reads the server's code a line at a time, so it catches the ordinary ways of reading a
 // clock, not a deliberate way round it such as `const D = Date; new D()`. The app's own clock, the
 // device half of T1, is the ios lane's: Swift isn't scanned here.
+//
+// Nor does code outside the time module make a `ServerNow` of its own, by a cast or a guard: the read predicate
+// and the add-target policy take only a `ServerNow`, so a time a route read from a request (`?t=`, a header) can
+// reach them only that way (the outside audit's A14). Tests may.
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
@@ -50,6 +54,23 @@ const READS = [
   },
   { what: "the tests' fake clock", pattern: /\bfakeClock\b|@tadayo\/domain\/testing/ },
 ] as const;
+
+/** The ways code could make a `ServerNow` of its own: a cast, with `as` or angle brackets, or a guard that says so. */
+const MINTS = [
+  { what: "a cast to ServerNow", pattern: /\bas\s+ServerNow\b/ },
+  // `<ServerNow>x`, but not a type argument, `Promise<ServerNow>`, which a name or a bracket comes before.
+  { what: "a cast to ServerNow in angle brackets", pattern: /(?<![\w$)\]>]\s*)<\s*ServerNow\s*>/ },
+  { what: "a guard that makes a ServerNow", pattern: /\bis\s+ServerNow\b/ },
+] as const;
+
+/** Each line of `text` that makes a `ServerNow`, as "file:line: what". */
+export function nowMints(file: string, text: string): string[] {
+  const found: string[] = [];
+  text.split("\n").forEach((line, index) => {
+    for (const mint of MINTS) if (mint.pattern.test(line)) found.push(`${file}:${String(index + 1)}: ${mint.what}`);
+  });
+  return found;
+}
 
 /** Why the root harness of the photo user's tests reads a clock (KEPT). */
 const HARNESS =
@@ -249,6 +270,34 @@ describe("only the time module reads a clock (T1)", () => {
     ]) {
       expect(clockReads("x.ts", line), line).toEqual([]);
     }
+  });
+
+  it("finds no code outside the time module that makes a ServerNow of its own (the outside audit's A14)", () => {
+    const found = productFiles().flatMap((file) => nowMints(file, readFileSync(join(ROOT, file), "utf8")));
+    expect(found).toEqual([]);
+  });
+
+  it("catches each way of making one, and leaves the type alone", () => {
+    for (const line of [
+      "const now = Temporal.Instant.from(request.query.t) as ServerNow;",
+      'const now = request.headers["if-modified-since"] as unknown as ServerNow;',
+      'readableDrops(sql, viewer, parsed as  ServerNow, "media")',
+      "const now = <ServerNow>parsed;",
+      "const now = (< ServerNow >parsed);",
+      "function isNow(value: Temporal.Instant): value is ServerNow {",
+      "function assertNow(value: unknown): asserts value is ServerNow {",
+    ])
+      expect(nowMints("x.ts", line), line).not.toEqual([]);
+    for (const line of [
+      'import type { ServerNow } from "../time/clock.ts";',
+      "export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow, what: ReadWhat): F {",
+      "sample(tx: ClockSql): Promise<ServerNow>;",
+      "const seen = new Map<string, ServerNow>();",
+      "const at: Array<ServerNow> = [];",
+      "// a ServerNow comes only from the clock",
+      "const nowIsServerNow = true;",
+    ])
+      expect(nowMints("x.ts", line), line).toEqual([]);
   });
 
   it("leaves the dev clock's table out of every numbered migration, which prod runs too (ADR-013)", () => {

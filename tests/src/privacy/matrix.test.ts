@@ -236,7 +236,7 @@ const REQUESTS_PER_WORLD = 89;
 /** What the roster's table did for each role (the role's test fills it; the last test reads it). */
 const ROSTER_TABLES = new Map<
   string,
-  { memberPhases: number; revisions: number; links: number; otherAnswers: number; invitations: number }
+  { memberPhases: number; revisions: number; links: number; otherAnswers: number; invitations: number; alone: number }
 >();
 /** The states each role's viewer left the cell's club in (the role's test fills it; a later test reads it). */
 const LEAVES = new Map<string, number>();
@@ -1040,8 +1040,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       const counted = { cells: 0, answers: 0, expectedAnswers: 0, bodies: 0, expectedBodies: 0 };
       // What the roster's table did for this role: the proposals it sent, the phases its viewer was a member
       // the club answers and the states that had one, the proposals the judge said must make a revision,
-      // the revisions and links made, and the answers given to another member. A table that was skipped
-      // whole would balance every other count, so these are asserted below.
+      // the revisions and links made, the answers given to another member, the invitations run, and the
+      // revisions made where nobody else in the club has a session and an active account. A table that was
+      // skipped whole would balance every other count, so these are asserted below.
       const roster = {
         proposals: 0,
         memberPhases: 0,
@@ -1050,6 +1051,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         links: 0,
         otherAnswers: 0,
         invitations: 0,
+        alone: 0,
       };
       const memberStates = new Set<string>();
       // What the leave's step did for this role: the states it asked in, and those the judge said it left in.
@@ -1085,7 +1087,6 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // answers another member got asking for the viewer's upload. Asserted in the test after the roles.
       const drops = { added: 0, replayed: 0, conflicts: 0, duplicates: 0, notReady: 0, closed: 0, others: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
-      const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
         const cell = await db.begin(async (tx) => {
           const w = await newWorld(plain(tx), suffix());
@@ -1134,10 +1135,13 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             FROM app.users WHERE id = ${cell.viewer}`;
         if (account === undefined || account.subject === null)
           throw new Error("the role's account has no sign-in subject");
-        // What the gate makes of the account is read from its row, and is the role's own (matrix.ts).
+        // What the gate makes of the account is read from its row, and is the role's own (matrix.ts), but where the
+        // state puts the viewer's own account in deletion (the author's or the star's).
         const session = sessionOf({ state: account.state, ageConfirmed: account.age_confirmed, name: account.name });
+        const expectedSession: Session =
+          state.deleting?.(cell.w) === cell.viewer ? "deleting" : (role.session ?? "active");
         if (session !== expectedSession)
-          wrong.push(`${state.name}: the account is ${session}, but the role says ${expectedSession}`);
+          wrong.push(`${state.name}: the account is ${session}, but the role and the state say ${expectedSession}`);
         const authorization = bearer(await keys.signer.token(account.subject));
         const viewerClubs = await db<{ club_id: string }[]>`
           SELECT club_id FROM app.memberships WHERE user_id = ${cell.viewer}`;
@@ -1759,8 +1763,13 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             await judged(link, relinked, second.problems, "a new link after the revoke");
             const token = second.token;
             const linkId = second.id;
-            if (token === undefined || linkId === undefined || other === undefined) {
-              wrong.push(`${where}: no second link, or no other member, to run it with`);
+            if (other === undefined) {
+              // Nobody else in the club has a session and an active account (the author left by a block, and the
+              // star is gone or deleting): the table needs another member to decline at the end, so it doesn't run
+              // here, and the cells where it doesn't are counted and pinned after the roles.
+              roster.alone += 1;
+            } else if (token === undefined || linkId === undefined) {
+              wrong.push(`${where}: no second link to run it with`);
             } else {
               secrets.push(token);
               roster.invitations += 1;
@@ -3016,17 +3025,16 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       console.log(`${role.name}, the roster's table: ${JSON.stringify(roster)}`);
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
       // Every cell ran: the contract's 89 requests a world (each operation for each drop it names, with each value of a
-      // required enum, and again with its optional ids), in each of the 7 states and each phase the
-      // role has. And every answer was scanned, with the manipulated and guessed requests and the bodies.
+      // required enum, and again with its optional ids), in each state and each phase the role has. And every answer was scanned, with the manipulated and guessed requests and the bodies.
       const specsPerWorld = operations.reduce(
         (sum, operation) => sum + specsFor(operation, elsewhere, "Bearer x").length,
         0,
       );
       expect(specsPerWorld).toBe(REQUESTS_PER_WORLD);
-      expect(counted.cells).toBe(7 * phases.length * REQUESTS_PER_WORLD);
+      expect(counted.cells).toBe(STATES.length * phases.length * REQUESTS_PER_WORLD);
       expect(counted.bodies).toBe(counted.expectedBodies);
       // In every phase of every state: createClub's eight bodies and the roster's eight proposals.
-      expect(counted.bodies).toBeGreaterThanOrEqual(7 * phases.length * 16);
+      expect(counted.bodies).toBeGreaterThanOrEqual(STATES.length * phases.length * 16);
       // The roster's table ran, for every role: its eight proposals in every phase of every state. Every
       // proposal the judge said must make a revision made one. A viewer who is a member the club answers in
       // some phase of a state proposes in the first such phase at least (a later phase may find the club
@@ -3054,8 +3062,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       expect(roster.revisions).toBeGreaterThanOrEqual(memberStates.size);
       if (roster.memberPhases === 0) expect(roster.revisions).toBe(0);
       expect(roster.links).toBe(roster.revisions);
-      expect(roster.invitations).toBe(roster.revisions);
-      expect(roster.otherAnswers).toBe(roster.revisions * (5 + INVITATION_OTHER_ANSWERS));
+      expect(roster.invitations).toBe(roster.revisions - roster.alone);
+      expect(roster.otherAnswers).toBe(roster.invitations * (5 + INVITATION_OTHER_ANSWERS));
       expect(counted.answers).toBe(counted.expectedAnswers);
       expect(malformed.size).toBeGreaterThan(0);
     });
@@ -3076,6 +3084,16 @@ describe("the roster's table ran (tests/src/privacy/roster.ts)", () => {
       "member who joined after the commit (T8)",
       "rejoined member, a new interval (T8)",
       "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
+      "blocked: Cleo blocked the author, both still members",
+    ]);
+    // The cells where nobody else in the club has a session and an active account, so the invitation's table, which
+    // needs another member to decline at the end, didn't run: once the author has blocked Cleo and left by the block,
+    // the two states that take the star away (gone, or deleting, before the reveal) leave Cleo alone in the club, in
+    // each of the role's three phases. Every other role, and that role in every other state, ran it.
+    expect(
+      [...ROSTER_TABLES].filter(([, table]) => table.alone > 0).map(([name, table]) => [name, table.alone]),
+    ).toEqual([
+      ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 2 * 3],
     ]);
   });
 });
@@ -3083,32 +3101,43 @@ describe("the roster's table ran (tests/src/privacy/roster.ts)", () => {
 describe("the leave ran (tests/src/privacy/leave.ts)", () => {
   it("left the club for the roles who are members the club answers in the last phase, and for no other role", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
+    // Counted by hand from ../matrix.ts: each role whose viewer is a member the club answers in the last phase leaves
+    // in each of the ten states but the suspended club, which refuses the leave: nine. The author doesn't where the
+    // author's own account is being deleted (the gate), and the star doesn't where the star has gone before the
+    // reveal (no member) or is deleting (the gate). Cleo, who blocked the author and stayed, leaves as any member.
     expect(LEAVES.size).toBe(ROLES.length);
     expect([...LEAVES].filter(([, states]) => states > 0)).toEqual([
-      ["author", 6],
-      ["star", 6],
-      ["member in the audience", 6],
-      ["member who joined after the commit (T8)", 6],
-      ["rejoined member, a new interval (T8)", 6],
-      ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 6],
+      ["author", 9 - 1],
+      ["star", 9 - 2],
+      ["member in the audience", 9],
+      ["member who joined after the commit (T8)", 9],
+      ["rejoined member, a new interval (T8)", 9],
+      ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 9],
+      ["blocked: Cleo blocked the author, both still members", 9],
     ]);
     // The world's revision lists the star alone: the star read it until the leave, and nothing after.
-    expect([...REVISIONS_LOST].filter(([, states]) => states > 0)).toEqual([["star", 6]]);
+    expect([...REVISIONS_LOST].filter(([, states]) => states > 0)).toEqual([["star", 9 - 2]]);
   });
 
   it("withdrew the leaver's own drops on withdraw, and settled the leaver's slots left live, as the world has them", () => {
     // What each leave did to the leaver's own contributions, which contributionProblems judged row by row, counted by
     // hand from the world (../matrix.ts), apart from the judge (spec 22, T18; the outside audit's A3). The choice is
     // keep in the even states and withdraw in the odd ones, and the suspended club refuses the leave, so withdraw is
-    // chosen twice: where the world's drop was withdrawn, and where it is held. By the last phase the photo the viewer
-    // added while collecting (the commit's table, below) is active in both, one each for the five roles that add. The
-    // author's world drops, Ben's photo and Ben's video link (twoContributors, which putInState puts in each state
-    // alike), are still held in the held state, so the author withdraws four. Cleo's link in the day is Cleo's first
-    // interval's, so the member in the audience withdraws it too (four), and so does Cleo once the author has blocked
-    // Cleo, who adds nothing (two); Cleo rejoined in a new interval keeps the link the first interval added (FQ142). No
-    // slot of the viewer's own is live by then (each given back or consumed while collecting), but Cleo's lapsed slot,
-    // given back to Cleo where the day and the club answer a release, is still unsettled where the day is suspended or
-    // cancelled, both keep: the leave settles it as expired, twice for each role whose viewer is Cleo's first interval.
+    // chosen four times: where the world's drop was withdrawn, where it is held, where its author's account is being
+    // deleted, and where its star's deletion was asked before the reveal. By the last phase the photo the viewer added
+    // while collecting (the commit's table, below) is active in the first three, whose day took slots, one each for
+    // the six roles that add; the star's deletion holds the day, which took none. The author's world drops, Ben's
+    // photo and Ben's video link (twoContributors, which putInState puts in each state alike), are still held in the
+    // held state, and active where the star's deletion was asked, so the author withdraws four and then two; the
+    // author's own deletion leaves the author no leave. The star withdraws the photo added in the first three, and
+    // doesn't leave where the star is deleting. Cleo's link in the day is Cleo's first interval's, so the member in
+    // the audience withdraws it too, in all four (seven), and so does Cleo once the author has blocked Cleo, who adds
+    // nothing (four), and Cleo who blocked the author and stayed, who adds as the member in the audience does
+    // (seven); Cleo rejoined in a new interval keeps the link the first interval added (FQ142). No slot of the
+    // viewer's own is live by then (each given back or consumed while collecting), but Cleo's lapsed slot, given back
+    // to Cleo where the day and the club answer a release (a held day answers one: the reservations' table, below),
+    // is still unsettled where the day is suspended or cancelled, both keep: the leave settles it as expired, twice
+    // for each role whose viewer is Cleo's first interval.
     // What the matrix doesn't reach: the leave runs only in the last phase, a year on, so every withdrawal here is
     // after its day's reveal and gives no slot back, and every slot it ends had lapsed. The withdrawal before the
     // reveal with its slots given back, and a live reservation released, are tests/src/db/leave-withdraw.test.ts's, and
@@ -3116,15 +3145,16 @@ describe("the leave ran (tests/src/privacy/leave.ts)", () => {
     expect(CONTRIBUTIONS_SETTLED.size).toBe(ROLES.length);
     expect([...CONTRIBUTIONS_SETTLED].filter(([, settled]) => settled.withdrawn > 0 || settled.slotsEnded > 0)).toEqual(
       [
-        ["author", { withdrawn: 4, slotsEnded: 0 }],
-        ["star", { withdrawn: 2, slotsEnded: 0 }],
-        ["member in the audience", { withdrawn: 4, slotsEnded: 2 }],
-        ["member who joined after the commit (T8)", { withdrawn: 2, slotsEnded: 0 }],
-        ["rejoined member, a new interval (T8)", { withdrawn: 2, slotsEnded: 0 }],
+        ["author", { withdrawn: 4 + 2, slotsEnded: 0 }],
+        ["star", { withdrawn: 3, slotsEnded: 0 }],
+        ["member in the audience", { withdrawn: 2 * 3 + 1, slotsEnded: 2 }],
+        ["member who joined after the commit (T8)", { withdrawn: 3, slotsEnded: 0 }],
+        ["rejoined member, a new interval (T8)", { withdrawn: 3, slotsEnded: 0 }],
         [
           "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
-          { withdrawn: 2, slotsEnded: 2 },
+          { withdrawn: 4, slotsEnded: 2 },
         ],
+        ["blocked: Cleo blocked the author, both still members", { withdrawn: 2 * 3 + 1, slotsEnded: 2 }],
       ],
     );
   });
@@ -3134,28 +3164,41 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
   it("held, gave back and saw lapse the slots each role's allowance gives, and none for any other role", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
     // Counted by hand from the world (../matrix.ts), apart from the judge. Slots are held only while the day
-    // is collecting, in the four states whose day takes them (not a suspended day or club, or a cancelled
-    // day). The author has a photo and a link in the day (neither when both were withdrawn), the member in
-    // the audience a link, and the star and the two who joined afresh nothing; so the table holds the author
-    // one (a photo, which fills the friend's three; three when both were withdrawn: two photos and a link),
-    // the star six (three photos, two links, then a photo to six), the member in the audience two photos, and
-    // each of the two who joined three (two photos and a link). Every slot but the first is given back live.
+    // is collecting, in the five states whose day takes them (not a suspended day or club, a cancelled day, or a
+    // day held as its star left or asked to delete their account before the reveal, FQ63), and never by a viewer
+    // whose own account is being deleted: the author where it is the author's, so the author takes slots in four.
+    // The author has a photo and a link in the day (neither when both were withdrawn), the member in the audience
+    // a link, and the star and the two who joined afresh nothing; so the table holds the author one (a photo,
+    // which fills the friend's three; three when both were withdrawn: two photos and a link), the star six (three
+    // photos, two links, then a photo to six), the member in the audience two photos, and each of the two who
+    // joined three (two photos and a link). Cleo, who blocked the author and stayed, holds as the member in the
+    // audience: a block takes nothing from Cleo's own allowance. Every slot but the first is given back live.
     // The first holds the upload the commit's table adds in the same phase, so it is consumed by that drop and given back after the reveal as consumed, naming it
-    // (T20), in each of the four states; until the commit was built it lapsed at the reveal and came back
+    // (T20), in each of those states; until the commit was built it lapsed at the reveal and came back
     // expired. A lapsed slot coming back expired is still asked in every cell: Cleo's, below. After the commit's
     // table, with that drop added, its link and its two photos hold where the limits leave room, each given back
     // live: the star all three (the drop added and at most two slots at once, of six; one link of two); each of the
     // two who joined the link and the first photo (the second refused, below); the member in the audience the
-    // first photo alone (the link refused, below); and the author the link and the first photo once both of Ben's
-    // drops were withdrawn, and nothing in the three states that keep them, where the drop added fills the
-    // friend's three.
+    // first photo alone (the link refused, below), and so does Cleo who blocked the author; and the author the link
+    // and the first photo once both of Ben's drops were withdrawn, and nothing in the three states that keep them,
+    // where the drop added fills the friend's three.
     expect(SLOTS.size).toBe(ROLES.length);
     expect([...SLOTS].filter(([, table]) => table.held > 0)).toEqual([
       ["author", { held: 6 + 2, released: 2 + 2, expired: 0, consumed: 4 }],
-      ["star", { held: 24 + 3 * 4, released: 20 + 3 * 4, expired: 0, consumed: 4 }],
-      ["member in the audience", { held: 8 + 4, released: 4 + 4, expired: 0, consumed: 4 }],
-      ["member who joined after the commit (T8)", { held: 12 + 2 * 4, released: 8 + 2 * 4, expired: 0, consumed: 4 }],
-      ["rejoined member, a new interval (T8)", { held: 12 + 2 * 4, released: 8 + 2 * 4, expired: 0, consumed: 4 }],
+      ["star", { held: 6 * 5 + 3 * 5, released: 5 * 5 + 3 * 5, expired: 0, consumed: 5 }],
+      ["member in the audience", { held: 2 * 5 + 5, released: 5 + 5, expired: 0, consumed: 5 }],
+      [
+        "member who joined after the commit (T8)",
+        { held: 3 * 5 + 2 * 5, released: 2 * 5 + 2 * 5, expired: 0, consumed: 5 },
+      ],
+      [
+        "rejoined member, a new interval (T8)",
+        { held: 3 * 5 + 2 * 5, released: 2 * 5 + 2 * 5, expired: 0, consumed: 5 },
+      ],
+      [
+        "blocked: Cleo blocked the author, both still members",
+        { held: 2 * 5 + 5, released: 5 + 5, expired: 0, consumed: 5 },
+      ],
     ]);
     expect(
       [...SLOTS].filter(
@@ -3167,8 +3210,10 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
   it("refused each role at the limits its allowance reaches: a friend's link and photos, the star's links, and the whole", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
     // Counted by hand from the world (../matrix.ts) and the table's order (three photos, three links, two photos),
-    // apart from the judge, in the four states whose day takes slots; QUOTA_FULL comes first where several limits
-    // are met. The author, with a photo and a link in the day, holds a photo and is refused the other seven as the
+    // apart from the judge, in the five states whose day takes slots (the author in four, not where the author's own
+    // account is being deleted); QUOTA_FULL comes first where several limits are met. Cleo, who blocked the author
+    // and stayed, meets them as the member in the audience does. The author, with a photo and a link in the day,
+    // holds a photo and is refused the other seven as the
     // friend's three are full, in the three states that keep both drops; once both were withdrawn, two photos,
     // the third refused at the friend's two (PHOTO_LIMIT), a link, then four refused as full. The star holds three
     // photos and two links, is refused the third link at the star's two (EXTERNAL_LIMIT), holds a photo to six and
@@ -3181,30 +3226,37 @@ describe("the reservations' table ran (tests/src/privacy/reservation.ts)", () =>
     // joined holds the link and the first photo and is refused the second at the friend's two, one photo added
     // and one held (PHOTO_LIMIT); so is the author once both of Ben's drops were withdrawn; the author is refused
     // all three as full where Ben's drops stay; the star holds all three. Every other role is asked too, and so is
-    // every role in the other three states: each gets the neutral not-found or the gate, as in the table, and
-    // holds nothing (T9, T17, addendum 2). The star's photo limit is the star's six, so QUOTA_FULL always comes
+    // every role in the other states: each gets the neutral not-found, the gate, or a held day's MEMBERSHIP_CHANGED
+    // (FQ63), as in the table, and holds nothing (T9, T17, addendum 2). The star's photo limit is the star's six, so QUOTA_FULL always comes
     // first: every other limit of the allowance is met, and each of a friend's three with a drop already in the
     // day counted.
     expect(LIMITS.size).toBe(ROLES.length);
     expect([...LIMITS].filter(([, met]) => Object.values(met).some((n) => n > 0))).toEqual([
       ["author", { QUOTA_FULL: 3 * 7 + 4 + 3 * 3, PHOTO_LIMIT: 1 + 1, EXTERNAL_LIMIT: 0 }],
-      ["star", { QUOTA_FULL: 4, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 4 }],
-      ["member in the audience", { QUOTA_FULL: 4 * 6 + 4, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 4 }],
-      ["member who joined after the commit (T8)", { QUOTA_FULL: 4 * 4, PHOTO_LIMIT: 4 + 4, EXTERNAL_LIMIT: 0 }],
-      ["rejoined member, a new interval (T8)", { QUOTA_FULL: 4 * 4, PHOTO_LIMIT: 4 + 4, EXTERNAL_LIMIT: 0 }],
+      ["star", { QUOTA_FULL: 5, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 5 }],
+      ["member in the audience", { QUOTA_FULL: 5 * 6 + 5, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 5 }],
+      ["member who joined after the commit (T8)", { QUOTA_FULL: 5 * 4, PHOTO_LIMIT: 5 + 5, EXTERNAL_LIMIT: 0 }],
+      ["rejoined member, a new interval (T8)", { QUOTA_FULL: 5 * 4, PHOTO_LIMIT: 5 + 5, EXTERNAL_LIMIT: 0 }],
+      [
+        "blocked: Cleo blocked the author, both still members",
+        { QUOTA_FULL: 5 * 6 + 5, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 5 },
+      ],
     ]);
   });
 
-  it("gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the four states that keep it", () => {
-    // Counted by hand from ../matrix.ts: two roles' viewer is Cleo still in the interval that held it, the
-    // member in the audience, in all four phases, and Cleo once the author has blocked Cleo and left by the
-    // block as the day opened, in its three phases from the reveal on. The day and the club answer a release in
-    // the four states that neither suspend nor cancel them. Cleo after leaving, after rejoining in a new
-    // interval, or after blocking the author and leaving by it has nothing, nor does anyone else (T9, T14).
+  it("gave Cleo's lapsed slot back to Cleo's first interval alone, in every phase of the seven states that keep it", () => {
+    // Counted by hand from ../matrix.ts: three roles' viewer is Cleo still in the interval that held it, the
+    // member in the audience and Cleo who blocked the author and stayed, in all four phases, and Cleo once the
+    // author has blocked Cleo and left by the block as the day opened, in its three phases from the reveal on.
+    // The day and the club answer a release in the seven states that neither suspend nor cancel them: a held day
+    // takes nothing new but gives a slot back (reservation.ts), and neither the author's deletion nor the star's
+    // touches Cleo's own slot. Cleo after leaving, after rejoining in a new interval, or after blocking the author
+    // and leaving by it has nothing, nor does anyone else (T9, T14).
     expect(CLEOS_SLOT.size).toBe(ROLES.length);
     expect([...CLEOS_SLOT].filter(([, answers]) => answers > 0)).toEqual([
-      ["member in the audience", 16],
-      ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 12],
+      ["member in the audience", 4 * 7],
+      ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 3 * 7],
+      ["blocked: Cleo blocked the author, both still members", 4 * 7],
     ]);
   });
 });
@@ -3213,13 +3265,14 @@ describe("the devices' table ran (tests/src/privacy/device.ts)", () => {
   it("registered, moved, refused and removed for every role the gate lets through, and only removed nothing for the others", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
     // Counted by hand from ../matrix.ts, apart from the judge. A device belongs to no club, so every state of the
-    // drop and every phase runs the same table: seven states, in four phases (three for the role whose block
+    // drop and every phase runs the same table: ten states, in four phases (three for the role whose block
     // comes as the day opens). In each cell a role the gate lets through registers four times (the first
     // sign-in twice, the second once, which moves the token from the first, the third once, which moves the
     // other club's author's), is refused three times (the first sign-in after the move, the other club's
     // author's secret, the second sign-in after its removal), removes once and finds nothing once. The account
     // whose deletion has begun gets the gate's 401 to every registration, so its removals find nothing: two a
-    // cell. The account that hasn't finished its profile gets the 403 until the last phase, where its own
+    // cell; so do the author where the state is the author's deletion and the star where it is the star's, in its
+    // four phases. The account that hasn't finished its profile gets the 403 until the last phase, where its own
     // updateMe finishes it before the table (account.ts's updateMeCases).
     const full = (cells: number) => ({
       registered: 4 * cells,
@@ -3230,24 +3283,25 @@ describe("the devices' table ran (tests/src/privacy/device.ts)", () => {
     });
     expect(DEVICES.size).toBe(ROLES.length);
     expect(Object.fromEntries(DEVICES)).toEqual({
-      author: full(28),
-      star: full(28),
-      "member in the audience": full(28),
-      "member who joined after the commit (T8)": full(28),
-      "rejoined member, a new interval (T8)": full(28),
-      "former member": full(28),
-      "invited, not yet a member (T7)": full(28),
-      "stranger from another club": full(28),
-      "blocked: Cleo blocked the author, leaving by the block": full(28),
-      "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)": full(21),
+      author: { ...full(9 * 4), none: 9 * 4 + 2 * 4 },
+      star: { ...full(9 * 4), none: 9 * 4 + 2 * 4 },
+      "member in the audience": full(40),
+      "member who joined after the commit (T8)": full(40),
+      "rejoined member, a new interval (T8)": full(40),
+      "former member": full(40),
+      "invited, not yet a member (T7)": full(40),
+      "stranger from another club": full(40),
+      "blocked: Cleo blocked the author, leaving by the block": full(40),
+      "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)": full(30),
+      "blocked: Cleo blocked the author, both still members": full(40),
       "deletion pending, the membership not yet ended (T27)": {
         registered: 0,
         moved: 0,
         refused: 0,
         removed: 0,
-        none: 56,
+        none: 2 * 40,
       },
-      "signed in, profile not finished (FQ13, FQ69)": { ...full(7), none: 7 + 2 * 21 },
+      "signed in, profile not finished (FQ13, FQ69)": { ...full(10), none: 10 + 2 * 30 },
     });
   });
 });
@@ -3256,13 +3310,14 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
   it("made, completed, retried and found again the uploads each role's slots allow, and refused them once the day revealed", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
     // Counted by hand from the world (../matrix.ts), apart from the judge. An upload is made only under a photo
-    // slot the reservations' table held, live, while the day is collecting: in the four states whose day takes
-    // slots, for the five roles that hold one (the reservations' table ran, above). Under the first slot the
-    // table held, in each of those four states; and under the table's other photo slot, left pending, wherever
-    // the role holds a second photo: the star, a member who joined after the commit and the rejoined member hold
-    // two photos and more in all four states, the member in the audience (whose link in the day leaves the
-    // photos free, and whose lapsed slot the reservations' table settled first) in all four, and the author,
-    // whose photo is in the drop, only in the state that withdrew it. A second upload under a slot that holds
+    // slot the reservations' table held, live, while the day is collecting: in the five states whose day takes
+    // slots (four for the author, as one is the author's own deletion), for the six roles that hold one (the
+    // reservations' table ran, above). Under the first slot the table held, in each of those states; and under the
+    // table's other photo slot, left pending, wherever the role holds a second photo: the star, a member who
+    // joined after the commit and the rejoined member hold two photos and more in all five states, the member in
+    // the audience and Cleo who blocked the author and stayed (whose link in the day leaves the photos free, and
+    // whose lapsed slot the reservations' table settled first) in all five, and the author, whose photo is in the
+    // drop, only in the state that withdrew it. A second upload under a slot that holds
     // one, with a new key, finds nothing (T17, T18). The first upload's retry once its bytes are in, before it is
     // completed, gets the first answer with no URL, as Storage signs nothing for them (T12); then it is completed
     // into preparing once, and the worker prepares it into ready once. The one left pending never is either, as
@@ -3271,15 +3326,17 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
     // on; and its retry under its key gets the first answer in all three later phases, as its slot's interval may
     // still add to the day (a revealed day refuses only something new), with a new signed upload only for the one
     // left pending, while it lives: open and past (T12, T19). From the reveal on, the day refuses an upload with
-    // OCCURRENCE_CLOSED to whoever owns the slot asked for: each of those five roles in the open phase, under the
+    // OCCURRENCE_CLOSED to whoever owns the slot asked for: each of those six roles in the open phase, under the
     // slot it held while collecting; the author in the three phases from the reveal under Ben's slot given back;
-    // and Cleo under Cleo's lapsed slot in the same three phases, as the member in the audience and once the
-    // author has blocked Cleo and left by the block (the slot is Cleo's first interval's: the reservations'
-    // table, above). Another member's live slot is never the viewer's (othersLiveSlot). Nobody else is refused
+    // and Cleo under Cleo's lapsed slot in the same three phases, as the member in the audience, as Cleo who
+    // blocked the author and stayed, and once the author has blocked Cleo and left by the block (the slot is Cleo's
+    // first interval's: the reservations' table, above), each in the five states whose day takes slots (the
+    // author in four); a held day refuses with MEMBERSHIP_CHANGED instead, whatever the time (FQ63). Another member's live slot is never the viewer's (othersLiveSlot). Nobody else is refused
     // for it, and nobody else makes one (T9, T14). A link's slot the reservations' table held, live, is asked for
     // an upload once in each state that holds one (the neutral not-found: upload.ts): the star's and each of the
-    // two who joined afresh in all four, the author's only once both drops were withdrawn, and never the member in
-    // the audience's, who holds only photos (the reservations' table ran, above).
+    // two who joined afresh in all five, the author's only once both drops were withdrawn, and never the member in
+    // the audience's or that of Cleo who blocked the author, who hold only photos (the reservations' table ran,
+    // above).
     expect(UPLOADS.size).toBe(ROLES.length);
     const one = {
       made: 4 + 1,
@@ -3291,20 +3348,20 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
       signedLater: 2 * 1,
     };
     const two = {
-      made: 4 + 4,
-      unsigned: 4,
-      preparing: 4,
-      ready: 4,
-      later: 2 * (4 + 4),
-      replayed: 3 * (4 + 4),
-      signedLater: 2 * 4,
+      made: 5 + 5,
+      unsigned: 5,
+      preparing: 5,
+      ready: 5,
+      later: 2 * (5 + 5),
+      replayed: 3 * (5 + 5),
+      signedLater: 2 * 5,
     };
     expect([...UPLOADS].filter(([, table]) => Object.values(table).some((n) => n > 0))).toEqual([
       ["author", { ...one, closed: 4 + 12, linkSlots: 1 }],
-      ["star", { ...two, closed: 4, linkSlots: 4 }],
-      ["member in the audience", { ...two, closed: 4 + 12, linkSlots: 0 }],
-      ["member who joined after the commit (T8)", { ...two, closed: 4, linkSlots: 4 }],
-      ["rejoined member, a new interval (T8)", { ...two, closed: 4, linkSlots: 4 }],
+      ["star", { ...two, closed: 5, linkSlots: 5 }],
+      ["member in the audience", { ...two, closed: 5 + 3 * 5, linkSlots: 0 }],
+      ["member who joined after the commit (T8)", { ...two, closed: 5, linkSlots: 5 }],
+      ["rejoined member, a new interval (T8)", { ...two, closed: 5, linkSlots: 5 }],
       [
         "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
         {
@@ -3312,13 +3369,14 @@ describe("the uploads' table ran (tests/src/privacy/upload.ts)", () => {
           unsigned: 0,
           preparing: 0,
           ready: 0,
-          closed: 12,
+          closed: 3 * 5,
           later: 0,
           replayed: 0,
           signedLater: 0,
           linkSlots: 0,
         },
       ],
+      ["blocked: Cleo blocked the author, both still members", { ...two, closed: 5 + 3 * 5, linkSlots: 0 }],
     ]);
   });
 });
@@ -3327,35 +3385,40 @@ describe("the commit's table ran (tests/src/privacy/drop.ts)", () => {
   it("added, replayed and refused the drops each role's uploads allow, and refused every body once the day revealed", () => {
     // As the roster's table above: it reads what the role tests left, so it holds only when the whole file runs.
     // Counted by hand from the world (../matrix.ts), apart from the judge. A drop is added only while the day is
-    // collecting, in the four states whose day takes slots, by the five roles that hold one (the reservations'
-    // table ran, above): the upload the worker made ready under the first slot, once in each of those states.
+    // collecting, in the five states whose day takes slots (four for the author, as one is the author's own
+    // deletion), by the six roles that hold one (the reservations' table ran, above): the upload the worker made
+    // ready under the first slot, once in each of those states.
     // Its retry under its key gets the first answer then and in each of the three phases after it (T19), and
     // another caption under that key conflicts once; the same upload under a new key is DUPLICATE_DROP with it
     // (T21), once in each state; and another member's commit of it is answered once in each state (every one of
-    // those roles has another member with a session: Ana, or Ben for the star). While collecting, the upload the
-    // uploads' table left pending is MEDIA_NOT_READY wherever it was made (the author only once the world's drop
-    // was withdrawn; the others in all four states), and so, for the author alone, is Ben's own upload still
-    // pending under the slot Ben gave back, in all four. The world's drop's photo is the author's too: a
+    // those roles has another member with a session and an active account: Ana, or for the star Ben, or Cleo where
+    // Ben's account is being deleted). While collecting, the upload the uploads' table left pending is
+    // MEDIA_NOT_READY wherever it was made (the author only once the world's drop was withdrawn; the others in all
+    // five states), and so, for the author alone, is Ben's own upload still pending under the slot Ben gave back,
+    // in all four. The world's drop's photo is the author's too: a
     // duplicate of that drop while it is active or held, and an upload another drop used, the neutral
     // not-found, once it was withdrawn or removed. From the reveal on, every body the table sends to someone who
     // may still add to the day is OCCURRENCE_CLOSED, whatever it names (T3, T4): the seven it sends in every
     // phase and each upload the viewer made while collecting (two, or the author's one but where the drop was
-    // withdrawn), in each of the three phases after collecting, in the four states; and the seven alone to
-    // Cleo once the author has blocked Cleo, as that role's three phases are from the reveal on and Cleo's first
-    // interval may still add to the day (the uploads' table ran, above). Nobody else adds, is refused for the
-    // day, or meets a duplicate (T9, T14).
+    // withdrawn), in each of the three phases after collecting, in the five states (the author's four); and the
+    // seven alone to Cleo once the author has blocked Cleo, as that role's three phases are from the reveal on and
+    // Cleo's first interval may still add to the day (the uploads' table ran, above), in the same five. A held day
+    // refuses each body with MEMBERSHIP_CHANGED instead, whatever the time (FQ63), and a viewer whose own account is
+    // being deleted gets the gate. Nobody else adds, is refused for the day, or meets a duplicate (T9, T14).
     expect(DROPS.size).toBe(ROLES.length);
     const one = { added: 4, replayed: 4 + 3 * 4, conflicts: 4, duplicates: 4, notReady: 4, others: 4 };
+    const five = { added: 5, replayed: 5 + 3 * 5, conflicts: 5, duplicates: 5, notReady: 5, others: 5 };
     expect([...DROPS].filter(([, table]) => Object.values(table).some((n) => n > 0))).toEqual([
       ["author", { ...one, duplicates: 4 + 2, notReady: 4 + 1, closed: 3 * ((7 + 1) * 3 + (7 + 2)) }],
-      ["star", { ...one, closed: 3 * (7 + 2) * 4 }],
-      ["member in the audience", { ...one, closed: 3 * (7 + 2) * 4 }],
-      ["member who joined after the commit (T8)", { ...one, closed: 3 * (7 + 2) * 4 }],
-      ["rejoined member, a new interval (T8)", { ...one, closed: 3 * (7 + 2) * 4 }],
+      ["star", { ...five, closed: 3 * (7 + 2) * 5 }],
+      ["member in the audience", { ...five, closed: 3 * (7 + 2) * 5 }],
+      ["member who joined after the commit (T8)", { ...five, closed: 3 * (7 + 2) * 5 }],
+      ["rejoined member, a new interval (T8)", { ...five, closed: 3 * (7 + 2) * 5 }],
       [
         "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
-        { added: 0, replayed: 0, conflicts: 0, duplicates: 0, notReady: 0, closed: 3 * 7 * 4, others: 0 },
+        { added: 0, replayed: 0, conflicts: 0, duplicates: 0, notReady: 0, closed: 3 * 7 * 5, others: 0 },
       ],
+      ["blocked: Cleo blocked the author, both still members", { ...five, closed: 3 * (7 + 2) * 5 }],
     ]);
   });
 });
@@ -3452,9 +3515,9 @@ describe("Home while a drop of the open day has a comment (B6's reply previews; 
     expect(undeclared).toEqual(targets.flatMap((target) => refused.map((role) => [target.name, role])));
     // Counted by hand from the world (../matrix.ts): Ben's photo's audience and Ben's video link's are both Ana,
     // Ben and Cleo's first interval. The author, the star and the member in the audience may see either, so the
-    // page is B6's. The member who joined after the commit and the rejoined member are in neither audience, and
-    // the author's block hides Ben's drops from Cleo, who stays a member when the author leaves by the block: each
-    // gets Home with a page that holds no commented drop. The former member, the invited person, the stranger and
+    // page is B6's. The member who joined after the commit and the rejoined member are in neither audience, and a
+    // block either way hides Ben's drops from Cleo, who stays a member when the author leaves by the block or when
+    // both stay: each gets Home with a page that holds no commented drop. The former member, the invited person, the stranger and
     // Cleo once Cleo has left by Cleo's own block are no members of the club.
     expect(got).toEqual(
       targets.flatMap((target) =>
@@ -3472,6 +3535,7 @@ describe("Home while a drop of the open day has a comment (B6's reply previews; 
             "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
             "Home",
           ],
+          ["blocked: Cleo blocked the author, both still members", "Home"],
         ].map(([role, outcome]) => [target.name, role, outcome]),
       ),
     );
