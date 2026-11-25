@@ -1,5 +1,5 @@
 // The API as a library, for the tests: importing it starts nothing (the entry is main.ts).
-export { BODY_LIMIT, bodyLimitOf, buildApp, notFound, routesOf, type Deps } from "./app.ts";
+export { BODY_LIMIT, BUILT_OPERATIONS, bodyLimitOf, buildApp, notFound, routesOf, type Deps } from "./app.ts";
 export { allowanceBody, occurrenceBody, starBody } from "./bodies.ts";
 export { clubListBody } from "./clubs/list.ts";
 export { clubDetailBody, withServerNow } from "./clubs/club.ts";

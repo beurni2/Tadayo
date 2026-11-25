@@ -1,0 +1,92 @@
+# B2: The `dev` worker's crash, printed by `ops` itself (`api/b2-worker-crash-report`)
+
+PR #118 (the worker's hardening, ADR-038) merged as `dea360c` at 02:40 UTC on 2026-11-25. Its `deploy-dev` run, 45534683082, updated the API's Machine, then failed on the worker's: flyctl's smoke check said "smoke checks for 84ed273f616468 failed: the app appears to be crashing" and "Check its logs: here's the last lines below, or run 'fly logs -i 84ed273f616468'", and printed no line below it. The re-run passed, with the worker Machine stopped: `flyctl deploy` leaves a stopped Machine stopped, so it doesn't start it to smoke-check it. The worker has stayed stopped since. The image starts and runs in the session with `fly.toml`'s command (Docker, run as Fly runs it), so what fails on Fly is something the session doesn't have.
+
+The founder chose on the card in the api thread at 03:45 UTC to fix it forward. Fly's log can't be read from the session (no `flyctl` runs here: `docs/LIMITATIONS.md`), so the founder was asked at 02:55 UTC for the worker Machine's lines. At 04:01 UTC the coordinator passed on that the founder is away, and asked for the `ops` run to print the crash's lines itself, keeping the ask to the founder as a fallback. That is this PR. It changes only `tools/ops`: no migration, no contract change, no workflow file, nothing the app or the API runs.
+
+Sources: `docs/TECH-DESIGN.md` section 10 (what the session can and can't do), ADR-034 (`ops` on the API's Machine), `docs/plans/api-b0-deploy.md` section 6 (the made-up flyctl the tests use), T52 and T56 (what a log may hold, what an `ops` script may print), and flyctl 0.5.8's source, the version `ops` pins, for what it prints.
+
+## 0. The readings
+
+1. **Print what Fly knows of the Machine, from the run that saw it fail.** Two things say why a process stopped: the Machine's events (`flyctl machine status <id>`, its "Event Logs" table, where each exit carries `exit_code=N,oom_killed=bool,requested_stop=bool`) and its last lines in Fly's log (`flyctl logs -a <app> --machine <id> --no-tail --json`, which prints one page of Fly's log and returns: `logs/polling.go` stops after the first page that holds anything, and Fly's API sets its size). Both need only the token the `ops` jobs already have. Neither changes anything.
+2. **Where: `worker-scale --to started`, and `deploy-branch` when flyctl fails a deploy.** The worker is stopped, so the next deploy won't start it; the run that will show the crash is the founder's `worker-scale` start, which is the step the founder approves before the worker runs on `dev` again in any case. `deploy-branch` (which `deploy-dev` runs on each merge) prints the same for each Machine its failure names, so the next crash at a deploy shows its cause in that run's log.
+3. **A start is watched, not taken at its word.** `worker-scale` read the state back until it said `started`, and stopped there. A worker that exits as it starts shows as started first, and Fly restarts it on a failure (`fly.toml`'s `[[restart]]`), so a crash loop can show as started at every look. So once the Machine shows as started, the run watches it for 30 seconds (six looks, five seconds apart; three times flyctl's 10-second smoke check) and then reads its events: the start fails if the Machine is in any other state, or if an exit that Fly wasn't asked for (`requested_stop=false`) is among the events that weren't there before the start (read just before it). An exit Fly was asked for, such as a restart someone asked for, isn't a failure. A start that fails prints the events and the log lines first; a start that held prints its events alone (section 5, F6). The events are compared cell by cell, not as flyctl padded them: its table pads each cell to its column's width, so one new or dropped row re-pads every other (section 5, F1). The events are asked for up to three times, three seconds apart, before the start and after the watch (section 6, L1). If flyctl still can't say them before the start, the worker isn't started at all, so the founder's run isn't spent on a start that can't be judged, and running it again gets one that is watched. If it can't say them after the watch, the start can't be judged, since an old crash can't be told from the start's own, nor a crash Fly restarted between two looks from a start that held: the run fails saying so, and the worker is left started (F2). A look at the state that fails is passed over and counted, and the others and the events judge the start (F3); if no look answers at all, the run says the start was judged by its events alone (section 6, N1).
+4. **What's printed is bounded and plain.** At most the last 60 log lines of the page, and only for a start that failed, each cut at 400 characters, on one line each, with colours and control characters taken out. Every line goes through the redactor in `tools/ops/src/main.ts` (`output.ts`), as every line an `ops` script says does: it holds back the run's own secret values and the shape of a connection string's user and password, a JSON Web Token, a Supabase secret key and the rest of its patterns. The worker's own lines never carry a secret (T52); a crash's might, which is why this matters.
+5. **Nothing here can fail a start that can be seen to hold.** Each read returns nothing, never throws, when flyctl fails, hangs (flyctl's own time limit) or prints what can't be read, and the run then says it couldn't read it. A Machine id that isn't one (14 hexadecimal digits) is never passed to flyctl. The new ways to fail are the watch's: a start that crashed, as it should; a start whose events can't be read after the watch, which can't be told from one (reading 3), and says so; and a start refused before it begins because its events can't be read, which changes nothing.
+6. **No clock.** The watch counts looks, with `sleep` from the entry, as the existing reads do; `ops` reads no clock (T1's one-clock test scans `tools/ops`).
+
+## 1. What changes
+
+- `tools/ops/src/fly.ts`: `MACHINE_ID`; `machineEvents(fly, id)`, the event table's rows (only the rows after its title that carry a time, so the VM table's time above it isn't taken for one), each as its cells trimmed and joined by " │ ", so a row reads the same however the table padded it; `exitOf(row)`, an exit's code and whether it was asked for or killed for memory; `machineLog(fly, id)`, the last 60 entries of the page, one line each (`time [level] message`); `machineReport(fly, id, label)`, `reportOf(...)` and `eventLines(...)`, the lines to print.
+- `tools/ops/src/worker-scale.ts`: the refusal of a state that can't move comes before anything is read; a start reads the events first, then watches as reading 3 says (`watchStart`), and a start never seen as started prints the report before its existing error. A worker that shows as started already is left as it is, as before, with no watch.
+- `tools/ops/src/deploy-branch.ts`: `failedMachines(text)`, the Machine ids in the lines of flyctl's output that say something failed, each once; on a failed deploy, each one's report, then the existing error.
+- `tools/ops/test/fake-fly.ts`: the worker's id as `deploy-dev` printed it, an event row's cells, `flyctl machine status`'s output (its header lines, the VM table and the "Event Logs" table, each drawn as tablewriter v1.1.5 draws one with flyctl's settings: each cell padded to its column's width) and `flyctl logs --json`'s (`meta` with Go's field names), as flyctl 0.5.8's source prints them and as the real tablewriter rendered them in the session (section 5, F4).
+
+## 2. Tests
+
+`tools/ops/src/fly.test.ts`, "machineReport: what Fly knows of a Machine's last runs, for a run's log" (9 tests): the calls and their arguments; only the event table's rows; a row read the same however the table pads it; an exit's fields; the log's entries once each, in order, the last 60; one line each, colours and control characters out, a long line cut; a secret a crash printed held back by the redactor; never throwing; nothing asked for an id that isn't a Machine's.
+
+`tools/ops/src/worker-scale.test.ts`, "workerScale to started" (10 tests): a start that holds for 30 seconds, with the calls, the waits and its events but no log line; old exits from before the start, which don't count however the table re-pads them, as a new row widens a column or an old one drops off; a crash that Fly restarted, which shows as started and fails; an exit Fly was asked for during the watch, which doesn't; a start that stops within the watch; the events asked for again when flyctl can't say them, and nothing started when it still can't before the start; a start whose events it can't say after the watch, which can't be judged and fails saying so, the worker left started; a look at the state that fails, which is passed over, and every look failing, which the run says; a start never seen as started; one started already, left alone.
+
+`tools/ops/src/deploy-branch.test.ts`: a failed deploy prints the report of the Machine its failure names, and not of a Machine whose line says nothing failed (`failedMachines`).
+
+## 3. Breakages
+
+Each changes one thing in `tools/ops/src` and must make one of the tests above fail (`breakages_wr.py`, on `evidence` with its run):
+
+- K01: an exit Fly was asked for counts as a failed start.
+- K02: the exits from before the start count too.
+- K03: the watch is 5 seconds, not 30.
+- K04: the watch doesn't look at the state.
+- K05: a start never seen as started prints no report.
+- K06: the watch prints no report.
+- K07: a fresh crash and restart passes.
+- K08: an exit is never read as asked for.
+- K09: an id that isn't a Machine's is passed to flyctl.
+- K10: the log keeps more than its last 60 lines.
+- K11: every Machine a deploy names is reported, not only those whose line failed.
+- K12: a failed deploy prints no report.
+- K13: an entry with a line break in it is printed on two lines.
+- K14: a long line isn't cut.
+- K15: a log line's colours and control characters reach the run's log.
+- K16: control characters reach the run's log (the event rows too).
+- K17: the VM table's time is taken for an event.
+- K18: an event row is kept as flyctl padded it (round 1, F1).
+- K19: a start whose events before it can't be read goes ahead, and old exits count as its own (F2; round 2, L1).
+- K20: a look at the state that fails fails the run (F3).
+- K21: a start that held prints its log lines (F6).
+- K22: a read of the events that fails once isn't asked again (round 2, L1).
+- K23: a watch with no look that answered says the Machine stayed started (round 2, N1).
+- K24: a failure whose events couldn't be read says its events are above (round 2, N2).
+
+## 4. After the merge
+
+On the founder's own yes, with `dev` claimed through the coordinator: one `ops` run, `worker-scale` with `to: started`, from `main`. If the worker crashes, the run fails and prints why. Fly restarts a process that failed (`fly.toml`'s `[[restart]]`, `on-failure`) until its retries run out, and then it stays stopped, as after `deploy-dev`; one `worker-scale --to stopped` run, which the founder's yes is asked to cover too, makes sure of it. The fix then follows forward on its own branch from `main`. If it holds for 30 seconds, the worker runs on `dev` again, and S1's and S2's device runs can go ahead.
+
+What this can't show: a crash that takes longer than 30 seconds to come (the worker's first pass runs within a minute of its start); what Fly's log no longer holds, or holds beyond its one page; and a worker caught showing as started in the middle of a crash loop, which is "already started" and isn't watched (F7: it is stopped now, so the start above is watched). `deploy-branch`'s read on a failed deploy comes seconds after flyctl's smoke check, which asked Fly's log the same thing and found nothing, probably because the log lags, so it may find nothing too; `worker-scale`'s read comes 30 seconds after the start (F5).
+
+## 5. Round 1 of the review
+
+One fresh subagent that hadn't seen the work reviewed the first commit, `ae15c32` (`ci` green, run 45548180694), on `main` at `f3b10d7`. It rendered flyctl's "Event Logs" table with the real tablewriter v1.1.5, set up as flyctl 0.5.8's `render.Table` sets it, and fed it through `machineEvents` and `exitOf`. Seven findings, each fixed or answered in the second commit:
+
+- **F1, high: the events before the start were compared as flyctl padded them.** tablewriter pads each cell to its column's width, and a time printed as RFC3339Nano is 20 to 24 characters, so the start's own row (`…:01.123Z`) widened the time column and re-padded every older row: #118's old crash (`exit_code=1`, `requested_stop=false`) no longer matched, and a start that held would have failed, blaming it. Fixed: `machineEvents` gives each row as its cells, trimmed and joined by " │ " (`tools/ops/src/fly.ts`), and the fakes pad as tablewriter does. Tests: `fly.test.ts` "gives a row the same however flyctl's table pads it, as another row widens or narrows a column", `worker-scale.test.ts` "counts only the start's own exits, however flyctl's table pads the old ones" (the column widened by a new row, and narrowed by an old one dropped); both fail on `ae15c32`. K18. The reviewer's other way, the `events` of `flyctl machine list --json`, wasn't taken: whether that list fills them isn't known, and the table is what flyctl prints.
+- **F2, medium: events that couldn't be read made the verdict wrong either way.** Unread after the watch, a crash Fly restarted between two looks passed as "stayed started"; unread before the start, every old exit counted as the start's own. Fixed: either one unread, the start can't be judged, and the run fails saying so, with its events and log lines first and the worker left started. Test: "can't judge a start whose events flyctl can't say, before it or after the watch, and fails saying so", through flyctl calls that fail (the old test's id, `w1`, never reached flyctl). K19.
+- **F3, low: one failed look at the state failed the run.** Fixed: a look that fails is passed over and counted ("flyctl couldn't list the Machines at N of the looks"), and the others and the events judge the start. Test: "passes over a look at the state that fails, and judges the start by the others and its events". K20.
+- **F4, low: the fakes didn't print what flyctl prints.** Fixed: `machineStatus` prints the four header lines, the VM table and the "Event Logs" table as tablewriter draws them, compared in the session with the real tablewriter's output for the same rows; times are RFC3339Nano (`…:00.4Z`, `…:12.31Z`); `logEntries`' `meta` has Go's field names (`Instance`, `Event.Provider`, `HTTP`, `Error`, `URL`), since `logs.Meta` has no JSON tags.
+- **F5, low: the records said `flyctl logs --no-tail` prints what the log buffer holds.** It prints one page (`logs/polling.go`). Fixed in reading 1, `machineLog`'s comment and the `docs/LIMITATIONS.md` row, which also no longer calls the deploy path worked around: its read comes seconds after the smoke check's, which found nothing (section 4).
+- **F6, low (T52, T56): a start that held printed 60 log lines, and the redactor knows the worker's secrets only by shape.** Fixed in part: a start that held prints its events alone, so the worker's own lines reach the run's log only when something went wrong. Answered: the `worker-scale` job holds only the Fly token, so the redactor can't hold back the worker's secret values themselves; it holds back their usual shapes (a connection string's user and password, `sb_secret_`, a JSON Web Token), the worker writes messages only (T52, `services/worker/src/main.ts`), and Fly's log already holds whatever it prints. K21.
+- **F7, nit: a worker caught showing as started in the middle of a crash loop gets "already started" and no watch.** Answered in section 4: the worker is stopped now, so the start the founder approves is watched.
+
+The breakages, K01 to K21, all caught at the second commit.
+
+## 6. Round 2 of the review
+
+One fresh subagent that hadn't seen the work checked round 1's fixes at the second commit, `b734a9d` (`ci` green, run 45551208496). It rendered tables with the real tablewriter again (an empty cell in the middle and first, a trailing empty cell, double spaces inside a cell, a second rendering that widened every column), found every old row equal across the two and only the new row new, and found the fakes' tables identical to the real ones. It made seven breakages of its own in a scratch copy, each caught. Nothing high or medium; one low and four nits, each fixed or answered in the third commit:
+
+- **L1, low: one failed read of the events before the start spent the founder's start.** The start went ahead and then failed as one that can't be judged, and a second run found the worker "already started" and didn't watch it. Fixed: the events are asked for up to three times, three seconds apart (`worker-scale.ts` `eventsOf`), before the start and after the watch; if they still can't be read before it, nothing is started ("nothing was changed"), as the script's other refusals do. Test: "asks for the events again when flyctl can't say them, and starts nothing when it still can't". K19 (re-pointed), K22.
+- **N1: a watch in which no look answered still said "stayed started".** Fixed: the run then says the Machine showed as started, no look answered for the 30 seconds after, and its events hold no exit Fly wasn't asked for, which still catches a crash. Test: in "passes over a look at the state that fails". K23.
+- **N2: a failure whose events couldn't be read said its events were above.** Fixed: it then says its lines in Fly's log are above. Test: "can't judge a start whose events flyctl can't say after the watch, and fails saying so, the worker left started". K24.
+- **N3: two fixtures still had the state "exited" and a time ending `.000Z`.** Fixed in `deploy-branch.test.ts` and `fly.test.ts`.
+- **N4: `fake-fly.ts`'s `table` re-implements tablewriter's padding, and could drift from it.** Answered: two reviewers compared its output with the real tablewriter's, byte for byte, and a generator lets each test draw the rows it needs; a golden copy would cover only the rows it holds. The pin, flyctl 0.5.8 with tablewriter v1.1.5, changes only in its own PR, which would check the fakes again.
+
+The breakages, K01 to K24, all caught at the third commit; three of the round's tests fail on `b734a9d`'s `worker-scale.ts`.
