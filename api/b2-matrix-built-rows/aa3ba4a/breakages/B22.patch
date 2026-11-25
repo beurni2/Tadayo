@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -1099,7 +1099,7 @@
+             star: w.ana.interval,
+             proposal,
+             reservation,
+-            upload,
++            upload: elsewhere.upload,
+             ...(await rosterTargets(tx, w)),
+           };
+           await checkBoundRows(tx, targets);

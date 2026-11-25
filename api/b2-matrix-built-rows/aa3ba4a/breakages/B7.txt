@@ -1,0 +1,118 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (93 tests | 4 failed) 1762ms
+   ❯ the requests a cell makes, from the contract's parameters (6)
+     × names each drop once as Ben's photo and once as Ben's video link (the outside audit's A4) 7ms
+     × sends each value of an Id parameter in the query too, required or optional, and knows which it sent 3ms
+     × makes one request for each value of a required enum, and gives each idempotent one a key 1ms
+   ❯ each step of the matrix reports a planted wrong answer (40)
+     × guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4) 2ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 89 passed (93)
+   Start at  23:21:57
+   Duration  3.23s (tests 56%, transform 27%, import 16%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > names each drop once as Ben's photo and once as Ben's video link (the outside audit's A4)
+AssertionError: expected [ { drop_id: 'drp_here' } ] to deeply equal [ { drop_id: 'drp_here' }, …(1) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "drop_id": "drp_here",
+    },
+-   {
+-     "drop_id": "drp_video_here",
+-   },
+  ]
+
+ ❯ src/privacy/harness.test.ts:318:93
+    316|
+    317|   it("names each drop once as Ben's photo and once as Ben's video link…
+    318|     expect(specsFor(operation("getDrop"), here, "Bearer planted").map(…
+       |                                                                                             ^
+    319|       { drop_id: "drp_here" },
+    320|       { drop_id: "drp_video_here" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > sends each value of an Id parameter in the query too, required or optional, and knows which it sent
+AssertionError: expected [ [ { drop_id: 'drp_here' }, …(1) ] ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -5,14 +5,6 @@
+      },
+      {
+        "drop_id": 0,
+      },
+    ],
+-   [
+-     {
+-       "drop_id": "drp_video_here",
+-     },
+-     {
+-       "drop_id": 1,
+-     },
+-   ],
+  ]
+
+ ❯ src/privacy/harness.test.ts:349:101
+    347|         parameters: [{ ...path, in: "query", required }],
+    348|       }) as ContractOperation;
+    349|     expect(specsFor(planted(true), here, "Bearer planted").map((made) …
+       |                                                                                                     ^
+    350|       [{ drop_id: "drp_here" }, { drop_id: 0 }],
+    351|       [{ drop_id: "drp_video_here" }, { drop_id: 1 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > makes one request for each value of a required enum, and gives each idempotent one a key
+AssertionError: expected [ { rendition: 'display' }, …(1) ] to deeply equal [ { rendition: 'display' }, …(3) ]
+
+- Expected
++ Received
+
+@@ -3,12 +3,6 @@
+      "rendition": "display",
+    },
+    {
+      "rendition": "full",
+    },
+-   {
+-     "rendition": "display",
+-   },
+-   {
+-     "rendition": "full",
+-   },
+  ]
+
+ ❯ src/privacy/harness.test.ts:377:99
+    375|
+    376|   it("makes one request for each value of a required enum, and gives e…
+    377|     expect(specsFor(operation("getDropMedia"), here, "Bearer planted")…
+       |                                                                                                   ^
+    378|       { rendition: "display" },
+    379|       { rendition: "full" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > guesses another club's object of the same kind: its video link for the cell's video link (the outside audit's A4)
+Error: getEmbed has one request, not two
+ ❯ src/privacy/harness.test.ts:586:59
+    584|     });
+    585|     const [photo, video] = specsFor(operation("getEmbed"), here, "Bear…
+    586|     if (photo === undefined || video === undefined) throw new Error("g…
+       |                                                           ^
+    587|     for (const [made, own, other] of [
+    588|       [photo, "drp_there", "drp_video_there"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

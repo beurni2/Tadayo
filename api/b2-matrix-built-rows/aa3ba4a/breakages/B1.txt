@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (25 tests | 25 skipped) 297ms
+
+ Test Files  1 failed (1)
+      Tests  25 skipped (25)
+   Start at  23:20:18
+   Duration  3.02s (transform 56%, import 30%, tests 14%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts [ src/privacy/matrix.test.ts ]
+Error: the cell's bindings name nothing of its world: comment_id's value guess_H5A20XHfNYN9MMVzJGqKuA is no row of app.comments
+ ❯ checkBoundRows src/privacy/matrix.test.ts:470:34
+    468|   )
+    469|     problems.push("drop_id doesn't name Ben's photo and then Ben's vid…
+    470|   if (problems.length > 0) throw new Error(`the cell's bindings name n…
+       |                                  ^
+    471| }
+    472|
+ ❯ src/privacy/matrix.test.ts:611:5
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/privacy/matrix.test.ts:587:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

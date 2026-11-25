@@ -1,0 +1,15 @@
+--- a/tests/src/privacy/harness.ts
++++ b/tests/src/privacy/harness.ts
+@@ -313,11 +313,7 @@
+   const values = bindAll(name, elsewhere);
+   const at = spec.which?.[name] ?? 0;
+   const value = values[at];
+-  if (value === undefined)
+-    throw new Error(
+-      `another club has no value ${String(at + 1)} for ${name}: its binding gives ${String(values.length)}`,
+-    );
+-  return value;
++  return value ?? (values[0] as string);
+ }
+ 
+ /** `spec` written out: the path's values as they are, the query encoded. */

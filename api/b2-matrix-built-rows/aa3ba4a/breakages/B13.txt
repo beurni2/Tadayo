@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (25 tests | 1 failed | 24 skipped) 12813ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 12520ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 skipped (25)
+   Start at  23:23:31
+   Duration  14.82s (tests 90%, transform 6%, import 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+Error: Ben's photo and video link are in 2 drop states in "withdrawn", not one
+ ❯ putInState src/privacy/matrix.test.ts:399:11
+    397|     SELECT DISTINCT state FROM app.drops WHERE id IN (${ben.drop}, ${b…
+    398|   if (rows.length !== 1)
+    399|     throw new Error(`Ben's photo and video link are in ${String(rows.l…
+       |           ^
+    400|   if (state.endsTheDrop && rows[0]?.state === "active") throw new Erro…
+    401| }
+ ❯ src/privacy/matrix.test.ts:1086:11
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/privacy/matrix.test.ts:1076:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

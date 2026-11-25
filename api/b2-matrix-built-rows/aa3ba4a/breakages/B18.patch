@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -2504,7 +2504,6 @@
+             [cell.cleos, "Cleo's slot, held as a member and lapsed before any phase"],
+             [cell.targets.reservation, "Ben's slot, given back"],
+             [carried, "the slot held in the phase before, lapsed at the reveal"],
+-            [linkSlot, "a link's slot the table holds, live"],
+             [cell.othersLive, "another member's photo slot, live while the day collects"],
+             [elsewhere.reservation, "another club's slot"],
+             [freshId(), "a slot nobody has"],

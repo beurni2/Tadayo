@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/harness.test.ts (93 tests | 1 failed) 1836ms
+   ❯ a built route names objects of the world (the outside audit's A4) (5)
+     × has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one 241ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 92 passed (93)
+   Start at  23:49:34
+   Duration  3.25s (tests 58%, transform 26%, import 16%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > a built route names objects of the world (the outside audit's A4) > has every operation whose request or answer can name a comment take comment_id, act on it, or refuse one
+AssertionError: expected [ 'getHome' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "getHome",
++ ]
+
+ ❯ src/privacy/harness.test.ts:249:7
+    247|     expect(
+    248|       canName.filter((id) => !takes(id) && !ACTS_ON[id]?.includes("com…
+    249|     ).toEqual([]);
+       |       ^
+    250|     // createReport too, whose target may be a comment though its body…
+    251|     expect(Object.keys(ACTS_ON).sort()).toEqual(["createComment", "cre…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

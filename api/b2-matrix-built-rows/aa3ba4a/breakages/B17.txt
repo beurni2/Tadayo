@@ -1,0 +1,70 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a4-brk/tests
+
+ ❯ src/privacy/matrix.test.ts (25 tests | 1 failed) 749210ms
+   ❯ the reservations' table ran (tests/src/privacy/reservation.ts) (3)
+     × refused each role at the limits its allowance reaches: a friend's photos, the star's links, and the whole 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 passed (25)
+   Start at  23:23:53
+   Duration  751.31s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > the reservations' table ran (tests/src/privacy/reservation.ts) > refused each role at the limits its allowance reaches: a friend's photos, the star's links, and the whole
+AssertionError: expected [ [ 'author', …(1) ], …(4) ] to deeply equal [ [ 'author', …(1) ], …(4) ]
+
+- Expected
++ Received
+
+@@ -1,12 +1,12 @@
+  [
+    [
+      "author",
+      {
+        "EXTERNAL_LIMIT": 0,
+-       "PHOTO_LIMIT": 1,
+-       "QUOTA_FULL": 25,
++       "PHOTO_LIMIT": 0,
++       "QUOTA_FULL": 26,
+      },
+    ],
+    [
+      "star",
+      {
+@@ -25,18 +25,18 @@
+    ],
+    [
+      "member who joined after the commit (T8)",
+      {
+        "EXTERNAL_LIMIT": 0,
+-       "PHOTO_LIMIT": 4,
+-       "QUOTA_FULL": 16,
++       "PHOTO_LIMIT": 0,
++       "QUOTA_FULL": 20,
+      },
+    ],
+    [
+      "rejoined member, a new interval (T8)",
+      {
+        "EXTERNAL_LIMIT": 0,
+-       "PHOTO_LIMIT": 4,
+-       "QUOTA_FULL": 16,
++       "PHOTO_LIMIT": 0,
++       "QUOTA_FULL": 20,
+      },
+    ],
+  ]
+
+ ❯ src/privacy/matrix.test.ts:3059:84
+    3057|     // while the day collects (T9, T17, addendum 2).
+    3058|     expect(LIMITS.size).toBe(ROLES.length);
+    3059|     expect([...LIMITS].filter(([, met]) => Object.values(met).some((n)…
+       |                                                                                    ^
+    3060|       ["author", { QUOTA_FULL: 3 * 7 + 4, PHOTO_LIMIT: 1, EXTERNAL_LIM…
+    3061|       ["star", { QUOTA_FULL: 4, PHOTO_LIMIT: 0, EXTERNAL_LIMIT: 4 }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
