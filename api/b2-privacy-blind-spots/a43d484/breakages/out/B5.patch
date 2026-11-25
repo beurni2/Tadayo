@@ -1,0 +1,26 @@
+diff --git a/packages/domain/src/authorization/read-sql.ts b/packages/domain/src/authorization/read-sql.ts
+index 630c5d2a..3560de47 100644
+--- a/packages/domain/src/authorization/read-sql.ts
++++ b/packages/domain/src/authorization/read-sql.ts
+@@ -107,9 +107,6 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
+        AND c.suspended_at IS NULL
+        AND ${starKeepsDay(sql)}
+        AND au.state = 'active'
+-       AND NOT EXISTS (SELECT FROM app.blocks b
+-                        WHERE (b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)
+-                           OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = m.user_id))
+        AND (NOT ${beyondCaption}::pg_catalog.bool OR o.reveal_at <= ${now}::pg_catalog.timestamptz)`;
+ }
+ 
+diff --git a/packages/domain/src/authorization/read.ts b/packages/domain/src/authorization/read.ts
+index c95642a7..42df1bfd 100644
+--- a/packages/domain/src/authorization/read.ts
++++ b/packages/domain/src/authorization/read.ts
+@@ -93,7 +93,6 @@ export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: Server
+     facts.authorAccount === "active" &&
+     // A block hides each one's drops from the other, whatever the blocker kept (T23, FQ88).
+     // Exactly false: a missing or strange value denies (Object.is, since it is typed boolean).
+-    Object.is(facts.blocked, false) &&
+     // Anything beyond the caption once server time has reached the reveal (T9, T10, D07).
+     (what === "caption" ||
+       (facts.revealAt instanceof Temporal.Instant && Temporal.Instant.compare(now, facts.revealAt) >= 0))

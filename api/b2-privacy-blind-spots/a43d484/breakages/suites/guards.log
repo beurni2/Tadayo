@@ -1,0 +1,5 @@
++ /usr/local/bin/python3 tools/ci/ci_config_guard.py
+guard 1: passed
++ /usr/local/bin/python3 tools/ci/journal_check.py --branch
++ /usr/local/bin/python3 tools/ci/ci_steps.py ratchet
+ci: ratchet: passed: each of the 13 target(s) on main at 4c0ef9338eba is still here or retired (13 here)

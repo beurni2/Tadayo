@@ -1,0 +1,13 @@
+ci: privacy: `test:privacy` in tests
++ pnpm -r --workspace-concurrency=1 run test:privacy
+Scope: 7 of 8 workspace projects
+$ vitest run --config vitest.privacy.config.ts
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+
+ Test Files  16 passed (16)
+      Tests  526 passed (526)
+   Start at  14:41:19
+   Duration  1439.68s (tests 100%)
+

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/packages/domain
+
+ ❯ src/authorization/one-module.test.ts (4 tests | 1 failed) 70ms
+   ❯ only the authorization module reads a drop's audience and the blocks (T9) (4)
+     × finds no other code that names them 39ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  15:27:59
+   Duration  258ms (tests 72%, import 14%, transform 7%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/one-module.test.ts > only the authorization module reads a drop's audience and the blocks (T9) > finds no other code that names them
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "db/migrations/0018_role_time_limits.sql:33: a drop's audience",
++ ]
+
+ ❯ src/authorization/one-module.test.ts:145:19
+    143|   it("finds no other code that names them", () => {
+    144|     const found = scannedFiles().flatMap((file) => tableNames(file, re…
+    145|     expect(found).toEqual([]);
+       |                   ^
+    146|   });
+    147|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

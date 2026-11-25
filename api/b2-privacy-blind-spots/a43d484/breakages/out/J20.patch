@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..c12a0556 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -342,6 +342,7 @@ export function homeFor(seen: HomeSeen, club: string): Record<string, unknown> |
+   if (row.suspendedAt !== null) return { mode: "unavailable", ...base };
+   if (!roster.activated) return { mode: "awaiting_activation", ...base };
+   const days = daysOf(world, club, now);
++  if (days.next !== undefined) return { mode: "waiting", ...base, next: days.next, recent_days: recentFor(seen, club) };
+   const open = days.open as { id: string; star: { membership_id: string } } | undefined;
+   if (open !== undefined) {
+     const page = pageFor(seen, open.id, interval);

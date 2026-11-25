@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: Cleo blocked the author, both still members as its account and its row say, and leaks nothing the scanner can find
+blocked: Cleo blocked the author, both still members: 3560 cells run, 68035 answers scanned
+blocked: Cleo blocked the author, both still members, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (28 tests | 1 failed | 27 skipped) 108211ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the blocked: Cleo blocked the author, both still members as its account and its row say, and leaks nothing the scanner can find 107804ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 27 skipped (28)
+   Start at  15:14:51
+   Duration  110.26s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the blocked: Cleo blocked the author, both still members as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 2, first: [ …(2) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 2,
++   "first": [
++     "active, open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_PN5pb938-l-22Ij20wHZHQ\",\"id\":\"occ_MJVkAURKghEYBaApZArR5w\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana babfaf0f9bb6\",\"membership_id\":\"mem_oqMuu9VrtKHiy3JP9VgpeQ\"}},\"club\":{\"id\":\"club_PN5pb938-l-22Ij20wHZHQ\",\"my_membership_id\":\"mem_slTVyos2J7pD1EFHEC55kw\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_PN5pb938-l-22Ij20wHZHQ\",\"id\":\"occ_MJVkAURKghEYBaApZArR5w\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana babfaf0f9bb6\",\"membership_id\":\"mem_oqMuu9VrtKHiy3JP9VgpeQ\"}},\"club\":{\"id\":\"club_PN5pb938-l-22Ij20wHZHQ\",\"my_membership_id\":\"mem_slTVyos2J7pD1EFHEC55kw\",\"name\":\"Saturda",
++     "active, past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_x2b7ABqU5xm7_2rXOgwxtA\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_PN5pb938-l-22Ij20wHZHQ\",\"id\":\"occ_tkUyZZRojFLyVlbPwtBSqg\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana babfaf0f9bb6\",\"membership_id\":\"mem_oqMuu9VrtKHiy3JP9VgpeQ\"}}}], not [{\"cover_drop_id\":\"drp_hXYNm3YPi2ENAW0aqaE9fQ\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_PN5pb938-l-22Ij20wHZHQ\",\"id\":\"occ_tkUyZZRojFLyVlbPwtBSqg\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana babfaf0f9bb6\",\"membership_id\":\"mem_oqMuu9VrtKHiy3JP9VgpeQ\"}}}]",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3032:66
+    3030|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3031|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3032|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3033|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3034|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

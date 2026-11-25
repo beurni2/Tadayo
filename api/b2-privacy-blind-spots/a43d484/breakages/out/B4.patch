@@ -1,0 +1,24 @@
+diff --git a/packages/domain/src/authorization/read-sql.ts b/packages/domain/src/authorization/read-sql.ts
+index 630c5d2a..b8d368c1 100644
+--- a/packages/domain/src/authorization/read-sql.ts
++++ b/packages/domain/src/authorization/read-sql.ts
+@@ -108,8 +108,7 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
+        AND ${starKeepsDay(sql)}
+        AND au.state = 'active'
+        AND NOT EXISTS (SELECT FROM app.blocks b
+-                        WHERE (b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)
+-                           OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = m.user_id))
++                        WHERE (b.blocker_user_id = am.user_id AND b.blocked_user_id = m.user_id))
+        AND (NOT ${beyondCaption}::pg_catalog.bool OR o.reveal_at <= ${now}::pg_catalog.timestamptz)`;
+ }
+ 
+@@ -185,8 +184,7 @@ async function dropReadFacts(
+                su.deletion_requested_at AS star_deletion_requested_at,
+                au.state AS author_account,
+                EXISTS (SELECT FROM app.blocks b
+-                        WHERE (b.blocker_user_id = ${viewer}::pg_catalog.text AND b.blocked_user_id = am.user_id)
+-                           OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = ${viewer}::pg_catalog.text)) AS blocked
++                        WHERE (b.blocker_user_id = am.user_id AND b.blocked_user_id = ${viewer}::pg_catalog.text)) AS blocked
+           FROM app.drops d
+           JOIN app.occurrences o ON o.id = d.occurrence_id
+           JOIN app.clubs c ON c.id = d.club_id

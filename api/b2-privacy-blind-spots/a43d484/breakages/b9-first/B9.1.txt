@@ -1,0 +1,63 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (28 tests | 1 failed | 27 skipped) 108011ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 107621ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 27 skipped (28)
+   Start at  15:23:34
+   Duration  110.09s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 20, first: [ …(20) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 20,
++   "first": [
++     "active, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "active, collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "withdrawn, collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "removed by moderation, collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "held (T29), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "held (T29), collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "its day suspended, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "its day suspended, collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "its club suspended, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "its club suspended, collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "its day cancelled, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "its day cancelled, collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "its author's account being deleted (T27), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "its author's account being deleted (T27), collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "its star gone before the reveal (FQ63), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "its star gone before the reveal (FQ63), collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++     "its star's account deletion asked before the reveal (FQ63, T27), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500, not 200 with Home",
++     "its star's account deletion asked before the reveal (FQ63, T27), collecting, getHome: shape at status: 500 isn't an answer getHome declares",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3032:66
+    3030|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3031|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3032|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3033|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3034|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

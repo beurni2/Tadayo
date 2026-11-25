@@ -1,0 +1,18 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..82d9a9d8 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -145,10 +145,9 @@ export function mayView(seen: HomeSeen, drop: string): boolean {
+   const star = day === undefined ? undefined : world.members.get(day.star);
+   const author = world.members.get(found.author);
+   if (day === undefined || star === undefined || author === undefined) return false;
+-  const mine = [...found.audience].some((interval) => {
+-    const member = world.members.get(interval);
+-    return member?.account === account && member.leftAt === null;
+-  });
++  const mine =
++    [...found.audience].some((interval) => world.members.get(interval)?.account === account) &&
++    [...world.members.values()].some((one) => one.club === day.club && one.account === account && one.leftAt === null);
+   const starAsked = world.accounts.get(star.account)?.deletionRequestedAt ?? null;
+   const blocked = home.blocks.some(
+     ([a, b]) => (a === account && b === author.account) || (a === author.account && b === account),

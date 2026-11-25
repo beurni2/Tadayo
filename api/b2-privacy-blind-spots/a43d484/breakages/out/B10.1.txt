@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/db/authorization.test.ts (37 tests | 1 failed) 3516ms
+   ❯ T23 and FQ88: a block denies in every interval after it, whoever made it (2)
+     × hides each one's drops from the other when the block was made in another club, both still members here 40ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 36 passed (37)
+   Start at  15:25:46
+   Duration  4.84s (tests 94%, transform 3%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides each one's drops from the other when the block was made in another club, both still members here
+AssertionError: Cleo, Ben's, Cleo blocked, collecting, caption: expected { policy: true, sql: true } to deeply equal { policy: false, sql: false }
+
+- Expected
++ Received
+
+  {
+-   "policy": false,
+-   "sql": false,
++   "policy": true,
++   "sql": true,
+  }
+
+ ❯ src/db/authorization.test.ts:296:96
+    294|             const reads = what === "caption" || phase !== "collecting";
+    295|             const label = `${blocker} blocked, ${phase}, ${what}`;
+    296|             expect(await bothPaths(tx, w.cleo.user, bens, what, now), …
+       |                                                                                                ^
+    297|               policy: false,
+    298|               sql: false,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/authorization.test.ts:278:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

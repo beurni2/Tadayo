@@ -1,0 +1,390 @@
+[
+ {
+  "name": "B1",
+  "what": "readableDrops and mayRead without the author's account being active",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B1",
+  "what": "readableDrops and mayRead without the author's account being active",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B2",
+  "what": "starKeepsDay and mayRead without the star's leaving before the reveal",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B2",
+  "what": "starKeepsDay and mayRead without the star's leaving before the reveal",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B3",
+  "what": "starKeepsDay and mayRead without the star's deletion asked before the reveal",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B3",
+  "what": "starKeepsDay and mayRead without the star's deletion asked before the reveal",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B4",
+  "what": "a one-way block: the viewer's own block of the author dropped, in both fragments",
+  "run": "matrix: blocked: Cleo blocked the author, both still members",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B4",
+  "what": "a one-way block: the viewer's own block of the author dropped, in both fragments",
+  "run": "db: src/db/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B4",
+  "what": "a one-way block: the viewer's own block of the author dropped, in both fragments",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B5",
+  "what": "no block at all, in both fragments and mayRead",
+  "run": "matrix: blocked: Cleo blocked the author, both still members",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B5",
+  "what": "no block at all, in both fragments and mayRead",
+  "run": "db: src/db/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B5",
+  "what": "no block at all, in both fragments and mayRead",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B6",
+  "what": "the audit's inline Home: the page's drops by its own statement, with a one-way block",
+  "run": "unit: src/authorization/one-module.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B6",
+  "what": "the audit's inline Home: the page's drops by its own statement, with a one-way block",
+  "run": "db: src/db/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B6",
+  "what": "the audit's inline Home: the page's drops by its own statement, with a one-way block",
+  "run": "matrix: blocked: Cleo blocked the author, both still members",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B7",
+  "what": "Home's time from `?t=` by a cast to ServerNow",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B7",
+  "what": "Home's time from `?t=` by a cast to ServerNow",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B8",
+  "what": "Home's time from If-Modified-Since by a cast to ServerNow",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B8",
+  "what": "Home's time from If-Modified-Since by a cast to ServerNow",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B9",
+  "what": "Home's time from `?t=` by a typed query whose row says it holds a ServerNow, with no cast (the instant bound as a Temporal.Instant, which the API's instant type takes)",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B9",
+  "what": "Home's time from `?t=` by a typed query whose row says it holds a ServerNow, with no cast (the instant bound as a Temporal.Instant, which the API's instant type takes)",
+  "run": "matrix: member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B10",
+  "what": "a block keyed by the blocked person's interval rather than their account, in both fragments",
+  "run": "db: src/db/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B10",
+  "what": "a block keyed by the blocked person's interval rather than their account, in both fragments",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B10",
+  "what": "a block keyed by the blocked person's interval rather than their account, in both fragments",
+  "run": "matrix: blocked: Cleo blocked the author, both still members (registered as a miss)",
+  "exit": 0,
+  "verdict": "passed, a miss registered beforehand",
+  "missing": [
+   "answers\\ the\\ blocked:\\ Cleo\\ blocked\\ the\\ author,\\ both\\ still\\ members"
+  ]
+ },
+ {
+  "name": "B11",
+  "what": "a view of the audience made in a migration, outside the authorization module",
+  "run": "unit: src/authorization/one-module.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B12",
+  "what": "readableDrops alone without starKeepsDay (mayRead and the day choice keep it)",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "B12",
+  "what": "readableDrops alone without starKeepsDay (mayRead and the day choice keep it)",
+  "run": "matrix: member in the audience (registered as a miss)",
+  "exit": 0,
+  "verdict": "passed, a miss registered beforehand",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "J01",
+  "what": "mayView without the viewer's account",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J02",
+  "what": "mayView without the audience",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J03",
+  "what": "mayView without the viewer's interval ended",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J04",
+  "what": "mayView without the drop's state",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J05",
+  "what": "mayView without the day's status",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J06",
+  "what": "mayView without the club's suspension",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J07",
+  "what": "mayView without the star gone before the reveal",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J08",
+  "what": "mayView without the star's deletion before the reveal",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J09",
+  "what": "mayView without the author's account",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J10",
+  "what": "mayView without a block either way",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J11",
+  "what": "mayView without the viewer's own block of the author",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J12",
+  "what": "mayView without the author's block of the viewer",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J13",
+  "what": "mayView without the reveal",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J14",
+  "what": "mayView without the star's leaving at any time",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J15",
+  "what": "mayView without the star's deletion at any time",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J16",
+  "what": "mayView without anyone's block",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J17",
+  "what": "mayView without the audience's interval being the viewer's active one",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J18",
+  "what": "recentFor without its newest-first order",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J19",
+  "what": "pageFor breaking a tie by a locale's order, not byte by byte",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J20",
+  "what": "homeFor waiting for the next day before the open one",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "J21",
+  "what": "homeFor pausing a member left alone before waiting for the next day",
+  "run": "unit: src/privacy/home.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ }
+]

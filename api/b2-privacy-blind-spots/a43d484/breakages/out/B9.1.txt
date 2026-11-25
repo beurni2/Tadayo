@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (28 tests | 1 failed | 27 skipped) 106614ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 106263ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 27 skipped (28)
+   Start at  15:33:26
+   Duration  108.79s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 41, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 41,
++   "first": [
++     "active, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "active, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's next is {\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_Wt3OvjCaF_W_GkzctzdUUw\",\"id\":\"occ_MnG5Zl3ocZt5GlHF9Tel5w\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 197597d94a09\",\"membership_id\":\"mem_sfYzBwk1Mo3T68mRIdX-DA\"}}, not {\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_Wt3OvjCaF_W_GkzctzdUUw\",\"id\":\"occ_AD_Kze8hT8IjhJlSr123yw\",\"local_date\":\"2026-11-07\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 197597d94a09\",\"membership_id\":\"mem_sfYzBwk1Mo3T68mRIdX-DA\"}}",
++     "active, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's recent_days is [{\"cover_drop_id\":\"drp_U82LehtrY2v6x1Kels1nCw\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_Wt3OvjCaF_W_GkzctzdUUw\",\"id\":\"occ_AD_Kze8hT8IjhJlSr123yw\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 197597d94a09\",\"membership_id\":\"mem_sfYzBwk1Mo3T68mRIdX-DA\"}}}], not []",
++     "active, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "active, collecting, getHome: world at $.recent_days[0].cover_drop_id: a drop in a DayLink before its day opens (T10, FQ21)",
++     "active, collecting, getHome: world at $.recent_days[0]: a day link before the day opens",
++     "active, collecting, getHome: world at $.recent_days[0]: a day link to a day that hasn't closed",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's next is {\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_UIXSuVSEddzCunaT6gqogA\",\"id\":\"occ_tljyzy4qtwUB9TXyMe88aw\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 667e2ea083ad\",\"membership_id\":\"mem_FlCUNkOkRrgKYCmZCo9o3w\"}}, not {\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_UIXSuVSEddzCunaT6gqogA\",\"id\":\"occ_-D0vDTDrm4NeNvFoX47K2g\",\"local_date\":\"2026-11-07\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 667e2ea083ad\",\"membership_id\":\"mem_FlCUNkOkRrgKYCmZCo9o3w\"}}",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's recent_days is [{\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_UIXSuVSEddzCunaT6gqogA\",\"id\":\"occ_-D0vDTDrm4NeNvFoX47K2g\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 667e2ea083ad\",\"membership_id\":\"mem_FlCUNkOkRrgKYCmZCo9o3w\"}}}], not []",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "withdrawn, collecting, getHome: world at $.recent_days[0]: a day link before the day opens",
++     "withdrawn, collecting, getHome: world at $.recent_days[0]: a day link to a day that hasn't closed",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's next is {\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_fg0xBabU1TY_QN2CEFQTdQ\",\"id\":\"occ_kCj0PLqKgPiFXVuLLGV0bQ\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 27c1cfc02360\",\"membership_id\":\"mem_GfXUQ4kkJX1CKB1-9OpDcQ\"}}, not {\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_fg0xBabU1TY_QN2CEFQTdQ\",\"id\":\"occ_uXm-lb5KYaHyiJ2IdCCxqA\",\"local_date\":\"2026-11-07\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 27c1cfc02360\",\"membership_id\":\"mem_GfXUQ4kkJX1CKB1-9OpDcQ\"}}",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's recent_days is [{\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_fg0xBabU1TY_QN2CEFQTdQ\",\"id\":\"occ_uXm-lb5KYaHyiJ2IdCCxqA\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 27c1cfc02360\",\"membership_id\":\"mem_GfXUQ4kkJX1CKB1-9OpDcQ\"}}}], not []",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "removed by moderation, collecting, getHome: world at $.recent_days[0]: a day link before the day opens",
++     "removed by moderation, collecting, getHome: world at $.recent_days[0]: a day link to a day that hasn't closed",
++     "held (T29), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "held (T29), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's next is {\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_F3zs_8A2er-vZjvI73_bDw\",\"id\":\"occ_1w7cKpZt7b4OLicCgSi9vw\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana c3b10e882517\",\"membership_id\":\"mem_IGtTZ__DyuwucJnjgkc3Ug\"}}, not {\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_F3zs_8A2er-vZjvI73_bDw\",\"id\":\"occ_B5DS1cOj9lAgDcq6xKTYZQ\",\"local_date\":\"2026-11-07\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana c3b10e882517\",\"membership_id\":\"mem_IGtTZ__DyuwucJnjgkc3Ug\"}}",
++     "held (T29), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's recent_days is [{\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_F3zs_8A2er-vZjvI73_bDw\",\"id\":\"occ_B5DS1cOj9lAgDcq6xKTYZQ\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana c3b10e882517\",\"membership_id\":\"mem_IGtTZ__DyuwucJnjgkc3Ug\"}}}], not []",
++     "held (T29), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "held (T29), collecting, getHome: world at $.recent_days[0]: a day link before the day opens",
++     "held (T29), collecting, getHome: world at $.recent_days[0]: a day link to a day that hasn't closed",
++     "its day suspended, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "its day suspended, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its club suspended, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "its club suspended, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its day cancelled, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "its day cancelled, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its author's account being deleted (T27), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "its author's account being deleted (T27), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's next is {\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_ifLux2_7GthMDauYF6R_aw\",\"id\":\"occ_FOjmdZutT0ndi1WFC6vSLw\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 17631ef4ef55\",\"membership_id\":\"mem_3RM5Ry2W3TAT8rMwL6lxJg\"}}, not {\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_ifLux2_7GthMDauYF6R_aw\",\"id\":\"occ_CjoRslmEril43Gj1ASYO-g\",\"local_date\":\"2026-11-07\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 17631ef4ef55\",\"membership_id\":\"mem_3RM5Ry2W3TAT8rMwL6lxJg\"}}",
++     "its author's account being deleted (T27), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's recent_days is [{\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_ifLux2_7GthMDauYF6R_aw\",\"id\":\"occ_CjoRslmEril43Gj1ASYO-g\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 17631ef4ef55\",\"membership_id\":\"mem_3RM5Ry2W3TAT8rMwL6lxJg\"}}}], not []",
++     "its author's account being deleted (T27), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its author's account being deleted (T27), collecting, getHome: world at $.recent_days[0]: a day link before the day opens",
++     "its author's account being deleted (T27), collecting, getHome: world at $.recent_days[0]: a day link to a day that hasn't closed",
++     "its star gone before the reveal (FQ63), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++     "its star gone before the reveal (FQ63), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its star's account deletion asked before the reveal (FQ63, T27), collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's club_today is \"2026-11-08\", not \"2026-11-07\"",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3032:66
+    3030|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3031|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3032|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3033|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3034|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

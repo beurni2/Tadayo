@@ -1,0 +1,122 @@
+[
+ {
+  "name": "B1",
+  "what": "readableDrops and mayRead without the author's account being active",
+  "run": "matrix: member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B2",
+  "what": "starKeepsDay and mayRead without the star's leaving before the reveal",
+  "run": "matrix: member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B3",
+  "what": "starKeepsDay and mayRead without the star's deletion asked before the reveal",
+  "run": "matrix: member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B4",
+  "what": "a one-way block: the viewer's own block of the author dropped, in both fragments",
+  "run": "matrix: blocked: Cleo blocked the author, leaving by the block",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ blocked:\\ Cleo\\ blocked\\ the\\ author,\\ leaving\\ by\\ the\\ block"
+  ]
+ },
+ {
+  "name": "B4",
+  "what": "a one-way block: the viewer's own block of the author dropped, in both fragments",
+  "run": "db: src/db/home.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": []
+ },
+ {
+  "name": "B5",
+  "what": "no block at all, in both fragments and mayRead",
+  "run": "matrix: blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "B6",
+  "what": "the audit's inline Home: the page's drops by its own statement, with a one-way block",
+  "run": "matrix: blocked: Cleo blocked the author, leaving by the block",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ blocked:\\ Cleo\\ blocked\\ the\\ author,\\ leaving\\ by\\ the\\ block"
+  ]
+ },
+ {
+  "name": "B6",
+  "what": "the audit's inline Home: the page's drops by its own statement, with a one-way block",
+  "run": "db: src/db/home.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": []
+ },
+ {
+  "name": "B7",
+  "what": "Home's time from `?t=` by a cast to ServerNow",
+  "run": "matrix: member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B8",
+  "what": "Home's time from If-Modified-Since by a cast to ServerNow",
+  "run": "matrix: member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B9",
+  "what": "Home's time from `?t=` by a typed query whose row says it holds a ServerNow, with no cast (the instant bound as a Temporal.Instant, which the API's instant type takes)",
+  "run": "matrix: member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "B10",
+  "what": "a block keyed by the blocked person's interval rather than their account, in both fragments",
+  "run": "db: src/db/home.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": []
+ },
+ {
+  "name": "B10",
+  "what": "a block keyed by the blocked person's interval rather than their account, in both fragments",
+  "run": "db: src/db/authorization.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": []
+ }
+]

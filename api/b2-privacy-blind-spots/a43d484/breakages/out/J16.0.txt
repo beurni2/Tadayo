@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 2 failed) 37ms
+   ❯ Home's statement of the read predicate (mayView; T9, T27; FQ63) (4)
+     × holds the star's leaving and deletion to the reveal, and a block to its two people 10ms
+   ❯ the open day's page (pageFor; T35; addendum 4) (3)
+     × leaves out what the viewer may not see 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  15:30:35
+   Duration  484ms (import 67%, transform 20%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > Home's statement of the read predicate (mayView; T9, T27; FQ63) > holds the star's leaving and deletion to the reveal, and a block to its two people
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/home.test.ts:211:103
+    209|     expect(mayView(seen(withMember("itv_ana", { leftAt: REVEAL })), "d…
+    210|     expect(mayView(seen(withAccount("usr_ana", { deletionRequestedAt: …
+    211|     expect(mayView(seen(world(), "usr_cleo", OPEN, { blocks: [["usr_an…
+       |                                                                                                       ^
+    212|     expect(mayView(seen(world(), "usr_cleo", OPEN, { blocks: [["usr_cl…
+    213|     // Someone else's block of the author, the viewer's block of someo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/home.test.ts > the open day's page (pageFor; T35; addendum 4) > leaves out what the viewer may not see
+AssertionError: expected [] to deeply equal [ 'drp_ana' ]
+
+- Expected
++ Received
+
+- [
+-   "drp_ana",
+- ]
++ []
+
+ ❯ src/privacy/home.test.ts:267:48
+    265|     );
+    266|     if (blocked === "refused") throw new Error("refused");
+    267|     expect(blocked.drops.map((one) => one.id)).toEqual(["drp_ana"]);
+       |                                                ^
+    268|   });
+    269|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

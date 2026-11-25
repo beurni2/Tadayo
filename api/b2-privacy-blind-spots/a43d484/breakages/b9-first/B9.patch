@@ -1,0 +1,23 @@
+diff --git a/services/api/src/clubs/home.ts b/services/api/src/clubs/home.ts
+index 4271e848..e6d6de21 100644
+--- a/services/api/src/clubs/home.ts
++++ b/services/api/src/clubs/home.ts
+@@ -20,6 +20,7 @@ import {
+   type PageDrop,
+   type RailEntry,
+   type RecentDay,
++  type ServerNow,
+ } from "@tadayo/domain";
+ import { ok, problem } from "../answers.ts";
+ import type { Deps, Handler } from "../deps.ts";
+@@ -117,7 +118,9 @@ export function getHomeHandler(deps: Deps): Handler {
+     const clubId = typeof params?.["club_id"] === "string" ? params["club_id"] : "";
+     // Read only, and the server's instant first: Home is one statement, so one snapshot (T1, T5, T34).
+     const body = await deps.sql.begin("read only", async (tx) => {
+-      const now = await deps.clock.sample(tx);
++      const t = (request.query as Record<string, unknown> | null)?.["t"];
++      const [row] = typeof t === "string" ? await tx<{ now: ServerNow }[]>`SELECT ${t}::pg_catalog.timestamptz AS now` : [];
++      const now = row?.now ?? (await deps.clock.sample(tx));
+       const home = await readHome(tx, account.id, clubId, now);
+       return home === null ? null : homeBody(now, home);
+     });

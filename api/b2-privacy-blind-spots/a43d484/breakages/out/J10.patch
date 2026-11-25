@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..eb81208f 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -161,7 +161,6 @@ export function mayView(seen: HomeSeen, drop: string): boolean {
+     (star.leftAt === null || !before(star.leftAt, day.revealAt)) &&
+     (starAsked === null || !before(starAsked, day.revealAt)) &&
+     world.accounts.get(author.account)?.state === "active" &&
+-    !blocked &&
+     !before(now, day.revealAt)
+   );
+ }

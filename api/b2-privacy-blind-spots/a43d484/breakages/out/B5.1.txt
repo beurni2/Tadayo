@@ -1,0 +1,68 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/db/home.test.ts (30 tests | 2 failed) 2258ms
+   ❯ the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) (5)
+     × leaves out a drop a block keeps from the viewer (T23) 31ms
+     × leaves out each other's drops when one of two members blocked the other, either way, made here or in another club (T9, T23, FQ88) 30ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  15:16:50
+   Duration  3.35s (tests 92%, import 4%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home.test.ts > the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) > leaves out a drop a block keeps from the viewer (T23)
+AssertionError: expected [ 'drp_0Eg3xE98OH6yl_qD5zA3IQ', …(1) ] to deeply equal [ 'drp_0Eg3xE98OH6yl_qD5zA3IQ' ]
+
+- Expected
++ Received
+
+  [
+    "drp_0Eg3xE98OH6yl_qD5zA3IQ",
++   "drp_tL7uZOv8gzDlHkZmh_8Pqw",
+  ]
+
+ ❯ src/db/home.test.ts:436:81
+    434|       // Ben blocks Ana and leaves by it, keeping the drop: Ana, still…
+    435|       await block(tx, w.ben, "Ben", w.ana, "Ana", STATE_AT);
+    436|       expect((await page(tx, w.ana.user, w.club)).drops.map((card) => …
+       |                                                                                 ^
+    437|       expect((await page(tx, w.cleo.user, w.club)).drops).toHaveLength…
+    438|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home.test.ts:430:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/home.test.ts > the open day's page: the star's own drops, then friends' (spec 15; T9, T35; addendum 4; Q18) > leaves out each other's drops when one of two members blocked the other, either way, made here or in another club (T9, T23, FQ88)
+AssertionError: Cleo blocked, here: expected [ 'drp_8SuWIL_iuCofU6RYMnk-hQ', …(1) ] to deeply equal [ 'drp_8SuWIL_iuCofU6RYMnk-hQ' ]
+
+- Expected
++ Received
+
+  [
+    "drp_8SuWIL_iuCofU6RYMnk-hQ",
++   "drp_GD-USh8O0sfOIa-bKWFp8g",
+  ]
+
+ ❯ src/db/home.test.ts:463:13
+    461|             (await page(tx, w.cleo.user, w.club)).drops.map((card) => …
+    462|             label,
+    463|           ).toEqual([cleos]);
+       |             ^
+    464|           expect(
+    465|             (await page(tx, w.ben.user, w.club)).drops.map((card) => c…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home.test.ts:450:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

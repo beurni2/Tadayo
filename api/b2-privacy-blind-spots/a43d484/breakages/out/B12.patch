@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/authorization/read-sql.ts b/packages/domain/src/authorization/read-sql.ts
+index 630c5d2a..61678fd0 100644
+--- a/packages/domain/src/authorization/read-sql.ts
++++ b/packages/domain/src/authorization/read-sql.ts
+@@ -105,7 +105,6 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
+        AND d.state = 'active'
+        AND o.status = 'scheduled'
+        AND c.suspended_at IS NULL
+-       AND ${starKeepsDay(sql)}
+        AND au.state = 'active'
+        AND NOT EXISTS (SELECT FROM app.blocks b
+                         WHERE (b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)

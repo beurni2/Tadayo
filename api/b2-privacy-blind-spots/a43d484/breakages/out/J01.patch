@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..703195d7 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -140,7 +140,7 @@ const second = (instant: Temporal.Instant) => instant.toString({ smallestUnit: "
+ export function mayView(seen: HomeSeen, drop: string): boolean {
+   const { world, home, account, now } = seen;
+   const found = world.drops.get(drop);
+-  if (account === null || found === undefined || world.accounts.get(account)?.state !== "active") return false;
++  if (account === null || found === undefined || false) return false;
+   const day = world.days.get(found.day);
+   const star = day === undefined ? undefined : world.members.get(day.star);
+   const author = world.members.get(found.author);

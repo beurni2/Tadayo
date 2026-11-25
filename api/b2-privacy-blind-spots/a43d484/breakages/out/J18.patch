@@ -1,0 +1,14 @@
+diff --git a/tests/src/privacy/home.ts b/tests/src/privacy/home.ts
+index 7ab0de6b..a437e66c 100644
+--- a/tests/src/privacy/home.ts
++++ b/tests/src/privacy/home.ts
+@@ -300,9 +300,6 @@ export function recentFor(seen: HomeSeen, club: string): Record<string, unknown>
+       const occurrence = pastOccurrence(world, id);
+       return occurrence === undefined ? [] : [{ id, day, occurrence }];
+     })
+-    .sort(
+-      (x, y) => Temporal.Instant.compare(y.day.revealAt, x.day.revealAt) || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0),
+-    )
+     .slice(0, RECENT);
+   return days.map(({ id, day, occurrence }) => {
+     const photos = readable(id)

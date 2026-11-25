@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 1 failed) 43ms
+   ❯ the open day's page (pageFor; T35; addendum 4) (3)
+     × puts the star's drops first, then friends', each by commit time and then id, byte by byte 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  15:30:38
+   Duration  509ms (import 59%, transform 26%, tests 12%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > the open day's page (pageFor; T35; addendum 4) > puts the star's drops first, then friends', each by commit time and then id, byte by byte
+AssertionError: expected [ [ 'drp_ana', 'star' ], …(4) ] to deeply equal [ [ 'drp_ana', 'star' ], …(4) ]
+
+- Expected
++ Received
+
+@@ -6,15 +6,15 @@
+    [
+      "drp_ana_b",
+      "star",
+    ],
+    [
+-     "drp_Zed",
++     "drp_cleo",
+      "friends",
+    ],
+    [
+-     "drp_cleo",
++     "drp_Zed",
+      "friends",
+    ],
+    [
+      "drp_ben",
+      "friends",
+
+ ❯ src/privacy/home.test.ts:248:60
+    246|     );
+    247|     if (page === "refused") throw new Error("refused");
+    248|     expect(page.drops.map((one) => [one.id, one.section])).toEqual([
+       |                                                            ^
+    249|       ["drp_ana", "star"],
+    250|       ["drp_ana_b", "star"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

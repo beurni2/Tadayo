@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14/tests
+
+ ❯ src/privacy/home.test.ts (12 tests | 1 failed) 29ms
+   ❯ the recent days (recentFor; D08) (2)
+     × lists the six newest closed days that hold a drop the viewer may see, newest first 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  15:30:37
+   Duration  440ms (import 67%, transform 22%, tests 9%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/home.test.ts > the recent days (recentFor; D08) > lists the six newest closed days that hold a drop the viewer may see, newest first
+AssertionError: expected [ 'occ_7', 'occ_6', 'occ_5', …(3) ] to deeply equal [ 'occ_1', 'occ_2', 'occ_3', …(3) ]
+
+- Expected
++ Received
+
+  [
+-   "occ_1",
+-   "occ_2",
+-   "occ_3",
+-   "occ_4",
+-   "occ_5",
++   "occ_7",
+    "occ_6",
++   "occ_5",
++   "occ_4",
++   "occ_3",
++   "occ_2",
+  ]
+
+ ❯ src/privacy/home.test.ts:317:70
+    315|   it("lists the six newest closed days that hold a drop the viewer may…
+    316|     const days = recentFor(seen(past(), "usr_cleo", OPEN), CLUB);
+    317|     expect(days.map((one) => (one.occurrence as { id: string }).id)).t…
+       |                                                                      ^
+    318|       "occ_1",
+    319|       "occ_2",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
