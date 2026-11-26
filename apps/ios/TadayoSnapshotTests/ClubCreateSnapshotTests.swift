@@ -508,7 +508,7 @@ private enum Invites {
     {
         .loaded(
             InvitationList(
-                club: club, state: .proposed, rows: rows, canInvite: canInvite,
+                club: club, state: .proposed, memberCount: 1, rows: rows, canInvite: canInvite,
                 awaitingMyApproval: false))
     }
 

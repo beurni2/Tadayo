@@ -435,29 +435,10 @@ struct InvitationRowView: View {
         .padding(.trailing, -Self.moreOverhang)
     }
 
-    private var glyph: String {
-        switch row.status {
-        case .notShared: "link"
-        case .shared: "square.and.arrow.up"
-        case .accepted: "checkmark"
-        case .needsToAcceptAgain: "arrow.clockwise"
-        case .revoked: "xmark.circle"
-        case .expired: "clock"
-        case .notOnThisPhone: "iphone.slash"
-        }
-    }
+    private var glyph: String { row.statusGlyph }
 
     private var statusWords: String {
-        guard !revoking else { return String(localized: "revoke.pending") }
-        return switch row.status {
-        case .notShared: String(localized: "invite.notShared")
-        case .shared: String(localized: "invite.shared")
-        case .accepted: String(localized: "invite.accepted")
-        case .needsToAcceptAgain: String(localized: "invite.used")
-        case .revoked: String(localized: "invite.revoked")
-        case .expired: String(localized: "invite.expired")
-        case .notOnThisPhone: String(localized: "invite.notOnThisPhone")
-        }
+        revoking ? String(localized: "revoke.pending") : row.statusWords
     }
 
     /// "Maya. Shared." (handoff 4's `invite.row.{name}.vo`, handoff 8's `links.used.row.vo`).
@@ -477,10 +458,45 @@ struct InvitationRowView: View {
     }
 
     private func actionLabel(_ action: InvitationRow.Action) -> String {
+        row.actionLabel(action)
+    }
+}
+
+extension InvitationRow {
+    /// The status's glyph (handoff 4's `invitationStatuses`; handoff 9's
+    /// `setupLinks.statusGlyphs`).
+    var statusGlyph: String {
+        switch status {
+        case .notShared: "link"
+        case .shared: "square.and.arrow.up"
+        case .accepted: "checkmark"
+        case .needsToAcceptAgain: "arrow.clockwise"
+        case .revoked: "xmark.circle"
+        case .expired: "clock"
+        case .notOnThisPhone: "iphone.slash"
+        }
+    }
+
+    /// The status's words, the glyph saying the same.
+    var statusWords: String {
+        switch status {
+        case .notShared: String(localized: "invite.notShared")
+        case .shared: String(localized: "invite.shared")
+        case .accepted: String(localized: "invite.accepted")
+        case .needsToAcceptAgain: String(localized: "invite.used")
+        case .revoked: String(localized: "invite.revoked")
+        case .expired: String(localized: "invite.expired")
+        case .notOnThisPhone: String(localized: "invite.notOnThisPhone")
+        }
+    }
+
+    /// An action's spoken name, with the person's: "Share again for Maya" (handoff 8's
+    /// `invitationControlAccessibilityLabels`).
+    func actionLabel(_ action: Action) -> String {
         switch action {
-        case .shareLink: InvitationsScreen.words("invite.share.label", row.name)
-        case .shareAgain: InvitationsScreen.words("invite.shareAgain.label", row.name)
-        case .createNewLink: InvitationsScreen.words("invite.createNew.label", row.name)
+        case .shareLink: InvitationsScreen.words("invite.share.label", name)
+        case .shareAgain: InvitationsScreen.words("invite.shareAgain.label", name)
+        case .createNewLink: InvitationsScreen.words("invite.createNew.label", name)
         }
     }
 }

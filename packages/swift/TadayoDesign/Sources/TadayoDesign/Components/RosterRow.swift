@@ -42,6 +42,9 @@ import SwiftUI
 /// Proposed." on the viewer's own row (handoff 9's `handoff9.proposed.ownRow.vo`), "Maya.
 /// Proposed by Ben. Proposed." (`proposed.row.vo`) on another's, or "Maya. Proposed." with no
 /// proposer.
+///
+/// The person's invitation page (`G05-members-invite`, handoff 8's frame 14) draws the same
+/// proposed row as its candidate's block, alone and with no separator (`separated` false).
 public struct RosterRow: View {
     /// How a person who isn't a member yet is shown.
     public enum Proposal: Sendable, Equatable {
@@ -65,6 +68,7 @@ public struct RosterRow: View {
     let days: String?
     let proposal: Proposal?
     let disclosure: Disclosure?
+    let separated: Bool
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var nameSize = TypeRole.row.size
     @ScaledMetric(relativeTo: TypeRole.row.textStyle)
@@ -75,9 +79,10 @@ public struct RosterRow: View {
     ///   - days: the member's weekdays as the screen words them, or nil while they have none.
     ///   - proposal: how a person who isn't a member yet is shown; nil for a member.
     ///   - disclosure: the trailing chevron, or its room; nil for a row with neither.
+    ///   - separated: the separator under the row; false for a row drawn alone.
     public init(
         name: String, photo: Image? = nil, isViewer: Bool, days: String?,
-        proposal: Proposal? = nil, disclosure: Disclosure? = nil
+        proposal: Proposal? = nil, disclosure: Disclosure? = nil, separated: Bool = true
     ) {
         self.name = name
         self.photo = photo
@@ -85,6 +90,7 @@ public struct RosterRow: View {
         self.days = days
         self.proposal = proposal
         self.disclosure = disclosure
+        self.separated = separated
     }
 
     public var body: some View {
@@ -138,11 +144,13 @@ public struct RosterRow: View {
         .padding(.bottom, isNameAlone ? Spacing.s : Spacing.l)
         .frame(maxWidth: .infinity, minHeight: Size.personRowNoDateMinHeight)
         .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(Palette.separator)
-                .frame(height: Size.separatorWidth)
-                .padding(.leading, Size.personRowTextInset)
-                .accessibilityHidden(true)
+            if separated {
+                Rectangle()
+                    .fill(Palette.separator)
+                    .frame(height: Size.separatorWidth)
+                    .padding(.leading, Size.personRowTextInset)
+                    .accessibilityHidden(true)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: spoken))

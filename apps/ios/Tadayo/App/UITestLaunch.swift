@@ -53,6 +53,11 @@
         /// members, its setup list, and approve, or decline after an Approve with no answer. A
         /// test seam, not product.
         static let propose = "-TadayoUITestPropose"
+        /// The stand-in services with an account already named, in Sunday people, active with
+        /// five members and a place free (`InvitingLater`): a test can open Club details' Invite
+        /// someone, propose a name, share the link, and come back to the person's invitation page
+        /// from Members. A test seam, not product.
+        static let inviteLater = "-TadayoUITestInviteLater"
         /// Debby's link `Invited` knows: made up, no server made it.
         static let invitedLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
         /// Maya's link `Invited` knows, whose Accept joins: made up, no server made it.
@@ -62,13 +67,17 @@
         @MainActor static func fakeGraph(
             hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false,
             creating: Bool = false, awaitingBen: Bool = false, invited: Bool = false,
-            changedListed: Bool = false, approving: Bool = false, proposing: Bool = false
+            changedListed: Bool = false, approving: Bool = false, proposing: Bool = false,
+            invitingLater: Bool = false
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let made = creating || awaitingBen ? NewClub(awaitingBen: awaitingBen) : nil
             let invitations = invited || changedListed ? Invited(changedListed: changedListed) : nil
             let proposal = proposing ? Proposing() : nil
-            let listed = inClubs ? TwoClubs.listed : approving ? Approving.listed : []
+            let listed =
+                inClubs
+                ? TwoClubs.listed
+                : approving ? Approving.listed : invitingLater ? InvitingLater.listed : []
             let accounts = FakeAccounts(
                 nameFailsThenHangs: nameFailsThenHangs, clubs: listed,
                 thenClubs: inClubs ? TwoClubs.relisted : nil,
@@ -80,6 +89,8 @@
                 clubs = TwoClubs()
             } else if approving {
                 clubs = Approving()
+            } else if invitingLater {
+                clubs = InvitingLater()
             } else if let proposal {
                 clubs = proposal
             } else if let made {

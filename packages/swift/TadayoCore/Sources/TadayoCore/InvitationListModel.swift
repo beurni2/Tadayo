@@ -45,6 +45,9 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
     public let candidateID: String
     /// The one name the revision shows for them (FQ66).
     public let name: String
+    /// Their proposer's name: "Proposed by {name}" on the person's invitation page (handoff 8's
+    /// frame 14).
+    public let proposedBy: String
     public let status: Status
     public let action: Action?
     public let menu: [MenuItem]
@@ -59,6 +62,7 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
     public init(_ candidate: Candidate, kept: KeptInvitationLink?) {
         candidateID = candidate.id
         name = candidate.name
+        proposedBy = candidate.proposedBy.displayName
         guard let invitation = candidate.invitation else {
             // No link yet: the app offers to make one (the contract's `Candidate`).
             (status, action, menu, linkNotSaved) = (.notShared, .shareLink, [], false)
@@ -98,6 +102,9 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
 public struct InvitationList: Sendable, Equatable {
     public let club: ClubRef
     public let state: ClubState
+    /// The club's active members, as `getClub` counts them: "{count} current members" on the
+    /// person's invitation page (frame 14). Candidates aren't counted.
+    public let memberCount: Int
     public let rows: [InvitationRow]
     /// Create an invitation shows: the server allows a proposal and a place is free (A01, T6).
     public let canInvite: Bool
@@ -107,11 +114,12 @@ public struct InvitationList: Sendable, Equatable {
 
     /// The model makes it from the server's answers; a snapshot makes its own.
     public init(
-        club: ClubRef, state: ClubState, rows: [InvitationRow], canInvite: Bool,
+        club: ClubRef, state: ClubState, memberCount: Int, rows: [InvitationRow], canInvite: Bool,
         awaitingMyApproval: Bool
     ) {
         self.club = club
         self.state = state
+        self.memberCount = memberCount
         self.rows = rows
         self.canInvite = canInvite
         self.awaitingMyApproval = awaitingMyApproval
@@ -129,6 +137,12 @@ public struct InvitationList: Sendable, Equatable {
 /// (`createInvitation.retention`). Making a link is one action with one key, made when it starts
 /// and sent again on every retry of it (T19); an answer without its link (the first answer lost
 /// on the way) makes one more under a new key, since the lost one was never shared.
+///
+/// Made for one candidate (`candidate`), it's the person's invitation page (`G05-members-invite`,
+/// handoff 8's `activeInvitationManagement`): the same reads, links and keys, with that one
+/// person's row, and only while the caller proposed them, since only a candidate's proposer gets
+/// their link's controls (handoff 8). It's `ended` once an answer no longer lists them as the
+/// caller's open candidate: they joined, the revision ended, or they were never the caller's.
 ///
 /// An answer counts only while `current` says so and while its read is the latest; a not found
 /// closes the list and has the club list read again (`gone`), as Club details does; `signedOut`
@@ -168,9 +182,14 @@ public struct InvitationList: Sendable, Equatable {
 
     public let club: ClubRef
     public let accountID: String
+    /// The one candidate the person's invitation page is for; nil for the setup list.
+    public let candidateID: String?
     public private(set) var state = State.loading
     /// A read answered not found: the club is no longer the caller's (T9, T14).
     public private(set) var closed = false
+    /// The person's invitation page only: the last answer doesn't list its candidate as the
+    /// caller's open candidate, so the page closes back to Members.
+    public private(set) var ended = false
     /// The candidates whose action is on its way: their row's controls wait.
     public private(set) var busy: Set<String> = []
     public private(set) var actionFailure: ActionFailure?
@@ -202,6 +221,7 @@ public struct InvitationList: Sendable, Equatable {
 
     public init(
         club: ClubRef, accountID: String, service: any ClubService, book: InvitationLinkBook,
+        candidate: String? = nil,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         current: @escaping @MainActor () -> Bool,
         gone: @escaping @MainActor () async -> Void = {},
@@ -209,6 +229,7 @@ public struct InvitationList: Sendable, Equatable {
     ) {
         self.club = club
         self.accountID = accountID
+        candidateID = candidate
         self.service = service
         self.book = book
         self.makeKey = makeKey
@@ -314,7 +335,9 @@ public struct InvitationList: Sendable, Equatable {
 
     /// The name step for one more person (`G01-invite-name`), while a place is free.
     public func makeInvite() -> InviteNameModel? {
-        guard let answer, answer.detail.canPropose, current() else { return nil }
+        guard candidateID == nil, let answer, answer.detail.canPropose, current() else {
+            return nil
+        }
         // The name step makes a link: another link action (handoff 9's `lifetime`).
         fail(nil)
         return InviteNameModel(
@@ -358,6 +381,7 @@ public struct InvitationList: Sendable, Equatable {
             learned = learned.filter { $0.value.at >= asked }
             relist()
             settleFailure()
+            if let candidateID { ended = !myCandidates.contains { $0.id == candidateID } }
         case (.failure(let failure), _), (_, .failure(let failure)):
             let worst = Self.decisive(answers.0.failure, answers.1.failure) ?? failure
             if let failed = await settle(worst), !quiet {
@@ -394,17 +418,21 @@ public struct InvitationList: Sendable, Equatable {
         }
         state = .loaded(
             InvitationList(
-                club: answer.members.club, state: answer.detail.club.state, rows: rows,
+                club: answer.members.club, state: answer.detail.club.state,
+                memberCount: answer.detail.club.memberCount, rows: rows,
                 canInvite: answer.detail.canPropose,
                 awaitingMyApproval: answer.members.openRevision?.myDecision == .pending))
     }
 
     /// The open revision's candidates the caller proposed, in the server's order, each with what
-    /// this list's own actions learned of their link since.
+    /// this list's own actions learned of their link since; on the person's invitation page,
+    /// only its candidate, if the caller proposed them.
     private var myCandidates: [Candidate] {
         guard let answer, let revision = answer.members.openRevision else { return [] }
         let me = answer.members.club.myMembershipID
-        return revision.candidates.filter { $0.proposedBy.membershipID == me }.map { candidate in
+        return revision.candidates.filter {
+            $0.proposedBy.membershipID == me && (candidateID == nil || $0.id == candidateID)
+        }.map { candidate in
             guard let invitation = learned[candidate.id]?.invitation else { return candidate }
             return Candidate(
                 id: candidate.id, name: candidate.name, proposedBy: candidate.proposedBy,
@@ -523,7 +551,7 @@ public struct InvitationList: Sendable, Equatable {
         if !stillOffered { fail(nil) }
     }
 
-    private static func decisive(_ first: APIFailure?, _ second: APIFailure?) -> APIFailure? {
+    static func decisive(_ first: APIFailure?, _ second: APIFailure?) -> APIFailure? {
         let both = [first, second].compactMap { $0 }
         return both.first { $0 == .signedOut } ?? both.first { $0 == .notFound }
     }
@@ -557,6 +585,12 @@ extension Result {
 /// makes one more under a new key. A failure is "Couldn’t create the invitation link for
 /// {name}." with the network's or a refusal's line, and keeps the name; a version conflict reads
 /// the roster's version again, and the next tap is a new action from it.
+///
+/// From Club details' Invite someone (handoff 8's `activeInvitationManagement`), the open
+/// revision's candidates aren't known (`known` nil): the first tap reads the club and its members
+/// before it proposes, so the person this proposal adds is told apart from anyone proposed
+/// earlier under the same name, and proposes at the version that read gave. A failed read fails
+/// the action with nothing proposed, and the next tap reads again.
 @MainActor @Observable public final class InviteNameModel {
     public enum Failure: Sendable, Equatable {
         case network
@@ -575,7 +609,7 @@ extension Result {
     public private(set) var link: KeptInvitationLink?
 
     private var rosterVersion: Int
-    private var known: Set<String>
+    private var known: Set<String>?
     private var proposal: (name: String, version: Int, key: IdempotencyKey)?
     private var linkKey: IdempotencyKey?
 
@@ -588,9 +622,10 @@ extension Result {
     let changed: @MainActor () async -> Void
 
     /// `known` holds the candidates the list already showed, so the one this proposal adds is
-    /// told apart; `changed` reads the list again once a share sheet closes.
+    /// told apart, or nil when they aren't known yet; `changed` reads the list again once a share
+    /// sheet closes.
     public init(
-        club: ClubRef, accountID: String, rosterVersion: Int, known: Set<String>,
+        club: ClubRef, accountID: String, rosterVersion: Int, known: Set<String>?,
         service: any ClubService, book: InvitationLinkBook,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         current: @escaping @MainActor () -> Bool,
@@ -643,6 +678,10 @@ extension Result {
             if let candidate {
                 proposed = candidate
             } else {
+                if known == nil {
+                    try await readFirst()
+                    guard current() else { return nil }
+                }
                 proposed = try await propose()
             }
             guard current() else { return nil }
@@ -693,6 +732,7 @@ extension Result {
         proposal = attempt
         let revision = try await service.propose(
             [attempt.name], in: club.id, expectedRosterVersion: attempt.version, key: attempt.key)
+        let known = known ?? []
         let added = revision.candidates.filter {
             !known.contains($0.id) && $0.name == name
                 && $0.proposedBy.membershipID == club.myMembershipID
@@ -731,6 +771,30 @@ extension Result {
     /// next tap is a new action from them. A failed read leaves them, and the next tap's own
     /// conflict reads again.
     private func reread() async {
+        guard let answers = await read() else { return }
+        if case .success(let list) = answers.1 {
+            known = Set(list.openRevision?.candidates.map(\.id) ?? [])
+        }
+        if case .success(let detail) = answers.0 { rosterVersion = detail.rosterVersion }
+    }
+
+    /// Before the first proposal of a name step whose candidates aren't known: the roster's
+    /// version and candidates, both from the same read, or the read's failure, with nothing
+    /// changed. Nothing happens once the session it was asked in has ended.
+    private func readFirst() async throws(APIFailure) {
+        guard let answers = await read() else { return }
+        switch answers {
+        case (.success(let detail), .success(let list)):
+            rosterVersion = detail.rosterVersion
+            known = Set(list.openRevision?.candidates.map(\.id) ?? [])
+        case (.failure(let failure), _), (_, .failure(let failure)):
+            throw InvitationListModel.decisive(answers.0.failure, answers.1.failure) ?? failure
+        }
+    }
+
+    /// The club and its members, read together; a members answer settles the kept links. Nil
+    /// once the session it was asked in has ended.
+    private func read() async -> (Result<ClubDetail, APIFailure>, Result<MemberList, APIFailure>)? {
         let stamp = book.beginRead()
         let id = club.id
         async let detail = InvitationListModel.result { [service] () async throws(APIFailure) in
@@ -740,11 +804,10 @@ extension Result {
             try await service.members(of: id)
         }
         let answers = await (detail, members)
-        guard current() else { return }
+        guard current() else { return nil }
         if case .success(let list) = answers.1 {
             book.settle(list, stamp: stamp, account: accountID)
-            known = Set(list.openRevision?.candidates.map(\.id) ?? [])
         }
-        if case .success(let detail) = answers.0 { rosterVersion = detail.rosterVersion }
+        return answers
     }
 }
