@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -374,7 +374,7 @@
+       this: unknown,
+       bindings: Record<string, unknown> | null | undefined,
+     ) {
+-      setBindings.call(this, bindings === undefined || bindings === null ? bindings : redactLine(bindings));
++      setBindings.call(this, redactLine(bindings as Record<string, unknown>));
+     };
+ }
+ 

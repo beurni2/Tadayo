@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -356,7 +356,7 @@
+               ...options.formatters,
+               // pino calls a formatter as a method of the formatters it was given.
+               log: function redactedOwn(this: unknown, fields: object) {
+-                return redactLine((own as (fields: object) => unknown).call(this, fields) as Record<string, unknown>);
++                return redactLine((own as (fields: object) => unknown).call(undefined, fields) as Record<string, unknown>);
+               },
+             },
+           };

@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (18 tests | 1 failed) 340ms
+   ❯ the redaction list (T52) (11)
+     × keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review) 21ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  04:59:17
+   Duration  956ms (tests 41%, import 37%, transform 21%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review)
+AssertionError: expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ src/logging.test.ts:237:18
+    235|     expect(entries[3]).toMatchObject({ msg: "this", caption: "[redacte…
+    236|     // pino calls a log formatter as a method of the child's formatter…
+    237|     expect(seen).toBe("function");
+       |                  ^
+    238|     expect(lines.join("")).not.toContain("SECRET-");
+    239|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (18 tests | 1 failed) 236ms
+   ❯ the redaction list (T52) (11)
+     × keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review) 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  04:59:15
+   Duration  795ms (import 38%, tests 35%, transform 27%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review)
+TypeError: Cannot read properties of null (reading 'call')
+ ❯ Object.redactedOwn [as log] src/logging.ts:359:72
+    357|               // pino calls a formatter as a method of the formatters …
+    358|               log: function redactedOwn(this: unknown, fields: object)…
+    359|                 return redactLine((own as (fields: object) => unknown)…
+       |                                                                        ^
+    360|               },
+    361|             },
+ ❯ Pino._asJson ../../node_modules/.pnpm/pino@10.4.0/node_modules/pino/lib/tools.js:162:22
+ ❯ Pino.asJson ../../node_modules/.pnpm/pino@10.4.0/node_modules/pino/lib/tools.js:125:20
+ ❯ Pino.write ../../node_modules/.pnpm/pino@10.4.0/node_modules/pino/lib/proto.js:233:28
+ ❯ Pino.LOG ../../node_modules/.pnpm/pino@10.4.0/node_modules/pino/lib/tools.js:69:21
+ ❯ Pino.ownMessage src/logging.ts:283:15
+ ❯ Pino.hookWrappedLog [as info] ../../node_modules/.pnpm/pino@10.4.0/node_modules/pino/lib/tools.js:44:10
+ ❯ src/logging.test.ts:213:43
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

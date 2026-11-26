@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (18 tests | 1 failed) 279ms
+   ❯ the redaction list (T52) (11)
+     × gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review) 17ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  04:59:14
+   Duration  954ms (import 42%, tests 34%, transform 24%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review)
+AssertionError: expected 'Reply was already sent, did you forge…' to be 'Reply was already sent' // Object.is equality
+
+Expected: "Reply was already sent"
+Received: "Reply was already sent, did you forget to "return reply" in the "/raw?caption=SECRET-RAW" (GET) route?"
+
+ ❯ src/logging.test.ts:340:48
+    338|     const raw = parse(own).filter((entry) => typeof entry.msg === "str…
+    339|     expect(raw.length).toBeGreaterThan(0);
+    340|     for (const entry of raw) expect(entry.msg).toBe(REPLY_SENT_MESSAGE…
+       |                                                ^
+    341|     expect(own.join("")).not.toContain("SECRET-RAW");
+    342|     // An `err` pino doesn't count as one, being falsy, gets no messag…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

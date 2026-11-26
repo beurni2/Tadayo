@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -2079,7 +2079,7 @@
+     if (this.#byInside !== undefined && lower.length >= SHORTEST_CUT)
+       for (const form of this.#byInside.get(lower.slice(0, SHORTEST_TEXT)) ?? [])
+         if (form.includes(lower)) needle(form);
+-    if (this.#byInside !== undefined)
++    if (this.#byInside !== undefined && lower.length < 0)
+       for (let at = 0; at + SHORTEST_RUN <= lower.length; at += 1) {
+         const run = lower.slice(at, at + SHORTEST_RUN);
+         for (const form of this.#byInside.get(run.slice(0, SHORTEST_TEXT)) ?? []) if (form.includes(run)) needle(form);

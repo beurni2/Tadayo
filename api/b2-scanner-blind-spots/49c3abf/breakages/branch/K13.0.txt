@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (111 tests | 2 failed) 598ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (5)
+     × finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one and a run of 12 of one inside a longer value 12ms
+     × catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON 7ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 109 passed (111)
+   Start at  04:59:07
+   Duration  1.34s (tests 50%, import 37%, transform 13%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one and a run of 12 of one inside a longer value
+AssertionError: expected [] to deeply equal [ 'Saturday People' ]
+
+- Expected
++ Received
+
+- [
+-   "Saturday People",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2725:59
+    2723|     // round-3 review), but not a run of 11, which a word of the log's…
+    2724|     const photo = new Needles(["Saturday People", "From Ben's photo"],…
+    2725|     expect(photo.within("trouble: aturday Peopl", false)).toEqual(["Sa…
+       |                                                           ^
+    2726|     expect(photo.within("caption=rom Ben's pho", false)).toEqual(["Fro…
+    2727|     expect(photo.within("CAPTION=ROM BEN'S PHO", false)).toEqual(["Fro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON
+AssertionError: a club's name cut short at both ends inside a message: : expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2777:9
+    2775|         found.some((problem) => expected.test(problem)),
+    2776|         `${what}: ${found.join("; ")}`,
+    2777|       ).toBe(true);
+       |         ^
+    2778|     }
+    2779|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -278,7 +278,7 @@
+     return;
+   }
+   const fields = typeof first === "object" && first !== null ? (first as { err?: unknown; msg?: unknown }) : undefined;
+-  const erred = first instanceof Error || (Boolean(fields?.err) && fields?.msg === undefined);
++  const erred = first instanceof Error || (fields?.err !== undefined && fields.err !== null && fields.msg === undefined);
+   if (erred && second === undefined) method.apply(this, [first, ERROR_MESSAGE]);
+   else method.apply(this, args);
+ }

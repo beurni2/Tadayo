@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -348,7 +348,7 @@
+   log.child = function redactedChild(this: FastifyBaseLogger, bindings, options) {
+     const own: unknown = options?.formatters?.log;
+     const formatted =
+-      options === undefined || typeof own !== "function"
++      options === undefined || own === undefined
+         ? options
+         : {
+             ...options,

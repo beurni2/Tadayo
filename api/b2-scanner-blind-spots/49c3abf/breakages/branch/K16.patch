@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -273,7 +273,7 @@
+   const [first, second] = args;
+   // pino's message is the first argument when that is a string, and the second when an object comes first.
+   const at = typeof first === "string" ? 0 : typeof second === "string" ? 1 : undefined;
+-  if (at !== undefined && (args[at] as string).startsWith(REPLY_SENT_MESSAGE)) {
++  if (at !== undefined && (args[at] as string).startsWith("never so")) {
+     method.apply(this, [...args.slice(0, at), REPLY_SENT_MESSAGE]);
+     return;
+   }

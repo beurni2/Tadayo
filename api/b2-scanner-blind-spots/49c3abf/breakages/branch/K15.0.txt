@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (111 tests | 1 failed) 576ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (10)
+     × reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 110 passed (111)
+   Start at  04:59:12
+   Duration  1.35s (tests 48%, import 41%, transform 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time
+AssertionError: mimetype: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2378:34
+    2376|       "emptyslots",
+    2377|     ])
+    2378|       expect(neverKey(key), key).toBe(true);
+       |                                  ^
+    2379|     for (const key of [
+    2380|       "id",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

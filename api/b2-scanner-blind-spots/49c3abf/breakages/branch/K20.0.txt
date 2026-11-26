@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (18 tests | 1 failed) 311ms
+   ❯ the redaction list (T52) (11)
+     × gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review) 23ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  04:59:20
+   Duration  937ms (tests 39%, import 38%, transform 23%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review)
+AssertionError: expected { Object (level, time, ...) } to not have property "msg"
+
+- Expected:
+undefined
+
++ Received:
+"error"
+
+ ❯ src/logging.test.ts:346:57
+    344|     app.log.warn({ err: 0 });
+    345|     app.log.warn({ err: "" });
+    346|     for (const entry of parse(lines)) expect(entry).not.toHaveProperty…
+       |                                                         ^
+    347|   });
+    348|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

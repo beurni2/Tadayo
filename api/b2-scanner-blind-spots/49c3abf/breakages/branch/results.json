@@ -1,0 +1,112 @@
+[
+ {
+  "name": "K13",
+  "what": "no runs: a run of 12 characters of a text people wrote inside a longer value no longer found",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "a run of 12 of one inside a longer value",
+   "aturday Peopl",
+   "catches a caption, a name, a club's name, a kept-back value",
+   "cut short at both ends"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K14",
+  "what": "a highlight no longer caught across two words (NEVER_STARTS on the word alone, as 573967b had it)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "highLighted"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K15",
+  "what": "the one-word spellings gone: mimetype, postid, videoid, datetaken, emptyslot",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "mimetype"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K16",
+  "what": "Fastify's warning that quotes the URL kept whole (no REPLY_SENT_MESSAGE rule in ownMessage)",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "gives a line with an error and no message of its own a fixed one",
+   "SECRET-RAW"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K17",
+  "what": "a child's own log formatter wrapped whatever it is, as 573967b had it: a falsy one throws on each line",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "keeps pino's ways",
+   "Cannot read properties of null|is not a function"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K18",
+  "what": "a child's own log formatter called without pino's this, as 573967b had it",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "keeps pino's ways",
+   "expected 'undefined' to be 'function'"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K19",
+  "what": "absent bindings redacted as if present, as 573967b had it: setBindings(undefined) throws",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "keeps pino's ways",
+   "not\\.toThrow|Cannot destructure"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K20",
+  "what": "an err judged present when it isn't undefined or null, as 573967b had it: a falsy err gets a message",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "gives a line with an error and no message of its own a fixed one",
+   "not to have property \\\"msg\\\"|toHaveProperty"
+  ],
+  "missing": []
+ },
+ {
+  "name": "N6",
+  "what": "createDrop logs a refused commit's caption less its first and last characters, inside a longer value",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "answers\\ the\\ member\\ in\\ the\\ audience",
+   "the\\ API's\\ log:\\ text people wrote at \\$\\.trouble"
+  ],
+  "missing": []
+ }
+]

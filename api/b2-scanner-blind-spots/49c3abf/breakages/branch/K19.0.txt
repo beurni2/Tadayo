@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (18 tests | 1 failed) 248ms
+   ❯ the redaction list (T52) (11)
+     × keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review) 16ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  04:59:18
+   Duration  842ms (import 39%, tests 34%, transform 26%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review)
+AssertionError: expected [Function] to not throw an error but 'TypeError: Cannot destructure propert…' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"TypeError: Cannot destructure property 'err' of 'fields' as it is undefined."
+
+ ❯ src/logging.test.ts:228:12
+    226|     expect(() => {
+    227|       settable.setBindings(undefined);
+    228|     }).not.toThrow();
+       |            ^
+    229|     expect(() => {
+    230|       settable.setBindings(null);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
