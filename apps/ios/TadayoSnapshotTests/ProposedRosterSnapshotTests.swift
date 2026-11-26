@@ -29,6 +29,13 @@ final class ProposedRosterSnapshotTests: XCTestCase {
         snap(roster(.roster(ClubFixtures.sundayRenamed)), named: "G05-members-proposed-approve")
     }
 
+    func testG05MembersProposedApproveDeclining() {
+        // Built from handoff 10's `decisionBusy` (no frame), as on G03-approve.
+        snap(
+            roster(.roster(ClubFixtures.sundayRenamed), busy: .decline),
+            named: "G05-members-proposed-approve-declining", busy: true)
+    }
+
     func testG05MembersProposedApproveFailed() {
         snap(
             roster(
@@ -151,7 +158,32 @@ final class ProposedRosterSnapshotTests: XCTestCase {
                 XCTAssertNotNil(button, "\(action) \(elements)")
                 XCTAssertTrue(button?.traits.contains(.notEnabled) ?? false, "\(busy) \(elements)")
             }
+            // The decision out keeps its label and says "In progress" (handoff 10's
+            // `decisionBusy`); the other says nothing of being at work.
+            let out = busy == .approve ? "Approve" : "Decline"
+            let other = busy == .approve ? "Decline" : "Approve"
+            XCTAssertEqual(
+                elements.first { $0.label == "\(out) roster for Sunday people." }?.value,
+                "In progress", "\(elements)")
+            XCTAssertEqual(
+                elements.first { $0.label == "\(other) roster for Sunday people." }?.value, "",
+                "\(elements)")
+            XCTAssertEqual(
+                elements.filter { $0.label.contains("In progress") || $0.value == "In progress" }
+                    .count, 1, "one element says it is at work \(elements)")
         }
+    }
+
+    func testBothDecisionsWaitUnderTheAlreadyDecidedAlert() {
+        // FQ146: the roster stays drawn, both decisions unavailable; Manage invitations stays.
+        let elements = AccessibilityElements.of(
+            roster(.roster(ClubFixtures.sundayRenamed), decided: true))
+        for action in ["Approve roster for Sunday people.", "Decline roster for Sunday people."] {
+            let button = elements.first { $0.label == action }
+            XCTAssertTrue(button?.traits.contains(.notEnabled) ?? false, "\(elements)")
+        }
+        let manage = elements.first { $0.label == "Manage invitations" }
+        XCTAssertFalse(manage?.traits.contains(.notEnabled) ?? true, "\(elements)")
     }
 
     func testTheActionsAreTheScreens() {
@@ -209,13 +241,13 @@ final class ProposedRosterSnapshotTests: XCTestCase {
 
     private func roster(
         _ shown: ProposedRosterModel.Shown, busy: RosterApprovalModel.Action? = nil,
-        failed: RosterApprovalModel.Failed? = nil,
+        failed: RosterApprovalModel.Failed? = nil, decided: Bool = false,
         actions: ProposedRosterActions = ProposedRosterActions()
     ) -> some View {
         pushed(
             ProposedRosterScreen(
-                shown: shown, busy: busy, failed: failed, alert: .constant(nil), actions: actions,
-                club: ClubFixtures.sundayProposal.club))
+                shown: shown, busy: busy, failed: failed, decided: decided, alert: .constant(nil),
+                actions: actions, club: ClubFixtures.sundayProposal.club))
     }
 
     private func snap(

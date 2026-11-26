@@ -157,6 +157,54 @@
         }
       }
     },
+    "approve.already.action" : {
+      "comment" : "handoff 10 handoff10.approval.already.members.action: the alert's one action on G03-approve",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See members"
+          }
+        }
+      }
+    },
+    "approve.already.action.vo" : {
+      "comment" : "handoff 10 handoff10.approval.already.members.action.vo: %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See members of %@."
+          }
+        }
+      }
+    },
+    "approve.already.approved" : {
+      "comment" : "handoff 10 handoff10.approval.already.approved: the native alert's title when an answer holds the viewer's own approval (FQ146)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already approved this roster."
+          }
+        }
+      }
+    },
+    "approve.already.declined" : {
+      "comment" : "handoff 10 handoff10.approval.already.declined: the native alert's title when an answer holds the viewer's own decline (FQ146)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already declined this roster."
+          }
+        }
+      }
+    },
     "approve.body" : {
       "comment" : "handoff 4 approval.body (spec 04, T7)",
       "extractionState" : "manual",
@@ -177,6 +225,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ will see only drops shared after joining."
+          }
+        }
+      }
+    },
+    "approve.busy.approve" : {
+      "comment" : "handoff 10 handoff10.approval.approve.busy.announcement: said once as Approve starts, on G03-approve and the proposed roster",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Approving this roster."
+          }
+        }
+      }
+    },
+    "approve.busy.decline" : {
+      "comment" : "handoff 10 handoff10.approval.decline.busy.announcement: said once as Decline starts, on G03-approve and the proposed roster",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Declining this roster."
           }
         }
       }
@@ -2833,6 +2905,18 @@
         }
       }
     },
+    "members.proposed.hint" : {
+      "comment" : "handoff 10 handoff10.members.proposed.hint: the hint on a proposed row in Members while the viewer's decision is pending; %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the proposed roster for %@."
+          }
+        }
+      }
+    },
     "members.subtitle.one" : {
       "comment" : "handoff 1 screen-copy G05-members, shown only when every member listed has one weekday (handoff 1's check)",
       "extractionState" : "manual",
@@ -2997,6 +3081,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start your club."
+          }
+        }
+      }
+    },
+    "proposed.already.action" : {
+      "comment" : "handoff 10 handoff10.approval.already.proposed.action: the alert's one action on the proposed roster",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review roster"
+          }
+        }
+      }
+    },
+    "proposed.already.action.vo" : {
+      "comment" : "handoff 10 handoff10.approval.already.proposed.action.vo: %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the proposed roster for %@."
           }
         }
       }

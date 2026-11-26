@@ -14,10 +14,23 @@ import SwiftUI
 /// (`friendsRow.AX5`: "Avatar aligns to first line"). The avatar keeps its size
 /// (`dynamicTypePolicy.avatarMarks`). The rows are about 68.5 apart where the frames draw 73: the
 /// name and the weekdays take their fonts' own line heights, which the contract's 22 and 18 only
-/// stand for (`dynamicTypePolicy.lineHeight`).
+/// stand for (`dynamicTypePolicy.lineHeight`). A row with the name alone is 52 high, 8 above and
+/// under the avatar, as handoff 5's `G05-members-proposed`, handoff 10's frame 7 and handoff 2's
+/// `G02-changed` draw their rows 52 apart, and as a Friends row with no day is (`PersonRow`); the
+/// avatar, the taller, would otherwise make it 64 with the words' 12 and 16 around it.
 ///
-/// It is not a button: nothing in the frames opens from a row. VoiceOver reads one element, the
-/// name then the weekdays, as sentences: "Ben, you. Monday and Thursday." (`person.self.vo`).
+/// It is not a button: nothing in the frames opens from a member's row. VoiceOver reads one
+/// element, the name then the weekdays, as sentences: "Ben, you. Monday and Thursday."
+/// (`person.self.vo`). A row that opens something is a button its screen makes, which shows the
+/// system's disclosure chevron in `secondaryText` at the trailing edge (`Disclosure.shown`):
+/// handoff 10's frame 5 draws one on a proposed row whose viewer's decision is pending, level with
+/// the name's first line (its 18-point box's middle 11 under the row's words' top, where the
+/// avatar's top is). The app draws the roster's own chevron there, 13 points in the Friends row's
+/// 20-point box, 4 from the trailing edge and 12 after the words, growing with the name's text
+/// (frame 5 draws an 18-point schematic, 48 at accessibility 5). Once decided, the same row
+/// reserves that room with no chevron (`Disclosure.reserved`), so its words wrap the same either
+/// way (handoff 10's `activeMembersProposedRow.contentColumns`). The chevron says nothing to
+/// VoiceOver.
 ///
 /// In an invitation's roster (`invitationRoster`, handoff 8's frame 15) a proposed person's row
 /// has no weekdays: under the name, "Proposed by {name}" in the weekdays' place when the proposer
@@ -38,26 +51,40 @@ public struct RosterRow: View {
         case unnamed
     }
 
+    /// The trailing disclosure chevron's room.
+    public enum Disclosure: Sendable, Equatable {
+        /// The chevron: the row opens something.
+        case shown
+        /// The chevron's room, empty: the same row when it opens nothing.
+        case reserved
+    }
+
     let name: String
     let photo: Image?
     let isViewer: Bool
     let days: String?
     let proposal: Proposal?
+    let disclosure: Disclosure?
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var nameSize = TypeRole.row.size
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle)
+    private var chevronBox = Size.personRowChevronBox
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var chevron = Size.personRowChevron
 
     /// - Parameters:
     ///   - days: the member's weekdays as the screen words them, or nil while they have none.
     ///   - proposal: how a person who isn't a member yet is shown; nil for a member.
+    ///   - disclosure: the trailing chevron, or its room; nil for a row with neither.
     public init(
         name: String, photo: Image? = nil, isViewer: Bool, days: String?,
-        proposal: Proposal? = nil
+        proposal: Proposal? = nil, disclosure: Disclosure? = nil
     ) {
         self.name = name
         self.photo = photo
         self.isViewer = isViewer
         self.days = days
         self.proposal = proposal
+        self.disclosure = disclosure
     }
 
     public var body: some View {
@@ -90,9 +117,25 @@ public struct RosterRow: View {
             }
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
+            if let disclosure {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: chevron))
+                    .foregroundStyle(Palette.secondaryText)
+                    .opacity(disclosure == .shown ? 1 : 0)
+                    .frame(width: chevronBox, height: chevronBox)
+                    // Level with the name's first line, as frame 5 draws it; a row aligned on
+                    // its centre centres it instead.
+                    .alignmentGuide(.top) {
+                        $0[VerticalAlignment.center]
+                            - TypeRole.row.firstLineMiddle(atSize: nameSize)
+                    }
+                    .padding(.leading, Spacing.m)
+                    .padding(.trailing, Size.personRowChevronInset)
+                    .accessibilityHidden(true)
+            }
         }
-        .padding(.top, Spacing.m)
-        .padding(.bottom, Spacing.l)
+        .padding(.top, isNameAlone ? Spacing.s : Spacing.m)
+        .padding(.bottom, isNameAlone ? Spacing.s : Spacing.l)
         .frame(maxWidth: .infinity, minHeight: Size.personRowNoDateMinHeight)
         .overlay(alignment: .bottom) {
             Rectangle()
@@ -104,6 +147,9 @@ public struct RosterRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: spoken))
     }
+
+    /// A row with the name alone: no weekdays, no proposer and no tag.
+    private var isNameAlone: Bool { line == nil && proposal == nil }
 
     private var visibleName: String {
         isViewer ? String(format: String(localized: "person.self", bundle: .module), name) : name

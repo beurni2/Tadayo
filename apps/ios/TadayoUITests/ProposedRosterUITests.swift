@@ -7,8 +7,12 @@ import XCTest
 /// invitations opens the setup list, and Back the roster again; an Approve with no answer keeps
 /// the line and every action, and Back and Review members again open the same decision, its line
 /// still there; the next Approve, which the stand-in takes only with the same key (T19), starts
-/// the club, and the roster closes onto Home read again. And Done for now on the setup list goes
-/// back to Home.
+/// the club, and the roster closes onto Home read again. A Decline after an Approve with no
+/// answer, which the stand-in answers as the server would once that Approve went through (the
+/// roster applied, so the Decline's version is out of date), shows no alert: the roster is read
+/// again and closes onto Home for the club that started. (FQ146's alert can't come here: Ben is
+/// the only member, so Ben's Approve always applies the roster; `ApproveUITests` walks it.) And
+/// Done for now on the setup list goes back to Home.
 final class ProposedRosterUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -54,6 +58,27 @@ final class ProposedRosterUITests: XCTestCase {
                     && !app.staticTexts["Review the updated members"].exists
             }, "Home read again")
         XCTAssertTrue(app.buttons["Switch club. Sunday people selected."].exists)
+    }
+
+    @MainActor func testADeclineAfterALostApproveThatStartedTheClubClosesTheRoster() {
+        let app = signedIn()
+        openRoster(app)
+        let approve = app.buttons["Approve roster for Sunday people."]
+        let decline = app.buttons["Decline roster for Sunday people."]
+        approve.tap()
+        let line = "Couldn’t approve this roster. Check your connection and try again."
+        XCTAssertTrue(element(line, in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(eventually { decline.isEnabled })
+        decline.tap()
+        // The Approve went through and started the club, so the Decline's version is out of
+        // date: the roster is read again and closes onto Home, read again, with no alert.
+        XCTAssertTrue(
+            eventually(10) { !app.staticTexts["Proposed roster"].exists }, "the roster closed")
+        XCTAssertTrue(
+            eventually(10) { !app.buttons["Review Sunday people’s updated members."].exists },
+            "Home read again")
+        XCTAssertTrue(app.buttons["Switch club. Sunday people selected."].exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists, "no alert")
     }
 
     @MainActor func testDoneForNowOnTheSetupListGoesBackToHome() {
