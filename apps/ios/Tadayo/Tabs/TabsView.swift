@@ -24,7 +24,10 @@ import TadayoDesign
 /// Each club tab holds its own navigation stack, its root's bar hidden, so the tab looks as it
 /// did without one. The switcher's Club details closes the sheet, then pushes Club details for
 /// the selected club onto the selected tab (`ClubRoute`), with the model `details` makes; Members
-/// is pushed from there, once however fast it's tapped. Back returns to the tab as it was. The
+/// is pushed from there, once however fast it's tapped, and G03-approve from a proposed row in
+/// Members, with the model Club details' makes for the revision Members listed; a decision closes
+/// it back to Members, which reads again (`docs/plans/ios-b1-approve.md` section 2). Back returns
+/// to the tab as it was. The
 /// pushed screens close when the club they show stops being the selected one (another is chosen,
 /// or the list is read again) and as soon as a read says the club is no longer the caller's
 /// (`ClubDetailsModel.closed`), whenever the list's own read answers. The model stays after they
@@ -113,6 +116,10 @@ struct TabsView: View {
     @State private var paths: [ClubTab: [ClubRoute]] = [:]
     /// The selected club's Club details and members list: the last opened.
     @State private var shownDetails: ClubDetailsModel?
+    /// The approval last opened from Members, which stays drawn while it slides away, and the
+    /// Club details model that made it (held, so it is never mistaken for a later one).
+    @State private var approving: RosterApprovalModel?
+    @State private var approvingFrom: ClubDetailsModel?
     /// The switcher's Club details was chosen: pushed once the sheet has closed.
     @State private var detailsChosen = false
     /// The switcher's Create a club was chosen: pushed once the sheet has closed.
@@ -206,6 +213,12 @@ struct TabsView: View {
         }
         .onChange(of: shownDetails?.closed ?? false) { _, closed in
             if closed { closeClubScreens() }
+        }
+        .onChange(of: approving?.changes ?? 0) { _, _ in
+            // A decision that answered after Back: Members, showing again, reads again.
+            if !paths.values.contains(where: { $0.contains(.approval) }) {
+                approvalClosed()
+            }
         }
         .onChange(of: inviting?.closed ?? false) { _, closed in
             if closed { closeCreateScreens() }
@@ -398,6 +411,39 @@ struct TabsView: View {
         paths[tab] = [.invitations]
     }
 
+    /// A proposed row's G03-approve over Members, once however fast it's tapped, for the revision
+    /// the list showed, with a model the selected club's makes, so it answers only in this session
+    /// and while the club stays selected. The same roster opened again is the approval as it
+    /// stands (`RosterApprovalModel.reopens`): its keys, its failure's line, and a decision still
+    /// out, so the retry is the same action (T19) and no second decision goes out beside it.
+    private func openApproval(_ revision: RosterRevision, on tab: ClubTab) {
+        guard paths[tab]?.last == .members, let shownDetails else { return }
+        if approvingFrom !== shownDetails || approving?.reopens(revision) != true {
+            approving = shownDetails.approval(of: revision)
+            approvingFrom = shownDetails
+        }
+        paths[tab, default: []].append(.approval)
+    }
+
+    /// A decision, or the full club's See members: back to Members, which reads again.
+    private func closeApproval(on tab: ClubTab) {
+        guard paths[tab]?.last == .approval else { return }
+        paths[tab]?.removeLast()
+        approvalClosed()
+    }
+
+    /// The approval closed: Members reads again, once for each change the approval has learned
+    /// of or may have caused (`RosterApprovalModel.takeMembersRead`): a decision, an outcome, a
+    /// newer roster, or an action with no answer, so Members never shows a decided or ended
+    /// proposal as still open to decide. A decision still out at Back reads it once it answers.
+    /// Back after a refusal, or with nothing done, reads nothing.
+    private func approvalClosed() {
+        guard let approving, let shownDetails, approvingFrom === shownDetails,
+            approving.takeMembersRead()
+        else { return }
+        Task { await shownDetails.loadMembers() }
+    }
+
     /// Create an invitation: the name step over the list, once however fast it's tapped.
     private func openNameStep(on tab: ClubTab) {
         guard paths[tab]?.last == .invitations, let model = inviting?.makeInvite() else { return }
@@ -434,6 +480,10 @@ struct TabsView: View {
                 if paths[tab]?.contains(.accepted) == true, !now.contains(.accepted) {
                     closeInvitation()
                 }
+                // Back from the approval: Members reads again if it moved on.
+                if paths[tab]?.last == .approval, now.last != .approval {
+                    approvalClosed()
+                }
                 paths[tab] = now
             })
     }
@@ -450,7 +500,13 @@ struct TabsView: View {
             }
         case .members:
             if let shownDetails {
-                MembersDestination(model: shownDetails)
+                MembersDestination(model: shownDetails) { revision in
+                    openApproval(revision, on: tab)
+                }
+            }
+        case .approval:
+            if let approving {
+                ApproveDestination(model: approving) { closeApproval(on: tab) }
             }
         case .create:
             if let creating {

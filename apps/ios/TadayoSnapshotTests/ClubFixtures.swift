@@ -53,10 +53,48 @@ enum ClubFixtures {
         "club_sunday", "Sunday people",
         [("Ben", [.monday, .thursday]), ("Debby", [.tuesday, .friday])])
 
-    /// The roster of `id` with each name's weekdays, in that order, Ben the viewer.
-    static func roster(_ id: String, _ name: String, _ days: [(String, [Weekday])]) -> Roster {
+    /// Kitchen table active with its five, Maya the viewer, and Ben's proposal of Leila open, with
+    /// Alex's of Nina in it for FQ144's two candidates (G03-approve: handoffs 4 and 8; FQ54, FQ60).
+    static func kitchenRevision(nina: Bool = false, decision: RosterDecision = .pending)
+        -> RosterRevision
+    {
+        let people = ["Ben", "Maya", "Alex", "Sam", "Debby"].map {
+            Person(membershipID: "mem_\($0)", displayName: $0, avatarVersion: nil)
+        }
+        var candidates = [
+            Candidate(id: "cand_leila", name: "Leila", proposedBy: people[0], invitation: nil)
+        ]
+        if nina {
+            candidates.append(
+                Candidate(id: "cand_nina", name: "Nina", proposedBy: people[2], invitation: nil))
+        }
+        return RosterRevision(
+            id: "rev_leila", version: 3, club: kitchenAsMaya, state: .open, proposedBy: people[0],
+            members: people, candidates: candidates, myDecision: decision, supersededBy: nil)
+    }
+
+    /// Kitchen table's five, one day each, Maya the viewer, with `open` as its open revision.
+    static func kitchenRoster(open: RosterRevision?) -> Roster {
+        roster(
+            "club_kitchen", "Kitchen table",
+            [
+                ("Ben", [.monday]), ("Maya", [.tuesday]), ("Alex", [.wednesday]),
+                ("Sam", [.thursday]), ("Debby", [.friday]),
+            ], viewer: "Maya", open: open)
+    }
+
+    private static let kitchenAsMaya = ClubRef(
+        id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
+        myMembershipID: "mem_Maya")
+
+    /// The roster of `id` with each name's weekdays, in that order, Ben the viewer unless
+    /// `viewer` says, and `open` as its open revision.
+    static func roster(
+        _ id: String, _ name: String, _ days: [(String, [Weekday])], viewer: String = "Ben",
+        open: RosterRevision? = nil
+    ) -> Roster {
         let ref = ClubRef(
-            id: id, name: name, timezone: "America/New_York", myMembershipID: "mem_Ben")
+            id: id, name: name, timezone: "America/New_York", myMembershipID: "mem_\(viewer)")
         let clock = ServerClock(serverNow: now, receivedAt: .now)
         let people = days.map { name, _ in
             Person(membershipID: "mem_\(name)", displayName: name, avatarVersion: nil)
@@ -66,7 +104,7 @@ enum ClubFixtures {
             members: people.enumerated().map { index, person in
                 Member(person: person, position: index + 1, cover: nil, nextDay: nil, nextUp: false)
             },
-            openRevision: nil)
+            openRevision: open)
         let week = ClubWeek(
             serverClock: clock, club: ref,
             assignments: zip(people, days).flatMap { person, day in

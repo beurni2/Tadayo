@@ -144,6 +144,20 @@ import Observation
         }
     }
 
+    /// G03-approve for the open revision Members lists (`Roster.openRevision`), asked in the same
+    /// session and for the same club as this model's reads (`docs/plans/ios-b1-approve.md`
+    /// section 2). Its not found reads the members again, whose own not found closes the club's
+    /// screens (`closed`), so the members list, not the approval, decides whether the club is
+    /// still the caller's.
+    public func approval(
+        of revision: RosterRevision,
+        makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() }
+    ) -> RosterApprovalModel {
+        RosterApprovalModel(
+            revision: revision, service: service, makeKey: makeKey, current: current,
+            gone: { [weak self] in await self?.loadMembers() }, signedOut: signedOut)
+    }
+
     /// What a failed read leads to: the model closed and the list read again for a club no
     /// longer the caller's, the session ended for a `signedOut` answer (neither shows a
     /// failure), or the failure the screen shows.
@@ -216,8 +230,36 @@ public struct Roster: Sendable, Equatable {
         case two
     }
 
+    /// Someone the open revision proposes, in a proposed row after the members (handoff 1:
+    /// "Leila, Proposed by Ben, Proposed"; `docs/plans/ios-b1-approve.md` section 2), with what
+    /// the row opens for the viewer.
+    public struct Proposed: Sendable, Equatable, Identifiable {
+        public enum Opens: Sendable, Equatable {
+            /// The candidate's proposer, once decided (by proposing, FQ60): the person's invitation
+            /// page (`G05-members-invite`, plan PR 7c), where only the proposer sees the link's
+            /// controls (handoff 8).
+            case invitation
+            /// A member whose decision on the revision is pending, the candidate's proposer among
+            /// them when the server made the revision for the candidate's own name (FQ84):
+            /// G03-approve, without which the revision could never go ahead.
+            case approval
+            /// A member who has decided: nothing, so no screen tells one decision from another
+            /// (FQ143, T15, T33).
+            case nothing
+        }
+
+        public let candidate: Candidate
+        public let opens: Opens
+
+        public var id: String { candidate.id }
+    }
+
     public let club: ClubRef
     public let rows: [Row]
+    /// The open revision's candidates, in its order; empty when none is open.
+    public let proposed: [Proposed]
+    /// The open revision itself, which G03-approve decides on exactly as listed here.
+    public let openRevision: RosterRevision?
 
     public init(_ list: MemberList, week: ClubWeek) {
         club = list.club
@@ -227,6 +269,19 @@ public struct Roster: Sendable, Equatable {
                 person: member.person, isViewer: id == list.club.myMembershipID,
                 weekdays: week.assignments.filter { $0.person.membershipID == id }.map(\.weekday)
                     .sorted())
+        }
+        let open = list.openRevision.flatMap { $0.state == .open ? $0 : nil }
+        openRevision = open
+        proposed = (open?.candidates ?? []).map { candidate in
+            let opens: Proposed.Opens =
+                if open?.myDecision == .pending {
+                    .approval
+                } else if candidate.proposedBy.membershipID == list.club.myMembershipID {
+                    .invitation
+                } else {
+                    .nothing
+                }
+            return Proposed(candidate: candidate, opens: opens)
         }
     }
 

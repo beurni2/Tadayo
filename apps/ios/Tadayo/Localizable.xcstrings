@@ -157,6 +157,294 @@
         }
       }
     },
+    "approve.body" : {
+      "comment" : "handoff 4 approval.body (spec 04, T7)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ must accept the exact roster. Every existing member must approve the same roster. Either can happen first."
+          }
+        }
+      }
+    },
+    "approve.boundary" : {
+      "comment" : "handoff 4 approval.boundary (FQ20)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ will see only drops shared after joining."
+          }
+        }
+      }
+    },
+    "approve.changed.action" : {
+      "comment" : "handoff 8 approval.changed.action",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review members"
+          }
+        }
+      }
+    },
+    "approve.changed.action.vo" : {
+      "comment" : "handoff 8 approval.changed.action.vo",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the updated members of %@."
+          }
+        }
+      }
+    },
+    "approve.changed.body.approve" : {
+      "comment" : "handoff 8 approve.changed.body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The members have changed. Review the updated roster before approving."
+          }
+        }
+      }
+    },
+    "approve.changed.body.decline" : {
+      "comment" : "handoff 8 decline.changed.body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The members have changed. Review the updated roster before declining."
+          }
+        }
+      }
+    },
+    "approve.changed.title" : {
+      "comment" : "handoff 8 approval.changed.title: the native alert after ROSTER_CHANGED",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the updated roster"
+          }
+        }
+      }
+    },
+    "approve.context" : {
+      "comment" : "handoff 4 approval.context ('To Kitchen table · 5 current members'): the club's name, then invitation.roster.count.*, counting the revision's members, never its candidates (approvalContext.currentMemberCountIncludesCandidate: false)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "approve.decline" : {
+      "comment" : "handoff 8 decline.label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decline"
+          }
+        }
+      }
+    },
+    "approve.decline.hint" : {
+      "comment" : "handoff 5 a11y.decline.hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No reason is required."
+          }
+        }
+      }
+    },
+    "approve.decline.vo" : {
+      "comment" : "handoff 5 a11y.decline, which replaced handoff 4's decline.vo at the founder's brief (handoff 6 keeps the replacement); handoff 8's decline.vo, 'Decline this invitation for {clubName}. No reason is required.', is asked of handoff 10",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decline %1$@ joining %2$@."
+          }
+        }
+      }
+    },
+    "approve.failed.network" : {
+      "comment" : "handoff 8 approve.failed.network (frame 10, G03-approve-failed), also its VoiceOver announcement",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t approve %@. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "approve.failed.refused" : {
+      "comment" : "handoff 8 approve.failed.refused: any failure other than the network's",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t approve %@. Try again."
+          }
+        }
+      }
+    },
+    "approve.full.action" : {
+      "comment" : "handoff 8 approval.full.action",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See members"
+          }
+        }
+      }
+    },
+    "approve.full.action.vo" : {
+      "comment" : "handoff 8 approval.full.action.vo",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See members of %@."
+          }
+        }
+      }
+    },
+    "approve.full.body" : {
+      "comment" : "handoff 8 approval.full.body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ already has six members."
+          }
+        }
+      }
+    },
+    "approve.full.title" : {
+      "comment" : "handoff 8 approval.full.title: the native alert after CLUB_FULL, approving only",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is full."
+          }
+        }
+      }
+    },
+    "approve.nav" : {
+      "comment" : "handoff 4 approval.nav: G03-approve's inline title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New member"
+          }
+        }
+      }
+    },
+    "approve.note" : {
+      "comment" : "handoff 4 approval.note, the shield's note (book p30)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We don’t identify who declined. Nobody is asked to give a reason."
+          }
+        }
+      }
+    },
+    "approve.primary" : {
+      "comment" : "handoff 8 approve.label: G03-approve's primary",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Approve %@"
+          }
+        }
+      }
+    },
+    "approve.primary.vo" : {
+      "comment" : "handoff 8 approve.vo and handoff 5 a11y.approve: the primary's spoken name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Approve %1$@ joining %2$@."
+          }
+        }
+      }
+    },
+    "approve.proposer" : {
+      "comment" : "handoff 4 approval.proposer and handoff 8 proposed.by: under the candidate's name on G03-approve",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proposed by %@"
+          }
+        }
+      }
+    },
+    "approve.title" : {
+      "comment" : "handoff 4 approval.title ('Invite Leila?'): the candidates' names, joined as the phone's list format words them (FQ144's default for two or more)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite %@?"
+          }
+        }
+      }
+    },
+    "approve.unavailable" : {
+      "comment" : "handoff 8 approval.unavailable: the neutral end for a revision that ended, never was, or can't be seen (T14)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation is no longer available."
+          }
+        }
+      }
+    },
     "auth.age.body" : {
       "comment" : "handoff 1 screen-copy, A02-age",
       "extractionState" : "manual",
@@ -873,6 +1161,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use 40 characters or fewer for the club name."
+          }
+        }
+      }
+    },
+    "decline.failed.network" : {
+      "comment" : "handoff 8 decline.failed.network: names nobody",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t decline this invitation. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "decline.failed.refused" : {
+      "comment" : "handoff 8 decline.failed.refused: names nobody",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t decline this invitation. Try again."
           }
         }
       }
@@ -2445,6 +2757,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Check your connection and try again."
+          }
+        }
+      }
+    },
+    "load.proposed.loading" : {
+      "comment" : "handoff 8 load.proposed.loading: Review members' read",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading proposed members…"
+          }
+        }
+      }
+    },
+    "load.proposed.retryHint" : {
+      "comment" : "handoff 8 load.proposed.retryHint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try loading proposed members again."
+          }
+        }
+      }
+    },
+    "load.proposed.title" : {
+      "comment" : "handoff 8 load.proposed.title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t load proposed members."
           }
         }
       }
