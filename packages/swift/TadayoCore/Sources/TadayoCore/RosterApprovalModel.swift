@@ -19,9 +19,11 @@ import Observation
 ///   members, which reads the members again and shows the revision they now list;
 /// - the club full (`CLUB_FULL`, approving only), with See members.
 ///
-/// A `VERSION_CONFLICT` says the revision moved without a newer one replacing it (a member
-/// declined, say), so "The members have changed." would be untrue (T43): the members are read at
-/// once, as Review members reads them, with no alert, as `InvitationModel`'s Accept checks again.
+/// A `VERSION_CONFLICT` says the revision ended (it applied or didn't go ahead): its version moves
+/// only as it ends, and a newer revision's replacing it is `ROSTER_CHANGED`. "The members have
+/// changed." would be untrue of it (T43), and any revision open now is a later proposal, so the
+/// screen doesn't swap it in unannounced: it is "no longer available", and Members, read again
+/// on Back, lists what is open now.
 ///
 /// A decision is done only when the answer holds it: the server answers a request that changes
 /// nothing (the viewer had decided already, an earlier answer lost) with the revision as it stands
@@ -153,7 +155,6 @@ import Observation
     private enum Then {
         case nothing
         case gone
-        case review
         case endSession
     }
 
@@ -221,8 +222,10 @@ import Observation
             alert = .rosterChanged(action)
             changes += 1
         case .failure(.versionConflict):
+            // The revision ended: nothing to decide on it any more.
             pending = [:]
-            then = .review
+            state = .unavailable
+            changes += 1
         case .failure(.clubFull) where action == .approve:
             pending = [:]
             alert = .clubFull
@@ -251,7 +254,6 @@ import Observation
         switch then {
         case .nothing: break
         case .gone: await membersGone()
-        case .review: await reviewMembers()
         case .endSession: await signedOut()
         }
     }
@@ -262,11 +264,10 @@ import Observation
         membersRead = changes
     }
 
-    /// The roster changed alert's Review members, a version conflict, and Retry after its read
-    /// failed: the club's members read again, and the revision they list now shown with no keys,
-    /// so neither decision is replayed onto it. No revision open any more is "no longer
-    /// available"; one the caller has already decided on (the caller's own proposal, FQ60, or an
-    /// earlier decision whose answer was lost) closes the screen back to Members.
+    /// The roster changed alert's Review members, and Retry after its read failed: the club's
+    /// members read again, and the revision they list now shown with no keys, so neither decision
+    /// is replayed onto it. No revision open any more is "no longer available"; one the caller has
+    /// already decided on (the caller's own proposal, FQ60) closes the screen back to Members.
     public func reviewMembers() async {
         switch state {
         case .deciding, .reviewFailed: break

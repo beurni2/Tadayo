@@ -140,9 +140,11 @@ import Testing
         service.declineAnswers = [.success(Approval.revision(decision: .approved))]
         let approval = model(service)
         await approval.approve()
+        #expect(approval.takeMembersRead())
         await approval.decline()
         #expect(approval.state == .deciding(Approval.revision()))
         #expect(approval.failed == .init(action: .decline, failure: .other))
+        // Members lists the decision as pending still: it reads again.
         #expect(approval.takeMembersRead())
         await approval.approve()
         #expect(
@@ -194,30 +196,23 @@ import Testing
         }
     }
 
-    @Test func aVersionConflictReadsTheMembersWithNoAlert() async {
-        // The revision moved, but no newer roster replaced it ("The members have changed" would
-        // be untrue): the members are read at once, and the screen shows what they list, with
-        // no keys.
-        let newer = Approval.revision(version: 4)
-        for (action, open, then) in [
-            (RosterApprovalModel.Action.approve, newer, RosterApprovalModel.State.deciding(newer)),
-            (.decline, nil, .unavailable),
-            (.approve, Approval.revision(version: 4, decision: .approved), .finished),
-        ] {
+    @Test func aVersionConflictIsNoLongerAvailable() async {
+        // A revision's version moves only as it ends, and a newer revision's replacing it is
+        // `ROSTER_CHANGED`: a conflict says it applied or didn't go ahead. Any revision open now
+        // is a later proposal, for Members to list ("The members have changed" would be untrue,
+        // and the screen's subject would change unannounced).
+        for action in [RosterApprovalModel.Action.approve, .decline] {
             let service = ScriptedClubs()
-            service.approveAnswers = [.failure(.versionConflict), .failure(.network)]
+            service.approveAnswers = [.failure(.versionConflict)]
             service.declineAnswers = [.failure(.versionConflict)]
-            service.memberAnswers = [.success(Approval.members(open: open))]
-            let approval = model(service)
+            let told = Told()
+            let approval = model(service, told: told)
             if action == .approve { await approval.approve() } else { await approval.decline() }
-            #expect(approval.alert == nil, "\(action) \(String(describing: open))")
-            #expect(approval.failed == nil)
-            #expect(approval.state == then, "\(action) \(String(describing: open))")
-            #expect(service.calls.last == "members club_kitchen")
-            if then == .deciding(newer) {
-                await approval.approve()
-                #expect(service.calls.last == "approve rev_leila v4 \(Keys.key(2))")
-            }
+            #expect(approval.state == .unavailable, "\(action)")
+            #expect(approval.alert == nil && approval.failed == nil)
+            #expect(service.calls.count == 1, "\(service.calls)")
+            #expect(told.gone == 0)
+            #expect(approval.takeMembersRead())
         }
     }
 
