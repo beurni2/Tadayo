@@ -95,7 +95,9 @@ sees what it compares (the review's PR2).
   `Temporal.Instant` (through an alias, read only, with a brand of its own, a type parameter whose constraint is one)
   and is a `ServerNow` when it is assignable to `ServerNow` (the two types read from `ServerNow`'s declaration in
   `clock.ts`, `instantTypes`), where the first commit matched the name `Instant` and skipped every intersection (the
-  review's G2 and PR2). It reads the same program as part 1's compiler check, compiled once.
+  review's G2 and PR2). Since the second review, a union is read member by member and a type parameter through its
+  constraint (`parts`), so `T extends Temporal.Instant | null` is found as the instant it may be (its third point). It
+  reads the same program as part 1's compiler check, compiled once.
 - The files it reads: the server's TypeScript and, since the first review, the time module's own (`timeModule`: every
   file of `packages/domain/src/time/` but the tests and the tests' clock, `testing.ts`), which the clock-read scan
   leaves out (PR2).
@@ -108,9 +110,9 @@ sees what it compares (the review's PR2).
   a constraint, and leaves a ServerNow alone": eight planted files, compiled beside the server's, each compiling
   cleanly: a parameter, an arrow function's parameter that may be null, an optional field, a field of a parameter's
   own type, a class's field, a parameter typed through an alias, and (since the first review) an instant with a brand
-  of its own, one read only and a type parameter whose constraint is an instant, each found by its name; and a
-  `ServerNow` alone, in a union, as a field and as a type parameter's constraint, and an array of instants, none
-  found. The cases are compared all at once, so a failure names every case, not only
+  of its own, one read only and a type parameter whose constraint is an instant, and (since the second review) one
+  whose constraint is an instant or null, each found by its name; and a `ServerNow` alone, in a union, as a field and
+  as a type parameter's constraint, with or without null, and an array of instants, none found. The cases are compared all at once, so a failure names every case, not only
   the first (since the first run of P6 and P7: section 3.1).
 - The header's last paragraph says the time an action happens at never reaches code as a plain instant, what the check
   leaves to review (section 4), and points here.
@@ -122,10 +124,16 @@ clock and parameters moved past the reveal, one name at a time (`now`, `t`, `at`
 others). It now sends one request more, with every other name a time might come under set at once to the claimed
 instant (`TIME_NAMES`: `since`, `before`, `after`, `until`, `from`, `date`, `day`, `time`, `ts`, `timestamp`,
 `client_time`), none of them a parameter of the contract's, so a route that reads one and answers by it answers that
-request otherwise than the cell's own, which the matrix reports. One request, not eleven, since the privacy step runs
+request otherwise than the cell's own, which the matrix reports. Since the second review (its fourth point), each name
+carries the time in the form a route would read it by (`timeText`): the claimed instant's date in UTC for `date` and
+`day`, its milliseconds since the epoch for `ts` and `timestamp`, the instant for the rest. The instant's text under
+`date` is refused by `Temporal.PlainDate.from`, and under `ts` read as `NaN`, so a route that parsed either and fell
+back to its own time when it couldn't would have answered as the cell does. One request, not eleven, since the privacy step runs
 near the `postgres` job's 20-minute limit on `ci` (section 4). `harness.test.ts`: the manipulations' count (15 to 16),
 "sends every other name a time might come under in one request, none of them a parameter of the contract's", and the
-planted routes that answer otherwise for `since` and for `client_time` in the query.
+planted routes that answer otherwise for `since` and for `client_time` in the query; since the second review, the
+expected request names each name's form, and two planted routes more answer otherwise for `date` read as a day's date
+and for `ts` read as milliseconds.
 
 ## 2. Tests first
 
@@ -189,6 +197,17 @@ code and tests, besides P1 to P7 again (P6's edit now on the compiler's reading 
   `harness.test.ts`, four tests (the planted routes for `since` and `client_time`, "sends every other name a time might
   come under…", and the step counts' 16).
 
+After the second review (section 5), registered before run3 (`breakages/run3.py` on `evidence`), on the third commit's
+code and tests: T0, C0, P1 to P13, B15 and B16 again, each as registered for run2, but for two edits the third commit's
+`parts` moves: P6 now takes a union's reading out of `parts`, and P8 puts the first commit's reading back whole (a
+union's members only, by the name `Instant`, no intersection), so P8's planted test names `chosenOrNone(at)` too. And:
+- P14: the request of time names sends the instant's text under every name again (`harness.ts` `timeText` answering
+  the instant alone): `harness.test.ts`, three tests (the planted routes for `date` read as a day's date and for `ts`
+  read as milliseconds, and "sends every other name a time might come under…").
+- P15: `plainInstants` reads a type parameter as itself again, not through its constraint: the planted test
+  (`chosenOrNone(at)`), the list test passing (registered as absent: its failure), since the server's code has no type
+  parameter whose constraint may be null.
+
 ### 3.1. As run
 
 On 2026-11-26 in the session, with Node 26.13.0, three times: twice on `main` at `60770d5`, where the slice began, and
@@ -233,9 +252,9 @@ output, patch and verdict on `evidence` under `api/b2-server-time-types/<the sec
   and `notBeforeReveal(revealAt)` kept and not found. C0, passed (missed), as registered.
 - P1 to P5, caught as before, each in the list test alone, naming its own.
 - P6, caught: the planted test (`late(at)`, `Asked.at`) and the list test (`DayFacts.starLeftAt`, with every field and
-  parameter that may be null or undefined, 13 of the 63).
+  parameter that may be null or undefined, 11 of the 63).
 - P7, caught: the planted test (`Asked.at`, `held(slot).at`, `Counter.at`) and the list test (`DayFacts.revealAt`, with
-  every field kept, 46 of the 63).
+  every field kept, 43 of the 63).
 - P8, caught: the planted test alone (`stamped(at)`, `fixed(at)`, `chosen(at)` not found), the list test passing as
   registered: the server's code has none of the shapes the first commit's reading missed.
 - P9, caught: the list test (the time module's six kept and not found, `DayInstants.revealAt`,
@@ -255,6 +274,31 @@ output, patch and verdict on `evidence` under `api/b2-server-time-types/<the sec
   request's quotes bare and vitest prints the failing list as JSON, the quotes escaped (`{\"query\":{\"since\":…`). The
   runner's words were changed to the escaped form, and nothing else, and both were run again on the slice; the first
   run's outputs are kept beside the second's (`first-run-B15-B16/`).
+- Corrected after the second review (its first point): this section first said 13 and 46 for P6 and P7, which their
+  outputs don't say (`expected [ …(52) ] to deeply equal [ …(63) ]`, and `[ …(20) ]`); the run kept one more entry
+  that may be null than the first commit's, `notBeforeReveal(at)`, and as many fields, `DayInstants`' two in and
+  `leftAt` and `registeredAt` out. The journal's entry stamped 2026-11-26 10:30 UTC says 13 and 46 too; the next
+  entry corrects it.
+
+After the second review (run3, `breakages/run3.py`), on 2026-11-26 in the session, on the same detached worktree at
+`f5000a3` holding a copy of the third commit's code and tests, the controls on `main` at `f5000a3` with `main`'s tests;
+every output, patch and verdict on `evidence` under `api/b2-server-time-types/<the third commit's short sha>/breakages/`:
+- T0, caught as before: the list test alone failed (1 failed, 11 passed), exactly section 0.1's 25 found and not kept,
+  and only `notBeforeReveal(at)` and `notBeforeReveal(revealAt)` kept and not found. C0, passed (missed).
+- P1 to P5 and P9 to P12, caught as in run2, each naming its own.
+- P6, caught: the planted test and the list test (2 failed, 10 passed), the list 52 of the 63, 11 missing.
+- P7, caught: the planted test and the list test (2 failed, 10 passed), the list 20 of the 63, 43 missing.
+- P8, caught: the planted test alone (1 failed, 11 passed), `stamped(at)`, `fixed(at)`, `chosen(at)` and
+  `chosenOrNone(at)` not found, the list test passing as registered.
+- P13, caught: `harness.test.ts`, the six tests registered (6 failed, 94 passed): the four of run2 and the planted
+  routes for `date` and `ts`, which the request of time names alone carries.
+- P14, caught: `harness.test.ts`, the three tests registered (3 failed, 97 passed).
+- P15, caught: the planted test alone (1 failed, 11 passed), `chosenOrNone(at)` not found, the list test passing as
+  registered.
+- B15, caught as in run2: `one-clock.test.ts`'s compile test, and the matrix as the member in the audience (1 failed,
+  28 skipped) on the request of time names, Home's `server_now` the request's in each of the ten drop states. B16,
+  caught by the matrix the same way (1 failed, 28 skipped), `one-clock.test.ts` passing, the miss registered
+  beforehand. Their controls weren't run again: `main`'s tree and tests haven't changed since run2's.
 
 ## 4. What it leaves to others, and what it costs
 
@@ -279,6 +323,15 @@ output, patch and verdict on `evidence` under `api/b2-server-time-types/<the sec
   Each command computes it from the clock's sample just before (`settle-change.ts`, `confirm-days.ts`,
   `generate.ts` `daysToMake`, `change.ts` `newMemberFirstDate`, each taking a `ServerNow`); and every day's own date
   is a `PlainDate`, a fact everywhere, so a list of dates would be every day's. Review keeps it.
+- An expiry is a plain instant, and the type doesn't hold it to the function that computes it (the second review's
+  second point): `holdSlot(slot).expiresAt` would take any instant, and it is what `settleLapsed` lapses by. Its one
+  caller, `packages/domain/src/drops/reserve.ts` `reserve`, passes `reservationExpiry(at, facts.day.revealAt)`, and
+  the database's guard bounds the row to `created_at < expires_at <= reveal_at` (migration 0006), so a wrong expiry
+  could hold a slot longer, never past the reveal. Having `holdSlot` compute it would move the plain instant to the
+  day's `revealAt`, a fact; a brand for expiries would be a second clock-like type for one caller. Review keeps it,
+  and the T18 row says only what the type holds.
+- The matrix's names carry one form each (section 1.3): a route that read `?date=` in another form (`20261108`), or a
+  time under a name it doesn't send, isn't seen.
 - The list's reasons are a reviewer's to keep true: the test holds the names, not the meaning. A field moved from a
   row's fact to the time of an action keeps its name and passes; review reads the list in the diff.
 - Time: the compiled program is part 1's, read once more; the file's tests take about 6 seconds here. The matrix's one
@@ -336,3 +389,29 @@ against 59, P6's 10 and P7's 43 missing).
 The ios lane said since (PR #140, `ci` run 45789901674) that its privacy step was cancelled at the `postgres` job's
 20-minute limit on a slower runner too, with nothing of its own under `services/`, `tests/`, `db/` or `packages/`: the
 limit, raised in its own CI-configuration PR under a freeze (T58), is the api lane's next step after this PR.
+
+Second review: a fresh subagent read the whole PR at the second commit, `9ce4321`, for correctness and for privacy and
+security together, looking hardest at what the second commit changed, since its fixes changed the check and the
+privacy matrix (`docs/GITHUB.md` step 5). Four low findings, none high or medium; each is fixed or answered in the third
+commit.
+- Its first point (low), fixed: section 3.1 and the journal's entry stamped 2026-11-26 10:30 UTC said P6 left 13 of the
+  63 unfound and P7 46; the outputs say 11 and 43 (section 3.1, the correction). The journal is append-only, so the
+  third commit's entry corrects it.
+- Its second point (low), fixed and answered: the T18 row said no request's time sets a slot's lapse without a cast,
+  but `holdSlot(slot).expiresAt`, an expiry kept plain, is what the lapse is by; the reviewer had `reserve.ts` take it
+  from a request's text and every check passed. Nothing is wrong in today's code (its one caller passes
+  `reservationExpiry`), and the database bounds it by the reveal. The row now says what the type holds; section 4
+  says why the expiry stays plain.
+- Its third point (low), fixed: `plainInstants` missed a type parameter whose constraint is an instant or null
+  (`<T extends Temporal.Instant | null>(at: T)`), which the header and the journal said it found. A type parameter is
+  read through its constraint now (`parts`, section 1.2); a planted case each way (`chosenOrNone(at)` found,
+  `sampledOrNone(now)` left alone). The server's code has none; the list is unchanged. P15.
+- Its fourth point (low), fixed: the request of time names sent the instant's text under `date`, `day`, `ts` and
+  `timestamp`, which a route reading a date or epoch milliseconds couldn't parse, so one that fell back to its own time
+  would pass. Each name carries its own form now (section 1.3); two planted routes more. P14.
+
+What it checked and found sound (its report): no `ServerNow` made outside the clocks in product code; a flow scan of
+every place a `ServerNow` is passed where a plain instant would be taken found only run-time checks, `Instant.compare`
+and the kept helpers; each of the 63 reasons true; every retyped function given the sample in its own transaction; no
+test expectation changed or case dropped; no handler reading `request.query`, and no contract parameter among
+`TIME_NAMES`; every edit in the api lane's parts; the counts 25, 63, 86 and 80 and each reason's.

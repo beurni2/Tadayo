@@ -246,7 +246,7 @@ function instantTypes(program: ts.Program): { instant: ts.Type; serverNow: ts.Ty
 /**
  * Each parameter in `file`, and each field of a type it declares, whose type, alone or in a union, is an instant and
  * not a ServerNow, as "file: owner(parameter)" or "file: Owner.field": a type the compiler takes for a
- * `Temporal.Instant` (through an alias, read only, with a brand of its own, a type parameter whose constraint is one)
+ * `Temporal.Instant` (through an alias, read only, with a brand of its own, a type parameter whose constraint is one, or one or null)
  * that a ServerNow's place wouldn't take. A request's time reaches such a place with no cast, so the time an action
  * happens at is never one: each that is left is on `PLAIN_INSTANTS` with its reason. An instant inside an array, a
  * tuple, a map, a mapped type or a promise isn't read, nor a variable, which no caller gives.
@@ -256,10 +256,17 @@ export function plainInstants(program: ts.Program, file: string): string[] {
   if (source === undefined) throw new Error(`time: ${file} isn't in the program`);
   const checker = program.getTypeChecker();
   const { instant, serverNow } = instantTypes(program);
+  // A type's members: a union's, each read in turn, and a type parameter's constraint's, so that
+  // `T extends Temporal.Instant | null` is read as the instant and the null its constraint allows.
+  const parts = (type: ts.Type): readonly ts.Type[] => {
+    if (type.isUnion()) return type.types.flatMap(parts);
+    const constraint = type.isTypeParameter() ? checker.getBaseConstraintOfType(type) : undefined;
+    return constraint === undefined || constraint === type ? [type] : parts(constraint);
+  };
   // By what the compiler lets through, not by name: an intersection with a brand of its own, a type parameter whose
   // constraint is an instant, `Readonly<Temporal.Instant>`. `any` passes for a ServerNow too, so it stays the lint's.
   const plain = (type: ts.Type): boolean =>
-    (type.isUnion() ? type.types : [type]).some(
+    parts(type).some(
       (part) => !checker.isTypeAssignableTo(part, serverNow) && checker.isTypeAssignableTo(part, instant),
     );
   // The named declarations around `node`, outermost first: "holdSlot(slot)" for a field of `holdSlot`'s `slot`.
@@ -734,18 +741,20 @@ const PLAIN: readonly (readonly [string, string, readonly string[]])[] = [
     ["moved(to)"],
   ],
   [
-    "an instant with a brand of its own, one read only, and a type parameter whose constraint is an instant",
+    "an instant with a brand of its own, one read only, and a type parameter whose constraint is an instant or may be null",
     "export function stamped(at: Temporal.Instant & { readonly stamped: true }): boolean {\n  return at.stamped;\n}\n" +
       "export function fixed(at: Readonly<Temporal.Instant>): bigint {\n  return at.epochNanoseconds;\n}\n" +
-      "export function chosen<T extends Temporal.Instant>(at: T): T {\n  return at;\n}",
-    ["stamped(at)", "fixed(at)", "chosen(at)"],
+      "export function chosen<T extends Temporal.Instant>(at: T): T {\n  return at;\n}\n" +
+      "export function chosenOrNone<T extends Temporal.Instant | null>(at: T): T {\n  return at;\n}",
+    ["stamped(at)", "fixed(at)", "chosen(at)", "chosenOrNone(at)"],
   ],
   [
-    "a ServerNow, alone, in a union, as a field and as a constraint, and an array of instants",
+    "a ServerNow, alone, in a union, as a field and as a constraint that may be null or not, and an array of instants",
     NOW +
       "export interface Row {\n  readonly at: ServerNow | null;\n}\n" +
       "export function kept(now: ServerNow): ServerNow {\n  return now;\n}\n" +
       "export function sampled<T extends ServerNow>(now: T): T {\n  return now;\n}\n" +
+      "export function sampledOrNone<T extends ServerNow | null>(now: T): T {\n  return now;\n}\n" +
       "export function many(at: readonly Temporal.Instant[]): number {\n  return at.length;\n}",
     [],
   ],
