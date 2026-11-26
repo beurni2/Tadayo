@@ -19,15 +19,24 @@ function url(name: string): string {
   return value;
 }
 
+/**
+ * The session's zone on every connection here, as far from UTC as a zone goes (+14 hours). Postgres
+ * resolves no zone and takes none from the session (ADR-008): SQL that took a date, a day's start or
+ * a weekday from the session's zone would give another date than UTC's for most of each day, and the
+ * tests that hold each date would fail (the outside audit's A11).
+ */
+export const SESSION_ZONE = "Pacific/Kiritimati";
+const connection = { TimeZone: SESSION_ZONE };
+
 export type Sql = postgres.Sql;
 export type Tx = postgres.TransactionSql;
 
 export function appSql(): Sql {
-  return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined });
+  return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined, connection });
 }
 
 export function adminSql(): Sql {
-  return postgres(url("DATABASE_ADMIN_URL"), { max: 2, onnotice: () => undefined });
+  return postgres(url("DATABASE_ADMIN_URL"), { max: 2, onnotice: () => undefined, connection });
 }
 
 /**
@@ -35,7 +44,12 @@ export function adminSql(): Sql {
  * time module's INSTANT_TYPE for `timestamptz`, so an instant crosses whole, to the microsecond.
  */
 export function commandSql() {
-  return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined, types: { instant: INSTANT_TYPE } });
+  return postgres(url("DATABASE_URL"), {
+    max: 2,
+    onnotice: () => undefined,
+    connection,
+    types: { instant: INSTANT_TYPE },
+  });
 }
 
 /**
@@ -54,7 +68,7 @@ export function worldSql(max = 2): postgres.Sql<WorldTypes> {
     serialize: (value: Temporal.Instant | Date) =>
       value instanceof Date ? value.toISOString() : INSTANT_TYPE.serialize(value),
   };
-  return postgres(url("DATABASE_URL"), { max, onnotice: () => undefined, types: { instant } });
+  return postgres(url("DATABASE_URL"), { max, onnotice: () => undefined, connection, types: { instant } });
 }
 
 /**
@@ -65,6 +79,7 @@ export function halfInstantSql() {
   return postgres(url("DATABASE_URL"), {
     max: 2,
     onnotice: () => undefined,
+    connection,
     types: { instant: { ...INSTANT_TYPE, from: [] } },
   });
 }

@@ -20,9 +20,9 @@ export interface MadeClub {
   member: Record<string, string>;
 }
 
-/** A club `name` has just made: proposed, with nobody else. */
-export async function foundedBy(tx: WorldTx, clock: FakeClock, name: string): Promise<MadeClub> {
-  const made = await founded(tx, clock, name);
+/** A club `name` has just made, in New York's zone unless `timezone` names another: proposed, with nobody else. */
+export async function foundedBy(tx: WorldTx, clock: FakeClock, name: string, timezone?: string): Promise<MadeClub> {
+  const made = await founded(tx, clock, name, timezone);
   return { club: made.club, user: { [name]: made.user }, member: { [name]: made.interval } };
 }
 
