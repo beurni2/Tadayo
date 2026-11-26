@@ -133,7 +133,8 @@ final class InviteLaterSnapshotTests: XCTestCase {
                     + "reopen the invitation already received."
             ),
             (Later.nina(.accepted), nil, false, "Accepted."),
-            (Later.nina(.revoked), "Create new link for Nina", true, "Link revoked."),
+            // Its only item is the primary's Create new link, so no More options.
+            (Later.nina(.revoked), "Create new link for Nina", false, "Link revoked."),
             (Later.nina(.expired), "Create new link for Nina", false, "Link expired."),
         ]
         for (row, primary, more, card) in cases {
@@ -234,6 +235,15 @@ final class InviteLaterSnapshotTests: XCTestCase {
         XCTAssertEqual(opened, ["cand_nina"])
     }
 
+    func testTheProposersOwnRowOpensNothingWhereThePageDoesntOpen() {
+        // A club in setup or paused: Members has no way to the page (`opensInvitations`).
+        let elements = AccessibilityElements.of(
+            pushed(MembersScreen(members: .loaded(Later.sundayWithNina), retry: {})))
+        let nina = elements.first { $0.label == "Nina. Proposed by Ben. Proposed." }
+        XCTAssertNotNil(nina, "\(elements)")
+        XCTAssertFalse(nina?.traits.contains(.button) ?? true, "\(elements)")
+    }
+
     func testAnotherMembersCandidateStillOpensNothing() {
         // Leila, proposed by Maya, whom Ben has approved: nothing to open (FQ143).
         let elements = AccessibilityElements.of(members(Later.sundayWithNina))
@@ -270,8 +280,9 @@ final class InviteLaterSnapshotTests: XCTestCase {
                 failure: failure, actions: actions))
     }
 
+    /// Members in an active club, where the proposer's own row opens the page.
     private func members(_ roster: Roster) -> some View {
-        pushed(MembersScreen(members: .loaded(roster), retry: {}))
+        pushed(MembersScreen(members: .loaded(roster), retry: {}, openInvitation: { _ in }))
     }
 
     private func snap(

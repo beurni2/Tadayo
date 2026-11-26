@@ -164,8 +164,9 @@ public struct InvitationList: Sendable, Equatable {
     /// An action that failed, with the row kept as it was. The line stays through scrolling, the
     /// system's menus and a share sheet; another link action starting clears it, as does a read
     /// whose answer shows the action no longer applies, and a new failure takes its place
-    /// (handoff 9's `setupLinks.mutationFailure.lifetime`). Each visit makes a new list, so
-    /// leaving clears it too.
+    /// (handoff 9's `setupLinks.mutationFailure.lifetime`). Leaving clears it too: each visit
+    /// to the setup list makes a new list, and the person's invitation page, kept while it goes on
+    /// so its keys survive Back (T19), clears it when it's opened again (`reopened()`).
     public enum ActionFailure: Sendable, Equatable {
         /// "Couldn’t create the invitation link for {name}." with the network's or a refusal's
         /// line (`createInvitation.createFailure`): the candidate's first link.
@@ -188,7 +189,7 @@ public struct InvitationList: Sendable, Equatable {
     /// A read answered not found: the club is no longer the caller's (T9, T14).
     public private(set) var closed = false
     /// The person's invitation page only: the last answer doesn't list its candidate as the
-    /// caller's open candidate, so the page closes back to Members.
+    /// caller's open candidate, so the page closes back to what's under it.
     public private(set) var ended = false
     /// The candidates whose action is on its way: their row's controls wait.
     public private(set) var busy: Set<String> = []
@@ -278,6 +279,12 @@ public struct InvitationList: Sendable, Equatable {
 
     /// The share sheet closed: a completed share marks the kept link Shared (FQ67); a cancelled
     /// one changes nothing.
+    /// The person's invitation page opened again after Back: the line goes, as navigation left
+    /// (handoff 9's `lifetime`), and each link action's key stays for its retry (T19).
+    public func reopened() {
+        fail(nil)
+    }
+
     public func shareFinished(for candidateID: String, completed: Bool) {
         guard completed,
             let kept = book.link(for: candidateID, club: club.id, account: accountID)

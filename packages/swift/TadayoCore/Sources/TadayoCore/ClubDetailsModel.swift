@@ -63,6 +63,8 @@ import Observation
     let gone: @MainActor () async -> Void
     let signedOut: @MainActor () async -> Void
     private var detailReads = 0
+    /// The person's invitation page opened last, kept while it goes on (`invitation(for:)`).
+    private var keptInvitation: InvitationListModel?
     private var memberReads = 0
 
     public init(
@@ -194,20 +196,38 @@ import Observation
             signedOut: signedOut)
     }
 
+    /// Whether the person's invitation page opens here: for an active club, on a phone that
+    /// keeps the account's links (handoff 8's `activeInvitationManagement`). A club in setup keeps
+    /// its setup list (`G01-invite-people`, "remains a setup destination"), and a paused club's
+    /// waits for B2's paused states. The club's state is the details' once read.
+    public var opensInvitations: Bool {
+        guard links != nil else { return false }
+        if case .loaded(let detail) = details { return detail.club.state == .active }
+        return club.state == .active
+    }
+
     /// The person's invitation page (`G05-members-invite`) for a candidate, asked in the same
     /// session and for the same club as this model's reads: the setup list's model made for that
     /// one candidate, which shows them only while the caller proposed them (handoff 8: "Only
     /// candidate.proposed_by gets link-management controls"). Its not found reads the members
-    /// again, as the approval's does. Nil on a phone that doesn't keep the account's links.
+    /// again, as the approval's does. Opened again for the same person while it goes on, it's the
+    /// same model, its line cleared, so a link action's key survives Back (T19). Nil where the
+    /// page doesn't open (`opensInvitations`) and once the session has ended.
     public func invitation(
         for candidateID: String,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() }
     ) -> InvitationListModel? {
-        guard let links else { return nil }
-        return InvitationListModel(
+        guard opensInvitations, let links, current() else { return nil }
+        if let kept = keptInvitation, kept.candidateID == candidateID, !kept.ended, !kept.closed {
+            kept.reopened()
+            return kept
+        }
+        let model = InvitationListModel(
             club: club.ref, accountID: links.accountID, service: service, book: links.book,
             candidate: candidateID, makeKey: makeKey, current: current,
             gone: { [weak self] in await self?.loadMembers() }, signedOut: signedOut)
+        keptInvitation = model
+        return model
     }
 
     /// What a failed read leads to: the model closed and the list read again for a club no

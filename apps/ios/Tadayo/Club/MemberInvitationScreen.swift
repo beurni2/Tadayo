@@ -244,8 +244,11 @@ struct MemberInvitationScreen: View {
         }
     }
 
-    /// The row's action as the primary, and More options under it with the row's items.
+    /// The row's action as the primary, and More options under it with the row's other items:
+    /// none for a revoked link, whose only item is the primary's Create new link (handoff 8:
+    /// "revoked Link revoked/Create new link").
     @ViewBuilder private func controls(_ row: InvitationRow) -> some View {
+        let more = row.menu.filter { !($0 == .createNewLink && row.action == .createNewLink) }
         if let action = row.action {
             let words = InvitationRowView.actionWords(action)
             let button = Button {
@@ -268,9 +271,9 @@ struct MemberInvitationScreen: View {
                 button
             }
         }
-        if !row.menu.isEmpty {
+        if !more.isEmpty {
             Menu {
-                ForEach(row.menu, id: \.self) { item in
+                ForEach(more, id: \.self) { item in
                     switch item {
                     case .revokeLink:
                         Button(role: .destructive) {

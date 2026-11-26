@@ -43,7 +43,8 @@ struct MembersDestination: View {
     var body: some View {
         MembersScreen(
             members: asked ? model.members : .loading, retry: { await model.loadMembers() },
-            openApproval: openApproval, openInvitation: openInvitation
+            openApproval: openApproval,
+            openInvitation: model.opensInvitations ? openInvitation : nil
         )
         .task {
             guard !asked else { return }

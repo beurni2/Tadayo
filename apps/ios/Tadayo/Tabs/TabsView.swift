@@ -28,11 +28,13 @@ import TadayoDesign
 /// Members, with the model Club details' makes for the revision Members listed; a decision closes
 /// it back to Members, which reads again (`docs/plans/ios-b1-approve.md` section 2). Club details'
 /// Invite someone pushes the name step with the model Club details' makes; once its share sheet
-/// closes, the person's invitation page takes its place, as handoff 8's flow orders it, and the
-/// proposer's own proposed row in Members pushes the same page (7c). The page closes once its
-/// model says it has ended or the club is no longer the caller's; Back from it, and from the name
-/// step, reads again what's under it (Members, or Club details quietly, whose Invite someone a
-/// proposal may have taken away). Back returns to the tab as it was. The
+/// closes, the person's invitation page takes its place (handoff 8's flow puts the page before
+/// the sheet; the name step shares, as it does in the setup flow: a known difference in
+/// INVENTORY.md), and in an active club the proposer's own proposed row in Members pushes the
+/// same page (7c), the same model while it goes on (`ClubDetailsModel.invitation(for:)`). The
+/// page closes once its model says it has ended or the club is no longer the caller's; Back from
+/// it, and from the name step, reads again what's under it (Members, or Club details quietly,
+/// whose Invite someone a proposal may have taken away). Back returns to the tab as it was. The
 /// pushed screens close when the club they show stops being the selected one (another is chosen,
 /// or the list is read again) and as soon as a read says the club is no longer the caller's
 /// (`ClubDetailsModel.closed`), whenever the list's own read answers. The model stays after they
@@ -136,11 +138,9 @@ struct TabsView: View {
     @State private var approving: RosterApprovalModel?
     @State private var approvingFrom: ClubDetailsModel?
     /// Club details' Invite someone: the name step's latest model, and the person's invitation
-    /// page last opened, which stays drawn while it slides away, with the Club details model that
-    /// made it.
+    /// page last opened, which stays drawn while it slides away.
     @State private var memberNaming: InviteNameModel?
     @State private var memberInvitation: InvitationListModel?
-    @State private var memberInvitationFrom: ClubDetailsModel?
     /// The switcher's Club details was chosen: pushed once the sheet has closed.
     @State private var detailsChosen = false
     /// The switcher's Create a club was chosen: pushed once the sheet has closed.
@@ -509,12 +509,13 @@ struct TabsView: View {
         paths[tab, default: []].append(.inviteSomeone)
     }
 
-    /// Invite someone's share sheet closed: the person's invitation page in the name step's place
-    /// (handoff 8's flow: "Commit proposal → Per-person G05-members-invite → Native Share sheet").
-    private func inviteSomeoneFinished(on tab: ClubTab) {
-        guard paths[tab]?.last == .inviteSomeone else { return }
+    /// `model`'s share sheet closed: the person's invitation page in the name step's place. Only
+    /// for the name step on screen: one left by Back, whose link came after another name step
+    /// was opened, changes nothing (its person's page is in Members).
+    private func inviteSomeoneFinished(_ model: InviteNameModel, on tab: ClubTab) {
+        guard memberNaming === model, paths[tab]?.last == .inviteSomeone else { return }
         paths[tab]?.removeLast()
-        guard let id = memberNaming?.candidate?.id, openMemberInvitationModel(for: id) else {
+        guard let id = model.candidate?.id, openMemberInvitationModel(for: id) else {
             memberInvitationLeft(to: paths[tab]?.last)
             return
         }
@@ -530,18 +531,12 @@ struct TabsView: View {
         paths[tab, default: []].append(.memberInvitation)
     }
 
-    /// The person's invitation page's model: the one opened last for them from this Club
-    /// details, while it goes on, so an action's key survives Back and opening it again (T19), or
-    /// a new one. False when Club details can't make one.
+    /// The person's invitation page's model, from Club details': the one opened last for them,
+    /// while it goes on, so an action's key survives Back and opening it again (T19), or a new
+    /// one. False when Club details can't make one.
     private func openMemberInvitationModel(for candidateID: String) -> Bool {
-        guard let shownDetails else { return false }
-        if let kept = memberInvitation, memberInvitationFrom === shownDetails,
-            kept.candidateID == candidateID, !kept.ended, !kept.closed
-        {
-            return true
-        }
-        guard let model = shownDetails.invitation(for: candidateID) else { return false }
-        (memberInvitation, memberInvitationFrom) = (model, shownDetails)
+        guard let model = shownDetails?.invitation(for: candidateID) else { return false }
+        memberInvitation = model
         return true
     }
 
@@ -716,7 +711,9 @@ struct TabsView: View {
             }
         case .inviteSomeone:
             if let memberNaming {
-                InviteNameScreen(model: memberNaming) { inviteSomeoneFinished(on: tab) }
+                InviteNameScreen(model: memberNaming) {
+                    inviteSomeoneFinished(memberNaming, on: tab)
+                }
             }
         case .memberInvitation:
             if let memberInvitation {

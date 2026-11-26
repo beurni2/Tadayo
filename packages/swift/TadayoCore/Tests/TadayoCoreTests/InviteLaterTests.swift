@@ -224,6 +224,32 @@ import Testing
         #expect(clubs.calls.first == "propose Nina club_sunday v3 \(NumberedKeys.key(1))")
     }
 
+    @Test func aFailedProposalAfterTheFirstReadSendsTheSameProposalAgainWithNoReadAgain() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(active(version: 4))]
+        clubs.memberAnswers = [.success(Sunday.members(nil))]
+        clubs.proposeAnswers = [
+            .failure(.network),
+            .success(Sunday.revision([Sunday.candidate("cand_nina", "Nina", nil)])),
+        ]
+        clubs.linkAnswers = [
+            .success(Sunday.link("inv_nina", for: "cand_nina", url: Sunday.url(9)))
+        ]
+        let step = nameStep(clubs, known: nil)
+        step.name = "Nina"
+        #expect(await step.createLinkAndShare() == nil)
+        #expect(step.failure == .network)
+        // The retry is the same proposal, at the same version, with the same key (T19): the
+        // candidates read once are still known, so nothing is read again.
+        #expect(await step.createLinkAndShare() == Sunday.url(9))
+        #expect(
+            Array(clubs.calls.dropFirst(2)) == [
+                "propose Nina club_sunday v4 \(NumberedKeys.key(1))",
+                "propose Nina club_sunday v4 \(NumberedKeys.key(1))",
+                "createInvitation cand_nina club_sunday \(NumberedKeys.key(2))",
+            ])
+    }
+
     // MARK: Club details' Invite someone
 
     func details(_ clubs: ScriptedClubs, state: ClubState) -> ClubDetailsModel {
@@ -293,6 +319,85 @@ import Testing
         let made = model.invitation(for: "cand_nina")
         #expect(made?.candidateID == "cand_nina")
         #expect(made?.club == Sunday.ref)
-        #expect(ClubDetailsModel(club: Sunday.summary, service: clubs).invitation(for: "x") == nil)
+        let active = ClubSummary(
+            ref: Sunday.ref, state: .active, memberCount: 5, openDay: nil, nextDay: nil)
+        #expect(ClubDetailsModel(club: active, service: clubs).invitation(for: "x") == nil)
+        let ended = ClubDetailsModel(
+            club: active, service: clubs,
+            links: (InvitationLinkBook(vault: InMemoryInvitationLinkVault()), account),
+            current: { false })
+        #expect(ended.invitation(for: "cand_nina") == nil)
+    }
+
+    @Test func thePageOpensOnlyInAnActiveClub() async {
+        let clubs = ScriptedClubs()
+        #expect(details(clubs, state: .active).opensInvitations == true)
+        for state in [ClubState.proposed, .paused] {
+            let model = details(clubs, state: state)
+            #expect(model.opensInvitations == false, "\(state)")
+            #expect(model.invitation(for: "cand_nina") == nil, "\(state)")
+        }
+        // The details, once read, say the club's state.
+        let paused = ScriptedClubs()
+        paused.clubAnswers = [
+            .success(
+                ClubDetail(
+                    serverClock: Sunday.clock,
+                    club: ClubSummary(
+                        ref: Sunday.ref, state: .paused, memberCount: 1, openDay: nil,
+                        nextDay: nil),
+                    rosterVersion: 3, canPropose: true, openRevisionID: nil))
+        ]
+        let model = details(paused, state: .active)
+        await model.loadDetails()
+        #expect(model.opensInvitations == false)
+        #expect(model.invitation(for: "cand_nina") == nil)
+    }
+
+    @Test func thePageOpenedAgainForThePersonKeepsItsKeyAndDropsItsLine() async {
+        let clubs = ScriptedClubs()
+        let keys = NumberedKeys()
+        clubs.clubAnswers = [.success(active()), .success(active())]
+        clubs.memberAnswers = [
+            .success(Sunday.members([Sunday.candidate("cand_nina", "Nina", .revoked)])),
+            .success(Sunday.members([Sunday.candidate("cand_nina", "Nina", .revoked)])),
+        ]
+        clubs.linkAnswers = [
+            .failure(.network),
+            .success(Sunday.link("inv_nina_2", for: "cand_nina", url: Sunday.url(7))),
+        ]
+        let model = details(clubs, state: .active)
+        let page = model.invitation(for: "cand_nina", makeKey: { keys.make() })
+        await page?.load()
+        await page?.createNewLink(for: "cand_nina")
+        #expect(page?.actionFailure == .createNewLink(name: "Nina", network: true))
+        // Back, then Nina's row again: the same page, its line gone (handoff 9's `lifetime`).
+        let again = model.invitation(for: "cand_nina")
+        #expect(again === page)
+        #expect(again?.actionFailure == nil)
+        // Its retry is the same action: the same key (T19).
+        await again?.createNewLink(for: "cand_nina")
+        #expect(
+            clubs.calls.filter { $0.hasPrefix("createInvitation") } == [
+                "createInvitation cand_nina club_sunday \(NumberedKeys.key(1))",
+                "createInvitation cand_nina club_sunday \(NumberedKeys.key(1))",
+            ])
+    }
+
+    @Test func anotherPersonsPageOrOneThatEndedIsANewPage() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [.success(active())]
+        clubs.memberAnswers = [.success(Sunday.members(nil))]
+        let model = details(clubs, state: .active)
+        let nina = model.invitation(for: "cand_nina")
+        let leila = model.invitation(for: "cand_leila")
+        #expect(leila !== nina)
+        #expect(model.invitation(for: "cand_leila") === leila)
+        // Leila is no longer an open candidate: her page has ended, and the next is new.
+        await leila?.load()
+        #expect(leila?.ended == true)
+        let next = model.invitation(for: "cand_leila")
+        #expect(next != nil)
+        #expect(next !== leila)
     }
 }

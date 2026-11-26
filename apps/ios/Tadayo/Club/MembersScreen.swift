@@ -32,10 +32,11 @@ import TadayoDesign
 /// frame 5, `handoff10.members.proposed.hint`); for one who has decided it opens nothing and shows
 /// no chevron, keeping its room so the words wrap the same, and nothing tells one decision from
 /// another (FQ143, frame 6). For the candidate's proposer, once decided by proposing (FQ60), it
-/// opens the person's invitation page (`openInvitation`, `G05-members-invite`; handoff 8's
-/// `returnPath`: "Club details → Members → own proposed candidate → G05-members-invite"), a button
-/// with the same chevron and no hint, since no delivery words one. VoiceOver reads "Leila.
-/// Proposed by Ben. Proposed." on every proposed row. Nothing
+/// opens the person's invitation page in an active club (`openInvitation`, nil elsewhere;
+/// `G05-members-invite`; handoff 8's `returnPath`: "Club details → Members → own proposed
+/// candidate → G05-members-invite"), a button with the same chevron and no hint, since no
+/// delivery words one; elsewhere it opens nothing, as a decided row does. VoiceOver reads
+/// "Leila. Proposed by Ben. Proposed." on every proposed row. Nothing
 /// counts approvals or activity (T15, T33, T55). While the list loads, the loading form; after it
 /// fails, frame 11's form with the members' words (`handoff8.loadStates.members`).
 struct MembersScreen: View {
@@ -43,7 +44,8 @@ struct MembersScreen: View {
     let retry: @MainActor () async -> Void
     var openApproval: (RosterRevision) -> Void = { _ in }
     /// The person's invitation page, for the proposer's own candidate.
-    var openInvitation: (String) -> Void = { _ in }
+    /// The person's invitation page, for the proposer's own row: nil where it doesn't open.
+    var openInvitation: ((String) -> Void)?
 
     var body: some View {
         content
@@ -108,7 +110,7 @@ struct MembersScreen: View {
         -> some View
     {
         let approves = proposed.opens == .approval && roster.openRevision != nil
-        let invites = proposed.opens == .invitation
+        let invites = proposed.opens == .invitation && openInvitation != nil
         let row = RosterRow(
             name: proposed.candidate.name, isViewer: false, days: nil,
             proposal: .by(proposed.candidate.proposedBy.displayName),
@@ -124,7 +126,7 @@ struct MembersScreen: View {
                 Text(verbatim: ApproveWords.words("members.proposed.hint", roster.club.name)))
         } else if invites {
             Button {
-                openInvitation(proposed.candidate.id)
+                openInvitation?(proposed.candidate.id)
             } label: {
                 row.contentShape(Rectangle())
             }
