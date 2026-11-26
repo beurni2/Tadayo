@@ -1,10 +1,13 @@
 /// <reference lib="esnext.temporal" />
 import { describe, expect, it } from "vitest";
 import { REVEAL_TIME, resolveCivilTime } from "../time/civil.ts";
+import type { ServerNow } from "../time/clock.ts";
 import { firstDate } from "./first-date.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 
-const at = (text: string) => Temporal.Instant.from(text);
+/** A confirmation's time, as the clock samples it. */
+const sample = (instant: Temporal.Instant) => instant as ServerNow;
+const at = (text: string) => sample(Temporal.Instant.from(text));
 const first = (weekday: Weekday, confirmedAt: string, zone: string) =>
   firstDate(weekday, at(confirmedAt), zone).toString();
 const DAY_NS = 24n * 3_600_000_000_000n;
@@ -46,8 +49,8 @@ describe("a confirmed day's first date (FQ79)", () => {
     const CAIRO = "Africa/Cairo";
     // Egypt's clocks go forward at 00:00 on the last Friday of April and back at 24:00 on the last
     // Thursday of October, so a Friday's 7 AM is 23 or 25 hours after Thursday's.
-    const thursdaySpring = resolveCivilTime(Temporal.PlainDate.from("2026-04-23"), REVEAL_TIME, CAIRO);
-    const thursdayAutumn = resolveCivilTime(Temporal.PlainDate.from("2026-10-29"), REVEAL_TIME, CAIRO);
+    const thursdaySpring = sample(resolveCivilTime(Temporal.PlainDate.from("2026-04-23"), REVEAL_TIME, CAIRO));
+    const thursdayAutumn = sample(resolveCivilTime(Temporal.PlainDate.from("2026-10-29"), REVEAL_TIME, CAIRO));
 
     it("has a 23-hour day in spring and a 25-hour day in autumn, as this test assumes", () => {
       expect(until7(thursdaySpring, Temporal.PlainDate.from("2026-04-24"), CAIRO)).toBe(23n * 3_600_000_000_000n);
@@ -60,8 +63,10 @@ describe("a confirmed day's first date (FQ79)", () => {
 
     it("opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8 AM to 7 AM exactly 24", () => {
       expect(firstDate("friday", thursdayAutumn, CAIRO).toString()).toBe("2026-10-30");
-      expect(firstDate("friday", thursdayAutumn.add({ hours: 1 }), CAIRO).toString()).toBe("2026-10-30");
-      expect(firstDate("friday", thursdayAutumn.add({ hours: 1, seconds: 1 }), CAIRO).toString()).toBe("2026-11-06");
+      expect(firstDate("friday", sample(thursdayAutumn.add({ hours: 1 })), CAIRO).toString()).toBe("2026-10-30");
+      expect(firstDate("friday", sample(thursdayAutumn.add({ hours: 1, seconds: 1 })), CAIRO).toString()).toBe(
+        "2026-11-06",
+      );
     });
   });
 
@@ -79,7 +84,7 @@ describe("a confirmed day's first date (FQ79)", () => {
     for (const zone of zones) {
       for (const start of starts) {
         for (let hour = 0; hour < 14 * 24; hour += 1) {
-          const confirmed = start.add({ hours: hour });
+          const confirmed = sample(start.add({ hours: hour }));
           for (const weekday of WEEKDAYS) {
             const date = firstDate(weekday, confirmed, zone);
             expect(date.dayOfWeek).toBe(WEEKDAYS.indexOf(weekday) + 1);

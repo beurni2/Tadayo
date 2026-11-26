@@ -6,7 +6,7 @@
 // first days on Thursday 5 November 2026, and with their week in force on Friday the 6th.
 
 import { Members } from "@tadayo/contracts";
-import { listMembers, makeDays, WEEKDAYS, type Roster } from "@tadayo/domain";
+import { listMembers, makeDays, WEEKDAYS, type Roster, type ServerNow } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import { membersBody } from "@tadayo/api";
 import { afterAll, describe, expect, it } from "vitest";
@@ -21,6 +21,8 @@ afterAll(async () => {
 
 const plain = (tx: WorldTx) => tx as unknown as Tx;
 const at = (text: string) => Temporal.Instant.from(text);
+/** The time an answer is made at, as the clock samples it. */
+const sample = (text: string) => at(text) as ServerNow;
 
 /** Monday 2 November 2026, 9 AM in New York; Wednesday the 4th, 9 AM (the contract's first-days fixture, FQ79). */
 const TIMES = { opened: "2026-11-02T14:00:00Z", confirmed: "2026-11-04T14:00:00Z" };
@@ -85,7 +87,7 @@ describe("the roster in a club's first days (the contract's first_days scene; FQ
       ]);
       // The route's body of this scene is the contract's `Members` too.
       if (found === null) throw new Error("refused");
-      expect(Members.safeParse(membersBody(at(THURSDAY), found)).success).toBe(true);
+      expect(Members.safeParse(membersBody(sample(THURSDAY), found)).success).toBe(true);
     });
   });
 
@@ -135,7 +137,7 @@ describe("the roster once the week is in force (the contract's sunday_people sce
       ]);
       // The route's body of it is the contract's `Members`.
       if (found === null) throw new Error("refused");
-      const body = membersBody(at(FRIDAY), found);
+      const body = membersBody(sample(FRIDAY), found);
       expect(Members.safeParse(body).success).toBe(true);
     });
   });

@@ -10,7 +10,7 @@
 // read in the roster's own statement. `cover` (FQ41), optional in the contract, isn't sent yet: nothing
 // stores it.
 
-import { contractInstant, listMembers, type Json, type Roster } from "@tadayo/domain";
+import { contractInstant, listMembers, type Json, type Roster, type ServerNow } from "@tadayo/domain";
 import { ok, problem } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
@@ -18,7 +18,7 @@ import { occurrenceBody } from "../bodies.ts";
 import { rosterRevisionBody } from "./roster.ts";
 
 /** The contract's `Members`: `now` is the clock's sample, whole seconds, rounded down. */
-export function membersBody(now: Temporal.Instant, roster: Roster): Json {
+export function membersBody(now: ServerNow, roster: Roster): Json {
   return {
     server_now: contractInstant(now),
     club: {

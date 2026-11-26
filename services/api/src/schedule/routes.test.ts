@@ -23,6 +23,7 @@ import {
   type ProposalMember,
   type SchedulePerson,
   type ScheduleSight,
+  type ServerNow,
   type SlotAnswer,
   type WeekFacts,
   type Weekday,
@@ -33,6 +34,9 @@ import { bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { personBody, proposalBody, scheduleBody, slotBody } from "./routes.ts";
 import { noStorage } from "../testing.ts";
+
+/** The time an answer is made at, as the clock samples it. */
+const sample = (text: string) => Temporal.Instant.from(text) as ServerNow;
 
 type Body = Record<string, unknown>;
 
@@ -112,7 +116,7 @@ describe("the serializers against the contract's examples (T55)", () => {
       "first_days_confirmed",
     ]);
     for (const [name, value] of scenes) {
-      const now = Temporal.Instant.from(value["server_now"] as string);
+      const now = sample(value["server_now"] as string);
       const body = scheduleBody(now, sight(value));
       expect(body, name).toEqual(value);
       expect(Schedule.strict().safeParse(body).success, name).toBe(true);
@@ -140,7 +144,7 @@ describe("the serializers against the contract's examples (T55)", () => {
     const read = pickOf("getSchedule");
     expect(read.map(([name]) => name)).toEqual(["new_member"]);
     for (const [name, value] of read) {
-      const body = scheduleBody(Temporal.Instant.from(value["server_now"] as string), sight(value));
+      const body = scheduleBody(sample(value["server_now"] as string), sight(value));
       expect(body, name).toEqual(value);
       expect(Schedule.strict().safeParse(body).success, name).toBe(true);
     }
@@ -274,7 +278,7 @@ describe("the serializers against the contract's examples (T55)", () => {
   });
 
   it("gives the server's instant in whole seconds, rounded down", () => {
-    const body = scheduleBody(Temporal.Instant.from("2026-11-03T09:41:07.999999Z"), {
+    const body = scheduleBody(sample("2026-11-03T09:41:07.999999Z"), {
       club: { id: "club_1", name: "Sunday people", timezone: "America/New_York", membershipId: "mem_ben" },
       current: null,
       proposal: null,

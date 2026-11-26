@@ -15,7 +15,8 @@ import { occurrenceBody } from "../bodies.ts";
 import { clubListBody } from "./list.ts";
 import { noStorage } from "../testing.ts";
 
-const now = Temporal.Instant.from("2026-11-07T07:00:00.987654Z");
+/** The time the lists are read at, as the clock samples it. */
+const now = Temporal.Instant.from("2026-11-07T07:00:00.987654Z") as ServerNow;
 
 const saturday: ChosenDay = {
   id: "occ_sat",
@@ -193,7 +194,7 @@ describe("GET /v1/clubs: one sample of the clock for the instant and the days (T
       clock: {
         sample: (t) => {
           sampled.push(t);
-          return Promise.resolve(now as ServerNow);
+          return Promise.resolve(now);
         },
       },
       authenticate: () => Promise.resolve(caller),

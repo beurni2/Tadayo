@@ -5,14 +5,14 @@
 // there is none, and carry the day's Occurrence and nothing else of it: no drop, no count, nothing about
 // who has added (T15, T33).
 
-import { contractInstant, listClubs, type ClubListing, type Json } from "@tadayo/domain";
+import { contractInstant, listClubs, type ClubListing, type Json, type ServerNow } from "@tadayo/domain";
 import { ok } from "../answers.ts";
 import { occurrenceBody } from "../bodies.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 
 /** The contract's `ClubList`: `now` is the clock's sample, whole seconds, rounded down. */
-export function clubListBody(now: Temporal.Instant, listing: ClubListing): Json {
+export function clubListBody(now: ServerNow, listing: ClubListing): Json {
   return {
     server_now: contractInstant(now),
     clubs: listing.clubs.map((club) => ({

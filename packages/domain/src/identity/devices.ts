@@ -55,7 +55,7 @@ import { createHash } from "node:crypto";
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { Refused } from "../refused.ts";
 import { clubTimeZone } from "../time/civil.ts";
-import type { Clock, ClockSql } from "../time/clock.ts";
+import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 
 /**
  * How long an ended sign-in is kept: longer than the longest life Supabase gives an access token (one week),
@@ -127,7 +127,7 @@ const tokenLock = (token: string) => `tadayo.device.token:${token}`;
 const signInLock = (signIn: string) => `tadayo.device.sign-in:${signIn}`;
 
 /** Deletes ended sign-ins older than `ENDED_KEEP` at `now`, skipping any row another transaction holds. */
-async function purgeEnded(tx: QuerySql, now: Temporal.Instant): Promise<void> {
+async function purgeEnded(tx: QuerySql, now: ServerNow): Promise<void> {
   const cut = now.subtract(ENDED_KEEP);
   await bound(tx)`
     DELETE FROM app.device_sign_ins_ended
@@ -144,7 +144,7 @@ async function purgeEnded(tx: QuerySql, now: Temporal.Instant): Promise<void> {
  * but not committed), and two removals whose purges each took the other's row would deadlock. Such a row is
  * past `ENDED_KEEP`, so no token of its sign-in lives to register it once it is gone.
  */
-async function endSignIn(tx: QuerySql, signIn: string, now: Temporal.Instant): Promise<void> {
+async function endSignIn(tx: QuerySql, signIn: string, now: ServerNow): Promise<void> {
   await bound(tx)`
     INSERT INTO app.device_sign_ins_ended (sign_in, ended_at)
     SELECT pg_catalog.decode(${signIn}, 'hex'), ${now}::pg_catalog.timestamptz

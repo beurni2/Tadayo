@@ -59,7 +59,7 @@ import { newId } from "../ids.ts";
 import { completeReceipt, reserveAsMember, reserveReceipt, type ReceiptKey } from "../idempotency/receipt.ts";
 import type { Json } from "../idempotency/request.ts";
 import { Refused } from "../refused.ts";
-import type { Clock, ClockSql } from "../time/clock.ts";
+import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import { freeSlot, settleLapsed, type CounterKey } from "../drops/counter.ts";
 import { settleChange } from "../schedule/settle-change.ts";
 import { settleFirstDays } from "../schedule/settle.ts";
@@ -128,7 +128,7 @@ async function settleContributions(
   tx: QuerySql,
   club: string,
   interval: string,
-  at: Temporal.Instant,
+  at: ServerNow,
   contributions: Contributions,
 ): Promise<void> {
   // A drop and a reservation each name their counter, so the counters find everything there is to settle. They
