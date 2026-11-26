@@ -6,7 +6,8 @@ The steps run against a fake Http that answers from a script and records every r
 sleep that counts, and a fake process runner, so nothing here needs the network, GitHub,
 Cloudflare or Fly. WorkflowFileTest reads deploy-dev.yml whole with ops_steps_test's strict reader
 and holds every key and value to the ones built here, so each secret is named only in the steps
-that use it. The committed lockfile is checked by the same function setup-wrangler runs.
+that use it. CiFitsTheWaitTest reads ci.yml's jobs (ci_jobs) and holds their limits
+within wait-ci's looks. The committed lockfile is checked by the same function setup-wrangler runs.
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
@@ -193,33 +194,67 @@ class WaitCiTest(unittest.TestCase):
                 self.assertEqual(http.requests, [])
 
 
-def ci_job_limits(lines):
-    """Each job's `timeout-minutes` under ci.yml's `jobs:`, the job's own key at the job's
-    indentation, not a step's. A job without one fails: GitHub would give it 360 minutes."""
+def ci_jobs(lines):
+    """Each job under ci.yml's `jobs:` with its own keys, the lines at the job's indentation (four
+    spaces), each with its text after the colon. Any other line at two spaces or four or fewer
+    fails, as does a job or a job's key written twice, so no job and none of a job's keys goes
+    unread: a job key written another way (`  "swift":`) or a key out of place can't hide one."""
     if "jobs:" not in lines:
         raise AssertionError("ci.yml has no top-level `jobs:`")
-    limits, current = {}, None
-    for line in lines[lines.index("jobs:") + 1:]:
-        if line and not line.startswith(" ") and not line.startswith("#"):
+    first = lines.index("jobs:") + 1
+    jobs, current = {}, None
+    for number, line in enumerate(lines[first:], first + 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if not line.startswith(" "):
             break  # the next top-level key
+        indent = len(line) - len(line.lstrip(" "))
         job = re.match(r"^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$", line)
-        limit = re.match(r"^    timeout-minutes: (\d+)\s*(?:#.*)?$", line)
+        key = re.match(r"^    ([A-Za-z0-9_-]+):(.*)$", line)
         if job:
             current = job.group(1)
-            limits[current] = None
-        elif current and limit:
-            limits[current] = int(limit.group(1))
-    unlimited = sorted(name for name, minutes in limits.items() if minutes is None)
-    if unlimited:
-        raise AssertionError(f"ci.yml's job(s) {', '.join(unlimited)} have no timeout-minutes")
+            if current in jobs:
+                raise AssertionError(f"line {number}: the job {current} is written twice")
+            jobs[current] = {}
+        elif key and current is not None:
+            name = key.group(1)
+            if name in jobs[current]:
+                raise AssertionError(f"line {number}: {current}'s {name} is written twice")
+            jobs[current][name] = key.group(2).split(" #")[0].strip()
+        elif indent <= 4:
+            raise AssertionError(f"line {number}: can't read {line.strip()!r} as a job or a job's key")
+    return jobs
+
+
+def ci_job_limits(lines):
+    """Each job's `timeout-minutes`, in whole minutes. A job without one fails, since GitHub would
+    give it 360 minutes, and so does anything that would make the jobs other than `ci` run one after
+    another, where the bound takes them as side by side: a `needs:` on any job but `ci`, or a
+    `strategy:` (a matrix may run its jobs in turn)."""
+    problems, limits = [], {}
+    for name, keys in ci_jobs(lines).items():
+        minutes = keys.get("timeout-minutes")
+        if minutes is None or not re.fullmatch(r"[0-9]+", minutes):
+            problems.append(f"{name} has no timeout-minutes in whole minutes")
+        else:
+            limits[name] = int(minutes)
+        if "needs" in keys and name != "ci":
+            problems.append(f"{name} needs another job")
+        if "strategy" in keys:
+            problems.append(f"{name} has a strategy")
+    if problems:
+        raise AssertionError("ci.yml: " + "; ".join(problems))
     return limits
 
 
 class CiFitsTheWaitTest(unittest.TestCase):
     """wait-ci's last look comes (CI_POLLS - 1) * CI_POLL_SECONDS after its first, so a main ci run
     that passes later than that finds deploy-dev gone, and nothing deploys. A passing run takes at
-    most its longest job's limit and then the `ci` job's, which runs after every other job; queueing
-    for a runner comes on top, which no limit bounds (docs/LIMITATIONS.md, the row of 2026-11-26)."""
+    most its longest job's limit and then the `ci` job's, which runs after every other job, the
+    others side by side (ci_job_limits refuses what would run them in turn). Queueing for a runner
+    and the hand-offs between jobs come on top, which no limit bounds: at 34 and 5 minutes they
+    have 40 seconds, and in practice about 5 minutes, the `ci` job taking about 15 seconds of its
+    5 (docs/LIMITATIONS.md, the row of 2026-11-26)."""
 
     def ci_yml_lines(self):
         with open(os.path.join(ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8") as f:
@@ -235,15 +270,44 @@ class CiFitsTheWaitTest(unittest.TestCase):
                              f"({limits['ci']}) outlast wait-ci's {wait} seconds")
 
     def test_the_reader_takes_each_job_s_own_limit_and_refuses_a_job_without_one(self):
-        lines = ["jobs:", "  node:", "    timeout-minutes: 15", "    steps:", "      - run: x",
-                 "        timeout-minutes: 99", "  ci:  # the verdict", "    timeout-minutes: 5",
-                 "on:", "  x:", "    timeout-minutes: 7"]
+        lines = ["jobs:", "  node:", "    timeout-minutes: 15", "    # a comment", "    steps:",
+                 "      - run: x", "        timeout-minutes: 99", "", "  ci:  # the verdict",
+                 "    needs: [node]", "    timeout-minutes: 5  # minutes", "on:", "  x:",
+                 "    timeout-minutes: 7"]
         self.assertEqual(ci_job_limits(lines), {"node": 15, "ci": 5})
-        with self.assertRaisesRegex(AssertionError, "swift have no timeout-minutes"):
-            ci_job_limits(["jobs:", "  node:", "    timeout-minutes: 15", "  swift:", "    steps:",
-                           "      - timeout-minutes: 30"])
-        with self.assertRaisesRegex(AssertionError, "no top-level `jobs:`"):
-            ci_job_limits(["on:", "  push:"])
+        for lines, message in [
+                (["jobs:", "  node:", "    timeout-minutes: 15", "  swift:", "    steps:",
+                  "      - timeout-minutes: 30"], "swift has no timeout-minutes"),
+                (["jobs:", "  swift:", "    timeout-minutes: ${{ 30 }}"], "swift has no timeout-minutes"),
+                (["on:", "  push:"], "no top-level `jobs:`")]:
+            with self.subTest(lines=lines), self.assertRaisesRegex(AssertionError, message):
+                ci_job_limits(lines)
+
+    def test_the_reader_refuses_jobs_that_could_run_in_turn(self):
+        # The bound takes every job but `ci` as side by side: one that needs another, or a matrix,
+        # could run after it and take both limits.
+        for lines, message in [
+                (["jobs:", "  node:", "    timeout-minutes: 15", "  postgres:", "    needs: node",
+                  "    timeout-minutes: 34"], "postgres needs another job"),
+                (["jobs:", "  swift:", "    timeout-minutes: 30", "    strategy:",
+                  "      max-parallel: 1"], "swift has a strategy")]:
+            with self.subTest(lines=lines), self.assertRaisesRegex(AssertionError, message):
+                ci_job_limits(lines)
+
+    def test_the_reader_refuses_a_line_it_can_t_place(self):
+        # A job key YAML writes another way, or a key out of place, would otherwise drop a job or
+        # give its limit to the job above it.
+        for lines, message in [
+                (["jobs:", "  postgres:", "    timeout-minutes: 30", '  "swift":',
+                  "    timeout-minutes: 40"], "can't read '\"swift\":'"),
+                (["jobs:", "  node:", "   timeout-minutes: 15"], "can't read 'timeout-minutes: 15'"),
+                (["jobs:", "    timeout-minutes: 15", "  node:"], "can't read"),
+                (["jobs:", "  node:", "    timeout-minutes: 15", "    timeout-minutes: 99"],
+                 "node's timeout-minutes is written twice"),
+                (["jobs:", "  node:", "    timeout-minutes: 15", "  node:", "    timeout-minutes: 9"],
+                 "the job node is written twice")]:
+            with self.subTest(lines=lines), self.assertRaisesRegex(AssertionError, message):
+                ci_jobs(lines)
 
 
 GOOD_API = answer(401, b'{"code":"UNAUTHENTICATED"}', {
