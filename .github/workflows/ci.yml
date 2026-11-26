@@ -48,7 +48,11 @@ jobs:
   postgres:
     name: postgres
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # The privacy step takes 13 to 14 minutes and was cut off at 20 on slower runners
+    # (docs/LIMITATIONS.md, 2026-11-26). deploy-dev looks for ci's result on main for
+    # 39 min 40 s (tools/ci/deploy_dev_steps.py, CI_POLLS); this limit and the ci job's
+    # fit in that, which tools/ci/deploy_dev_steps_test.py checks.
+    timeout-minutes: 34
     permissions:
       contents: read
     services:
