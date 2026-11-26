@@ -1,0 +1,87 @@
+--- 07:12:01 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-26-071201.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-26 07:12:01.00 +0000
+pid: 76072
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.6606832E-791C-4046-BC10-E4FDB19BF817
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 76072, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 07:13:29 UTC, /Library/Logs/DiagnosticReports/JetsamEvent-2026-11-26-071328.ips
+bug_type: 298
+timestamp: 2026-11-26 07:13:28.00 +0000
+largestProcess: SimMetalHost (iPhone 17: default
+killed: XProtectBridgeService, pid 1006 (idle-exit)
+killed: visualintelligenced, pid 1068 (idle-exit)
+killed: mediaanalysisd, pid 604 (idle-exit)
+killed: fudHelperAgent, pid 1585 (idle-exit)
+killed: assistant_cdmd, pid 471 (idle-exit)
+killed: com.apple.StreamingUnzipService., pid 586 (idle-exit)
+killed: com.apple.hiservices-xpcservice, pid 3273 (idle-exit)
+killed: STExtractionService.privileged, pid 2090 (idle-exit)
+killed: com.apple.MobileAsset.DownloadSe, pid 274 (idle-exit)
+killed: installcoordinationd, pid 713 (idle-exit)
+killed: IMDPersistenceAgent, pid 513 (idle-exit)
+killed: frauddefensed, pid 544 (idle-exit)
+killed: SecuritySubscriber, pid 3809 (idle-exit)
+killed: InteractiveLegacyProfilesSubscri, pid 3814 (idle-exit)
+killed: ScreenSharingSubscriber, pid 3816 (idle-exit)
+killed: LegacyProfilesSubscriber, pid 3817 (idle-exit)
+killed: PasscodeSettingsSubscriber, pid 3818 (idle-exit)
+killed: DiskManagementSubscriber, pid 3822 (idle-exit)
+killed: ManagedPreferencesSubscriber, pid 3823 (idle-exit)
+killed: SoftwareUpdateSubscriber, pid 3824 (idle-exit)
+killed: MigrationSubscriber, pid 3825 (idle-exit)
+killed: deviceconfigurationd, pid 344 (idle-exit)
+killed: DeviceConfigurationSubscriber, pid 3831 (idle-exit)
+killed: ManagedAppsSubscriber, pid 3832 (idle-exit)
+killed: NetworkExtensionSubscriber, pid 3833 (idle-exit)
+killed: ManagementTestSubscriber, pid 3834 (idle-exit)
+killed: ManagedConfigurationFilesSubscri, pid 3835 (idle-exit)
+killed: AssetCacheManagerService, pid 3837 (idle-exit)
+killed: AssetCacheSubscriber, pid 3836 (idle-exit)
+killed: AppSSODaemon, pid 512 (idle-exit)
+--- 07:16:53 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-26-071415_sjc20-bb712-7476bc6b-a4a0-49ac-ba55-0a85b7f97046-C23E6F3EE430.diag
+Date/Time:        2026-11-26 07:10:01.721 +0000
+End time:         2026-11-26 07:11:21.499 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 0D7C4F8D-F9CC-4903-A42A-290E54BBC4E8
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18553c000
+
+Command:          STExtractionService
+Path:             /Volumes/VOLUME/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.6606832E-791C-4046-BC10-E4FDB19BF817"(2836)
+On Behalf Of:     82 samples UNKNOWN [75168] (81 samples originated by UNKNOWN [75108, 75234, 75241], 1 sample originated by trustd [75208])
+Architecture:     arm64
+Parent:           UNKNOWN [74863]
+PID:              76002
+
+--- 07:19:52 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-26-071654_sjc20-bb712-7476bc6b-a4a0-49ac-ba55-0a85b7f97046-C23E6F3EE430.diag
+Date/Time:        2026-11-26 06:36:02.307 +0000
+End time:         2026-11-26 07:11:52.139 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 6E02E5C8-0C6D-481B-B61C-98BA4FB87A37
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18553c000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18dcc8000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(778)
+On Behalf Of:     155 samples UNKNOWN [2225, 7658, 31534, 31566, 33641, 34456, 76290] (155 samples originated by UNKNOWN [211, 31534, 31566, 33641, 34456, 76290])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              652
