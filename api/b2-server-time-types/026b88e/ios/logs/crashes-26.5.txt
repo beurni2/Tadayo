@@ -1,0 +1,32 @@
+--- 12:05:52 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-26-120552.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-26 12:05:52.00 +0000
+pid: 91868
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.D3EB7239-9305-461C-AC36-9CBADFD2DFB9
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 91868, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 12:15:11 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-26-120937_sat12-bq160-d1a22378-2f95-481d-a65a-0c63cd2549f3-768818E48FAA.diag
+Date/Time:        2026-11-26 11:21:05.180 +0000
+End time:         2026-11-26 12:05:34.268 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 05371F91-6A17-40E6-A334-232C45C85B45
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x187c20000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x198ca4000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(820)
+On Behalf Of:     165 samples UNKNOWN [2573, 27120, 33496, 35214, 90293, 90296, 90297, 91885] (165 samples originated by UNKNOWN [242, 27120, 33496, 35214, 90293, 90296, 90297, 91885])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              673
