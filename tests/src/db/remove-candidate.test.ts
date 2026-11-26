@@ -4,10 +4,12 @@
 // docs/plans/api-b2-unpropose.md, sections 0 to 3; packages/domain/src/clubs/remove-candidate.ts): the place it
 // frees, the revision it ends or replaces, the links it stops, and who may do it.
 //
-// These tests were written before the code they test. The first describe holds the audit's finding as it stands on
-// `main`: revoking and the proposer's own decline free nothing, and still don't once removing exists. The last describe
-// holds a removal to the club's row against the commands it can meet there: an acceptance that joins, the approval that
-// applies the roster, and the proposer's leave, each way round.
+// The first two describes were written before the code they test. The first holds the audit's finding as it stands on
+// `main`: revoking and the proposer's own decline free nothing, and still don't once removing exists. The third, written
+// with the code, holds a removal to the club's row against the commands it can meet there: an acceptance that joins,
+// the approval that applies the roster, and the proposer's leave, each way round. The last two came from the PR's
+// review: who the club and the account let remove, a name's revision carried, and what an account that accepted is
+// told whatever ended the roster.
 
 import { randomUUID } from "node:crypto";
 import { invitationAcceptanceBody, leftClubBody, rosterRevisionBody } from "@tadayo/api";
@@ -29,9 +31,10 @@ import {
   refusal,
   revoke,
   rosterVersion,
+  webPreview,
 } from "./roster-world.ts";
 import { clubOf, holding, waitingOn, type WeekClub } from "./week-world.ts";
-import { leave, newUser } from "./world.ts";
+import { joinByRoster, leave, newUser } from "./world.ts";
 
 const db = worldSql(8);
 afterAll(async () => {
@@ -150,11 +153,14 @@ describe("removing someone invited who hasn't joined (FQ148; the outside audit's
 
   it("asks the other members again, the remover too when someone else proposed the revision", async () => {
     await rolledBack(db, async (tx) => {
-      const w = await clubOf(tx, 2);
+      const w = await clubOf(tx, 3);
       const first = await propose(tx, clock, user(w, 0), w.club, ["Nina"]);
       const nina = first.candidates[0]?.id ?? "";
-      // Maya's proposal carries Nina, Ben's, and is Maya's alone to have approved (FQ60).
+      // Maya's proposal carries Nina, Ben's, and is Maya's alone to have approved (FQ60). Alex approves it too, so the
+      // carried revision shows whether an approval given by hand is carried: it mustn't be.
       const second = await propose(tx, clock, user(w, 1), w.club, ["Zed"]);
+      await approve(tx, clock, user(w, 2), second.id, second.version);
+      expect((await read(tx, user(w, 2), second.id, NOW))?.my_decision).toBe("approved");
       await remove(tx, user(w, 0), nina);
       const next = (await revisionState(tx, second.id))?.superseded_by_id ?? "";
       expect(await read(tx, user(w, 1), next, NOW)).toMatchObject({
@@ -163,6 +169,11 @@ describe("removing someone invited who hasn't joined (FQ148; the outside audit's
         my_decision: "approved",
       });
       expect((await read(tx, user(w, 0), next, NOW))?.my_decision).toBe("pending");
+      expect((await read(tx, user(w, 2), next, NOW))?.my_decision).toBe("pending");
+      const [approvals] = await tx<{ explicit: number }[]>`
+        SELECT pg_catalog.count(*)::pg_catalog.int4 AS explicit FROM app.roster_approvals
+         WHERE revision_id = ${next} AND NOT implicit`;
+      expect(approvals?.explicit).toBe(0);
     });
   });
 
@@ -174,11 +185,13 @@ describe("removing someone invited who hasn't joined (FQ148; the outside audit's
       const ninaLink = await linkFor(tx, clock, ben.user, ben.club, nina ?? "");
       const mayaLink = await linkFor(tx, clock, ben.user, ben.club, maya ?? "");
       const mayaUser = await accept(tx, open.id, maya ?? "", mayaLink.id, LATER, "Maya");
+      expect(await webPreview(tx, ninaLink.token, NOW)).toEqual({ inviter_name: "Ben" });
       await remove(tx, ben.user, nina ?? "");
       await remove(tx, ben.user, maya ?? "");
       const stranger = await newUser(plain(tx), "Nina");
-      // As a revoked link answers (FQ59): the neutral not-found, for any account.
+      // As a revoked link answers (FQ59): the neutral not-found, for any account, and on the web page too.
       expect(await preview(tx, stranger, ninaLink.token, NOW)).toBeNull();
+      expect(await webPreview(tx, ninaLink.token, NOW)).toBeNull();
       expect(await preview(tx, mayaUser, mayaLink.token, NOW)).toEqual({
         state: "did_not_go_ahead",
         inviter_name: "Ben",
@@ -394,4 +407,129 @@ describe("a removal behind the club's row (T1, T7; FQ121)", () => {
       }
     },
   );
+});
+
+describe("who the club and the account let remove, and a name's revision carried (T14, T27; FQ80, FQ84)", () => {
+  it("names nothing to a suspended club's proposer, and moves nothing", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 2);
+      const open = await propose(tx, clock, user(w, 0), w.club, ["Nina"]);
+      const nina = open.candidates[0]?.id ?? "";
+      await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id = ${w.club}`;
+      const before = await rosterVersion(tx, w.club);
+      expect((await refusal(remove(tx, user(w, 0), nina))).code).toBe("NOT_FOUND");
+      expect(await candidateState(tx, nina)).toBe("open");
+      expect((await revisionState(tx, open.id))?.state).toBe("open");
+      expect(await rosterVersion(tx, w.club)).toBe(before);
+    });
+  });
+
+  it("names nothing to a proposer whose account's deletion has begun, and moves nothing", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 2);
+      const open = await propose(tx, clock, user(w, 0), w.club, ["Nina"]);
+      const nina = open.candidates[0]?.id ?? "";
+      await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${LATER} WHERE id = ${user(w, 0)}`;
+      const before = await rosterVersion(tx, w.club);
+      expect((await refusal(remove(tx, user(w, 0), nina))).code).toBe("NOT_FOUND");
+      expect(await candidateState(tx, nina)).toBe("open");
+      expect(await rosterVersion(tx, w.club)).toBe(before);
+    });
+  });
+
+  it("names nothing to a proposer who left and came back: the candidate was another interval's", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const open = await propose(tx, clock, user(w, 2), w.club, ["Nina"]);
+      const nina = open.candidates[0]?.id ?? "";
+      const maya = { user: user(w, 1), interval: w.members[1] ?? "" };
+      // Alex leaves, which ends Nina with Alex's revision (FQ121), and comes back by a roster of Maya's, with a new
+      // interval. Nina was Alex's first interval's: the removal names nothing, rather than answering as removed.
+      await tx.savepoint((sp) =>
+        leaveClub(
+          sp as unknown as WorldTx,
+          clock,
+          { userId: user(w, 2), key: randomUUID(), clubId: w.club, contributions: "keep" },
+          leftClubBody,
+        ),
+      );
+      expect(await candidateState(tx, nina)).toBe("ended");
+      await joinByRoster(plain(tx), w.club, maya, [{ user: user(w, 2), label: "Alex" }], LATER);
+      const before = await rosterVersion(tx, w.club);
+      expect((await refusal(remove(tx, user(w, 2), nina))).code).toBe("NOT_FOUND");
+      expect(await rosterVersion(tx, w.club)).toBe(before);
+    });
+  });
+
+  it("carries a name's revision as a name's: nobody's approval, the proposer's included (FQ84)", async () => {
+    await rolledBack(db, async (tx) => {
+      const ben = await founded(tx, clock);
+      const open = await propose(tx, clock, ben.user, ben.club, ["Maya", "Nina"]);
+      const [maya, nina] = open.candidates.map(({ id }) => id);
+      const mayaLink = await linkFor(tx, clock, ben.user, ben.club, maya ?? "");
+      // An account named Mia accepts Maya's place: the server makes a revision under Mia's name, which nobody has
+      // approved, Ben included.
+      const mia = await newUser(plain(tx), "Mia");
+      expect((await acceptWith(tx, clock, mia, mayaLink.token, open.id, open.version)).state).toBe("changed");
+      const renamed = (await revisionState(tx, open.id))?.superseded_by_id ?? "";
+      await remove(tx, ben.user, nina ?? "");
+      const next = (await revisionState(tx, renamed))?.superseded_by_id ?? "";
+      expect((await revisionState(tx, renamed))?.state).toBe("superseded");
+      const [row] = await tx<{ origin: string; proposer: string }[]>`
+        SELECT origin, proposed_by_interval_id AS proposer FROM app.roster_revisions WHERE id = ${next}`;
+      expect(row).toEqual({ origin: "rename", proposer: ben.interval });
+      const [approvals] = await tx<{ count: number }[]>`
+        SELECT pg_catalog.count(*)::pg_catalog.int4 AS count FROM app.roster_approvals WHERE revision_id = ${next}`;
+      expect(approvals?.count).toBe(0);
+      expect(await read(tx, ben.user, next, NOW)).toMatchObject({
+        state: "open",
+        candidates: [{ id: maya, name: "Mia" }],
+        my_decision: "pending",
+      });
+    });
+  });
+});
+
+describe("what an account that accepted is told, whatever ended the roster (FQ148; T33)", () => {
+  // Nina's account accepts and waits; then a member declines, or Ben removes Nina alone, or Ben removes Nina while
+  // Zed is carried on. Each time the preview says only that it didn't go ahead, and accepting the revision Nina saw
+  // answers alike: a version conflict at the version it ended at, then nothing at that version. So the account can't
+  // tell a removal from a decline, or whether anyone else went on.
+  it("answers the preview and the acceptance alike after a decline, a removal alone and a removal that carried others", async () => {
+    const told: unknown[] = [];
+    for (const ending of ["declined", "removed alone", "removed, Zed carried"] as const) {
+      await rolledBack(db, async (tx) => {
+        const w = await clubOf(tx, 2);
+        const open = await propose(
+          tx,
+          clock,
+          user(w, 0),
+          w.club,
+          ending === "removed, Zed carried" ? ["Nina", "Zed"] : ["Nina"],
+        );
+        const nina = open.candidates[0]?.id ?? "";
+        const link = await linkFor(tx, clock, user(w, 0), w.club, nina);
+        const account = await newUser(plain(tx), "Nina");
+        expect((await acceptWith(tx, clock, account, link.token, open.id, open.version)).state).toBe("waiting");
+        if (ending === "declined") await decline(tx, clock, user(w, 1), open.id, open.version);
+        else await remove(tx, user(w, 0), nina);
+        told.push({
+          ending,
+          preview: await preview(tx, account, link.token, NOW),
+          asSeen: await refusal(acceptWith(tx, clock, account, link.token, open.id, open.version)),
+          asEnded: await refusal(acceptWith(tx, clock, account, link.token, open.id, open.version + 1)),
+        });
+      });
+    }
+    const alike = {
+      preview: { state: "did_not_go_ahead", inviter_name: "Ben" },
+      asSeen: { code: "VERSION_CONFLICT", facts: { current_version: 2 } },
+      asEnded: { code: "NOT_FOUND", facts: {} },
+    };
+    expect(told).toEqual([
+      { ending: "declined", ...alike },
+      { ending: "removed alone", ...alike },
+      { ending: "removed, Zed carried", ...alike },
+    ]);
+  });
 });

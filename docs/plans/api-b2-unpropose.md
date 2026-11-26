@@ -59,6 +59,10 @@ three options; the founder chose the first at 21:25 UTC ("Remove them from the i
   still good. A remover who isn't the revision's proposer approves again like any other member: removing one person
   isn't approving the others, whom someone else may have proposed. If no other candidate is open, the revision ends as
   `did_not_go_ahead`. Either way `roster_version` moves.
+- **What an account that accepted is told by `acceptInvitation`** (since the review, G4 and P2): a revision superseded
+  by one that doesn't list the candidate answers as any roster that ended, VERSION_CONFLICT at a stale version and
+  NOT_FOUND at the current one (`packages/domain/src/clubs/accept-invitation.ts`, step d.), so a decline, a removal
+  alone and a removal that carried others answer alike, never who or why.
 - **Locks and order:** as `proposeRoster`: the club's row `FOR UPDATE`, the caller's interval again, the candidate's
   row `FOR UPDATE`, then the clock. Every roster command takes the club's row first, so a removal and an acceptance, an
   approval or a leave of the same club run one after the other, never interleaved.
@@ -69,10 +73,13 @@ three options; the founder chose the first at 21:25 UTC ("Remove them from the i
   removal of that candidate is judged after the invitation's table: by someone of another club and by another member
   (NOT_FOUND), then by the proposer (the 200 answer, byte for byte), then again (the same bytes); the candidate's row,
   the club's roster version and the revisions are checked after it, and the revision and the club are read again.
-  Where the table ran, its decline had already ended the candidate, so the removal finds them removed; where nobody
-  else could run it, the candidate is still open, and the removal ends them and their revision. The counts are pinned
-  (`removals` equals the revisions made, `removedOpen` the cells with nobody else). The answer carries the candidate's
-  id and `removed`, no name. The leak scanner has no candidates in its world (a candidate's id is shown to every member
+  Where the table ran, its decline had already ended the candidate, so the removal finds them removed and moves
+  nothing; where nobody else could run it, the proposer's removal isn't asked, and the revision stays open for the
+  last phase's leave to meet, as on `main` (review G3). The rows read after the refused removals must be as before
+  them (review G1). The counts are pinned (`removals` equals the invitations run, `leftOpen` the cells with nobody
+  else). Since the review (P1), a sweep of its own asks every role, in every state and phase, to remove an open
+  candidate, Mo, whom Ana invited and who accepted (section 6). The answer carries the candidate's id and `removed`,
+  no name. The leak scanner has no candidates in its world (a candidate's id is shown to every member
   the revision lists, so it keeps none back); the row's judge holds the answer exactly.
 
 ## 3. Tests first
@@ -95,6 +102,10 @@ NOT_FOUND to the removal; or removed, then NOT_FOUND to the acceptance and the r
 roster the candidate accepted (applied, then NOT_FOUND; or removed, then VERSION_CONFLICT and nothing applied); and
 the proposer's leave (left, then NOT_FOUND, FQ121 having ended the candidate; or removed, then left). The route's
 answers and refusals are in `services/api/src/clubs/roster.test.ts`.
+
+The review added five more (section 6): a suspended club's proposer, a proposer whose account's deletion has begun and
+a proposer who left and came back get NOT_FOUND; a name's revision carries as a name's; and an account that accepted
+is told alike whatever ended the roster. With them the file has 18 tests.
 
 ## 4. Design handoff 11
 
@@ -159,3 +170,52 @@ Dark and large-text frames: frames 6 to 9, titled <state>-dark and <state>-xl. 9
 - Expiring candidates on their own (FQ148's third option, not the default).
 - Changing Revoke link (FQ148's second option, not the default).
 - Where a later addition's link is shared and managed, which has no render yet (`createInvitation`'s description).
+
+## 6. Review, round 1
+
+Two fresh subagents reviewed the first commit, `526ffc2`, one general (correctness and the tests) and one for privacy
+and security. Neither found a blocker. Their 12 findings are each fixed or answered in the second commit.
+
+- **P1 (should-fix): nothing asked who may remove an open candidate, nor in a suspended club.** The cells ask every
+  role to remove Ben, who has joined, and remove an open candidate only where the viewer proposed someone, which no
+  viewer can in a suspended club. A planted `activeMember` without its suspended-club condition passed every test.
+  Fixed:
+  - `tests/src/db/remove-candidate.test.ts`, "who the club and the account let remove, and a name's revision carried":
+    a suspended club's proposer and a proposer whose account's deletion has begun get NOT_FOUND, and nothing moves.
+    The links test also reads `previewInvitationWeb` for the removed candidate's live link, which names nothing.
+  - `tests/src/privacy/matrix.test.ts`, "who removes someone invited who hasn't joined, as each role in each state".
+    Every role, in every state and phase, asks to remove Mo, whom Ana invited and who accepted (`tests/src/matrix.ts`
+    `invite`, which now lists the club's active members and keeps Mo's token in `INVITE_TOKENS`). The gate, then
+    `candidateRemovalOutcome`, judges each answer; the rows show what moved; Mo previews the link after each request.
+    Pinned by hand: Ana removes Mo in seven states, the first time in the first phase and alike in the three after it.
+    In a suspended club and once gone, Ana gets the neutral not-found, and once deleting the gate's 401. Mo's preview
+    waits in every world Mo isn't removed from but a suspended club's, where it is the neutral not-found (FQ80).
+  - The T14 audit row says what the matrix asks.
+- **P2 and G4 (one finding, low): an account that had accepted could tell a removal that carried others from a
+  decline,** by sending `acceptInvitation` again: NOT_FOUND against VERSION_CONFLICT at its old version. Fixed in
+  `packages/domain/src/clubs/accept-invitation.ts`, step d. (section 2). `remove-candidate.test.ts`, "what an account
+  that accepted is told, whatever ended the roster", pins the three cases. FQ121's leave answers the same way now,
+  and `tests/src/db/leave-club.test.ts`, `tests/src/privacy/invitation.ts` `acceptOutcome` and its test changed with it.
+- **G1: the matrix couldn't see a write made by a refused removal.** Fixed: the rows are read again after the refused
+  removals and must be as before them.
+- **G2: no test carried a name's revision.** Fixed: "carries a name's revision as a name's: nobody's approval, the
+  proposer's included (FQ84)".
+- **G3: the matrix's leave no longer met an open revision.** Fixed (section 2): `leftOpen` is pinned to the cells where
+  nobody else could run the table, and "the leave ran" pins the leaves that met an open revision (the FQ88 role, in its
+  two states with nobody else).
+- **G5: no test for a proposer who left and came back.** Fixed: "names nothing to a proposer who left and came back:
+  the candidate was another interval's".
+- **G6: the approvals test couldn't see approvals carried over.** Fixed: a third member approves before the removal and
+  is asked again after it.
+- **G7: a comment said the caller is read again as "the same interval".** Fixed: it says what the code reads, an active
+  membership under the lock, as `revokeInvitation` reads it, the candidate then matched to that interval.
+- **G8: comments out of date.** Fixed in the headers of `services/api/src/clubs/roster.ts`, `roster.test.ts` and
+  `remove-candidate.test.ts`. The matrix's "the link stays live, and its revision open, for the rest of the cell" is
+  true again with G3's fix.
+- **G9: the records' wording.** Fixed: the spec 04 row's count, table 4.1's "where the role proposed someone", `swift`
+  named in "Not verified" (`ci`'s `swift` job builds `TadayoAPI` from `openapi.yaml`), and FQ148 in the journal's
+  section 0.7. FQ146 is the ios lane's line there.
+- **G10: design handoffs are the ios lane's by the Lanes table.** Answered: the api lane wrote handoff 11's brief
+  because the founder chose the operation on the api lane's card, and the coordinator reserved the number with FQ148.
+  `design/reference/INVENTORY.md` stays the ios lane's. `docs/PROGRESS.md`'s api section asks the ios lane to add the 9
+  states as `requested 11`, and the ios lane was told at 23:03 UTC on 2026-11-26.

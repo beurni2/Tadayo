@@ -1,9 +1,10 @@
 /// <reference lib="esnext.temporal" />
 // A club's roster revisions and its candidates' links over HTTP (the contract's `proposeRoster`,
-// `getRosterRevision`, `approveRoster`, `declineRoster`, `createInvitation` and `revokeInvitation`; spec 04, 32; G01-invite-people,
+// `getRosterRevision`, `approveRoster`, `declineRoster`, `createInvitation`, `revokeInvitation` and `removeCandidate`;
+// spec 04, 32; FQ148; G01-invite-people,
 // G03-approve, book p30; T1, T7, T9, T14, T15, T19, T33, T52, T55). The rules, the order of the refusals,
 // the locks and who may read or act are the domain's (packages/domain/src/clubs/roster-revision.ts,
-// propose-roster.ts, decide-roster.ts and invitation.ts): a handler here parses the request by the contract's own schema,
+// propose-roster.ts, decide-roster.ts, invitation.ts and remove-candidate.ts): a handler here parses the request by the contract's own schema,
 // runs the read or the command in one transaction, and serializes what comes back, each serializer an
 // explicit field list (T55).
 //

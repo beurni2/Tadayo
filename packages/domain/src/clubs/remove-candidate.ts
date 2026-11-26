@@ -9,8 +9,9 @@
 // is their approval (FQ60), and revoking ends a link, not the candidate, so someone who never answered held a place of
 // the club's six for good.
 //
-// 1. The candidate's club, the caller's membership of it, the club's row `FOR UPDATE`, and the caller again: the
-//    same interval, or NOT_FOUND. Then the candidate, `FOR UPDATE`, if the caller's interval proposed it. Anyone else,
+// 1. The candidate's club, the caller's membership of it, the club's row `FOR UPDATE`, and the caller's membership
+//    again, under the lock: an active one, or NOT_FOUND, as `revokeInvitation` reads it. Then the candidate,
+//    `FOR UPDATE`, if the interval read under the lock proposed it. Anyone else,
 //    an id nobody has, and someone whose membership ended get the same NOT_FOUND, so the answer never tells another
 //    member anything about the candidate (T14).
 // 2. A candidate who has joined is a member, not a candidate: NOT_FOUND, as the proposer's list no longer shows them.

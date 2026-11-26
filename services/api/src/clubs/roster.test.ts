@@ -3,8 +3,8 @@
 // `createInvitation`, `revokeInvitation` and `removeCandidate`; T7, T14, T19, T33, T52, T55), with no database: the
 // serializers' field lists, held against every example the contract gives, read from the contract and not
 // copied by hand; everything refused before a command runs; and what each route answers. The commands,
-// their receipts and the read are on Postgres (tests/src/db/propose-roster.test.ts and
-// invitation.test.ts), and every role's answers are the privacy matrix's (tests/src/privacy/roster.ts).
+// their receipts and the read are on Postgres (tests/src/db/propose-roster.test.ts, invitation.test.ts and
+// remove-candidate.test.ts), and every role's answers are the privacy matrix's (tests/src/privacy/roster.ts).
 
 import { InvitationLink, RemovedCandidate, RevokedInvitation, RosterRevision } from "@tadayo/contracts";
 // The examples aren't among the contract package's exports, and that package changes only in its own PR

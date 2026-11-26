@@ -223,11 +223,12 @@ export function acceptOutcome(
   if (!mine && Temporal.Instant.compare(link.expiresAt, now) <= 0) return EXPIRED;
   if (holdsAnother(roster, link, account)) return NEUTRAL;
   if (rows.state === "superseded") {
-    // Told of the newest revision only while it lists the candidate: a leave may have ended them and
-    // carried the others on.
+    // Told of the newest revision only while it lists the candidate. A leave or a removal may have ended them and
+    // carried the others on: then the revision is answered as one that didn't go ahead, below, so the account
+    // can't tell whether the others went on (FQ148).
     const newest = newestOf(roster, revision);
     const still = roster.revisions.get(newest)?.candidates.some((candidate) => candidate.id === link.candidate);
-    return still === true ? rosterChanged(newest) : NEUTRAL;
+    if (still === true) return rosterChanged(newest);
   }
   if (rows.version !== expected) return versionConflict(rows.version);
   if (rows.state !== "open") return rows.state === "applied" && viewer !== undefined ? "joined again" : NEUTRAL;
