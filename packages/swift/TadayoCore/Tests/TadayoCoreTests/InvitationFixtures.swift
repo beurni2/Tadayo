@@ -15,10 +15,14 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var revokeAnswers: [Result<Void, APIFailure>] = []
     var previewAnswers: [Result<InvitationPreview, APIFailure>] = []
     var acceptAnswers: [Result<InvitationAcceptance, APIFailure>] = []
+    var approveAnswers: [Result<RosterRevision, APIFailure>] = []
+    var declineAnswers: [Result<RosterRevision, APIFailure>] = []
     private(set) var calls: [String] = []
     /// Run inside each preview and each accept, before it answers.
     var duringPreview: @Sendable () async -> Void = {}
     var duringAccept: @Sendable () async -> Void = {}
+    /// Run inside each approve and each decline, before it answers.
+    var duringDecision: @Sendable () async -> Void = {}
     /// Run inside each members read, given which read it is (1 for the first), before it
     /// answers: a slow network, say.
     var duringMembers: @Sendable (Int) async -> Void = { _ in }
@@ -93,15 +97,19 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
         async throws(APIFailure) -> RosterRevision
     {
-        lock.withLock { calls.append("approve") }
-        throw .refused
+        await duringDecision()
+        return try lock.withLock {
+            answer("approve \(revisionID) v\(expectedVersion) \(key)", &approveAnswers)
+        }.get()
     }
 
     func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
         async throws(APIFailure) -> RosterRevision
     {
-        lock.withLock { calls.append("decline") }
-        throw .refused
+        await duringDecision()
+        return try lock.withLock {
+            answer("decline \(revisionID) v\(expectedVersion) \(key)", &declineAnswers)
+        }.get()
     }
 
     /// Recorded with the token's last two characters, which tell the tests' made-up tokens apart.

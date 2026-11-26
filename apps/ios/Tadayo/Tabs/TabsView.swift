@@ -24,7 +24,10 @@ import TadayoDesign
 /// Each club tab holds its own navigation stack, its root's bar hidden, so the tab looks as it
 /// did without one. The switcher's Club details closes the sheet, then pushes Club details for
 /// the selected club onto the selected tab (`ClubRoute`), with the model `details` makes; Members
-/// is pushed from there, once however fast it's tapped. Back returns to the tab as it was. The
+/// is pushed from there, once however fast it's tapped, and G03-approve from a proposed row in
+/// Members, with the model Club details' makes for the revision Members listed; a decision closes
+/// it back to Members, which reads again (`docs/plans/ios-b1-approve.md` section 2). Back returns
+/// to the tab as it was. The
 /// pushed screens close when the club they show stops being the selected one (another is chosen,
 /// or the list is read again) and as soon as a read says the club is no longer the caller's
 /// (`ClubDetailsModel.closed`), whenever the list's own read answers. The model stays after they
@@ -113,6 +116,10 @@ struct TabsView: View {
     @State private var paths: [ClubTab: [ClubRoute]] = [:]
     /// The selected club's Club details and members list: the last opened.
     @State private var shownDetails: ClubDetailsModel?
+    /// The approval last opened from Members, which stays drawn while it slides away, and the one
+    /// Members has already read again for.
+    @State private var approving: RosterApprovalModel?
+    @State private var refreshedFor: ObjectIdentifier?
     /// The switcher's Club details was chosen: pushed once the sheet has closed.
     @State private var detailsChosen = false
     /// The switcher's Create a club was chosen: pushed once the sheet has closed.
@@ -206,6 +213,12 @@ struct TabsView: View {
         }
         .onChange(of: shownDetails?.closed ?? false) { _, closed in
             if closed { closeClubScreens() }
+        }
+        .onChange(of: approving?.refreshesMembers ?? false) { _, moved in
+            // A decision that answered after Back: Members, showing again, reads again.
+            if moved, !paths.values.contains(where: { $0.contains(.approval) }) {
+                approvalClosed()
+            }
         }
         .onChange(of: inviting?.closed ?? false) { _, closed in
             if closed { closeCreateScreens() }
@@ -398,6 +411,34 @@ struct TabsView: View {
         paths[tab] = [.invitations]
     }
 
+    /// A proposed row's G03-approve over Members, once however fast it's tapped, for the revision
+    /// the list showed, with a model the selected club's makes, so it answers only in this session
+    /// and while the club stays selected.
+    private func openApproval(_ revision: RosterRevision, on tab: ClubTab) {
+        guard paths[tab]?.last == .members, let shownDetails else { return }
+        approving = shownDetails.approval(of: revision)
+        paths[tab, default: []].append(.approval)
+    }
+
+    /// A decision, or the full club's See members: back to Members, which reads again.
+    private func closeApproval(on tab: ClubTab) {
+        guard paths[tab]?.last == .approval else { return }
+        paths[tab]?.removeLast()
+        approvalClosed()
+    }
+
+    /// The approval closed: Members reads again, once for each approval, as soon as it has moved
+    /// on from the roster Members listed (`RosterApprovalModel.refreshesMembers`), so Members never
+    /// shows a decided or ended proposal as still open to decide; a decision still out at Back
+    /// reads it once it answers. Back from that roster, undecided, reads nothing.
+    private func approvalClosed() {
+        guard let approving, approving.refreshesMembers, let shownDetails,
+            refreshedFor != ObjectIdentifier(approving)
+        else { return }
+        refreshedFor = ObjectIdentifier(approving)
+        Task { await shownDetails.loadMembers() }
+    }
+
     /// Create an invitation: the name step over the list, once however fast it's tapped.
     private func openNameStep(on tab: ClubTab) {
         guard paths[tab]?.last == .invitations, let model = inviting?.makeInvite() else { return }
@@ -434,6 +475,10 @@ struct TabsView: View {
                 if paths[tab]?.contains(.accepted) == true, !now.contains(.accepted) {
                     closeInvitation()
                 }
+                // Back from the approval: Members reads again if it moved on.
+                if paths[tab]?.last == .approval, now.last != .approval {
+                    approvalClosed()
+                }
                 paths[tab] = now
             })
     }
@@ -450,7 +495,13 @@ struct TabsView: View {
             }
         case .members:
             if let shownDetails {
-                MembersDestination(model: shownDetails)
+                MembersDestination(model: shownDetails) { revision in
+                    openApproval(revision, on: tab)
+                }
+            }
+        case .approval:
+            if let approving {
+                ApproveDestination(model: approving) { closeApproval(on: tab) }
             }
         case .create:
             if let creating {

@@ -18,12 +18,14 @@ enum ClubRoute: Hashable {
     case invitation
     /// An accepted invitation from the club list, the root's (`RootModel.openAccepted`).
     case accepted
+    /// G03-approve, from a proposed row in Members (`ClubDetailsModel.approval`).
+    case approval
 
     /// A screen of the club being made, which isn't the selected club's: it stays while another
     /// club is selected or the list is read again.
     var isCreateFlow: Bool {
         switch self {
-        case .details, .members, .linkEntry, .invitation, .accepted: false
+        case .details, .members, .approval, .linkEntry, .invitation, .accepted: false
         case .create, .invitations, .inviteName, .pending: true
         }
     }

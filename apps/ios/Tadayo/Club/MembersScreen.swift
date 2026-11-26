@@ -19,12 +19,23 @@ import TadayoDesign
 ///   `membersFooter`: "updates from one authorized server snapshot"; never a proposed person).
 ///   They follow the rows, where handoff 2's frame draws its line low on the screen under two.
 ///
-/// Nothing on a row opens anything, and nothing counts approvals or activity (T15, T33, T55).
-/// While the list loads, the loading form; after it fails, frame 11's form with the members'
-/// words (`handoff8.loadStates.members`).
+/// While a revision is open, its candidates follow the members, one proposed row each in the
+/// revision's order (`Roster.proposed`; handoff 1: "place Leila in one separate proposed row after
+/// the current roster: Leila, Proposed by Ben, Proposed"; no frame draws one in an active club,
+/// so it's built from spec, `docs/plans/ios-b1-approve.md` section 2): `RosterRow`'s proposed form,
+/// the name, "Proposed by {name}" and the Proposed tag, with no weekday, no status and nothing
+/// about who has approved or accepted. The footer counts the members alone.
+///
+/// A member's row opens nothing. A proposed row opens G03-approve (`openApproval`) only for a
+/// viewer whose decision on the revision is pending, and is then a button; for one who has
+/// decided it opens nothing, so nothing tells one decision from another (FQ143); for the
+/// candidate's proposer it opens nothing yet (their invitation page is plan PR 7c). Nothing counts
+/// approvals or activity (T15, T33, T55). While the list loads, the loading form; after it fails,
+/// frame 11's form with the members' words (`handoff8.loadStates.members`).
 struct MembersScreen: View {
     let members: ClubDetailsModel.Members
     let retry: @MainActor () async -> Void
+    var openApproval: (RosterRevision) -> Void = { _ in }
 
     var body: some View {
         content
@@ -64,6 +75,9 @@ struct MembersScreen: View {
                         name: row.person.displayName, isViewer: row.isViewer,
                         days: ClubWords.days(row.weekdays))
                 }
+                ForEach(roster.proposed) { proposed in
+                    proposedRow(proposed, in: roster)
+                }
             }
             .padding(.top, Spacing.xxl)
             VStack(alignment: .leading, spacing: 0) {
@@ -76,6 +90,26 @@ struct MembersScreen: View {
             .foregroundStyle(Palette.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, Spacing.xxxl)
+        }
+    }
+
+    /// A candidate's proposed row: a button that opens G03-approve when the viewer's decision is
+    /// pending, and otherwise the row alone.
+    @ViewBuilder private func proposedRow(_ proposed: Roster.Proposed, in roster: Roster)
+        -> some View
+    {
+        let row = RosterRow(
+            name: proposed.candidate.name, isViewer: false, days: nil,
+            proposal: .by(proposed.candidate.proposedBy.displayName))
+        if proposed.opens == .approval, let revision = roster.openRevision {
+            Button {
+                openApproval(revision)
+            } label: {
+                row.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            row
         }
     }
 
