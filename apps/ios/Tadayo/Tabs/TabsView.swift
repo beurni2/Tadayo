@@ -192,6 +192,41 @@ struct TabsView: View {
     }
 
     var body: some View {
+        tabs
+            .onChange(of: approving?.changes ?? 0) { _, _ in
+                // A decision that answered after Back: Members, showing again, reads again.
+                if !paths.values.contains(where: { $0.contains(.approval) }) {
+                    approvalClosed()
+                }
+            }
+            .onChange(of: inviting?.closed ?? false) { _, closed in
+                if closed { closeCreateScreens() }
+            }
+            .onChange(of: proposing?.closed ?? false) { _, closed in
+                if closed { closeProposedRoster() }
+            }
+            .onChange(of: invitation.map(ObjectIdentifier.init)) { _, _ in
+                rootInvitationChanged()
+            }
+            .sheet(isPresented: $switching, onDismiss: openChosen) {
+                if case .listed(let list) = state.clubs {
+                    ClubSwitcher(
+                        clubs: list.clubs, selectedID: state.selected?.id,
+                        invitations: state.accepted,
+                        select: { club in Task { await select(club) } },
+                        openAccepted: { acceptedChosen = $0 },
+                        openDetails: { detailsChosen = true },
+                        createClub: { createChosen = true }
+                    )
+                    .fittedSheet()
+                }
+            }
+    }
+
+    /// The three tabs (and the Lab's), with what VoiceOver is told of the selected one, and the
+    /// pushed screens that close with the list or the selected club. A part of `body` of its own,
+    /// so the compiler checks each half in reasonable time.
+    private var tabs: some View {
         TabView(selection: $selection) {
             tab(.home, label: "tabs.home", symbol: "house")
             tab(.friends, label: "tabs.friends", symbol: "person.2")
@@ -227,34 +262,6 @@ struct TabsView: View {
         }
         .onChange(of: shownDetails?.closed ?? false) { _, closed in
             if closed { closeClubScreens() }
-        }
-        .onChange(of: approving?.changes ?? 0) { _, _ in
-            // A decision that answered after Back: Members, showing again, reads again.
-            if !paths.values.contains(where: { $0.contains(.approval) }) {
-                approvalClosed()
-            }
-        }
-        .onChange(of: inviting?.closed ?? false) { _, closed in
-            if closed { closeCreateScreens() }
-        }
-        .onChange(of: proposing?.closed ?? false) { _, closed in
-            if closed { closeProposedRoster() }
-        }
-        .onChange(of: invitation.map(ObjectIdentifier.init)) { _, _ in
-            rootInvitationChanged()
-        }
-        .sheet(isPresented: $switching, onDismiss: openChosen) {
-            if case .listed(let list) = state.clubs {
-                ClubSwitcher(
-                    clubs: list.clubs, selectedID: state.selected?.id,
-                    invitations: state.accepted,
-                    select: { club in Task { await select(club) } },
-                    openAccepted: { acceptedChosen = $0 },
-                    openDetails: { detailsChosen = true },
-                    createClub: { createChosen = true }
-                )
-                .fittedSheet()
-            }
         }
     }
 
