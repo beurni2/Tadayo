@@ -9,6 +9,7 @@
 // whose made days a new week must follow: FQ61, FQ124) adds its start: the date is also on or after it.
 
 import { REVEAL_TIME, clubTimeZone, resolveCivilTime } from "../time/civil.ts";
+import type { ServerNow } from "../time/clock.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 
 const LEAD_NANOSECONDS = 24n * 3_600_000_000_000n;
@@ -19,7 +20,7 @@ const LEAD_NANOSECONDS = 24n * 3_600_000_000_000n;
  */
 export function firstDate(
   weekday: Weekday,
-  confirmedAt: Temporal.Instant,
+  confirmedAt: ServerNow,
   zone: string,
   notBefore?: Temporal.PlainDate,
 ): Temporal.PlainDate {

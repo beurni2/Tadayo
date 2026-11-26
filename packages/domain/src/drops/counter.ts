@@ -25,6 +25,7 @@
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
+import type { ServerNow } from "../time/clock.ts";
 import type { CounterRow, MediaClass } from "./allowance.ts";
 
 /** Whose counter, in which day: a membership interval's in one occurrence of one club (ND04). */
@@ -83,7 +84,7 @@ export async function lockCounter(tx: QuerySql, key: CounterKey): Promise<void> 
  * it then stands: each live reservation whose `expires_at` is at or before `at` becomes `expired`, ended at its
  * own `expires_at`, and leaves the counts. The caller holds the lock (`lockCounter`).
  */
-export async function settleLapsed(tx: QuerySql, key: CounterKey, at: Temporal.Instant): Promise<CounterRow> {
+export async function settleLapsed(tx: QuerySql, key: CounterKey, at: ServerNow): Promise<CounterRow> {
   const settled = await bound(tx)`
     WITH lapsed AS (
       UPDATE app.reservations SET state = 'expired', ended_at = expires_at
@@ -124,7 +125,7 @@ export async function holdSlot(
   key: CounterKey,
   slot: {
     readonly media: MediaClass;
-    readonly at: Temporal.Instant;
+    readonly at: ServerNow;
     readonly expiresAt: Temporal.Instant;
     readonly requestKey: string;
   },
@@ -150,7 +151,7 @@ export async function holdSlot(
  * Returns the row as it then stands, or throws when the reservation isn't live in this counter, which the
  * caller has read under the lock.
  */
-export async function freeSlot(tx: QuerySql, key: CounterKey, id: string, at: Temporal.Instant): Promise<CounterRow> {
+export async function freeSlot(tx: QuerySql, key: CounterKey, id: string, at: ServerNow): Promise<CounterRow> {
   const rows = await bound(tx)`
     WITH freed AS (
       UPDATE app.reservations SET state = 'released', ended_at = ${at}::pg_catalog.timestamptz
@@ -180,7 +181,7 @@ export async function consumeSlot(
   key: CounterKey,
   id: string,
   dropId: string,
-  at: Temporal.Instant,
+  at: ServerNow,
 ): Promise<CounterRow> {
   const rows = await bound(tx)`
     WITH used AS (

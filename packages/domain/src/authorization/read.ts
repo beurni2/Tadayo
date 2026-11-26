@@ -102,10 +102,11 @@ export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: Server
 
 /**
  * Whether the star's leaving, `at`, keeps the day: it hasn't happened (null), or it came at
- * `revealAt` or later, once the day had opened. Anything that isn't an instant denies. Home's day
- * choice (./days.ts) asks it too, so a held day is held alike for its drops and for Home (FQ63).
+ * `revealAt` or later, once the day had opened. Anything that isn't an instant denies, whatever its
+ * type said. Home's day choice (./days.ts) asks it too, so a held day is held alike for its drops and
+ * for Home (FQ63). Both are facts a row holds, typed so the plain-instant list sees them (one-clock.test.ts).
  */
-export function notBeforeReveal(at: unknown, revealAt: unknown): boolean {
+export function notBeforeReveal(at: Temporal.Instant | null, revealAt: Temporal.Instant): boolean {
   return (
     at === null ||
     (at instanceof Temporal.Instant &&

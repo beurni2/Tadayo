@@ -15,7 +15,7 @@
 // existed. The deliberate breakages, run at the PR's last head, show they can fail.
 
 import { randomBytes } from "node:crypto";
-import { isPlainLoopback, type Clock } from "@tadayo/domain";
+import { isPlainLoopback, type Clock, type ServerNow } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import {
   BACKOFF_SECONDS,
@@ -425,7 +425,7 @@ describe("a pass (spec 34, T52, T54)", () => {
     const clock = fakeClock(T);
     // A handler that committed its work and the event's end, then failed on its way out.
     const { handler } = recording(async (e) => {
-      await db.begin((tx) => finishEvent(tx, e.id, T));
+      await db.begin((tx) => finishEvent(tx, e.id, T as ServerNow));
       throw new StorageUnavailable("got no answer");
     });
     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });

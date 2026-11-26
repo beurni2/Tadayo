@@ -44,7 +44,7 @@
 // the run's order does that (`worker-scale --to stopped` first).
 
 import { randomBytes, randomUUID } from "node:crypto";
-import { contractInstant, dayInstants, newId, type Clock } from "@tadayo/domain";
+import { contractInstant, dayInstants, newId, type Clock, type ServerNow } from "@tadayo/domain";
 import type postgres from "postgres";
 import { devClock } from "./dev-clock.ts";
 import { DEV_HOST } from "./environment.ts";
@@ -116,7 +116,7 @@ export interface SpikeAccount {
  * The first day's date: the earliest Monday to Friday in New York whose 07:00 is at least
  * `AHEAD_MINUTES` after `now`, so the next date, Ben's, is Tuesday to Saturday, never Sunday.
  */
-export function firstDate(now: Temporal.Instant): Temporal.PlainDate {
+export function firstDate(now: ServerNow): Temporal.PlainDate {
   const earliest = now.add({ minutes: AHEAD_MINUTES });
   let date = now.toZonedDateTimeISO(ZONE).toPlainDate();
   for (let day = 0; day < 8; day += 1) {
@@ -134,7 +134,7 @@ export function firstDate(now: Temporal.Instant): Temporal.PlainDate {
  * weekday's 06:59:40 and add a day or more (three from a Friday). Started in time, a run adds about
  * 18 hours and a quarter at most.
  */
-export function startDay(now: Temporal.Instant): Temporal.PlainDate {
+export function startDay(now: ServerNow): Temporal.PlainDate {
   const date = firstDate(now);
   if (Temporal.Instant.compare(dayInstants(date, ZONE).revealAt, now.add({ minutes: WITHIN_MINUTES })) > 0) {
     // To the microsecond when the sample has a fraction, so a sample just after 06:57 never reads 06:57:00.

@@ -1,9 +1,12 @@
 /// <reference lib="esnext.temporal" />
 import { describe, expect, it } from "vitest";
+import type { ServerNow } from "../time/clock.ts";
 import { daysToMake, WEEKS_AHEAD, windowEnd, type GenerationFacts, type WeekVersion } from "./generate.ts";
 import type { Weekday } from "./propose.ts";
 
 const at = (text: string) => Temporal.Instant.from(text);
+/** The time the days are made at, as the clock samples it. */
+const sample = (text: string) => at(text) as ServerNow;
 const NY = "America/New_York";
 
 /** A version from `effectiveFrom` whose days are `[weekday, star, firstDate]`, every star active unless named in `gone`. */
@@ -48,7 +51,7 @@ function club(over: Partial<GenerationFacts> = {}): GenerationFacts {
   };
 }
 
-const dates = (facts: GenerationFacts, now: string) => daysToMake(facts, at(now)).map((day) => day.localDate);
+const dates = (facts: GenerationFacts, now: string) => daysToMake(facts, sample(now)).map((day) => day.localDate);
 
 describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115)", () => {
   // Friday 6 November 2026, 9:41 AM in New York.
@@ -142,7 +145,7 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
   });
 
   it("names each day's star, its version and its two instants, each resolved in the club's zone", () => {
-    const [first] = daysToMake(club(), at(NOW));
+    const [first] = daysToMake(club(), sample(NOW));
     expect(first).toEqual({
       localDate: "2026-11-07",
       versionId: "ver_1",
@@ -209,7 +212,7 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
           ),
         ],
       }),
-      at(NOW),
+      sample(NOW),
     );
     expect(owed.map((day) => day.starInterval)).toEqual(["ben", "ben", "ben", "ben"]);
   });
@@ -244,7 +247,7 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
       ["friday", "debby", "2026-11-06"],
       ["saturday", "maya", "2026-11-07"],
     ]);
-    const owed = daysToMake(club({ activeMembers: 3, versions: [three] }), at("2026-11-08T14:00:00Z"));
+    const owed = daysToMake(club({ activeMembers: 3, versions: [three] }), sample("2026-11-08T14:00:00Z"));
     // Sunday the 8th: Monday the 9th to Saturday 5 December are four whole weeks, and the 6th is a Sunday.
     expect(owed).toHaveLength(24);
     expect(owed.slice(0, 6).map((day) => day.starInterval)).toEqual(["ben", "debby", "maya", "ben", "debby", "maya"]);
@@ -256,7 +259,7 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
       ["tuesday", "ben", "2026-11-17"],
     ]);
     // Given in any order.
-    const owed = daysToMake(club({ versions: [next, SIX] }), at(NOW));
+    const owed = daysToMake(club({ versions: [next, SIX] }), sample(NOW));
     const before = owed.filter((day) => day.localDate < "2026-11-16");
     const after = owed.filter((day) => day.localDate >= "2026-11-16");
     expect(new Set(before.map((day) => day.versionId))).toEqual(new Set(["ver_1"]));
@@ -296,7 +299,7 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
       [second, third, first],
       [third, second, first],
     ]) {
-      const owed = daysToMake(club({ versions }), at(NOW));
+      const owed = daysToMake(club({ versions }), sample(NOW));
       expect(owed.map((day) => [day.localDate, day.versionId])).toEqual(expected);
     }
   });
@@ -322,7 +325,7 @@ describe("a made day's instants across a clock change (T2; ADR-008)", () => {
     Number(day.closeAt.epochNanoseconds - day.revealAt.epochNanoseconds) / 3_600_000_000_000;
   const saturday = (zone: string, date: string, now: string) => {
     const week = version("ver_1", "2026-01-05", [["saturday", "nina", "2026-01-10"]]);
-    const day = daysToMake(club({ zone, versions: [week] }), at(now)).find((owed) => owed.localDate === date);
+    const day = daysToMake(club({ zone, versions: [week] }), sample(now)).find((owed) => owed.localDate === date);
     if (day === undefined) throw new Error(`no day on ${date}`);
     return day;
   };
@@ -388,10 +391,12 @@ describe("a made day's instants across a clock change (T2; ADR-008)", () => {
   });
 
   it("refuses a zone that isn't an IANA name, instead of guessing one (FQ19)", () => {
-    expect(() => daysToMake(club({ zone: "+05:00" }), at("2026-11-06T14:41:00Z"))).toThrow(RangeError);
+    expect(() => daysToMake(club({ zone: "+05:00" }), sample("2026-11-06T14:41:00Z"))).toThrow(RangeError);
     // Whether or not the club is owed a day: the zone is checked before anything is read from it.
-    expect(() => daysToMake(club({ zone: "+05:00", versions: [] }), at("2026-11-06T14:41:00Z"))).toThrow(RangeError);
-    expect(() => daysToMake(club({ zone: "+05:00", activated: false }), at("2026-11-06T14:41:00Z"))).toThrow(
+    expect(() => daysToMake(club({ zone: "+05:00", versions: [] }), sample("2026-11-06T14:41:00Z"))).toThrow(
+      RangeError,
+    );
+    expect(() => daysToMake(club({ zone: "+05:00", activated: false }), sample("2026-11-06T14:41:00Z"))).toThrow(
       RangeError,
     );
   });
@@ -416,7 +421,7 @@ describe("a date whose day was cancelled (FQ129, FQ130)", () => {
 
   it("owes a cancelled date to the star the week in force now gives it: the new member's first days", () => {
     expect(
-      daysToMake(club({ versions: [SIX, LEILAS], made, cancelled }), at(NOW)).map((day) => [
+      daysToMake(club({ versions: [SIX, LEILAS], made, cancelled }), sample(NOW)).map((day) => [
         day.localDate,
         day.starInterval,
         day.versionId,

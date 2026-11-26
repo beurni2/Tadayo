@@ -21,6 +21,7 @@ import {
   type ScheduleCommandInput,
   type SchedulePerson,
   type ScheduleSight,
+  type ServerNow,
   type SlotAnswer,
 } from "@tadayo/domain";
 import { IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
@@ -65,7 +66,7 @@ export function proposalBody(proposal: ProposalAnswer): Json {
 }
 
 /** The contract's `Schedule`: `now` is the clock's sample, whole seconds, rounded down. */
-export function scheduleBody(now: Temporal.Instant, sight: ScheduleSight): Json {
+export function scheduleBody(now: ServerNow, sight: ScheduleSight): Json {
   return {
     server_now: contractInstant(now),
     club: {

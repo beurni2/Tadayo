@@ -30,6 +30,7 @@
 //   first such date whose 7 AM is at least 24 elapsed hours after it (FQ79, FQ130), after the last day of
 //   that weekday announced for a member still in the club, and on or after the start of the week it joins.
 
+import type { ServerNow } from "../time/clock.ts";
 import { firstDate } from "./first-date.ts";
 import { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./propose.ts";
 import type { ProposedDays } from "./roster-change.ts";
@@ -215,7 +216,7 @@ export function nextWeekStart(today: Temporal.PlainDate, latestStart: Temporal.P
  */
 export function newMemberFirstDate(
   weekday: Weekday,
-  confirmedAt: Temporal.Instant,
+  confirmedAt: ServerNow,
   zone: string,
   weekStart: Temporal.PlainDate,
   lastAnnounced: Temporal.PlainDate | null,

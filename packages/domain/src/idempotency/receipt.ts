@@ -7,6 +7,7 @@
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { Refused } from "../refused.ts";
+import type { ServerNow } from "../time/clock.ts";
 import { replayOutcome, requestHash, type IdempotentRequest, type Json } from "./request.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
@@ -32,7 +33,7 @@ export interface ReceiptKey {
 export async function reserveReceipt(
   tx: QuerySql,
   { userId, key, request }: ReceiptKey,
-  at: Temporal.Instant,
+  at: ServerNow,
 ): Promise<{ readonly replay: Json } | null> {
   const reserved = await bound(tx)`
     INSERT INTO app.idempotency_receipts (actor_user_id, operation, idempotency_key, request_hash, created_at)
@@ -84,7 +85,7 @@ export async function reservedSince(
 export async function reserveAsMember(
   tx: QuerySql,
   receipt: ReceiptKey,
-  at: Temporal.Instant,
+  at: ServerNow,
   interval: string,
 ): Promise<{ readonly replay: Json } | null> {
   let first: { readonly replay: Json } | null;

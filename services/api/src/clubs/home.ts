@@ -20,6 +20,7 @@ import {
   type PageDrop,
   type RailEntry,
   type RecentDay,
+  type ServerNow,
 } from "@tadayo/domain";
 import { ok, problem } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
@@ -73,7 +74,7 @@ function railEntryBody(entry: RailEntry): Json {
 }
 
 /** The contract's Home: `now` is the clock's sample, whole seconds, rounded down. */
-export function homeBody(now: Temporal.Instant, home: HomeRead): Json {
+export function homeBody(now: ServerNow, home: HomeRead): Json {
   const serverNow = contractInstant(now);
   const base = { server_now: serverNow, club: clubRef(home), club_today: home.clubToday };
   switch (home.mode) {

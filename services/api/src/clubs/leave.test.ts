@@ -9,7 +9,7 @@ import { LeftClub } from "@tadayo/contracts";
 // The examples aren't among the contract package's exports, and that package changes only in its own PR
 // (docs/TECH-DESIGN.md section 3), so this test reads the file where it is.
 import { successExamples } from "../../../../packages/contracts/src/fixtures/examples.ts";
-import { Refused, type Account, type Clock } from "@tadayo/domain";
+import { Refused, type Account, type Clock, type ServerNow } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
@@ -30,7 +30,7 @@ describe("the leave's serializer against the contract's example (T55)", () => {
     const value = example.value as Body;
     const made = leftClubBody({
       clubId: String(value["club_id"]),
-      leftAt: Temporal.Instant.from(String(value["left_at"])),
+      leftAt: Temporal.Instant.from(String(value["left_at"])) as ServerNow,
       contributions: value["contributions"] === "withdraw" ? "withdraw" : "keep",
     });
     expect(made).toEqual(value);
@@ -41,7 +41,7 @@ describe("the leave's serializer against the contract's example (T55)", () => {
     expect(
       leftClubBody({
         clubId: "club_1",
-        leftAt: Temporal.Instant.from("2026-11-13T14:41:00.999999Z"),
+        leftAt: Temporal.Instant.from("2026-11-13T14:41:00.999999Z") as ServerNow,
         contributions: "withdraw",
       }),
     ).toEqual({ club_id: "club_1", left_at: "2026-11-13T14:41:00Z", contributions: "withdraw" });

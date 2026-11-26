@@ -353,8 +353,33 @@ export function render(spec: Spec): Request {
  * author by the membership id every caption card gives out; then the three headers that carry a
  * device's time, and the two that ask a media route for a short answer before it has checked the
  * caller (a 304 for any version, a 206 for one byte). `t` and `If-Modified-Since` since the outside
- * audit's A14, whose reviewer had Home read its time from each and pass.
+ * audit's A14, whose reviewer had Home read its time from each and pass; and, since its third part's review,
+ * whose reviewer had Home answer `server_now` from `?since=` and pass, one more request with every other name a
+ * time might come under at once (`TIME_NAMES`), none of them a parameter of the contract's, each in the form a
+ * route would read it by: a day's date for `date` and `day`, milliseconds since the epoch for `ts` and
+ * `timestamp`, and the instant for the rest (`timeText`), so a route that parses one and answers by it is seen.
  */
+export const TIME_NAMES = [
+  "since",
+  "before",
+  "after",
+  "until",
+  "from",
+  "date",
+  "day",
+  "time",
+  "ts",
+  "timestamp",
+  "client_time",
+] as const;
+
+/** `later` as `name` would carry it: a day's date, milliseconds since the epoch, or the instant. */
+export function timeText(name: (typeof TIME_NAMES)[number], later: Temporal.Instant): string {
+  if (name === "date" || name === "day") return later.toZonedDateTimeISO("UTC").toPlainDate().toString();
+  if (name === "ts" || name === "timestamp") return String(later.epochMilliseconds);
+  return later.toString({ smallestUnit: "second" });
+}
+
 export function manipulations(spec: Spec, author: string, later: Temporal.Instant): Spec[] {
   const at = later.toString({ smallestUnit: "second" });
   const date = new Date(later.epochMilliseconds).toUTCString();
@@ -372,6 +397,10 @@ export function manipulations(spec: Spec, author: string, later: Temporal.Instan
   };
   return [
     ...Object.entries(query).map(([name, value]) => ({ ...spec, query: { ...spec.query, [name]: value } })),
+    {
+      ...spec,
+      query: { ...spec.query, ...Object.fromEntries(TIME_NAMES.map((name) => [name, timeText(name, later)])) },
+    },
     { ...spec, headers: { ...spec.headers, date } },
     { ...spec, headers: { ...spec.headers, "if-modified-since": date } },
     { ...spec, headers: { ...spec.headers, "x-client-time": at } },

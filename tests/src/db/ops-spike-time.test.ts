@@ -198,8 +198,9 @@ describe("what spike-time expects, against the API's own day choice and serializ
         }
       }
       const seen = new Set<string>();
-      for (const now of instants) {
-        const body = clubListBody(now, await listClubs(tx, account.id, now as ServerNow));
+      for (const instant of instants) {
+        const now = instant as ServerNow;
+        const body = clubListBody(now, await listClubs(tx, account.id, now));
         // The answer's server_now is the sample cut to the second, which is all the run is given.
         const expected = expectedClubList(club, Temporal.Instant.from(contractInstant(now)));
         expect(canonical(body), `at ${now.toString()}`).toBe(canonical(expected));

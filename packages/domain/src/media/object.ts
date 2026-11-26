@@ -4,6 +4,8 @@
 
 import { randomBytes } from "node:crypto";
 
+import type { ServerNow } from "../time/clock.ts";
+
 /** How long an upload lives from its intent, then counts as gone (the contract's examples; FQ15). */
 export const UPLOAD_HOURS = 24;
 
@@ -20,6 +22,6 @@ export function newObjectKey(): string {
 }
 
 /** When an upload made at `at` lapses: 24 hours on. */
-export function uploadExpiry(at: Temporal.Instant): Temporal.Instant {
+export function uploadExpiry(at: ServerNow): Temporal.Instant {
   return at.add({ hours: UPLOAD_HOURS });
 }
