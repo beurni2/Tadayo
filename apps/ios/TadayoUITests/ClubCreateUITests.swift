@@ -8,7 +8,9 @@ import XCTest
 /// row reads Not shared with Share link (`createInvitation.retention`); Revoke link from More asks
 /// the system's alert first and then reads Link revoked; Done for now puts the waiting screen in
 /// the list's place, with the club's name in the bar; and Back returns to Home, which now shows
-/// the club made.
+/// the club made. And the waiting screen's Review members, when the club's revision waits on Ben
+/// (`UITestLaunch.createAwaitingBen`), opens the proposed roster, whose Approve roster starts the
+/// club and closes onto Home.
 final class ClubCreateUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -80,13 +82,74 @@ final class ClubCreateUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Home"].isSelected)
     }
 
+    /// The waiting screen asking for Ben's review (`G01-pending-approve`), on the club made whose
+    /// revision waits on Ben once Sam's link is made: Review members opens the proposed roster
+    /// with Approve roster (`G05-members-proposed-approve`); Manage invitations opens the waiting
+    /// screen's own setup list, Sam's row in it, and Back the roster again; and Approve roster
+    /// starts the club, which closes the roster and the waiting screen under it, so Home shows the
+    /// club with nothing left to review.
+    @MainActor func testTheWaitingScreensReviewOpensTheRosterWhoseApprovalStartsTheClub() {
+        let app = signedIn("-TadayoUITestCreateAwaitingBen")
+        app.buttons["Create a club."].tap()
+        let name = app.textFields["Club name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Sunday people")
+        let continueButton = app.buttons["Continue to invitations"]
+        XCTAssertTrue(eventually { continueButton.isEnabled }, "Continue takes the name")
+        continueButton.tap()
+        XCTAssertTrue(app.staticTexts["Invite your people"].waitForExistence(timeout: 10))
+        app.buttons["Create an invitation"].tap()
+        let person = app.textFields["Person’s name"]
+        XCTAssertTrue(person.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            eventually { (person.value(forKey: "hasKeyboardFocus") as? Bool) ?? false },
+            "the name field focused on arrival")
+        person.typeText("Sam")
+        app.buttons["Create link and share"].tap()
+        closeShareSheet(app)
+        let sam = element("Sam. Not shared.", in: app)
+        XCTAssertTrue(sam.waitForExistence(timeout: 10))
+
+        // Done for now: the waiting screen, asking for Ben's review.
+        app.buttons["Finish managing invitations for now."].tap()
+        let review = app.buttons["Review Sunday people’s updated members."]
+        XCTAssertTrue(review.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["Sunday people"].exists)
+        review.tap()
+
+        // The proposed roster, with Ben's decision.
+        XCTAssertTrue(app.staticTexts["Proposed roster"].waitForExistence(timeout: 10))
+        XCTAssertTrue(element("Ben, you.", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(element("Sam.", in: app).exists)
+        let approve = app.buttons["Approve roster for Sunday people."]
+        XCTAssertTrue(approve.waitForExistence(timeout: 5))
+
+        // Manage invitations: the waiting screen's own list; Back, the roster read again.
+        app.buttons["Manage invitations"].tap()
+        XCTAssertTrue(app.staticTexts["Invite your people"].waitForExistence(timeout: 10))
+        XCTAssertTrue(sam.waitForExistence(timeout: 10))
+        back(in: app)
+        XCTAssertTrue(approve.waitForExistence(timeout: 10))
+
+        // Approve roster: the club starts; the roster and the waiting screen close onto Home.
+        XCTAssertTrue(eventually { approve.isEnabled }, "Approve roster takes a tap")
+        approve.tap()
+        XCTAssertTrue(
+            eventually(10) { !app.staticTexts["Proposed roster"].exists }, "the roster closed")
+        let selector = app.buttons["Switch club. Sunday people selected."]
+        XCTAssertTrue(eventually(10) { shows(selector) && tabBarShows(app) }, "Home, the club")
+        XCTAssertFalse(review.exists, "nothing left to review")
+        XCTAssertFalse(app.navigationBars["Sunday people"].exists, "the waiting screen closed")
+    }
+
     // MARK: Helpers
 
     /// Signed in on the stand-in services' named account with no club, at Home's Start your
-    /// club.
-    @MainActor private func signedIn() -> XCUIApplication {
+    /// club, with `launch` choosing the stand-in club's behaviour.
+    @MainActor private func signedIn(_ launch: String = "-TadayoUITestCreate") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-TadayoUITestCreate"]
+        app.launchArguments = [launch]
         app.launch()
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")

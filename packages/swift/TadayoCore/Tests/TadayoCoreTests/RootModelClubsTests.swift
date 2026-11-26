@@ -893,8 +893,21 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         #expect(root.proposedRoster(of: sunday.ref) === first)
         let other = root.proposedRoster(of: kitchen.ref)
         #expect(other !== first && other?.club == kitchen.ref)
+        // Each club keeps its own: Sunday people's is the same after Kitchen table's was opened.
+        #expect(root.proposedRoster(of: sunday.ref) === first)
+        #expect(root.proposedRoster(of: kitchen.ref) === other)
         await root.leave()
         #expect(root.proposedRoster(of: sunday.ref) == nil)
+    }
+
+    @Test func leaveSignInForgetsTheProposedRosters() async {
+        let root = root(FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))]))
+        await root.start()
+        weak var roster = root.proposedRoster(of: sunday.ref)
+        #expect(roster != nil)
+        await root.leave()
+        // Nothing of the account left stays in memory, its keys included (T11).
+        #expect(roster == nil)
     }
 
     @Test func aProposedRosterNoLongerAProposalReadsTheListAgainAndIsNotKept() async {

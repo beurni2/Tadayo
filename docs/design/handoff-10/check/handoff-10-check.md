@@ -17,7 +17,6 @@
 
 **Where the app keeps something other than the frames** (section 4):
 - Frames 1, 8 and 9's club of five members and two candidates is seven people, one more than a club holds; the snapshots keep the brief's scene as a layout proof, as handoff 10 says, and no test sends it to a server.
-- The proposed roster's rows keep 32 points under the line, as handoff 5's frame draws them, where frame 7 puts them 24 under: one layout serves both states.
 - The viewer's row on the proposed roster reads "Ben, you.", as every roster row in the app does, where frame 7's manifest says "Ben. You."; handoff 10 doesn't list that among the things it replaces.
 
 **Nothing blocks the build.** Section 6 lists which PR adopts what: 7b adopts frame 7, and the next PR, `ios/b1-approve-handoff-10`, adopts the rest on the approval screen and Members.
@@ -68,9 +67,9 @@
 
 `design/reference/INVENTORY.md`'s Known differences ("Handoff 10") lists each:
 - **Seven people in frames 1, 8 and 9.** Five members and two candidates is one more than a club holds (the contract's `ProposeRosterRequest`). Handoff 10 keeps the brief's scene as a layout proof and asks that it never be used as a server fixture. The snapshots draw it from `ClubFixtures.kitchenRevision(nina:)`, which no test sends anywhere; `ApproveUITests` uses one candidate.
-- **The proposed roster's first row.** Handoff 5's frame puts the first row about 28.5 under the line, built as 32 (handoff 5's V-17); frame 7 puts it 24 under. The rows keep 32 in both states, so the list doesn't move between them; everything under the rows takes frame 7's gaps.
 - **The viewer's row on the proposed roster** reads "Ben, you." (`person.self.vo`), as on every roster in the app, where frame 7's manifest reads "Ben. You." and `handoff10.members.active.own.vo` words an active member "{name}. You. {weekday}.". Handoff 10's `replaces` list doesn't name either, and its precedence applies only what it lists, so the built reading stays; whether the app should move to "Ben. You." everywhere goes in the next brief.
 - **The viewer's photograph:** frame 7 draws Ben's portrait; the app shows the initial until avatars are read, as on Home and handoff 5's state.
+- **A row with the name alone** is 64 high, where frame 7 and handoff 5's frame put the proposed roster's rows 52 apart: `RosterRow` sets 12 above and 16 under the 36-point avatar, the taller of the avatar and the name. The invitation's roster has done the same since 6a. Section 6 puts the fix in the next PR, on both screens at once.
 
 ## 5. FQ146: for the founder
 
@@ -87,6 +86,7 @@ The lane recommends adopting it: it says what is true where the default can't, a
     - Decline's busy form, the value "In progress" and the one progress announcement.
     - FQ146 as the founder decides.
     - `G03-approve`'s actions in the column at the accessibility sizes (A1's "large" rule), as 7b's roster already does.
+    - A row with the name alone 52 high, as handoff 5's frame and frame 7 draw the proposed roster's rows and handoff 2's `G02-changed` its own, where `RosterRow` makes it 64 (the 36-point avatar with the row's 12 and 16 around it), on the proposed roster and the invitation's roster together (the inventory's Known differences, handoff 10).
 - **Nothing else changes:** frames 1, 2, 4 and 6 are as built; the alerts keep no Cancel; handoff 9's rows stay as built.
 
 ## 7. The pictures, and the review

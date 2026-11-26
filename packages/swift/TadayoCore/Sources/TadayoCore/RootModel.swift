@@ -107,8 +107,9 @@ import Observation
     /// Moves each time Home is read: an answer to an earlier read, for a club since left
     /// behind, say, is dropped.
     private var homeReads = 0
-    /// The proposed roster last made, in the session it was made in (`proposedRoster(of:)`).
-    private var proposing: (model: ProposedRosterModel, epoch: Int)?
+    /// The proposed rosters made in this session, by club (`proposedRoster(of:)`), forgotten with
+    /// the session's clubs.
+    private var proposing: (models: [String: ProposedRosterModel], epoch: Int) = ([:], 0)
     /// A link held in memory until the tabs show, never written anywhere (book p9,
     /// `linkEntry.retention`; FQ135's default): one opened before any account showed, for the
     /// first account that shows; or one opened while an incomplete account's age or profile step
@@ -408,25 +409,25 @@ import Observation
     }
 
     /// The proposed roster of `club`, a club that hasn't started (`G05-members-proposed`), while
-    /// the tabs show an account: the one made before for the same club in this session, while it
-    /// is still open, so a decision on it keeps its keys (T19) however often Review members opens
-    /// it, or a new one. Its answers count only in the session it was made in, whichever club is
-    /// selected, as the setup list's do; a club no longer a proposal the caller can read has the
-    /// list read again, which decides, as Home does; a `signedOut` answer ends the session.
+    /// the tabs show an account: the one made before for the same club in this session, while it is
+    /// still open, whatever other club's roster was opened since, so a decision on it keeps its
+    /// keys (T19) however often Review members opens it, or a new one. (A decision from Members'
+    /// `G03-approve` on the same revision is that screen's own, with its own keys; the server keeps
+    /// one decision per member per revision, so neither can record a second.) Its answers count
+    /// only in the session it was made in, whichever club is selected, as the setup list's do; a
+    /// club no longer a proposal the caller can read has the list read again, which decides, as
+    /// Home does; a `signedOut` answer ends the session.
     public func proposedRoster(of club: ClubRef) -> ProposedRosterModel? {
         guard route == .tabs, account != nil else { return nil }
-        if let kept = proposing, kept.epoch == epoch, kept.model.club.id == club.id,
-            !kept.model.closed
-        {
-            return kept.model
-        }
+        if proposing.epoch != epoch { proposing = ([:], epoch) }
+        if let kept = proposing.models[club.id], !kept.closed { return kept }
         let made = epoch
         let model = ProposedRosterModel(
             club: club, service: clubService, makeKey: makeKey,
             current: { [weak self] in self?.epoch == made },
             gone: { [weak self] in await self?.loadClubs() },
             signedOut: { [weak self] in await self?.endedByServer() })
-        proposing = (model, made)
+        proposing.models[club.id] = model
         return model
     }
 
@@ -687,6 +688,7 @@ import Observation
         selectedClubID = nil
         home = .loading
         homeReads += 1
+        proposing = ([:], epoch)
     }
 
     /// A02-email, empty unless the server ended the sign-in before while the address was still

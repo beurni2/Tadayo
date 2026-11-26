@@ -46,11 +46,11 @@ import TadayoDesign
 /// Review members, on Home before its club starts and on the waiting screen, pushes the proposed
 /// roster (`G05-members-proposed`, `docs/plans/ios-b1-approve.md` section 2, 7b) with the model
 /// `proposedRoster` makes, the same one for the same club in a session, so a decision on it keeps
-/// its keys (T19). It closes when its model says the club is no longer a proposal the caller can
-/// read; Back reads again what's under it (Home, or the waiting screen's words) when a decision may
-/// have changed it. Its Manage invitations pushes the club's setup list over it (the waiting
-/// screen's own list, over that screen), whose Done for now returns to the screen under the
-/// roster, the waiting state itself, and Back to the roster, read again.
+/// its keys (T19), in place of one open on another tab. It closes when its model says the club is
+/// no longer a proposal the caller can read; Back reads again what's under it (Home, or the waiting
+/// screen's words) when a decision may have changed it. Its Manage invitations pushes the club's
+/// setup list over it (the waiting screen's own list, over that screen), whose Done for now returns
+/// to the screen under the roster, the waiting state itself, and Back to the roster, read again.
 ///
 /// I have an invite, on a tab with no club, pushes the paste step onto that tab, with the model
 /// `linkEntry` makes, in place of any paste step on another tab. Continue checks the link there,
@@ -298,8 +298,15 @@ struct TabsView: View {
         detailsChosen = false
     }
 
+    /// The club being made's screens close, and a setup list Manage invitations pushed over a
+    /// proposed roster with them, back to the roster, read again as Back would read it.
     private func closeCreateScreens() {
         paths = paths.filter { !($0.value.first?.isCreateFlow ?? false) }
+        for tab in Array(paths.keys) {
+            guard let at = paths[tab]?.firstIndex(of: .invitations) else { continue }
+            paths[tab]?.removeSubrange(at...)
+            Task { await proposing?.load() }
+        }
     }
 
     /// I have an invite: the paste step on `tab`, in place of any on another tab, whose
@@ -499,11 +506,17 @@ struct TabsView: View {
     private var homeAsksReview: Bool { state.home == .awaiting(review: true) }
 
     /// Review members, on Home before its club starts or on the waiting screen: the proposed
-    /// roster of `club` over it, once however fast it's tapped.
+    /// roster of `club` over it, once however fast it's tapped, in place of one open on another
+    /// tab, which closes as Back would close it, so no tab shows another tab's club.
     private func openProposedRoster(_ club: ClubRef?, on tab: ClubTab) {
         let stack = paths[tab] ?? []
         guard let club, stack.isEmpty || stack == [.pending], let model = proposedRoster(club)
         else { return }
+        for other in Array(paths.keys) where other != tab {
+            guard let at = paths[other]?.firstIndex(of: .proposedRoster) else { continue }
+            proposedRosterLeft(from: paths[other]?.first)
+            paths[other]?.removeSubrange(at...)
+        }
         proposing = model
         paths[tab, default: []].append(.proposedRoster)
     }
@@ -523,11 +536,11 @@ struct TabsView: View {
     }
 
     /// The proposed roster's club is no longer a proposal the caller can read: it comes off
-    /// every tab, with what was pushed over it.
+    /// every tab, with what was pushed over it, and the waiting screen under it, which has nothing
+    /// left to wait for, so the tab shows its own screen, read again with the club list.
     private func closeProposedRoster() {
-        for tab in Array(paths.keys) {
-            guard let at = paths[tab]?.firstIndex(of: .proposedRoster) else { continue }
-            paths[tab]?.removeSubrange(at...)
+        for tab in Array(paths.keys) where paths[tab]?.contains(.proposedRoster) == true {
+            paths[tab] = []
         }
     }
 

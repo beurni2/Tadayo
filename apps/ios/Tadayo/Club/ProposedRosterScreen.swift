@@ -62,20 +62,20 @@ struct ProposedRosterDestination: View {
 /// 32 (handoff 5's V-17).
 ///
 /// While the viewer's own decision on the open revision is pending, the screen is
-/// G05-members-proposed-approve (handoff 10's frame 7; FQ145): the same column to the last row,
-/// then Manage invitations as a leading text action 24 under it, "Review and approve the updated
-/// roster before {clubName} can start." 24 under its target in `body` `secondaryText`, G03-approve's
-/// shield note 24 under that, and a failed action's line 20 under the note, said once, politely,
-/// the column scrolled to it. Approve roster, the primary, and Decline under it are pinned as
-/// G03-approve's are (704 and 766 in the frame), and follow the note in the same column at the
-/// accessibility sizes. Each decides the whole revision: VoiceOver reads "Approve roster for
-/// {clubName}." and "Decline roster for {clubName}.", hinted "No reason is required.", and a
-/// failure says "this roster" (`handoff10.proposed.*`). Both wait while either is out, Approve
-/// busy. Review members' read, after a changed roster, shows this screen's loading and failure
-/// forms. Once the approval is done with its revision (a decision, See members, or a revision
-/// that ended) the roster is read again, in the loading form, and shows what is true now; a club
-/// that started closes the screen, and the club list is read again. Whenever the roster replaces
-/// the loading form, VoiceOver's focus goes to the title.
+/// G05-members-proposed-approve (handoff 10's frame 7; FQ145): the same column, with the first row
+/// 24 under the line as frame 7 draws it, then Manage invitations as a leading text action 24 under
+/// it, "Review and approve the updated roster before {clubName} can start." 24 under its target in
+/// `body` `secondaryText`, G03-approve's shield note 24 under that, and a failed action's line 20
+/// under the note, said once, politely, the column scrolled to it. Approve roster, the primary, and
+/// Decline under it are pinned as G03-approve's are (704 and 766 in the frame), and follow the note
+/// in the same column at the accessibility sizes. Each decides the whole revision: VoiceOver reads
+/// "Approve roster for {clubName}." and "Decline roster for {clubName}.", hinted "No reason is
+/// required.", and a failure says "this roster" (`handoff10.proposed.*`). Both wait while either is
+/// out, Approve busy. Review members' read, after a changed roster, shows this screen's loading and
+/// failure forms. Once the approval is done with its revision (a decision, See members, or a
+/// revision that ended) the roster is read again, in the loading form, and shows what is true now;
+/// a club that started closes the screen, and the club list is read again. Whenever the roster
+/// replaces the loading form, VoiceOver's focus goes to the title.
 ///
 /// While it loads, the proposed members' loading form, its label said once; after a failure,
 /// frame 11's form with the proposed members' words and Retry (handoff 8's `load.proposed`).
@@ -152,7 +152,7 @@ struct ProposedRosterScreen: View {
                         RosterRow(name: entry.name, isViewer: entry.isYou, days: nil)
                     }
                 }
-                .padding(.top, Spacing.xxxl)
+                .padding(.top, roster.deciding == nil ? Spacing.xxxl : Spacing.xxl)
                 if roster.deciding != nil {
                     decision(line: line)
                 }
@@ -166,7 +166,9 @@ struct ProposedRosterScreen: View {
                     SetupFooter(bottom: Spacing.s, spacing: Spacing.s) { decisionActions }
                 }
             }
-            .onChange(of: line) { _, shown in
+            // From the first draw too: a line the approval kept when the roster was opened again
+            // would otherwise start under the pinned actions.
+            .onChange(of: line, initial: true) { _, shown in
                 guard shown != nil else { return }
                 scroll.scrollTo(Self.failureID, anchor: .bottom)
                 // Again in the main queue's next turn, once the line has its place.

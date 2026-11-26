@@ -33,6 +33,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.clubs) {
                 return .live(UITestLaunch.fakeGraph(inClubs: true))
             }
+            if process.arguments.contains(UITestLaunch.createAwaitingBen) {
+                return .live(UITestLaunch.fakeGraph(awaitingBen: true))
+            }
             if process.arguments.contains(UITestLaunch.create) {
                 return .live(UITestLaunch.fakeGraph(creating: true))
             }
