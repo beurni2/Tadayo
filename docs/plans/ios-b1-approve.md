@@ -24,14 +24,17 @@ For one open revision and the account, made from the members answer that listed 
 
 - Made by Club details' model (`ClubDetailsModel.approval(of:)`), so it answers only in that model's session and while its club is selected, and its not found reads the members again, whose own not found closes the club's screens.
 - **Approve and Decline** call `approve` and `decline` with the revision's `version` as `expected_version`. Each action has its own key, made when it starts and sent again on every retry of the same action on the same revision (T19, as `ProfileModel` does). Approving after a failed Decline is a new action with a new key. One action at a time; both buttons wait while one is out.
-- **Success** of either: the screen closes back to Members, which reads again. Nothing on screen says how many approved, who else did, or that the club is now waiting on anyone (T15, T33). A decline names nobody (book p30).
+- **Success** of either, when the answer holds the person's decision (`my_decision` `approved` after Approve, `declined` after Decline): the screen closes back to Members, which reads again. Nothing on screen says how many approved, who else did, or that the club is now waiting on anyone (T15, T33). A decline names nobody (book p30).
+- **An answer that changed nothing.** The server answers a decision that can change nothing with the revision as it stands, and a 200 (spec 32; `packages/domain/src/clubs/decide-roster.ts` step 7). When it holds the other decision (an earlier one of the person's, whose answer was lost, went through), the screen doesn't claim the action and doesn't close: FQ146's default is the action's own refusal line ("Couldn’t decline this invitation. Try again."), with both actions kept, this action's key dropped and the other's kept, so its retry is answered with the decision it made. When the revision ended without the person's decision, it is "This invitation is no longer available.".
 - **A failure keeps the screen** and both actions (handoff 8, frame 10): the network's "Couldn’t approve {name}. Check your connection and try again." or "Couldn’t decline this invitation. Check your connection and try again.", or a refusal's "Try again." in place of the second sentence (handoff 8's failure words). VoiceOver reads the line once, politely, with the focus left on the button.
-- **`ROSTER_CHANGED`**, and **`VERSION_CONFLICT`**, which says the same of this screen (its revision's state moved, so the roster it shows is no longer the one open): the native alert "Review the updated roster" with "The members have changed. Review the updated roster before approving." (or "declining"), and Review members. Review members reads the members again and opens the open revision it now lists, as a new screen with new keys; neither decision is replayed onto it (handoff 8). If no revision is open any more, the screen says "This invitation is no longer available." (handoff 8's neutral recovery words) with Back.
+- **`ROSTER_CHANGED`** (a newer revision replaced this one): the native alert "Review the updated roster" with "The members have changed. Review the updated roster before approving." (or "declining"), and Review members. Review members reads the members again and shows the open revision they now list, with no keys; neither decision is replayed onto it (handoff 8). If no revision is open any more, the screen says "This invitation is no longer available." (handoff 8's neutral recovery words) with Back.
+- **`VERSION_CONFLICT`** (the revision's state moved with no newer one: a member declined, or the person's own earlier Decline went through): "The members have changed." would be untrue (T43), so the members are read at once, as Review members reads them, with no alert, as `InvitationModel`'s Accept checks again on the same answer.
 - **`CLUB_FULL`** (approving only): the native alert "{clubName} is full." with "{clubName} already has six members.", and See members, which closes the screen back to Members, which reads again. It claims no approval and suggests removing nobody (handoff 8).
 - **Not found:** the revision, or the club, is no longer the caller's to see (T14): "This invitation is no longer available." with Back, and Members reads again, whose own not found closes the club's screens as today (`ClubDetailsModel.closed`).
 - **Signed out** ends the session, as everywhere. **`PROFILE_INCOMPLETE`** is a refusal's line: the root already holds an account without a name or an age to finishing its profile, so it can't reach this screen.
 - An answer counts only while the session it was asked in hasn't ended and the club is still the selected one, and a cancelled call shows no failure, as `ClubDetailsModel`'s reads.
-- **Members under it reads again** as it closes, once, when the approval has moved on from the roster Members listed (a decision, an outcome, or a newer roster after Review members: `refreshesMembers`), and when a decision still out at Back answers afterwards. Back from the same roster, undecided, reads nothing.
+- **Members under it reads again** as it closes, once for each change the approval has learned of or may have caused (`changes`, `takeMembersRead`): a decision, an outcome, a newer roster after Review members, or an action with no answer (the server may have carried it out). A decision still out at Back reads it once it answers. Back after a refusal, or with nothing done, reads nothing, and a not found's own read is the only one it gets.
+- **The same roster opened again** from Members is the approval as it stands (`reopens`: the same revision at the same `version`, still on screen), so its keys (T19), its failure's line and any decision still out stay with it, and no second decision goes out beside one on its way. Any other revision, or one Club details' model made earlier, opens a new approval.
 
 ### Who opens what from a proposed row
 
@@ -39,8 +42,8 @@ For one open revision and the account, made from the members answer that listed 
 
 | The viewer | `my_decision` | The row | Source |
 |---|---|---|---|
+| Any member, the candidate's proposer among them | `pending` | Opens `G03-approve` for the revision. The proposer's decision is pending on a revision the server made for the candidate's own name (FQ84), which could never go ahead without it. | handoff 4, book p30 |
 | The candidate's proposer | `approved` (FQ60) | Opens the person's invitation page, 7c (`G05-members-invite`). In 7a it opens nothing. | handoff 8 (`activeInvitationManagement`) |
-| Another member | `pending` | Opens `G03-approve` for the revision | handoff 4, book p30 |
 | Another member | `approved` or `declined` | Opens nothing (FQ143's default) | none drawn |
 
 ### `G03-approve` and `G03-approve-failed` (`apps/ios/Tadayo/Club/ApproveScreen.swift`)
@@ -76,15 +79,17 @@ The approval model's tests, and the proposed rows' (`RosterProposedRowsTests`, t
     - approving and declining send the revision's id and `version`;
     - one key per action, reused on a retry of it; a new key for the other action and for a new revision;
     - one action at a time;
-    - success closes, with nothing counted;
+    - success closes, with nothing counted, only when the answer holds the decision: one holding the other decision keeps the screen with the action's line (FQ146), one where the revision ended is "no longer available";
     - the network's and a refusal's lines, per action, both actions kept;
-    - `ROSTER_CHANGED` and `VERSION_CONFLICT` give the alert with its action's body;
+    - `ROSTER_CHANGED` gives the alert with its action's body; `VERSION_CONFLICT` reads the members with no alert;
     - Review members reads the members and opens the newly listed revision with new keys, replaying nothing, or "no longer available" when none is open;
     - `CLUB_FULL` gives the full alert;
     - not found gives "no longer available";
     - signed out ends the session;
-    - an answer after the session or the club changed, or a cancelled call, changes nothing.
-- **`MembersRowsTests`** (the roster's proposed rows): the candidates after the members in the revision's order, "Proposed by" from each candidate's own proposer, the footer's count of active members only, and each row's destination by the table in section 2.
+    - an answer after the session or the club changed, or a cancelled call, changes nothing;
+    - Members reads again once for each change it doesn't show, never after a refusal, and only `gone`'s read after a not found;
+    - the same roster opened again is the same approval, while a decision is out too, and not after Review members moved on.
+- **`RosterProposedRowsTests`** (the roster's proposed rows): the candidates after the members in the revision's order, "Proposed by" from each candidate's own proposer, the footer's count of active members only, and each row's destination by the table in section 2.
 
 ## 4. The states to snapshot (`TadayoSnapshotTests`, iOS 27.2)
 
@@ -94,7 +99,7 @@ The approval model's tests, and the proposed rows' (`RosterProposedRowsTests`, t
 
 Hosted readings (7a): the screen's words, the candidate as one element, both actions' spoken names and Decline's hint, nothing counted; each failure's line with both actions kept; both waiting while one is out; Approve and Decline calling their actions; two candidates named together, the count the members'; the neutral end and Review members' forms; the alerts' words; and in Members, the proposed row after the members, the footer counting five, a pending decision's row a button that opens the approval for the revision listed, and a decided member's row, approved or declined alike, not a button.
 
-UI tests (iOS 26.5 and 27.2; `ApproveUITests`, on `UITestLaunch.Approving`, where Ben stands in for the frames' Maya and Maya for Ben, since the UI tests sign in as Ben): Ben opens Members, taps Leila's proposed row, approves into no answer, which keeps the line and both actions, approves again and is back on Members, read again, where Leila's row is no longer a button; and a Decline into a changed roster, whose alert's Review members shows the newer roster, still to decide, with nothing sent for it.
+UI tests (iOS 26.5 and 27.2; `ApproveUITests`, on `UITestLaunch.Approving`, where Ben stands in for the frames' Maya and Maya for Ben, since the UI tests sign in as Ben): Ben opens Members, taps Leila's proposed row, approves into no answer, which keeps the line and both actions, goes Back and taps the row again, which opens the same approval with its line, approves again and is back on Members, read again, where Leila's row is no longer a button; and a Decline into a changed roster, whose alert's Review members shows the newer roster, still to decide, with nothing sent for it (no alert comes back).
 
 ## 5. What isn't drawn, and the defaults meanwhile
 
@@ -103,12 +108,13 @@ Built from the spec and the frames' components, marked built from spec in `desig
 - **FQ143.** What a member who has already decided sees from a proposed row. Default: the row opens nothing, and nothing shows the decision, so nothing on the screen differs between members who approved, declined or haven't been asked (T15, T33).
 - **FQ144.** `G03-approve` for a revision with two or more candidates. Default: one block per candidate, in the revision's order, with the title "Invite {name} and {name}?" and Approve {name} and {name}, the names joined by the locale's list format.
 - **FQ145.** Where the creator approves the revision the server made for a name (frame 13). Default: Approve and Decline under the proposed roster, when the creator's decision is pending.
+- **FQ146.** What a member sees when an Approve or Decline changes nothing because an earlier decision of theirs, whose answer was lost, went through. Default: the screen stays, with the action's own refusal line ("Couldn’t decline this invitation. Try again.") and both actions; Back reads the members again, where the decided row opens nothing (FQ143).
 - **The proposed row in an active club's Members.** Default: handoff 1's words and the brand sheet's proposed member row, after the current members. A row that opens the approval is a button with no chevron and no hint: no frame draws its affordance, and handoff 10 asks for one.
 - **The approval's neutral end, and Review members' read on it** (`G03-approve-unavailable`, `G03-approve-reviewing`, `G03-approve-review-failed`): handoff 8 gives the words and the forms they reuse, and no frame.
 
 ## 6. Design handoff 10
 
-Written with this plan's PR, in `docs/design/handoff-10/handoff-10-brief.txt` (the text to paste, whole) and `handoff-10-brief.md` (how to send it), as one block for the founder to paste into Claude Design. It names the 11 frames it expects back, in order: `G03-approve-two`, `G03-approve-unavailable`, `G03-approve-reviewing`, `G03-approve-review-failed`, `G05-members-with-proposed`, `G05-members-with-proposed-decided` and `G05-members-proposed-approve` at the default size, and `G03-approve-two` and `G05-members-with-proposed` dark and at accessibility 5. It asks in words which Decline label stands (section 2), whether Decline needs a busy form, whether either alert needs a Cancel, and the needs list's items 70 to 72, which waited for a handoff. The needs list's section 16 (`docs/design/handoff-7/ios-lane-needs.md`, items 73 to 79) records this handoff's items. The app builds the defaults above until it comes back.
+Written with this plan's PR, in `docs/design/handoff-10/handoff-10-brief.txt` (the text to paste, whole) and `handoff-10-brief.md` (how to send it), as one block for the founder to paste into Claude Design. It names the 11 frames it expects back, in order: `G03-approve-two`, `G03-approve-unavailable`, `G03-approve-reviewing`, `G03-approve-review-failed`, `G05-members-with-proposed`, `G05-members-with-proposed-decided` and `G05-members-proposed-approve` at the default size, and `G03-approve-two` and `G05-members-with-proposed` dark and at accessibility 5. It asks in words which Decline label stands (section 2), whether Decline needs a busy form, whether either alert needs a Cancel, what an Approve or Decline that changed nothing says (FQ146), and the needs list's items 70 to 72, which waited for a handoff. The needs list's section 16 (`docs/design/handoff-7/ios-lane-needs.md`, items 73 to 80) records this handoff's items. The app builds the defaults above until it comes back.
 
 ## 7. Privacy checks for the review
 
@@ -118,3 +124,4 @@ Written with this plan's PR, in `docs/design/handoff-10/handoff-10-brief.txt` (t
 - A not found reads the same for a revision that ended, one that never existed and one the caller can't see (T14).
 - A candidate shows no photograph before joining (FQ47), and the link controls show only to the candidate's proposer (7c).
 - The approval is made for the revision Members listed and decides on exactly that `id` and `version`; a newer one shows only after Review members, with no keys.
+- A decision is shown as done only when the server's answer holds it (FQ146); opening the same roster again keeps its keys and lets no second decision out beside one on its way (T19).

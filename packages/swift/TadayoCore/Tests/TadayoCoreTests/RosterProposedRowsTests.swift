@@ -32,17 +32,28 @@ import Testing
         }
     }
 
-    @Test func theProposerOpensTheInvitationWhateverTheDecision() {
+    @Test func theProposerWhoHasDecidedOpensTheInvitation() {
         // Alex proposed Nina; the viewer here is Alex, whose own decision is approved (FQ60).
+        let list = asAlex(Approval.revision(decision: .approved, nina: true))
+        #expect(roster(list).proposed.map(\.opens) == [.nothing, .invitation])
+        #expect(roster(list).rows.filter(\.isViewer).map(\.person.displayName) == ["Alex"])
+    }
+
+    @Test func aPendingDecisionOpensTheApprovalEvenForTheProposer() {
+        // A revision the server made for Nina's own name keeps Alex as her proposer, and Alex's
+        // decision on it is pending (FQ84): without the approval it could never go ahead.
+        let list = asAlex(Approval.revision(decision: .pending, nina: true))
+        #expect(roster(list).proposed.map(\.opens) == [.approval, .approval])
+    }
+
+    /// Kitchen table's members as Alex reads them, with `open` open.
+    private func asAlex(_ open: RosterRevision) -> MemberList {
         let alex = ClubRef(
             id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
             myMembershipID: "mem_alex")
-        let open = Approval.revision(decision: .approved, nina: true)
-        let list = MemberList(
+        return MemberList(
             serverClock: Sunday.clock, club: alex, members: Approval.members(open: nil).members,
             openRevision: open)
-        #expect(roster(list).proposed.map(\.opens) == [.nothing, .invitation])
-        #expect(roster(list).rows.filter(\.isViewer).map(\.person.displayName) == ["Alex"])
     }
 
     @Test func noRevisionOpenListsNobodyProposed() {

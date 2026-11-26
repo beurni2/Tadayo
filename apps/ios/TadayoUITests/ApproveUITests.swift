@@ -3,9 +3,11 @@ import XCTest
 /// Approving a proposed member from Members (`docs/plans/ios-b1-approve.md` section 4), on the
 /// stand-in services' Kitchen table (`UITestLaunch.Approving`), where Maya has proposed Leila and
 /// Ben hasn't decided: Leila's proposed row opens G03-approve; an Approve with no answer keeps
-/// the line and both actions, and the next approves and closes back to Members, which reads
-/// again, Leila's row then opening nothing (FQ143). And a Decline into a changed roster: the
-/// system's alert, whose Review members shows the newer roster, with nothing sent for it.
+/// the line and both actions, and Back and Leila's row again open the same approval, its line
+/// still there (its key with it, T19); the next Approve approves and closes back to Members,
+/// which reads again, Leila's row then opening nothing (FQ143). And a Decline into a changed
+/// roster: the system's alert, whose Review members shows the newer roster, with nothing sent for
+/// it.
 final class ApproveUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -26,6 +28,17 @@ final class ApproveUITests: XCTestCase {
         XCTAssertTrue(eventually { approve.isEnabled && decline.isEnabled }, "both actions kept")
         XCTAssertTrue(app.staticTexts["Invite Leila?"].exists)
 
+        // Back, and Leila's row again: the same approval, as it stands.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let leila = app.buttons["Leila. Proposed by Maya. Proposed."]
+        XCTAssertTrue(leila.waitForExistence(timeout: 5))
+        leila.tap()
+        XCTAssertTrue(app.staticTexts["Invite Leila?"].waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            element("Couldn’t approve Leila. Check your connection and try again.", in: app)
+                .exists, "the same approval, its line with it")
+
+        XCTAssertTrue(eventually { approve.isEnabled })
         approve.tap()
         // Approved: back on Members, read again, where Leila's row is no longer a button.
         XCTAssertTrue(
@@ -62,12 +75,14 @@ final class ApproveUITests: XCTestCase {
         review.tap()
 
         // The newer roster, both actions there, and nothing sent for it: had the Decline been
-        // replayed onto it, the screen would close.
+        // replayed onto it, the stand-in would answer that the roster changed again, and the
+        // alert would be back.
         XCTAssertTrue(app.staticTexts["Invite Leila and Nina?"].waitForExistence(timeout: 10))
         let approveBoth = app.buttons["Approve Leila and Nina joining Kitchen table."]
         XCTAssertTrue(approveBoth.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Decline Leila and Nina joining Kitchen table."].exists)
         RunLoop.current.run(until: Date().addingTimeInterval(2))
+        XCTAssertFalse(app.alerts.firstMatch.exists, "nothing sent for the newer roster")
         XCTAssertTrue(app.staticTexts["Invite Leila and Nina?"].exists, "still deciding")
         XCTAssertTrue(approveBoth.isEnabled)
     }

@@ -814,3 +814,10 @@ The coordinator reserved FQ143 to FQ145 at 01:36 UTC on 2026-11-26. Each is aske
     - Default (Claude Code's): the proposed roster shows Approve and Decline under its list when the viewer's `my_decision` is pending, with `G03-approve`'s outcomes, failure lines and alerts.
     - The other reading: Review members on frame 13 opens `G03-approve` itself for that revision, and the proposed roster stays read-only.
     - Needed by: B1 PR 7b (`ios/b1-proposed-roster`), before Gate A. The answer changes which screen holds the actions, nothing in the contract.
+
+The coordinator reserved FQ146 at 03:49 UTC on 2026-11-26, from the independent review of `ios/b1-approve`. It is asked of Claude Design in design handoff 10's written questions too.
+
+- **FQ146. What a member sees when an Approve or Decline changes nothing because an earlier decision of theirs already went through.** A member decides once (the schema writes a decision once), and the server answers a decision that can change nothing with the revision as it stands and a 200, with no refusal (spec 32; `packages/domain/src/clubs/decide-roster.ts` step 7). So after an Approve that went through with its answer lost (handoff 8's frame 10, "Couldn’t approve Leila. Check your connection and try again."), a Decline, a new action with a new key, is answered with the viewer's approval in it. No source gives words for it.
+    - Default (Claude Code's): the screen doesn't claim the action and doesn't close; it shows the action's own refusal line ("Couldn’t decline this invitation. Try again.") with both actions, drops that action's key and keeps the other's, whose retry is answered with the decision it made and closes; Back reads Members again, where the decided row opens nothing (FQ143). `RosterApprovalModel.decide`.
+    - The other reading: the screen says the viewer's own decision ("You approved Leila joining Kitchen table."), never anyone else's, and closes.
+    - Needed by: B1 PR 7a (`ios/b1-approve`), before Gate A. The answer changes one line's words, nothing in the contract.

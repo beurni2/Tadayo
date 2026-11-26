@@ -235,10 +235,13 @@ public struct Roster: Sendable, Equatable {
     /// the row opens for the viewer.
     public struct Proposed: Sendable, Equatable, Identifiable {
         public enum Opens: Sendable, Equatable {
-            /// The candidate's proposer: the person's invitation page (`G05-members-invite`, plan
-            /// PR 7b), where only the proposer sees the link's controls (handoff 8).
+            /// The candidate's proposer, once decided (by proposing, FQ60): the person's invitation
+            /// page (`G05-members-invite`, plan PR 7c), where only the proposer sees the link's
+            /// controls (handoff 8).
             case invitation
-            /// A member whose decision on the revision is pending: G03-approve.
+            /// A member whose decision on the revision is pending, the candidate's proposer among
+            /// them when the server made the revision for the candidate's own name (FQ84):
+            /// G03-approve, without which the revision could never go ahead.
             case approval
             /// A member who has decided: nothing, so no screen tells one decision from another
             /// (FQ143, T15, T33).
@@ -271,10 +274,10 @@ public struct Roster: Sendable, Equatable {
         openRevision = open
         proposed = (open?.candidates ?? []).map { candidate in
             let opens: Proposed.Opens =
-                if candidate.proposedBy.membershipID == list.club.myMembershipID {
-                    .invitation
-                } else if open?.myDecision == .pending {
+                if open?.myDecision == .pending {
                     .approval
+                } else if candidate.proposedBy.membershipID == list.club.myMembershipID {
+                    .invitation
                 } else {
                     .nothing
                 }

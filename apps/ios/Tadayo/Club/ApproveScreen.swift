@@ -83,6 +83,8 @@ struct ApproveScreen: View {
     var lastShown: RosterRevision?
     var actions = ApproveActions()
     @AccessibilityFocusState private var titleFocused: Bool
+    /// The alert last shown, whose title stays while it animates away after `alert` is cleared.
+    @State private var titled: RosterApprovalModel.Alert?
 
     /// The failed action's line, which the column is scrolled to as it shows.
     private static let failureID = "approve.failure"
@@ -107,7 +109,9 @@ struct ApproveScreen: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
             .alert(
-                Text(verbatim: alert.map { ApproveWords.alertTitle($0, club: club) } ?? ""),
+                Text(
+                    verbatim: (alert ?? titled).map { ApproveWords.alertTitle($0, club: club) }
+                        ?? ""),
                 isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } }),
                 presenting: alert
             ) { shown in
@@ -123,6 +127,9 @@ struct ApproveScreen: View {
                     Text(verbatim: ApproveWords.alertActionSpoken(shown, club: club)))
             } message: { shown in
                 Text(verbatim: ApproveWords.alertBody(shown, club: club))
+            }
+            .onChange(of: alert, initial: true) { _, shown in
+                if let shown { titled = shown }
             }
             // A newer roster after Review members: VoiceOver's focus goes to its title, so it
             // isn't left on the loading words that are gone.

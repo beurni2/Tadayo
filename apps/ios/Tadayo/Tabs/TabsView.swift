@@ -116,10 +116,10 @@ struct TabsView: View {
     @State private var paths: [ClubTab: [ClubRoute]] = [:]
     /// The selected club's Club details and members list: the last opened.
     @State private var shownDetails: ClubDetailsModel?
-    /// The approval last opened from Members, which stays drawn while it slides away, and the one
-    /// Members has already read again for.
+    /// The approval last opened from Members, which stays drawn while it slides away, and the
+    /// Club details model that made it (held, so it is never mistaken for a later one).
     @State private var approving: RosterApprovalModel?
-    @State private var refreshedFor: ObjectIdentifier?
+    @State private var approvingFrom: ClubDetailsModel?
     /// The switcher's Club details was chosen: pushed once the sheet has closed.
     @State private var detailsChosen = false
     /// The switcher's Create a club was chosen: pushed once the sheet has closed.
@@ -214,9 +214,9 @@ struct TabsView: View {
         .onChange(of: shownDetails?.closed ?? false) { _, closed in
             if closed { closeClubScreens() }
         }
-        .onChange(of: approving?.refreshesMembers ?? false) { _, moved in
+        .onChange(of: approving?.changes ?? 0) { _, _ in
             // A decision that answered after Back: Members, showing again, reads again.
-            if moved, !paths.values.contains(where: { $0.contains(.approval) }) {
+            if !paths.values.contains(where: { $0.contains(.approval) }) {
                 approvalClosed()
             }
         }
@@ -413,10 +413,15 @@ struct TabsView: View {
 
     /// A proposed row's G03-approve over Members, once however fast it's tapped, for the revision
     /// the list showed, with a model the selected club's makes, so it answers only in this session
-    /// and while the club stays selected.
+    /// and while the club stays selected. The same roster opened again is the approval as it
+    /// stands (`RosterApprovalModel.reopens`): its keys, its failure's line, and a decision still
+    /// out, so the retry is the same action (T19) and no second decision goes out beside it.
     private func openApproval(_ revision: RosterRevision, on tab: ClubTab) {
         guard paths[tab]?.last == .members, let shownDetails else { return }
-        approving = shownDetails.approval(of: revision)
+        if approvingFrom !== shownDetails || approving?.reopens(revision) != true {
+            approving = shownDetails.approval(of: revision)
+            approvingFrom = shownDetails
+        }
         paths[tab, default: []].append(.approval)
     }
 
@@ -427,15 +432,15 @@ struct TabsView: View {
         approvalClosed()
     }
 
-    /// The approval closed: Members reads again, once for each approval, as soon as it has moved
-    /// on from the roster Members listed (`RosterApprovalModel.refreshesMembers`), so Members never
-    /// shows a decided or ended proposal as still open to decide; a decision still out at Back
-    /// reads it once it answers. Back from that roster, undecided, reads nothing.
+    /// The approval closed: Members reads again, once for each change the approval has learned
+    /// of or may have caused (`RosterApprovalModel.takeMembersRead`): a decision, an outcome, a
+    /// newer roster, or an action with no answer, so Members never shows a decided or ended
+    /// proposal as still open to decide. A decision still out at Back reads it once it answers.
+    /// Back after a refusal, or with nothing done, reads nothing.
     private func approvalClosed() {
-        guard let approving, approving.refreshesMembers, let shownDetails,
-            refreshedFor != ObjectIdentifier(approving)
+        guard let approving, let shownDetails, approvingFrom === shownDetails,
+            approving.takeMembersRead()
         else { return }
-        refreshedFor = ObjectIdentifier(approving)
         Task { await shownDetails.loadMembers() }
     }
 

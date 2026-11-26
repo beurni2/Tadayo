@@ -46,7 +46,9 @@ import Testing
 
     @Test func aNetworkFailureKeepsBothActionsAndItsRetrySendsTheSameKey() async {
         let service = ScriptedClubs()
-        service.approveAnswers = [.failure(.network), .success(Approval.revision())]
+        service.approveAnswers = [
+            .failure(.network), .success(Approval.revision(decision: .approved)),
+        ]
         let approval = model(service)
         await approval.approve()
         #expect(approval.failed == .init(action: .approve, failure: .network))
@@ -110,7 +112,7 @@ import Testing
 
     @Test func oneActionAtATime() async {
         let service = ScriptedClubs()
-        service.approveAnswers = [.success(Approval.revision())]
+        service.approveAnswers = [.success(Approval.revision(decision: .approved))]
         let approval = model(service)
         let gate = Gate()
         service.duringDecision = { await gate.wait() }
@@ -127,22 +129,95 @@ import Testing
         #expect(approval.state == .finished)
     }
 
+    @Test func aDecisionThatChangedNothingDoesntClose() async {
+        // FQ146: Approve went through but its answer was lost; Decline, a new action, changes
+        // nothing, and the server answers with the revision as it stands, Maya's approval in it.
+        // The screen doesn't claim the Decline, and Approve's retry still sends its own key.
+        let service = ScriptedClubs()
+        service.approveAnswers = [
+            .failure(.network), .success(Approval.revision(decision: .approved)),
+        ]
+        service.declineAnswers = [.success(Approval.revision(decision: .approved))]
+        let approval = model(service)
+        await approval.approve()
+        await approval.decline()
+        #expect(approval.state == .deciding(Approval.revision()))
+        #expect(approval.failed == .init(action: .decline, failure: .other))
+        #expect(approval.takeMembersRead())
+        await approval.approve()
+        #expect(
+            service.calls == [
+                "approve rev_leila v3 \(Keys.key(1))", "decline rev_leila v3 \(Keys.key(2))",
+                "approve rev_leila v3 \(Keys.key(1))",
+            ])
+        #expect(approval.state == .finished)
+    }
+
+    @Test func aDecisionTheServerDidntTakeIsNotTakenForOne() async {
+        // An answer with the viewer's decision still pending on an open revision is one the
+        // contract never gives: it isn't taken for the decision either.
+        let service = ScriptedClubs()
+        service.approveAnswers = [.success(Approval.revision()), .failure(.network)]
+        let approval = model(service)
+        await approval.approve()
+        #expect(approval.state == .deciding(Approval.revision()))
+        #expect(approval.failed == .init(action: .approve, failure: .other))
+        await approval.approve()
+        #expect(service.calls.last == "approve rev_leila v3 \(Keys.key(2))")
+    }
+
+    @Test func aDecisionOnARevisionThatHadEndedIsNoLongerAvailable() async {
+        for ended in [RosterRevisionState.applied, .didNotGoAhead, .superseded] {
+            let service = ScriptedClubs()
+            service.approveAnswers = [.success(Approval.revision(state: ended))]
+            let told = Told()
+            let approval = model(service, told: told)
+            await approval.approve()
+            #expect(approval.state == .unavailable, "\(ended)")
+            #expect(told.gone == 0)
+            #expect(approval.takeMembersRead())
+        }
+    }
+
     // MARK: The approval's own outcomes
 
     @Test func aChangedRosterAsksToReviewItWithTheActionsOwnWords() async {
-        let cases: [(RosterApprovalModel.Action, APIFailure)] = [
-            (.approve, .rosterChanged), (.approve, .versionConflict),
-            (.decline, .rosterChanged), (.decline, .versionConflict),
-        ]
-        for (action, failure) in cases {
+        for action in [RosterApprovalModel.Action.approve, .decline] {
             let service = ScriptedClubs()
-            service.approveAnswers = [.failure(failure)]
-            service.declineAnswers = [.failure(failure)]
+            service.approveAnswers = [.failure(.rosterChanged)]
+            service.declineAnswers = [.failure(.rosterChanged)]
             let approval = model(service)
             if action == .approve { await approval.approve() } else { await approval.decline() }
-            #expect(approval.alert == .rosterChanged(action), "\(action) \(failure)")
+            #expect(approval.alert == .rosterChanged(action), "\(action)")
             #expect(approval.failed == nil)
             #expect(approval.revision == Approval.revision())
+        }
+    }
+
+    @Test func aVersionConflictReadsTheMembersWithNoAlert() async {
+        // The revision moved, but no newer roster replaced it ("The members have changed" would
+        // be untrue): the members are read at once, and the screen shows what they list, with
+        // no keys.
+        let newer = Approval.revision(version: 4)
+        for (action, open, then) in [
+            (RosterApprovalModel.Action.approve, newer, RosterApprovalModel.State.deciding(newer)),
+            (.decline, nil, .unavailable),
+            (.approve, Approval.revision(version: 4, decision: .approved), .finished),
+        ] {
+            let service = ScriptedClubs()
+            service.approveAnswers = [.failure(.versionConflict), .failure(.network)]
+            service.declineAnswers = [.failure(.versionConflict)]
+            service.memberAnswers = [.success(Approval.members(open: open))]
+            let approval = model(service)
+            if action == .approve { await approval.approve() } else { await approval.decline() }
+            #expect(approval.alert == nil, "\(action) \(String(describing: open))")
+            #expect(approval.failed == nil)
+            #expect(approval.state == then, "\(action) \(String(describing: open))")
+            #expect(service.calls.last == "members club_kitchen")
+            if then == .deciding(newer) {
+                await approval.approve()
+                #expect(service.calls.last == "approve rev_leila v4 \(Keys.key(2))")
+            }
         }
     }
 
@@ -175,13 +250,15 @@ import Testing
     }
 
     @Test func reviewMembersWithNothingOpenIsNoLongerAvailable() async {
-        let service = ScriptedClubs()
-        service.declineAnswers = [.failure(.rosterChanged)]
-        service.memberAnswers = [.success(Approval.members(open: nil))]
-        let approval = model(service)
-        await approval.decline()
-        await approval.reviewMembers()
-        #expect(approval.state == .unavailable)
+        for open in [nil, Approval.revision(id: "rev_2", state: .didNotGoAhead)] {
+            let service = ScriptedClubs()
+            service.declineAnswers = [.failure(.rosterChanged)]
+            service.memberAnswers = [.success(Approval.members(open: open))]
+            let approval = model(service)
+            await approval.decline()
+            await approval.reviewMembers()
+            #expect(approval.state == .unavailable, "\(String(describing: open))")
+        }
     }
 
     @Test func reviewMembersOnARosterAlreadyDecidedCloses() async {
@@ -263,7 +340,7 @@ import Testing
 
     @Test func anAnswerAfterTheSessionEndedChangesNothing() async {
         let service = ScriptedClubs()
-        service.approveAnswers = [.success(Approval.revision())]
+        service.approveAnswers = [.success(Approval.revision(decision: .approved))]
         let session = SessionFlag()
         service.duringDecision = { @MainActor in session.current = false }
         let approval = model(service, session: session)
@@ -274,35 +351,108 @@ import Testing
 
     // MARK: Members, under the screen
 
-    @Test func membersReadAgainOnlyOnceTheScreenMovedOnFromTheirRoster() async {
+    @Test func membersReadAgainOnceForEachChangeTheyDontShow() async {
         let service = ScriptedClubs()
-        service.approveAnswers = [.failure(.network), .failure(.rosterChanged)]
+        service.approveAnswers = [.failure(.refused), .failure(.network), .failure(.rosterChanged)]
         let newer = Approval.revision(id: "rev_2", version: 1)
         service.memberAnswers = [.success(Approval.members(open: newer))]
         let approval = model(service)
-        #expect(!approval.refreshesMembers)
-        // A failure's line keeps the same roster: Back reads nothing.
+        #expect(!approval.takeMembersRead())
+        // A refusal carried nothing out: Members still lists what the server has.
         await approval.approve()
-        #expect(!approval.refreshesMembers)
-        // The roster changed: Members lists one the person no longer sees.
+        #expect(!approval.takeMembersRead())
+        // No answer: the server may have carried it out, so Members reads again, once.
         await approval.approve()
+        #expect(approval.takeMembersRead())
+        #expect(!approval.takeMembersRead())
+        // The roster changed, and Review members showed a newer one than Members lists.
+        await approval.approve()
+        let changed = approval.changes
         await approval.reviewMembers()
         #expect(approval.state == .deciding(newer))
-        #expect(approval.refreshesMembers)
+        #expect(approval.changes > changed)
+        #expect(approval.takeMembersRead())
+        #expect(!approval.takeMembersRead())
     }
 
-    @Test func membersReadAgainAfterADecisionOrAnEnd() async {
+    @Test func membersReadAgainAfterADecisionOrAnOutcome() async {
         for (answer, action) in [
-            (Result<RosterRevision, APIFailure>.success(Approval.revision()), "approve"),
-            (.failure(.notFound), "approve"), (.success(Approval.revision()), "decline"),
+            (
+                Result<RosterRevision, APIFailure>.success(Approval.revision(decision: .approved)),
+                RosterApprovalModel.Action.approve
+            ),
+            (.success(Approval.revision(decision: .declined)), .decline),
+            (.failure(.clubFull), .approve), (.failure(.unavailable), .decline),
         ] {
             let service = ScriptedClubs()
             service.approveAnswers = [answer]
             service.declineAnswers = [answer]
             let approval = model(service)
-            if action == "approve" { await approval.approve() } else { await approval.decline() }
-            #expect(approval.refreshesMembers, "\(answer) \(action)")
+            if action == .approve { await approval.approve() } else { await approval.decline() }
+            #expect(approval.takeMembersRead(), "\(answer) \(action)")
         }
+    }
+
+    @Test func aNotFoundsOwnReadOfTheMembersIsTheOnlyOne() async {
+        // `gone` reads the members already: closing the screen reads nothing more.
+        for review in [false, true] {
+            let service = ScriptedClubs()
+            service.approveAnswers = [review ? .failure(.rosterChanged) : .failure(.notFound)]
+            service.memberAnswers = [.failure(.notFound)]
+            let told = Told()
+            let approval = model(service, told: told)
+            await approval.approve()
+            if review { await approval.reviewMembers() }
+            #expect(approval.state == .unavailable)
+            #expect(told.gone == 1)
+            #expect(!approval.takeMembersRead(), "\(review)")
+        }
+    }
+
+    // MARK: Opened again from Members
+
+    @Test func theSameRosterOpenedAgainIsThisApprovalAsItStands() async {
+        // A network failure, Back, and Leila's row again: the same approval, its line and its
+        // key with it (T19), so the retry is the same action.
+        let service = ScriptedClubs()
+        service.approveAnswers = [.failure(.network), .failure(.network)]
+        let approval = model(service)
+        #expect(approval.reopens(Approval.revision()))
+        await approval.approve()
+        #expect(approval.reopens(Approval.revision()))
+        #expect(!approval.reopens(Approval.revision(version: 4)))
+        #expect(!approval.reopens(Approval.revision(id: "rev_2")))
+        await approval.approve()
+        #expect(
+            service.calls == [
+                "approve rev_leila v3 \(Keys.key(1))", "approve rev_leila v3 \(Keys.key(1))",
+            ])
+    }
+
+    @Test func aDecisionStillOutIsReopenedNotSentTwice() async {
+        let service = ScriptedClubs()
+        service.approveAnswers = [.success(Approval.revision(decision: .approved))]
+        let approval = model(service)
+        let gate = Gate()
+        service.duringDecision = { await gate.wait() }
+        async let first: Void = approval.approve()
+        await gate.reached()
+        #expect(approval.reopens(Approval.revision()))
+        gate.open()
+        await first
+        #expect(!approval.reopens(Approval.revision()))
+    }
+
+    @Test func anApprovalThatMovedOnIsNotReopenedForTheRosterItLeft() async {
+        let service = ScriptedClubs()
+        service.approveAnswers = [.failure(.rosterChanged)]
+        let newer = Approval.revision(id: "rev_2", version: 1)
+        service.memberAnswers = [.success(Approval.members(open: newer))]
+        let approval = model(service)
+        await approval.approve()
+        await approval.reviewMembers()
+        #expect(!approval.reopens(Approval.revision()))
+        #expect(approval.reopens(newer))
     }
 
     /// Club details' model makes the approval in its own session, for its own club: a not found
@@ -370,8 +520,8 @@ enum Approval {
     static let debby = Person(membershipID: "mem_debby", displayName: "Debby", avatarVersion: nil)
 
     static func revision(
-        id: String = "rev_leila", version: Int = 3, decision: RosterDecision = .pending,
-        nina: Bool = false
+        id: String = "rev_leila", version: Int = 3, state: RosterRevisionState = .open,
+        decision: RosterDecision = .pending, nina: Bool = false
     ) -> RosterRevision {
         var candidates = [
             Candidate(id: "cand_leila", name: "Leila", proposedBy: ben, invitation: nil)
@@ -381,7 +531,7 @@ enum Approval {
                 Candidate(id: "cand_nina", name: "Nina", proposedBy: alex, invitation: nil))
         }
         return RosterRevision(
-            id: id, version: version, club: ref, state: .open, proposedBy: ben,
+            id: id, version: version, club: ref, state: state, proposedBy: ben,
             members: [ben, maya, alex, sam, debby], candidates: candidates, myDecision: decision,
             supersededBy: nil)
     }
