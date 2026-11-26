@@ -482,6 +482,15 @@ final class ScreenSnapshotSettleTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: folder) }
         let reference = try XCTUnwrap(pixels()?.pngData())
         try reference.write(to: folder.appendingPathComponent("glassComparison.reference.png"))
+        // A comparison that fails writes the image it was given into SnapshotTesting's
+        // SNAPSHOT_ARTIFACTS, which the evidence job lists as a screen that changed; the two
+        // failures this test expects write theirs into its own folder instead.
+        let artifacts = "SNAPSHOT_ARTIFACTS"
+        let runArtifacts = ProcessInfo.processInfo.environment[artifacts]
+        setenv(artifacts, folder.path, 1)
+        defer {
+            if let runArtifacts { setenv(artifacts, runArtifacts, 1) } else { unsetenv(artifacts) }
+        }
         func compared(_ image: UIImage) -> String? {
             verifySnapshot(
                 of: image, as: .image(precision: 1, perceptualPrecision: 0.98, scale: 2),
@@ -498,6 +507,12 @@ final class ScreenSnapshotSettleTests: XCTestCase {
         XCTAssertNotNil(compared(drawn26.image))
         XCTAssertTrue(matched27 === drawn27.image)
         XCTAssertNotNil(compared(matched27))
+        XCTAssertTrue(
+            FileManager.default.fileExists(
+                atPath: folder.appendingPathComponent(
+                    "ScreenSnapshotSettleTests/glassComparison.reference.png"
+                ).path),
+            "the failures' images were written into the test's own folder")
     }
 
     /// The reference `glassMatched` reads is the one `assertSnapshot` compares with: A02-age's
