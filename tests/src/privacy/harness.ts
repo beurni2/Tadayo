@@ -183,8 +183,10 @@ export function sentTo(app: FastifyInstance): number {
  * (DATE_LAG_MS).
  */
 export async function answerOf(app: FastifyInstance, request: Request): Promise<Answer> {
-  sent.set(app, sentTo(app) + 1);
   await new Promise((resolve) => setImmediate(resolve));
+  // Counted once what the last request left to write is written, so a line the app writes from here on is
+  // this request's (the privacy matrix holds each request to one line).
+  sent.set(app, sentTo(app) + 1);
   const from = Date.now();
   const response = await app.inject({
     method: request.method as "GET",

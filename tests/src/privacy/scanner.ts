@@ -48,9 +48,9 @@
 //   handles to 24 to 32 bytes, and to put a version tag inside the encoded bytes or in whole groups
 //   of 4 characters (rows.ts);
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it, and every object of a
-//   schema an answer can hold before a day's reveal is exactly its list (BEFORE_REVEAL); in an answer of
-//   BEFORE_REVEAL_OPERATIONS, no object of a schema on neither list, or of none (this file's own copies,
-//   so a contract change alone can't widen them: the outside audit's A14);
+//   schema an answer can hold before a day's reveal, opened or not, is exactly its list (BEFORE_REVEAL);
+//   in an answer of BEFORE_REVEAL_OPERATIONS, no object of a schema off the list, or of none (this file's
+//   own copies, so a contract change alone can't widen them: the outside audit's A14);
 // - world: each of these an answer names is the world's and the viewer's to see:
 //   - a card's drop, in an audience holding an active interval of the viewer, or the viewer's own
 //     for an own card, with the drop's own author and caption;
@@ -416,7 +416,7 @@ const MEDIA_CLASSES = new Set(["photo", "external_video"]);
  * a day, Home, a drop's detail, the author's own day and drops and what each add, edit, removal,
  * highlight, hide and reservation answers, the clubs and members, which hold a club's open and next day,
  * and the author's own preview of a drop (T11, built by B3). In their answers that succeed, every object
- * is of a schema BEFORE_REVEAL or OPENED_ONLY names.
+ * is of a schema BEFORE_REVEAL names.
  */
 export const BEFORE_REVEAL_OPERATIONS: ReadonlySet<string> = new Set([
   "getOccurrence",
@@ -438,35 +438,20 @@ export const BEFORE_REVEAL_OPERATIONS: ReadonlySet<string> = new Set([
   "getAuthorPreview",
 ]);
 
-/**
- * The schemas only an opened day holds, and nothing of a day before its reveal. The world check refuses
- * each before its day opens (a revealed card, an opened reference, a link to a closed day), and the key
- * check doesn't look inside what has opened. An opened day that also names a day still to open (Home's
- * open day and its `next`, the revealed day and its `add_target`) has its own list (BEFORE_REVEAL); a
- * test holds that none of these reaches a day but a day link's own.
- */
-export const OPENED_ONLY: ReadonlySet<string> = new Set([
-  "DayLink",
-  "DropRevealed",
-  "HighlightEntry",
-  "ReactionSummary",
-  "ReplyPreview",
-  "RevealedDayDrop",
-  "RevealedPhoto",
-  "RevealedVideo",
-]);
-
 export interface KeyList {
   readonly required: readonly string[];
   readonly optional: readonly string[];
 }
 
 /**
- * T10's lists for every other object an answer of BEFORE_REVEAL_OPERATIONS can hold, by its schema:
- * this file's own copy, so a key the contract and a route add together still fails here (the outside
- * audit's A14). The scan holds each object of these schemas to its list exactly, in every answer and
- * phase. A test reads the contract: these and OPENED_ONLY are every object schema those answers reach,
- * and each list is its schema's keys today.
+ * T10's lists for every object an answer of BEFORE_REVEAL_OPERATIONS can hold, by its schema: this file's
+ * own copy, so a key the contract and a route add together still fails here (the outside audit's A14).
+ * The scan holds each object of these schemas to its list exactly, in every answer and phase. What has
+ * opened is on it too (a revealed card and its media, reactions and reply, a highlight, a day link): it
+ * sits in the same answers as a day still to open (Home's `next` and recent days, the revealed day's
+ * `add_target`), and the key check doesn't look inside what has opened, so only a list stops a key there
+ * that counts or flags the day still hidden (the round-2 review). A test reads the contract: these are
+ * every object schema those answers reach, and each list is its schema's keys today.
  */
 export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
   Allowance: {
@@ -493,11 +478,17 @@ export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
     required: ["id", "name", "timezone", "my_membership_id", "state", "member_count"],
     optional: ["open_day", "next_day"],
   },
+  // A closed day, among Home's recent days while the next one collects (the round-2 review).
+  DayLink: { required: ["occurrence"], optional: ["cover_drop_id"] },
   DropCaption: CAPTION_CARD,
   DropDetail: { required: ["server_now", "occurrence", "club", "drop"], optional: [] },
   DropOwn: {
     required: ["view", "id", "author", "media_class", "highlight", "state", "version"],
     optional: ["caption"],
+  },
+  DropRevealed: {
+    required: ["view", "id", "author", "media_class", "highlight", "reactions", "viewer_favourite"],
+    optional: ["caption", "photo", "video", "viewer_reaction"],
   },
   DropReceipt: {
     required: ["drop_id", "occurrence", "media_class", "state", "version", "allowance", "highlight"],
@@ -507,6 +498,7 @@ export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
   // The author's own preview of their link, to its author alone (T11, T40): built by B3.
   ExternalVideoPreview: { required: ["provider", "original_url"], optional: [] },
   HiddenDrop: { required: ["drop_id", "hidden"], optional: [] },
+  HighlightEntry: { required: ["drop_id", "author", "star_pick"], optional: [] },
   HighlightPointer: { required: ["version"], optional: ["drop_id"] },
   HomeAwaitingActivation: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
   // Home's open day: opened, but its `next` is the club's next day, still collecting.
@@ -526,14 +518,22 @@ export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
   OwnContributionPage: { required: ["items"], optional: ["next_cursor"] },
   OwnDay: { required: ["server_now", "occurrence", "club", "allowance", "highlight", "drops"], optional: [] },
   Person: CARD_AUTHOR,
+  ReactionSummary: { required: ["reaction"], optional: ["people"] },
   ReleasedReservation: { required: ["id", "state"], optional: ["drop_id", "allowance"] },
   RemovedDrop: { required: ["drop_id", "state"], optional: ["allowance", "highlight"] },
+  ReplyPreview: { required: ["comment_id", "author", "media_version"], optional: [] },
   Reservation: { required: ["id", "occurrence_id", "media_class", "expires_at", "allowance"], optional: [] },
   // The opened day: its `add_target` is the star's next day, still collecting.
   RevealedDay: {
     required: ["stage", "server_now", "occurrence", "club", "viewer", "drops", "highlights"],
     optional: ["add_target", "next_cursor"],
   },
+  RevealedDayDrop: {
+    required: ["view", "id", "author", "media_class", "highlight", "reactions", "viewer_favourite", "section"],
+    optional: ["caption", "photo", "video", "viewer_reaction", "reply_preview"],
+  },
+  RevealedPhoto: { required: ["width", "height", "media_version"], optional: [] },
+  RevealedVideo: { required: ["provider"], optional: [] },
   RosterRevision: {
     required: ["id", "version", "club", "state", "proposed_by", "members", "candidates", "my_decision"],
     optional: ["superseded_by"],
@@ -559,9 +559,11 @@ const NEVER_KEY = new RegExp(
 );
 
 /**
- * T10's never-list and the ways to reach media, as words of a key, each also in its plural; and the
- * outside audit's additions (A14): a count, a total, a number, whether there is any, a hidden flag, a
- * position, a preview and a time.
+ * T10's never-list and the ways to reach media, as words of a key, each also in its plural; the outside
+ * audit's additions (A14): a count, a total, a number, whether there is any, a hidden flag, a position, a
+ * preview and a time; and the plain spellings of T10's and T15's own lists the round-2 review found passing:
+ * a provider's post or video id, a date taken, a length, a width and height as `w` and `h`, dimensions as
+ * `dims`, a MIME type, and what is remaining, missing, empty or left of a day's slots.
  */
 const NEVER_WORDS = new Set(
   [
@@ -613,8 +615,23 @@ const NEVER_WORDS = new Set(
     "timestamp",
     "created",
     "updated",
+    "post",
+    "video",
+    "taken",
+    "length",
+    "w",
+    "h",
+    "dims",
+    "mime",
+    "remaining",
+    "missing",
+    "empty",
+    "slotsleft",
   ].flatMap((word) => [word, `${word}s`]),
 );
+
+/** A never-word no plain word starts with, caught at a word's start too: `highlighted`, `highlighting`. */
+const NEVER_STARTS = /^highlight/;
 
 /**
  * Media words and counts no plain word ends with, caught at a word's end too: `filesize`, `imageurl`,
@@ -645,9 +662,9 @@ export function keyWords(key: string): string[] {
 /**
  * Whether a key names one of T10's never-list, a way to reach media, a count, a total, a number, whether
  * there is any, a hidden flag, a position, a size, a preview or a time (a last word `at` or `on`:
- * `committed_at`, `addedOn`), in snake_case or camelCase, as one word or two (`waveForm`, `highLight`),
- * or ends a word with a media word or a count (NEVER_ENDINGS); and every key `main`'s list named
- * (NEVER_KEY).
+ * `committed_at`, `addedOn`), in snake_case or camelCase, as one word or two (`waveForm`, `highLight`,
+ * `slots_left`), or starts a word with a highlight (NEVER_STARTS) or ends one with a media word or a count
+ * (NEVER_ENDINGS); and every key `main`'s list named (NEVER_KEY).
  */
 export function neverKey(key: string): boolean {
   if (NEVER_KEY.test(key)) return true;
@@ -659,6 +676,7 @@ export function neverKey(key: string): boolean {
     (word, index) =>
       NEVER_WORDS.has(word) ||
       NEVER_WORDS.has(`${word}${words[index + 1] ?? ""}`) ||
+      NEVER_STARTS.test(word) ||
       (NEVER_ENDINGS.test(word) && !PLAIN_WORDS.has(word)),
   );
 }
@@ -1416,9 +1434,9 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       for (const problem of exactKeys(node.author, CARD_AUTHOR))
         find("whitelist", `${at}.author`, `${problem} (T10, FQ74)`);
   }
-  // whitelist: every object of a schema an answer can hold before a day's reveal, against this file's
-  // own list of its keys; and in a successful answer of BEFORE_REVEAL_OPERATIONS, no object of a schema
-  // on neither list, or of none (the outside audit's A14).
+  // whitelist: every object of a schema an answer can hold before a day's reveal, opened or not, against
+  // this file's own list of its keys; and in a successful answer of BEFORE_REVEAL_OPERATIONS, no object of
+  // a schema off the list, or of none (the outside audit's A14).
   const beforeReveal = answer.status < 300 && BEFORE_REVEAL_OPERATIONS.has(context.operation.id);
   for (const [node, at] of objects(body)) {
     const kind = walked.names.get(at);
@@ -1426,7 +1444,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     if (kind !== undefined && list !== undefined) {
       for (const problem of exactKeys(node, list))
         find("whitelist", at, `${schemaArticle(kind)} ${kind} that ${problem} (T10: this file's own list)`);
-    } else if (beforeReveal && (kind === undefined || !OPENED_ONLY.has(kind))) {
+    } else if (beforeReveal) {
       find(
         "whitelist",
         at,
@@ -1966,54 +1984,89 @@ export function worldTexts(world: WorldFacts): string[] {
 }
 
 /**
+ * A log string this long or longer is looked for inside text people wrote too, as a text cut short or
+ * trimmed (the round-2 review: `Saturday` from the club "Saturday People"). A shorter one could be a word
+ * of the log's own (`request`) inside an ordinary sentence.
+ */
+const SHORTEST_CUT = 8;
+
+/** `found`'s list under `key`, with `value` added. */
+function listed(found: Map<string, string[]>, key: string, value: string): void {
+  const list = found.get(key);
+  if (list === undefined) found.set(key, [value]);
+  else list.push(value);
+}
+
+/**
  * Strings a log line must not hold, each indexed by its first SHORTEST_TEXT characters, so a line's few
  * short values are read against tens of thousands of them in a few lookups each (the privacy matrix reads
- * every line, at the end against all it gathered).
+ * every line, at the end against all it gathered). Each is looked for in any case and also as JSON escapes
+ * it inside another string (a body logged whole holds a caption's `"` as `\"`: the round-2 review). With
+ * `cuts`, each is also indexed by every SHORTEST_TEXT characters inside it, so a value of SHORTEST_CUT
+ * characters or more found inside one counts too; text people wrote has it, while tokens and kept-back
+ * values, long random strings by the thousand, aren't cut where the API could carry them.
  */
 export class Needles {
-  readonly #all = new Set<string>();
+  readonly #needles = new Set<string>();
+  /** Each needle's forms, lower case, with the needle they are of. */
+  readonly #forms = new Map<string, string>();
   readonly #short: string[] = [];
   readonly #byStart = new Map<string, string[]>();
+  readonly #byInside: Map<string, string[]> | undefined;
 
-  constructor(needles: Iterable<string> = []) {
+  constructor(needles: Iterable<string> = [], options: { readonly cuts?: boolean } = {}) {
+    this.#byInside = options.cuts === true ? new Map() : undefined;
     for (const needle of needles) this.add(needle);
   }
 
   get size(): number {
-    return this.#all.size;
+    return this.#needles.size;
   }
 
   add(needle: string): this {
-    if (needle === "" || this.#all.has(needle)) return this;
-    this.#all.add(needle);
-    if (needle.length < SHORTEST_TEXT) this.#short.push(needle);
-    else {
-      const start = needle.slice(0, SHORTEST_TEXT);
-      const found = this.#byStart.get(start);
-      if (found === undefined) this.#byStart.set(start, [needle]);
-      else found.push(needle);
+    if (needle === "" || this.#needles.has(needle)) return this;
+    this.#needles.add(needle);
+    for (const form of new Set([needle, JSON.stringify(needle).slice(1, -1)].map((one) => one.toLowerCase()))) {
+      if (this.#forms.has(form)) continue;
+      this.#forms.set(form, needle);
+      if (form.length < SHORTEST_TEXT) {
+        this.#short.push(form);
+        continue;
+      }
+      listed(this.#byStart, form.slice(0, SHORTEST_TEXT), form);
+      if (this.#byInside !== undefined && form.length > SHORTEST_CUT) {
+        const starts = new Set<string>();
+        for (let at = 0; at + SHORTEST_TEXT <= form.length; at += 1) starts.add(form.slice(at, at + SHORTEST_TEXT));
+        for (const start of starts) listed(this.#byInside, start, form);
+      }
     }
     return this;
   }
 
   /**
-   * The needles `value` holds: `value` itself, and each of SHORTEST_TEXT characters or more inside it;
-   * with `shortInside`, each shorter one inside it too.
+   * The needles `value` holds, in any case: `value` itself, and each of SHORTEST_TEXT characters or more
+   * inside it; with `shortInside`, each shorter one inside it too; and, with `cuts`, each that holds
+   * `value` when it has SHORTEST_CUT characters or more.
    */
   within(value: string, shortInside: boolean): string[] {
+    const lower = value.toLowerCase();
     const found = new Set<string>();
-    if (this.#all.has(value)) found.add(value);
-    if (shortInside) for (const needle of this.#short) if (value.includes(needle)) found.add(needle);
-    for (let at = 0; at + SHORTEST_TEXT <= value.length; at += 1)
-      for (const needle of this.#byStart.get(value.slice(at, at + SHORTEST_TEXT)) ?? [])
-        if (value.startsWith(needle, at)) found.add(needle);
+    const needle = (form: string) => found.add(this.#forms.get(form) ?? form);
+    if (this.#forms.has(lower)) needle(lower);
+    if (shortInside) for (const form of this.#short) if (lower.includes(form)) needle(form);
+    for (let at = 0; at + SHORTEST_TEXT <= lower.length; at += 1)
+      for (const form of this.#byStart.get(lower.slice(at, at + SHORTEST_TEXT)) ?? [])
+        if (lower.startsWith(form, at)) needle(form);
+    if (this.#byInside !== undefined && lower.length >= SHORTEST_CUT)
+      for (const form of this.#byInside.get(lower.slice(0, SHORTEST_TEXT)) ?? [])
+        if (form.includes(lower)) needle(form);
     return [...found];
   }
 }
 
 /** What a log must never hold, gathered from every world the matrix made: T52 has no viewer. */
 export interface LogFacts {
-  /** Text people wrote: in the worlds, and in the requests (a caption a refused commit carried). */
+  /** Text people wrote: in the worlds, and in the requests (a caption a refused commit carried); with `cuts`. */
   readonly texts: Needles;
   /** Values the worlds keep back (their canaries). */
   readonly keptBack: Needles;
@@ -2023,10 +2076,11 @@ export interface LogFacts {
 
 /**
  * What is wrong with one line of the API's log (T52, T16; the outside audit's A14): it is a JSON object
- * with only LOG_KEYS, and no string anywhere in it holds text people wrote (whole, or one of 6 characters or
- * more inside it), a value a world keeps back, a request's token or any JSON Web Token, a URL, a storage
- * path or a provider's host (NEVER_VALUE, the values check's own marks). A log carries no content to anyone,
- * so nothing here depends on who asked.
+ * with only LOG_KEYS, and no string anywhere in it holds text people wrote (whole, one of 6 characters or
+ * more inside it, or 8 characters or more of one: Needles), a value a world keeps back, a request's token or
+ * any JSON Web Token, a URL, a storage path or a provider's host (NEVER_VALUE, the values check's own
+ * marks), in any case and as JSON escapes them. A log carries no content to anyone, so nothing here depends
+ * on who asked.
  */
 export function logProblems(line: string, facts: LogFacts): string[] {
   let entry: unknown;

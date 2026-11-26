@@ -371,15 +371,18 @@ let photo: Buffer;
  * written since, against everything a log must never hold that the matrix has met so far: the text people
  * wrote and the values kept back in every world made, the text every request carried (a caption a refused
  * commit never stored), and every token a request carried or an answer gave; and holds them to one request
- * line for each request sent since. The last test reads every line again, against all of it.
+ * line for each request sent since, written while it was the last one sent. The last test reads every line
+ * again, against all of it.
  */
 const logLines: string[] = [];
+/** For each line, how many requests the app had been sent when it was written (harness.ts, `sentTo`). */
+const logTags: number[] = [];
 let logRead = 0;
 /** How many requests the app had been sent at the last read. */
 let logSent = 0;
 /** The answers the scanner read, each of which wrote one request line. */
 let logAnswers = 0;
-const logFacts = { texts: new Needles(), keptBack: new Needles(), secrets: new Needles() };
+const logFacts = { texts: new Needles([], { cuts: true }), keptBack: new Needles(), secrets: new Needles() };
 
 /** Whether a line of the log is a request's line. */
 const isRequestLine = (line: string) => {
@@ -392,17 +395,40 @@ const isRequestLine = (line: string) => {
 };
 
 /**
+ * How the request lines from line `from` on fall against the requests after the `sentBefore`th: each request
+ * one line, written while it was the last one sent, and no line written in another's time (the round-2
+ * review: counted by step alone, a lost line and a doubled one in the same step cancelled out).
+ */
+function lineCounts(from: number, sentBefore: number): string[] {
+  const lines = new Map<number, number>();
+  // From `from` on only: each step reads its own lines, never the whole log again, which would make the
+  // matrix's time grow with the square of its lines.
+  for (let index = from; index < logLines.length; index += 1) {
+    const line = logLines[index];
+    if (line !== undefined && isRequestLine(line)) {
+      const tag = logTags[index] ?? 0;
+      lines.set(tag, (lines.get(tag) ?? 0) + 1);
+    }
+  }
+  const problems: string[] = [];
+  for (let request = sentBefore + 1; request <= sentTo(app); request += 1) {
+    const count = lines.get(request) ?? 0;
+    if (count !== 1) problems.push(`${String(count)} request lines for request ${String(request)}`);
+    lines.delete(request);
+  }
+  for (const [request, count] of lines)
+    problems.push(`${String(count)} request lines written while request ${String(request)} was the last sent`);
+  return problems;
+}
+
+/**
  * The lines written since the last read, through the log's scan, and one request line for each request
  * sent since: each problem as a line, into `wrong`.
  */
 function readLog(wrong: string[], where: string): void {
-  const lines = logLines.slice(logRead);
-  for (const line of lines)
+  for (const line of logLines.slice(logRead))
     for (const problem of logProblems(line, logFacts)) wrong.push(`${where}, the API's log: ${problem}`);
-  const requests = lines.filter(isRequestLine).length;
-  const sent = sentTo(app) - logSent;
-  if (requests !== sent)
-    wrong.push(`${where}, the API's log: ${String(requests)} request lines for ${String(sent)} requests`);
+  for (const problem of lineCounts(logRead, logSent)) wrong.push(`${where}, the API's log: ${problem}`);
   logRead = logLines.length;
   logSent = sentTo(app);
 }
@@ -425,20 +451,26 @@ function* stringsIn(value: unknown): Generator<string> {
 }
 
 /**
+ * The opaque values a request carries that a log may hold (T52): an id of the API's (`drp_` and 22 characters
+ * of base64url: packages/domain/src/ids.ts), a UUID (an idempotency key), and a whole date or instant.
+ */
+const OPAQUE = [
+  /^[a-z][a-z0-9]{0,15}_[A-Za-z0-9_-]{22}$/,
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  /^\d{4}-\d{2}-\d{2}$/,
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/,
+];
+
+/**
  * The text `spec` carries, which no log may hold: each string of its body and query of 6 characters or more
- * but an id, a date or an instant, and a value the contract enumerates (T52; the round-1 review: a caption a
- * refused commit never stored, or a search's words, are in no world).
+ * but an opaque value (OPAQUE) and a value the contract enumerates (T52; the round-1 review: a caption a
+ * refused commit never stored, or a search's words, are in no world; the round-2 review: an id isn't text
+ * people wrote, and a caption that starts with a date is).
  */
 function textsOf(spec: Spec): string[] {
   const found: string[] = [];
   const take = (value: string) => {
-    if (
-      value.length >= 6 &&
-      !ENUM_VALUES.has(value) &&
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) &&
-      !/^\d{4}-\d{2}-\d{2}/.test(value)
-    )
-      found.push(value);
+    if (value.length >= 6 && !ENUM_VALUES.has(value) && !OPAQUE.some((opaque) => opaque.test(value))) found.push(value);
   };
   for (const value of Object.values(spec.query)) take(value);
   if (spec.body !== undefined) {
@@ -476,11 +508,15 @@ function answerSecrets(answer: Answer): string[] {
   return found;
 }
 
-/** The tokens and secrets `spec` carries, which no log may hold: its bearer token and its body's. */
+/**
+ * The tokens and secrets `spec` carries, which no log may hold: its credential whatever its scheme, whole and
+ * after the scheme (the round-2 review: `Basic`'s too), each of 6 characters or more, and its body's.
+ */
 function secretsOf(spec: Spec): string[] {
   const found: string[] = [];
-  const bearer = spec.headers["authorization"];
-  if (bearer?.startsWith("Bearer ")) found.push(bearer.slice("Bearer ".length));
+  const authorization = spec.headers["authorization"] ?? "";
+  const credential = authorization.slice(authorization.indexOf(" ") + 1);
+  for (const value of new Set([authorization, credential])) if (value.length >= 6) found.push(value);
   if (spec.body !== undefined) {
     try {
       const body: unknown = JSON.parse(spec.body);
@@ -731,7 +767,15 @@ beforeAll(async () => {
     clock,
     authenticate: sessions({ verifier: keys.verifier, sql: api, clock }),
     storage,
-    log: { level: "info", stream: { write: (line: string) => void logLines.push(line) } },
+    log: {
+      level: "info",
+      stream: {
+        write: (line: string) => {
+          logLines.push(line);
+          logTags.push(sentTo(app));
+        },
+      },
+    },
   });
   await app.ready();
   elsewhere = await db.begin(async (tx) => {
@@ -4521,8 +4565,14 @@ describe("the API's log, at production's level (T52, T16; the outside audit's A1
     // text a later request carried.
     for (const [index, line] of logLines.entries())
       for (const problem of logProblems(line, logFacts)) wrong.push(`line ${String(index)}, read again: ${problem}`);
+    console.log(
+      `the API's log: ${String(logLines.length)} lines read twice, for ${String(sentTo(app))} requests, against ` +
+        `${String(logFacts.texts.size)} texts, ${String(logFacts.keptBack.size)} kept-back values and ` +
+        `${String(logFacts.secrets.size)} tokens`,
+    );
     expect(wrong.slice(0, 40)).toEqual([]);
     expect(logAnswers).toBeGreaterThan(0);
+    expect(lineCounts(0, 0)).toEqual([]);
     expect(logLines.filter(isRequestLine)).toHaveLength(sentTo(app));
     expect(sentTo(app)).toBeGreaterThanOrEqual(logAnswers);
     // The scan had something to look for.

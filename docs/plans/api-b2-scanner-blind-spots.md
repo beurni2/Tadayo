@@ -48,21 +48,26 @@ slice's changes carried over by a three-way merge, which met no conflict.
   `listMembers` (the last four hold a club's `open_day`, `next_day` and a member's `next_day`); and, since round 1,
   `getAuthorPreview`, the author's own preview of a link, which answers its author before the reveal (T11, built by
   B3; section 5.1, P7).
-- `OPENED_ONLY`: the schemas only an opened day holds (`DropRevealed`, `RevealedPhoto`, `RevealedVideo`,
-  `ReactionSummary`, `RevealedDayDrop`, `ReplyPreview`, `HighlightEntry`, `DayLink`). The world check already refuses
-  each before its day opens; the key check skips what has opened. The first commit had Home's open day (`HomeDay`) and
-  the revealed day (`RevealedDay`) on it too, but each also names a day still to open (`next`, `add_target`), so since
-  round 1 each has its own list in `BEFORE_REVEAL` (section 5.1, P2), and a test holds that no schema on `OPENED_ONLY`
-  reaches an `Occurrence` but `DayLink`'s, a closed day.
-- `BEFORE_REVEAL`: this file's own copy of each other object schema those answers reach, its keys as
-  `{ required, optional }` (37 schemas since round 1: the first commit's 34, `HomeDay`, `RevealedDay` and the author's
-  preview's `ExternalVideoPreview`). The scan checks every object whose schema (the walk's name for it) is on the list against
-  it exactly, in every answer and phase, as a `whitelist` finding (`a <schema> that has <key>`, or `an`). In an answer of a
-  `BEFORE_REVEAL_OPERATIONS` operation, an object of a schema on neither list, or with no schema name at all, is a
-  `whitelist` finding too, so a new schema can't arrive under the day unlisted.
+- `OPENED_ONLY`, in the first two commits: the schemas only an opened day holds (`DropRevealed`, `RevealedPhoto`,
+  `RevealedVideo`, `ReactionSummary`, `RevealedDayDrop`, `ReplyPreview`, `HighlightEntry`, `DayLink`), which no list
+  held: the world check refuses each before its day opens, and the key check skips what has opened. The first commit had
+  Home's open day (`HomeDay`) and the revealed day (`RevealedDay`) on it too, but each also names a day still to open
+  (`next`, `add_target`), so round 1 gave each its own list (section 5.1, P2). Round 2 found that a day link sits among
+  a waiting Home's recent days while the club's next day collects, and that an opened card, its photo and its
+  reactions sit in the same answers as a day still to open, so a key there (`drops: 7` on a day link, `upcoming: 2` on
+  an opened card) met no list, and no never-word; `OPENED_ONLY` is gone, and each of the eight has its list (section
+  5.4, F1).
+- `BEFORE_REVEAL`: this file's own copy of each object schema those answers reach, its keys as `{ required, optional }`
+  (37 schemas after round 1: the first commit's 34, `HomeDay`, `RevealedDay` and the author's preview's
+  `ExternalVideoPreview`; 45 since round 2, with `DayLink` and the seven opened ones). The scan checks every object whose
+  schema (the walk's name for it) is on the list against it exactly, in every answer and phase, as a `whitelist` finding
+  (`a <schema> that has <key>`, or `an`). In an answer of a `BEFORE_REVEAL_OPERATIONS` operation, an object of a schema
+  off the list, or with no schema name at all, is a `whitelist` finding too, so a new schema can't arrive under the day
+  unlisted.
 - `CAPTION_CARD` and `CARD_AUTHOR` stay as they are: they judge a card by its `view`, whatever schema the walk gives it.
 - A test reads the contract: the object schemas `BEFORE_REVEAL_OPERATIONS`' answers reach are exactly `BEFORE_REVEAL`'s
-  and `OPENED_ONLY`'s names, the two lists don't meet, and each list is the contract's keys and required keys today; and
+  names (since round 2; before, with `OPENED_ONLY`'s), and each list is the contract's keys and required keys today; the
+  schemas only an opened day holds, where the key check doesn't look, are on it, and none reaches an `Occurrence`; and
   every operation whose answer reaches an `Occurrence`, a caption or own card, an `Allowance` or a drop or day id field
   is in `BEFORE_REVEAL_OPERATIONS` or on the test's own list of operations that answer only about opened days
   (`listFavourites`, `listMemories`, `searchMemories`, and the reactions', favourites', comments' and threads'). So a
@@ -87,6 +92,10 @@ slice's changes carried over by a three-way merge, which met no conflict.
   one (`waveForm`, `highLight`); `NEVER_WORDS` gains `n`, `num`, `number`, `has`, `any`, `time`, `timestamp`, `created`
   and `updated`; a last word `on` is a time too (`added_on`); and `count` and `total` are caught as a word's end
   (`dropcount`), but in `account` (`PLAIN_WORDS`).
+- Since round 2 (section 5.4, F4): the plain spellings of T10's and T15's own lists, `post`, `video`, `taken`,
+  `length`, `w`, `h`, `dims`, `mime`, `remaining`, `missing`, `empty` and `slotsleft` (two words read as one, so
+  `slots_left`), each with its plural; and a highlight at a word's start (`NEVER_STARTS`: `highlighted`,
+  `isHighlighted`). No key the contract serves outside what has opened names one (the served-for-a-reason test).
 - `SERVED_FOR_A_REASON`: the keys the contract serves today that a new word names, by schema and key, each with its
   reason: `Occurrence.reveal_at` and `close_at` (T1, the server's times), `expires_at` on `Reservation` (T18),
   `CandidateInvitation`, `InvitationLink`, `InvitationOpen`, `InvitationChanged`, `SignedUpload`, `Upload`,
@@ -116,6 +125,15 @@ slice's changes carried over by a three-way merge, which met no conflict.
   section 5.1, G3). The last test reads every line again, against all of it (a token an answer gave after its line was
   read, text a later request carried), and asks for exactly one request line for every request sent, so a silenced
   log, a lost line or a doubled one fails it.
+- Since round 2 (section 5.4, F5 to F7 and F9): a request's text is each string but an opaque one (`OPAQUE`: an id of
+  the API's, `drp_` and 22 characters, a UUID, a whole date or instant), so an id, which T52 allows, is no text, and a
+  caption that starts with a date is; a request's credential is gathered whatever its scheme, whole and after the
+  scheme (`Basic`'s too); `Needles` looks for each string in any case and as JSON escapes it, and, for text people
+  wrote (`cuts`), finds a log value of 8 characters or more inside one too (a text cut short or trimmed); and each line
+  is tagged with the number of requests sent when it was written (`answerOf` counts a request after the event loop's
+  turn, once the last one's lines are written), so each request must have exactly one request line written in its own
+  time, and a lost line and a doubled one in the same step no longer cancel out (`lineCounts`, which reads from the
+  step's own first line: walking the whole log at each step made round 2's first full run take 2,215 s; section 4).
 
 ### 1.4. Redaction at every depth (`services/api/src/logging.ts`)
 
@@ -130,9 +148,20 @@ slice's changes carried over by a three-way merge, which met no conflict.
   only and resets `formatters.bindings` for each child, so the first commit wrote `log.child({ caption })`'s caption
   whole, where `main`'s path redaction blanked it; pino makes each child from its parent, so the root's `child` is the
   one every logger of the app calls, Fastify's request loggers included. A request's id stays.
+- Since round 2 (section 5.4, F2, F3 and F8): pino's own path redaction, `main`'s (each field of the list at the top
+  and one level down), stays beneath `formatters.log`, so a child that brings a log formatter of its own, or bindings
+  pino stringifies itself, still meet everything `main` blanked; `redactBindings` blanks bindings set later
+  (`setBindings`) as it blanks a child's, and runs a child's own log formatter's output through the redaction; a `msg`
+  among a line's fields is blanked; a line with an error and no message of its own gets a fixed one (`ownMessage`,
+  pino's `hooks.logMethod`), since pino would copy the error's message into the line's `msg`, which no field's
+  redaction reaches (Postgres quotes rows in it; Fastify's warning for a second answer quotes the URL); and
+  `REDACTED_WORDS` gains `content`, `query`, `search`, `reason`, `username` and `nickname`.
 - `logging.test.ts`: a caption four levels down, in an array, under a camelCase key and inside a class's instance, each
   blanked; an error still its class and code; since round 1, keys the list doesn't spell with a content word in them,
-  and a child's and a grandchild's bindings, each blanked, with the request line's own keys and a request's id kept.
+  and a child's and a grandchild's bindings, each blanked, with the request line's own keys and a request's id kept;
+  since round 2, bindings set later, a child's own formatter's output and a `msg` field blanked, `main`'s paths beneath,
+  and a line with an error and no message of its own (`log.error(err)`, `{ err }`, a child's, Fastify's own warning for
+  a second answer) given the fixed message.
 
 ### 1.5. A request line for Fastify's own answers (`services/api/src/app.ts`, `logging.ts`)
 
@@ -245,15 +274,19 @@ alone, as `{ ...meBody(account), avatarUrl: "x" }`; the first run's runner is ke
   (its `privacy` step 12 min 2 s), so about 16 min 40 s was expected; at `6459ad3` it took 16 min 18 s (run
   45729519892, its `privacy` step 13 min 53 s). Round 1 reads more (each request's texts and each answer's tokens, and
   every line a second time at the end) through `Needles`' index: `privacy` 540 of 540 in 1,199 s here, against the
-  first commit's 1,262 s for 537 on the same machine. If later rows bring it near the limit, the limit is a workflow
-  change, in its own PR (T58), not a cut to what the matrix reads.
+  first commit's 1,262 s for 537 on the same machine, and at `d76b977` the `postgres` job took 13 min 58 s (run
+  45740021078, its `privacy` step 11 min 39 s). Round 2's first full run took 2,215 s for 542: each step's count of
+  request lines walked the whole log from its first line, so the matrix's time grew with the square of its lines. It
+  now reads from the step's own first line (`lineCounts`), and one role's sweep takes 93 s, against 88 s at `d76b977`
+  and 107 s before the fix; the full run, 542 of 542 in 1,219 s, against round 1's 1,199 s for 540. If later rows
+  bring it near the limit, the limit is a workflow change, in its own PR (T58), not a cut to what the matrix reads.
 
 ## 5. Review
 
 ### 5.1. Round 1, at `6459ad3`
 
 Two fresh reviews, by subagents that hadn't seen the work: one on privacy and security (P1 to P7: three medium, four
-low), one on the tests and the records (G1 to G12: one high, two medium, two low, and records points and nits). Each
+low), one on the tests and the records (G1 to G12: one high, two medium, three low, and records points and nits). Each
 is fixed in the second commit, or answered here.
 
 - **P1 and G1 (medium; high): the never-word check named less than `main`'s (T58).** `keyWords` cut an acronym's
@@ -366,3 +399,121 @@ freshly made database:
   Both recorded as run, not registered again.
 - The last test's second reading has no breakage that only it catches: each of M1 to M5 is found in the step that
   wrote its line, and again by the second reading.
+
+### 5.4. Round 2, at `d76b977`
+
+One fresh review, by a subagent that hadn't seen the work, on privacy and security at full depth and the truth of the
+records (F1 to F10: two medium, six low, two nits; nothing high). It read pino's own code and probed each case.
+Each is fixed in the third commit, or answered here.
+
+- **F1 (medium): a day link met no list, though a pre-reveal answer holds it.** `HomeWaiting`, `HomePaused` and
+  `HomeDay` hold `recent_days: DayLink[]` while the club's next day collects, and `DayLink` was on `OPENED_ONLY`: with
+  the contract and the route widened together, `drops: 7, unseen: 3, contributors: [...]` on a waiting Home's day link
+  passed every check (no list, no never-word, and the world check judges only its day and cover). Fixed beyond the
+  finding: the same held for every schema on `OPENED_ONLY` (a key on an opened card, its photo or a reaction sits in an
+  answer beside a day still to open, inside what the key check skips), so `OPENED_ONLY` is gone and all eight have
+  their lists (section 1.1). Tests: the key-list test (every schema those answers reach is on the list; the opened ones
+  reach no day), and "holds what has opened to its list: a day link among a waiting Home's recent days, and an opened
+  card, its photo and its reactions", with the review's case.
+- **F2 (medium; on `main` too): an error logged with no message put its message in the line's `msg`.** pino copies
+  `err.message` into `msg` when no message is given (`proto.js`, `write`), and `formatters.log` never sees `msg`; Fastify
+  logs `{ err }` so itself for a second answer to a request (`reply.js`), whose message quotes the request's URL. No
+  route of ours logs so today. Fixed: `ownMessage`, pino's `hooks.logMethod`, gives such a line the fixed message
+  `error` (section 1.4). Test: "gives a line with an error and no message of its own a fixed one, …", with
+  `log.error(err)`, `{ err }`, a child's warning and Fastify's own second-answer warning on a bare app.
+- **F3 (low; T58): bindings set later, and a child with its own log formatter, kept what `main` blanked.**
+  `request.log.setBindings({ caption })` and `log.child({}, { formatters: { log } }).info({ caption })` came out whole on
+  the branch and blanked on `main`, whose path redaction ran through pino's stringifiers. Nothing calls either today.
+  Fixed: `main`'s paths stay beneath, `setBindings` is redacted like `child`, and a child's own formatter's output is
+  redacted (section 1.4); the T58 row says it. Tests: "blanks bindings set later, a child's whose own log formatter
+  would keep them, and a `msg` among a line's fields", and "keeps pino's own redaction of the list beneath it, …".
+- **F4 (low): the never-words missed plain spellings of T10's and T15's lists** (`highlighted`, `post_id`, `video_id`,
+  `dateTaken`, `lengthSeconds`, `w`, `h`, `dims`, `mime_type`, `remaining`, `slots_left`, `empty_slots`, `missing`),
+  which matter outside the lists (`Me`, `Config`, uploads, invitations, the schedule). Fixed (section 1.2), each in the
+  never-word test, with `slots`, `weekday`, `headers`, `held_by`, `content_type` and `first_date` still passing; the
+  audit's `post_id` mutant on the day's occurrence now meets the key check too.
+- **F5 (low): a request's ids counted as text people wrote, and a caption starting with a date didn't.** Only UUIDs were
+  skipped, so an id of the API's would have failed a future honest line that logs one (T52 allows ids), and any string
+  starting with a date was dropped. Fixed: `OPAQUE` (section 1.3). Enum values stay skipped: a log carries the
+  contract's own words (an operation, a state), and a caption that is exactly one is one word the log may hold anyway.
+- **F6 (low): the log scan found text only whole inside a value.** A text cut short, lower-cased or JSON-escaped passed.
+  Fixed in `Needles` (section 1.3): any case and the escaped form for every needle, and, for text people wrote, a
+  value of 8 characters or more inside one. Tokens and kept-back values, long random strings by the thousand, aren't
+  indexed for cuts: by every 6 characters, they would hold millions of entries (a test here: 30,000 random strings of
+  150 characters, 4.3 million entries and 588 MB).
+- **F7 (low): only a Bearer token was gathered.** The `another scheme` caller's `Basic bWF0cml4Om1hdHJpeA==` was in no
+  needle. Fixed: the credential whatever its scheme, whole and after the scheme, each of 6 characters or more.
+- **F8 (low): `REDACTED_WORDS` missed common content keys** (`content`, `search_query`, `reason`, `username`,
+  `nickname`; `query` was a field, not a word). Fixed (section 1.4), each in the content-word test; none is a key the
+  request line writes.
+- **F9 (nit): the request-line counts compared totals only,** so a lost line and a doubled one in the same step
+  cancelled out. Fixed: each line is tagged with the requests sent when it was written, and each request must have one
+  (section 1.3). A probe first showed the line is written before `inject` resolves (3,000 requests of five kinds, none
+  late), and `answerOf` counts after the event loop's turn, so a line still owed by the last request is that one's.
+- **F10 (nit, records):** round 1's count of low findings among G1 to G12 was two, where G4, G5 and G6 are three, and
+  table 4.1's row left out G5. Corrected in 5.1 and in table 4.1's row.
+
+### 5.5. Breakages for round 2, registered before they are run
+
+As 5.2, with K for the scanner's and the log's unit tests and N for the matrix. N1 to N5 also run as controls in a
+worktree at `d76b977`, the second commit, with its own matrix. N1 is registered to pass.
+
+- K1: what has opened off the lists, as `d76b977` had it (the eight lists gone, the closed world skipping them):
+  scanner, the key-list test and "holds what has opened to its list".
+- K2: round 2's new never-words gone: scanner, "reads a key's words…" (`post_id`).
+- K3: a highlight at a word's start no longer caught: scanner, the same test (`highlighted`).
+- K4: `Needles` in its own case only: scanner, "finds a needle in any case and as JSON escapes it, …" (`saturday
+  people`).
+- K5: `Needles` without the escaped form: scanner, the same test (`JSON.stringify({ caption })`).
+- K6: no cuts: scanner, the same test and the planted log lines (`cut short`).
+- K7: no `ownMessage`: logging, the error-message test.
+- K8: bindings set later not redacted: logging, the bindings test (`SECRET-SET-CAPTION`).
+- K8 as run failed in its test, but on the comment two levels down: `main`'s paths, beneath since this round, blank the
+  caption set at the top. Registered again after that run: K8a, the same change (logging, the bindings test,
+  `SECRET-SET-COMMENT`).
+- K9: a child's own formatter not followed by the redaction: logging, the bindings test (`photoUrl`).
+- K10: `main`'s paths gone from beneath: logging, "keeps pino's own redaction of the list beneath it, …".
+- K11: round 2's new content words gone: logging, the content-word test.
+- K12: a `msg` field kept: logging, the bindings test (`SECRET-MSG-FIELD`).
+- N1: createDrop logs a refused commit's reservation id as `trouble`: the matrix, registered to pass (an id is no
+  text). Control: expected caught (F5).
+- N2: createDrop logs a refused commit's caption less its first and last characters: the matrix (`the API's log: text
+  people wrote at $.trouble`). Control: expected missed (F6).
+- N3: the gate logs the credential of a caller whose scheme isn't Bearer: the matrix as the callers without a session
+  (`-t "answers each the same whatever the ids name|wrote one request line for every request"`; `the API's log: a
+  request's or answer's token at $.trouble`). Control: expected missed (F7).
+- N4: `getHealth`'s odd answers write no request line and its even ones two: the matrix (`0 request lines for request
+  N`). Control: recorded as run (F9).
+- N5: Home serves `drops` on each day link, which the contract names too: the matrix (`a DayLink that has drops`).
+  Control: expected missed (F1).
+
+### 5.6. As run
+
+On the branch's tree with round 2's fixes, uncommitted, with Node 26.13.0, one run at a time, each matrix run on a
+freshly made database:
+
+- `db-tests` 951 of 951 (122 s), before `main` at `1a6fe23` was merged in as `15150ab` (the ios lane's #138: records
+  and a snapshot test, nothing those tests run); `privacy` 542 of 542 on a fresh cluster in 1,219 s, after it. The
+  first full run took 2,215 s: each step's count of request lines walked the whole log from its first line, so the
+  matrix's time grew with the square of its lines. `lineCounts` now reads from the step's own first line; one role's
+  sweep (`-t "answers the member in the audience as|wrote one request line for every request"`) took 107 s before
+  the fix, 93 s after it and 88 s at `d76b977` (section 4). `format`, `lint`, `typecheck`, `copy-lint`, `unit` (api
+  428, worker 160, domain 516, contracts 251, ops 495, web 47) and `tools-tests` pass; `scanner.test.ts` 111 of 111
+  and `logging.test.ts` 17 of 17.
+- K1 to K7 and K9 to K12 caught, each with its pattern. K8 failed its test without its pattern (5.5); K8a, registered
+  after it, caught.
+- N1 passed, as registered: a reservation's id in `trouble` is no text. N2 to N5 caught, each with its pattern: N2 in
+  10 of the cell's lines (`text people wrote at $.trouble`); N3 in each of the 9,520 lines the gate wrote for a caller
+  of another scheme, each found twice, as a request's token and as a value the world keeps back (below); N4 in 190
+  requests (`0 request lines for request N`, and 2 for the next); N5 in 10 cells, 5 by the day link's list on Home
+  before the reveal (`a DayLink that has drops`) and 5 by Home's judge in the past cells, which compares `recent_days`
+  whole there.
+- The controls at `d76b977`: N1 failed, as registered (10 problems: the reservation's id taken for text people
+  wrote). N2 missed, as registered. N3, registered to be missed, was caught, but not as a token: the sweep's world
+  keeps back each caller's header less its first seven characters (`slice("Bearer ".length)` in `matrix.test.ts`),
+  which for `Basic bWF0cml4Om1hdHJpeA==` leaves `WF0cml4Om1hdHJpeA==`, inside the logged credential; the token needle
+  for a credential of any scheme is the branch's (`secretsOf`), and that kept-back value an accident of the slice. N4
+  was caught on its totals, in 50 steps (`0 request lines for 1 requests`, `16 request lines for 15 requests`), where
+  the branch names each of 190 requests. N5, registered to be missed, was caught in the 5 past cells by Home's judge;
+  the 5 cells before the reveal, the review's case, were missed, and only the branch finds them. N3 and N5 are recorded
+  as run, not registered again.

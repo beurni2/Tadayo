@@ -15,7 +15,6 @@ import {
   BEFORE_REVEAL,
   BEFORE_REVEAL_OPERATIONS,
   Needles,
-  OPENED_ONLY,
   SERVED_FOR_A_REASON,
   keyWords,
   logProblems,
@@ -2198,20 +2197,32 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
     return new Set([...into].filter(isObjectSchema));
   };
   const keysOf = (name: string) => Object.keys((schemas[name] as JsonObject).properties as JsonObject);
+  /**
+   * The schemas only what has opened holds, where the key check doesn't look (an opened photo has its width,
+   * height and media version): each is on BEFORE_REVEAL all the same, held to its list (the round-2 review).
+   */
+  const OPENED = [
+    "DropRevealed",
+    "HighlightEntry",
+    "ReactionSummary",
+    "ReplyPreview",
+    "RevealedDayDrop",
+    "RevealedPhoto",
+    "RevealedVideo",
+  ];
 
   it("holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today", () => {
     const reach = new Set([...BEFORE_REVEAL_OPERATIONS].flatMap((id) => [...answered(id)]));
-    expect([...reach].sort()).toEqual([...Object.keys(BEFORE_REVEAL), ...OPENED_ONLY].sort());
-    expect(Object.keys(BEFORE_REVEAL).filter((name) => OPENED_ONLY.has(name))).toEqual([]);
+    expect([...reach].sort()).toEqual(Object.keys(BEFORE_REVEAL).sort());
     for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
       const required = ((schemas[name] as JsonObject).required ?? []) as string[];
       expect([...list.required].sort(), name).toEqual([...required].sort());
       expect([...list.required, ...list.optional].sort(), name).toEqual(keysOf(name).sort());
     }
-    // What only an opened day holds reaches no day, but a day link's own, which the world check holds to a
-    // closed day: an opened day that names a day still to open (Home's `next`, the revealed day's
-    // `add_target`) is on BEFORE_REVEAL, held to its list.
-    expect([...OPENED_ONLY].filter((name) => reached(schemas[name] ?? null).has("Occurrence"))).toEqual(["DayLink"]);
+    // What only an opened day holds is on the list too, and reaches no day: the day link, which names a
+    // closed day among Home's recent days while the next one collects, is no schema of an opened card's.
+    expect(OPENED.filter((name) => BEFORE_REVEAL[name] === undefined)).toEqual([]);
+    expect(OPENED.filter((name) => reached(schemas[name] ?? null).has("Occurrence"))).toEqual([]);
   });
 
   it("finds no object those answers can hold but a named schema's: none inline, none a map", () => {
@@ -2335,6 +2346,24 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       "imageurl",
       "thumbhash",
       "file_sizes",
+      // The plain spellings of T10's and T15's lists the round-2 review found passing.
+      "highlighted",
+      "is_highlighted",
+      "isHighlighted",
+      "post_id",
+      "postId",
+      "video_id",
+      "dateTaken",
+      "date_taken",
+      "lengthSeconds",
+      "w",
+      "h",
+      "dims",
+      "mime_type",
+      "remaining",
+      "slots_left",
+      "empty_slots",
+      "missing",
     ])
       expect(neverKey(key), key).toBe(true);
     for (const key of [
@@ -2354,6 +2383,12 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       "is_star",
       "name",
       "company",
+      "slots",
+      "weekday",
+      "headers",
+      "held_by",
+      "content_type",
+      "first_date",
     ])
       expect(neverKey(key), key).toBe(false);
   });
@@ -2379,7 +2414,7 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       for (const response of found.responses.values()) if (response.json !== undefined) reached(response.json, answers);
     const named: Record<string, string[]> = {};
     for (const name of [...answers].filter(isObjectSchema).sort()) {
-      if (OPENED_ONLY.has(name)) continue;
+      if (OPENED.includes(name)) continue;
       // The keys T10's never-list named before: a highlight on the viewer's own drop, a link's URL to its
       // proposer and a signed upload's URL to its owner, each judged by the world check, and what B3 and B7
       // serve (an embed, a source, the config's providers), each failing until its slice allows it.
@@ -2437,7 +2472,8 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
         "getOccurrence",
         { ...upcomingDay([bensCard()]), occurrence: { ...saturday, post_id: "p1" } },
         "$.occurrence",
-        ["whitelist"],
+        // A provider's post is a never-word since the round-2 review.
+        ["keys", "whitelist"],
       ],
       [
         "committed_at on an own day",
@@ -2542,11 +2578,62 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       checks(scan(answer({ ...upcomingDay([]), stats: { photos: 1 } }, 200), context("getMe", cleo))),
     ).not.toContain("whitelist");
   });
+
+  it("holds what has opened to its list: a day link among a waiting Home's recent days, and an opened card, its photo and its reactions", () => {
+    // The round-2 review: a key on a day link of a Home whose next day still collects, and none of the
+    // never-words, passed every check.
+    const link = { occurrence: pastSaturday, cover_drop_id: "drp_ben" };
+    const homeAt = { now: AFTER_CLOSE };
+    const linkWidened = widened({
+      DayLink: { drops: integer, unseen: integer, contributors: { type: "array", items: { type: "string" } } },
+    });
+    const home = (recent: unknown[]) => waitingHome("2026-11-08T02:00:00Z", recent);
+    expect(scan(answer(home([link])), context("getHome", cleo, { ...homeAt, document: linkWidened }))).toEqual([]);
+    const counted = scan(
+      answer(home([{ ...link, drops: 7, unseen: 3, contributors: [ana, cleo] }])),
+      context("getHome", cleo, { ...homeAt, document: linkWidened }),
+    );
+    expect(checks(counted)).toEqual(["whitelist"]);
+    // One finding for each key: drops, unseen and contributors.
+    expect(at(counted, "whitelist")).toEqual(Array(3).fill("$.recent_days[0]"));
+    // Inside an opened day, where the key check doesn't look: a key on a card, its photo or a reaction.
+    const opened = (card: unknown) =>
+      revealedDay([card], [{ drop_id: "drp_ben", author: person(ben, "Ben"), star_pick: true }]);
+    const cases: [string, Record<string, Record<string, Json>>, unknown, string][] = [
+      [
+        "upcoming on a card",
+        { RevealedDayDrop: { upcoming: integer } },
+        { ...bensRevealedCard(), upcoming: 2 },
+        "$.drops[0]",
+      ],
+      [
+        "next on its photo",
+        { RevealedPhoto: { next: integer } },
+        { ...bensRevealedCard(), photo: { ...bensRevealedCard().photo, next: 1 } },
+        "$.drops[0].photo",
+      ],
+      [
+        "others on a reaction",
+        { ReactionSummary: { others: integer } },
+        bensRevealedCard([{ reaction: "heart", others: 4 }]),
+        "$.drops[0].reactions[0]",
+      ],
+    ];
+    expect(scan(answer(opened(bensRevealedCard())), context("getOccurrence", cleo, { now: OPEN }))).toEqual([]);
+    for (const [what, additions, card, where] of cases) {
+      const found = scan(
+        answer(opened(card)),
+        context("getOccurrence", cleo, { now: OPEN, document: widened(additions) }),
+      );
+      expect(checks(found), what).toEqual(["whitelist"]);
+      expect(at(found, "whitelist"), what).toEqual([where]);
+    }
+  });
 });
 
 describe("the API's log as the scanner reads it (T52, T16; the outside audit's A14)", () => {
   const facts = {
-    texts: new Needles(worldTexts(world)),
+    texts: new Needles(worldTexts(world), { cuts: true }),
     keptBack: new Needles(world.canaries.keys()),
     secrets: new Needles(["presented-token-of-forty-three-characters-xx"]),
   };
@@ -2606,6 +2693,24 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
     expect(needles.within("Saturday Peopl", false)).toEqual([]);
   });
 
+  it("finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one", () => {
+    const caption = 'Ben said "go" at the pier';
+    const plain = new Needles(["Saturday People", caption]);
+    expect(plain.within("served saturday people", false)).toEqual(["Saturday People"]);
+    expect(plain.within("SATURDAY PEOPLE", false)).toEqual(["Saturday People"]);
+    // A body logged whole holds the caption's quotes escaped.
+    expect(plain.within(JSON.stringify({ caption }), false)).toEqual([caption]);
+    expect(plain.within("Saturday", false)).toEqual([]);
+    const cut = new Needles(["Saturday People", caption], { cuts: true });
+    expect(cut.size).toBe(2);
+    expect(cut.within("Saturday", false)).toEqual(["Saturday People"]);
+    expect(cut.within("saturday peopl", false)).toEqual(["Saturday People"]);
+    expect(cut.within("at the pier", false)).toEqual([caption]);
+    // Shorter than 8, a value could be any word of the log's own inside a sentence.
+    expect(cut.within("Saturda", false)).toEqual([]);
+    expect(cut.within("request", false)).toEqual([]);
+  });
+
   it("catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON", () => {
     const [caption] = [...world.drops.values()].map((drop) => drop.caption).filter((text) => text !== null);
     const [canary] = world.canaries.keys();
@@ -2614,6 +2719,9 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
       ["a caption inside a message", line({ msg: `served ${String(caption)} to Ben` }), /text people wrote at \$\.msg/],
       ["a name, whole", line({ msg: "Ben" }), /text people wrote/],
       ["a club's name", line({ msg: "Saturday People" }), /text people wrote/],
+      // The round-2 review: a text cut short, or lower-cased.
+      ["a club's name cut short", line({ msg: "request", trouble: "Saturday" }), /text people wrote at \$\.trouble/],
+      ["a caption lower-cased", line({ msg: String(caption).toLowerCase() }), /text people wrote at \$\.msg/],
       ["a kept-back value", line({ msg: `version ${String(canary)}` }), /keeps back/],
       [
         "a request's token",

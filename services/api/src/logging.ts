@@ -9,12 +9,16 @@
 // 2. The one line a request gets is ours (`logEachRequest`): its random id, the contract's operation id
 //    (for the browser's preflight, `preflight` and the operation it is for: web-origin.ts), the status and
 //    the milliseconds it took. No URL, header, body, address or claim ever goes in it.
-// 3. Whatever else a later change logs, in a line's own fields or a child logger's bindings, goes through
-//    `redact`, which blanks every field that could hold content at any depth: a key on the list in any case
-//    and with or without `_` and `-` (`signedURL`, `Caption`), and a key with a word of REDACTED_WORDS in
-//    it (`signed_upload_url`, `captionText`, `storage_path`); and any object that isn't a plain one or an
-//    array. An `err` is reduced to its class name and its code (the outside audit's A14: pino's own
-//    redaction went one level down, and read only the spellings it was given).
+// 3. Whatever else a later change logs, in a line's own fields or a logger's bindings (a child's, or ones
+//    set later), goes through `redact`, which blanks every field that could hold content at any depth: a
+//    key on the list in any case and with or without `_` and `-` (`signedURL`, `Caption`), and a key with
+//    a word of REDACTED_WORDS in it (`signed_upload_url`, `captionText`, `storage_path`); and any object
+//    that isn't a plain one or an array (the outside audit's A14: pino's own redaction went one level down,
+//    and read only the spellings it was given). pino's own redaction of the list, at the top and one level
+//    down, stays beneath it, for a child that brings a log formatter of its own (the round-2 review). An
+//    `err` is reduced to its class name and its code. A line's message is the fixed string our code
+//    passes: given an error and no message, pino would copy the error's message into it, so such a line
+//    gets a fixed one (`ownMessage`; the round-2 review).
 // The request id is random, 96 bits, never Fastify's counter and never a header the caller sent.
 //
 // Time is pino's own (`time` in each line), which is not the server's clock (T1): nothing here reads one.
@@ -143,7 +147,8 @@ export const REDACTED_FIELDS = [
 /**
  * The words that blank a key wherever they stand in it, as a word of its own (the round-1 review: a key the
  * list doesn't spell, such as `media_url`, `photoUrl` or `object_key`, came out whole): an address, a
- * credential, a storage path, text people wrote, a name and a provider's post. Not the request line's own
+ * credential, a storage path, text people wrote, a search, a reason someone gave, a name and a provider's
+ * post (the round-2 review: `search_query`, `content`, `reason`, `username`). Not the request line's own
  * keys' words (`req` of `reqId`, `op`, `ms`).
  */
 export const REDACTED_WORDS = [
@@ -170,13 +175,22 @@ export const REDACTED_WORDS = [
   "title",
   "message",
   "payload",
+  "content",
+  "query",
+  "search",
+  "reason",
   "exif",
   "metadata",
   "email",
   "phone",
   "name",
+  "username",
+  "nickname",
   "label",
 ] as const;
+
+/** The paths pino's own redaction blanks beneath `redact`: each field at the top and one level down, as `main` had. */
+const PATHS = REDACTED_FIELDS.flatMap((field) => [field, `*.${field}`]);
 
 /** A key as `redact` matches it: lower case, with `_` and `-` taken out. */
 const squash = (key: string) => key.toLowerCase().replace(/[_-]/g, "");
@@ -225,13 +239,32 @@ function redact(value: unknown, within: Set<object>): unknown {
 }
 
 /**
- * A line's own fields, or a child logger's bindings, `redact`ed, but its `err`, which its serializer reduces
- * to a class and a code.
+ * A line's own fields, or a logger's bindings, `redact`ed, but its `err`, which its serializer reduces to a
+ * class and a code; and a `msg` among them blanked, which pino would write as the line's message.
  */
 export function redactLine(fields: Record<string, unknown>): Record<string, unknown> {
-  const { err, ...rest } = fields;
+  const { err, msg, ...rest } = fields;
   const out = redact(rest, new Set()) as Record<string, unknown>;
+  if (msg !== undefined) out.msg = BLANKED;
   return err === undefined ? out : { ...out, err };
+}
+
+/** The message of a line that has an error and none of its own. */
+export const ERROR_MESSAGE = "error";
+
+/**
+ * pino's `hooks.logMethod`: a line that has an error and no message of its own (`log.error(err)`,
+ * `log.warn({ err })`) gets ERROR_MESSAGE, since pino would copy the error's message into the line's `msg`,
+ * which no field's redaction reaches (the round-2 review: Postgres quotes row values in it, and Fastify's
+ * warning for a second answer to a request quotes the request's URL).
+ */
+function ownMessage(this: unknown, args: unknown[], method: (...args: unknown[]) => void): void {
+  const [first, second] = args;
+  const fields = typeof first === "object" && first !== null ? (first as { err?: unknown; msg?: unknown }) : undefined;
+  const erred =
+    first instanceof Error || (fields?.err !== undefined && fields.err !== null && fields.msg === undefined);
+  if (erred && second === undefined) method.apply(this, [first, ERROR_MESSAGE]);
+  else method.apply(this, args);
 }
 
 /** An error as a log line may show it: its class and its code, never its message, which can quote rows. */
@@ -264,8 +297,10 @@ export function fastifyLogging(
       ...(config.stream === undefined ? {} : { stream: config.stream }),
       // Not the process id or the machine's name: a line is the request's, nothing about where it ran.
       base: null,
-      // A line's own fields; a child logger's bindings are `redactBindings`'.
+      // A line's own fields; a logger's bindings are `redactBindings`'.
       formatters: { log: redactLine },
+      redact: { paths: PATHS, censor: BLANKED },
+      hooks: { logMethod: ownMessage },
       serializers: { err: safeError, req: () => undefined, res: () => undefined },
       // Fastify types a serializer's result as its own request, error and answer shapes; these return less.
     } as unknown as NonNullable<FastifyServerOptions["logger"]>,
@@ -276,18 +311,39 @@ export function fastifyLogging(
 }
 
 /**
- * Every child logger's bindings `redact`ed as it is made, its children's too (the round-1 review): pino's
- * `formatters.log` reads only a line's own fields, and pino resets `formatters.bindings` for a child, so
- * `request.log.child({ caption })` would write the caption whole into each of its lines. pino makes a child
- * from its parent's prototype, so the root's own `child` is the one every logger of the app calls, Fastify's
- * request loggers included. A request's id (`reqId`) is no field of the list and stays.
+ * Every logger's bindings `redact`ed, as a child is made and as `setBindings` adds to them, its children's
+ * too (the round-1 and round-2 reviews): pino's `formatters.log` reads only a line's own fields, and pino
+ * resets `formatters.bindings` for a child, so `request.log.child({ caption })` would write the caption whole
+ * into each of its lines. pino makes a child from its parent's prototype, so the root's own `child` and
+ * `setBindings` are the ones every logger of the app calls, Fastify's request loggers included. A child that
+ * brings a log formatter of its own gets it with `redactLine` after it. A request's id (`reqId`) is no field
+ * of the list and stays.
  */
 export function redactBindings(log: FastifyBaseLogger): void {
+  // pino's loggers have it; Fastify's type of them leaves it out.
+  const settable = log as FastifyBaseLogger & { setBindings?: (bindings: Record<string, unknown>) => void };
   // eslint-disable-next-line @typescript-eslint/unbound-method -- called below with the logger it is made from
   const child = log.child;
+  const setBindings = settable.setBindings;
   log.child = function redactedChild(this: FastifyBaseLogger, bindings, options) {
-    return child.call(this, redactLine(bindings), options);
+    const own = options?.formatters?.log;
+    const formatted =
+      options === undefined || own === undefined
+        ? options
+        : {
+            ...options,
+            formatters: {
+              ...options.formatters,
+              log: (fields: object) => redactLine(own(fields) as Record<string, unknown>),
+            },
+          };
+    return child.call(this, redactLine(bindings), formatted);
   };
+  // A logger with no `setBindings` has no bindings to set later.
+  if (setBindings !== undefined)
+    settable.setBindings = function redactedSetBindings(this: unknown, bindings: Record<string, unknown>) {
+      setBindings.call(this, redactLine(bindings));
+    };
 }
 
 /** The one line a request gets, when its answer has gone: id, operation, status and milliseconds. */

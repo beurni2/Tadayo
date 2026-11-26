@@ -9,12 +9,12 @@ import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import type { Account, Clock } from "@tadayo/domain";
 import { Refused } from "@tadayo/domain";
-import type { FastifyInstance, InjectOptions } from "fastify";
+import Fastify, { type FastifyInstance, type InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { KeysUnavailable } from "./identity/token.ts";
-import { REDACTED_FIELDS, redacted, requestId } from "./logging.ts";
+import { ERROR_MESSAGE, fastifyLogging, REDACTED_FIELDS, redactBindings, redacted, requestId } from "./logging.ts";
 import { noStorage, TEST_EMAIL } from "./testing.ts";
 import type { Authenticate } from "./session.ts";
 
@@ -132,6 +132,13 @@ describe("the redaction list (T52)", () => {
       "search_text",
       "labels",
       "clubName2",
+      // The round-2 review.
+      "search_query",
+      "searchQuery",
+      "content",
+      "reason",
+      "username",
+      "nickname",
     ];
     app.log.info({ deep: [{ inside: Object.fromEntries(spelled.map((key) => [key, marker])) }] }, "spelled");
     expect(lines.join("")).not.toContain(marker);
@@ -159,6 +166,46 @@ describe("the redaction list (T52)", () => {
     await inject({ method: "GET", url: "/v1/me" });
     const [line] = parse(lines);
     expect(line?.reqId).toMatch(/^[A-Za-z0-9_-]{16}$/);
+  });
+
+  it("blanks bindings set later, a child's whose own log formatter would keep them, and a `msg` among a line's fields (the round-2 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const later = app.log.child({ step: 2 });
+    (later as unknown as { setBindings(bindings: object): void }).setBindings({
+      caption: "SECRET-SET-CAPTION",
+      deep: { inner: { comment_text: "SECRET-SET-COMMENT" } },
+    });
+    later.info("set later");
+    app.log
+      .child({ step: 3 }, { formatters: { log: (fields: object) => fields } })
+      .info({ caption: "SECRET-OWN-CAPTION", deep: { inner: { photoUrl: "https://s.example/own" } } }, "own formatter");
+    app.log.info({ msg: "SECRET-MSG-FIELD", op: "probe" });
+    const [set, own, field] = parse(lines);
+    expect(set).toMatchObject({
+      msg: "set later",
+      step: 2,
+      caption: "[redacted]",
+      deep: { inner: { comment_text: "[redacted]" } },
+    });
+    expect(own).toMatchObject({
+      msg: "own formatter",
+      step: 3,
+      caption: "[redacted]",
+      deep: { inner: { photoUrl: "[redacted]" } },
+    });
+    expect(field).toMatchObject({ msg: "[redacted]", op: "probe" });
+    expect(lines.join("")).not.toMatch(/SECRET-|s\.example/);
+  });
+
+  it("keeps pino's own redaction of the list beneath it, at the top and one level down, as `main` had (the round-2 review)", () => {
+    const options = fastifyLogging({ level: "info" }).logger as unknown as {
+      redact: { paths: string[]; censor: string };
+    };
+    expect(options.redact.censor).toBe("[redacted]");
+    for (const field of REDACTED_FIELDS) {
+      expect(options.redact.paths, field).toContain(field);
+      expect(options.redact.paths, field).toContain(`*.${field}`);
+    }
   });
 
   it("names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email", () => {
@@ -202,6 +249,41 @@ describe("the redaction list (T52)", () => {
     app.log.error({ err: "ana@example.invalid said so" }, "failed");
     app.log.error({ err: null }, "failed");
     expect(lines.join("")).not.toContain("ana@");
+  });
+
+  it("gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const error = () =>
+      Object.assign(new Error(`duplicate key value (caption)=(SECRET-ROW) ${TEST_EMAIL}`), { code: "23505" });
+    app.log.error(error());
+    app.log.error({ err: error() });
+    app.log.child({ step: 1 }).warn({ err: error() });
+    app.log.error({ err: "SECRET-STRING-ERROR" });
+    const entries = parse(lines);
+    expect(entries).toHaveLength(4);
+    for (const entry of entries.slice(0, 3)) {
+      expect(entry).toMatchObject({ msg: ERROR_MESSAGE, err: { type: "Error", code: "23505" } });
+    }
+    expect(lines.join("")).not.toMatch(/SECRET-ROW|duplicate|example\.invalid|SECRET-STRING-ERROR/);
+    // A message of its own stays.
+    lines.length = 0;
+    app.log.error({ err: error() }, "failed");
+    expect(parse(lines)[0]).toMatchObject({ msg: "failed" });
+    // Fastify's own warning for a second answer to a request, whose error quotes the request's URL.
+    const own: string[] = [];
+    const bare = Fastify(fastifyLogging({ level: "info", stream: { write: (line) => void own.push(line) } }));
+    redactBindings(bare.log);
+    bare.get("/twice", (_request, reply) => {
+      void reply.send("one");
+      void reply.send("two");
+      return reply;
+    });
+    open.push(bare);
+    await bare.inject({ method: "GET", url: "/twice?caption=SECRET-QUERY" });
+    const warned = parse(own).filter((entry) => entry.err !== undefined);
+    expect(warned.length).toBeGreaterThan(0);
+    for (const entry of warned) expect(entry.msg).toBe(ERROR_MESSAGE);
+    expect(own.join("")).not.toContain("SECRET-QUERY");
   });
 
   it("drops a whole request or answer object logged by mistake, and doesn't merely blank it", async () => {
