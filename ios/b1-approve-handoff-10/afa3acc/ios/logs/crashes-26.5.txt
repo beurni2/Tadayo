@@ -1,0 +1,77 @@
+--- 12:21:16 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-26-122116.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-26 12:21:16.00 +0000
+pid: 92941
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.DD17A940-A0A1-4F08-970E-2948FC504090
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 92941, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 12:25:31 UTC, /Users/runner/Library/Logs/DiagnosticReports/MobileCal-2026-11-26-122531.ips
+name: MobileCal
+app_name: MobileCal
+bug_type: 309
+timestamp: 2026-11-26 12:25:31.00 +0000
+pid: 97852
+procName: MobileCal
+procPath: /Volumes/VOLUME/*/MobileCal.app/MobileCal
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.DD17A940-A0A1-4F08-970E-2948FC504090
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGKILL", "type": "EXC_CRASH"}
+termination: {"code": 2343432205, "flags": 6, "namespace": "FRONTBOARD", "reasons": ["<RBSTerminateContext| domain:10 code:0x8BADF00D explanation:process-launch watchdog transgression: app<com.apple.mobilecal((null))>:97852 exhausted real (wall clock) time allowance of 30.00 seconds", "ProcessVisibility: Backgro…
+--- 12:27:14 UTC, /Users/runner/Library/Logs/DiagnosticReports/searchd-2026-11-26-122714.ips
+name: searchd
+app_name: searchd
+bug_type: 309
+timestamp: 2026-11-26 12:27:14.00 +0000
+pid: 91669
+procName: searchd
+procPath: /Volumes/VOLUME/*/Search.framework/searchd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.DD17A940-A0A1-4F08-970E-2948FC504090
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 91669, "byProc": "searchd", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 12:29:19 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-26-122620_sjc22-bt152-4905bb24-4ce0-4b44-86cf-9ca5e7a50a6f-96BCF0CB611E.diag
+Date/Time:        2026-11-26 12:17:41.833 +0000
+End time:         2026-11-26 12:19:34.266 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 551D7609-867C-42D9-94E5-7EDFE5AD4CA4
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18528c000
+
+Command:          STExtractionService
+Path:             /Volumes/VOLUME/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.DD17A940-A0A1-4F08-970E-2948FC504090"(2753)
+On Behalf Of:     79 samples UNKNOWN [91555] (79 samples originated by UNKNOWN [91490, 91640])
+Architecture:     arm64
+Parent:           UNKNOWN [91483]
+PID:              92405
+
+--- 12:33:20 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-26-122919_sjc22-bt152-4905bb24-4ce0-4b44-86cf-9ca5e7a50a6f-96BCF0CB611E.diag
+Date/Time:        2026-11-26 11:19:59.940 +0000
+End time:         2026-11-26 12:28:25.590 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: EA3562D6-D164-4807-828B-2E0885C91C8A
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18528c000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18d600000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(798)
+On Behalf Of:     152 samples UNKNOWN [39812, 39830, 44093, 44117, 93008] (152 samples originated by UNKNOWN [39812, 39830, 44093, 44117, 93008]), 4 samples spindump [6619] (4 samples originated by UNKNOWN [228])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              661
