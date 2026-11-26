@@ -75,7 +75,7 @@
 
 FQ146 asks what a member sees when Approve or Decline is answered with their own earlier, opposite decision: after an Approve that went through with its answer lost, a Decline is answered with the approval in it, and nothing changed. Its default, built in #139, keeps the screen with the action's own refusal line, whose "Try again." can't come true. Handoff 10 gives the other reading: a native alert titled "You already approved this roster." (or "You already declined this roster."), no body and no Cancel, whose one action returns: "See members" on `G03-approve` (read "See members of Kitchen table."), "Review roster" on the proposed roster (read "Review the proposed roster for Sunday people."). Both decisions wait from the answer on; the old failure line goes. The words come only from the viewer's own decision in the answer, never anyone else's or a cache (T15, T33), and a not found or a version conflict keeps the neutral end.
 
-The lane recommends adopting it: it says what is true where the default can't, and it tells the viewer only their own decision. It was put to the founder on a card in the ios thread, and the founder chose handoff 10's alert at 08:13 UTC on 26 November 2026 (`docs/QUESTIONS.md`, FQ146). The next PR builds it.
+The lane recommends adopting it: it says what is true where the default can't, and it tells the viewer only their own decision. It was put to the founder on a card in the ios thread, and the founder chose handoff 10's alert at 08:13 UTC on 26 November 2026 (`docs/QUESTIONS.md`, FQ146). The next PR builds it, and `ios/b1-approve-handoff-10` did, on both decision screens.
 
 ## 6. What changes in which PR
 
@@ -87,6 +87,7 @@ The lane recommends adopting it: it says what is true where the default can't, a
     - FQ146's alert, as the founder chose.
     - `G03-approve`'s actions in the column at the accessibility sizes (A1's "large" rule), as 7b's roster already does.
     - A row with the name alone 52 high, as handoff 5's frame and frame 7 draw the proposed roster's rows and handoff 2's `G02-changed` its own, where `RosterRow` makes it 64 (the 36-point avatar with the row's 12 and 16 around it), on the proposed roster and the invitation's roster together (the inventory's Known differences, handoff 10).
+    - **Built** in `ios/b1-approve-handoff-10`, all six, as `docs/plans/ios-b1-approve.md` section 2 ("Handoff 10's rest") describes. Decline's busy form has no frame: it is built from `decisionBusy`'s words and the busy primary button's geometry, and its two states are marked built from spec in `design/reference/INVENTORY.md`.
 - **Nothing else changes:** frames 1, 2, 4 and 6 are as built; the alerts keep no Cancel; handoff 9's rows stay as built.
 
 ## 7. The pictures, and the review

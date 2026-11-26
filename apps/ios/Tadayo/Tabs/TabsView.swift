@@ -205,6 +205,11 @@ struct TabsView: View {
             .onChange(of: proposing?.closed ?? false) { _, closed in
                 if closed { closeProposedRoster() }
             }
+            // A decision on the proposed roster that answered after Back, and the roster read
+            // again after it: what was under the roster reads again (handoff 10's
+            // `decisionBusy.Back`: "refresh parent when its authoritative outcome arrives").
+            .onChange(of: proposing?.changes ?? 0) { _, _ in proposedRosterAnsweredAfterBack() }
+            .onChange(of: proposing?.asksDecision) { _, _ in proposedRosterAnsweredAfterBack() }
             .onChange(of: invitation.map(ObjectIdentifier.init)) { _, _ in
                 rootInvitationChanged()
             }
@@ -555,6 +560,16 @@ struct TabsView: View {
         } else if changed || proposing.asksDecision.map({ $0 != homeAsksReview }) == true {
             Task { await retryHome() }
         }
+    }
+
+    /// The proposed roster's model changed with no tab showing the roster: a decision that
+    /// answered after Back, or the read after it. What was under it reads again, as on Back.
+    private func proposedRosterAnsweredAfterBack() {
+        guard proposing != nil,
+            !paths.values.contains(where: { $0.contains(.proposedRoster) })
+        else { return }
+        let onPending = paths.values.contains { $0.last == .pending }
+        proposedRosterLeft(from: onPending ? .pending : nil)
     }
 
     private func path(for tab: ClubTab) -> Binding<[ClubRoute]> {

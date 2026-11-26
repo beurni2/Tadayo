@@ -5,9 +5,12 @@ import XCTest
 /// Ben hasn't decided: Leila's proposed row opens G03-approve; an Approve with no answer keeps
 /// the line and both actions, and Back and Leila's row again open the same approval, its line
 /// still there (its key with it, T19); the next Approve approves and closes back to Members,
-/// which reads again, Leila's row then opening nothing (FQ143). And a Decline into a changed
-/// roster: the system's alert, whose Review members shows the newer roster, with nothing sent for
-/// it.
+/// which reads again, Leila's row then opening nothing (FQ143). A Decline into a changed roster:
+/// the system's alert, whose Review members shows the newer roster, with nothing sent for it. And
+/// a Decline after an Approve with no answer, which the stand-in answers as the server would had
+/// that Approve gone through (the revision still open, Ben's approval in it): "You already
+/// approved this roster." (FQ146), whose See members is back on Members, read again, Leila's row
+/// opening nothing.
 final class ApproveUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -85,6 +88,40 @@ final class ApproveUITests: XCTestCase {
         XCTAssertFalse(app.alerts.firstMatch.exists, "nothing sent for the newer roster")
         XCTAssertTrue(app.staticTexts["Invite Leila and Nina?"].exists, "still deciding")
         XCTAssertTrue(approveBoth.isEnabled)
+    }
+
+    @MainActor func testADeclineAfterALostApproveSaysBenAlreadyApproved() {
+        let app = signedIn()
+        openApproval(app)
+
+        let approve = app.buttons["Approve Leila joining Kitchen table."]
+        let decline = app.buttons["Decline Leila joining Kitchen table."]
+        XCTAssertTrue(approve.waitForExistence(timeout: 5))
+        approve.tap()
+        let line = "Couldn’t approve Leila. Check your connection and try again."
+        XCTAssertTrue(element(line, in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(eventually { decline.isEnabled })
+        decline.tap()
+        // The answer holds Ben's own approval: the alert says so, with See members alone.
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        XCTAssertTrue(alert.staticTexts["You already approved this roster."].exists)
+        XCTAssertEqual(alert.buttons.count, 1, "no Cancel")
+        // Its one action, See members: what VoiceOver calls it goes in the log.
+        let see = alert.buttons.firstMatch
+        print("ui: the already approved alert's action reads \"\(see.label)\"")
+        XCTAssertTrue(
+            ["See members", "See members of Kitchen table."].contains(see.label), see.label)
+        see.tap()
+        // Back on Members, read again, where Leila's row opens nothing.
+        XCTAssertTrue(
+            eventually(10) { !app.staticTexts["Invite Leila?"].exists }, "the approval closed")
+        let row = element("Leila. Proposed by Maya. Proposed.", in: app)
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            eventually { !app.buttons["Leila. Proposed by Maya. Proposed."].exists },
+            "Leila's row opens nothing once Ben has decided")
+        XCTAssertFalse(element(line, in: app).exists, "the old line gone")
     }
 
     // MARK: Helpers

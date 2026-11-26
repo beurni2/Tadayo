@@ -27,11 +27,14 @@ import TadayoDesign
 /// about who has approved or accepted. The footer counts the members alone.
 ///
 /// A member's row opens nothing. A proposed row opens G03-approve (`openApproval`) only for a
-/// viewer whose decision on the revision is pending, and is then a button; for one who has
-/// decided it opens nothing, so nothing tells one decision from another (FQ143); for the
-/// candidate's proposer it opens nothing yet (their invitation page is plan PR 7c). Nothing counts
-/// approvals or activity (T15, T33, T55). While the list loads, the loading form; after it fails,
-/// frame 11's form with the members' words (`handoff8.loadStates.members`).
+/// viewer whose decision on the revision is pending, and is then a button with the system's
+/// disclosure chevron and the hint "Review the proposed roster for {clubName}." (handoff 10's
+/// frame 5, `handoff10.members.proposed.hint`); for one who has decided it opens nothing and shows
+/// no chevron, keeping its room so the words wrap the same, and nothing tells one decision from
+/// another (FQ143, frame 6); for the candidate's proposer it opens nothing yet (their invitation
+/// page is plan PR 7c). VoiceOver reads "Leila. Proposed by Ben. Proposed." either way. Nothing
+/// counts approvals or activity (T15, T33, T55). While the list loads, the loading form; after it
+/// fails, frame 11's form with the members' words (`handoff8.loadStates.members`).
 struct MembersScreen: View {
     let members: ClubDetailsModel.Members
     let retry: @MainActor () async -> Void
@@ -93,21 +96,25 @@ struct MembersScreen: View {
         }
     }
 
-    /// A candidate's proposed row: a button that opens G03-approve when the viewer's decision is
-    /// pending, and otherwise the row alone.
+    /// A candidate's proposed row: a button with the chevron and its hint that opens G03-approve
+    /// when the viewer's decision is pending, and otherwise the row alone, the chevron's room kept.
     @ViewBuilder private func proposedRow(_ proposed: Roster.Proposed, in roster: Roster)
         -> some View
     {
+        let opens = proposed.opens == .approval && roster.openRevision != nil
         let row = RosterRow(
             name: proposed.candidate.name, isViewer: false, days: nil,
-            proposal: .by(proposed.candidate.proposedBy.displayName))
-        if proposed.opens == .approval, let revision = roster.openRevision {
+            proposal: .by(proposed.candidate.proposedBy.displayName),
+            disclosure: opens ? .shown : .reserved)
+        if opens, let revision = roster.openRevision {
             Button {
                 openApproval(revision)
             } label: {
                 row.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityHint(
+                Text(verbatim: ApproveWords.words("members.proposed.hint", roster.club.name)))
         } else {
             row
         }
