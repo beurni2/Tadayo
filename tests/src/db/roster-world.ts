@@ -176,20 +176,16 @@ export async function decide(
     VALUES (${revisionId}, ${intervalId}, ${decision}, false, ${at})`;
 }
 
-/** A club its creator has just made with `createClub`: proposed, with nobody else. */
+/** A club its creator has just made with `createClub` in `timezone`: proposed, with nobody else. */
 export async function founded(
   tx: WorldTx,
   clock: FakeClock,
   name = "Ben",
+  timezone = "America/New_York",
 ): Promise<{ user: string; club: string; interval: string }> {
   const user = await newUser(plain(tx), name);
   const made = await tx.savepoint((sp) =>
-    createClub(
-      sp,
-      clock,
-      { userId: user, key: randomUUID(), name: "Sunday people", timezone: "America/New_York" },
-      clubDetailBody,
-    ),
+    createClub(sp, clock, { userId: user, key: randomUUID(), name: "Sunday people", timezone }, clubDetailBody),
   );
   const { club } = made.answer as unknown as { club: { id: string; my_membership_id: string } };
   return { user, club: club.id, interval: club.my_membership_id };
