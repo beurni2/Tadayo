@@ -179,7 +179,7 @@ import Observation
 
     /// Of two reads' failures, the one that decides more than the screen: a session ended, then
     /// a club no longer the caller's.
-    private static func decisive(_ first: APIFailure?, _ second: APIFailure?) -> APIFailure? {
+    static func decisive(_ first: APIFailure?, _ second: APIFailure?) -> APIFailure? {
         let both = [first, second].compactMap { $0 }
         return both.first { $0 == .signedOut } ?? both.first { $0 == .notFound }
     }

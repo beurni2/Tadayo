@@ -83,8 +83,6 @@ struct ApproveScreen: View {
     var lastShown: RosterRevision?
     var actions = ApproveActions()
     @AccessibilityFocusState private var titleFocused: Bool
-    /// The alert last shown, whose title stays while it animates away after `alert` is cleared.
-    @State private var titled: RosterApprovalModel.Alert?
 
     /// The failed action's line, which the column is scrolled to as it shows.
     private static let failureID = "approve.failure"
@@ -108,29 +106,11 @@ struct ApproveScreen: View {
             .navigationTitle(Text("approve.nav"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
-            .alert(
-                Text(
-                    verbatim: (alert ?? titled).map { ApproveWords.alertTitle($0, club: club) }
-                        ?? ""),
-                isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } }),
-                presenting: alert
-            ) { shown in
-                Button {
-                    switch shown {
-                    case .rosterChanged: Task { await actions.reviewMembers() }
-                    case .clubFull: actions.seeMembers()
-                    }
-                } label: {
-                    Text(verbatim: ApproveWords.alertAction(shown))
-                }
-                .accessibilityLabel(
-                    Text(verbatim: ApproveWords.alertActionSpoken(shown, club: club)))
-            } message: { shown in
-                Text(verbatim: ApproveWords.alertBody(shown, club: club))
-            }
-            .onChange(of: alert, initial: true) { _, shown in
-                if let shown { titled = shown }
-            }
+            .modifier(
+                ApprovalAlerts(
+                    alert: $alert, club: club, reviewMembers: actions.reviewMembers,
+                    seeMembers: actions.seeMembers)
+            )
             // A newer roster after Review members: VoiceOver's focus goes to its title, so it
             // isn't left on the loading words that are gone.
             .onChange(of: revision?.id) { old, new in
@@ -244,6 +224,47 @@ struct ApproveScreen: View {
             }
         }
         .announcing(line, politely: true)
+    }
+}
+
+/// The approval's own outcomes as the system's alerts (handoff 8, "Changed roster and full club
+/// outcomes"), on G03-approve and on the proposed roster where the creator decides (FQ145): "Review
+/// the updated roster", with the action's own body and Review members, and "{clubName} is full.",
+/// with See members, each with one action, spoken with the club's name. The title stays while the
+/// alert animates away after `alert` is cleared.
+struct ApprovalAlerts: ViewModifier {
+    @Binding var alert: RosterApprovalModel.Alert?
+    let club: ClubRef
+    let reviewMembers: @MainActor () async -> Void
+    let seeMembers: @MainActor () -> Void
+    /// The alert last shown.
+    @State private var titled: RosterApprovalModel.Alert?
+
+    func body(content: Content) -> some View {
+        content
+            .alert(
+                Text(
+                    verbatim: (alert ?? titled).map { ApproveWords.alertTitle($0, club: club) }
+                        ?? ""),
+                isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } }),
+                presenting: alert
+            ) { shown in
+                Button {
+                    switch shown {
+                    case .rosterChanged: Task { await reviewMembers() }
+                    case .clubFull: seeMembers()
+                    }
+                } label: {
+                    Text(verbatim: ApproveWords.alertAction(shown))
+                }
+                .accessibilityLabel(
+                    Text(verbatim: ApproveWords.alertActionSpoken(shown, club: club)))
+            } message: { shown in
+                Text(verbatim: ApproveWords.alertBody(shown, club: club))
+            }
+            .onChange(of: alert, initial: true) { _, shown in
+                if let shown { titled = shown }
+            }
     }
 }
 

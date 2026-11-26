@@ -10,12 +10,13 @@ import TadayoDesign
 /// match H3 Home"), 32 under the bar as Home's is under its header, with frame 13's title and line
 /// when the creator's own decision on the open revision is pending (`review`; handoff 8's
 /// `creatorReviewRequired`, FQ84). Review members is pinned 44 above the safe area's bottom ("its
-/// primary button sits at y724 because it has no tab bar"), with Home's labels; it does nothing
-/// until the proposed roster's review comes (plan PR 7), as Home's doesn't. Nothing lists or
+/// primary button sits at y724 because it has no tab bar"), with Home's labels, and opens the
+/// proposed roster (`G05-members-proposed`, B1 plan PR 7b), as Home's does. Nothing lists or
 /// counts who has accepted (book p30, T33).
 struct PendingScreen: View {
     let club: String
     let review: Bool
+    var reviewMembers: () -> Void = {}
     @AccessibilityFocusState private var focus: TabFocus?
 
     var body: some View {
@@ -29,7 +30,7 @@ struct PendingScreen: View {
         .background { Palette.canvas.ignoresSafeArea() }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom) {
-                ReviewMembersButton(club: club, review: review)
+                ReviewMembersButton(club: club, review: review, action: reviewMembers)
             }
         }
         .navigationTitle(Text(verbatim: club))

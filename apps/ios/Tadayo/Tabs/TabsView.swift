@@ -43,6 +43,15 @@ import TadayoDesign
 /// the selected club's: they stay while the list is read again and another club is selected, and
 /// close when the list's model says the club is no longer the caller's, or with the tabs.
 ///
+/// Review members, on Home before its club starts and on the waiting screen, pushes the proposed
+/// roster (`G05-members-proposed`, `docs/plans/ios-b1-approve.md` section 2, 7b) with the model
+/// `proposedRoster` makes, the same one for the same club in a session, so a decision on it keeps
+/// its keys (T19), in place of one open on another tab. It closes when its model says the club is
+/// no longer a proposal the caller can read; Back reads again what's under it (Home, or the waiting
+/// screen's words) when a decision may have changed it. Its Manage invitations pushes the club's
+/// setup list over it (the waiting screen's own list, over that screen), whose Done for now returns
+/// to the screen under the roster, the waiting state itself, and Back to the roster, read again.
+///
 /// I have an invite, on a tab with no club, pushes the paste step onto that tab, with the model
 /// `linkEntry` makes, in place of any paste step on another tab. Continue checks the link there,
 /// then pushes the invitation it found; Back returns to the field as it was. Not now, Done and
@@ -104,6 +113,7 @@ struct TabsView: View {
     let details: @MainActor () -> ClubDetailsModel?
     let createClub: @MainActor () -> CreateClubModel?
     let invitations: @MainActor (ClubRef) -> InvitationListModel?
+    let proposedRoster: @MainActor (ClubRef) -> ProposedRosterModel?
     let linkEntry: @MainActor () -> InvitationLinkEntryModel?
     /// The invitation the root shows, from an accepted invitation's row, and how to open and close
     /// one.
@@ -130,6 +140,8 @@ struct TabsView: View {
     @State private var naming: InviteNameModel?
     /// The waiting screen asks for the creator's review (`G01-pending-approve`).
     @State private var pendingReview = false
+    /// The proposed roster last opened by Review members, which stays drawn while it slides away.
+    @State private var proposing: ProposedRosterModel?
     /// I have an invite's paste step, and the invitation it last pushed, which stays drawn while
     /// it slides away.
     @State private var entering: InvitationLinkEntryModel?
@@ -153,6 +165,7 @@ struct TabsView: View {
         details: @escaping @MainActor () -> ClubDetailsModel? = { nil },
         createClub: @escaping @MainActor () -> CreateClubModel? = { nil },
         invitations: @escaping @MainActor (ClubRef) -> InvitationListModel? = { _ in nil },
+        proposedRoster: @escaping @MainActor (ClubRef) -> ProposedRosterModel? = { _ in nil },
         linkEntry: @escaping @MainActor () -> InvitationLinkEntryModel? = { nil },
         invitation: InvitationModel? = nil,
         openAccepted: @escaping @MainActor (MyInvitation) async -> InvitationModel? = { _ in nil },
@@ -169,6 +182,7 @@ struct TabsView: View {
         self.details = details
         self.createClub = createClub
         self.invitations = invitations
+        self.proposedRoster = proposedRoster
         self.linkEntry = linkEntry
         self.invitation = invitation
         self.openAccepted = openAccepted
@@ -178,6 +192,41 @@ struct TabsView: View {
     }
 
     var body: some View {
+        tabs
+            .onChange(of: approving?.changes ?? 0) { _, _ in
+                // A decision that answered after Back: Members, showing again, reads again.
+                if !paths.values.contains(where: { $0.contains(.approval) }) {
+                    approvalClosed()
+                }
+            }
+            .onChange(of: inviting?.closed ?? false) { _, closed in
+                if closed { closeCreateScreens() }
+            }
+            .onChange(of: proposing?.closed ?? false) { _, closed in
+                if closed { closeProposedRoster() }
+            }
+            .onChange(of: invitation.map(ObjectIdentifier.init)) { _, _ in
+                rootInvitationChanged()
+            }
+            .sheet(isPresented: $switching, onDismiss: openChosen) {
+                if case .listed(let list) = state.clubs {
+                    ClubSwitcher(
+                        clubs: list.clubs, selectedID: state.selected?.id,
+                        invitations: state.accepted,
+                        select: { club in Task { await select(club) } },
+                        openAccepted: { acceptedChosen = $0 },
+                        openDetails: { detailsChosen = true },
+                        createClub: { createChosen = true }
+                    )
+                    .fittedSheet()
+                }
+            }
+    }
+
+    /// The three tabs (and the Lab's), with what VoiceOver is told of the selected one, and the
+    /// pushed screens that close with the list or the selected club. A part of `body` of its own,
+    /// so the compiler checks each half in reasonable time.
+    private var tabs: some View {
         TabView(selection: $selection) {
             tab(.home, label: "tabs.home", symbol: "house")
             tab(.friends, label: "tabs.friends", symbol: "person.2")
@@ -214,31 +263,6 @@ struct TabsView: View {
         .onChange(of: shownDetails?.closed ?? false) { _, closed in
             if closed { closeClubScreens() }
         }
-        .onChange(of: approving?.changes ?? 0) { _, _ in
-            // A decision that answered after Back: Members, showing again, reads again.
-            if !paths.values.contains(where: { $0.contains(.approval) }) {
-                approvalClosed()
-            }
-        }
-        .onChange(of: inviting?.closed ?? false) { _, closed in
-            if closed { closeCreateScreens() }
-        }
-        .onChange(of: invitation.map(ObjectIdentifier.init)) { _, _ in
-            rootInvitationChanged()
-        }
-        .sheet(isPresented: $switching, onDismiss: openChosen) {
-            if case .listed(let list) = state.clubs {
-                ClubSwitcher(
-                    clubs: list.clubs, selectedID: state.selected?.id,
-                    invitations: state.accepted,
-                    select: { club in Task { await select(club) } },
-                    openAccepted: { acceptedChosen = $0 },
-                    openDetails: { detailsChosen = true },
-                    createClub: { createChosen = true }
-                )
-                .fittedSheet()
-            }
-        }
     }
 
     /// What the selected tab shows, and whether a screen is pushed over it.
@@ -274,8 +298,15 @@ struct TabsView: View {
         detailsChosen = false
     }
 
+    /// The club being made's screens close, and a setup list Manage invitations pushed over a
+    /// proposed roster with them, back to the roster, read again as Back would read it.
     private func closeCreateScreens() {
         paths = paths.filter { !($0.value.first?.isCreateFlow ?? false) }
+        for tab in Array(paths.keys) {
+            guard let at = paths[tab]?.firstIndex(of: .invitations) else { continue }
+            paths[tab]?.removeSubrange(at...)
+            Task { await proposing?.load() }
+        }
     }
 
     /// I have an invite: the paste step on `tab`, in place of any on another tab, whose
@@ -457,11 +488,73 @@ struct TabsView: View {
         paths[tab]?.removeLast()
     }
 
-    /// Done for now: the waiting screen in the list's place.
+    /// Done for now: the waiting screen in the list's place. From a list Manage invitations
+    /// opened over Home's proposed roster, Home is that waiting screen: the tab's own, read again
+    /// if the list says otherwise of the creator's review.
     private func showPending(review: Bool, on tab: ClubTab) {
         guard paths[tab]?.last == .invitations else { return }
+        if paths[tab]?.first == .proposedRoster {
+            paths[tab] = []
+            if review != homeAsksReview { Task { await retryHome() } }
+            return
+        }
         pendingReview = review
         paths[tab] = [.pending]
+    }
+
+    /// Whether Home asks for the creator's review now.
+    private var homeAsksReview: Bool { state.home == .awaiting(review: true) }
+
+    /// Review members, on Home before its club starts or on the waiting screen: the proposed
+    /// roster of `club` over it, once however fast it's tapped, in place of one open on another
+    /// tab, which closes as Back would close it, so no tab shows another tab's club.
+    private func openProposedRoster(_ club: ClubRef?, on tab: ClubTab) {
+        let stack = paths[tab] ?? []
+        guard let club, stack.isEmpty || stack == [.pending], let model = proposedRoster(club)
+        else { return }
+        for other in Array(paths.keys) where other != tab {
+            guard let at = paths[other]?.firstIndex(of: .proposedRoster) else { continue }
+            proposedRosterLeft(from: paths[other]?.first)
+            paths[other]?.removeSubrange(at...)
+        }
+        proposing = model
+        paths[tab, default: []].append(.proposedRoster)
+    }
+
+    /// The proposed roster's Manage invitations: the club's setup list over it, the waiting
+    /// screen's own when it was opened from there, or one made for it, in place of any other
+    /// club being made.
+    private func openManage(on tab: ClubTab) {
+        guard paths[tab]?.last == .proposedRoster, let club = proposing?.club else { return }
+        let waitingScreens = paths[tab]?.first == .pending && inviting?.club.id == club.id
+        if !waitingScreens {
+            guard let model = invitations(club) else { return }
+            closeCreateScreens()
+            (inviting, naming) = (model, nil)
+        }
+        paths[tab, default: []].append(.invitations)
+    }
+
+    /// The proposed roster's club is no longer a proposal the caller can read: it comes off
+    /// every tab, with what was pushed over it, and the waiting screen under it, which has nothing
+    /// left to wait for, so the tab shows its own screen, read again with the club list.
+    private func closeProposedRoster() {
+        for tab in Array(paths.keys) where paths[tab]?.contains(.proposedRoster) == true {
+            paths[tab] = []
+        }
+    }
+
+    /// Back from the proposed roster on `tab`, whose stack started with `first`: what's under it
+    /// reads again when a decision may have changed it, or when the roster's last answer says
+    /// otherwise of the creator's review.
+    private func proposedRosterLeft(from first: ClubRoute?) {
+        guard let proposing else { return }
+        let changed = proposing.takeUnderRead()
+        if first == .pending {
+            if let asks = proposing.asksDecision { pendingReview = asks }
+        } else if changed || proposing.asksDecision.map({ $0 != homeAsksReview }) == true {
+            Task { await retryHome() }
+        }
     }
 
     private func path(for tab: ClubTab) -> Binding<[ClubRoute]> {
@@ -483,6 +576,14 @@ struct TabsView: View {
                 // Back from the approval: Members reads again if it moved on.
                 if paths[tab]?.last == .approval, now.last != .approval {
                     approvalClosed()
+                }
+                // Back from the proposed roster: what's under it reads again if it moved on.
+                if paths[tab]?.contains(.proposedRoster) == true, !now.contains(.proposedRoster) {
+                    proposedRosterLeft(from: paths[tab]?.first)
+                }
+                // Back from the setup list to the proposed roster: the roster is read again.
+                if paths[tab]?.last == .invitations, now.last == .proposedRoster {
+                    Task { await proposing?.load() }
                 }
                 paths[tab] = now
             })
@@ -526,7 +627,13 @@ struct TabsView: View {
             }
         case .pending:
             if let inviting {
-                PendingScreen(club: inviting.club.name, review: pendingReview)
+                PendingScreen(club: inviting.club.name, review: pendingReview) {
+                    openProposedRoster(inviting.club, on: tab)
+                }
+            }
+        case .proposedRoster:
+            if let proposing {
+                ProposedRosterDestination(model: proposing) { openManage(on: tab) }
             }
         case .linkEntry:
             if let entering {
@@ -562,7 +669,8 @@ struct TabsView: View {
                 invitations: state.accepted, name: name, retry: retry, retryHome: retryHome,
                 switchClub: { switching = true }, createClub: { startCreating(on: tab) },
                 openInvite: { openLinkEntry(on: tab) },
-                openAccepted: { open($0, on: tab) }, goHome: { selection = .home }
+                openAccepted: { open($0, on: tab) }, goHome: { selection = .home },
+                reviewMembers: { openProposedRoster(state.selected?.ref, on: tab) }
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: ClubRoute.self) { route in

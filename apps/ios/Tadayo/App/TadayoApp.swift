@@ -68,6 +68,7 @@ struct RoutedView: View {
                 retry: { await root.retry() }, retryHome: { await root.loadHome() },
                 select: { await root.select($0) }, details: { root.clubDetails() },
                 createClub: { root.createClub() }, invitations: { root.invitations(for: $0) },
+                proposedRoster: { root.proposedRoster(of: $0) },
                 linkEntry: { root.linkEntry() }, invitation: root.invitation,
                 openAccepted: { await root.openAccepted($0) },
                 closeInvitation: { root.closeInvitation() }, logOut: { await root.leave() })

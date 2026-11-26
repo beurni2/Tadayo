@@ -33,6 +33,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.clubs) {
                 return .live(UITestLaunch.fakeGraph(inClubs: true))
             }
+            if process.arguments.contains(UITestLaunch.createAwaitingBen) {
+                return .live(UITestLaunch.fakeGraph(awaitingBen: true))
+            }
             if process.arguments.contains(UITestLaunch.create) {
                 return .live(UITestLaunch.fakeGraph(creating: true))
             }
@@ -44,6 +47,9 @@ enum AppLaunch {
             }
             if process.arguments.contains(UITestLaunch.approve) {
                 return .live(UITestLaunch.fakeGraph(approving: true))
+            }
+            if process.arguments.contains(UITestLaunch.propose) {
+                return .live(UITestLaunch.fakeGraph(proposing: true))
             }
         #endif
         if isHostingTests(process) { return .inert }
