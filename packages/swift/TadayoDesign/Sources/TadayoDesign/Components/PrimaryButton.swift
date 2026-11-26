@@ -23,17 +23,25 @@ import UIKit
 /// can be busy opts in (`tadayoPrimary(isBusy:)`); no other primary button changes. No
 /// delivery draws I’m 18 or older or Continue busy, or any busy button at the largest text
 /// size, so those are built from the written contract (INVENTORY.md).
+///
+/// One that `waits` is unavailable only while another request on its screen is out (a decision
+/// screen's Approve while its Decline is): it keeps its idle fill and label, with no indicator,
+/// rather than the disabled colours (handoff 10's `decisionBusy.approveWhileDeclining`: "do not
+/// claim Approve is working or dim it to the disabled-primary palette").
 public struct PrimaryButtonStyle: ButtonStyle {
     let isBusy: Bool
     let canBeBusy: Bool
+    let waits: Bool
 
-    public init(isBusy: Bool = false, canBeBusy: Bool = false) {
+    public init(isBusy: Bool = false, canBeBusy: Bool = false, waits: Bool = false) {
         self.isBusy = isBusy
         self.canBeBusy = canBeBusy
+        self.waits = waits
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        PrimaryButton(configuration: configuration, isBusy: isBusy, canBeBusy: canBeBusy)
+        PrimaryButton(
+            configuration: configuration, isBusy: isBusy, canBeBusy: canBeBusy, waits: waits)
     }
 }
 
@@ -41,13 +49,14 @@ private struct PrimaryButton: View {
     let configuration: ButtonStyleConfiguration
     let isBusy: Bool
     let canBeBusy: Bool
+    let waits: Bool
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.isFocused) private var isFocused
 
     var body: some View {
         PrimaryButtonFace(
             isPressed: configuration.isPressed, isFocused: isFocused,
-            isEnabled: isEnabled || isBusy, isBusy: isBusy, canBeBusy: canBeBusy
+            isEnabled: isEnabled || isBusy || waits, isBusy: isBusy, canBeBusy: canBeBusy
         ) {
             configuration.label
         }
@@ -207,5 +216,11 @@ extension ButtonStyle where Self == PrimaryButtonStyle {
     /// The primary button, busy while its request is on its way.
     public static func tadayoPrimary(isBusy: Bool) -> PrimaryButtonStyle {
         PrimaryButtonStyle(isBusy: isBusy, canBeBusy: true)
+    }
+
+    /// A decision screen's Approve: busy while its request is on its way, and keeping its idle
+    /// look while the other decision's is (`waits`).
+    public static func tadayoPrimary(isBusy: Bool, waits: Bool) -> PrimaryButtonStyle {
+        PrimaryButtonStyle(isBusy: isBusy, canBeBusy: true, waits: waits)
     }
 }

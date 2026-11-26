@@ -83,6 +83,7 @@ struct ApproveScreen: View {
     var lastShown: RosterRevision?
     var actions = ApproveActions()
     @AccessibilityFocusState private var titleFocused: Bool
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// The failed action's line, which the column is scrolled to as it shows.
     private static let failureID = "approve.failure"
@@ -108,8 +109,8 @@ struct ApproveScreen: View {
             .toolbar(.hidden, for: .tabBar)
             .modifier(
                 ApprovalAlerts(
-                    alert: $alert, club: club, reviewMembers: actions.reviewMembers,
-                    seeMembers: actions.seeMembers)
+                    alert: $alert, club: club, returnsTo: .members,
+                    reviewMembers: actions.reviewMembers, seeMembers: actions.seeMembers)
             )
             // A newer roster after Review members: VoiceOver's focus goes to its title, so it
             // isn't left on the loading words that are gone.
@@ -126,6 +127,9 @@ struct ApproveScreen: View {
         switch state {
         case .deciding(let revision):
             deciding(revision, closing: false)
+        case .decided(let revision, _):
+            // Under the alert saying the viewer's own decision (FQ146): both actions wait.
+            deciding(revision, closing: true)
         case .finished:
             if let lastShown {
                 deciding(lastShown, closing: true)
@@ -133,9 +137,8 @@ struct ApproveScreen: View {
                 Palette.canvas.ignoresSafeArea()
             }
         case .reviewing:
-            ClubLoading(label: "load.proposed.loading")
-                .announcing(
-                    String(localized: "load.proposed.loading"), politely: true, initial: true)
+            // Handoff 10's frame 3: G02-opening's wait, with the proposed members' words.
+            InvitationWait(words: String(localized: "load.proposed.loading"), checksFirst: false)
         case .reviewFailed(let failure):
             ClubLoadFailure(
                 title: "load.proposed.title", failure: failure == .network ? .network : .refused,
@@ -190,33 +193,23 @@ struct ApproveScreen: View {
                         .padding(.top, Spacing.xl)
                         .id(Self.failureID)
                 }
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                SetupFooter(bottom: Spacing.s, spacing: Spacing.s) {
-                    Button {
-                        Task { await actions.approve() }
-                    } label: {
-                        Text(verbatim: ApproveWords.approve(revision))
-                    }
-                    .buttonStyle(.tadayoPrimary(isBusy: busy == .approve))
-                    .disabled(busy != nil || closing)
-                    // Handoff 8's `approve.vo`, with Voice Control still answering to the words it
-                    // shows (WCAG 2.5.3, as Done for now does).
-                    .accessibilityLabel(Text(verbatim: ApproveWords.approveSpoken(revision)))
-                    .accessibilityInputLabels([Text(verbatim: ApproveWords.approve(revision))])
-                    Button {
-                        Task { await actions.decline() }
-                    } label: {
-                        Text("approve.decline")
-                    }
-                    .buttonStyle(.tadayoTextUnderPrimary)
-                    .disabled(busy != nil || closing)
-                    .accessibilityLabel(Text(verbatim: ApproveWords.declineSpoken(revision)))
-                    .accessibilityHint(Text("approve.decline.hint"))
-                    .accessibilityInputLabels([Text("approve.decline")])
+                if dynamicTypeSize.isAccessibilitySize {
+                    // At the accessibility sizes the actions follow in the same column (handoff
+                    // 10's `approvalRevision.actions.large`), as the proposed roster's do.
+                    VStack(spacing: Spacing.s) { actionPair(revision, closing: closing) }
+                        .padding(.top, Spacing.xxl)
                 }
             }
-            .onChange(of: line) { _, shown in
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    SetupFooter(bottom: Spacing.s, spacing: Spacing.s) {
+                        actionPair(revision, closing: closing)
+                    }
+                }
+            }
+            // From the first draw too: a line the approval kept when Members opened it again
+            // would otherwise start under the pinned actions, as on the proposed roster.
+            .onChange(of: line, initial: true) { _, shown in
                 guard shown != nil else { return }
                 scroll.scrollTo(Self.failureID, anchor: .bottom)
                 // Again in the main queue's next turn, once the line has its place.
@@ -224,17 +217,61 @@ struct ApproveScreen: View {
             }
         }
         .announcing(line, politely: true)
+        // Once, as a decision starts (handoff 10's `decisionBusy.a11y`); the action out has the
+        // value "In progress" too.
+        .announcing(busy.map(ApproveWords.busy), politely: true)
+    }
+
+    /// Approve {name}, the primary, and Decline under it, each deciding the whole revision. Both
+    /// wait while either is out, the one out busy (handoff 10's `decisionBusy`) and the other
+    /// keeping its idle look, unavailable; both wait the same way under the already decided alert
+    /// and while the screen slides away.
+    @ViewBuilder private func actionPair(_ revision: RosterRevision, closing: Bool) -> some View {
+        Button {
+            Task { await actions.approve() }
+        } label: {
+            Text(verbatim: ApproveWords.approve(revision))
+        }
+        .buttonStyle(.tadayoPrimary(isBusy: busy == .approve, waits: true))
+        .disabled(busy != nil || closing)
+        // Handoff 8's `approve.vo`, with Voice Control still answering to the words it shows
+        // (WCAG 2.5.3, as Done for now does).
+        .accessibilityLabel(Text(verbatim: ApproveWords.approveSpoken(revision)))
+        .accessibilityInputLabels([Text(verbatim: ApproveWords.approve(revision))])
+        Button {
+            Task { await actions.decline() }
+        } label: {
+            Text("approve.decline")
+        }
+        .buttonStyle(.tadayoTextUnderPrimary(isBusy: busy == .decline, waits: true))
+        .disabled(busy != nil || closing)
+        .accessibilityLabel(Text(verbatim: ApproveWords.declineSpoken(revision)))
+        .accessibilityHint(Text("approve.decline.hint"))
+        .accessibilityInputLabels([Text("approve.decline")])
     }
 }
 
 /// The approval's own outcomes as the system's alerts (handoff 8, "Changed roster and full club
 /// outcomes"), on G03-approve and on the proposed roster where the creator decides (FQ145): "Review
 /// the updated roster", with the action's own body and Review members, and "{clubName} is full.",
-/// with See members, each with one action, spoken with the club's name. The title stays while the
-/// alert animates away after `alert` is cleared.
+/// with See members, each with one action, spoken with the club's name. An answer holding the
+/// viewer's own other decision (FQ146, handoff 10's `alreadyDecided`) is "You already approved
+/// this roster." or "You already declined this roster.", with no body and one action that returns:
+/// See members on G03-approve, Review roster on the proposed roster, each spoken with the club's
+/// name. None has a Cancel: each action reads or returns, and decides nothing. The title stays
+/// while the alert animates away after `alert` is cleared.
 struct ApprovalAlerts: ViewModifier {
+    /// Where the already decided alert's action returns.
+    enum Return {
+        /// G03-approve's See members: back to Members, read again.
+        case members
+        /// The proposed roster's Review roster: the roster read again.
+        case proposedRoster
+    }
+
     @Binding var alert: RosterApprovalModel.Alert?
     let club: ClubRef
+    let returnsTo: Return
     let reviewMembers: @MainActor () async -> Void
     let seeMembers: @MainActor () -> Void
     /// The alert last shown.
@@ -252,15 +289,19 @@ struct ApprovalAlerts: ViewModifier {
                 Button {
                     switch shown {
                     case .rosterChanged: Task { await reviewMembers() }
-                    case .clubFull: seeMembers()
+                    case .clubFull, .alreadyDecided: seeMembers()
                     }
                 } label: {
-                    Text(verbatim: ApproveWords.alertAction(shown))
+                    Text(verbatim: ApproveWords.alertAction(shown, returnsTo: returnsTo))
                 }
                 .accessibilityLabel(
-                    Text(verbatim: ApproveWords.alertActionSpoken(shown, club: club)))
+                    Text(
+                        verbatim: ApproveWords.alertActionSpoken(
+                            shown, club: club, returnsTo: returnsTo)))
             } message: { shown in
-                Text(verbatim: ApproveWords.alertBody(shown, club: club))
+                if let body = ApproveWords.alertBody(shown, club: club) {
+                    Text(verbatim: body)
+                }
             }
             .onChange(of: alert, initial: true) { _, shown in
                 if let shown { titled = shown }
@@ -363,28 +404,49 @@ enum ApproveWords {
         switch alert {
         case .rosterChanged: String(localized: "approve.changed.title")
         case .clubFull: words("approve.full.title", club.name)
+        case .alreadyDecided(.approve): String(localized: "approve.already.approved")
+        case .alreadyDecided(.decline): String(localized: "approve.already.declined")
         }
     }
 
-    static func alertBody(_ alert: RosterApprovalModel.Alert, club: ClubRef) -> String {
+    /// The alert's body; the already decided alert has none.
+    static func alertBody(_ alert: RosterApprovalModel.Alert, club: ClubRef) -> String? {
         switch alert {
         case .rosterChanged(.approve): String(localized: "approve.changed.body.approve")
         case .rosterChanged(.decline): String(localized: "approve.changed.body.decline")
         case .clubFull: words("approve.full.body", club.name)
+        case .alreadyDecided: nil
         }
     }
 
-    static func alertAction(_ alert: RosterApprovalModel.Alert) -> String {
-        switch alert {
-        case .rosterChanged: String(localized: "approve.changed.action")
-        case .clubFull: String(localized: "approve.full.action")
+    static func alertAction(
+        _ alert: RosterApprovalModel.Alert, returnsTo: ApprovalAlerts.Return
+    ) -> String {
+        switch (alert, returnsTo) {
+        case (.rosterChanged, _): String(localized: "approve.changed.action")
+        case (.clubFull, _): String(localized: "approve.full.action")
+        case (.alreadyDecided, .members): String(localized: "approve.already.action")
+        case (.alreadyDecided, .proposedRoster): String(localized: "proposed.already.action")
         }
     }
 
-    static func alertActionSpoken(_ alert: RosterApprovalModel.Alert, club: ClubRef) -> String {
-        switch alert {
-        case .rosterChanged: words("approve.changed.action.vo", club.name)
-        case .clubFull: words("approve.full.action.vo", club.name)
+    static func alertActionSpoken(
+        _ alert: RosterApprovalModel.Alert, club: ClubRef, returnsTo: ApprovalAlerts.Return
+    ) -> String {
+        switch (alert, returnsTo) {
+        case (.rosterChanged, _): words("approve.changed.action.vo", club.name)
+        case (.clubFull, _): words("approve.full.action.vo", club.name)
+        case (.alreadyDecided, .members): words("approve.already.action.vo", club.name)
+        case (.alreadyDecided, .proposedRoster): words("proposed.already.action.vo", club.name)
+        }
+    }
+
+    /// "Approving this roster." or "Declining this roster.", said once as the decision starts
+    /// (handoff 10's `approval.approve.busy.announcement` and `.decline.busy.announcement`).
+    static func busy(_ action: RosterApprovalModel.Action) -> String {
+        switch action {
+        case .approve: String(localized: "approve.busy.approve")
+        case .decline: String(localized: "approve.busy.decline")
         }
     }
 

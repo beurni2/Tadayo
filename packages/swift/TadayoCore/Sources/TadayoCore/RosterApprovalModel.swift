@@ -27,9 +27,12 @@ import Observation
 ///
 /// A decision is done only when the answer holds it: the server answers a request that changes
 /// nothing (the viewer had decided already, an earlier answer lost) with the revision as it stands
-/// (spec 32). An answer holding the other decision keeps the screen, with the action's own failure
-/// line (FQ146's default); one where the revision ended without the viewer's decision is "no
-/// longer available".
+/// (spec 32). An answer holding the viewer's own other decision says so (FQ146, the founder's
+/// answer: handoff 10's alert, "You already approved this roster." or "You already declined this
+/// roster."): the roster stays drawn under the alert, both actions waiting, and the alert's one
+/// action closes it. The words come from the viewer's own decision in that answer alone, never
+/// anyone else's or a cache (T15, T33). An answer where the revision ended without the viewer's
+/// decision is "no longer available".
 ///
 /// A not found, from either call or from Review members' read, is the same answer for a revision
 /// that ended, one that never was and one the caller can't see (T14): "This invitation is no longer
@@ -65,6 +68,10 @@ import Observation
         case rosterChanged(Action)
         /// "{clubName} is full.", "{clubName} already has six members.", and See members.
         case clubFull
+        /// "You already approved this roster." or "You already declined this roster.": the
+        /// viewer's own decision the answer held (FQ146), with no body, and one action that
+        /// returns (See members on G03-approve, Review roster on the proposed roster).
+        case alreadyDecided(Action)
     }
 
     public enum State: Sendable, Equatable {
@@ -76,6 +83,10 @@ import Observation
         case reviewFailed(Failure)
         /// "This invitation is no longer available.", with Back.
         case unavailable
+        /// The answer held the viewer's own other decision on the roster shown (FQ146): it stays
+        /// drawn, both actions waiting, under the alert that says so, until the alert's action
+        /// closes the screen.
+        case decided(RosterRevision, Action)
         /// Decided, or See members: the screen closes back to Members, which reads again.
         case finished
     }
@@ -130,6 +141,11 @@ import Observation
         if case .deciding(let revision) = state { revision } else { nil }
     }
 
+    /// Whether the answer held the viewer's own other decision (FQ146): both actions wait.
+    public var isDecided: Bool {
+        if case .decided = state { true } else { false }
+    }
+
     /// Whether Members, under the screen, should read again now: true once for each change since
     /// it last did (`changes`). A refusal changes nothing, so Back after one reads nothing; a not
     /// found's own read (`gone`) is the only one it gets.
@@ -163,6 +179,14 @@ import Observation
         switch action {
         case .approve: .approved
         case .decline: .declined
+        }
+    }
+
+    /// The decision that isn't `action`.
+    private static func other(_ action: Action) -> Action {
+        switch action {
+        case .approve: .decline
+        case .decline: .approve
         }
     }
 
@@ -209,11 +233,21 @@ import Observation
             pending = [:]
             state = .unavailable
             changes += 1
+        case .success(let answered)
+        where answered.id == shown.id
+            && answered.myDecision == Self.decision(Self.other(action)):
+            // The request changed nothing: the viewer's own other decision, its answer lost, went
+            // through (FQ146). That is the truth to tell, not a failure to retry: the roster
+            // stays drawn, both actions waiting, under the alert that says which decision is
+            // held. No key is kept, since nothing more is sent on this revision.
+            pending = [:]
+            state = .decided(shown, Self.other(action))
+            alert = .alreadyDecided(Self.other(action))
+            changes += 1
         case .success:
-            // The request changed nothing: an earlier decision of the viewer's, its answer lost,
-            // went through (FQ146), or an answer the contract never gives. This action wasn't
-            // carried out, so its next tap is a new one; the other's key stays, and its retry is
-            // answered with the decision it made.
+            // An answer the contract never gives (the viewer's decision still pending on an open
+            // revision, or another revision's): this action wasn't carried out, so its next tap
+            // is a new one; the other's key stays.
             pending[action] = nil
             failed = Failed(action: action, failure: .other)
             changes += 1
@@ -309,7 +343,9 @@ import Observation
         }
     }
 
-    /// The full club alert's See members: the screen closes back to Members, which reads again.
+    /// The full club alert's See members, and the already decided alert's action (See members on
+    /// G03-approve, Review roster on the proposed roster): the screen closes back to what opened
+    /// it, which reads again.
     public func seeMembers() {
         alert = nil
         state = .finished

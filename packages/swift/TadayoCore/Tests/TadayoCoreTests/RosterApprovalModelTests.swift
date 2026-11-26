@@ -129,30 +129,81 @@ import Testing
         #expect(approval.state == .finished)
     }
 
-    @Test func aDecisionThatChangedNothingDoesntClose() async {
-        // FQ146: Approve went through but its answer was lost; Decline, a new action, changes
-        // nothing, and the server answers with the revision as it stands, Maya's approval in it.
-        // The screen doesn't claim the Decline, and Approve's retry still sends its own key.
+    @Test func aDeclineAnsweredWithTheViewersOwnApprovalSaysSoAndWaits() async {
+        // FQ146, the founder's answer (handoff 10's alert): Approve went through but its answer
+        // was lost; Decline, a new action, changes nothing, and the server answers with the
+        // revision as it stands, Maya's approval in it. The screen says Maya's own decision,
+        // keeps the roster drawn with both actions waiting, and sends nothing more on it.
         let service = ScriptedClubs()
-        service.approveAnswers = [
-            .failure(.network), .success(Approval.revision(decision: .approved)),
-        ]
+        service.approveAnswers = [.failure(.network)]
         service.declineAnswers = [.success(Approval.revision(decision: .approved))]
         let approval = model(service)
         await approval.approve()
         #expect(approval.takeMembersRead())
         await approval.decline()
-        #expect(approval.state == .deciding(Approval.revision()))
-        #expect(approval.failed == .init(action: .decline, failure: .other))
-        // Members lists the decision as pending still: it reads again.
+        #expect(approval.state == .decided(Approval.revision(), .approve))
+        #expect(approval.alert == .alreadyDecided(.approve))
+        #expect(approval.failed == nil && approval.busy == nil)
+        #expect(approval.revision == nil)
+        #expect(!approval.reopens(Approval.revision()))
+        // Members lists the decision as pending still: it reads again, once.
         #expect(approval.takeMembersRead())
+        #expect(!approval.takeMembersRead())
+        // Neither action, nor Review members, sends anything more on this revision.
         await approval.approve()
+        await approval.decline()
+        await approval.reviewMembers()
         #expect(
             service.calls == [
                 "approve rev_leila v3 \(Keys.key(1))", "decline rev_leila v3 \(Keys.key(2))",
-                "approve rev_leila v3 \(Keys.key(1))",
             ])
+        // See members closes the screen back to Members.
+        approval.seeMembers()
         #expect(approval.state == .finished)
+        #expect(approval.alert == nil)
+    }
+
+    @Test func anApproveAnsweredWithTheViewersOwnDeclineSaysSo() async {
+        // The other way round, on a revision Maya's decline ended: the answer holds Maya's own
+        // decline, so that is what the alert says, never anyone else's decision.
+        for state in [RosterRevisionState.open, .didNotGoAhead] {
+            let service = ScriptedClubs()
+            service.declineAnswers = [.failure(.network)]
+            service.approveAnswers = [
+                .success(Approval.revision(state: state, decision: .declined))
+            ]
+            let approval = model(service)
+            await approval.decline()
+            await approval.approve()
+            #expect(approval.state == .decided(Approval.revision(), .decline), "\(state)")
+            #expect(approval.alert == .alreadyDecided(.decline), "\(state)")
+            #expect(approval.failed == nil, "\(state)")
+        }
+    }
+
+    @Test func anAnswerMatchingTheActionIsTheDecisionNotTheAlert() async {
+        // A retry answered with its own decision is the decision done: no alert.
+        let service = ScriptedClubs()
+        service.declineAnswers = [
+            .failure(.network), .success(Approval.revision(decision: .declined)),
+        ]
+        let approval = model(service)
+        await approval.decline()
+        await approval.decline()
+        #expect(approval.state == .finished)
+        #expect(approval.alert == nil)
+    }
+
+    @Test func anotherRevisionsDecisionIsNotTakenForTheViewers() async {
+        // An answer for a revision other than the one shown is one the contract never gives:
+        // nothing is said about a decision from it.
+        let service = ScriptedClubs()
+        service.declineAnswers = [.success(Approval.revision(id: "rev_other", decision: .approved))]
+        let approval = model(service)
+        await approval.decline()
+        #expect(approval.state == .deciding(Approval.revision()))
+        #expect(approval.alert == nil)
+        #expect(approval.failed == .init(action: .decline, failure: .other))
     }
 
     @Test func aDecisionTheServerDidntTakeIsNotTakenForOne() async {

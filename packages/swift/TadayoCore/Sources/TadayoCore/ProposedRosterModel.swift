@@ -21,9 +21,11 @@ import Observation
 /// While the viewer's own `my_decision` on the open revision is `pending`, the roster holds an
 /// approval (`RosterApprovalModel`) for exactly that revision and version, and the screen shows
 /// Approve and Decline with its line and alerts; the approval's Review members shows the revision
-/// it reads, in this screen's loading and failure forms. Once the approval is done with its
-/// revision (a decision, See members, or a revision that ended), the roster is read again and
-/// shows what is true now: a club that started closes the screen. A read that lists the same
+/// it reads, in this screen's loading and failure forms. An answer holding the viewer's own other
+/// decision (FQ146) keeps the roster under the alert that says so, both actions waiting, until its
+/// Review roster. Once the approval is done with its revision (a decision, See members, Review
+/// roster, or a revision that ended), the roster is read again and shows what is true now: a club
+/// that started closes the screen. A read that lists the same
 /// revision at the same version keeps the approval as it stands, its keys with it (T19), so a
 /// decision still on its way is never sent twice.
 @MainActor @Observable public final class ProposedRosterModel {
@@ -88,7 +90,9 @@ import Observation
         case .loaded(let roster):
             guard let approval else { return .roster(roster) }
             switch approval.state {
-            case .deciding(let revision):
+            case .deciding(let revision), .decided(let revision, _):
+                // The roster to decide on or, under the alert saying the viewer's own decision
+                // (FQ146), the one they decided on, both actions waiting.
                 return .roster(ProposedRoster(revision, viewer: club.myMembershipID))
             case .reviewFailed(let failure):
                 return .failed(failure == .network ? .network : .refused)
@@ -174,7 +178,9 @@ import Observation
     /// The changed roster alert's Review members.
     public func reviewMembers() async { await act { await $0.reviewMembers() } }
 
-    /// The full club alert's See members: the roster is read again.
+    /// The full club alert's See members, and the already decided alert's Review roster (FQ146):
+    /// the roster is read again, and shows the viewer's own decision as the server holds it,
+    /// read-only, or closes for a club that started.
     public func seeMembers() async { await act { $0.seeMembers() } }
 
     /// One of the approval's actions, then, once the approval is done with its revision, the
@@ -188,7 +194,7 @@ import Observation
         switch approval.state {
         case .finished, .unavailable:
             await load()
-        case .deciding, .reviewing, .reviewFailed:
+        case .deciding, .reviewing, .reviewFailed, .decided:
             break
         }
     }

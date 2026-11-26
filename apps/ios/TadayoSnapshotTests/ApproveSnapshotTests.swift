@@ -25,6 +25,14 @@ final class ApproveSnapshotTests: XCTestCase {
             named: "G03-approve-failed")
     }
 
+    func testG03ApproveDeclining() {
+        // Built from handoff 10's `decisionBusy` (no frame): Decline busy, its words where they
+        // were; Approve unavailable in its idle look.
+        snap(
+            approve(.deciding(ClubFixtures.kitchenRevision()), busy: .decline),
+            named: "G03-approve-declining", busy: true)
+    }
+
     func testG03ApproveTwo() {
         snap(approve(.deciding(ClubFixtures.kitchenRevision(nina: true))), named: "G03-approve-two")
     }
@@ -45,6 +53,15 @@ final class ApproveSnapshotTests: XCTestCase {
         snap(
             members(ClubFixtures.kitchenRoster(open: ClubFixtures.kitchenRevision())),
             named: "G05-members-with-proposed")
+    }
+
+    func testG05MembersWithProposedDecided() {
+        // Handoff 10's frame 6: the same row after Maya decided, no chevron, its room kept.
+        snap(
+            members(
+                ClubFixtures.kitchenRoster(
+                    open: ClubFixtures.kitchenRevision(decision: .approved))),
+            named: "G05-members-with-proposed-decided")
     }
 
     // MARK: What VoiceOver finds
@@ -117,6 +134,16 @@ final class ApproveSnapshotTests: XCTestCase {
                 let button = elements.first { $0.label == action }
                 XCTAssertTrue(button?.traits.contains(.notEnabled) ?? false, "\(busy) \(elements)")
             }
+            // The decision out keeps its label and says "In progress" (handoff 10's
+            // `decisionBusy`), Decline too; the other says nothing of being at work.
+            let out = busy == .approve ? "Approve" : "Decline"
+            let other = busy == .approve ? "Decline" : "Approve"
+            XCTAssertEqual(
+                elements.first { $0.label == "\(out) Leila joining Kitchen table." }?.value,
+                "In progress", "\(elements)")
+            XCTAssertEqual(
+                elements.first { $0.label == "\(other) Leila joining Kitchen table." }?.value, "",
+                "\(elements)")
         }
     }
 
@@ -184,16 +211,62 @@ final class ApproveSnapshotTests: XCTestCase {
         XCTAssertEqual(
             ApproveWords.alertBody(.rosterChanged(.decline), club: club),
             "The members have changed. Review the updated roster before declining.")
-        XCTAssertEqual(ApproveWords.alertAction(.rosterChanged(.decline)), "Review members")
         XCTAssertEqual(
-            ApproveWords.alertActionSpoken(.rosterChanged(.approve), club: club),
+            ApproveWords.alertAction(.rosterChanged(.decline), returnsTo: .members),
+            "Review members")
+        XCTAssertEqual(
+            ApproveWords.alertActionSpoken(
+                .rosterChanged(.approve), club: club, returnsTo: .members),
             "Review the updated members of Kitchen table.")
         XCTAssertEqual(ApproveWords.alertTitle(.clubFull, club: club), "Kitchen table is full.")
         XCTAssertEqual(
             ApproveWords.alertBody(.clubFull, club: club), "Kitchen table already has six members.")
-        XCTAssertEqual(ApproveWords.alertAction(.clubFull), "See members")
+        XCTAssertEqual(ApproveWords.alertAction(.clubFull, returnsTo: .members), "See members")
         XCTAssertEqual(
-            ApproveWords.alertActionSpoken(.clubFull, club: club), "See members of Kitchen table.")
+            ApproveWords.alertActionSpoken(.clubFull, club: club, returnsTo: .members),
+            "See members of Kitchen table.")
+    }
+
+    func testTheAlreadyDecidedAlertSaysTheViewersOwnDecisionAndWhereItReturns() {
+        // FQ146, the founder's answer (handoff 10's `alreadyDecided`): the title from the
+        // viewer's own decision, no body, and the action that returns to the screen under it.
+        let kitchen = ClubFixtures.kitchenRevision().club
+        let sunday = ClubFixtures.sundayProposal.club
+        XCTAssertEqual(
+            ApproveWords.alertTitle(.alreadyDecided(.approve), club: kitchen),
+            "You already approved this roster.")
+        XCTAssertEqual(
+            ApproveWords.alertTitle(.alreadyDecided(.decline), club: kitchen),
+            "You already declined this roster.")
+        XCTAssertNil(ApproveWords.alertBody(.alreadyDecided(.approve), club: kitchen))
+        XCTAssertEqual(
+            ApproveWords.alertAction(.alreadyDecided(.decline), returnsTo: .members),
+            "See members")
+        XCTAssertEqual(
+            ApproveWords.alertActionSpoken(
+                .alreadyDecided(.decline), club: kitchen, returnsTo: .members),
+            "See members of Kitchen table.")
+        XCTAssertEqual(
+            ApproveWords.alertAction(.alreadyDecided(.approve), returnsTo: .proposedRoster),
+            "Review roster")
+        XCTAssertEqual(
+            ApproveWords.alertActionSpoken(
+                .alreadyDecided(.approve), club: sunday, returnsTo: .proposedRoster),
+            "Review the proposed roster for Sunday people.")
+    }
+
+    func testBothActionsWaitUnderTheAlreadyDecidedAlert() {
+        // The roster stays drawn under the alert, with no line and neither action available.
+        let elements = AccessibilityElements.of(
+            approve(.decided(ClubFixtures.kitchenRevision(), .approve)))
+        XCTAssertTrue(elements.contains { $0.label == "Invite Leila?" }, "\(elements)")
+        for action in [
+            "Approve Leila joining Kitchen table.", "Decline Leila joining Kitchen table.",
+        ] {
+            let button = elements.first { $0.label == action }
+            XCTAssertTrue(button?.traits.contains(.notEnabled) ?? false, "\(elements)")
+        }
+        XCTAssertFalse(elements.contains { $0.label.hasPrefix("Couldn’t") }, "\(elements)")
     }
 
     // MARK: Members with a proposed row
@@ -220,6 +293,10 @@ final class ApproveSnapshotTests: XCTestCase {
             $0.label == "Leila. Proposed by Ben. Proposed."
         }
         XCTAssertTrue(leila?.traits.contains(.button) ?? false, "\(String(describing: leila))")
+        // Handoff 10's frame 5: the hint says where it goes.
+        XCTAssertEqual(
+            leila?.hint, "Review the proposed roster for Kitchen table.",
+            "\(String(describing: leila))")
         XCTAssertTrue(
             AccessibilityElements.activate("Leila. Proposed by Ben. Proposed.", in: view))
         XCTAssertEqual(opened, ["rev_leila"])
@@ -234,6 +311,7 @@ final class ApproveSnapshotTests: XCTestCase {
             let leila = elements.first { $0.label == "Leila. Proposed by Ben. Proposed." }
             XCTAssertNotNil(leila, "\(decision) \(elements)")
             XCTAssertFalse(leila?.traits.contains(.button) ?? true, "\(decision) \(elements)")
+            XCTAssertEqual(leila?.hint, "", "\(decision) \(elements)")
         }
     }
 

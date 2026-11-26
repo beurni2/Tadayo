@@ -24,7 +24,7 @@ struct ProposedRosterDestination: View {
     var body: some View {
         ProposedRosterScreen(
             shown: asked ? model.shown : .loading, busy: model.approval?.busy,
-            failed: model.approval?.failed,
+            failed: model.approval?.failed, decided: model.approval?.isDecided ?? false,
             alert: Binding(get: { model.approval?.alert }, set: { model.approval?.alert = $0 }),
             actions: ProposedRosterActions(
                 retry: { await model.retry() }, approve: { await model.approve() },
@@ -83,6 +83,8 @@ struct ProposedRosterScreen: View {
     let shown: ProposedRosterModel.Shown
     var busy: RosterApprovalModel.Action?
     var failed: RosterApprovalModel.Failed?
+    /// The answer held the viewer's own other decision (FQ146): both actions wait under the alert.
+    var decided = false
     @Binding var alert: RosterApprovalModel.Alert?
     var actions = ProposedRosterActions()
     let club: ClubRef
@@ -99,8 +101,8 @@ struct ProposedRosterScreen: View {
             .toolbar(.hidden, for: .tabBar)
             .modifier(
                 ApprovalAlerts(
-                    alert: $alert, club: club, reviewMembers: actions.reviewMembers,
-                    seeMembers: actions.seeMembers)
+                    alert: $alert, club: club, returnsTo: .proposedRoster,
+                    reviewMembers: actions.reviewMembers, seeMembers: actions.seeMembers)
             )
             // The roster in place of the loading form (after the first read, Review members' or
             // the one after a decision): VoiceOver's focus goes to the title, so it isn't left on
@@ -115,9 +117,8 @@ struct ProposedRosterScreen: View {
     @ViewBuilder private var content: some View {
         switch shown {
         case .loading:
-            ClubLoading(label: "load.proposed.loading")
-                .announcing(
-                    String(localized: "load.proposed.loading"), politely: true, initial: true)
+            // Handoff 10's frame 3: G02-opening's wait, with the proposed members' words.
+            InvitationWait(words: String(localized: "load.proposed.loading"), checksFirst: false)
         case .failed(let failure):
             ClubLoadFailure(
                 title: "load.proposed.title", failure: failure,
@@ -176,6 +177,8 @@ struct ProposedRosterScreen: View {
             }
         }
         .announcing(line, politely: true)
+        // Once, as a decision starts (handoff 10's `decisionBusy.a11y`).
+        .announcing(busy.map(ApproveWords.busy), politely: true)
     }
 
     /// Manage invitations: the setup list, the only place a link's state shows.
@@ -216,7 +219,8 @@ struct ProposedRosterScreen: View {
     /// Approve roster, the primary, and Decline under it, each deciding the whole revision, with
     /// handoff 10's spoken names (`handoff10.proposed.approve.vo`, `.decline.vo`) and Voice
     /// Control still answering to the words they show (WCAG 2.5.3). Both wait while either is
-    /// out, Approve busy.
+    /// out, the one out busy and the other keeping its idle look (handoff 10's `decisionBusy`),
+    /// and under the already decided alert (FQ146).
     @ViewBuilder private var decisionActions: some View {
         let name = club.name
         Button {
@@ -224,8 +228,8 @@ struct ProposedRosterScreen: View {
         } label: {
             Text("proposed.approve")
         }
-        .buttonStyle(.tadayoPrimary(isBusy: busy == .approve))
-        .disabled(busy != nil)
+        .buttonStyle(.tadayoPrimary(isBusy: busy == .approve, waits: true))
+        .disabled(busy != nil || decided)
         .accessibilityLabel(Text(verbatim: ApproveWords.words("proposed.approve.vo", name)))
         .accessibilityInputLabels([Text("proposed.approve")])
         Button {
@@ -233,8 +237,8 @@ struct ProposedRosterScreen: View {
         } label: {
             Text("approve.decline")
         }
-        .buttonStyle(.tadayoTextUnderPrimary)
-        .disabled(busy != nil)
+        .buttonStyle(.tadayoTextUnderPrimary(isBusy: busy == .decline, waits: true))
+        .disabled(busy != nil || decided)
         .accessibilityLabel(Text(verbatim: ApproveWords.words("proposed.decline.vo", name)))
         .accessibilityHint(Text("approve.decline.hint"))
         .accessibilityInputLabels([Text("approve.decline")])

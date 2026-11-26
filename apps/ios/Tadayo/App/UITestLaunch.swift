@@ -50,7 +50,8 @@
         /// The stand-in services with an account already named, the creator of Sunday people,
         /// which hasn't started, where the server made a revision for Debby's own name and Ben
         /// hasn't decided (`Proposing`): a test can open the proposed roster from Home's Review
-        /// members, its setup list, and approve. A test seam, not product.
+        /// members, its setup list, and approve, or decline after an Approve with no answer. A
+        /// test seam, not product.
         static let propose = "-TadayoUITestPropose"
         /// Debby's link `Invited` knows: made up, no server made it.
         static let invitedLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
@@ -813,7 +814,9 @@
         /// for it, which Ben must approve (`propose`; FQ84, FQ145). The first Approve gets no
         /// answer; the next, with the same key (T19), approves, and the club starts: the list,
         /// the details and Home then show it active. An Approve with another key gets no answer
-        /// either, so a key not kept shows as the line staying. Every other call is `NoClubs`'.
+        /// either, so a key not kept shows as the line staying. A Decline after an Approve with
+        /// no answer is answered as the server would once that Approve went through, its answer
+        /// lost (FQ146): with Ben's approval, the club started. Every other call is `NoClubs`'.
         final class Proposing: ClubService, @unchecked Sendable {
             private static let sunday = ClubRef(
                 id: "club_sunday", name: "Sunday people", timezone: "America/New_York",
@@ -900,7 +903,18 @@
 
             func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
                 async throws(APIFailure) -> RosterRevision
-            { try await none.decline(revisionID, expectedVersion: expectedVersion, key: key) }
+            {
+                let approved = lock.withLock {
+                    guard self.firstKey != nil else { return false }
+                    self.started = true
+                    return true
+                }
+                guard approved else {
+                    return try await none.decline(
+                        revisionID, expectedVersion: expectedVersion, key: key)
+                }
+                return revision()
+            }
 
             func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
                 async throws(APIFailure) -> ClubDetail
