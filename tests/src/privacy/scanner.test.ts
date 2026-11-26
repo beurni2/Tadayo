@@ -10,9 +10,17 @@ import { STATUS_CODES } from "node:http";
 import Fastify from "fastify";
 import { describe, expect, it } from "vitest";
 import { answerOf } from "./harness.ts";
-import { contractOperations, readDocument } from "./operations.ts";
+import { contractOperations, isObject, readDocument, resolve, type Json, type JsonObject } from "./operations.ts";
 import {
+  BEFORE_REVEAL,
+  BEFORE_REVEAL_OPERATIONS,
+  OPENED_ONLY,
+  SERVED_FOR_A_REASON,
+  keyWords,
+  logProblems,
+  neverKey,
   scan,
+  worldTexts,
   type Answer,
   type Check,
   type MediaClass,
@@ -28,6 +36,13 @@ import {
 } from "./scanner.ts";
 
 const document = readDocument();
+/** T10's never-list as the scanner read it before the outside audit's A14: snake_case words alone. */
+const OLD_NEVER_KEY = new RegExp(
+  "(^|_)(url|uri|href|src|link|token|thumbnail|thumb|poster|blur|blurhash|hash|colour|color|width|height|" +
+    "dimension|aspect|ratio|embed|html|source|provider|alt|exif|captured|capture|duration|size|bytes|highlight|" +
+    "title|waveform|original|media_version)s?(_|$)",
+  "i",
+);
 const operations = new Map(contractOperations(document).map((operation) => [operation.id, operation]));
 
 function operation(id: string) {
@@ -1552,8 +1567,10 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     const sent = await answerOf(app, { method: "GET", url: "/v1/occurrences/occ_sat", headers: {} });
     await app.close();
     const found = scan(sent, context("getOccurrence", cleo));
-    expect(checks(found)).toEqual(["keys", "shape", "values"]);
+    // The day's own list (BEFORE_REVEAL) finds the key too.
+    expect(checks(found)).toEqual(["keys", "shape", "values", "whitelist"]);
     expect(found.find((finding) => finding.check === "shape")?.at).toBe("$.media_url");
+    expect(found.find((finding) => finding.check === "whitelist")?.at).toBe("$");
   });
 });
 
@@ -1788,7 +1805,8 @@ describe("the proposer's invitation link (T7, T14, T52, FQ77; handoff 1)", () =>
     // contract declares no such answer, so nothing there is judged a link, and the key and the URL fail.
     const ok200 = madeBy(ben, link({ url: url(BENS_TOKEN) }), 200);
     expect(at(ok200, "shape")).toContain("status");
-    expect(at(ok200, "keys")).toEqual(["$.url"]);
+    // Its time fails too: nothing there is read as an InvitationLink, whose lapse is served for a reason.
+    expect(at(ok200, "keys")).toEqual(["$.expires_at", "$.url"]);
     expect(at(ok200, "values")).toEqual(["$.invitation_id", "$.url"]);
     // To another member, the link's own URL is the link's id and its token both.
     const toCleo = madeBy(cleo, link({ url: url(BENS_TOKEN) }));
@@ -2068,10 +2086,11 @@ describe("the signed upload URL and an upload's id (T12, T14; TECH-DESIGN sectio
   it("catches a signed upload URL outside createUpload's 201", () => {
     expect(at(scan(answer(upload()), context("getUpload", ben)), "world")).toContain("$.signed_upload");
     expect(at(scan(answer(upload(), 202), context("completeUpload", ben)), "world")).toContain("$.signed_upload");
-    // createUpload declares no 200, so nothing in it is read as an Upload: the URL fails as any URL does.
+    // createUpload declares no 200, so nothing in it is read as an Upload: the URL fails as any URL does,
+    // and each time as any time does, since no schema says why it is served (SERVED_FOR_A_REASON).
     const undeclared = scan(answer(upload(), 200), context("createUpload", ben));
     expect(at(undeclared, "shape")).toContain("status");
-    expect(at(undeclared, "keys")).toEqual(["$.signed_upload.url"]);
+    expect(at(undeclared, "keys")).toEqual(["$.expires_at", "$.signed_upload.url", "$.signed_upload.expires_at"]);
     expect(at(undeclared, "values")).toContain("$.signed_upload.url");
   });
 
@@ -2146,5 +2165,306 @@ describe("the signed upload URL and an upload's id (T12, T14; TECH-DESIGN sectio
     expect(
       at(scan(answer({ code: "INVALID_REQUEST", field: BENS_OBJECT }, 400), context("createUpload", ben)), "values"),
     ).toEqual(["$.field"]);
+  });
+});
+
+describe("the scanner's own key lists and never-words (the outside audit's A14; T10)", () => {
+  const schemas = (document.components as JsonObject).schemas as JsonObject;
+  /** The names of the schemas `node` reaches, through every reference, the components' responses' too. */
+  const reached = (node: Json, into = new Set<string>()): Set<string> => {
+    if (Array.isArray(node)) for (const item of node) reached(item, into);
+    else if (isObject(node)) {
+      if (typeof node.$ref === "string") {
+        const name = node.$ref.startsWith("#/components/schemas/") ? node.$ref.split("/").pop() : undefined;
+        if (name === undefined) reached(resolve(document, node), into);
+        else if (!into.has(name)) {
+          into.add(name);
+          reached(schemas[name] ?? null, into);
+        }
+      } else for (const child of Object.values(node)) reached(child, into);
+    }
+    return into;
+  };
+  const isObjectSchema = (name: string) => {
+    const schema = schemas[name];
+    return isObject(schema) && isObject(schema.properties);
+  };
+  /** The object schemas an operation's answers that succeed reach. */
+  const answered = (id: string): Set<string> => {
+    const into = new Set<string>();
+    for (const [status, response] of operation(id).responses)
+      if (status < 300 && response.json !== undefined) reached(response.json, into);
+    return new Set([...into].filter(isObjectSchema));
+  };
+  const keysOf = (name: string) => Object.keys((schemas[name] as JsonObject).properties as JsonObject);
+
+  it("holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today", () => {
+    const reach = new Set([...BEFORE_REVEAL_OPERATIONS].flatMap((id) => [...answered(id)]));
+    expect([...reach].sort()).toEqual([...Object.keys(BEFORE_REVEAL), ...OPENED_ONLY].sort());
+    expect(Object.keys(BEFORE_REVEAL).filter((name) => OPENED_ONLY.has(name))).toEqual([]);
+    for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+      const required = ((schemas[name] as JsonObject).required ?? []) as string[];
+      expect([...list.required].sort(), name).toEqual([...required].sort());
+      expect([...list.required, ...list.optional].sort(), name).toEqual(keysOf(name).sort());
+    }
+  });
+
+  it("counts every operation whose answer can name a day or a drop as answering before the reveal, or only after", () => {
+    // The ones that answer only about a day that has opened: favourites, Memories, reactions, comments and
+    // a thread's notifications (spec 16 to 19).
+    const onlyOpened = [
+      "clearReaction",
+      "createComment",
+      "listFavourites",
+      "listMemories",
+      "saveFavourite",
+      "searchMemories",
+      "setReaction",
+      "setThreadNotifications",
+      "updateComment",
+    ];
+    const naming = new Set(["Occurrence", "DropCaption", "DropOwn", "Allowance"]);
+    const fields = new Set(["drop_id", "occurrence_id", "cover_drop_id", "existing_drop_id"]);
+    const names = [...operations.keys()].filter((id) =>
+      [...answered(id)].some((schema) => naming.has(schema) || keysOf(schema).some((key) => fields.has(key))),
+    );
+    expect(names.sort()).toEqual([...BEFORE_REVEAL_OPERATIONS, ...onlyOpened].sort());
+  });
+
+  it("reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time", () => {
+    expect(keyWords("thumbnailUrl")).toEqual(["thumbnail", "url"]);
+    expect(keyWords("posterURL")).toEqual(["poster", "url"]);
+    expect(keyWords("HTMLBody")).toEqual(["html", "body"]);
+    expect(keyWords("drop_count")).toEqual(["drop", "count"]);
+    expect(keyWords("x-Media-Version")).toEqual(["x", "media", "version"]);
+    for (const key of [
+      "thumbnail_url",
+      "thumbnailUrl",
+      "posterURL",
+      "ImageWidth",
+      "mediaVersion",
+      "drop_count",
+      "hiddenCount",
+      "total",
+      "position",
+      "previewText",
+      "committed_at",
+      "committedAt",
+      "filesize",
+      "imageurl",
+      "thumbhash",
+      "file_sizes",
+    ])
+      expect(neverKey(key), key).toBe(true);
+    for (const key of ["id", "caption", "author", "state", "version", "server_now", "at", "club_today", "my_days"])
+      expect(neverKey(key), key).toBe(false);
+  });
+
+  it("holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word", () => {
+    const answers = new Set<string>();
+    for (const found of operations.values())
+      for (const response of found.responses.values()) if (response.json !== undefined) reached(response.json, answers);
+    const named: Record<string, string[]> = {};
+    for (const name of [...answers].filter(isObjectSchema).sort()) {
+      if (OPENED_ONLY.has(name)) continue;
+      // The keys T10's never-list named before: a highlight on the viewer's own drop, a link's URL to its
+      // proposer and a signed upload's URL to its owner, each judged by the world check, and what B3 and B7
+      // serve (an embed, a source, the config's providers), each failing until its slice allows it.
+      const words = keysOf(name).filter((key) => neverKey(key) && !OLD_NEVER_KEY.test(key));
+      if (words.length > 0) named[name] = words.sort();
+    }
+    expect(named).toEqual(
+      Object.fromEntries(Object.entries(SERVED_FOR_A_REASON).map(([name, keys]) => [name, [...keys].sort()])),
+    );
+  });
+
+  // The audit's mutants: a key the contract and the route add together. The test's own copy of the
+  // contract names each, so the shape check passes and only this file's own lists and words catch it.
+  const widened = (additions: Record<string, Record<string, Json>>): JsonObject => {
+    const copy = structuredClone(document);
+    const into = (copy.components as JsonObject).schemas as JsonObject;
+    for (const [name, properties] of Object.entries(additions)) {
+      const schema = into[name] as JsonObject;
+      schema.properties = { ...(schema.properties as JsonObject), ...properties };
+    }
+    return copy;
+  };
+  const integer: Json = { type: "integer" };
+  const instantRef: Json = { $ref: "#/components/schemas/Instant" };
+
+  it("catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home", () => {
+    const cases: [string, Record<string, Record<string, Json>>, string, unknown, string, string[]][] = [
+      [
+        "drop_count on the day",
+        { UpcomingDay: { drop_count: integer } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), drop_count: 2 },
+        "$",
+        ["keys", "whitelist"],
+      ],
+      [
+        "hidden_count on the day",
+        { UpcomingDay: { hidden_count: integer } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), hidden_count: 1 },
+        "$",
+        ["keys", "whitelist"],
+      ],
+      [
+        "a list of ids under viewer",
+        { ViewerDay: { drop_ids: { type: "array", items: { type: "string" } } } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), viewer: { ...placeIn(cleo), drop_ids: [] } },
+        "$.viewer",
+        ["whitelist"],
+      ],
+      [
+        "post_id on the day's occurrence",
+        { Occurrence: { post_id: { type: "string" } } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), occurrence: { ...saturday, post_id: "p1" } },
+        "$.occurrence",
+        ["whitelist"],
+      ],
+      [
+        "committed_at on an own day",
+        { OwnDay: { committed_at: instantRef } },
+        "getOwnDay",
+        { ...ownDay(allowance(1, 1, 0, 0)), committed_at: "2026-11-06T10:00:00Z" },
+        "$",
+        ["keys", "whitelist"],
+      ],
+      [
+        "filesize on an allowance",
+        { Allowance: { filesize: integer } },
+        "getOwnDay",
+        { ...ownDay(allowance(1, 1, 0, 0)), allowance: { ...allowance(1, 1, 0, 0), filesize: 10 } },
+        "$.allowance",
+        ["keys", "whitelist"],
+      ],
+      [
+        "drop_count on a club",
+        { ClubSummary: { drop_count: integer } },
+        "listClubs",
+        { server_now: "2026-11-07T06:59:59Z", clubs: [{ ...clubSummary(cleo), drop_count: 2 }], invitations: [] },
+        "$.clubs[0]",
+        ["keys", "whitelist"],
+      ],
+      [
+        "drop_count on a waiting Home",
+        { HomeWaiting: { drop_count: integer } },
+        "getHome",
+        { ...waitingHome("2026-11-07T06:59:59Z", []), drop_count: 2 },
+        "$",
+        ["keys", "whitelist"],
+      ],
+    ];
+    for (const [what, additions, id, body, where, caught] of cases) {
+      const found = scan(answer(body), context(id, cleo, { document: widened(additions) }));
+      expect(checks(found), what).toEqual(caught);
+      expect(at(found, "whitelist"), what).toEqual([where]);
+      // With the contract as it is, the shape check finds it too.
+      expect(checks(scan(answer(body), context(id, cleo))), what).toContain("shape");
+    }
+    // And the same day without them passes, so it is each key alone.
+    expect(scan(answer(upcomingDay([bensCard()])), context("getOccurrence", cleo))).toEqual([]);
+  });
+
+  it("catches a camelCase key the contract names outside the lists, and passes each key served for a reason", () => {
+    const found = scan(
+      answer({ ...upcomingDay([bensCard()]), club: { ...club(), posterUrl: "x" } }),
+      context("getOccurrence", cleo, { document: widened({ ClubRef: { posterUrl: { type: "string" } } }) }),
+    );
+    expect(at(found, "keys")).toEqual(["$.club.posterUrl"]);
+    // The day's own times, a club's count of members and a member's place: all served (the passes above
+    // hold Occurrence's and ClubSummary's), as is a reservation's lapse.
+    const reservation = {
+      id: "rsv_cleo_live",
+      occurrence_id: "occ_sat",
+      media_class: "photo",
+      expires_at: "2026-11-07T06:59:59Z",
+      allowance: allowance(0, 0, 1, 0),
+    };
+    expect(at(scan(answer(reservation, 201), context("createReservation", cleo)), "keys")).toEqual([]);
+  });
+
+  it("catches an object of a schema it holds no list for, and one of no schema, in an answer before the reveal", () => {
+    const stats: Json = { type: "object", properties: { photos: integer } };
+    const additions = { UpcomingDay: { stats } };
+    const found = scan(
+      answer({ ...upcomingDay([bensCard()]), stats: { photos: 1 } }),
+      context("getOccurrence", cleo, { document: widened(additions) }),
+    );
+    expect(at(found, "whitelist")).toEqual(["$", "$.stats"]);
+    // A new schema, named: the day's list finds the key, and no list holds the schema.
+    const named = structuredClone(widened({ UpcomingDay: { stats: { $ref: "#/components/schemas/DayStats" } } }));
+    ((named.components as JsonObject).schemas as JsonObject).DayStats = stats;
+    const foundNamed = scan(
+      answer({ ...upcomingDay([bensCard()]), stats: { photos: 1 } }),
+      context("getOccurrence", cleo, { document: named }),
+    );
+    expect(foundNamed.filter((finding) => finding.check === "whitelist").map((finding) => finding.what)).toEqual([
+      "an UpcomingDay that has stats (T10: this file's own list)",
+      "a DayStats, which this file holds no list for before the reveal (T10)",
+    ]);
+    // An answer of another operation (an account's) isn't held to the lists' closed world.
+    expect(
+      checks(scan(answer({ ...upcomingDay([]), stats: { photos: 1 } }, 200), context("getMe", cleo))),
+    ).not.toContain("whitelist");
+  });
+});
+
+describe("the API's log as the scanner reads it (T52, T16; the outside audit's A14)", () => {
+  const facts = {
+    texts: new Set(worldTexts(world)),
+    keptBack: new Set(world.canaries.keys()),
+    secrets: new Set(["presented-token-of-forty-three-characters-xx"]),
+  };
+  const line = (fields: Record<string, unknown>) =>
+    JSON.stringify({ level: 30, time: 1_762_499_999_000, reqId: "q2Zt0b9aXk1vR3mW", ...fields });
+
+  it("passes the request line and the warnings the API writes", () => {
+    expect(logProblems(line({ op: "getOccurrence", status: 200, ms: 3, msg: "request" }), facts)).toEqual([]);
+    expect(logProblems(line({ op: "getHealth", status: 503, ms: 2001, msg: "request" }), facts)).toEqual([]);
+    expect(
+      logProblems(line({ err: { type: "PostgresError", code: "57014" }, msg: "database out of time" }), facts),
+    ).toEqual([]);
+    expect(logProblems(line({ trouble: "unreachable", msg: "sign-in keys unavailable" }), facts)).toEqual([]);
+  });
+
+  it("holds every text people wrote in the world: captions, comments, names, a club's name and labels, an invitation's names", () => {
+    const texts = worldTexts(world);
+    for (const drop of world.drops.values()) if (drop.caption !== null) expect(texts).toContain(drop.caption);
+    for (const club of world.clubs.values()) expect(texts).toContain(club.name);
+    for (const member of world.members.values()) if (member.name !== null) expect(texts).toContain(member.name);
+  });
+
+  it("catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON", () => {
+    const [caption] = [...world.drops.values()].map((drop) => drop.caption).filter((text) => text !== null);
+    const [canary] = world.canaries.keys();
+    const cases: [string, string, RegExp][] = [
+      ["a caption in a field", line({ msg: "request", op: String(caption) }), /text people wrote at \$\.op/],
+      ["a caption inside a message", line({ msg: `served ${String(caption)} to Ben` }), /text people wrote at \$\.msg/],
+      ["a name, whole", line({ msg: "Ben" }), /text people wrote/],
+      ["a club's name", line({ msg: "Saturday People" }), /text people wrote/],
+      ["a kept-back value", line({ msg: `version ${String(canary)}` }), /keeps back/],
+      ["a request's token", line({ msg: "presented-token-of-forty-three-characters-xx" }), /a request's token/],
+      ["a bearer token", line({ msg: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln" }), /a token at/],
+      ["a URL", line({ msg: "https://store.example/o" }), /a URL, storage path or provider host/],
+      ["a storage path", line({ msg: "uploads/BenObjectKey" }), /a URL, storage path or provider host/],
+      [
+        "a key it doesn't write",
+        line({ msg: "served", served: { home: "[redacted]" } }),
+        /a key the API's log doesn't write: served/,
+      ],
+      ["a line that isn't JSON", "served the day", /isn't JSON/],
+    ];
+    for (const [what, planted, expected] of cases) {
+      const found = logProblems(planted, facts);
+      expect(
+        found.some((problem) => expected.test(problem)),
+        `${what}: ${found.join("; ")}`,
+      ).toBe(true);
+    }
   });
 });

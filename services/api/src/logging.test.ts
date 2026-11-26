@@ -2,8 +2,10 @@
 // finds no email address"): no caption, comment, note, source or signed URL, token, EXIF, push text or
 // email address, and nothing that names a person. Fastify's own request lines are off, a request gets
 // one line of ours (its random id, the operation, the status, the milliseconds), whatever else a
-// change logs goes through the redaction list, and an error is its class and its code.
+// change logs goes through the redaction list at any depth (the outside audit's A14), and an error is
+// its class and its code.
 
+import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import type { Account, Clock } from "@tadayo/domain";
 import { Refused } from "@tadayo/domain";
@@ -57,11 +59,14 @@ async function logged(
 const parse = (lines: readonly string[]) => lines.map((line) => JSON.parse(line) as Record<string, unknown>);
 
 describe("the redaction list (T52)", () => {
-  it("blanks every listed field, at the top and one level down", async () => {
+  it("blanks every listed field, at the top, one level down and four levels down in a list", async () => {
     const { app, lines } = await logged(() => Promise.resolve(READY));
     const marker = "MARKER-must-never-appear";
     for (const field of REDACTED_FIELDS) {
-      app.log.info({ [field]: marker, wrapper: { [field]: marker } }, "probe");
+      app.log.info(
+        { [field]: marker, wrapper: { [field]: marker }, served: { home: { drops: [{ [field]: marker }] } } },
+        "probe",
+      );
     }
     expect(lines).toHaveLength(REDACTED_FIELDS.length);
     for (const entry of parse(lines)) {
@@ -69,6 +74,41 @@ describe("the redaction list (T52)", () => {
     }
     expect(parse(lines)[0]).toMatchObject({ msg: "probe" });
     expect(lines.join("")).toContain("[redacted]");
+  });
+
+  it("blanks Home's whole answer logged by mistake, a field under another spelling and anything that isn't plain data (the outside audit's A14)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const caption = "a caption that must never be logged: sunset at the pier";
+    const body = {
+      mode: "day",
+      club: { id: "clb_1", name: "Saturday People", timezone: "Europe/London" },
+      day: { drops: [{ id: "drp_1", caption, author: { membership_id: "itv_1", display_name: "Ben" } }] },
+    };
+    class Holder {
+      readonly inside: string;
+      constructor(inside: string) {
+        this.inside = inside;
+      }
+    }
+    const looped: Record<string, unknown> = { id: "drp_1" };
+    looped.self = looped;
+    app.log.info({ served: { home: body } }, "served");
+    app.log.info({ Caption: caption, signedURL: "https://s.example/o", "display-name": "Ben" }, "spelled");
+    app.log.info({ held: new Holder(caption), bytes: Buffer.from(caption), looped }, "objects");
+    const text = lines.join("");
+    for (const content of [caption, "Saturday People", "Ben", "https://s.example"]) expect(text).not.toContain(content);
+    const [served, spelled, objects] = parse(lines);
+    // Ids, modes and timezones are left as they are: the line still says what happened.
+    expect(served).toMatchObject({
+      msg: "served",
+      served: { home: { mode: "day", club: { id: "clb_1", name: "[redacted]", timezone: "Europe/London" } } },
+    });
+    expect(spelled).toMatchObject({ Caption: "[redacted]", signedURL: "[redacted]", "display-name": "[redacted]" });
+    expect(objects).toMatchObject({
+      held: "[redacted]",
+      bytes: "[redacted]",
+      looped: { id: "drp_1", self: "[circular]" },
+    });
   });
 
   it("names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email", () => {
@@ -86,6 +126,7 @@ describe("the redaction list (T52)", () => {
       "email",
       "phone",
       "display_name",
+      "name",
       "headers",
       "body",
       "query",
@@ -176,8 +217,31 @@ describe("a request's log line", () => {
     await inject({ method: "GET", url: `/v1/drops/${"a".repeat(101)}` });
     await inject({ method: "PATCH", url: "/v1/me", headers: { "content-type": "application/json" }, payload: "{bad" });
     const messages = parse(lines).map((entry) => entry["msg"]);
-    expect(messages).toEqual(["request", "request"].slice(0, messages.length));
+    // Ours alone, one each: the id past its limit too, which Fastify answers before routing.
+    expect(messages).toEqual(["request", "request", "request"]);
     expect(lines.join("")).not.toMatch(/incoming request|not found|request completed|request errored|\/v1\/nope/);
+  });
+
+  it("is written for an answer Fastify gives before routing too: an id past its limit, a broken escape (the outside audit's A14)", async () => {
+    const { inject, lines } = await logged(() => Promise.resolve(READY));
+    const urls = [
+      `/v1/clubs/${"a".repeat(101)}`,
+      `/v1/clubs/${"b".repeat(4096)}`,
+      "/v1/clubs/%zz",
+      "/v1/clubs/%",
+      "/v1/clubs/%E0%A4%A",
+    ];
+    for (const url of urls) {
+      const answer = await inject({ method: "GET", url });
+      expect(answer.statusCode).toBe(404);
+    }
+    const entries = parse(lines);
+    expect(entries).toHaveLength(urls.length);
+    for (const entry of entries) {
+      expect(entry).toMatchObject({ level: 30, msg: "request", status: 404 });
+      expect(Object.keys(entry).sort()).toEqual(["level", "ms", "msg", "reqId", "status", "time"]);
+    }
+    expect(lines.join("")).not.toMatch(/clubs|aaaa|bbbb|%zz|%E0/);
   });
 
   it("honours the level: silent says nothing, warn says no request line", async () => {

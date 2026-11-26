@@ -45,7 +45,7 @@ import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./
 import { registerDeviceHandler, removeDeviceHandler } from "./identity/devices.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
-import { fastifyLogging, logEachRequest } from "./logging.ts";
+import { fastifyLogging, logEachRequest, requestLine } from "./logging.ts";
 import { installGate } from "./session.ts";
 import { END_SECONDS } from "./shutdown.ts";
 import { WEB_OPERATION, allowWebOrigin, preflight } from "./web-origin.ts";
@@ -232,9 +232,11 @@ export function buildApp(deps: Deps): FastifyInstance {
     exposeHeadRoutes: false,
     onProtoPoisoning: "error",
     onConstructorPoisoning: "error",
-    // Fastify's own answers to a request it routes (an id past its limit, a broken escape): neutral.
+    // Fastify's own answers to a request it routes (an id past its limit, a broken escape): neutral, with the
+    // request's line, which no hook writes for them (logging.ts).
     frameworkErrors: (_error, request, reply) => {
       void notFound(request, reply);
+      requestLine(request, reply);
     },
     clientErrorHandler: clientError,
   });
