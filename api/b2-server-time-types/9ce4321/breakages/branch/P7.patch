@@ -1,0 +1,11 @@
+--- a/packages/domain/src/time/one-clock.test.ts
++++ b/packages/domain/src/time/one-clock.test.ts
+@@ -288,7 +288,7 @@
+   const found: string[] = [];
+   const where = file.split(sep).join("/");
+   const visit = (node: ts.Node): void => {
+-    const named = ts.isParameter(node) || ts.isPropertySignature(node) || ts.isPropertyDeclaration(node);
++    const named = ts.isParameter(node);
+     if (named && node.name.getText(source) !== "this" && plain(checker.getTypeAtLocation(node))) {
+       const owner = ownerOf(node);
+       const name = node.name.getText(source);

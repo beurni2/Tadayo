@@ -1,0 +1,11 @@
+--- a/packages/domain/src/authorization/read.ts
++++ b/packages/domain/src/authorization/read.ts
+@@ -106,7 +106,7 @@
+  * type said. Home's day choice (./days.ts) asks it too, so a held day is held alike for its drops and
+  * for Home (FQ63). Both are facts a row holds, typed so the plain-instant list sees them (one-clock.test.ts).
+  */
+-export function notBeforeReveal(at: Temporal.Instant | null, revealAt: Temporal.Instant): boolean {
++export function notBeforeReveal(at: unknown, revealAt: unknown): boolean {
+   return (
+     at === null ||
+     (at instanceof Temporal.Instant &&

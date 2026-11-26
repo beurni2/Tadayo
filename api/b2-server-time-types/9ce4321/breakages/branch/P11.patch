@@ -1,0 +1,11 @@
+--- a/tools/ops/src/spike-time.ts
++++ b/tools/ops/src/spike-time.ts
+@@ -134,7 +134,7 @@
+  * weekday's 06:59:40 and add a day or more (three from a Friday). Started in time, a run adds about
+  * 18 hours and a quarter at most.
+  */
+-export function startDay(now: ServerNow): Temporal.PlainDate {
++export function startDay(now: Temporal.Instant): Temporal.PlainDate {
+   const date = firstDate(now);
+   if (Temporal.Instant.compare(dayInstants(date, ZONE).revealAt, now.add({ minutes: WITHIN_MINUTES })) > 0) {
+     // To the microsecond when the sample has a fraction, so a sample just after 06:57 never reads 06:57:00.

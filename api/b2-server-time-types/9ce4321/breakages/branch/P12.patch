@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -81,7 +81,7 @@
+ export interface LeftClub {
+   readonly clubId: string;
+   /** The server's clock when the interval ended, sampled under the club's row. */
+-  readonly leftAt: ServerNow;
++  readonly leftAt: Temporal.Instant;
+   readonly contributions: Contributions;
+ }
+ 

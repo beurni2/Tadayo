@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/packages/domain
+
+ ❯ src/time/one-clock.test.ts (12 tests | 1 failed) 6365ms
+   ❯ only the time module reads a clock (T1) (12)
+     × compiles the server's TypeScript without an error, so the check below follows every type to its end 5825ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  10:14:25
+   Duration  6.94s (tests 94%, import 5%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > compiles the server's TypeScript without an error, so the check below follows every type to its end
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "services/api/src/clubs/home.ts:124: Argument of type 'Instant' is not assignable to parameter of type 'ServerNow'.
++   Property '[SERVER_NOW]' is missing in type 'Instant' but required in type '{ readonly [SERVER_NOW]: true; }'.",
++ ]
+
+ ❯ src/time/one-clock.test.ts:917:22
+    915|       const program = server();
+    916|       const errors = serverTypeScript().flatMap((file) => problems(pro…
+    917|       expect(errors).toEqual([]);
+       |                      ^
+    918|     },
+    919|     TIMEOUT,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

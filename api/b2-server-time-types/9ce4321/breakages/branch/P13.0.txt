@@ -1,0 +1,90 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/tests
+
+ ❯ src/privacy/harness.test.ts (98 tests | 4 failed) 1831ms
+   ❯ each step of the matrix reports a planted wrong answer (45)
+     × passes the skeleton's neutral answer in every step, and gets the answers each step counts 144ms
+     × sends every other name a time might come under in one request, none of them a parameter of the contract's 3ms
+     × reports a route that answers differently for `since` in the query (T16, Q09) 4ms
+     × reports a route that answers differently for `client_time` in the query (T16, Q09) 3ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 94 passed (98)
+   Start at  09:48:34
+   Duration  2.83s (tests 69%, import 22%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > passes the skeleton's neutral answer in every step, and gets the answers each step counts
+AssertionError: expected [ Array(15) ] to have a length of 16 but got 15
+
+- Expected
++ Received
+
+- 16
++ 15
+
+ ❯ src/privacy/harness.test.ts:479:65
+    477|       await app.close();
+    478|     }
+    479|     expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHave…
+       |                                                                 ^
+    480|   });
+    481|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > sends every other name a time might come under in one request, none of them a parameter of the contract's
+AssertionError: expected [] to deeply equal [ { …(11) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "after": "2026-11-08T07:00:00Z",
+-     "before": "2026-11-08T07:00:00Z",
+-     "client_time": "2026-11-08T07:00:00Z",
+-     "date": "2026-11-08T07:00:00Z",
+-     "day": "2026-11-08T07:00:00Z",
+-     "from": "2026-11-08T07:00:00Z",
+-     "since": "2026-11-08T07:00:00Z",
+-     "time": "2026-11-08T07:00:00Z",
+-     "timestamp": "2026-11-08T07:00:00Z",
+-     "ts": "2026-11-08T07:00:00Z",
+-     "until": "2026-11-08T07:00:00Z",
+-   },
+- ]
++ []
+
+ ❯ src/privacy/harness.test.ts:488:44
+    486|       TIME_NAMES.some((name) => Object.hasOwn(made.query, name)),
+    487|     );
+    488|     expect(sent.map((made) => made.query)).toEqual([
+       |                                            ^
+    489|       Object.fromEntries(TIME_NAMES.map((name) => [name, LATER.toStrin…
+    490|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers differently for `since` in the query (T16, Q09)
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers differently for `client_time` in the query (T16, Q09)
+AssertionError: expected Set{} to have a size of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privacy/harness.test.ts:617:96
+    615|       const step = await manipulationStep(app, spec("getDrop"), "itv_a…
+    616|       // One manipulated request, however many ways its answer differs…
+    617|       expect(new Set(step.problems.map((problem) => problem.slice(0, p…
+       |                                                                                                ^
+    618|       expect(step.problems).toContainEqual(expect.stringMatching(/^get…
+    619|       await app.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+

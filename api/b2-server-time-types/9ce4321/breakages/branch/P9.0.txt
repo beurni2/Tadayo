@@ -1,0 +1,49 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/packages/domain
+
+ ❯ src/time/one-clock.test.ts (12 tests | 1 failed) 5783ms
+   ❯ only the time module reads a clock (T1) (12)
+     × finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14) 152ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  09:48:06
+   Duration  6.30s (tests 94%, import 4%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14)
+AssertionError: expected [ …(57) ] to deeply equal [ …(63) ]
+
+- Expected
++ Received
+
+@@ -33,16 +33,10 @@
+    "packages/domain/src/media/upload.ts: UploadAnswer.expiresAt",
+    "packages/domain/src/media/upload.ts: UploadRow.expiresAt",
+    "packages/domain/src/schedule/generate.ts: OwedDay.closeAt",
+    "packages/domain/src/schedule/generate.ts: OwedDay.revealAt",
+    "packages/domain/src/schedule/settle-change.ts: LatestAssignment.confirmedAt",
+-   "packages/domain/src/time/civil.ts: DayInstants.closeAt",
+-   "packages/domain/src/time/civil.ts: DayInstants.revealAt",
+-   "packages/domain/src/time/instant.ts: INSTANT_TYPE.serialize(value)",
+-   "packages/domain/src/time/instant.ts: contractInstant(instant)",
+-   "packages/domain/src/time/instant.ts: databaseInstant(instant)",
+-   "packages/domain/src/time/instant.ts: wholeMicroseconds(instant)",
+    "services/api/src/connection.ts: ApiSql.instant",
+    "services/api/src/connection.ts: connect(tx).instant",
+    "services/api/src/connection.ts: connect.body(tx).instant",
+    "services/worker/src/connection.ts: WorkerSql.instant",
+    "services/worker/src/connection.ts: WorkerTx.instant",
+
+ ❯ src/time/one-clock.test.ts:962:21
+    960|       const found = [...serverTypeScript()].flatMap((file) => plainIns…
+    961|       const kept = PLAIN_INSTANTS.flatMap((entry) => entry.at).sort();
+    962|       expect(found).toEqual(kept);
+       |                     ^
+    963|       for (const entry of PLAIN_INSTANTS) expect(entry.why).not.toBe("…
+    964|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
