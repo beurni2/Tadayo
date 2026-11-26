@@ -1,0 +1,11 @@
+--- a/packages/domain/src/clubs/apply-roster.ts
++++ b/packages/domain/src/clubs/apply-roster.ts
+@@ -82,7 +82,7 @@
+   readonly origin: "proposal" | "rename";
+   /** The interval the revision names as its proposer. */
+   readonly proposer: string;
+-  readonly at: ServerNow;
++  readonly at: Temporal.Instant;
+   /** Its candidates, in their order, each by the label it shows. */
+   readonly candidates: readonly CarriedCandidate[];
+   /** The proposer's approval by proposing (FQ60): only in a member's proposal, never for a name (FQ84). */

@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/packages/domain
+
+ ❯ src/time/one-clock.test.ts (12 tests | 1 failed) 5979ms
+   ❯ only the time module reads a clock (T1) (12)
+     × finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14) 115ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  08:03:02
+   Duration  6.54s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14)
+AssertionError: expected [ …(60) ] to deeply equal [ …(59) ]
+
+- Expected
++ Received
+
+@@ -15,10 +15,11 @@
+    "packages/domain/src/authorization/read.ts: DropReadFacts.clubSuspendedAt",
+    "packages/domain/src/authorization/read.ts: DropReadFacts.revealAt",
+    "packages/domain/src/authorization/read.ts: DropReadFacts.starDeletionRequestedAt",
+    "packages/domain/src/authorization/read.ts: DropReadFacts.starLeftAt",
+    "packages/domain/src/authorization/upload.ts: UploadOwnership.expiresAt",
++   "packages/domain/src/clubs/apply-roster.ts: NewRevision.at",
+    "packages/domain/src/clubs/invitation-facts.ts: LinkFacts.expiresAt",
+    "packages/domain/src/clubs/invitation-preview.ts: InvitationSight.expiresAt",
+    "packages/domain/src/clubs/invitation.ts: MadeLink.expiresAt",
+    "packages/domain/src/clubs/invitation.ts: wholeSecond(instant)",
+    "packages/domain/src/clubs/leave-club.ts: LeftClub.leftAt",
+
+ ❯ src/time/one-clock.test.ts:923:21
+    921|         .sort();
+    922|       const kept = PLAIN_INSTANTS.flatMap((entry) => entry.at).sort();
+    923|       expect(found).toEqual(kept);
+       |                     ^
+    924|       for (const entry of PLAIN_INSTANTS) expect(entry.why).not.toBe("…
+    925|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

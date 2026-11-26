@@ -1,0 +1,27 @@
+[
+ {
+  "name": "T0",
+  "what": "the slice's one-clock.test.ts on main's code (tests first)",
+  "run": "unit: one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "C0",
+  "what": "main's one-clock.test.ts on main's code, which takes all 21 as plain instants",
+  "run": "unit: one-clock.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": []
+ },
+ {
+  "name": "B15",
+  "what": "Home's server_now from ?since=, with no cast (part 1's B15, registered then as missed by every suite)",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [],
+  "present_but_absent_registered": []
+ }
+]

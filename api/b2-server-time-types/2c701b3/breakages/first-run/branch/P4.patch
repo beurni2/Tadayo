@@ -1,0 +1,11 @@
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -77,7 +77,7 @@
+ }
+ 
+ /** The days the club is owed at `now`, in date order. */
+-export function daysToMake(facts: GenerationFacts, now: ServerNow): OwedDay[] {
++export function daysToMake(facts: GenerationFacts, now: ServerNow | Temporal.Instant): OwedDay[] {
+   const zone = clubTimeZone(facts.zone);
+   // A fact that is missing makes no day: `!(n >= 2)` is true of a number that isn't one.
+   if (!facts.activated || facts.suspended || !(facts.activeMembers >= 2)) return [];

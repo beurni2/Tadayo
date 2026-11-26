@@ -1,0 +1,21 @@
+--- a/services/api/src/clubs/home.ts
++++ b/services/api/src/clubs/home.ts
+@@ -74,7 +74,7 @@
+ }
+ 
+ /** The contract's Home: `now` is the clock's sample, whole seconds, rounded down. */
+-export function homeBody(now: ServerNow, home: HomeRead): Json {
++export function homeBody(now: Temporal.Instant, home: HomeRead): Json {
+   const serverNow = contractInstant(now);
+   const base = { server_now: serverNow, club: clubRef(home), club_today: home.clubToday };
+   switch (home.mode) {
+@@ -120,7 +120,8 @@
+     const body = await deps.sql.begin("read only", async (tx) => {
+       const now = await deps.clock.sample(tx);
+       const home = await readHome(tx, account.id, clubId, now);
+-      return home === null ? null : homeBody(now, home);
++      const since = (request.query as Record<string, unknown> | null)?.["since"];
++      return home === null ? null : homeBody(typeof since === "string" ? Temporal.Instant.from(since) : now, home);
+     });
+     return body === null ? problem(reply, "NOT_FOUND") : ok(reply, body);
+   };

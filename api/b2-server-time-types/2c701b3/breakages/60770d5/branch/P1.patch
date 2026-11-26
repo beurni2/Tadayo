@@ -1,0 +1,11 @@
+--- a/packages/domain/src/drops/counter.ts
++++ b/packages/domain/src/drops/counter.ts
+@@ -84,7 +84,7 @@
+  * it then stands: each live reservation whose `expires_at` is at or before `at` becomes `expired`, ended at its
+  * own `expires_at`, and leaves the counts. The caller holds the lock (`lockCounter`).
+  */
+-export async function settleLapsed(tx: QuerySql, key: CounterKey, at: ServerNow): Promise<CounterRow> {
++export async function settleLapsed(tx: QuerySql, key: CounterKey, at: Temporal.Instant): Promise<CounterRow> {
+   const settled = await bound(tx)`
+     WITH lapsed AS (
+       UPDATE app.reservations SET state = 'expired', ended_at = expires_at

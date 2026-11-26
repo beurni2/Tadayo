@@ -1,0 +1,13 @@
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -98,8 +98,8 @@
+ }
+ 
+ /** The start of `instant`'s second. */
+-function wholeSecond(instant: Temporal.Instant): Temporal.Instant {
+-  const nanoseconds = instant.epochNanoseconds;
++function wholeSecond(moment: Temporal.Instant): Temporal.Instant {
++  const nanoseconds = moment.epochNanoseconds;
+   const within = ((nanoseconds % 1_000_000_000n) + 1_000_000_000n) % 1_000_000_000n;
+   return Temporal.Instant.fromEpochNanoseconds(nanoseconds - within);
+ }

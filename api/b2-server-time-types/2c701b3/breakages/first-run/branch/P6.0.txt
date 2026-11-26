@@ -1,0 +1,100 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/packages/domain
+
+ ❯ src/time/one-clock.test.ts (12 tests | 2 failed) 5875ms
+   ❯ only the time module reads a clock (T1) (12)
+     × finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14) 141ms
+     × finds a plain instant a parameter or a field takes, alone, in a union, optional or through an alias, and leaves a ServerNow alone 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  08:03:24
+   Duration  6.42s (tests 94%, import 4%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14)
+AssertionError: expected [ …(49) ] to deeply equal [ …(59) ]
+
+- Expected
++ Received
+
+@@ -1,23 +1,15 @@
+  [
+-   "packages/domain/src/authorization/add-target.ts: AddTargetFacts.clubSuspendedAt",
+-   "packages/domain/src/authorization/add-target.ts: AddTargetFacts.viewerJoinedAt",
+    "packages/domain/src/authorization/add-target.ts: before(a)",
+    "packages/domain/src/authorization/add-target.ts: before(b)",
+-   "packages/domain/src/authorization/days.ts: ClubDayFacts.clubSuspendedAt",
+    "packages/domain/src/authorization/days.ts: DayFacts.closeAt",
+    "packages/domain/src/authorization/days.ts: DayFacts.revealAt",
+-   "packages/domain/src/authorization/days.ts: DayFacts.starDeletionRequestedAt",
+-   "packages/domain/src/authorization/days.ts: DayFacts.starLeftAt",
+    "packages/domain/src/authorization/days.ts: PlacedDay.closeAt",
+    "packages/domain/src/authorization/days.ts: PlacedDay.revealAt",
+    "packages/domain/src/authorization/days.ts: before(a)",
+    "packages/domain/src/authorization/days.ts: before(b)",
+-   "packages/domain/src/authorization/read.ts: DropReadFacts.clubSuspendedAt",
+    "packages/domain/src/authorization/read.ts: DropReadFacts.revealAt",
+-   "packages/domain/src/authorization/read.ts: DropReadFacts.starDeletionRequestedAt",
+-   "packages/domain/src/authorization/read.ts: DropReadFacts.starLeftAt",
+    "packages/domain/src/authorization/upload.ts: UploadOwnership.expiresAt",
+    "packages/domain/src/clubs/invitation-facts.ts: LinkFacts.expiresAt",
+    "packages/domain/src/clubs/invitation-preview.ts: InvitationSight.expiresAt",
+    "packages/domain/src/clubs/invitation.ts: MadeLink.expiresAt",
+    "packages/domain/src/clubs/invitation.ts: wholeSecond(instant)",
+@@ -38,21 +30,19 @@
+    "services/api/src/connection.ts: ApiSql.instant",
+    "services/api/src/connection.ts: connect(tx).instant",
+    "services/api/src/connection.ts: connect.body(tx).instant",
+    "services/worker/src/connection.ts: WorkerSql.instant",
+    "services/worker/src/connection.ts: WorkerTx.instant",
+-   "tools/ops/src/dev-clock.ts: DevClockOptions.to",
+    "tools/ops/src/dev-clock.ts: DevClockReport.devNow",
+    "tools/ops/src/dev-clock.ts: DevClockReport.postgresNow",
+    "tools/ops/src/dev-clock.ts: moveOffset(target)",
+    "tools/ops/src/run.ts: spikeOnMachine.checks.database.moveClock(to)",
+    "tools/ops/src/spike-time.ts: SpikeDatabase.moveClock(to)",
+    "tools/ops/src/spike-time.ts: SpikeDay.closeAt",
+    "tools/ops/src/spike-time.ts: SpikeDay.revealAt",
+    "tools/ops/src/spike-time.ts: expectedClubList(serverNow)",
+    "tools/ops/src/spike-time.ts: firstDate(now)",
+-   "tools/ops/src/spike-time.ts: judge.serverNow",
+    "tools/ops/src/spike-time.ts: moveClock(to)",
+    "tools/ops/src/spike-time.ts: spikeTime.move(to)",
+    "tools/ops/src/spike-time.ts: spikeTime.watch(at)",
+    "tools/ops/src/spike-time.ts: spikeTime.watch.firstAfter.serverNow",
+    "tools/ops/src/spike-time.ts: spikeTime.watch.lastBefore.serverNow",
+
+ ❯ src/time/one-clock.test.ts:923:21
+    921|         .sort();
+    922|       const kept = PLAIN_INSTANTS.flatMap((entry) => entry.at).sort();
+    923|       expect(found).toEqual(kept);
+       |                     ^
+    924|       for (const entry of PLAIN_INSTANTS) expect(entry.why).not.toBe("…
+    925|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds a plain instant a parameter or a field takes, alone, in a union, optional or through an alias, and leaves a ServerNow alone
+AssertionError: an arrow function's parameter that may be null: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "services/worker/src/now-plain-1.ts: late(at)",
+- ]
++ []
+
+ ❯ src/time/one-clock.test.ts:936:52
+    934|         const file = caseFile("plain", index);
+    935|         expect(problems(program, file), what).toEqual([]);
+    936|         expect(plainInstants(program, file), what).toEqual(
+       |                                                    ^
+    937|           expected.map((name) => `${file.split(sep).join("/")}: ${name…
+    938|         );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

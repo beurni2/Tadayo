@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/packages/domain
+
+ ❯ src/time/one-clock.test.ts (12 tests | 1 failed) 6467ms
+   ❯ only the time module reads a clock (T1) (12)
+     × finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14) 165ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  08:05:55
+   Duration  6.98s (tests 95%, import 4%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14)
+AssertionError: expected [ …(60) ] to deeply equal [ …(59) ]
+
+- Expected
++ Received
+
+@@ -32,10 +32,11 @@
+    "packages/domain/src/media/upload.ts: ToSign.expiresAt",
+    "packages/domain/src/media/upload.ts: UploadAnswer.expiresAt",
+    "packages/domain/src/media/upload.ts: UploadRow.expiresAt",
+    "packages/domain/src/schedule/generate.ts: OwedDay.closeAt",
+    "packages/domain/src/schedule/generate.ts: OwedDay.revealAt",
++   "packages/domain/src/schedule/generate.ts: daysToMake(now)",
+    "packages/domain/src/schedule/settle-change.ts: LatestAssignment.confirmedAt",
+    "services/api/src/connection.ts: ApiSql.instant",
+    "services/api/src/connection.ts: connect(tx).instant",
+    "services/api/src/connection.ts: connect.body(tx).instant",
+    "services/worker/src/connection.ts: WorkerSql.instant",
+
+ ❯ src/time/one-clock.test.ts:923:21
+    921|         .sort();
+    922|       const kept = PLAIN_INSTANTS.flatMap((entry) => entry.at).sort();
+    923|       expect(found).toEqual(kept);
+       |                     ^
+    924|       for (const entry of PLAIN_INSTANTS) expect(entry.why).not.toBe("…
+    925|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

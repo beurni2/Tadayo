@@ -1,0 +1,11 @@
+--- a/packages/domain/src/time/one-clock.test.ts
++++ b/packages/domain/src/time/one-clock.test.ts
+@@ -230,7 +230,7 @@
+   if (source === undefined) throw new Error(`time: ${file} isn't in the program`);
+   const checker = program.getTypeChecker();
+   const plain = (type: ts.Type): boolean =>
+-    (type.isUnion() ? type.types : [type]).some((part) => {
++    [type].some((part) => {
+       if (part.isIntersection()) return false;
+       const symbol = part.getSymbol();
+       return (

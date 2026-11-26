@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/packages/domain
+
+ ❯ src/time/one-clock.test.ts (12 tests | 1 failed) 6829ms
+   ❯ only the time module reads a clock (T1) (12)
+     × finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14) 178ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  08:02:46
+   Duration  7.50s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14)
+AssertionError: expected [ …(60) ] to deeply equal [ …(59) ]
+
+- Expected
++ Received
+
+@@ -23,10 +23,11 @@
+    "packages/domain/src/clubs/invitation.ts: wholeSecond(instant)",
+    "packages/domain/src/clubs/leave-club.ts: LeftClub.leftAt",
+    "packages/domain/src/clubs/roster-revision.ts: RevisionLink.expiresAt",
+    "packages/domain/src/drops/commit.ts: UploadFacts.expiresAt",
+    "packages/domain/src/drops/counter.ts: holdSlot(slot).expiresAt",
++   "packages/domain/src/drops/counter.ts: settleLapsed(at)",
+    "packages/domain/src/drops/reserve.ts: ReservationAnswer.expiresAt",
+    "packages/domain/src/drops/reserve.ts: reservationExpiry(revealAt)",
+    "packages/domain/src/identity/devices.ts: DeviceRegistration.registeredAt",
+    "packages/domain/src/media/upload.ts: SlotRow.expiresAt",
+    "packages/domain/src/media/upload.ts: ToSign.expiresAt",
+
+ ❯ src/time/one-clock.test.ts:923:21
+    921|         .sort();
+    922|       const kept = PLAIN_INSTANTS.flatMap((entry) => entry.at).sort();
+    923|       expect(found).toEqual(kept);
+       |                     ^
+    924|       for (const entry of PLAIN_INSTANTS) expect(entry.why).not.toBe("…
+    925|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

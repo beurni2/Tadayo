@@ -1,0 +1,65 @@
+[
+ {
+  "name": "P1",
+  "what": "settleLapsed takes a plain instant again",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": [],
+  "present_but_absent_registered": []
+ },
+ {
+  "name": "P2",
+  "what": "homeBody takes a plain instant again, and B15 with it",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": [],
+  "present_but_absent_registered": []
+ },
+ {
+  "name": "P3",
+  "what": "NewRevision.at a plain instant again, a field",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": [],
+  "present_but_absent_registered": []
+ },
+ {
+  "name": "P4",
+  "what": "daysToMake takes ServerNow | Temporal.Instant, a union",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": [],
+  "present_but_absent_registered": []
+ },
+ {
+  "name": "P5",
+  "what": "a kept parameter renamed: wholeSecond(moment)",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": [],
+  "present_but_absent_registered": []
+ },
+ {
+  "name": "P6",
+  "what": "plainInstants reads a whole type only, no union",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": [],
+  "present_but_absent_registered": []
+ },
+ {
+  "name": "P7",
+  "what": "plainInstants reads parameters only, no fields",
+  "run": "unit: src/time/one-clock.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": [],
+  "present_but_absent_registered": []
+ }
+]
