@@ -42,6 +42,11 @@ import Observation
     public struct Failed: Sendable, Equatable {
         public let action: Action
         public let failure: Failure
+
+        public init(action: Action, failure: Failure) {
+            self.action = action
+            self.failure = failure
+        }
     }
 
     public enum Alert: Sendable, Equatable {
