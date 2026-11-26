@@ -147,6 +147,58 @@ final class ApproveSnapshotTests: XCTestCase {
         }
     }
 
+    func testTheBusyAnnouncementSaysWhichDecisionIsOut() {
+        // Handoff 10's `decisionBusy.a11y`: one announcement as the decision starts, on both
+        // decision screens. That it is said once is a device check (VoiceOver).
+        XCTAssertEqual(ApproveWords.busy(.approve), "Approving this roster.")
+        XCTAssertEqual(ApproveWords.busy(.decline), "Declining this roster.")
+    }
+
+    func testTheActionsArePinned12ApartWhenApprovesWordsFitOnOneLine() {
+        // Handoff 10's `approvalRevision.actions`: Decline 12 under Approve, the pair 8 above the
+        // safe area's bottom.
+        let layout = AccessibilityElements.layout(
+            of: approve(.deciding(ClubFixtures.kitchenRevision())))
+        let approve = layout.elements.first { $0.label == "Approve Leila joining Kitchen table." }
+        let decline = layout.elements.first { $0.label == "Decline Leila joining Kitchen table." }
+        guard let approve, let decline else { return XCTFail("\(layout.elements)") }
+        XCTAssertEqual(decline.frame.minY - approve.frame.maxY, 12, accuracy: 0.5, "\(layout)")
+        XCTAssertEqual(
+            layout.size.height - layout.safeArea.bottom - decline.frame.maxY, 8, accuracy: 0.5,
+            "pinned \(layout)")
+    }
+
+    func testApprovesWordsThatWrapPutTheActionsInTheColumn() {
+        // Handoff 10's `approvalRevision.actions.large`: "whenever either action label wraps,
+        // move both actions to the end of the same scroll column", even at the default size: 24
+        // under the note's box (its words 16 inside it), 12 apart.
+        let base = ClubFixtures.kitchenRevision()
+        let long = RosterRevision(
+            id: base.id, version: base.version, club: base.club, state: .open,
+            proposedBy: base.proposedBy, members: base.members,
+            candidates: [
+                Candidate(
+                    id: "cand_alexandra", name: "Alexandra Montgomery-Fitzwilliam",
+                    proposedBy: base.members[0], invitation: nil)
+            ],
+            myDecision: .pending, supersededBy: nil)
+        let layout = AccessibilityElements.layout(of: approve(.deciding(long)))
+        let note = layout.elements.first {
+            $0.label == "We don’t identify who declined. Nobody is asked to give a reason."
+        }
+        let approve = layout.elements.first {
+            $0.label == "Approve Alexandra Montgomery-Fitzwilliam joining Kitchen table."
+        }
+        let decline = layout.elements.first {
+            $0.label == "Decline Alexandra Montgomery-Fitzwilliam joining Kitchen table."
+        }
+        guard let note, let approve, let decline else { return XCTFail("\(layout.elements)") }
+        XCTAssertEqual(
+            approve.frame.minY - note.frame.maxY, 40, accuracy: 1,
+            "in the column \(layout)")
+        XCTAssertEqual(decline.frame.minY - approve.frame.maxY, 12, accuracy: 0.5, "\(layout)")
+    }
+
     func testApproveAndDeclineDecideOnTheRosterShown() {
         var told: [String] = []
         let actions = ApproveActions(

@@ -23,11 +23,14 @@ import SwiftUI
 /// element, the name then the weekdays, as sentences: "Ben, you. Monday and Thursday."
 /// (`person.self.vo`). A row that opens something is a button its screen makes, which shows the
 /// system's disclosure chevron in `secondaryText` at the trailing edge (`Disclosure.shown`):
-/// handoff 10's frame 5 draws one on a proposed row whose viewer's decision is pending, centred
-/// on the avatar, in the roster chevron's 20-point box 4 from the trailing edge, 12 after the
-/// words, growing with the text. Once decided, the same row reserves that room with no chevron
-/// (`Disclosure.reserved`), so its words wrap the same either way (handoff 10's
-/// `activeMembersProposedRow.contentColumns`). The chevron says nothing to VoiceOver.
+/// handoff 10's frame 5 draws one on a proposed row whose viewer's decision is pending, level with
+/// the name's first line (its 18-point box's middle 11 under the row's words' top, where the
+/// avatar's top is). The app draws the roster's own chevron there, 13 points in the Friends row's
+/// 20-point box, 4 from the trailing edge and 12 after the words, growing with the name's text
+/// (frame 5 draws an 18-point schematic, 48 at accessibility 5). Once decided, the same row
+/// reserves that room with no chevron (`Disclosure.reserved`), so its words wrap the same either
+/// way (handoff 10's `activeMembersProposedRow.contentColumns`). The chevron says nothing to
+/// VoiceOver.
 ///
 /// In an invitation's roster (`invitationRoster`, handoff 8's frame 15) a proposed person's row
 /// has no weekdays: under the name, "Proposed by {name}" in the weekdays' place when the proposer
@@ -120,13 +123,11 @@ public struct RosterRow: View {
                     .foregroundStyle(Palette.secondaryText)
                     .opacity(disclosure == .shown ? 1 : 0)
                     .frame(width: chevronBox, height: chevronBox)
-                    // Centred on the avatar: level with its middle, and at the accessibility
-                    // sizes with the name's first line, as the avatar is.
+                    // Level with the name's first line, as frame 5 draws it; a row aligned on
+                    // its centre centres it instead.
                     .alignmentGuide(.top) {
                         $0[VerticalAlignment.center]
-                            - (typeSize.isAccessibilitySize
-                                ? TypeRole.row.firstLineMiddle(atSize: nameSize)
-                                : AvatarSize.row.rawValue / 2)
+                            - TypeRole.row.firstLineMiddle(atSize: nameSize)
                     }
                     .padding(.leading, Spacing.m)
                     .padding(.trailing, Size.personRowChevronInset)

@@ -67,18 +67,23 @@ struct ProposedRosterDestination: View {
 /// it, "Review and approve the updated roster before {clubName} can start." 24 under its target in
 /// `body` `secondaryText`, G03-approve's shield note 24 under that, and a failed action's line 20
 /// under the note, said once, politely, the column scrolled to it. Approve roster, the primary, and
-/// Decline under it are pinned as G03-approve's are (704 and 766 in the frame), and follow the note
-/// in the same column at the accessibility sizes. Each decides the whole revision: VoiceOver reads
-/// "Approve roster for {clubName}." and "Decline roster for {clubName}.", hinted "No reason is
-/// required.", and a failure says "this roster" (`handoff10.proposed.*`). Both wait while either is
-/// out, Approve busy. Review members' read, after a changed roster, shows this screen's loading and
-/// failure forms. Once the approval is done with its revision (a decision, See members, or a
-/// revision that ended) the roster is read again, in the loading form, and shows what is true now;
-/// a club that started closes the screen, and the club list is read again. Whenever the roster
-/// replaces the loading form, VoiceOver's focus goes to the title.
+/// Decline 12 under it are pinned as G03-approve's are (704 and 766 in the frame), and follow the
+/// note in the same column at the accessibility sizes. Each decides the whole revision: VoiceOver
+/// reads "Approve roster for {clubName}." and "Decline roster for {clubName}.", hinted "No reason
+/// is required.", and a failure says "this roster" (`handoff10.proposed.*`). Both wait while either
+/// is out, the one out busy, with "Approving this roster." or "Declining this roster." said once
+/// (handoff 10's `decisionBusy`). An answer holding Ben's own other decision is the alert "You
+/// already approved this roster." or "You already declined this roster." with Review roster
+/// (FQ146, `alreadyDecided`), both actions unavailable under it. Review members' read, after a
+/// changed roster, shows this screen's loading and failure forms. Once the approval is done with
+/// its revision (a decision, See members, Review roster, or a revision that ended) the roster is
+/// read again, in the loading form, and shows what is true now; a club that started closes the
+/// screen, and the club list is read again. Whenever the roster replaces the loading form,
+/// VoiceOver's focus goes to the title.
 ///
-/// While it loads, the proposed members' loading form, its label said once; after a failure,
-/// frame 11's form with the proposed members' words and Retry (handoff 8's `load.proposed`).
+/// While it loads, handoff 10's frame 3 loading form with the proposed members' words, said once;
+/// after a failure, frame 11's form with the proposed members' words and Retry (handoff 8's
+/// `load.proposed`).
 struct ProposedRosterScreen: View {
     let shown: ProposedRosterModel.Shown
     var busy: RosterApprovalModel.Action?
@@ -164,7 +169,7 @@ struct ProposedRosterScreen: View {
                         manage.buttonStyle(.tadayoPrimary)
                     }
                 } else if !dynamicTypeSize.isAccessibilitySize {
-                    SetupFooter(bottom: Spacing.s, spacing: Spacing.s) { decisionActions }
+                    SetupFooter(bottom: Spacing.s, spacing: Spacing.m) { decisionActions }
                 }
             }
             // From the first draw too: a line the approval kept when the roster was opened again
@@ -193,7 +198,7 @@ struct ProposedRosterScreen: View {
     /// The creator's decision under the list (handoff 10's frame 7): Manage invitations as a
     /// leading text action 24 under the last row, the explanation 24 under its target, the shield
     /// note 24 under that, then a failure's line 20 under the note; at the accessibility sizes
-    /// the actions follow, 24 under, in the same column.
+    /// the actions follow, 24 under and 12 apart, in the same column.
     @ViewBuilder private func decision(line: String?) -> some View {
         manage
             .buttonStyle(.tadayoText)
@@ -211,7 +216,7 @@ struct ProposedRosterScreen: View {
                 .id(Self.failureID)
         }
         if dynamicTypeSize.isAccessibilitySize {
-            VStack(spacing: Spacing.s) { decisionActions }
+            VStack(spacing: Spacing.m) { decisionActions }
                 .padding(.top, Spacing.xxl)
         }
     }
@@ -219,8 +224,8 @@ struct ProposedRosterScreen: View {
     /// Approve roster, the primary, and Decline under it, each deciding the whole revision, with
     /// handoff 10's spoken names (`handoff10.proposed.approve.vo`, `.decline.vo`) and Voice
     /// Control still answering to the words they show (WCAG 2.5.3). Both wait while either is
-    /// out, the one out busy and the other keeping its idle look (handoff 10's `decisionBusy`),
-    /// and under the already decided alert (FQ146).
+    /// out, the one out busy and the other keeping its idle look (handoff 10's `decisionBusy`);
+    /// under the already decided alert (FQ146) both are unavailable in the disabled look.
     @ViewBuilder private var decisionActions: some View {
         let name = club.name
         Button {
@@ -228,7 +233,7 @@ struct ProposedRosterScreen: View {
         } label: {
             Text("proposed.approve")
         }
-        .buttonStyle(.tadayoPrimary(isBusy: busy == .approve, waits: true))
+        .buttonStyle(.tadayoPrimary(isBusy: busy == .approve, waits: busy != nil))
         .disabled(busy != nil || decided)
         .accessibilityLabel(Text(verbatim: ApproveWords.words("proposed.approve.vo", name)))
         .accessibilityInputLabels([Text("proposed.approve")])
@@ -237,7 +242,7 @@ struct ProposedRosterScreen: View {
         } label: {
             Text("approve.decline")
         }
-        .buttonStyle(.tadayoTextUnderPrimary(isBusy: busy == .decline, waits: true))
+        .buttonStyle(.tadayoTextUnderPrimary(isBusy: busy == .decline, waits: busy != nil))
         .disabled(busy != nil || decided)
         .accessibilityLabel(Text(verbatim: ApproveWords.words("proposed.decline.vo", name)))
         .accessibilityHint(Text("approve.decline.hint"))

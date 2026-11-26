@@ -12,9 +12,9 @@ struct ApproveActions {
 
 /// The approval as a club tab's stack shows it, bound to its model (`ClubDetailsModel.approval`):
 /// the screen follows the model's state, its action out, its failure and its alert as they
-/// change. Once the model is finished (a decision, or the full club's See members) the tabs are
-/// told, once, and close it back to Members; while it slides away it keeps drawing the last
-/// roster it showed, both actions waiting.
+/// change. Once the model is finished (a decision, or the See members of the full club's alert or
+/// of the already decided one) the tabs are told, once, and close it back to Members; while it
+/// slides away it keeps drawing the last roster it showed, both actions waiting.
 struct ApproveDestination: View {
     @Bindable var model: RosterApprovalModel
     let close: @MainActor () -> Void
@@ -55,8 +55,12 @@ struct ApproveDestination: View {
 ///   asked to give a reason." (book p30);
 /// - 20 under the note, a failed action's line (frame 10), which the column is scrolled to as it
 ///   shows, and VoiceOver reads once, politely, with its focus left where it was;
-/// - in the footer, Approve {name}, the primary, and Decline under it, as the invitation's Accept
-///   and Not now sit. Both wait while either is out, the one out busy where it has a busy form.
+/// - in the footer, Approve {name}, the primary, and Decline 12 under it, 8 above the safe area
+///   (handoff 10's `approvalRevision.actions`). Both wait while either is out, the one out busy
+///   (`decisionBusy`). At the accessibility sizes, or wherever Approve's words don't fit on one
+///   line in the button, the two follow the note (or a failure's line) in the same column, 24
+///   under it, so a wrapped list of names is never pinned over the roster
+///   (`approvalRevision.actions.large`).
 ///
 /// The spacings are handoff 8's frame 10, the later frame of this screen, on the scale; handoff
 /// 4's frame draws the boundary 12 and the note 21 lower (its `approvalNote.frameTop` 532 against
@@ -67,12 +71,14 @@ struct ApproveDestination: View {
 /// actions naming them all, joined as the phone's own list words them ("Leila and Nina").
 ///
 /// Nothing on it counts approvals or says who else decided or hasn't (T15, T33), and a decline
-/// names nobody (book p30). The approval's own outcomes are the system's alerts (handoff 8):
-/// the roster changed, with Review members, and the club full, with See members. Review members
-/// reads the members again, in the proposed members' loading and failure forms (handoff 8's
-/// `load.proposed`), and shows the revision they now list. "This invitation is no longer
-/// available." (handoff 8's `approval.unavailable`) is the neutral end: a revision that ended,
-/// one that never was and one the caller can't see read the same (T14); Back returns to Members.
+/// names nobody (book p30). The approval's own outcomes are the system's alerts (handoff 8, and
+/// handoff 10's `alreadyDecided`; `ApprovalAlerts`): the roster changed, with Review members, the
+/// club full, with See members, and the viewer's own earlier decision (FQ146), with See members.
+/// Review members reads the members again, in handoff 10's frame 3 loading form and the proposed
+/// members' failure form (handoff 8's `load.proposed`), and shows the revision they now list.
+/// "This invitation is no longer available." (handoff 8's `approval.unavailable`) is the neutral
+/// end: a revision that ended, one that never was and one the caller can't see read the same
+/// (T14); Back returns to Members.
 struct ApproveScreen: View {
     let state: RosterApprovalModel.State
     var busy: RosterApprovalModel.Action?
@@ -84,6 +90,8 @@ struct ApproveScreen: View {
     var actions = ApproveActions()
     @AccessibilityFocusState private var titleFocused: Bool
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Whether Approve's words fit on one line in the pinned button (`OneLineProbe`).
+    @State private var approveFits = true
 
     /// The failed action's line, which the column is scrolled to as it shows.
     private static let failureID = "approve.failure"
@@ -123,19 +131,32 @@ struct ApproveScreen: View {
         if case .deciding(let revision) = state { revision } else { nil }
     }
 
-    @ViewBuilder private var content: some View {
+    /// The roster drawn and whether both actions wait for good: the one to decide on; under the
+    /// alert saying the viewer's own decision (FQ146); or the last one shown as the screen slides
+    /// away. One branch draws all three, so the column keeps its place as the state moves on.
+    private var drawn: (revision: RosterRevision, closing: Bool)? {
         switch state {
-        case .deciding(let revision):
-            deciding(revision, closing: false)
-        case .decided(let revision, _):
-            // Under the alert saying the viewer's own decision (FQ146): both actions wait.
-            deciding(revision, closing: true)
+        case .deciding(let revision): (revision: revision, closing: false)
+        case .decided(let revision, _): (revision: revision, closing: true)
+        case .finished: lastShown.map { (revision: $0, closing: true) }
+        case .reviewing, .reviewFailed, .unavailable: nil
+        }
+    }
+
+    @ViewBuilder private var content: some View {
+        if let drawn {
+            deciding(drawn.revision, closing: drawn.closing)
+        } else {
+            others
+        }
+    }
+
+    @ViewBuilder private var others: some View {
+        switch state {
+        case .deciding, .decided:
+            EmptyView()
         case .finished:
-            if let lastShown {
-                deciding(lastShown, closing: true)
-            } else {
-                Palette.canvas.ignoresSafeArea()
-            }
+            Palette.canvas.ignoresSafeArea()
         case .reviewing:
             // Handoff 10's frame 3: G02-opening's wait, with the proposed members' words.
             InvitationWait(words: String(localized: "load.proposed.loading"), checksFirst: false)
@@ -157,6 +178,7 @@ struct ApproveScreen: View {
 
     private func deciding(_ revision: RosterRevision, closing: Bool) -> some View {
         let line = failed.map { ApproveWords.failure($0, revision) }
+        let inColumn = dynamicTypeSize.isAccessibilitySize || !approveFits
         return ScrollViewReader { scroll in
             SetupScroll {
                 Text(verbatim: ApproveWords.title(revision))
@@ -193,19 +215,22 @@ struct ApproveScreen: View {
                         .padding(.top, Spacing.xl)
                         .id(Self.failureID)
                 }
-                if dynamicTypeSize.isAccessibilitySize {
-                    // At the accessibility sizes the actions follow in the same column (handoff
-                    // 10's `approvalRevision.actions.large`), as the proposed roster's do.
-                    VStack(spacing: Spacing.s) { actionPair(revision, closing: closing) }
+                if inColumn {
+                    // At the accessibility sizes, or where Approve's words wrap, the actions
+                    // follow in the same column (handoff 10's `approvalRevision.actions.large`).
+                    VStack(spacing: Spacing.m) { actionPair(revision, closing: closing) }
                         .padding(.top, Spacing.xxl)
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                if !dynamicTypeSize.isAccessibilitySize {
-                    SetupFooter(bottom: Spacing.s, spacing: Spacing.s) {
+                if !inColumn {
+                    SetupFooter(bottom: Spacing.s, spacing: Spacing.m) {
                         actionPair(revision, closing: closing)
                     }
                 }
+            }
+            .background(alignment: .top) {
+                OneLineProbe(words: ApproveWords.approve(revision), fits: $approveFits)
             }
             // From the first draw too: a line the approval kept when Members opened it again
             // would otherwise start under the pinned actions, as on the proposed roster.
@@ -224,15 +249,15 @@ struct ApproveScreen: View {
 
     /// Approve {name}, the primary, and Decline under it, each deciding the whole revision. Both
     /// wait while either is out, the one out busy (handoff 10's `decisionBusy`) and the other
-    /// keeping its idle look, unavailable; both wait the same way under the already decided alert
-    /// and while the screen slides away.
+    /// keeping its idle look, unavailable; under the already decided alert and while the screen
+    /// slides away both are unavailable in the disabled look.
     @ViewBuilder private func actionPair(_ revision: RosterRevision, closing: Bool) -> some View {
         Button {
             Task { await actions.approve() }
         } label: {
             Text(verbatim: ApproveWords.approve(revision))
         }
-        .buttonStyle(.tadayoPrimary(isBusy: busy == .approve, waits: true))
+        .buttonStyle(.tadayoPrimary(isBusy: busy == .approve, waits: busy != nil))
         .disabled(busy != nil || closing)
         // Handoff 8's `approve.vo`, with Voice Control still answering to the words it shows
         // (WCAG 2.5.3, as Done for now does).
@@ -243,11 +268,43 @@ struct ApproveScreen: View {
         } label: {
             Text("approve.decline")
         }
-        .buttonStyle(.tadayoTextUnderPrimary(isBusy: busy == .decline, waits: true))
+        .buttonStyle(.tadayoTextUnderPrimary(isBusy: busy == .decline, waits: busy != nil))
         .disabled(busy != nil || closing)
         .accessibilityLabel(Text(verbatim: ApproveWords.declineSpoken(revision)))
         .accessibilityHint(Text("approve.decline.hint"))
         .accessibilityInputLabels([Text("approve.decline")])
+    }
+}
+
+/// Whether `words` fit on one line in the pinned primary button at this screen's width, between
+/// the button's two busy slots (`PrimaryButtonFace`: the screen's inset, then the button's 16 and
+/// its 24-point slots on each side), as Approve {names} must for the actions to be pinned (handoff
+/// 10's `approvalRevision.actions.large`: "whenever either action label wraps"). Decline's one
+/// word wraps only at the accessibility sizes, which put the actions in the column already. It
+/// draws nothing and says nothing.
+private struct OneLineProbe: View {
+    let words: String
+    @Binding var fits: Bool
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            Text(verbatim: words)
+                .textRole(.button)
+                .fixedSize()
+                .padding(.horizontal, Spacing.l + Size.busySlot)
+            // Chosen only when the words don't fit: no height.
+            Color.clear.frame(width: 0, height: 0)
+        }
+        .background {
+            GeometryReader { probe in
+                Color.clear.onChange(of: probe.size.height > 0, initial: true) { _, one in
+                    fits = one
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.inset)
+        .hidden()
+        .accessibilityHidden(true)
     }
 }
 

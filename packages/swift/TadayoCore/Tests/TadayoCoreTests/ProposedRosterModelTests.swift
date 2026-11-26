@@ -297,7 +297,10 @@ import Testing
         // FQ146, as on G03-approve (handoff 10's alert, the founder's answer): Approve went
         // through, its answer lost; Decline is answered with Ben's approval in it. The roster
         // stays, both actions waiting under "You already approved this roster.", and its Review
-        // roster reads the roster again, which shows Ben's decision read-only.
+        // roster reads the roster again, which shows Ben's decision read-only. Today's server
+        // can't answer so here (Ben is the only member, so Ben's Approve applies the roster and
+        // the Decline after it is a version conflict, as the next test has it); the mapping is
+        // kept for a roster with more members to approve.
         let service = ScriptedClubs()
         service.clubAnswers = [
             .success(Sunday.detail(revision: "rev_debby")),
@@ -330,6 +333,50 @@ import Testing
         }
         #expect(shown.deciding == nil)
         #expect(names(roster) == ["Ben · You", "Debby"])
+    }
+
+    @Test func aDeclineAfterAnApproveThatStartedTheClubClosesItWithNoAlert() async {
+        // What today's server answers: Ben's Approve, its answer lost, applied the roster and
+        // moved its version, so the Decline after it is a version conflict. The roster is read
+        // again, the club has started, and the screen closes; nothing says a decision.
+        let service = ScriptedClubs()
+        service.clubAnswers = [
+            .success(Sunday.detail(revision: "rev_debby")), .success(Self.started()),
+        ]
+        service.memberAnswers = [
+            .success(Self.members(Self.named())), .success(Self.members(nil)),
+        ]
+        service.approveAnswers = [.failure(.network)]
+        service.declineAnswers = [.failure(.versionConflict)]
+        let told = Told()
+        let roster = model(service, told: told)
+        await roster.load()
+        await roster.approve()
+        await roster.decline()
+        #expect(roster.closed)
+        #expect(told.gone == 1)
+        #expect(roster.approval == nil)
+    }
+
+    @Test func aDecidedApprovalIsDroppedWhenTheRosterIsReadAgain() async {
+        // A decision that answered after Back with the viewer's own other decision: opening the
+        // roster again reads it, and the alert isn't said again over the read, even one that
+        // fails.
+        let service = ScriptedClubs()
+        service.clubAnswers = [
+            .success(Sunday.detail(revision: "rev_debby")), .failure(.network),
+        ]
+        service.memberAnswers = [.success(Self.members(Self.named())), .failure(.network)]
+        service.approveAnswers = [.failure(.network)]
+        service.declineAnswers = [.success(Self.named(decision: .approved))]
+        let roster = model(service)
+        await roster.load()
+        await roster.approve()
+        await roster.decline()
+        #expect(roster.approval?.alert == .alreadyDecided(.approve))
+        await roster.load()
+        #expect(roster.approval == nil)
+        #expect(roster.shown == .failed(.network))
     }
 
     @Test func aChangedRosterShowsTheNewerOneOnReviewMembersReplayingNothing() async {

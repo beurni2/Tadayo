@@ -677,7 +677,11 @@
         /// proposed Leila and Ben's decision is pending (`approve`): the first Approve gets no
         /// answer and the next approves, so the members then list Ben's decision as made; Decline
         /// answers that the roster changed, and the members then list Maya's newer proposal, of
-        /// Leila with Alex's of Nina, still Ben's to decide. Every other call is `NoClubs`'.
+        /// Leila with Alex's of Nina, still Ben's to decide. A Decline after an Approve with no
+        /// answer is answered as the server would had that Approve gone through, its answer lost
+        /// (FQ146): the revision still open at its version, since the others haven't approved,
+        /// with Ben's approval in it; the members then list it so. Every other call is
+        /// `NoClubs`'.
         final class Approving: ClubService, @unchecked Sendable {
             private static let kitchen = ClubRef(
                 id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
@@ -768,8 +772,16 @@
             func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
                 async throws(APIFailure) -> RosterRevision
             {
-                lock.withLock { changed = true }
-                throw .rosterChanged
+                let lost = lock.withLock {
+                    guard approvals > 0 else {
+                        changed = true
+                        return false
+                    }
+                    approved = true
+                    return true
+                }
+                guard lost else { throw .rosterChanged }
+                return revision()
             }
 
             func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
@@ -816,7 +828,10 @@
         /// the details and Home then show it active. An Approve with another key gets no answer
         /// either, so a key not kept shows as the line staying. A Decline after an Approve with
         /// no answer is answered as the server would once that Approve went through, its answer
-        /// lost (FQ146): with Ben's approval, the club started. Every other call is `NoClubs`'.
+        /// lost: Ben is the club's only member and Debby has accepted, so the Approve applied the
+        /// roster and moved its version, and the Decline, sent at the version shown, is a version
+        /// conflict (`decide-roster.ts` checks the version before the decision), the club
+        /// started. Every other call is `NoClubs`'.
         final class Proposing: ClubService, @unchecked Sendable {
             private static let sunday = ClubRef(
                 id: "club_sunday", name: "Sunday people", timezone: "America/New_York",
@@ -904,16 +919,16 @@
             func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
                 async throws(APIFailure) -> RosterRevision
             {
-                let approved = lock.withLock {
+                let applied = lock.withLock {
                     guard self.firstKey != nil else { return false }
                     self.started = true
                     return true
                 }
-                guard approved else {
+                guard applied else {
                     return try await none.decline(
                         revisionID, expectedVersion: expectedVersion, key: key)
                 }
-                return revision()
+                throw .versionConflict
             }
 
             func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)

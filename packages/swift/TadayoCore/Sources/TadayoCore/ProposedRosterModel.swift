@@ -123,6 +123,9 @@ import Observation
     public func load() async {
         reads += 1
         let asked = reads
+        // An approval done with its revision has nothing left to show, and its alert goes with
+        // it: a decision that answered after Back isn't said again over the next read.
+        if let approval, approval.isDecided || approval.state == .finished { self.approval = nil }
         state = .loading
         let id = club.id
         async let detail = Self.result { [service] () async throws(APIFailure) in

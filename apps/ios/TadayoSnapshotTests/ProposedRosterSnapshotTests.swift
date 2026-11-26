@@ -170,7 +170,7 @@ final class ProposedRosterSnapshotTests: XCTestCase {
                 "\(elements)")
             XCTAssertEqual(
                 elements.filter { $0.label.contains("In progress") || $0.value == "In progress" }
-                    .count, 1, "said once \(elements)")
+                    .count, 1, "one element says it is at work \(elements)")
         }
     }
 

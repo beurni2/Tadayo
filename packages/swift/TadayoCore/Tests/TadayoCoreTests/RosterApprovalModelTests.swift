@@ -164,8 +164,10 @@ import Testing
     }
 
     @Test func anApproveAnsweredWithTheViewersOwnDeclineSaysSo() async {
-        // The other way round, on a revision Maya's decline ended: the answer holds Maya's own
-        // decline, so that is what the alert says, never anyone else's decision.
+        // The other way round: an answer holding Maya's own decline is what the alert says,
+        // never anyone else's decision. Today's server never answers so (a decline ends the
+        // revision and moves its version, so the Approve after it is a version conflict, as the
+        // next test has it); the mapping is kept as a defence, open or ended alike.
         for state in [RosterRevisionState.open, .didNotGoAhead] {
             let service = ScriptedClubs()
             service.declineAnswers = [.failure(.network)]
@@ -179,6 +181,19 @@ import Testing
             #expect(approval.alert == .alreadyDecided(.decline), "\(state)")
             #expect(approval.failed == nil, "\(state)")
         }
+    }
+
+    @Test func anApproveAfterALostDeclineIsTheNeutralEndWithNoAlert() async {
+        // What today's server answers: the Decline went through, its answer lost, and ended the
+        // revision, moving its version; the Approve after it is a version conflict.
+        let service = ScriptedClubs()
+        service.declineAnswers = [.failure(.network)]
+        service.approveAnswers = [.failure(.versionConflict)]
+        let approval = model(service)
+        await approval.decline()
+        await approval.approve()
+        #expect(approval.state == .unavailable)
+        #expect(approval.alert == nil)
     }
 
     @Test func anAnswerMatchingTheActionIsTheDecisionNotTheAlert() async {

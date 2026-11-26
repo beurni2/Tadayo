@@ -8,9 +8,11 @@ import XCTest
 /// the line and every action, and Back and Review members again open the same decision, its line
 /// still there; the next Approve, which the stand-in takes only with the same key (T19), starts
 /// the club, and the roster closes onto Home read again. A Decline after an Approve with no
-/// answer, which the stand-in answers with Ben's approval (FQ146), says "You already approved this
-/// roster.", and its Review roster reads the roster again, which closes onto Home for the club
-/// that started. And Done for now on the setup list goes back to Home.
+/// answer, which the stand-in answers as the server would once that Approve went through (the
+/// roster applied, so the Decline's version is out of date), shows no alert: the roster is read
+/// again and closes onto Home for the club that started. (FQ146's alert can't come here: Ben is
+/// the only member, so Ben's Approve always applies the roster; `ApproveUITests` walks it.) And
+/// Done for now on the setup list goes back to Home.
 final class ProposedRosterUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -58,7 +60,7 @@ final class ProposedRosterUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Switch club. Sunday people selected."].exists)
     }
 
-    @MainActor func testADeclineAfterALostApproveSaysBenAlreadyApproved() {
+    @MainActor func testADeclineAfterALostApproveThatStartedTheClubClosesTheRoster() {
         let app = signedIn()
         openRoster(app)
         let approve = app.buttons["Approve roster for Sunday people."]
@@ -68,25 +70,15 @@ final class ProposedRosterUITests: XCTestCase {
         XCTAssertTrue(element(line, in: app).waitForExistence(timeout: 5))
         XCTAssertTrue(eventually { decline.isEnabled })
         decline.tap()
-        // The answer holds Ben's own approval: the alert says so, with Review roster alone.
-        let alert = app.alerts.firstMatch
-        XCTAssertTrue(alert.waitForExistence(timeout: 5))
-        XCTAssertTrue(alert.staticTexts["You already approved this roster."].exists)
-        XCTAssertEqual(alert.buttons.count, 1, "no Cancel")
-        // Its one action, Review roster: what VoiceOver calls it goes in the log.
-        let review = alert.buttons.firstMatch
-        print("ui: the already approved alert's action reads \"\(review.label)\"")
-        XCTAssertTrue(
-            ["Review roster", "Review the proposed roster for Sunday people."].contains(
-                review.label), review.label)
-        review.tap()
-        // Read again: the club started, so the roster closes onto Home, read again.
+        // The Approve went through and started the club, so the Decline's version is out of
+        // date: the roster is read again and closes onto Home, read again, with no alert.
         XCTAssertTrue(
             eventually(10) { !app.staticTexts["Proposed roster"].exists }, "the roster closed")
         XCTAssertTrue(
             eventually(10) { !app.buttons["Review Sunday people’s updated members."].exists },
             "Home read again")
         XCTAssertTrue(app.buttons["Switch club. Sunday people selected."].exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists, "no alert")
     }
 
     @MainActor func testDoneForNowOnTheSetupListGoesBackToHome() {
