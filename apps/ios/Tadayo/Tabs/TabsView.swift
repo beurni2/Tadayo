@@ -27,8 +27,10 @@ import TadayoDesign
 /// is pushed from there, once however fast it's tapped, and G03-approve from a proposed row in
 /// Members, with the model Club details' makes for the revision Members listed; a decision closes
 /// it back to Members, which reads again (`docs/plans/ios-b1-approve.md` section 2). Club details'
-/// Invite someone pushes the name step with the model Club details' makes; once its share sheet
-/// closes, the person's invitation page takes its place (handoff 8's flow puts the page before
+/// Invite someone pushes the name step with the model Club details' makes, the same one again
+/// after Back while its proposal or link may have gone through without an answer
+/// (`ClubDetailsModel.makeInvite`, T19); once its share sheet closes, the person's invitation
+/// page takes its place (handoff 8's flow puts the page before
 /// the sheet; the name step shares, as it does in the setup flow: a known difference in
 /// INVENTORY.md), and in an active club the proposer's own proposed row in Members pushes the
 /// same page (7c), the same model while it goes on (`ClubDetailsModel.invitation(for:)`). The
@@ -502,7 +504,7 @@ struct TabsView: View {
 
     /// Club details' Invite someone: the name step over it, once however fast it's tapped, with
     /// the model Club details' makes, so it answers only in this session and while the club stays
-    /// selected.
+    /// selected: the one left by Back while unfinished, so its retry sends the same keys (T19).
     private func openInviteSomeone(on tab: ClubTab) {
         guard paths[tab]?.last == .details, let model = shownDetails?.makeInvite() else { return }
         memberNaming = model

@@ -833,3 +833,10 @@ The ios lane reserved FQ147 at 21:02 UTC on 2026-11-26, the next free number, fr
     - Default (Claude Code's): as built. A pending decision first; the proposer's own row opens the page once the proposer has decided.
     - The other reading: the proposer's own row opens the page whenever another candidate's row in the same revision opens `G03-approve`, so both stay reachable.
     - Needed by: B1 PR 7c (`ios/b1-invite-later`), before Gate A. The answer changes which screen one row opens, nothing in the contract.
+
+The ios lane reserved FQ149 at 22:42 UTC on 2026-11-26, the next free number, from the second independent review of `ios/b1-invite-later` (its screens review).
+
+- **FQ149. What VoiceOver says the proposer's own proposed row in Members opens.** In an active club the row opens the person's invitation page (`G05-members-invite`, handoff 8's `returnPath`), and frame 5's chevron shows it opens something, but no delivery words a hint for it; handoff 10's hint, "Review the proposed roster for {clubName}.", is the pending row's, which opens `G03-approve`. VoiceOver reads "Nina. Proposed by Ben. Proposed." and "button", as it reads another member's candidate's row without "button".
+    - Default (Claude Code's): as built. A button with no hint; the page's title, "Nina’s invitation", says where it went.
+    - The other reading: a hint in Claude Design's words, such as one naming the person's invitation, asked in the next invitation handoff.
+    - Needed by: B1 PR 7c (`ios/b1-invite-later`), before Gate A. The answer adds one string, nothing in the contract.

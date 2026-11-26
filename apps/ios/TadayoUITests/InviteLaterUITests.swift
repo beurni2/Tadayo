@@ -5,15 +5,16 @@ import XCTest
 /// (`UITestLaunch.InvitingLater`): Club details' Invite someone opens the name step, whose Create
 /// link and share proposes Nina, makes Nina's link and opens the system's share sheet; closed
 /// unshared, Nina's invitation page takes the name step's place, Nina's link Not shared and
-/// offered again by Share link (`createInvitation.retention`). Back is Club details, read again,
-/// where Invite someone has gone, since Nina took the last place; its Members lists Nina's
-/// proposed row, which opens the same page.
+/// offered again by Share link (`createInvitation.retention`); More options' Revoke link asks
+/// first, and Keep link keeps the link. Back is Club details, read again, where Invite someone
+/// has gone, since Nina took the last place; its Members lists Nina's proposed row, which opens
+/// the same page.
 final class InviteLaterUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }
 
-    @MainActor func testBenInvitesNinaFromClubDetailsAndComesBackToHerPageFromMembers() {
+    @MainActor func testBenInvitesNinaFromClubDetailsAndComesBackToNinasPageFromMembers() {
         let app = signedIn()
         app.buttons["Switch club. Sunday people selected."].tap()
         XCTAssertTrue(app.staticTexts["Your clubs"].waitForExistence(timeout: 5))
@@ -41,6 +42,23 @@ final class InviteLaterUITests: XCTestCase {
         XCTAssertTrue(element("5 current members", in: app).exists)
         XCTAssertTrue(app.buttons["Share link for Nina"].exists)
         XCTAssertTrue(app.buttons["More options for Nina’s invitation"].exists)
+
+        // More options: the system's menu with Revoke link, which asks first; Keep link keeps it.
+        app.buttons["More options for Nina’s invitation"].tap()
+        let revoke = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Revoke link"))
+            .firstMatch
+        XCTAssertTrue(revoke.waitForExistence(timeout: 5))
+        revoke.tap()
+        let alert = app.alerts["Revoke Nina’s invitation link?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            alert.staticTexts[
+                "Nina won’t be able to use this link. You can create a new link for Nina later."
+            ].exists)
+        alert.buttons["Keep link"].tap()
+        XCTAssertTrue(
+            eventually { !app.alerts.firstMatch.exists }, "the confirmation closed")
+        XCTAssertTrue(element("Not shared. Each person gets a separate link.", in: app).exists)
 
         // Back: Club details, read again, with no place free for anyone else.
         app.navigationBars.buttons.element(boundBy: 0).tap()

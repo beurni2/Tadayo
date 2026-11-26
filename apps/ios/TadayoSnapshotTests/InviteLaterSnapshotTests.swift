@@ -24,8 +24,16 @@ final class InviteLaterSnapshotTests: XCTestCase {
         snap(page(Later.nina(.live)), named: "G05-members-invite-not-shared")
     }
 
+    func testG05MembersInviteLiveNotHeld() {
+        snap(page(Later.nina(.live, kept: false)), named: "G05-members-invite-live-not-held")
+    }
+
     func testG05MembersInviteUsed() {
         snap(page(Later.nina(.used, shared: true)), named: "G05-members-invite-used")
+    }
+
+    func testG05MembersInviteUsedMissing() {
+        snap(page(Later.nina(.used, kept: false)), named: "G05-members-invite-used-missing")
     }
 
     func testG05MembersInviteAccepted() {
@@ -108,10 +116,7 @@ final class InviteLaterSnapshotTests: XCTestCase {
         XCTAssertTrue(share?.traits.contains(.button) ?? false, "\(elements)")
         XCTAssertNotNil(more, "\(elements)")
         XCTAssertFalse(share?.traits.contains(.notEnabled) ?? true, "\(elements)")
-        // The link's address is never read (T52), and nothing counts who has decided (T33).
-        XCTAssertFalse(
-            elements.contains { $0.label.contains("tadayo.app") || $0.label.contains("http") },
-            "\(elements)")
+        // Nothing counts who has decided (T33).
         XCTAssertFalse(elements.contains { $0.label.contains("approved") }, "\(elements)")
     }
 
@@ -140,6 +145,14 @@ final class InviteLaterSnapshotTests: XCTestCase {
         for (row, primary, more, card) in cases {
             let elements = AccessibilityElements.of(page(row))
             let state = "\(row.status)"
+            // The link's address is never read, in any state, whether the phone keeps it or not
+            // (T52).
+            XCTAssertFalse(
+                elements.contains { element in
+                    [element.label, element.value, element.hint].contains {
+                        $0.contains("tadayo.app") || $0.contains("http") || $0.contains("#")
+                    }
+                }, "\(state) \(elements)")
             XCTAssertTrue(
                 elements.contains { $0.label == "\(card) Each person gets a separate link." },
                 "\(state) \(elements)")
@@ -156,6 +169,24 @@ final class InviteLaterSnapshotTests: XCTestCase {
         XCTAssertEqual(
             notHeld.first { $0.label == "Create new link for Nina" }?.hint,
             "A new link replaces the previous link.", "\(notHeld)")
+    }
+
+    func testMoreOptionsHoldsRevokeLinkForALiveLinkAlone() {
+        // The system's menu isn't read until it opens: its items, by state, as the page builds
+        // them (`InviteLaterUITests` opens it and reads Revoke link's confirmation).
+        let cases: [(InvitationRow, [InvitationRow.MenuItem])] = [
+            (Later.nina(.live), [.revokeLink]),
+            (Later.nina(.live, shared: true), [.revokeLink]),
+            (Later.nina(.live, kept: false), [.revokeLink]),
+            (Later.nina(.used, shared: true), []),
+            (Later.nina(.used, kept: false), []),
+            (Later.nina(.accepted), []),
+            (Later.nina(.revoked), []),
+            (Later.nina(.expired), []),
+        ]
+        for (row, items) in cases {
+            XCTAssertEqual(MemberInvitationScreen.moreItems(row), items, "\(row.status)")
+        }
     }
 
     func testThePrimaryActsForThePerson() {

@@ -674,6 +674,20 @@ extension Result {
     /// The name a failure names: the person proposed, or the name as typed.
     public var failureName: String { candidate?.name ?? trimmedName }
 
+    /// Create link and share is on its way, or may have proposed the person or made the link
+    /// without the answer reaching the phone: the next tap sends the same keys (T19), so a name
+    /// step left this way is the one Club details' Invite someone opens again
+    /// (`ClubDetailsModel.makeInvite`).
+    public var isUnfinished: Bool {
+        isCreating || (link == nil && (candidate != nil || proposal != nil))
+    }
+
+    /// The name step opened again after Back: the line goes, as navigation left (handoff 9's
+    /// `lifetime`), and each command's key stays for its retry (T19).
+    public func reopened() {
+        failure = nil
+    }
+
     /// Create link and share: the link to give the share sheet, or nil with the failure.
     public func createLinkAndShare() async -> URL? {
         guard canCreate else { return nil }

@@ -65,6 +65,7 @@ import Observation
     private var detailReads = 0
     /// The person's invitation page opened last, kept while it goes on (`invitation(for:)`).
     private var keptInvitation: InvitationListModel?
+    private var keptNaming: InviteNameModel?
     private var memberReads = 0
 
     public init(
@@ -183,17 +184,26 @@ import Observation
 
     /// The name step for Invite someone, from the details' roster version. Club details doesn't
     /// read the open revision's candidates, so the name step reads them before its first
-    /// proposal (`known` nil). Nil when Invite someone isn't offered.
+    /// proposal (`known` nil). One left by Back while unfinished (`InviteNameModel.isUnfinished`:
+    /// its action on its way, or a proposal or link that may have gone through without its
+    /// answer) is the one opened again, its line cleared: its retry sends the same keys, so the
+    /// person isn't proposed twice (T19). Nil when Invite someone isn't offered.
     public func makeInvite(
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() }
     ) -> InviteNameModel? {
         guard canInvite, let links, case .loaded(let detail) = details, current() else {
             return nil
         }
-        return InviteNameModel(
+        if let kept = keptNaming, kept.isUnfinished {
+            kept.reopened()
+            return kept
+        }
+        let model = InviteNameModel(
             club: club.ref, accountID: links.accountID, rosterVersion: detail.rosterVersion,
             known: nil, service: service, book: links.book, makeKey: makeKey, current: current,
             signedOut: signedOut)
+        keptNaming = model
+        return model
     }
 
     /// Whether the person's invitation page opens here: for an active club, on a phone that

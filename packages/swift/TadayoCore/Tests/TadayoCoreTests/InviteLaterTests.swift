@@ -393,11 +393,116 @@ import Testing
         let leila = model.invitation(for: "cand_leila")
         #expect(leila !== nina)
         #expect(model.invitation(for: "cand_leila") === leila)
-        // Leila is no longer an open candidate: her page has ended, and the next is new.
+        // Leila is no longer an open candidate: Leila's page has ended, and the next is new.
         await leila?.load()
         #expect(leila?.ended == true)
         let next = model.invitation(for: "cand_leila")
         #expect(next != nil)
         #expect(next !== leila)
+    }
+
+    // MARK: The name step left unfinished (T19)
+
+    /// Club details loaded, with Nina's proposal and link scripted after them.
+    func detailsForNina(
+        _ clubs: ScriptedClubs, propose: [Result<RosterRevision, APIFailure>],
+        link: [Result<InvitationLink, APIFailure>]
+    ) async -> ClubDetailsModel {
+        clubs.clubAnswers = [.success(active()), .success(active())]
+        clubs.memberAnswers = [.success(Sunday.members(nil))]
+        clubs.proposeAnswers = propose
+        clubs.linkAnswers = link
+        let model = details(clubs, state: .active)
+        await model.loadDetails()
+        return model
+    }
+
+    var nina: RosterRevision { Sunday.revision([Sunday.candidate("cand_nina", "Nina", nil)]) }
+    var ninasLink: InvitationLink { Sunday.link("inv_nina", for: "cand_nina", url: Sunday.url(9)) }
+
+    /// The commands sent, without the reads.
+    func commands(_ clubs: ScriptedClubs) -> [String] {
+        clubs.calls.filter { !$0.hasPrefix("club ") && !$0.hasPrefix("members ") }
+    }
+
+    @Test func theNameStepLeftWithNinaProposedIsTheOneInviteSomeoneOpensAgain() async {
+        let clubs = ScriptedClubs()
+        let keys = NumberedKeys()
+        let model = await detailsForNina(
+            clubs, propose: [.success(nina)], link: [.failure(.network), .success(ninasLink)])
+        let step = model.makeInvite(makeKey: { keys.make() })
+        step?.name = "Nina"
+        #expect(await step?.createLinkAndShare() == nil)
+        #expect(step?.failure == .network)
+        #expect(step?.isUnfinished == true)
+        // Back, then Invite someone again: the same name step, Nina still named, its line gone.
+        let again = model.makeInvite()
+        #expect(again === step)
+        #expect(again?.name == "Nina")
+        #expect(again?.failure == nil)
+        // Its retry makes Nina's link with the same key and proposes nobody again (T19).
+        #expect(await again?.createLinkAndShare() == Sunday.url(9))
+        #expect(
+            commands(clubs) == [
+                "propose Nina club_sunday v3 \(NumberedKeys.key(1))",
+                "createInvitation cand_nina club_sunday \(NumberedKeys.key(2))",
+                "createInvitation cand_nina club_sunday \(NumberedKeys.key(2))",
+            ])
+        // Done: the next Invite someone is a new name step.
+        #expect(step?.isUnfinished == false)
+        let next = model.makeInvite()
+        #expect(next != nil)
+        #expect(next !== step)
+    }
+
+    @Test func aProposalWithNoAnswerGoesAgainWithItsKeyFromTheNameStepOpenedAgain() async {
+        let clubs = ScriptedClubs()
+        let keys = NumberedKeys()
+        let model = await detailsForNina(
+            clubs, propose: [.failure(.network), .success(nina)], link: [.success(ninasLink)])
+        let step = model.makeInvite(makeKey: { keys.make() })
+        step?.name = "Nina"
+        #expect(await step?.createLinkAndShare() == nil)
+        let again = model.makeInvite()
+        #expect(again === step)
+        #expect(await again?.createLinkAndShare() == Sunday.url(9))
+        #expect(
+            commands(clubs) == [
+                "propose Nina club_sunday v3 \(NumberedKeys.key(1))",
+                "propose Nina club_sunday v3 \(NumberedKeys.key(1))",
+                "createInvitation cand_nina club_sunday \(NumberedKeys.key(2))",
+            ])
+    }
+
+    @Test func backWhileCreateLinkAndShareIsOutOpensTheSameNameStepAgain() async {
+        let clubs = ScriptedClubs()
+        let model = await detailsForNina(
+            clubs, propose: [.success(nina)], link: [.success(ninasLink)])
+        let gate = Gate()
+        clubs.duringLink = { await gate.wait() }
+        let step = model.makeInvite()
+        step?.name = "Nina"
+        let action = Task { await step?.createLinkAndShare() }
+        await gate.reached()
+        #expect(model.makeInvite() === step)
+        gate.open()
+        #expect(await action.value == Sunday.url(9))
+        #expect(commands(clubs).filter { $0.hasPrefix("propose") }.count == 1)
+    }
+
+    @Test func aNameStepWithNothingOutstandingIsNotOpenedAgain() async {
+        let clubs = ScriptedClubs()
+        let model = await detailsForNina(clubs, propose: [.failure(.notAllowed)], link: [])
+        // Left with nothing sent: the next is new.
+        let untouched = model.makeInvite()
+        #expect(untouched?.isUnfinished == false)
+        let step = model.makeInvite()
+        #expect(step !== untouched)
+        // A refusal says the server proposed nobody: the next is new, and proposes afresh.
+        step?.name = "Nina"
+        #expect(await step?.createLinkAndShare() == nil)
+        #expect(step?.failure == .other)
+        #expect(step?.isUnfinished == false)
+        #expect(model.makeInvite() !== step)
     }
 }

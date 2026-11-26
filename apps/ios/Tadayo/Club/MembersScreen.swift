@@ -35,15 +35,14 @@ import TadayoDesign
 /// opens the person's invitation page in an active club (`openInvitation`, nil elsewhere;
 /// `G05-members-invite`; handoff 8's `returnPath`: "Club details → Members → own proposed
 /// candidate → G05-members-invite"), a button with the same chevron and no hint, since no
-/// delivery words one; elsewhere it opens nothing, as a decided row does. VoiceOver reads
-/// "Leila. Proposed by Ben. Proposed." on every proposed row. Nothing
-/// counts approvals or activity (T15, T33, T55). While the list loads, the loading form; after it
+/// delivery words one (FQ149's default); elsewhere it opens nothing, as a decided row does.
+/// VoiceOver reads "Leila. Proposed by Ben. Proposed." on every proposed row. Nothing counts
+/// approvals or activity (T15, T33, T55). While the list loads, the loading form; after it
 /// fails, frame 11's form with the members' words (`handoff8.loadStates.members`).
 struct MembersScreen: View {
     let members: ClubDetailsModel.Members
     let retry: @MainActor () async -> Void
     var openApproval: (RosterRevision) -> Void = { _ in }
-    /// The person's invitation page, for the proposer's own candidate.
     /// The person's invitation page, for the proposer's own row: nil where it doesn't open.
     var openInvitation: ((String) -> Void)?
 

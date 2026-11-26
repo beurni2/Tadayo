@@ -244,11 +244,10 @@ struct MemberInvitationScreen: View {
         }
     }
 
-    /// The row's action as the primary, and More options under it with the row's other items:
-    /// none for a revoked link, whose only item is the primary's Create new link (handoff 8:
-    /// "revoked Link revoked/Create new link").
+    /// The row's action as the primary, and More options under it with the row's other items
+    /// (`moreItems`).
     @ViewBuilder private func controls(_ row: InvitationRow) -> some View {
-        let more = row.menu.filter { !($0 == .createNewLink && row.action == .createNewLink) }
+        let more = Self.moreItems(row)
         if let action = row.action {
             let words = InvitationRowView.actionWords(action)
             let button = Button {
@@ -308,6 +307,13 @@ struct MemberInvitationScreen: View {
         }
     }
 
+    /// More options' items: the row's menu without the primary's own action, so a revoked
+    /// link's page, whose only item is the primary's Create new link, has no More options
+    /// (handoff 8: "revoked Link revoked/Create new link"). Empty: no More options.
+    static func moreItems(_ row: InvitationRow) -> [InvitationRow.MenuItem] {
+        row.menu.filter { !($0 == .createNewLink && row.action == .createNewLink) }
+    }
+
     /// "Nina’s invitation".
     static func title(_ name: String) -> String { words("memberInvite.title", name) }
 
@@ -331,24 +337,27 @@ struct MemberInvitationScreen: View {
 /// link." in `metadata` `secondaryText`, on a `surface` card of radius 12, at least 76 high, as the
 /// Private drafts card is, and growing with the text. The words are in `row` 17/22 `primaryText`,
 /// 49 from the card's edge, level with the person's name above; 16 above and under them. The glyph
-/// is in `secondaryText`, centred in a 20-point box 16 in from the edge, at the size whose glyph
-/// matches frame 14's share symbol (about 18 wide), growing with the text up to the largest size
-/// below the accessibility sizes, as Club details' chevron does. A used link the phone doesn't hold
-/// adds handoff 8's two lines under the status, and a live link not on this phone handoff 9's
-/// "A new link replaces the previous link."; built from spec, since frame 14 draws Shared alone.
-/// While a revoke is on its way the words say "Revoking link…", with no glyph.
+/// is in `secondaryText`, in a 20-point box 16 in from the edge, at the size whose glyph matches
+/// frame 14's share symbol (about 18 wide), the box and the glyph growing with the text, as
+/// Private drafts' folder does. Centred on the card while it holds frame 14's two lines at a size
+/// below the accessibility sizes, as the frame draws it; elsewhere on the status's first line, as
+/// the setup list's status glyph sits, so it stays beside the words it stands for. A used link
+/// the phone doesn't hold adds handoff 8's two lines under the status, and a live link not on this
+/// phone handoff 9's "A new link replaces the previous link."; built from spec, since frame 14
+/// draws Shared alone. While a revoke is on its way the words say "Revoking link…", with no
+/// glyph, the words staying where they were.
 ///
 /// VoiceOver reads the card as one element, its lines as sentences ("Shared. Each person gets a
 /// separate link."); the glyph is decorative beside its words (handoff 4).
 private struct InvitationLinkCard: View {
     let row: InvitationRow
     let revoking: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(alignment: .center, spacing: 0) {
+        HStack(alignment: centred ? .center : .firstTextBaseline, spacing: 0) {
             CardGlyph(name: row.statusGlyph)
                 .opacity(revoking ? 0 : 1)
-                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(verbatim: status)
                     .textRole(.row)
@@ -373,6 +382,9 @@ private struct InvitationLinkCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: spoken))
     }
+
+    /// The glyph centred on the card, as frame 14 draws its two lines.
+    private var centred: Bool { extra.isEmpty && !typeSize.isAccessibilitySize }
 
     private var status: String {
         revoking ? String(localized: "revoke.pending") : row.statusWords
