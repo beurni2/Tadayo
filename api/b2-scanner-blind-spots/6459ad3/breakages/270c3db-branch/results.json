@@ -1,0 +1,154 @@
+[
+ {
+  "name": "S1",
+  "what": "drop_count on every Occurrence, the day before and after its reveal (contract and occurrenceBody)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S1",
+  "what": "drop_count on every Occurrence, the day before and after its reveal (contract and occurrenceBody)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S2",
+  "what": "the open day's drop ids under its ViewerDay (contract and Home's route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S2",
+  "what": "the open day's drop ids under its ViewerDay (contract and Home's route)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S3",
+  "what": "committed_at on the commit's DropReceipt, before the reveal (contract and createDrop's route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S3",
+  "what": "committed_at on the commit's DropReceipt, before the reveal (contract and createDrop's route)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S4",
+  "what": "drop_count on each ClubSummary of listClubs (contract and listClubs' route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S4",
+  "what": "drop_count on each ClubSummary of listClubs (contract and listClubs' route)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S5",
+  "what": "filesize on every Allowance (contract and allowanceBody)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S5",
+  "what": "filesize on every Allowance (contract and allowanceBody)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S6",
+  "what": "avatarUrl on Me, outside the lists (contract and getMe's handler alone; the first run put it in meBody, which updateMe's answers share, and updateMe answered 500)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S6",
+  "what": "avatarUrl on Me, outside the lists (contract and getMe's handler alone; the first run put it in meBody, which updateMe's answers share, and updateMe answered 500)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S7",
+  "what": "a new schema, DayStats, under the waiting Home (contract and Home's route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "S7",
+  "what": "a new schema, DayStats, under the waiting Home (contract and Home's route)",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "L1",
+  "what": "Home's handler logs its whole answer as { served: { home: body } }",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "L2",
+  "what": "L1, with the redaction back to pino's paths one level down",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "L2",
+  "what": "L1, with the redaction back to pino's paths one level down",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "L3",
+  "what": "listClubs' handler logs a club's name as { club: name }",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ },
+ {
+  "name": "L4",
+  "what": "the matrix's app back at silent",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "caught",
+  "missing": []
+ }
+]

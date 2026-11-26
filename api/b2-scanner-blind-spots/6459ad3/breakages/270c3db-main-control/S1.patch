@@ -1,0 +1,47 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 2c5a2778..a0ecd3c5 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -12751,6 +12751,10 @@ components:
+           $ref: "#/components/schemas/Instant"
+         phase:
+           $ref: "#/components/schemas/OccurrencePhase"
++        drop_count:
++          type: integer
++          minimum: 0
++          maximum: 9007199254740991
+       required:
+         - id
+         - club_id
+@@ -12759,6 +12763,7 @@ components:
+         - reveal_at
+         - close_at
+         - phase
++        - drop_count
+       description: "One person's day: the star, the exact local date, and the two instants resolved in the club's timezone (T2). Clients target its id, never a weekday (spec 05)."
+     OccurrencePhase:
+       type: string
+diff --git a/packages/contracts/src/common.ts b/packages/contracts/src/common.ts
+index 86e46e4e..be1c61ce 100644
+--- a/packages/contracts/src/common.ts
++++ b/packages/contracts/src/common.ts
+@@ -251,6 +251,7 @@ export const Occurrence = named(
+     reveal_at: Instant,
+     close_at: Instant,
+     phase: OccurrencePhase,
++    drop_count: z.int().min(0),
+   }),
+ );
+ 
+diff --git a/services/api/src/bodies.ts b/services/api/src/bodies.ts
+index 539a75c2..5129030a 100644
+--- a/services/api/src/bodies.ts
++++ b/services/api/src/bodies.ts
+@@ -23,6 +23,7 @@ export function occurrenceBody(day: PlacedDay): Json {
+     reveal_at: contractInstant(day.revealAt),
+     close_at: contractInstant(day.closeAt),
+     phase: day.phase,
++    drop_count: 0,
+   };
+ }
+ 

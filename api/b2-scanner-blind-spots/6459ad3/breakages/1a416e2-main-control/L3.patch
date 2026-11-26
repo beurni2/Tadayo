@@ -1,0 +1,15 @@
+diff --git a/services/api/src/clubs/list.ts b/services/api/src/clubs/list.ts
+index 37b88eb3..de047ee9 100644
+--- a/services/api/src/clubs/list.ts
++++ b/services/api/src/clubs/list.ts
+@@ -41,7 +41,9 @@ export function listClubsHandler(deps: Deps): Handler {
+     // snapshot, and the days are chosen at that instant (T1).
+     const body = await deps.sql.begin("read only", async (tx) => {
+       const now = await deps.clock.sample(tx);
+-      return clubListBody(now, await listClubs(tx, account.id, now));
++      const listing = await listClubs(tx, account.id, now);
++      request.log.info({ club: listing.clubs[0]?.name ?? "none" }, "clubs listed");
++      return clubListBody(now, listing);
+     });
+     return ok(reply, body);
+   };

@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk/services/api
+
+ ❯ src/logging.test.ts (12 tests | 2 failed) 290ms
+   ❯ the redaction list (T52) (5)
+     × blanks every listed field, at the top, one level down and four levels down in a list 121ms
+     × blanks Home's whole answer logged by mistake, a field under another spelling and anything that isn't plain data (the outside audit's A14) 35ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  22:59:24
+   Duration  1.83s (transform 57%, import 25%, tests 17%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks every listed field, at the top, one level down and four levels down in a list
+AssertionError: expected '{"level":30,"time":1795647566297,"aut…' not to contain 'MARKER-must-never-appear'
+
+Expected: "MARKER-must-never-appear"
+Received: "{"level":30,"time":1795647566297,"authorization":"[redacted]","wrapper":{"authorization":"[redacted]"},"served":{"home":{"drops":[{"authorization":"MARKER-must-never-appear"}]}},"msg":"probe"}"
+
+ ❯ src/logging.test.ts:73:41
+     71|     expect(lines).toHaveLength(REDACTED_FIELDS.length);
+     72|     for (const entry of parse(lines)) {
+     73|       expect(JSON.stringify(entry)).not.toContain(marker);
+       |                                         ^
+     74|     }
+     75|     expect(parse(lines)[0]).toMatchObject({ msg: "probe" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks Home's whole answer logged by mistake, a field under another spelling and anything that isn't plain data (the outside audit's A14)
+AssertionError: expected '{"level":30,"time":1795647566335,"ser…' not to contain 'a caption that must never be logged: …'
+
+- Expected
++ Received
+
+- a caption that must never be logged: sunset at the pier
++ {"level":30,"time":1795647566335,"served":{"home":{"mode":"day","club":{"id":"clb_1","name":"Saturday People","timezone":"Europe/London"},"day":{"drops":[{"id":"drp_1","caption":"a caption that must never be logged: sunset at the pier","author":{"membership_id":"itv_1","display_name":"Ben"}}]}}},"msg":"served"}
++ {"level":30,"time":1795647566335,"Caption":"a caption that must never be logged: sunset at the pier","signedURL":"https://s.example/o","display-name":"Ben","msg":"spelled"}
++ {"level":30,"time":1795647566335,"held":{"inside":"a caption that must never be logged: sunset at the pier"},"bytes":"[unable to serialize, circular reference is too complex to analyze]","looped":{"id":"drp_1","self":{"id":"drp_1","self":"[Circular]"}},"msg":"objects"}
++
+
+ ❯ src/logging.test.ts:99:102
+     97|     app.log.info({ held: new Holder(caption), bytes: Buffer.from(capti…
+     98|     const text = lines.join("");
+     99|     for (const content of [caption, "Saturday People", "Ben", "https:/…
+       |                                                                                                      ^
+    100|     const [served, spelled, objects] = parse(lines);
+    101|     // Ids, modes and timezones are left as they are: the line still s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

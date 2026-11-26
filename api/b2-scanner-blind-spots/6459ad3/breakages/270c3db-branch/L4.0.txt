@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk2/tests
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 1 failed | 27 skipped) 74356ms
+   ❯ the API's log, at production's level (T52, T16; the outside audit's A14) (1)
+     × wrote a request line for every answer the scanner read, and no line holds content, a kept-back value or a token 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 27 skipped (29)
+   Start at  23:51:10
+   Duration  75.96s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > the API's log, at production's level (T52, T16; the outside audit's A14) > wrote a request line for every answer the scanner read, and no line holds content, a kept-back value or a token
+AssertionError: expected 0 to be greater than or equal to 68035
+ ❯ src/privacy/matrix.test.ts:4427:29
+    4425|     expect(logAnswers).toBeGreaterThan(0);
+    4426|     const requests = logLines.filter((line) => (JSON.parse(line) as { …
+    4427|     expect(requests.length).toBeGreaterThanOrEqual(logAnswers);
+       |                             ^
+    4428|     // The scan had something to look for.
+    4429|     expect(logFacts.texts.size).toBeGreaterThan(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

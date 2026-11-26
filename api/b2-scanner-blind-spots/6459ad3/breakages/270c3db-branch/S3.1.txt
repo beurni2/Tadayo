@@ -1,0 +1,73 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk2/tests
+
+ ❯ src/privacy/scanner.test.ts (106 tests | 2 failed) 433ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (7)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 11ms
+     × holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word 4ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 104 passed (106)
+   Start at  23:40:30
+   Duration  1.03s (tests 49%, import 43%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: DropReceipt: expected [ 'allowance', 'drop_id', …(5) ] to deeply equal [ 'allowance', 'committed_at', …(6) ]
+
+- Expected
++ Received
+
+@@ -1,8 +1,7 @@
+  [
+    "allowance",
+-   "committed_at",
+    "drop_id",
+    "highlight",
+    "media_class",
+    "occurrence",
+    "state",
+
+ ❯ src/privacy/scanner.test.ts:2207:47
+    2205|     for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+    2206|       const required = ((schemas[name] as JsonObject).required ?? []) …
+    2207|       expect([...list.required].sort(), name).toEqual([...required].so…
+       |                                               ^
+    2208|       expect([...list.required, ...list.optional].sort(), name).toEqua…
+    2209|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word
+AssertionError: expected { …(18) } to deeply equal { …(17) }
+
+- Expected
++ Received
+
+@@ -9,10 +9,13 @@
+      "member_count",
+    ],
+    "DeviceRegistration": [
+      "registered_at",
+    ],
++   "DropReceipt": [
++     "committed_at",
++   ],
+    "HiddenDrop": [
+      "hidden",
+    ],
+    "InvitationChanged": [
+      "expires_at",
+
+ ❯ src/privacy/scanner.test.ts:2276:19
+    2274|       if (words.length > 0) named[name] = words.sort();
+    2275|     }
+    2276|     expect(named).toEqual(
+       |                   ^
+    2277|       Object.fromEntries(Object.entries(SERVED_FOR_A_REASON).map(([nam…
+    2278|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

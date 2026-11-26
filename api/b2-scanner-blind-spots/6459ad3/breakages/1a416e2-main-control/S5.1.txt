@@ -1,0 +1,110 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main/packages/contracts
+
+ ❯ src/contract.test.ts (221 tests | 11 failed) 623ms
+   ❯ the examples (160)
+     × getOwnDay: your_drops matches its schema, with no key it doesn't name 8ms
+     × getOwnDay: nothing_yet matches its schema, with no key it doesn't name 1ms
+     × getOwnDay: own_day matches its schema, with no key it doesn't name 1ms
+     × createReservation: held matches its schema, with no key it doesn't name 1ms
+     × releaseReservation: released matches its schema, with no key it doesn't name 1ms
+     × createDrop: added matches its schema, with no key it doesn't name 1ms
+     × removeDrop: before_reveal matches its schema, with no key it doesn't name 1ms
+     × the QUOTA_FULL example is a valid error with its own code 1ms
+     × the EXTERNAL_LIMIT example is a valid error with its own code 1ms
+     × the PHOTO_LIMIT example is a valid error with its own code 0ms
+   ❯ the new direction (ADR-035) (11)
+     × gives the allowance the caller's own drops, photos and video links, each committed and reserved (T15, T17) 2ms
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 210 passed (221)
+   Start at  23:07:04
+   Duration  1.02s (tests 72%, import 19%, transform 8%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/contract.test.ts > the examples > getOwnDay: your_drops matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOwnDay: nothing_yet matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOwnDay: own_day matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > createReservation: held matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > releaseReservation: released matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > createDrop: added matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > removeDrop: before_reveal matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "allowance",
++       "filesize"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  src/contract.test.ts > the examples > the QUOTA_FULL example is a valid error with its own code
+ FAIL  src/contract.test.ts > the examples > the EXTERNAL_LIMIT example is a valid error with its own code
+ FAIL  src/contract.test.ts > the examples > the PHOTO_LIMIT example is a valid error with its own code
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/contract.test.ts:825:49
+    823|     it(`the ${code} example is a valid error with its own code`, () =>…
+    824|       const value = errorExample(code);
+    825|       expect(ApiError.safeParse(value).success).toBe(true);
+       |                                                 ^
+    826|       expect(unknownKeys(document, { $ref: "#/components/schemas/Error…
+    827|       expect((value as { code: string }).code).toBe(code);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  src/contract.test.ts > the new direction (ADR-035) > gives the allowance the caller's own drops, photos and video links, each committed and reserved (T15, T17)
+AssertionError: expected [ 'added', 'external_added', …(9) ] to deeply equal [ 'added', 'external_added', …(8) ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,11 @@
+  [
+    "added",
+    "external_added",
+    "external_limit",
+    "external_reserved",
++   "filesize",
+    "is_star",
+    "limit",
+    "photo_added",
+    "photo_limit",
+    "photo_reserved",
+
+ ❯ src/contract.test.ts:1312:49
+    1310|
+    1311|   it("gives the allowance the caller's own drops, photos and video lin…
+    1312|     expect(Object.keys(Allowance.shape).sort()).toEqual([
+       |                                                 ^
+    1313|       "added",
+    1314|       "external_added",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+

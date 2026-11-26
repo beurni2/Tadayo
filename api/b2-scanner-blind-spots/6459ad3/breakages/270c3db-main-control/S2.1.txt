@@ -1,0 +1,113 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main2/packages/contracts
+
+ ❯ src/contract.test.ts (221 tests | 11 failed) 606ms
+   ❯ the pre-reveal whitelist (T10) (3)
+     × is all a day before the reveal can hold: nothing revealed, no rail, no count (T10, T15) 8ms
+   ❯ the examples (160)
+     × getHome: open matches its schema, with no key it doesn't name 5ms
+     × getHome: first_drop matches its schema, with no key it doesn't name 1ms
+     × getHome: quiet matches its schema, with no key it doesn't name 1ms
+     × getHome: your_day matches its schema, with no key it doesn't name 1ms
+     × getOccurrence: upcoming matches its schema, with no key it doesn't name 2ms
+     × getOccurrence: open matches its schema, with no key it doesn't name 1ms
+     × getOccurrence: past matches its schema, with no key it doesn't name 1ms
+     × getOccurrence: friends_only matches its schema, with no key it doesn't name 1ms
+     × getOccurrence: joined_later matches its schema, with no key it doesn't name 0ms
+     × getOccurrence: unavailable matches its schema, with no key it doesn't name 1ms
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 210 passed (221)
+   Start at  23:55:19
+   Duration  1.02s (tests 69%, import 19%, transform 11%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/contract.test.ts > the pre-reveal whitelist (T10) > is all a day before the reveal can hold: nothing revealed, no rail, no count (T10, T15)
+AssertionError: ViewerDay: expected [ 'drop_ids', 'is_star', …(1) ] to deeply equal [ 'is_star', 'joined_later' ]
+
+- Expected
++ Received
+
+  [
++   "drop_ids",
+    "is_star",
+    "joined_later",
+  ]
+
+ ❯ src/contract.test.ts:528:96
+    526|     ]);
+    527|     for (const name of ["ViewerDay", "Occurrence", "ClubRef"]) {
+    528|       expect(Object.keys((schemas[name] as JsonObject).properties as J…
+       |                                                                                                ^
+    529|         {
+    530|           ViewerDay: ["is_star", "joined_later"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  src/contract.test.ts > the examples > getHome: open matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: first_drop matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: quiet matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: your_day matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "array",\n   …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "array",
++     "code": "invalid_type",
++     "path": [
++       "day",
++       "viewer",
++       "drop_ids"
++     ],
++     "message": "Invalid input: expected array, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  src/contract.test.ts > the examples > getOccurrence: upcoming matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: open matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: past matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: friends_only matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: joined_later matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: unavailable matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "array",\n   …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "array",
++     "code": "invalid_type",
++     "path": [
++       "viewer",
++       "drop_ids"
++     ],
++     "message": "Invalid input: expected array, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+

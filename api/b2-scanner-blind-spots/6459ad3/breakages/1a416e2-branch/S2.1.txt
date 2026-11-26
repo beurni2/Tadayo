@@ -1,0 +1,484 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk/tests
+
+ ❯ src/privacy/scanner.test.ts (106 tests | 19 failed) 417ms
+   ❯ the leak scanner passes what may be shown (12)
+     × passes a day before the reveal with Ben's and Cleo's caption cards, to Cleo 23ms
+     × passes the author's own card beside another's caption card, to the author (TECH-DESIGN section 8) 4ms
+     × passes a caption that holds a link of its own, as the world stored it (T13) 2ms
+     × passes a caption card whose author carries their avatar version (FQ74, ADR-031) 2ms
+     × passes an opened day whose next day and add target haven't opened, with the photo's own content version 5ms
+     × passes a revealed day with its highlight, and who reacted only to the drop's author (FQ73) 3ms
+     × passes the transport's headers in their own forms, and a Content-Length that is the body's 2ms
+     × passes a caption that holds another drop's link, as its author wrote it, to its readers (T13) 1ms
+   ❯ the leak scanner catches each planted leak with its own check (49)
+     × catches a revealed day, its highlight entry and a day link to it, before the day opens 3ms
+     × judges an own card by the world's author, never by the card's own author field (TECH-DESIGN section 8) 1ms
+     × catches a caption swapped from another drop, a wrong name and a wrong author, on every card 2ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 2ms
+     × catches a caption holding its own drop's hidden link and post id before the reveal (T13, Q07) 2ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 2ms
+     × catches an image body, a body without private, no-store, a cacheable 204 and a 429 that doesn't say when 2ms
+     × catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer 2ms
+     × catches a planted extra field in an answer the app sends (the HTTP path) 53ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (7)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 3ms
+     × catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home 10ms
+
+ Test Files  1 failed (1)
+      Tests  19 failed | 87 passed (106)
+   Start at  22:50:23
+   Duration  1.03s (tests 47%, import 43%, transform 10%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes a day before the reveal with Ben's and Cleo's caption cards, to Cleo
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:480:98
+    478| describe("the leak scanner passes what may be shown", () => {
+    479|   it("passes a day before the reveal with Ben's and Cleo's caption car…
+    480|     expect(scan(answer(upcomingDay([bensCard(), cleosCard()])), contex…
+       |                                                                                                  ^
+    481|   });
+    482|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes the author's own card beside another's caption card, to the author (TECH-DESIGN section 8)
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:485:63
+    483|   it("passes the author's own card beside another's caption card, to t…
+    484|     const body = upcomingDay([bensOwnCard(), cleosCard()], ben);
+    485|     expect(scan(answer(body), context("getOccurrence", ben))).toEqual(…
+       |                                                               ^
+    486|   });
+    487|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes a caption that holds a link of its own, as the world stored it (T13)
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:489:86
+    487|
+    488|   it("passes a caption that holds a link of its own, as the world stor…
+    489|     expect(scan(answer(upcomingDay([cleosCard()])), context("getOccurr…
+       |                                                                                      ^
+    490|   });
+    491|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes a caption card whose author carries their avatar version (FQ74, ADR-031)
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:494:79
+    492|   it("passes a caption card whose author carries their avatar version …
+    493|     const card = { ...bensCard(), author: { ...person(ben, "Ben"), ava…
+    494|     expect(scan(answer(upcomingDay([card])), context("getOccurrence", …
+       |                                                                               ^
+    495|   });
+    496|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes an opened day whose next day and add target haven't opened, with the photo's own content version
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getHome's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:529:67
+    527|     };
+    528|     const now = Temporal.Instant.from("2026-10-31T09:00:00Z");
+    529|     expect(scan(answer(body), context("getHome", cleo, { now }))).toEq…
+       |                                                                   ^
+    530|   });
+    531|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes a revealed day with its highlight, and who reacted only to the drop's author (FQ73)
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:538:81
+    536|       [{ drop_id: "drp_ben", author: person(ben, "Ben"), star_pick: tr…
+    537|     );
+    538|     expect(scan(answer(toCleo), context("getOccurrence", cleo, { now: …
+       |                                                                                 ^
+    539|     const withPeople = { ...heart, people: [person(cleo, "Cleo")] };
+    540|     const toBen = revealedDay([bensRevealedCard([withPeople])], [], be…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes the transport's headers in their own forms, and a Content-Length that is the body's
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:568:78
+    566|       "keep-alive": "timeout=72",
+    567|     };
+    568|     expect(scan(answer(body, 200, headers), context("getOccurrence", c…
+       |                                                                              ^
+    569|   });
+    570|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes a caption that holds another drop's link, as its author wrote it, to its readers (T13)
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:579:80
+    577|       caption: "Like https://www.tiktok.com/@cleo/video/73123456789012…
+    578|     };
+    579|     expect(scan(answer(upcomingDay([quote])), context("getOccurrence",…
+       |                                                                                ^
+    580|   });
+    581|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed day, its highlight entry and a day link to it, before the day opens
+AssertionError: expected [ 'keys', 'shape', 'world' ] to deeply equal [ 'keys', 'world' ]
+
+- Expected
++ Received
+
+  [
+    "keys",
++   "shape",
+    "world",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:683:96
+    681|     expect(at(day, "world")).toEqual(["$", "$.highlights[0].drop_id"]);
+    682|     // An empty rail is still a rail before the reveal (T10, FQ21): th…
+    683|     expect(checks(scan(answer({ ...early, highlights: [] }), context("…
+       |                                                                                                ^
+    684|       "keys",
+    685|       "world",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > judges an own card by the world's author, never by the card's own author field (TECH-DESIGN section 8)
+AssertionError: expected [ 'keys', 'shape', 'world' ] to deeply equal [ 'keys', 'world' ]
+
+- Expected
++ Received
+
+  [
+    "keys",
++   "shape",
+    "world",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:738:27
+    736|     const cleosAsBens = { ...bensOwnCard(), id: "drp_cleo" };
+    737|     const found = scan(answer(upcomingDay([cleosAsBens], ben)), contex…
+    738|     expect(checks(found)).toEqual(["keys", "world"]);
+       |                           ^
+    739|     expect(at(found, "world")).toContain("$.drops[0]");
+    740|     const unknown = { ...bensOwnCard(), id: "drp_nobody" };
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption swapped from another drop, a wrong name and a wrong author, on every card
+AssertionError: {"view":"caption","id":"drp_ben","author":{"membership_id":"itv_ben","display_name":"Ben"},"media_class":"photo","caption":"See https://example.org/x"}: expected [ 'shape', 'world' ] to deeply equal [ 'world' ]
+
+- Expected
++ Received
+
+  [
++   "shape",
+    "world",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:761:111
+    759|       { ...bensCard(), author: person(cleo, "Cleo") },
+    760|     ]) {
+    761|       expect(checks(scan(answer(upcomingDay([card])), context("getOccu…
+       |                                                                                                               ^
+    762|         "world",
+    763|       ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [ …(11) ] to deeply equal [ { check: 'world', …(2) }, …(9) ]
+
+- Expected
++ Received
+
+@@ -1,7 +1,12 @@
+  [
+    {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++   {
+      "at": "$.occurrence",
+      "check": "world",
+      "what": "a day of a club the viewer has no interval in (T14)",
+    },
+    {
+
+ ❯ src/privacy/scanner.test.ts:810:91
+    808|     const unread = (at: string) => ({ check: "values", at, what: "text…
+    809|     const ofAnotherClub = "a person of a club the viewer has no interv…
+    810|     expect(scan(answer(upcomingDay([bensCard()], stan)), context("getO…
+       |                                                                                           ^
+    811|       judged("$.occurrence", "a day of a club the viewer has no interv…
+    812|       judged("$.occurrence.star", ofAnotherClub),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption holding its own drop's hidden link and post id before the reveal (T13, Q07)
+AssertionError: expected [ …(3) ] to deeply equal [ { check: 'values', …(2) }, …(1) ]
+
+- Expected
++ Received
+
+@@ -1,7 +1,12 @@
+  [
+    {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOccurrence's declared answer",
++   },
++   {
+      "at": "$.drops[0].caption",
+      "check": "values",
+      "what": "a caption holding its own drop's kept-back value (T13, Q07)",
+    },
+    {
+
+ ❯ src/privacy/scanner.test.ts:845:19
+    843|       what: "a caption holding its own drop's kept-back value (T13, Q0…
+    844|     };
+    845|     expect(found).toEqual([held, held]);
+       |                   ^
+    846|   });
+    847|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [ 'shape header date', …(2) ] to deeply equal [ 'shape header date', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "shape header date",
+    "values header date",
++   "shape $",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:877:73
+    875|     // In a header too: Date's form is the shape check's, and what it …
+    876|     const inHeader = scan(answer(upcomingDay([bensCard()]), 200, { dat…
+    877|     expect(inHeader.map((finding) => `${finding.check} ${finding.at}`)…
+       |                                                                         ^
+    878|       "shape header date",
+    879|       "values header date",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches an image body, a body without private, no-store, a cacheable 204 and a 429 that doesn't say when
+AssertionError: expected [ 'shape header cache-control', …(1) ] to deeply equal [ 'shape header cache-control' ]
+
+- Expected
++ Received
+
+  [
+    "shape header cache-control",
++   "shape $",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:970:78
+    968|     ]) {
+    969|       const cachedFound = scan(cached, context("getOccurrence", cleo));
+    970|       expect(cachedFound.map((finding) => `${finding.check} ${finding.…
+       |                                                                              ^
+    971|     }
+    972|     const cacheable = scan(bare(204, { "cache-control": "max-age=60" }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer
+AssertionError: expected [ 'shape reason', 'shape $' ] to deeply equal [ 'shape reason' ]
+
+- Expected
++ Received
+
+  [
+    "shape reason",
++   "shape $",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:1522:60
+    1520|     const shape = (sent: Answer, id = "getOccurrence") =>
+    1521|       scan(sent, context(id, cleo)).map((finding) => `${finding.check}…
+    1522|     expect(shape({ ...answer(body), reason: "Found It" })).toEqual(["s…
+       |                                                            ^
+    1523|     expect(shape(answer(body, 200, { "content-length": "3" }))).toEqua…
+    1524|     expect(shape(answer(body, 200, { connection: "upgrade" }))).toEqua…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a planted extra field in an answer the app sends (the HTTP path)
+AssertionError: expected '$' to be '$.media_url' // Object.is equality
+
+Expected: "$.media_url"
+Received: "$"
+
+ ❯ src/privacy/scanner.test.ts:1572:68
+    1570|     // The day's own list (BEFORE_REVEAL) finds the key too.
+    1571|     expect(checks(found)).toEqual(["keys", "shape", "values", "whiteli…
+    1572|     expect(found.find((finding) => finding.check === "shape")?.at).toB…
+       |                                                                    ^
+    1573|     expect(found.find((finding) => finding.check === "whitelist")?.at)…
+    1574|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: ViewerDay: expected [ 'is_star', 'joined_later' ] to deeply equal [ 'drop_ids', 'is_star', …(1) ]
+
+- Expected
++ Received
+
+  [
+-   "drop_ids",
+    "is_star",
+    "joined_later",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2207:47
+    2205|     for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+    2206|       const required = ((schemas[name] as JsonObject).required ?? []) …
+    2207|       expect([...list.required].sort(), name).toEqual([...required].so…
+       |                                               ^
+    2208|       expect([...list.required, ...list.optional].sort(), name).toEqua…
+    2209|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/19]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home
+AssertionError: drop_count on the day: expected [ 'keys', 'shape', 'whitelist' ] to deeply equal [ 'keys', 'whitelist' ]
+
+- Expected
++ Received
+
+  [
+    "keys",
++   "shape",
+    "whitelist",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2364:35
+    2362|     for (const [what, additions, id, body, where, caught] of cases) {
+    2363|       const found = scan(answer(body), context(id, cleo, { document: w…
+    2364|       expect(checks(found), what).toEqual(caught);
+       |                                   ^
+    2365|       expect(at(found, "whitelist"), what).toEqual([where]);
+    2366|       // With the contract as it is, the shape check finds it too.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/19]⎯
+

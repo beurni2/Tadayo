@@ -1,0 +1,256 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main/tests
+
+ ❯ src/privacy/scanner.test.ts (106 tests | 10 failed) 444ms
+   ❯ the leak scanner catches each planted leak with its own check (49)
+     × catches a planted extra field in an answer the app sends (the HTTP path) 100ms
+   ❯ the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) (7)
+     × catches a URL that isn't this link's own, in another answer, on another host or to someone else 4ms
+   ❯ the signed upload URL and an upload's id (T12, T14; TECH-DESIGN section 8; api/b2-spike-uploads) (8)
+     × catches a signed upload URL outside createUpload's 201 2ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (7)
+     × counts every operation whose answer can name a day or a drop as answering before the reveal, or only after 4ms
+     × reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time 1ms
+     × catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home 11ms
+     × catches a camelCase key the contract names outside the lists, and passes each key served for a reason 6ms
+     × catches an object of a schema it holds no list for, and one of no schema, in an answer before the reveal 6ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (3)
+     × holds every text people wrote in the world: captions, comments, names, a club's name and labels, an invitation's names 1ms
+     × catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a planted extra field in an answer the app sends (the HTTP path)
+AssertionError: expected [ 'keys', 'shape', 'values' ] to deeply equal [ 'keys', 'shape', 'values', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "keys",
+    "shape",
+    "values",
+-   "whitelist",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:1571:27
+    1569|     const found = scan(sent, context("getOccurrence", cleo));
+    1570|     // The day's own list (BEFORE_REVEAL) finds the key too.
+    1571|     expect(checks(found)).toEqual(["keys", "shape", "values", "whiteli…
+       |                           ^
+    1572|     expect(found.find((finding) => finding.check === "shape")?.at).toB…
+    1573|     expect(found.find((finding) => finding.check === "whitelist")?.at)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > catches a URL that isn't this link's own, in another answer, on another host or to someone else
+AssertionError: expected [ '$.url' ] to deeply equal [ '$.expires_at', '$.url' ]
+
+- Expected
++ Received
+
+  [
+-   "$.expires_at",
+    "$.url",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:1809:31
+    1807|     expect(at(ok200, "shape")).toContain("status");
+    1808|     // Its time fails too: nothing there is read as an InvitationLink,…
+    1809|     expect(at(ok200, "keys")).toEqual(["$.expires_at", "$.url"]);
+       |                               ^
+    1810|     expect(at(ok200, "values")).toEqual(["$.invitation_id", "$.url"]);
+    1811|     // To another member, the link's own URL is the link's id and its …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the signed upload URL and an upload's id (T12, T14; TECH-DESIGN section 8; api/b2-spike-uploads) > catches a signed upload URL outside createUpload's 201
+AssertionError: expected [ '$.signed_upload.url' ] to deeply equal [ '$.expires_at', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "$.expires_at",
+    "$.signed_upload.url",
+-   "$.signed_upload.expires_at",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2093:36
+    2091|     const undeclared = scan(answer(upload(), 200), context("createUplo…
+    2092|     expect(at(undeclared, "shape")).toContain("status");
+    2093|     expect(at(undeclared, "keys")).toEqual(["$.expires_at", "$.signed_…
+       |                                    ^
+    2094|     expect(at(undeclared, "values")).toContain("$.signed_upload.url");
+    2095|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > counts every operation whose answer can name a day or a drop as answering before the reveal, or only after
+AssertionError: expected [ Array(25) ] to deeply equal [ 'clearReaction', …(8) ]
+
+- Expected
++ Received
+
+  [
+    "clearReaction",
++   "createClub",
+    "createComment",
++   "createDrop",
++   "createReservation",
++   "getClub",
++   "getDrop",
++   "getHome",
++   "getOccurrence",
++   "getOwnDay",
++   "hideDrop",
++   "listClubs",
+    "listFavourites",
++   "listMembers",
+    "listMemories",
++   "listMyDrops",
++   "releaseReservation",
++   "removeDrop",
+    "saveFavourite",
+    "searchMemories",
++   "setHighlight",
+    "setReaction",
+    "setThreadNotifications",
+    "updateComment",
++   "updateDrop",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2231:26
+    2229|       [...answered(id)].some((schema) => naming.has(schema) || keysOf(…
+    2230|     );
+    2231|     expect(names.sort()).toEqual([...BEFORE_REVEAL_OPERATIONS, ...only…
+       |                          ^
+    2232|   });
+    2233|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time
+AssertionError: expected [ 'thumbnailurl' ] to deeply equal [ 'thumbnail', 'url' ]
+
+- Expected
++ Received
+
+  [
+-   "thumbnail",
+-   "url",
++   "thumbnailurl",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2235:38
+    2233|
+    2234|   it("reads a key's words in snake_case and camelCase, and finds a nev…
+    2235|     expect(keyWords("thumbnailUrl")).toEqual(["thumbnail", "url"]);
+       |                                      ^
+    2236|     expect(keyWords("posterURL")).toEqual(["poster", "url"]);
+    2237|     expect(keyWords("HTMLBody")).toEqual(["html", "body"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home
+AssertionError: drop_count on the day: expected [] to deeply equal [ 'keys', 'whitelist' ]
+
+- Expected
++ Received
+
+- [
+-   "keys",
+-   "whitelist",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2364:35
+    2362|     for (const [what, additions, id, body, where, caught] of cases) {
+    2363|       const found = scan(answer(body), context(id, cleo, { document: w…
+    2364|       expect(checks(found), what).toEqual(caught);
+       |                                   ^
+    2365|       expect(at(found, "whitelist"), what).toEqual([where]);
+    2366|       // With the contract as it is, the shape check finds it too.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches a camelCase key the contract names outside the lists, and passes each key served for a reason
+AssertionError: expected [] to deeply equal [ '$.club.posterUrl' ]
+
+- Expected
++ Received
+
+- [
+-   "$.club.posterUrl",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2378:31
+    2376|       context("getOccurrence", cleo, { document: widened({ ClubRef: { …
+    2377|     );
+    2378|     expect(at(found, "keys")).toEqual(["$.club.posterUrl"]);
+       |                               ^
+    2379|     // The day's own times, a club's count of members and a member's p…
+    2380|     // hold Occurrence's and ClubSummary's), as is a reservation's lap…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches an object of a schema it holds no list for, and one of no schema, in an answer before the reveal
+AssertionError: expected [] to deeply equal [ '$', '$.stats' ]
+
+- Expected
++ Received
+
+- [
+-   "$",
+-   "$.stats",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2398:36
+    2396|       context("getOccurrence", cleo, { document: widened(additions) }),
+    2397|     );
+    2398|     expect(at(found, "whitelist")).toEqual(["$", "$.stats"]);
+       |                                    ^
+    2399|     // A new schema, named: the day's list finds the key, and no list …
+    2400|     const named = structuredClone(widened({ UpcomingDay: { stats: { $r…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > holds every text people wrote in the world: captions, comments, names, a club's name and labels, an invitation's names
+AssertionError: expected [] to include 'From Ben'
+ ❯ src/privacy/scanner.test.ts:2437:87
+    2435|   it("holds every text people wrote in the world: captions, comments, …
+    2436|     const texts = worldTexts(world);
+    2437|     for (const drop of world.drops.values()) if (drop.caption !== null…
+       |                                                                                       ^
+    2438|     for (const club of world.clubs.values()) expect(texts).toContain(c…
+    2439|     for (const member of world.members.values()) if (member.name !== n…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON
+AssertionError: a caption in a field: : expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2467:9
+    2465|         found.some((problem) => expected.test(problem)),
+    2466|         `${what}: ${found.join("; ")}`,
+    2467|       ).toBe(true);
+       |         ^
+    2468|     }
+    2469|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 96 passed (106)
+   Start at  22:24:06
+   Duration  1.54s (import 40%, tests 33%, transform 27%)
+

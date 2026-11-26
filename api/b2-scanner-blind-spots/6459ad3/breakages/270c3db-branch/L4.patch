@@ -1,0 +1,108 @@
+diff --git a/tests/src/privacy/matrix.test.ts b/tests/src/privacy/matrix.test.ts
+index 474e6002..9616b3f0 100644
+--- a/tests/src/privacy/matrix.test.ts
++++ b/tests/src/privacy/matrix.test.ts
+@@ -220,6 +220,8 @@ import {
+   type WorldInvitation,
+   type WorldReservation,
+   type WorldUpload,
++  logProblems,
++  worldTexts,
+ } from "./scanner.ts";
+ import { bearer, signing, tokenCallers, type Signing } from "./tokens.ts";
+ 
+@@ -360,6 +362,45 @@ let workerStorage: FakeWorkerStorage;
+ /** The photo the uploads' table puts, a JPEG `sharp` makes (@tadayo/worker/testing). */
+ let photo: Buffer;
+ 
++/**
++ * The API's log, as the matrix's app writes it at production's level (fly.toml's LOG_LEVEL, `info`), and
++ * how far the scanner has read it (T52, T16; the outside audit's A14). Each step's scanner reads the lines
++ * written since, against everything a log must never hold that the matrix has met so far: the text people
++ * wrote and the values kept back in every world made, and every token a request carried.
++ */
++const logLines: string[] = [];
++let logRead = 0;
++/** The answers the scanner read, each of which wrote one request line. */
++let logAnswers = 0;
++const logFacts = { texts: new Set<string>(), keptBack: new Set<string>(), secrets: new Set<string>() };
++
++/** The lines written since the last read, through the log's scan: each problem as a line, into `wrong`. */
++function readLog(wrong: string[], where: string): void {
++  for (const line of logLines.slice(logRead))
++    for (const problem of logProblems(line, logFacts)) wrong.push(`${where}, the API's log: ${problem}`);
++  logRead = logLines.length;
++}
++
++/** The tokens and secrets `spec` carries, which no log may hold: its bearer token and its body's. */
++function secretsOf(spec: Spec): string[] {
++  const found: string[] = [];
++  const bearer = spec.headers["authorization"];
++  if (bearer?.startsWith("Bearer ")) found.push(bearer.slice("Bearer ".length));
++  if (spec.body !== undefined) {
++    try {
++      const body: unknown = JSON.parse(spec.body);
++      if (typeof body === "object" && body !== null)
++        for (const key of ["token", "apns_token", "removal_secret"]) {
++          const value = (body as Record<string, unknown>)[key];
++          if (typeof value === "string" && value !== "") found.push(value);
++        }
++    } catch {
++      // A body that isn't JSON carries no field of these.
++    }
++  }
++  return found;
++}
++
+ /**
+  * The worker's `upload.prepare` on the upload `id`, given its event as a claim gives it, at the clock's time
+  * (services/worker/src/prepare.ts): the photo's renditions stored, the upload ready with its hash and version,
+@@ -595,7 +636,7 @@ beforeAll(async () => {
+     clock,
+     authenticate: sessions({ verifier: keys.verifier, sql: api, clock }),
+     storage,
+-    log: { level: "silent" },
++    log: { level: "silent", stream: { write: (line: string) => void logLines.push(line) } },
+   });
+   await app.ready();
+   elsewhere = await db.begin(async (tx) => {
+@@ -979,8 +1020,12 @@ function scanner(
+   return (step: Step) => {
+     for (const problem of step.problems) wrong.push(`${where}: ${problem}`);
+     const known = facts();
++    for (const text of [...worldTexts(known.world), ...known.viewer.texts]) logFacts.texts.add(text);
++    for (const kept of known.world.canaries.keys()) logFacts.keptBack.add(kept);
+     for (const { spec, answer } of step.answers) {
+       counted.answers += 1;
++      logAnswers += 1;
++      for (const secret of secretsOf(spec)) logFacts.secrets.add(secret);
+       const context = {
+         document,
+         operation: spec.operation,
+@@ -995,6 +1040,7 @@ function scanner(
+         wrong.push(`${where}, ${spec.operation.id}: ${finding.check} at ${finding.at}: ${finding.what}`);
+       }
+     }
++    readLog(wrong, where);
+   };
+ }
+ 
+@@ -4370,3 +4416,18 @@ describe("callers without a session, in each state of the drop and phase of the
+     expect(counted.answers).toBeGreaterThan(STATES.length * Object.keys(PHASES).length * operations.length * 3);
+   });
+ });
++
++describe("the API's log, at production's level (T52, T16; the outside audit's A14)", () => {
++  it("wrote a request line for every answer the scanner read, and no line holds content, a kept-back value or a token", () => {
++    const wrong: string[] = [];
++    readLog(wrong, "after every cell");
++    expect(wrong).toEqual([]);
++    expect(logAnswers).toBeGreaterThan(0);
++    const requests = logLines.filter((line) => (JSON.parse(line) as { msg?: unknown }).msg === "request");
++    expect(requests.length).toBeGreaterThanOrEqual(logAnswers);
++    // The scan had something to look for.
++    expect(logFacts.texts.size).toBeGreaterThan(0);
++    expect(logFacts.keptBack.size).toBeGreaterThan(0);
++    expect(logFacts.secrets.size).toBeGreaterThan(0);
++  });
++});

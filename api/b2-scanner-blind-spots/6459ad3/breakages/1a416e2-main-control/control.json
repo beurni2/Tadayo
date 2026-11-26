@@ -1,0 +1,136 @@
+[
+ {
+  "name": "S1",
+  "what": "drop_count on every Occurrence, the day before and after its reveal (contract and occurrenceBody)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S1",
+  "what": "drop_count on every Occurrence, the day before and after its reveal (contract and occurrenceBody)",
+  "run": "unit: packages/contracts src/contract.test.ts",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S2",
+  "what": "the open day's drop ids under its ViewerDay (contract and Home's route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S2",
+  "what": "the open day's drop ids under its ViewerDay (contract and Home's route)",
+  "run": "unit: packages/contracts src/contract.test.ts",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S3",
+  "what": "committed_at on the commit's DropReceipt, before the reveal (contract and createDrop's route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S3",
+  "what": "committed_at on the commit's DropReceipt, before the reveal (contract and createDrop's route)",
+  "run": "unit: packages/contracts src/contract.test.ts",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S4",
+  "what": "drop_count on each ClubSummary of listClubs (contract and listClubs' route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "S4",
+  "what": "drop_count on each ClubSummary of listClubs (contract and listClubs' route)",
+  "run": "unit: packages/contracts src/contract.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": []
+ },
+ {
+  "name": "S5",
+  "what": "filesize on every Allowance (contract and allowanceBody)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S5",
+  "what": "filesize on every Allowance (contract and allowanceBody)",
+  "run": "unit: packages/contracts src/contract.test.ts",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S6",
+  "what": "avatarUrl on Me, outside the lists (contract and getMe's route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S6",
+  "what": "avatarUrl on Me, outside the lists (contract and getMe's route)",
+  "run": "unit: packages/contracts src/contract.test.ts",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": []
+ },
+ {
+  "name": "S7",
+  "what": "a new schema, DayStats, under the waiting Home (contract and Home's route)",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "S7",
+  "what": "a new schema, DayStats, under the waiting Home (contract and Home's route)",
+  "run": "unit: packages/contracts src/contract.test.ts",
+  "exit": 1,
+  "verdict": "failed",
+  "missing": []
+ },
+ {
+  "name": "L1",
+  "what": "Home's handler logs its whole answer as { served: { home: body } }",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ },
+ {
+  "name": "L3",
+  "what": "listClubs' handler logs a club's name as { club: name }",
+  "run": "matrix: matrix as the member in the audience",
+  "exit": 0,
+  "verdict": "passed (missed)",
+  "missing": [
+   "answers\\ the\\ member\\ in\\ the\\ audience"
+  ]
+ }
+]

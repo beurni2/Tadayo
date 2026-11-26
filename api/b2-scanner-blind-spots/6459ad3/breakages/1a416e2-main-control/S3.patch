@@ -1,0 +1,53 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 2c5a2778..3224b4bc 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -11843,6 +11843,8 @@ components:
+           $ref: "#/components/schemas/Version"
+         allowance:
+           $ref: "#/components/schemas/Allowance"
++        committed_at:
++          $ref: "#/components/schemas/Instant"
+         highlight:
+           $ref: "#/components/schemas/HighlightPointer"
+       required:
+@@ -11852,6 +11854,7 @@ components:
+         - state
+         - version
+         - allowance
++        - committed_at
+         - highlight
+       description: "The commit's receipt: the drop is in this day, and only now is it Added (T20). A replay with the same Idempotency-Key returns this same receipt, even after the cutoff or midnight (T19, Q12), but for the day's star, named as members see them at the replay (FQ75, FQ139); one with no name left to show answers MEMBERSHIP_CHANGED."
+     DropRenderedEvent:
+diff --git a/packages/contracts/src/schemas/contributing.ts b/packages/contracts/src/schemas/contributing.ts
+index 2b664799..08ea7f38 100644
+--- a/packages/contracts/src/schemas/contributing.ts
++++ b/packages/contracts/src/schemas/contributing.ts
+@@ -203,6 +203,7 @@ export const DropReceipt = named(
+     state: tag("added"),
+     version: Version,
+     allowance: Allowance,
++    committed_at: Instant,
+     highlight: HighlightPointer,
+   }),
+ );
+diff --git a/services/api/src/drops/drops.ts b/services/api/src/drops/drops.ts
+index 694b504d..c3e2d60f 100644
+--- a/services/api/src/drops/drops.ts
++++ b/services/api/src/drops/drops.ts
+@@ -15,6 +15,7 @@ import {
+   type DropReceiptAnswer,
+   type DropRender,
+   type Json,
++  contractInstant,
+ } from "@tadayo/domain";
+ import type { FastifyRequest } from "fastify";
+ import { created, IDEMPOTENCY_KEY, problem, refusal } from "../answers.ts";
+@@ -34,6 +35,7 @@ export function dropReceiptBody(receipt: DropReceiptAnswer): Json {
+     state: "added",
+     version: receipt.version,
+     allowance: allowanceBody(receipt.allowance),
++    committed_at: contractInstant(receipt.occurrence.revealAt),
+     highlight: {
+       ...(receipt.highlight.dropId === null ? {} : { drop_id: receipt.highlight.dropId }),
+       version: receipt.highlight.version,

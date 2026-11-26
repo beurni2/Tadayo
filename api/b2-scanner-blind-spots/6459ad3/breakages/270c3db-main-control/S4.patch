@@ -1,0 +1,39 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 2c5a2778..9ecce4fc 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -11387,6 +11387,10 @@ components:
+           type: integer
+           minimum: 1
+           maximum: 6
++        drop_count:
++          type: integer
++          minimum: 0
++          maximum: 9007199254740991
+         open_day:
+           $ref: "#/components/schemas/Occurrence"
+         next_day:
+diff --git a/packages/contracts/src/schemas/clubs.ts b/packages/contracts/src/schemas/clubs.ts
+index b7b96039..ffb31c86 100644
+--- a/packages/contracts/src/schemas/clubs.ts
++++ b/packages/contracts/src/schemas/clubs.ts
+@@ -34,6 +34,7 @@ export const ClubSummary = named(
+     my_membership_id: Id,
+     state: ClubState,
+     member_count: z.int().min(1).max(6),
++    drop_count: z.int().min(0).optional(),
+     open_day: Occurrence.optional(),
+     next_day: Occurrence.optional(),
+   }),
+diff --git a/services/api/src/clubs/list.ts b/services/api/src/clubs/list.ts
+index 37b88eb3..f359173f 100644
+--- a/services/api/src/clubs/list.ts
++++ b/services/api/src/clubs/list.ts
+@@ -22,6 +22,7 @@ export function clubListBody(now: Temporal.Instant, listing: ClubListing): Json
+       my_membership_id: club.membershipId,
+       state: club.state,
+       member_count: club.memberCount,
++      drop_count: 0,
+       ...(club.openDay === null ? {} : { open_day: occurrenceBody(club.openDay) }),
+       ...(club.nextDay === null ? {} : { next_day: occurrenceBody(club.nextDay) }),
+     })),

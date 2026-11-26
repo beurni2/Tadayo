@@ -1,0 +1,51 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 2492 cells run, 46352 answers scanned
+member in the audience, the roster's table: {"proposals":224,"memberPhases":24,"due":24,"revisions":24,"links":24,"otherAnswers":480,"invitations":24}
+
+ ❯ src/privacy/matrix.test.ts (28 tests | 1 failed | 26 skipped) 58884ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 58554ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 26 skipped (28)
+   Start at  22:49:22
+   Duration  60.56s (tests 98%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 8, first: [ …(8) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 8,
++   "first": [
++     "active, open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_g98CYTe_9IDBt25abwqKAg\",\"id\":\"occ_67dXvrL7u3Thm-CdqQDb2w\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana ef3c0c3c54a9\",\"membership_id\":\"mem_TiWGVkGkmcgIz5siL_cikA\"}},\"club\":{\"id\":\"club_g98CYTe_9IDBt25abwqKAg\",\"my_membership_id\":\"mem__OKKEyTLyaclf-jbPWH97A\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_g98CYTe_9IDBt25abwqKAg\",\"id\":\"occ_67dXvrL7u3Thm-CdqQDb2w\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana ef3c0c3c54a9\",\"membership_id\":\"mem_TiWGVkGkmcgIz5siL_cikA\"}},\"club\":{\"id\":\"club_g98CYTe_9IDBt25abwqKAg\",\"my_membership_id\":\"mem__OKKEyTLyaclf-jbPWH97A\",\"name\":\"Saturda",
++     "active, open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++     "withdrawn, open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_Erlx499RsaYbjQpYpUTv1Q\",\"id\":\"occ_p20dxJeDrcy-OWVvLjTy-A\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana a270fdb3456c\",\"membership_id\":\"mem_iQBujT78KBWL0ze6T-GVqQ\"}},\"club\":{\"id\":\"club_Erlx499RsaYbjQpYpUTv1Q\",\"my_membership_id\":\"mem_dUuiiD6P-HalI_gkofsbsg\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_Erlx499RsaYbjQpYpUTv1Q\",\"id\":\"occ_p20dxJeDrcy-OWVvLjTy-A\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana a270fdb3456c\",\"membership_id\":\"mem_iQBujT78KBWL0ze6T-GVqQ\"}},\"club\":{\"id\":\"club_Erlx499RsaYbjQpYpUTv1Q\",\"my_membership_id\":\"mem_dUuiiD6P-HalI_gkofsbsg\",\"name\":\"Saturda",
++     "withdrawn, open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++     "removed by moderation, open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_tywB1dMPGR6dIoa0q3lmaw\",\"id\":\"occ_sxdvGIWOkPchLPuziRJwkA\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 6b1a5d493daf\",\"membership_id\":\"mem_NhR7zeXFZtXv29o7_FyMxw\"}},\"club\":{\"id\":\"club_tywB1dMPGR6dIoa0q3lmaw\",\"my_membership_id\":\"mem_ZWpDNTMxgslRwmhcc6LlpQ\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_tywB1dMPGR6dIoa0q3lmaw\",\"id\":\"occ_sxdvGIWOkPchLPuziRJwkA\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 6b1a5d493daf\",\"membership_id\":\"mem_NhR7zeXFZtXv29o7_FyMxw\"}},\"club\":{\"id\":\"club_tywB1dMPGR6dIoa0q3lmaw\",\"my_membership_id\":\"mem_ZWpDNTMxgslRwmhcc6LlpQ\",\"name\":\"Saturda",
++     "removed by moderation, open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++     "held (T29), open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_rX42xJ8eNP-Qa_SUSveO0g\",\"id\":\"occ_vdInST2MSIQm4Dap-vi3tw\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana d6c2ac1e224d\",\"membership_id\":\"mem_A8bEINfTNVRVwm4NUtBicA\"}},\"club\":{\"id\":\"club_rX42xJ8eNP-Qa_SUSveO0g\",\"my_membership_id\":\"mem_K4SpLz4EYAXuoWizX05fLQ\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_rX42xJ8eNP-Qa_SUSveO0g\",\"id\":\"occ_vdInST2MSIQm4Dap-vi3tw\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana d6c2ac1e224d\",\"membership_id\":\"mem_A8bEINfTNVRVwm4NUtBicA\"}},\"club\":{\"id\":\"club_rX42xJ8eNP-Qa_SUSveO0g\",\"my_membership_id\":\"mem_K4SpLz4EYAXuoWizX05fLQ\",\"name\":\"Saturda",
++     "held (T29), open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3063:66
+    3061|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3062|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3063|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3064|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3065|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

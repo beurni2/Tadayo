@@ -1,0 +1,46 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main2/packages/contracts
+
+ ❯ src/contract.test.ts (221 tests | 3 failed) 665ms
+   ❯ the examples (160)
+     × getHome: waiting matches its schema, with no key it doesn't name 8ms
+     × getHome: after_close matches its schema, with no key it doesn't name 1ms
+     × getHome: sunday matches its schema, with no key it doesn't name 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 218 passed (221)
+   Start at  00:02:41
+   Duration  1.07s (tests 72%, import 20%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/contract.test.ts > the examples > getHome: waiting matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: after_close matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: sunday matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "object",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "object",
++     "code": "invalid_type",
++     "path": [
++       "stats"
++     ],
++     "message": "Invalid input: expected object, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+

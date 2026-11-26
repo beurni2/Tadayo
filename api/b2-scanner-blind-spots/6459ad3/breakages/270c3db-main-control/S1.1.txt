@@ -1,0 +1,970 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main2/packages/contracts
+
+ ❯ src/contract.test.ts (221 tests | 36 failed) 626ms
+   ❯ the pre-reveal whitelist (T10) (3)
+     × is all a day before the reveal can hold: nothing revealed, no rail, no count (T10, T15) 9ms
+   ❯ the examples (160)
+     × listMyDrops: mine matches its schema, with no key it doesn't name 3ms
+     × listClubs: two_clubs matches its schema, with no key it doesn't name 2ms
+     × getClub: sunday_people matches its schema, with no key it doesn't name 1ms
+     × getClub: kitchen_table matches its schema, with no key it doesn't name 1ms
+     × listMembers: sunday_people matches its schema, with no key it doesn't name 1ms
+     × listMembers: kitchen_table matches its schema, with no key it doesn't name 2ms
+     × listMembers: first_days matches its schema, with no key it doesn't name 1ms
+     × getHome: open matches its schema, with no key it doesn't name 5ms
+     × getHome: waiting matches its schema, with no key it doesn't name 1ms
+     × getHome: first_drop matches its schema, with no key it doesn't name 1ms
+     × getHome: after_close matches its schema, with no key it doesn't name 1ms
+     × getHome: sunday matches its schema, with no key it doesn't name 1ms
+     × getHome: quiet matches its schema, with no key it doesn't name 1ms
+     × getHome: your_day matches its schema, with no key it doesn't name 1ms
+     × getHome: paused matches its schema, with no key it doesn't name 1ms
+     × getOccurrence: upcoming matches its schema, with no key it doesn't name 2ms
+     × getOccurrence: open matches its schema, with no key it doesn't name 1ms
+     × getOccurrence: past matches its schema, with no key it doesn't name 1ms
+     × getOccurrence: friends_only matches its schema, with no key it doesn't name 0ms
+     × getOccurrence: joined_later matches its schema, with no key it doesn't name 0ms
+     × getOccurrence: unavailable matches its schema, with no key it doesn't name 1ms
+     × getOwnDay: your_drops matches its schema, with no key it doesn't name 2ms
+     × getOwnDay: nothing_yet matches its schema, with no key it doesn't name 0ms
+     × getOwnDay: own_day matches its schema, with no key it doesn't name 0ms
+     × getDrop: revealed matches its schema, with no key it doesn't name 1ms
+     × getDrop: caption_only matches its schema, with no key it doesn't name 0ms
+     × createDrop: added matches its schema, with no key it doesn't name 1ms
+     × listFavourites: two matches its schema, with no key it doesn't name 1ms
+     × listMemories: days matches its schema, with no key it doesn't name 1ms
+     × searchMemories: caption matches its schema, with no key it doesn't name 1ms
+     × the OCCURRENCE_CLOSED example is a valid error with its own code 1ms
+     × the QUOTA_FULL example is a valid error with its own code 1ms
+     × the EXTERNAL_LIMIT example is a valid error with its own code 0ms
+     × the PHOTO_LIMIT example is a valid error with its own code 0ms
+     × the MEMBERSHIP_CHANGED example is a valid error with its own code 0ms
+
+ Test Files  1 failed (1)
+      Tests  36 failed | 185 passed (221)
+   Start at  23:53:51
+   Duration  1.24s (tests 62%, transform 22%, import 15%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 36 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/contract.test.ts > the pre-reveal whitelist (T10) > is all a day before the reveal can hold: nothing revealed, no rail, no count (T10, T15)
+AssertionError: Occurrence: expected [ 'close_at', 'club_id', …(6) ] to deeply equal [ 'close_at', 'club_id', 'id', …(4) ]
+
+- Expected
++ Received
+
+@@ -1,8 +1,9 @@
+  [
+    "close_at",
+    "club_id",
++   "drop_count",
+    "id",
+    "local_date",
+    "phase",
+    "reveal_at",
+    "star",
+
+ ❯ src/contract.test.ts:528:96
+    526|     ]);
+    527|     for (const name of ["ViewerDay", "Occurrence", "ClubRef"]) {
+    528|       expect(Object.keys((schemas[name] as JsonObject).properties as J…
+       |                                                                                                ^
+    529|         {
+    530|           ViewerDay: ["is_star", "joined_later"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > listMyDrops: mine matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > listFavourites: two matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       0,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       1,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > listClubs: two_clubs matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "clubs",
++       0,
++       "open_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "clubs",
++       0,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "clubs",
++       1,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getClub: sunday_people matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "club",
++       "open_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "club",
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getClub: kitchen_table matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "club",
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > listMembers: sunday_people matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       0,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       1,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       2,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       3,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       4,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       5,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > listMembers: kitchen_table matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       0,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       1,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       2,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       3,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       4,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > listMembers: first_days matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       1,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       2,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       3,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "members",
++       5,
++       "next_day",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getHome: open matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: quiet matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: your_day matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "day",
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "day",
++       "add_target",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "next",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       0,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       1,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getHome: waiting matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getHome: after_close matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "next",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       0,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       1,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getHome: first_drop matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "day",
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "day",
++       "add_target",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "next",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getHome: sunday matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "next",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       0,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       1,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       2,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       3,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       4,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       5,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getHome: paused matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "recent_days",
++       0,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getOccurrence: upcoming matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: open matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: joined_later matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "add_target",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > getOccurrence: past matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: friends_only matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOccurrence: unavailable matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOwnDay: your_drops matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOwnDay: nothing_yet matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getOwnDay: own_day matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getDrop: revealed matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > getDrop: caption_only matches its schema, with no key it doesn't name
+ FAIL  src/contract.test.ts > the examples > createDrop: added matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > listMemories: days matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       0,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       1,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       2,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       3,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       4,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   },
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       5,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > searchMemories: caption matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "number",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "number",
++     "code": "invalid_type",
++     "path": [
++       "items",
++       0,
++       "occurrence",
++       "drop_count"
++     ],
++     "message": "Invalid input: expected number, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/36]⎯
+
+ FAIL  src/contract.test.ts > the examples > the OCCURRENCE_CLOSED example is a valid error with its own code
+ FAIL  src/contract.test.ts > the examples > the QUOTA_FULL example is a valid error with its own code
+ FAIL  src/contract.test.ts > the examples > the EXTERNAL_LIMIT example is a valid error with its own code
+ FAIL  src/contract.test.ts > the examples > the PHOTO_LIMIT example is a valid error with its own code
+ FAIL  src/contract.test.ts > the examples > the MEMBERSHIP_CHANGED example is a valid error with its own code
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/contract.test.ts:825:49
+    823|     it(`the ${code} example is a valid error with its own code`, () =>…
+    824|       const value = errorExample(code);
+    825|       expect(ApiError.safeParse(value).success).toBe(true);
+       |                                                 ^
+    826|       expect(unknownKeys(document, { $ref: "#/components/schemas/Error…
+    827|       expect((value as { code: string }).code).toBe(code);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/36]⎯
+

@@ -1,0 +1,37 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 2c5a2778..6f9a6957 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -12586,6 +12586,8 @@ components:
+           type: boolean
+         version:
+           $ref: "#/components/schemas/Version"
++        avatarUrl:
++          type: string
+       required:
+         - id
+         - age_confirmed
+diff --git a/packages/contracts/src/schemas/account.ts b/packages/contracts/src/schemas/account.ts
+index 1fef6761..b4a281db 100644
+--- a/packages/contracts/src/schemas/account.ts
++++ b/packages/contracts/src/schemas/account.ts
+@@ -31,6 +31,7 @@ export const Me = named(
+     avatar_version: ContentVersion.optional(),
+     age_confirmed: z.boolean(),
+     version: Version,
++    avatarUrl: z.string().optional(),
+   }),
+ );
+ 
+diff --git a/services/api/src/identity/me.ts b/services/api/src/identity/me.ts
+index 8ad3df13..a0e7c2b5 100644
+--- a/services/api/src/identity/me.ts
++++ b/services/api/src/identity/me.ts
+@@ -16,6 +16,7 @@ export function meBody(account: Account): Json {
+     ...(account.avatarVersion === null ? {} : { avatar_version: account.avatarVersion }),
+     age_confirmed: account.ageConfirmed,
+     version: account.version,
++    avatarUrl: String(account.version),
+   };
+ }
+ 

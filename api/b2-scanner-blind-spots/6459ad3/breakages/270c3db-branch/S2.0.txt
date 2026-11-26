@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk2/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 1 failed | 27 skipped) 76601ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 76294ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 27 skipped (29)
+   Start at  23:37:40
+   Duration  78.36s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 10, first: [ …(10) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 10,
++   "first": [
++     "active, open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_YY64QgZ33E4UqjBUqgXDNw\",\"id\":\"occ_f-Mt63gUA-R-kExEpoCH4Q\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana e767b16c7e09\",\"membership_id\":\"mem_DEyoHSgADURxZMmTvXPjLA\"}},\"club\":{\"id\":\"club_YY64QgZ33E4UqjBUqgXDNw\",\"my_membership_id\":\"mem_oz9j6CzznXsT5rj-Z2IW7A\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_YY64QgZ33E4UqjBUqgXDNw\",\"id\":\"occ_f-Mt63gUA-R-kExEpoCH4Q\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana e767b16c7e09\",\"membership_id\":\"mem_DEyoHSgADURxZMmTvXPjLA\"}},\"club\":{\"id\":\"club_YY64QgZ33E4UqjBUqgXDNw\",\"my_membership_id\":\"mem_oz9j6CzznXsT5rj-Z2IW7A\",\"name\":\"Saturda",
++     "active, open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++     "withdrawn, open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_ii9GzcOhsSzpahzyXktodw\",\"id\":\"occ_JqKR102V5phC3vPm3L3eUQ\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 96416de3e665\",\"membership_id\":\"mem_kD-nrJxJZzkw9r6BqrMsJQ\"}},\"club\":{\"id\":\"club_ii9GzcOhsSzpahzyXktodw\",\"my_membership_id\":\"mem_TVc7LuLF9xyyzB_cez_hTw\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_ii9GzcOhsSzpahzyXktodw\",\"id\":\"occ_JqKR102V5phC3vPm3L3eUQ\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 96416de3e665\",\"membership_id\":\"mem_kD-nrJxJZzkw9r6BqrMsJQ\"}},\"club\":{\"id\":\"club_ii9GzcOhsSzpahzyXktodw\",\"my_membership_id\":\"mem_TVc7LuLF9xyyzB_cez_hTw\",\"name\":\"Saturda",
++     "withdrawn, open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++     "removed by moderation, open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_3Rbad1hyMxSrT2vJDn0B2Q\",\"id\":\"occ_nvrVAqQuJOfXzKp6acx4cQ\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana fcebdf82166d\",\"membership_id\":\"mem_Bv0Wd83cw9vyNfBGKJ_pFA\"}},\"club\":{\"id\":\"club_3Rbad1hyMxSrT2vJDn0B2Q\",\"my_membership_id\":\"mem_z0N1OxVMMdQ8RRWlogicmg\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_3Rbad1hyMxSrT2vJDn0B2Q\",\"id\":\"occ_nvrVAqQuJOfXzKp6acx4cQ\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana fcebdf82166d\",\"membership_id\":\"mem_Bv0Wd83cw9vyNfBGKJ_pFA\"}},\"club\":{\"id\":\"club_3Rbad1hyMxSrT2vJDn0B2Q\",\"my_membership_id\":\"mem_z0N1OxVMMdQ8RRWlogicmg\",\"name\":\"Saturda",
++     "removed by moderation, open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++     "held (T29), open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_2EaeET3mOAFTjDCZwvOwpQ\",\"id\":\"occ_aT2sLYHg3_fsb4lhq3Ta6w\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 2fcaca0d1d93\",\"membership_id\":\"mem_7oGvP-Vof2xaYvghDtGdLA\"}},\"club\":{\"id\":\"club_2EaeET3mOAFTjDCZwvOwpQ\",\"my_membership_id\":\"mem_aMt0w4PDEL5SQB4Yi_SfWw\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_2EaeET3mOAFTjDCZwvOwpQ\",\"id\":\"occ_aT2sLYHg3_fsb4lhq3Ta6w\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana 2fcaca0d1d93\",\"membership_id\":\"mem_7oGvP-Vof2xaYvghDtGdLA\"}},\"club\":{\"id\":\"club_2EaeET3mOAFTjDCZwvOwpQ\",\"my_membership_id\":\"mem_aMt0w4PDEL5SQB4Yi_SfWw\",\"name\":\"Saturda",
++     "held (T29), open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++     "its author's account being deleted (T27), open: getHome: Home's day is {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_qLcBP4S_yoKB8Aw2fHRQ1g\",\"id\":\"occ_wCsuJFwMriIFsc75JcCpPg\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana c05b02553912\",\"membership_id\":\"mem_E0iwddwiLiLaSt2FusjzUQ\"}},\"club\":{\"id\":\"club_qLcBP4S_yoKB8Aw2fHRQ1g\",\"my_membership_id\":\"mem_Zvg8zKNCsHbUOIhVJAso3w\",\"name\":\"Saturda, not {\"add_target\":{\"close_at\":\"2026-11-15T01:00:00Z\",\"club_id\":\"club_qLcBP4S_yoKB8Aw2fHRQ1g\",\"id\":\"occ_wCsuJFwMriIFsc75JcCpPg\",\"local_date\":\"2026-11-14\",\"phase\":\"collecting\",\"reveal_at\":\"2026-11-14T07:00:00Z\",\"star\":{\"display_name\":\"Ana c05b02553912\",\"membership_id\":\"mem_E0iwddwiLiLaSt2FusjzUQ\"}},\"club\":{\"id\":\"club_qLcBP4S_yoKB8Aw2fHRQ1g\",\"my_membership_id\":\"mem_Zvg8zKNCsHbUOIhVJAso3w\",\"name\":\"Saturda",
++     "its author's account being deleted (T27), open, getHome: whitelist at $.day.viewer: a ViewerDay that has drop_ids (T10: this file's own list)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3078:66
+    3076|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3077|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3078|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3079|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3080|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,46 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 2c5a2778..c8a819d6 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -11083,6 +11083,10 @@ components:
+           maximum: 2
+         is_star:
+           type: boolean
++        filesize:
++          type: integer
++          minimum: 0
++          maximum: 9007199254740991
+       required:
+         - added
+         - reserved
+@@ -11094,6 +11098,7 @@ components:
+         - external_reserved
+         - external_limit
+         - is_star
++        - filesize
+       description: "The caller's own allowance in one day, never anyone else's (T15), by their role in it (T17; addendum 2): the star (`is_star`) has six drops, any of them photos and at most two of them external video links (`limit` 6, `photo_limit` 6, `external_limit` 2); anyone else has three, at most two photos and at most one video link (3, 2 and 1). The limits are always exactly one of those two sets. The server reads the role from the caller's membership interval and the day's star interval, never from a request. `added`, `photo_added` and `external_added` count committed drops, the only ones that are Added (T20); `reserved`, `photo_reserved` and `external_reserved` count the caller's live reservations, which the limits also count (T18). The photos are the drops less the video links. Drafts and photos in conversations count for nothing (T17, T64)."
+     AvatarUploadRequest:
+       type: object
+diff --git a/packages/contracts/src/common.ts b/packages/contracts/src/common.ts
+index 86e46e4e..dd25273b 100644
+--- a/packages/contracts/src/common.ts
++++ b/packages/contracts/src/common.ts
+@@ -276,6 +276,7 @@ export const Allowance = named(
+     external_reserved: z.int().min(0).max(2),
+     external_limit: z.int().min(1).max(2),
+     is_star: z.boolean(),
++    filesize: z.int().min(0),
+   }),
+ );
+ 
+diff --git a/services/api/src/bodies.ts b/services/api/src/bodies.ts
+index 539a75c2..94339d7f 100644
+--- a/services/api/src/bodies.ts
++++ b/services/api/src/bodies.ts
+@@ -39,5 +39,6 @@ export function allowanceBody(allowance: Allowance): Json {
+     external_reserved: allowance.externalReserved,
+     external_limit: allowance.externalLimit,
+     is_star: allowance.isStar,
++    filesize: 0,
+   };
+ }

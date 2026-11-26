@@ -1,0 +1,111 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main/services/api
+
+ ❯ src/logging.test.ts (12 tests | 5 failed) 204ms
+   ❯ the redaction list (T52) (5)
+     × blanks every listed field, at the top, one level down and four levels down in a list 84ms
+     × blanks Home's whole answer logged by mistake, a field under another spelling and anything that isn't plain data (the outside audit's A14) 27ms
+     × names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email 2ms
+   ❯ a request's log line (6)
+     × holds Fastify's own lines back: no incoming request, no route not found, no completed request 11ms
+     × is written for an answer Fastify gives before routing too: an id past its limit, a broken escape (the outside audit's A14) 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks every listed field, at the top, one level down and four levels down in a list
+AssertionError: expected '{"level":30,"time":1795645947995,"aut…' not to contain 'MARKER-must-never-appear'
+
+Expected: "MARKER-must-never-appear"
+Received: "{"level":30,"time":1795645947995,"authorization":"[redacted]","wrapper":{"authorization":"[redacted]"},"served":{"home":{"drops":[{"authorization":"MARKER-must-never-appear"}]}},"msg":"probe"}"
+
+ ❯ src/logging.test.ts:73:41
+     71|     expect(lines).toHaveLength(REDACTED_FIELDS.length);
+     72|     for (const entry of parse(lines)) {
+     73|       expect(JSON.stringify(entry)).not.toContain(marker);
+       |                                         ^
+     74|     }
+     75|     expect(parse(lines)[0]).toMatchObject({ msg: "probe" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks Home's whole answer logged by mistake, a field under another spelling and anything that isn't plain data (the outside audit's A14)
+AssertionError: expected '{"level":30,"time":1795645948023,"ser…' not to contain 'a caption that must never be logged: …'
+
+- Expected
++ Received
+
+- a caption that must never be logged: sunset at the pier
++ {"level":30,"time":1795645948023,"served":{"home":{"mode":"day","club":{"id":"clb_1","name":"Saturday People","timezone":"Europe/London"},"day":{"drops":[{"id":"drp_1","caption":"a caption that must never be logged: sunset at the pier","author":{"membership_id":"itv_1","display_name":"Ben"}}]}}},"msg":"served"}
++ {"level":30,"time":1795645948023,"Caption":"a caption that must never be logged: sunset at the pier","signedURL":"https://s.example/o","display-name":"Ben","msg":"spelled"}
++ {"level":30,"time":1795645948023,"held":{"inside":"a caption that must never be logged: sunset at the pier"},"bytes":"[unable to serialize, circular reference is too complex to analyze]","looped":{"id":"drp_1","self":{"id":"drp_1","self":"[Circular]"}},"msg":"objects"}
++
+
+ ❯ src/logging.test.ts:99:102
+     97|     app.log.info({ held: new Holder(caption), bytes: Buffer.from(capti…
+     98|     const text = lines.join("");
+     99|     for (const content of [caption, "Saturday People", "Ben", "https:/…
+       |                                                                                                      ^
+    100|     const [served, spelled, objects] = parse(lines);
+    101|     // Ids, modes and timezones are left as they are: the line still s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email
+AssertionError: name: expected [ 'authorization', 'cookie', …(80) ] to include 'name'
+ ❯ src/logging.test.ts:136:38
+    134|       "removal_secret",
+    135|     ]) {
+    136|       expect(REDACTED_FIELDS, field).toContain(field);
+       |                                      ^
+    137|     }
+    138|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/logging.test.ts > a request's log line > holds Fastify's own lines back: no incoming request, no route not found, no completed request
+AssertionError: expected [ 'request', 'request' ] to deeply equal [ 'request', 'request', 'request' ]
+
+- Expected
++ Received
+
+  [
+    "request",
+    "request",
+-   "request",
+  ]
+
+ ❯ src/logging.test.ts:221:22
+    219|     const messages = parse(lines).map((entry) => entry["msg"]);
+    220|     // Ours alone, one each: the id past its limit too, which Fastify …
+    221|     expect(messages).toEqual(["request", "request", "request"]);
+       |                      ^
+    222|     expect(lines.join("")).not.toMatch(/incoming request|not found|req…
+    223|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/logging.test.ts > a request's log line > is written for an answer Fastify gives before routing too: an id past its limit, a broken escape (the outside audit's A14)
+AssertionError: expected [] to have a length of 5 but got +0
+
+- Expected
++ Received
+
+- 5
++ 0
+
+ ❯ src/logging.test.ts:233:21
+    231|     }
+    232|     const entries = parse(lines);
+    233|     expect(entries).toHaveLength(urls.length);
+       |                     ^
+    234|     for (const entry of entries) {
+    235|       expect(entry).toMatchObject({ level: 30, msg: "request", status:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 7 passed (12)
+   Start at  22:32:27
+   Duration  759ms (import 40%, tests 32%, transform 27%, worker 1%)
+

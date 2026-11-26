@@ -1,0 +1,71 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 2c5a2778..ff98ae73 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -11662,6 +11662,16 @@ components:
+         - star
+         - friends
+       description: "Which of a revealed day's two sections a drop is in (T35; addendum 4): `star`, From {starName}, the star's own drops; `friends`, From friends, everyone else's. The server reads it from the author's membership interval and the day's star interval, so a card never moves."
++    DayStats:
++      type: object
++      properties:
++        added:
++          type: integer
++          minimum: 0
++          maximum: 9007199254740991
++      required:
++        - added
++      description: A breakage's own schema.
+     DeleteAccountRequest:
+       type: object
+       properties:
+@@ -12280,6 +12290,8 @@ components:
+           $ref: "#/components/schemas/LocalDate"
+         next:
+           $ref: "#/components/schemas/Occurrence"
++        stats:
++          $ref: "#/components/schemas/DayStats"
+         recent_days:
+           maxItems: 6
+           type: array
+@@ -12291,6 +12303,7 @@ components:
+         - club
+         - club_today
+         - next
++        - stats
+         - recent_days
+       description: "No day is open: the next person, the exact date and the countdown from `server_now` (spec 08, T5), never a day held because its star left (FQ63), with recent days as secondary links; after 1 AM and on Sunday too (book p29). Nothing here says whether anyone has added, the caller included (T15, T33). H01-first-drop's prompt is the app's own, once, right after joining; here it targets `next`."
+     Id:
+diff --git a/packages/contracts/src/schemas/days.ts b/packages/contracts/src/schemas/days.ts
+index e635b9b7..c43880a4 100644
+--- a/packages/contracts/src/schemas/days.ts
++++ b/packages/contracts/src/schemas/days.ts
+@@ -284,6 +284,8 @@ export const HomeDay = named(
+   }),
+ );
+ 
++export const DayStats = named("DayStats", "A breakage's own schema.", z.object({ added: z.int().min(0) }));
++
+ export const HomeWaiting = named(
+   "HomeWaiting",
+   "No day is open: the next person, the exact date and the countdown from `server_now` (spec 08, T5), " +
+@@ -295,6 +297,7 @@ export const HomeWaiting = named(
+     mode: tag("waiting"),
+     ...homeBase,
+     next: Occurrence,
++    stats: DayStats,
+     recent_days: z.array(DayLink).max(6),
+   }),
+ );
+diff --git a/services/api/src/clubs/home.ts b/services/api/src/clubs/home.ts
+index 4271e848..15204f71 100644
+--- a/services/api/src/clubs/home.ts
++++ b/services/api/src/clubs/home.ts
+@@ -88,6 +88,7 @@ export function homeBody(now: Temporal.Instant, home: HomeRead): Json {
+         mode: home.mode,
+         ...base,
+         next: occurrenceBody(home.next),
++        stats: { added: 0 },
+         recent_days: home.recentDays.map(dayLinkBody),
+       };
+     case "day":

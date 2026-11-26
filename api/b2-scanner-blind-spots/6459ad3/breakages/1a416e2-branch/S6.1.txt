@@ -1,0 +1,46 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk/tests
+
+ ❯ src/privacy/scanner.test.ts (106 tests | 1 failed) 460ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (7)
+     × holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 105 passed (106)
+   Start at  22:55:26
+   Duration  1.06s (tests 49%, import 42%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word
+AssertionError: expected { …(18) } to deeply equal { …(17) }
+
+- Expected
++ Received
+
+@@ -24,10 +24,13 @@
+      "expires_at",
+    ],
+    "LeftClub": [
+      "left_at",
+    ],
++   "Me": [
++     "avatarUrl",
++   ],
+    "Member": [
+      "position",
+    ],
+    "NotificationPreferences": [
+      "text_previews",
+
+ ❯ src/privacy/scanner.test.ts:2276:19
+    2274|       if (words.length > 0) named[name] = words.sort();
+    2275|     }
+    2276|     expect(named).toEqual(
+       |                   ^
+    2277|       Object.fromEntries(Object.entries(SERVED_FOR_A_REASON).map(([nam…
+    2278|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

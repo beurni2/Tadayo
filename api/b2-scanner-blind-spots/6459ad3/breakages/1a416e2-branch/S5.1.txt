@@ -1,0 +1,152 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk/tests
+
+ ❯ src/privacy/scanner.test.ts (106 tests | 5 failed) 415ms
+   ❯ the leak scanner passes what may be shown (12)
+     × passes the viewer's own allowance and clubs, a closed day's link with a photo cover, and a random cursor 34ms
+   ❯ the leak scanner catches each planted leak with its own check (49)
+     × catches an allowance that isn't the viewer's own role in the day: the star's limits for a friend, a friend's for the star, or a wrong is_star (T17) 5ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (7)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 3ms
+     × holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word 3ms
+     × catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home 27ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 101 passed (106)
+   Start at  22:54:14
+   Duration  1.03s (tests 46%, import 45%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes the viewer's own allowance and clubs, a closed day's link with a photo cover, and a random cursor
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getOwnDay's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:600:85
+    598|
+    599|   it("passes the viewer's own allowance and clubs, a closed day's link…
+    600|     expect(scan(answer(ownDay(allowance(1, 1, 1, 0))), context("getOwn…
+       |                                                                                     ^
+    601|     const clubs = { server_now: "2026-11-07T06:59:59Z", clubs: [clubSu…
+    602|     expect(scan(answer(clubs), context("listClubs", cleo))).toEqual([]…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches an allowance that isn't the viewer's own role in the day: the star's limits for a friend, a friend's for the star, or a wrong is_star (T17)
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not the contract's Error",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:1126:86
+    1124|     const refusal = (counts: ReturnType<typeof allowance>) =>
+    1125|       answer({ code: "PHOTO_LIMIT", target: saturday, next_target: nex…
+    1126|     expect(scan(refusal(allowance(1, 1, 1, 0)), context("createReserva…
+       |                                                                                      ^
+    1127|     expect(at(scan(refusal(allowance(3, 1, 0, 0)), context("createRese…
+    1128|       "$.allowance.added",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: Allowance: expected [ 'added', 'external_added', …(8) ] to deeply equal [ 'added', 'external_added', …(9) ]
+
+- Expected
++ Received
+
+@@ -1,11 +1,10 @@
+  [
+    "added",
+    "external_added",
+    "external_limit",
+    "external_reserved",
+-   "filesize",
+    "is_star",
+    "limit",
+    "photo_added",
+    "photo_limit",
+    "photo_reserved",
+
+ ❯ src/privacy/scanner.test.ts:2207:47
+    2205|     for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+    2206|       const required = ((schemas[name] as JsonObject).required ?? []) …
+    2207|       expect([...list.required].sort(), name).toEqual([...required].so…
+       |                                               ^
+    2208|       expect([...list.required, ...list.optional].sort(), name).toEqua…
+    2209|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word
+AssertionError: expected { …(18) } to deeply equal { …(17) }
+
+- Expected
++ Received
+
+@@ -1,9 +1,12 @@
+  {
+    "AccountDeletion": [
+      "requested_at",
+    ],
++   "Allowance": [
++     "filesize",
++   ],
+    "CandidateInvitation": [
+      "expires_at",
+    ],
+    "ClubSummary": [
+      "member_count",
+
+ ❯ src/privacy/scanner.test.ts:2276:19
+    2274|       if (words.length > 0) named[name] = words.sort();
+    2275|     }
+    2276|     expect(named).toEqual(
+       |                   ^
+    2277|       Object.fromEntries(Object.entries(SERVED_FOR_A_REASON).map(([nam…
+    2278|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home
+AssertionError: committed_at on an own day: expected [ 'keys', 'shape', 'whitelist' ] to deeply equal [ 'keys', 'whitelist' ]
+
+- Expected
++ Received
+
+  [
+    "keys",
++   "shape",
+    "whitelist",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2364:35
+    2362|     for (const [what, additions, id, body, where, caught] of cases) {
+    2363|       const found = scan(answer(body), context(id, cleo, { document: w…
+    2364|       expect(checks(found), what).toEqual(caught);
+       |                                   ^
+    2365|       expect(at(found, "whitelist"), what).toEqual([where]);
+    2366|       // With the contract as it is, the shape check finds it too.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

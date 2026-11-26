@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk2/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 1 failed | 27 skipped) 76836ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 76502ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 27 skipped (29)
+   Start at  23:42:08
+   Duration  78.31s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 374, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 374,
++   "first": [
++     "active, collecting: releaseReservation: the released slot's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":0,\"reserved\":0}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":0,\"reserved\":0} (Cleo's slot, held as a member and lapsed before any phase)",
++     "active, collecting, releaseReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, releaseReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: the slot held's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":1,\"reserved\":1}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":1,\"reserved\":1} (the table's 1)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: the slot held's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2} (the table's 2)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: QUOTA_FULL's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2} (the table's 3)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: QUOTA_FULL's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2} (the table's 4)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: QUOTA_FULL's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2} (the table's 5)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: QUOTA_FULL's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2} (the table's 6)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: QUOTA_FULL's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2} (the table's 7)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: QUOTA_FULL's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":2,\"reserved\":2} (the table's 8)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: releaseReservation: the released slot's allowance is {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":1,\"reserved\":1}, not {\"added\":1,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":0,\"photo_limit\":2,\"photo_reserved\":1,\"reserved\":1} (a slot held in the table, given back while it is live)",
++     "active, collecting, releaseReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, releaseReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createDrop: the drop added's allowance is {\"added\":2,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":1,\"photo_limit\":2,\"photo_reserved\":0,\"reserved\":0}, not {\"added\":2,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":1,\"photo_limit\":2,\"photo_reserved\":0,\"reserved\":0} (the ready upload under its slot, added)",
++     "active, collecting, createDrop: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createDrop: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting, createDrop: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createDrop: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++     "active, collecting: createReservation: EXTERNAL_LIMIT's allowance is {\"added\":2,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"filesize\":0,\"is_star\":false,\"limit\":3,\"photo_added\":1,\"photo_limit\":2,\"photo_reserved\":0,\"reserved\":0}, not {\"added\":2,\"external_added\":1,\"external_limit\":1,\"external_reserved\":0,\"is_star\":false,\"limit\":3,\"photo_added\":1,\"photo_limit\":2,\"photo_reserved\":0,\"reserved\":0} (a link after the commit's table)",
++     "active, collecting, createReservation: whitelist at $.allowance: an Allowance that has filesize (T10: this file's own list)",
++     "active, collecting, createReservation: keys at $.allowance.filesize: a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3078:66
+    3076|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3077|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3078|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3079|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3080|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

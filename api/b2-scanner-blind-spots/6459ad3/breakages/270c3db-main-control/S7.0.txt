@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main2/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (28 tests | 1 failed | 27 skipped) 78718ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 78434ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 27 skipped (28)
+   Start at  00:01:20
+   Duration  80.25s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 121, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 121,
++   "first": [
++     "active, collecting: getHome: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{\"viewer\":\"mem_A-ZtFizA7bYmLUe9bg7zSA\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"if-modified-since\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: Home's stats is {\"added\":0}, not undefined",
++     "active, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: Home's stats is {\"added\":0}, not undefined",
++     "active, past: getHome: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"viewer\":\"mem_Ei9-YMkil2Ht9q9YFByM1g\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"if-modified-since\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: Home's stats is {\"added\":0}, not undefined",
++     "withdrawn, past: getHome: Home's stats is {\"added\":0}, not undefined",
++     "removed by moderation, collecting: getHome: Home's stats is {\"added\":0}, not undefined",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"t\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's stats is {\"added\":0}, not undefined",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3032:66
+    3030|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3031|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3032|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3033|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3034|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

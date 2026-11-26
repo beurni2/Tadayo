@@ -1,0 +1,12 @@
+diff --git a/services/api/src/clubs/home.ts b/services/api/src/clubs/home.ts
+index 4271e848..6a9ed18e 100644
+--- a/services/api/src/clubs/home.ts
++++ b/services/api/src/clubs/home.ts
+@@ -121,6 +121,7 @@ export function getHomeHandler(deps: Deps): Handler {
+       const home = await readHome(tx, account.id, clubId, now);
+       return home === null ? null : homeBody(now, home);
+     });
++    request.log.info({ served: { home: body } }, "home served");
+     return body === null ? problem(reply, "NOT_FOUND") : ok(reply, body);
+   };
+ }

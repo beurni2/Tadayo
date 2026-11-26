@@ -1,0 +1,45 @@
+diff --git a/packages/contracts/openapi.yaml b/packages/contracts/openapi.yaml
+index 2c5a2778..1da7977f 100644
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -13790,9 +13790,14 @@ components:
+           type: boolean
+         joined_later:
+           type: boolean
++        drop_ids:
++          type: array
++          items:
++            $ref: "#/components/schemas/Id"
+       required:
+         - is_star
+         - joined_later
++        - drop_ids
+       description: "The caller's own place in this day: whether it's their day (\"It's your Monday\", \"Your pick\"), and whether their membership began after the day started collecting, so the app can say the day may be partly visible to them without any number (spec 07, F02-joined-later). It comes from the caller's own membership, never from whether hidden drops exist (T15)."
+     WebInvitationPreview:
+       type: object
+diff --git a/packages/contracts/src/schemas/days.ts b/packages/contracts/src/schemas/days.ts
+index e635b9b7..4264dfb0 100644
+--- a/packages/contracts/src/schemas/days.ts
++++ b/packages/contracts/src/schemas/days.ts
+@@ -168,7 +168,7 @@ export const ViewerDay = named(
+     "whether their membership began after the day started collecting, so the app can say the day may be " +
+     "partly visible to them without any number (spec 07, F02-joined-later). It comes from the caller's own " +
+     "membership, never from whether hidden drops exist (T15).",
+-  z.object({ is_star: z.boolean(), joined_later: z.boolean() }),
++  z.object({ is_star: z.boolean(), joined_later: z.boolean(), drop_ids: z.array(Id) }),
+ );
+ 
+ const dayBase = {
+diff --git a/services/api/src/clubs/home.ts b/services/api/src/clubs/home.ts
+index 4271e848..21267c39 100644
+--- a/services/api/src/clubs/home.ts
++++ b/services/api/src/clubs/home.ts
+@@ -99,7 +99,7 @@ export function homeBody(now: Temporal.Instant, home: HomeRead): Json {
+           server_now: serverNow,
+           occurrence: occurrenceBody(home.day.occurrence),
+           club: clubRef(home),
+-          viewer: { is_star: home.day.isStar, joined_later: home.day.joinedLater },
++          viewer: { is_star: home.day.isStar, joined_later: home.day.joinedLater, drop_ids: home.day.drops.map((drop) => drop.id) },
+           ...(home.day.addTarget === null ? {} : { add_target: occurrenceBody(home.day.addTarget) }),
+           drops: home.day.drops.map(pageDropBody),
+           highlights: home.day.highlights.map(railEntryBody),

@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14-main/packages/contracts
+
+ ❯ src/contract.test.ts (221 tests | 1 failed) 615ms
+   ❯ the examples (160)
+     × createDrop: added matches its schema, with no key it doesn't name 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 220 passed (221)
+   Start at  23:04:56
+   Duration  960ms (tests 73%, import 19%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/contract.test.ts > the examples > createDrop: added matches its schema, with no key it doesn't name
+AssertionError: expected '[\n  {\n    "expected": "string",\n  …' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ [
++   {
++     "expected": "string",
++     "code": "invalid_type",
++     "path": [
++       "committed_at"
++     ],
++     "message": "Invalid input: expected string, received undefined"
++   }
++ ]
+
+ ❯ src/contract.test.ts:797:84
+    795|       it(`${op.id}: ${name} matches its schema, with no key it doesn't…
+    796|         const result = schema.safeParse(example.value);
+    797|         expect(result.success ? "" : JSON.stringify(result.error.issue…
+       |                                                                                    ^
+    798|         expect(
+    799|           unknownKeys(document, { $ref: `#/components/schemas/${String…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

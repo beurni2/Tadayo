@@ -1,0 +1,117 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk2/tests
+
+ ❯ src/privacy/scanner.test.ts (106 tests | 4 failed) 416ms
+   ❯ the leak scanner passes what may be shown (12)
+     × passes the viewer's own allowance and clubs, a closed day's link with a photo cover, and a random cursor 25ms
+   ❯ the leak scanner catches each planted leak with its own check (49)
+     × catches a revealed day, its highlight entry and a day link to it, before the day opens 3ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (7)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 3ms
+     × catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home 45ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 102 passed (106)
+   Start at  23:46:24
+   Duration  1.01s (tests 47%, import 44%, transform 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes the viewer's own allowance and clubs, a closed day's link with a photo cover, and a random cursor
+AssertionError: expected [ { check: 'shape', at: '$', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$",
++     "check": "shape",
++     "what": "not getHome's declared answer",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:604:80
+    602|     expect(scan(answer(clubs), context("listClubs", cleo))).toEqual([]…
+    603|     const home = waitingHome("2026-11-08T02:00:00Z", [{ occurrence: pa…
+    604|     expect(scan(answer(home), context("getHome", cleo, { now: AFTER_CL…
+       |                                                                                ^
+    605|     const page = { items: [], next_cursor: "4RtIK5F6Cyxq3sqS_6pIVvN1uC…
+    606|     expect(scan(answer(page), context("listMyDrops", cleo))).toEqual([…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed day, its highlight entry and a day link to it, before the day opens
+AssertionError: {"occurrence":{"id":"occ_sat","club_id":"clb_sat","star":{"membership_id":"itv_ana","display_name":"Ana"},"local_date":"2026-11-07","reveal_at":"2026-11-07T07:00:00Z","close_at":"2026-11-08T01:00:00Z","phase":"collecting"}}: expected [ 'shape', 'world' ] to deeply equal [ 'world' ]
+
+- Expected
++ Received
+
+  [
++   "shape",
+    "world",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:702:51
+    700|     ]) {
+    701|       const found = scan(answer(waiting([link])), context("getHome", c…
+    702|       expect(checks(found), JSON.stringify(link)).toEqual(["world"]);
+       |                                                   ^
+    703|     }
+    704|     expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: expected [ 'Allowance', 'Candidate', …(43) ] to deeply equal [ 'Allowance', 'Candidate', …(42) ]
+
+- Expected
++ Received
+
+@@ -5,10 +5,11 @@
+    "ClubDetail",
+    "ClubList",
+    "ClubRef",
+    "ClubSummary",
+    "DayLink",
++   "DayStats",
+    "DropCaption",
+    "DropDetail",
+    "DropOwn",
+    "DropReceipt",
+    "DropRevealed",
+
+ ❯ src/privacy/scanner.test.ts:2203:31
+    2201|   it("holds its own key list for every object schema an answer can hol…
+    2202|     const reach = new Set([...BEFORE_REVEAL_OPERATIONS].flatMap((id) =…
+    2203|     expect([...reach].sort()).toEqual([...Object.keys(BEFORE_REVEAL), …
+       |                               ^
+    2204|     expect(Object.keys(BEFORE_REVEAL).filter((name) => OPENED_ONLY.has…
+    2205|     for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home
+AssertionError: drop_count on a waiting Home: expected [ 'keys', 'shape', 'whitelist' ] to deeply equal [ 'keys', 'whitelist' ]
+
+- Expected
++ Received
+
+  [
+    "keys",
++   "shape",
+    "whitelist",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2364:35
+    2362|     for (const [what, additions, id, body, where, caught] of cases) {
+    2363|       const found = scan(answer(body), context(id, cleo, { document: w…
+    2364|       expect(checks(found), what).toEqual(caught);
+       |                                   ^
+    2365|       expect(at(found, "whitelist"), what).toEqual([where]);
+    2366|       // With the contract as it is, the shape check finds it too.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

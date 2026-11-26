@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b-brk2/tests
+
+ ❯ src/privacy/scanner.test.ts (106 tests | 3 failed) 449ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (7)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 11ms
+     × holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word 8ms
+     × catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home 41ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 103 passed (106)
+   Start at  23:41:59
+   Duration  1.11s (tests 46%, import 45%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: ClubSummary: expected [ 'id', 'member_count', …(6) ] to deeply equal [ 'drop_count', 'id', …(7) ]
+
+- Expected
++ Received
+
+@@ -1,7 +1,6 @@
+  [
+-   "drop_count",
+    "id",
+    "member_count",
+    "my_membership_id",
+    "name",
+    "next_day",
+
+ ❯ src/privacy/scanner.test.ts:2208:65
+    2206|       const required = ((schemas[name] as JsonObject).required ?? []) …
+    2207|       expect([...list.required].sort(), name).toEqual([...required].so…
+    2208|       expect([...list.required, ...list.optional].sort(), name).toEqua…
+       |                                                                 ^
+    2209|     }
+    2210|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word
+AssertionError: expected { …(17) } to deeply equal { …(17) }
+
+- Expected
++ Received
+
+@@ -4,10 +4,11 @@
+    ],
+    "CandidateInvitation": [
+      "expires_at",
+    ],
+    "ClubSummary": [
++     "drop_count",
+      "member_count",
+    ],
+    "DeviceRegistration": [
+      "registered_at",
+    ],
+
+ ❯ src/privacy/scanner.test.ts:2276:19
+    2274|       if (words.length > 0) named[name] = words.sort();
+    2275|     }
+    2276|     expect(named).toEqual(
+       |                   ^
+    2277|       Object.fromEntries(Object.entries(SERVED_FOR_A_REASON).map(([nam…
+    2278|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home
+AssertionError: drop_count on a club: expected [ 'keys', 'whitelist' ] to include 'shape'
+ ❯ src/privacy/scanner.test.ts:2367:67
+    2365|       expect(at(found, "whitelist"), what).toEqual([where]);
+    2366|       // With the contract as it is, the shape check finds it too.
+    2367|       expect(checks(scan(answer(body), context(id, cleo))), what).toCo…
+       |                                                                   ^
+    2368|     }
+    2369|     // And the same day without them passes, so it is each key alone.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
