@@ -25,6 +25,7 @@
 //   when the new member confirmed (FQ129, FQ130): the new member's day is made there.
 
 import { clubTimeZone, dayInstants } from "../time/civil.ts";
+import type { ServerNow } from "../time/clock.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 
 /** How far ahead days are made: through the end of this many whole weeks after the club's current week (FQ115). */
@@ -76,7 +77,7 @@ export interface OwedDay {
 }
 
 /** The days the club is owed at `now`, in date order. */
-export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedDay[] {
+export function daysToMake(facts: GenerationFacts, now: ServerNow): OwedDay[] {
   const zone = clubTimeZone(facts.zone);
   // A fact that is missing makes no day: `!(n >= 2)` is true of a number that isn't one.
   if (!facts.activated || facts.suspended || !(facts.activeMembers >= 2)) return [];

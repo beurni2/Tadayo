@@ -27,7 +27,7 @@
 // is written as soon as what it says is committed, so a pass that then fails, or that runs on while events keep
 // coming, loses or holds back none.
 
-import type { Clock } from "@tadayo/domain";
+import type { Clock, ServerNow } from "@tadayo/domain";
 import type { WorkerSql, WorkerTx } from "./connection.ts";
 import { LOCK_WAIT_MS, STATEMENT_MS } from "./generation.ts";
 
@@ -100,7 +100,7 @@ async function limited<T>(sql: WorkerSql, fn: (tx: WorkerTx) => Promise<T>): Pro
 }
 
 /** Marks the event `id` done at `at`, in the caller's transaction, if it is still pending. */
-export async function finishEvent(tx: WorkerTx, id: string, at: Temporal.Instant): Promise<void> {
+export async function finishEvent(tx: WorkerTx, id: string, at: ServerNow): Promise<void> {
   await tx`UPDATE app.outbox_events SET state = 'done', processed_at = ${at} WHERE id = ${id} AND state = 'pending'`;
 }
 

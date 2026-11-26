@@ -89,7 +89,7 @@ function check(input: CreateReservationInput): void {
 }
 
 /** When a slot held at `at` lapses: 30 minutes on, or the day's reveal if that comes first (T18). */
-export function reservationExpiry(at: Temporal.Instant, revealAt: Temporal.Instant): Temporal.Instant {
+export function reservationExpiry(at: ServerNow, revealAt: Temporal.Instant): Temporal.Instant {
   const later = at.add({ minutes: RESERVATION_MINUTES });
   return Temporal.Instant.compare(later, revealAt) < 0 ? later : revealAt;
 }

@@ -125,7 +125,7 @@ describe("the registration's serializer against the contract's example (T55)", (
     const made = deviceRegistrationBody({
       apnsEnvironment: value["apns_environment"] === "sandbox" ? "sandbox" : "production",
       timezone: String(value["timezone"]),
-      registeredAt: Temporal.Instant.from(String(value["registered_at"])),
+      registeredAt: Temporal.Instant.from(String(value["registered_at"])) as ServerNow,
     });
     expect(made).toEqual(value);
     expect(Object.keys(made as Body)).toEqual(["apns_environment", "timezone", "registered_at"]);
@@ -136,7 +136,7 @@ describe("the registration's serializer against the contract's example (T55)", (
     const made = deviceRegistrationBody({
       apnsEnvironment: "sandbox",
       timezone: "Asia/Tokyo",
-      registeredAt: Temporal.Instant.from("2026-11-24T03:30:00.999999Z"),
+      registeredAt: Temporal.Instant.from("2026-11-24T03:30:00.999999Z") as ServerNow,
     }) as Body;
     expect(made).toEqual({
       apns_environment: "sandbox",
@@ -290,7 +290,7 @@ describe("what the device routes answer", () => {
   const registered: DeviceRegistration = {
     apnsEnvironment: "production",
     timezone: "America/New_York",
-    registeredAt: Temporal.Instant.from("2026-11-09T14:41:00Z"),
+    registeredAt: Temporal.Instant.from("2026-11-09T14:41:00Z") as ServerNow,
   };
 
   it("answers a registration with 200 and the registration as stored, with no token and no secret", async () => {

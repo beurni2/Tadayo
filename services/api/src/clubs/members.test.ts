@@ -8,10 +8,13 @@ import { Members } from "@tadayo/contracts";
 // The examples aren't among the contract package's exports, and that package changes only in its own PR
 // (docs/TECH-DESIGN.md section 3), so this test reads the file where it is.
 import { successExamples } from "../../../../packages/contracts/src/fixtures/examples.ts";
-import type { ChosenDay, MemberRow, Roster } from "@tadayo/domain";
+import type { ChosenDay, MemberRow, Roster, ServerNow } from "@tadayo/domain";
 import { describe, expect, it } from "vitest";
 import { membersBody } from "./members.ts";
 import { revisionSight } from "./revision-example.ts";
+
+/** The time an answer is made at, as the clock samples it. */
+const sample = (text: string) => Temporal.Instant.from(text) as ServerNow;
 
 type Body = Record<string, unknown>;
 
@@ -77,7 +80,7 @@ describe("the roster's serializer against the contract's examples (T55)", () => 
 
   it.each(examples)("makes %s field for field, but for the cover", (_name, example) => {
     const value = example.value as Body;
-    const made = membersBody(Temporal.Instant.from(value["server_now"] as string), roster(value));
+    const made = membersBody(sample(value["server_now"] as string), roster(value));
     expect(made).toEqual(sentNow(value));
     expect(Members.safeParse(made).success).toBe(true);
   });
@@ -91,12 +94,12 @@ describe("the roster's serializer against the contract's examples (T55)", () => 
   it("sends the server's instant in whole seconds, rounded down", () => {
     const [, example] = examples[0] ?? [];
     const value = example?.value as Body;
-    const made = membersBody(Temporal.Instant.from("2026-11-06T14:41:00.999999Z"), roster(value)) as Body;
+    const made = membersBody(sample("2026-11-06T14:41:00.999999Z"), roster(value)) as Body;
     expect(made["server_now"]).toBe("2026-11-06T14:41:00Z");
   });
 
   it("sends no next day and no avatar where there is none, and nothing else of a member", () => {
-    const made = membersBody(Temporal.Instant.from("2026-11-06T14:41:00Z"), {
+    const made = membersBody(sample("2026-11-06T14:41:00Z"), {
       club: { id: "club_1", name: "Sunday people", timezone: "America/New_York", membershipId: "mem_1" },
       members: [
         {

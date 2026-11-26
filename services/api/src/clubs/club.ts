@@ -19,6 +19,7 @@ import {
   type CreateClubInput,
   type CreatedClub,
   type Json,
+  type ServerNow,
 } from "@tadayo/domain";
 import { created, IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
@@ -46,7 +47,7 @@ export function clubDetailBody(detail: ClubDetail): { readonly [key: string]: Js
 }
 
 /** The whole `ClubDetail`: `now` is the clock's sample, whole seconds, rounded down. */
-export function withServerNow(now: Temporal.Instant, body: Json): Json {
+export function withServerNow(now: ServerNow, body: Json): Json {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     throw new Error("clubs: a club's stored answer isn't an object");
   }

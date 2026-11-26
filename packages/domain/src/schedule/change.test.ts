@@ -3,6 +3,7 @@
 // FQ129 to FQ131; docs/plans/api-b2-new-member-day.md, sections 1 and 4).
 
 import { describe, expect, it } from "vitest";
+import type { ServerNow } from "../time/clock.ts";
 import {
   newMemberFirstDate,
   nextMonday,
@@ -16,8 +17,8 @@ import type { Weekday } from "./propose.ts";
 
 const D = (date: string): Temporal.PlainDate => Temporal.PlainDate.from(date);
 const NEW_YORK = "America/New_York";
-/** An instant from the club's own wall time in New York. */
-const at = (wall: string): Temporal.Instant => Temporal.PlainDateTime.from(wall).toZonedDateTime(NEW_YORK).toInstant();
+/** A confirmation's time, as the clock samples it, from the club's own wall time in New York. */
+const at = (wall: string) => Temporal.PlainDateTime.from(wall).toZonedDateTime(NEW_YORK).toInstant() as ServerNow;
 
 function week(...days: readonly (readonly [Weekday, string])[]): WeekDay[] {
   return days.map(([weekday, star]) => ({ weekday, star }));
@@ -418,7 +419,9 @@ describe("newMemberFirstDate: the picked day in the week after (FQ130)", () => {
     expect(newMemberFirstDate("tuesday", sunday, NEW_YORK, D("2026-11-08"), null).toString()).toBe("2026-11-10");
     // Monday 9 November at 08:00 in Auckland is still Sunday the 8th by UTC: this week is the club's, so
     // the first Wednesday is the 18th, not the 11th.
-    const auckland = Temporal.PlainDateTime.from("2026-11-09T08:00").toZonedDateTime("Pacific/Auckland").toInstant();
+    const auckland = Temporal.PlainDateTime.from("2026-11-09T08:00")
+      .toZonedDateTime("Pacific/Auckland")
+      .toInstant() as ServerNow;
     expect(auckland.toString()).toBe("2026-11-08T19:00:00Z");
     expect(newMemberFirstDate("wednesday", auckland, "Pacific/Auckland", D("2026-11-09"), null).toString()).toBe(
       "2026-11-18",

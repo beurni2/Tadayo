@@ -37,6 +37,7 @@ import {
   signedOutCount,
   signedOutStep,
   specsFor,
+  TIME_NAMES,
   UNAUTHENTICATED,
   type Caller,
   type Spec,
@@ -475,7 +476,33 @@ describe("each step of the matrix reports a planted wrong answer", () => {
       expect(signedOutCount(spec(id)), id).toBe(signedOutAnswers);
       await app.close();
     }
-    expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(15);
+    expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(16);
+  });
+
+  it("sends every other name a time might come under in one request, none of them a parameter of the contract's", () => {
+    const named = new Set(operations.flatMap((each) => each.parameters.map((parameter) => parameter.name)));
+    expect(TIME_NAMES.filter((name) => named.has(name))).toEqual([]);
+    const sent = manipulations(spec("getDrop"), "itv_author", LATER).filter((made) =>
+      TIME_NAMES.some((name) => Object.hasOwn(made.query, name)),
+    );
+    // Each in the form a route would read it by (the second review's fourth point): a day's date, milliseconds since
+    // the epoch, or the instant, all of them the same moment past the reveal.
+    expect(sent.map((made) => made.query)).toEqual([
+      {
+        since: "2026-11-08T07:00:00Z",
+        before: "2026-11-08T07:00:00Z",
+        after: "2026-11-08T07:00:00Z",
+        until: "2026-11-08T07:00:00Z",
+        from: "2026-11-08T07:00:00Z",
+        date: "2026-11-08",
+        day: "2026-11-08",
+        time: "2026-11-08T07:00:00Z",
+        ts: String(LATER.epochMilliseconds),
+        timestamp: String(LATER.epochMilliseconds),
+        client_time: "2026-11-08T07:00:00Z",
+      },
+    ]);
+    expect(LATER.toString()).toBe("2026-11-08T07:00:00Z");
   });
 
   // Each wrong answer with the problem cellStep must name for it, so a problem found for another
@@ -579,9 +606,24 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     });
   }
 
+  // A day's date as a route would read one, or nothing when the text isn't one.
+  const dateOf = (text: string | undefined): boolean => {
+    try {
+      return text !== undefined && Temporal.PlainDate.from(text) instanceof Temporal.PlainDate;
+    } catch {
+      return false;
+    }
+  };
   const tells: [string, (request: FastifyRequest) => boolean][] = [
     ["`now` in the query", (request) => Object.hasOwn(request.query as object, "now")],
     ["`t` in the query", (request) => Object.hasOwn(request.query as object, "t")],
+    ["`since` in the query", (request) => Object.hasOwn(request.query as object, "since")],
+    ["`client_time` in the query", (request) => Object.hasOwn(request.query as object, "client_time")],
+    ["`date` in the query, read as a day's date", (request) => dateOf((request.query as Record<string, string>).date)],
+    [
+      "`ts` in the query, read as milliseconds",
+      (request) => Number.isFinite(Number((request.query as Record<string, string>).ts ?? NaN)),
+    ],
     ["`rendition=full` in the query", (request) => (request.query as Record<string, string>).rendition === "full"],
     ["a client time header", (request) => request.headers["x-client-time"] !== undefined],
     ["a Date header", (request) => request.headers.date !== undefined],

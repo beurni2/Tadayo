@@ -10,13 +10,24 @@ import { ClubDetail as ClubDetailSchema } from "@tadayo/contracts";
 // The examples aren't among the contract package's exports, and that package changes only in its own PR
 // (docs/TECH-DESIGN.md section 3), so this test reads the file where it is.
 import { successExamples } from "../../../../packages/contracts/src/fixtures/examples.ts";
-import { Refused, type Account, type ChosenDay, type Clock, type ClubDetail, type CreatedClub } from "@tadayo/domain";
+import {
+  Refused,
+  type Account,
+  type ChosenDay,
+  type Clock,
+  type ClubDetail,
+  type CreatedClub,
+  type ServerNow,
+} from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { clubDetailBody, withServerNow } from "./club.ts";
 import { noStorage } from "../testing.ts";
+
+/** The time an answer is made at, as the clock samples it. */
+const sample = (text: string) => Temporal.Instant.from(text) as ServerNow;
 
 type Body = Record<string, unknown>;
 
@@ -70,7 +81,7 @@ describe("the club's serializer against the contract's examples (T55)", () => {
 
   it.each(examples)("makes %s field for field", (_name, example) => {
     const value = example.value as Body;
-    const made = withServerNow(Temporal.Instant.from(value["server_now"] as string), clubDetailBody(detail(value)));
+    const made = withServerNow(sample(value["server_now"] as string), clubDetailBody(detail(value)));
     expect(made).toEqual(value);
     expect(ClubDetailSchema.strict().safeParse(made).success).toBe(true);
   });
@@ -79,7 +90,7 @@ describe("the club's serializer against the contract's examples (T55)", () => {
     const value = examples[0]?.[1].value as Body;
     const stored = clubDetailBody(detail(value));
     expect(Object.keys(stored).sort()).toEqual(["can_propose", "club", "roster_version"]);
-    const made = withServerNow(Temporal.Instant.from("2026-11-06T14:41:00.999999Z"), stored) as Body;
+    const made = withServerNow(sample("2026-11-06T14:41:00.999999Z"), stored) as Body;
     expect(made["server_now"]).toBe("2026-11-06T14:41:00Z");
   });
 
@@ -115,7 +126,7 @@ describe("the club's serializer against the contract's examples (T55)", () => {
 
   it("refuses to stamp a stored answer that isn't an object", () => {
     for (const stored of [null, "club", 3, []]) {
-      expect(() => withServerNow(Temporal.Instant.from("2026-11-06T14:41:00Z"), stored)).toThrow();
+      expect(() => withServerNow(sample("2026-11-06T14:41:00Z"), stored)).toThrow();
     }
   });
 });

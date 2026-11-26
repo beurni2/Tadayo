@@ -82,7 +82,7 @@ export interface NewRevision {
   readonly origin: "proposal" | "rename";
   /** The interval the revision names as its proposer. */
   readonly proposer: string;
-  readonly at: Temporal.Instant;
+  readonly at: ServerNow;
   /** Its candidates, in their order, each by the label it shows. */
   readonly candidates: readonly CarriedCandidate[];
   /** The proposer's approval by proposing (FQ60): only in a member's proposal, never for a name (FQ84). */

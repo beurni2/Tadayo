@@ -28,6 +28,9 @@ import type { ApiSql } from "../connection.ts";
 import { homeBody } from "./home.ts";
 import { noStorage } from "../testing.ts";
 
+/** The time an answer is made at, as the clock samples it. */
+const sample = (text: string) => Temporal.Instant.from(text) as ServerNow;
+
 type Body = Record<string, unknown>;
 
 /** A contract example's Occurrence as the domain holds a day Home names. */
@@ -187,7 +190,7 @@ describe("Home's serializer against the contract's examples (T55)", () => {
 
   it.each(examples)("makes %s field for field", (_name, example) => {
     const value = example.value as Body;
-    const made = homeBody(Temporal.Instant.from(value["server_now"] as string), read(value));
+    const made = homeBody(sample(value["server_now"] as string), read(value));
     expect(made).toEqual(value);
     expect(HomeSchema.safeParse(made).success).toBe(true);
   });
@@ -198,7 +201,7 @@ describe("Home's serializer against the contract's examples (T55)", () => {
     const drops = (frame["drops"] as Body[]).map(withoutLater);
     const bare = { ...value, day: { ...frame, drops } };
     expect(drops.some(hasLater)).toBe(false);
-    const made = homeBody(Temporal.Instant.from(value["server_now"] as string), read(bare));
+    const made = homeBody(sample(value["server_now"] as string), read(bare));
     expect(made).toEqual(bare);
     expect(HomeSchema.safeParse(made).success).toBe(true);
     // A video's card: its provider, and no photo frame.
@@ -211,7 +214,7 @@ describe("Home's serializer against the contract's examples (T55)", () => {
 
   it("sends the server's instant in whole seconds, rounded down, in the base and in the day", () => {
     const value = examples.find(([name]) => name === "quiet")?.[1].value as Body;
-    const made = homeBody(Temporal.Instant.from("2026-11-06T14:41:00.999999Z"), read(value)) as Body;
+    const made = homeBody(sample("2026-11-06T14:41:00.999999Z"), read(value)) as Body;
     expect(made["server_now"]).toBe("2026-11-06T14:41:00Z");
     expect((made["day"] as Body)["server_now"]).toBe("2026-11-06T14:41:00Z");
   });
@@ -226,7 +229,7 @@ describe("Home's serializer against the contract's examples (T55)", () => {
       next: null,
       recentDays: home.recentDays.map((link) => ({ ...link, coverDropId: null })),
     };
-    const made = homeBody(Temporal.Instant.from(value["server_now"] as string), bare) as Body;
+    const made = homeBody(sample(value["server_now"] as string), bare) as Body;
     expect(Object.keys(made).sort()).toEqual(["club", "club_today", "day", "mode", "recent_days", "server_now"]);
     expect(Object.keys(made["day"] as Body).sort()).toEqual([
       "club",
