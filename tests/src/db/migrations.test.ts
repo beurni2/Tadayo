@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { applyMigration, migrate, readMigrations } from "@tadayo/ops";
 import { afterAll, describe, expect, it } from "vitest";
-import { adminSql, appSql, MIGRATIONS, type Tx } from "./harness.ts";
+import { adminSql, appSql, commandSql, MIGRATIONS, SESSION_ZONE, type Tx } from "./harness.ts";
 import { checkAsAtCommit, commitDrop, newWorld, type Member } from "./world.ts";
 
 const app = appSql();
@@ -441,27 +441,34 @@ describe("0010: each role's allowance, over counters made before it (T17, T57; a
 
 describe("the schema resolves no time zone: TypeScript does, and Postgres only compares (ADR-008; the outside audit's A11)", () => {
   /**
-   * The ways SQL names or resolves a zone. A cast between a date or a timestamp and a timestamptz takes the
-   * session's zone without naming one, and is left to review: the schema's own casts are date to timestamp,
-   * which takes none.
+   * The ways SQL names a zone, takes one by name, or sets the session's: packages/domain/src/time/one-clock.test.ts's
+   * SQL_ZONES, which holds that each of its patterns is here too. SQL that takes the session's zone without naming
+   * one (a cast between a timestamptz and a date, `to_char` on a timestamptz) can't be told from a date's own by its
+   * words: every database test runs in a session zone 14 hours from UTC instead (harness.ts, SESSION_ZONE). Postgres
+   * records no dependency on its own functions, so the schema's dependencies can't name these either.
    */
   const ZONES: readonly (readonly [what: string, pattern: RegExp])[] = [
     ["AT TIME ZONE or AT LOCAL", /\bAT\s+(?:TIME\s+ZONE|LOCAL)\b/i],
-    ["timezone()", /\btimezone\(|\btimezone\s+\(\s*(?:'|\$|\w+\.)/i],
+    ["timezone()", /\btimezone"?\s*\(/i],
     ["the zone lists", /\bpg_timezone_(?:names|abbrevs)\b/i],
+    ["a function that takes a zone", /\b(?:make_timestamptz|date_add|date_subtract)\s*\(/i],
+    ["date_trunc but on a plain timestamp", /\bdate_trunc\s*\((?![^()]*::pg_catalog\.timestamp\s*\))/i],
+    ["a series of times", /\bgenerate_series\s*\([^()]*\b(?:interval|timestamp)/i],
+    ["a zone's name built into text", /\|\|\s*(?:\w+\.)?"?timezone\b|\btimezone"?\s*\|\|/i],
     [
       "a setting of the zone",
-      /\bSET\s+(?:SESSION\s+|LOCAL\s+)?"?(?:TIME\s+ZONE|timezone)\b|\bset_config\s*\(\s*'timezone'/i,
+      /\bSET\s+(?:SESSION\s+|LOCAL\s+)?"?(?:TIME\s+ZONE|timezone)\b|\bset_config\s*\(\s*'timezone'|-c\s*timezone\s*=|\bPGTZ\b/i,
     ],
   ];
 
   const resolves = (text: string): string[] => ZONES.filter(([, pattern]) => pattern.test(text)).map(([what]) => what);
 
   /**
-   * The text of each function, view, constraint, default, index and trigger of app's. A function is read whole, as
-   * Postgres prints it: its settings (`SET "TimeZone" TO 'UTC'`) and its body, which for a body in SQL's standard form
-   * (`RETURN …`, `BEGIN ATOMIC …`) is kept apart from `prosrc`, empty for it. An aggregate, which Postgres doesn't
-   * print, does its work in functions of its own, read here too.
+   * The text of each function, view, constraint, default, index and trigger of app's, and the settings Postgres gives
+   * `tadayo_app`'s sessions, its own or this database's. A function is read whole, as Postgres prints it: its
+   * settings (`SET "TimeZone" TO 'UTC'`) and its body, which for a body in SQL's standard form (`RETURN …`,
+   * `BEGIN ATOMIC …`) is kept apart from `prosrc`, empty for it. An aggregate, which Postgres doesn't print, does its
+   * work in functions of its own, read here too.
    */
   const schemaTexts = (sql: Tx) => sql<{ what: string; text: string }[]>`
     SELECT 'function ' || p.oid::regprocedure::text AS what,
@@ -483,15 +490,23 @@ describe("the schema resolves no time zone: TypeScript does, and Postgres only c
     UNION ALL
     SELECT 'trigger ' || t.tgname, pg_catalog.pg_get_triggerdef(t.oid)
       FROM pg_catalog.pg_trigger t JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
-     WHERE c.relnamespace = 'app'::regnamespace AND NOT t.tgisinternal`;
+     WHERE c.relnamespace = 'app'::regnamespace AND NOT t.tgisinternal
+    UNION ALL
+    SELECT 'setting of ' || CASE WHEN s.setrole = 0 THEN 'every role' ELSE 'tadayo_app' END
+             || CASE WHEN s.setdatabase = 0 THEN '' ELSE ' in this database' END,
+           (SELECT pg_catalog.string_agg('SET ' || setting, ' ') FROM pg_catalog.unnest(s.setconfig) AS setting)
+      FROM pg_catalog.pg_db_role_setting s
+     WHERE s.setrole IN (0, 'tadayo_app'::regrole)
+       AND s.setdatabase IN (0, (SELECT oid FROM pg_catalog.pg_database WHERE datname = pg_catalog.current_database()))`;
 
   const found = (rows: readonly { what: string; text: string }[]): string[] =>
     rows.flatMap((row) => resolves(row.text).map((what) => `${row.what}: ${what}`));
 
-  it("finds none in a function, view, constraint, default, index or trigger of app's, nor in a function's settings", async () => {
+  it("finds none in a function, view, constraint, default, index or trigger of app's, nor in tadayo_app's settings", async () => {
     const rows = await admin.begin((tx) => schemaTexts(tx));
-    // The schema has each kind of object the check reads, so an empty answer isn't a check that read nothing.
-    for (const kind of ["function ", "constraint ", "default of ", "index ", "trigger "]) {
+    // Each kind of object the schema has is read, so an empty answer isn't a check that read nothing. It has no view
+    // yet; the next test reads one.
+    for (const kind of ["function ", "constraint ", "default of ", "index ", "trigger ", "setting of tadayo_app"]) {
       expect(
         rows.some((row) => row.what.startsWith(kind)),
         kind,
@@ -500,46 +515,88 @@ describe("the schema resolves no time zone: TypeScript does, and Postgres only c
     expect(found(rows)).toEqual([]);
   });
 
-  it("reads a function's body and its settings, and a view, from the live schema", async () => {
+  it("reads a function's body in either form and its settings, a view, a default, an index and tadayo_app's settings", async () => {
     const rollback = new Error("rolled back");
     await expect(
       admin.begin(async (tx) => {
         await tx.unsafe(`
           CREATE FUNCTION app.zone_probe_body(at timestamptz) RETURNS date LANGUAGE sql
             RETURN (at AT TIME ZONE 'Europe/London')::date;
+          CREATE FUNCTION app.zone_probe_plpgsql(zone_name text, at timestamptz) RETURNS timestamp LANGUAGE plpgsql
+            AS $$ BEGIN RETURN pg_catalog.timezone (zone_name, at); END $$;
+          CREATE FUNCTION app.zone_probe_trunc(at timestamptz) RETURNS timestamptz LANGUAGE sql
+            RETURN pg_catalog.date_trunc('day', at, 'Europe/London');
           CREATE FUNCTION app.zone_probe_setting() RETURNS int LANGUAGE sql SET timezone = 'UTC'
             RETURN 1;
-          CREATE VIEW app.zone_probe_view AS SELECT name FROM pg_catalog.pg_timezone_names;`);
-        expect(found(await schemaTexts(tx))).toEqual([
-          "function app.zone_probe_body(timestamp with time zone): AT TIME ZONE or AT LOCAL",
-          "function app.zone_probe_setting(): a setting of the zone",
-          "view zone_probe_view: the zone lists",
-        ]);
+          CREATE VIEW app.zone_probe_view AS SELECT name FROM pg_catalog.pg_timezone_names;
+          CREATE TABLE app.zone_probe_table (
+            opens timestamptz DEFAULT pg_catalog.make_timestamptz(2026, 7, 1, 7, 0, 0, 'Europe/London'),
+            timezone text
+          );
+          CREATE INDEX zone_probe_index ON app.zone_probe_table ((('2026-07-01 07:00 ' || timezone)));
+          ALTER ROLE tadayo_app SET timezone = 'UTC';`);
+        expect(found(await schemaTexts(tx)).sort()).toEqual(
+          [
+            "function app.zone_probe_body(timestamp with time zone): AT TIME ZONE or AT LOCAL",
+            "function app.zone_probe_plpgsql(text,timestamp with time zone): timezone()",
+            "function app.zone_probe_trunc(timestamp with time zone): date_trunc but on a plain timestamp",
+            "function app.zone_probe_setting(): a setting of the zone",
+            "view zone_probe_view: the zone lists",
+            "default of app.zone_probe_table: a function that takes a zone",
+            "index zone_probe_index: a zone's name built into text",
+            "setting of tadayo_app: a setting of the zone",
+          ].sort(),
+        );
         throw rollback;
       }),
     ).rejects.toBe(rollback);
   });
 
-  it("catches each way, and leaves a date's cast, a column named timezone and the zone a test names alone", () => {
+  it("runs every database test in a session zone 14 hours from UTC, where a date taken from the session isn't UTC's", async () => {
+    const commands = commandSql();
+    try {
+      for (const sql of [app, admin, commands]) {
+        const [row] = await sql<{ zone: string; date: string }[]>`
+          SELECT pg_catalog.current_setting('TimeZone') AS zone,
+                 ('2026-11-16T20:00:00Z'::pg_catalog.timestamptz)::pg_catalog.date::text AS date`;
+        expect(row).toEqual({ zone: SESSION_ZONE, date: "2026-11-17" });
+      }
+    } finally {
+      await commands.end();
+    }
+  });
+
+  it("catches each way, and leaves a date's cast, a column named timezone and a series of numbers alone", () => {
     for (const text of [
       "(NEW.created_at AT TIME ZONE c.timezone)::date",
       "SELECT x at  time zone 'UTC'",
       "NEW.created_at AT LOCAL",
       "pg_catalog.timezone(c.timezone, NEW.created_at)",
+      "pg_catalog.timezone (zone_name, at)",
+      'pg_catalog."timezone"(c.timezone, at)',
       "SELECT name FROM pg_catalog.pg_timezone_names",
       "SELECT abbrev FROM pg_timezone_abbrevs",
+      "make_timestamptz(2026, 7, 1, 7, 0, 0, 'Europe/London'::text)",
+      "date_add(at, '1 day'::interval, 'Europe/London'::text)",
+      "date_trunc('day'::text, at, 'Europe/London'::text)",
+      "date_trunc('day'::text, at)",
+      "generate_series(a, b, '1 day'::interval, 'Europe/London'::text)",
+      "(('2026-07-01 07:00 '::text || timezone))::timestamp with time zone",
       "SET TIME ZONE 'Europe/London'",
       "SET LOCAL timezone = 'UTC'",
       "SELECT pg_catalog.set_config('timezone', 'UTC', true)",
       `SET "TimeZone" TO 'UTC'`,
+      "SET TimeZone=UTC",
     ]) {
       expect(resolves(text), text).not.toEqual([]);
     }
     for (const text of [
       "SELECT c.timezone FROM app.clubs c",
       "pg_catalog.date_trunc('week', o.local_date::pg_catalog.timestamp)",
-      "EXTRACT(epoch FROM NEW.effective_from::pg_catalog.timestamp)",
+      "EXTRACT(epoch FROM NEW.effective_from)",
       "timezone text NOT NULL CHECK (pg_catalog.char_length(timezone) <= 64)",
+      "generate_series(1, 6)",
+      "SET search_path TO ''",
     ]) {
       expect(resolves(text), text).toEqual([]);
     }

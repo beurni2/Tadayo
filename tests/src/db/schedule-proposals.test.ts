@@ -1209,7 +1209,7 @@ describe("a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, 
     return version;
   }
 
-  it("is proposed open, at version 1, in its one week, with no week of its own, from the club's local date", async () => {
+  it("is proposed open, at version 1, in its one week, with no week of its own, on a date some zone puts at the instant it opened", async () => {
     await rolledBack(app, async (tx) => {
       const w = await applied(tx);
       const refused = (over: Record<string, string | number | Date | null>, message: RegExp) =>

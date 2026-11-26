@@ -11,15 +11,16 @@
 -- `today`), and tests/src/db/membership-change.test.ts holds it. Here Postgres refuses only a date no
 -- zone puts at the instant the pick opened: every zone's offset lies between -12 and +14 hours, so the
 -- date begins, at +14, 14 hours before its midnight by UTC's clock, and ends, at -12, 12 hours after
--- the next midnight by UTC's. A timestamp without a zone (the date at its midnight) and its epoch are
--- nominal, read with no zone, and a timestamptz's epoch is the instant's; EXTRACT gives both exactly.
--- Each other check is 0015's, unchanged.
+-- the next midnight by UTC's. A date's epoch is nominal, its midnight read with no zone, and a
+-- timestamptz's epoch is the instant's; EXTRACT gives both exactly, by no session setting, and a date
+-- out of any timestamp's range ('infinity' too) is refused here like any other. Each other check is
+-- 0015's, unchanged.
 
 CREATE OR REPLACE FUNCTION app.schedule_change_start_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
   -- Seconds from the date's midnight, by UTC's clock, to the instant the pick opened.
-  since_midnight numeric := EXTRACT(epoch FROM NEW.created_at) - EXTRACT(epoch FROM NEW.effective_from::pg_catalog.timestamp);
+  since_midnight numeric := EXTRACT(epoch FROM NEW.created_at) - EXTRACT(epoch FROM NEW.effective_from);
 BEGIN
   IF NEW.state <> 'open' OR NEW.version <> 1 OR NEW.week_revision <> 1 OR NEW.replaced_by IS NOT NULL THEN
     RAISE EXCEPTION 'app.schedule_proposals: a membership change is proposed open, at version 1, in its one week'
