@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (112 tests | 1 failed) 2901ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (6)
+     × says whether a value holds a needle as `within` finds them, and stops at the first, so a body logged whole costs little against thousands of texts worded alike (the round-4 review) 2345ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 111 passed (112)
+   Start at  06:03:48
+   Duration  3.59s (tests 84%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > says whether a value holds a needle as `within` finds them, and stops at the first, so a body logged whole costs little against thousands of texts worded alike (the round-4 review)
+AssertionError: expected 2118.225576 to be less than 100
+ ❯ src/privacy/scanner.test.ts:2803:41
+    2801|       logProblems(leaking, alikeFacts);
+    2802|     }
+    2803|     expect(performance.now() - started).toBeLessThan(100);
+       |                                         ^
+    2804|   });
+    2805|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

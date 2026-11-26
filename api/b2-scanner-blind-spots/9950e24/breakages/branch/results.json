@@ -1,0 +1,83 @@
+[
+ {
+  "name": "K21",
+  "what": "holds collects every needle, as within does: no stop at the first",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "says whether a value holds a needle as `within` finds them, and stops at the first",
+   "to be less than 100"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K22",
+  "what": "logProblems asks within(...).length > 0, as 49c3abf had it",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "says whether a value holds a needle as `within` finds them, and stops at the first",
+   "to be less than 100"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K23",
+  "what": "the run lookup by first characters and a search, as 49c3abf had it, the stop at the first kept",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 0,
+  "verdict": "passed, as registered",
+  "found": [],
+  "missing": []
+ },
+ {
+  "name": "K24",
+  "what": "joinedNever off: one word read as two run together no longer caught",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "providerid"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K25",
+  "what": "NEVER_ENDINGS as 49c3abf had it",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "slotsremaining"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K26",
+  "what": "a child's own bindings formatter not wrapped, as 49c3abf had it",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "blanks what a child's own bindings formatter brings",
+   "\\[redacted\\]"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K27",
+  "what": "falsy bindings other than null and undefined redacted as if present, as 49c3abf had it",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "blanks what a child's own bindings formatter brings",
+   "to throw"
+  ],
+  "missing": []
+ }
+]

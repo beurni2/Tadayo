@@ -1,0 +1,16 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -2116,12 +2116,7 @@
+ 
+   /** Whether `value` holds any needle as `within` finds them, stopping at the first (the round-4 review). */
+   holds(value: string, shortInside: boolean): boolean {
+-    let held = false;
+-    this.#scan(value, shortInside, () => {
+-      held = true;
+-      return true;
+-    });
+-    return held;
++    return this.within(value, shortInside).length > 0;
+   }
+ 
+   /**

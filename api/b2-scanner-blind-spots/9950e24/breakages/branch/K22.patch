@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -2176,7 +2176,7 @@
+   for (const key of Object.keys(entry))
+     if (!LOG_KEYS.has(key)) problems.push(`a key the API's log doesn't write: ${key}`);
+   for (const [value, at] of strings(entry)) {
+-    if (facts.texts.holds(value, false)) problems.push(`text people wrote at ${at} (T52)`);
++    if (facts.texts.within(value, false).length > 0) problems.push(`text people wrote at ${at} (T52)`);
+     if (facts.keptBack.holds(value, true)) problems.push(`a value the world keeps back at ${at}`);
+     if (facts.secrets.holds(value, true)) problems.push(`a request's or answer's token at ${at} (T52)`);
+     if (JWT.test(value)) problems.push(`a token at ${at} (T52)`);

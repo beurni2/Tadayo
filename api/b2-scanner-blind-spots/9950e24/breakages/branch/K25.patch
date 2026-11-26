@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -648,7 +648,7 @@
+  * words that do (PLAIN_WORDS).
+  */
+ const NEVER_ENDINGS =
+-  /(url|uri|src|size|hash|thumb|thumbnail|width|height|count|total|color|colour|remaining|missing|duration|preview|timestamp|dimension|waveform|highlight)s?$/;
++  /(url|uri|src|size|hash|thumb|thumbnail|width|height|count|total)s?$/;
+ const PLAIN_WORDS = new Set(["account", "accounts"]);
+ 
+ /**

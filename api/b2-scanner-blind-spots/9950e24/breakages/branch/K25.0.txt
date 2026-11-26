@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (112 tests | 1 failed) 653ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (10)
+     × reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 111 passed (112)
+   Start at  06:03:59
+   Duration  1.38s (tests 53%, import 35%, transform 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time
+AssertionError: slotsremaining: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2396:34
+    2394|       "photo_providerid",
+    2395|     ])
+    2396|       expect(neverKey(key), key).toBe(true);
+       |                                  ^
+    2397|     for (const key of [
+    2398|       "id",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

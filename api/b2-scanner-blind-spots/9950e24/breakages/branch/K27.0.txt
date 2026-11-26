@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (19 tests | 1 failed) 227ms
+   ❯ the redaction list (T52) (12)
+     × blanks what a child's own bindings formatter brings, and lets pino refuse falsy bindings as pino does (the round-4 review) 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  06:04:03
+   Duration  788ms (import 42%, tests 34%, transform 24%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks what a child's own bindings formatter brings, and lets pino refuse falsy bindings as pino does (the round-4 review)
+AssertionError: 0: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/logging.test.ts:266:101
+    264|       .info("none");
+    265|     for (const bindings of [0, "", false, null, undefined])
+    266|       expect(() => app.log.child(bindings as unknown as Record<string,…
+       |                                                                                                     ^
+    267|         "missing bindings for child Pino",
+    268|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

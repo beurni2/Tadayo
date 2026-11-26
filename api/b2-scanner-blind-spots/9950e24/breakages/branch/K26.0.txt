@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (19 tests | 1 failed) 262ms
+   ❯ the redaction list (T52) (12)
+     × blanks what a child's own bindings formatter brings, and lets pino refuse falsy bindings as pino does (the round-4 review) 16ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  06:04:01
+   Duration  832ms (import 39%, tests 36%, transform 24%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks what a child's own bindings formatter brings, and lets pino refuse falsy bindings as pino does (the round-4 review)
+AssertionError: expected { Object (level, time, ...) } to match object { msg: 'bound', step: 7, …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  {
+    "extra": {
+      "deeper": {
+-       "caption": "[redacted]",
++       "caption": "SECRET-BINDINGS",
+      },
+    },
+    "msg": "bound",
+    "note": "[redacted]",
+    "step": 7,
+
+ ❯ src/logging.test.ts:271:24
+    269|     const entries = parse(lines);
+    270|     expect(entries).toHaveLength(3);
+    271|     expect(entries[0]).toMatchObject({
+       |                        ^
+    272|       msg: "bound",
+    273|       step: 7,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

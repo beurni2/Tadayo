@@ -1,0 +1,12 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -2134,7 +2134,8 @@
+     if (this.#forms.has(lower) && take(lower)) return;
+     if (this.#byRun !== undefined)
+       for (let at = 0; at + SHORTEST_RUN <= lower.length; at += 1)
+-        for (const form of this.#byRun.get(lower.slice(at, at + SHORTEST_RUN)) ?? []) if (take(form)) return;
++        for (const form of this.#byInside?.get(lower.slice(at, at + SHORTEST_TEXT)) ?? [])
++          if (form.includes(lower.slice(at, at + SHORTEST_RUN)) && take(form)) return;
+     for (let at = 0; at + SHORTEST_TEXT <= lower.length; at += 1)
+       for (const form of this.#byStart.get(lower.slice(at, at + SHORTEST_TEXT)) ?? [])
+         if (lower.startsWith(form, at) && take(form)) return;

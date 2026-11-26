@@ -1,0 +1,33 @@
+--- a/tests/src/privacy/scanner.ts	2026-11-26 06:04:01.251689534 +0000
++++ b/tests/src/privacy/scanner.ts (stop only)	2026-11-26 06:02:06.873328669 +0000
+@@ -2062,10 +2062,11 @@
+   readonly #byStart = new Map<string, string[]>();
+   readonly #byInside: Map<string, string[]> | undefined;
+   readonly #byRun: Map<string, string[]> | undefined;
++  #noRun = false;
+ 
+   constructor(needles: Iterable<string> = [], options: { readonly cuts?: boolean } = {}) {
+     this.#byInside = options.cuts === true ? new Map() : undefined;
+-    this.#byRun = options.cuts === true ? new Map() : undefined;
++    this.#byRun = options.cuts === true ? new Map() : undefined; this.#noRun = true;
+     for (const needle of needles) this.add(needle);
+   }
+ 
+@@ -2090,7 +2091,7 @@
+         for (const start of starts) listed(this.#byInside, start, form);
+       }
+       // A form of SHORTEST_RUN characters or fewer inside a value is found whole, by its start.
+-      if (this.#byRun !== undefined && form.length > SHORTEST_RUN) {
++      if (this.#byRun !== undefined && form.length > SHORTEST_RUN && !this.#noRun) {
+         const runs = new Set<string>();
+         for (let at = 0; at + SHORTEST_RUN <= form.length; at += 1) runs.add(form.slice(at, at + SHORTEST_RUN));
+         for (const run of runs) listed(this.#byRun, run, form);
+@@ -2134,7 +2135,7 @@
+     if (this.#forms.has(lower) && take(lower)) return;
+     if (this.#byRun !== undefined)
+       for (let at = 0; at + SHORTEST_RUN <= lower.length; at += 1)
+-        for (const form of this.#byRun.get(lower.slice(at, at + SHORTEST_RUN)) ?? []) if (take(form)) return;
++        for (const form of this.#byInside?.get(lower.slice(at, at + SHORTEST_TEXT)) ?? []) if (form.includes(lower.slice(at, at + SHORTEST_RUN)) && take(form)) return;
+     for (let at = 0; at + SHORTEST_TEXT <= lower.length; at += 1)
+       for (const form of this.#byStart.get(lower.slice(at, at + SHORTEST_TEXT)) ?? [])
+         if (lower.startsWith(form, at) && take(form)) return;

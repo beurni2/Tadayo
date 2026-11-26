@@ -1,0 +1,15 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -351,7 +351,11 @@
+   log.child = function redactedChild(this: FastifyBaseLogger, bindings, options) {
+     // Fastify's type says bindings are always an object; a caller outside TypeScript can pass anything.
+     const given = bindings as typeof bindings | null | undefined | false | 0 | "";
+-    return child.call(this, given ? redactLine(given) : bindings, redactedFormatters(options));
++    return child.call(
++      this,
++      given === undefined || given === null ? bindings : redactLine(given as Record<string, unknown>),
++      redactedFormatters(options),
++    );
+   };
+   // A logger with no `setBindings` has no bindings to set later.
+   if (setBindings !== undefined)

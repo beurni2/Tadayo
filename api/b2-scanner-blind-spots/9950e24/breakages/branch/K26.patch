@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -376,7 +376,7 @@
+   if (formatters === undefined || formatters === null) return options;
+   const wrapped: Record<string, unknown> = { ...formatters };
+   let any = false;
+-  for (const name of ["log", "bindings"]) {
++  for (const name of ["log"]) {
+     const own = formatters[name];
+     if (typeof own !== "function") continue;
+     any = true;

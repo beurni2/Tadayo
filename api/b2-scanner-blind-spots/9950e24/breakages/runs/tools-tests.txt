@@ -1,0 +1,60 @@
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p ci_config_guard_test.py
+................
+----------------------------------------------------------------------
+Ran 16 tests in 2.584s
+
+OK
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p ci_steps_test.py
+......................................................ss..............................
+----------------------------------------------------------------------
+Ran 86 tests in 2.729s
+
+OK (skipped=2)
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p deploy_dev_steps_test.py
+.............................................................................
+----------------------------------------------------------------------
+Ran 77 tests in 0.261s
+
+OK
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p ios_release_steps_test.py
+................................................................./home/user/tadayo-a14b/tools/ci/ios_release_steps.py:709: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+  packed.extract(member, self.out, numeric_owner=True, **DATA_ONLY)
+................................
+----------------------------------------------------------------------
+Ran 97 tests in 0.659s
+
+OK
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p ios_steps_test.py
+............................................................./home/user/tadayo-a14b/tools/ci/ios_steps_test.py:2375: ResourceWarning: unclosed file <_io.TextIOWrapper name=4 encoding='UTF-8'>
+  code = ios_steps.Shell(root).run(cmd, env={"LC_ALL": "C.UTF-8"}, log=log)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..............................To file:///tmp/ios-steps-62e0k6s0/_remote.git
+ ! [rejected]        HEAD -> evidence (non-fast-forward)
+error: failed to push some refs to 'file:///tmp/ios-steps-62e0k6s0/_remote.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+.................................................................................................................................
+----------------------------------------------------------------------
+Ran 220 tests in 10.437s
+
+OK
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p journal_check_test.py
+.............................
+----------------------------------------------------------------------
+Ran 29 tests in 35.074s
+
+OK
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p journal_hook_test.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 9.899s
+
+OK
++ /usr/local/bin/python3 -I -m unittest discover -s tools/ci -t tools/ci -p ops_steps_test.py
+....................................
+----------------------------------------------------------------------
+Ran 36 tests in 0.347s
+
+OK
