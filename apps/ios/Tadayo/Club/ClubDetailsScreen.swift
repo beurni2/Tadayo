@@ -20,12 +20,16 @@ enum ClubRoute: Hashable {
     case accepted
     /// G03-approve, from a proposed row in Members (`ClubDetailsModel.approval`).
     case approval
+    /// G05-members-proposed, from Review members on Home or G01-pending
+    /// (`RootModel.proposedRoster`).
+    case proposedRoster
 
     /// A screen of the club being made, which isn't the selected club's: it stays while another
     /// club is selected or the list is read again.
     var isCreateFlow: Bool {
         switch self {
-        case .details, .members, .approval, .linkEntry, .invitation, .accepted: false
+        case .details, .members, .approval, .proposedRoster, .linkEntry, .invitation, .accepted:
+            false
         case .create, .invitations, .inviteName, .pending: true
         }
     }

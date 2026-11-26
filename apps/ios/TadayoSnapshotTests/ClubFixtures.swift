@@ -6,7 +6,9 @@ import TadayoCore
 /// (`H01-awaiting-activation`, `G06-switcher-status`), or suspended (`H01-unavailable`,
 /// `G06-switcher-unavailable`), or active with Debby's Friday open (2.1's `G06-switcher`); and
 /// Kitchen table active with its five members and Maya's day next (`G06-switcher`,
-/// `G06-switcher-unavailable`), or with Ben alone and paused (`G06-switcher-status`).
+/// `G06-switcher-unavailable`), or with Ben alone and paused (`G06-switcher-status`). Sunday
+/// people's proposed roster, Ben's own and the one the server made for Debby's name, is the
+/// creator's (`G05-members-proposed`, `-approve`).
 enum ClubFixtures {
     static let sunday = club("club_sunday", "Sunday people", .proposed)
     static let sundaySuspended = club("club_sunday", "Sunday people", .suspended)
@@ -86,6 +88,40 @@ enum ClubFixtures {
     private static let kitchenAsMaya = ClubRef(
         id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
         myMembershipID: "mem_Maya")
+
+    /// Sunday people before it starts, Ben its creator and only member, with Ben's first roster
+    /// open: Ben, then Maya, Alex, Sam, Debby and Nina as Ben proposed them, Ben's approval counted
+    /// by proposing (FQ60; handoff 5's `G05-members-proposed`).
+    static let sundayProposal = proposal(
+        ["Maya", "Alex", "Sam", "Debby", "Nina"], id: "rev_sunday", version: 1, decision: .approved)
+
+    /// The revision the server made when Debby accepted under a name Ben didn't give (FQ84), which
+    /// Ben must approve (`G05-members-proposed-approve`, FQ145's default).
+    static let sundayRenamed = proposal(
+        ["Debby"], id: "rev_debby", version: 2, decision: .pending)
+
+    /// Sunday people's proposed roster as Ben reads it: Ben, then `names` as candidates of the
+    /// open revision `id` at `version`, with Ben's `decision` on it.
+    private static func proposal(
+        _ names: [String], id: String, version: Int, decision: RosterDecision
+    ) -> ProposedRoster {
+        let club = ClubRef(
+            id: "club_sunday", name: "Sunday people", timezone: "America/New_York",
+            myMembershipID: "mem_Ben")
+        let ben = Person(membershipID: "mem_Ben", displayName: "Ben", avatarVersion: nil)
+        let revision = RosterRevision(
+            id: id, version: version, club: club, state: .open, proposedBy: ben, members: [ben],
+            candidates: names.map {
+                Candidate(
+                    id: "cand_\($0.lowercased())", name: $0, proposedBy: ben, invitation: nil)
+            },
+            myDecision: decision, supersededBy: nil)
+        let list = MemberList(
+            serverClock: ServerClock(serverNow: now, receivedAt: .now), club: club,
+            members: [Member(person: ben, position: 1, cover: nil, nextDay: nil, nextUp: false)],
+            openRevision: revision)
+        return ProposedRoster(list, open: revision)
+    }
 
     /// The roster of `id` with each name's weekdays, in that order, Ben the viewer unless
     /// `viewer` says, and `open` as its open revision.

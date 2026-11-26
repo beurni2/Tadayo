@@ -107,6 +107,8 @@ import Observation
     /// Moves each time Home is read: an answer to an earlier read, for a club since left
     /// behind, say, is dropped.
     private var homeReads = 0
+    /// The proposed roster last made, in the session it was made in (`proposedRoster(of:)`).
+    private var proposing: (model: ProposedRosterModel, epoch: Int)?
     /// A link held in memory until the tabs show, never written anywhere (book p9,
     /// `linkEntry.retention`; FQ135's default): one opened before any account showed, for the
     /// first account that shows; or one opened while an incomplete account's age or profile step
@@ -403,6 +405,29 @@ import Observation
             current: { [weak self] in self?.epoch == made },
             gone: { [weak self] in await self?.loadClubs() },
             signedOut: { [weak self] in await self?.endedByServer() })
+    }
+
+    /// The proposed roster of `club`, a club that hasn't started (`G05-members-proposed`), while
+    /// the tabs show an account: the one made before for the same club in this session, while it
+    /// is still open, so a decision on it keeps its keys (T19) however often Review members opens
+    /// it, or a new one. Its answers count only in the session it was made in, whichever club is
+    /// selected, as the setup list's do; a club no longer a proposal the caller can read has the
+    /// list read again, which decides, as Home does; a `signedOut` answer ends the session.
+    public func proposedRoster(of club: ClubRef) -> ProposedRosterModel? {
+        guard route == .tabs, account != nil else { return nil }
+        if let kept = proposing, kept.epoch == epoch, kept.model.club.id == club.id,
+            !kept.model.closed
+        {
+            return kept.model
+        }
+        let made = epoch
+        let model = ProposedRosterModel(
+            club: club, service: clubService, makeKey: makeKey,
+            current: { [weak self] in self?.epoch == made },
+            gone: { [weak self] in await self?.loadClubs() },
+            signedOut: { [weak self] in await self?.endedByServer() })
+        proposing = (model, made)
+        return model
     }
 
     /// An invitation link, from the link handler. While the tabs show an account it's presented at
