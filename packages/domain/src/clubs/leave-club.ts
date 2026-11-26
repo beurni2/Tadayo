@@ -81,7 +81,7 @@ export interface LeaveClubInput {
 export interface LeftClub {
   readonly clubId: string;
   /** The server's clock when the interval ended, sampled under the club's row. */
-  readonly leftAt: Temporal.Instant;
+  readonly leftAt: ServerNow;
   readonly contributions: Contributions;
 }
 

@@ -10,6 +10,7 @@
 // which also holds `expectedClubList` against the API's own day choice and serializer; the runner's
 // and the Machine's halves, as run.ts wires them, are in run-remote.test.ts.
 
+import type { ServerNow } from "@tadayo/domain";
 import { describe, expect, it } from "vitest";
 import { FAKE_PUBLISHABLE, FAKE_SECRET, FAKE_URL, fakeSupabase, type Fake } from "../test/fake-supabase.ts";
 import { COMMAND_SECONDS } from "./on-machine.ts";
@@ -34,6 +35,8 @@ import {
 const RUN = "1a2b3c4d-0000-4000-8000-000000000000";
 const API_ROOT = "https://api.example.test";
 const at = (text: string) => Temporal.Instant.from(text);
+/** An instant as the clock's sample, which `firstDate` and `startDay` take (a test may make one). */
+const sample = (text: string) => at(text) as ServerNow;
 
 /** The run's club as `writeClub` would write it from Monday 16 November 2026, 06:50 in New York. */
 const CLUB: SpikeClub = {
@@ -688,7 +691,7 @@ describe("the first day's date", () => {
       ["2026-03-07T12:00:00Z", "2026-03-09"], // Saturday before the spring change: Monday, in daylight time
     ];
     for (const [now, date] of cases) {
-      const first = firstDate(at(now));
+      const first = firstDate(sample(now));
       expect(first.toString(), now).toBe(date);
       expect(first.dayOfWeek, now).toBeLessThanOrEqual(5);
       expect(first.add({ days: 1 }).dayOfWeek, now).not.toBe(7);
@@ -705,7 +708,7 @@ describe("the run's start", () => {
       ["2026-11-20T11:56:59Z", "2026-11-20"], // Friday, 06:56:59
       ["2026-03-09T10:50:00Z", "2026-03-09"], // Monday after the spring change, 06:50 in daylight time
     ];
-    for (const [now, date] of starts) expect(startDay(at(now)).toString(), now).toBe(date);
+    for (const [now, date] of starts) expect(startDay(sample(now)).toString(), now).toBe(date);
   });
 
   it("refuses, saying what dev's clock reads, a club written before 06:45, after 06:57 or on a weekend", () => {
@@ -718,8 +721,8 @@ describe("the run's start", () => {
       ["2026-11-20T04:00:00Z", "2026-11-19T23:00:00"], // Thursday, 23:00
     ];
     for (const [now, reads] of refused) {
-      expect(() => startDay(at(now)), now).toThrow(OpsError);
-      expect(() => startDay(at(now)), now).toThrow(
+      expect(() => startDay(sample(now)), now).toThrow(OpsError);
+      expect(() => startDay(sample(now)), now).toThrow(
         `spike-time: dev's clock reads ${reads} in New York, and a run starts between 06:45 and 06:57 there on a weekday, so no club is written and dev's clock isn't moved`,
       );
     }

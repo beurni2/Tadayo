@@ -108,7 +108,7 @@ export interface RegisterDeviceInput {
 export interface DeviceRegistration {
   readonly apnsEnvironment: ApnsEnvironment;
   readonly timezone: string;
-  readonly registeredAt: Temporal.Instant;
+  readonly registeredAt: ServerNow;
 }
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | number | Temporal.Instant)[]) => R;

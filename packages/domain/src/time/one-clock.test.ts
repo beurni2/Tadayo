@@ -19,8 +19,10 @@
 // through `Function` (`Reflect.apply`), are a deliberate way round. Nor does the time an action happens
 // at reach code as a plain `Temporal.Instant`, which a request's time would reach with no cast at all: the code that
 // decides, writes or answers by the time now takes a ServerNow, and each plain instant the server's code still takes, a
-// parameter or a field, is on `PLAIN_INSTANTS` with its reason, so a new one fails until someone says why it isn't the
-// clock's sample (`plainInstants`; docs/plans/api-b2-server-time-types.md). Tests may make a ServerNow.
+// parameter or a field, the time module's own included, is on `PLAIN_INSTANTS` with its reason, so a new one fails
+// until someone says why it isn't the clock's sample (`plainInstants`). It reads a parameter's or a field's own type:
+// an instant in an array, a tuple, a map, a mapped type or a promise, a parameter typed `unknown`, and a time as text
+// or as a date are left to review (docs/plans/api-b2-server-time-types.md, section 4). Tests may make a ServerNow.
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
@@ -219,27 +221,47 @@ export function nowMints(program: ts.Program, file: string): string[] {
   return found;
 }
 
+/** `Temporal.Instant` and `ServerNow`, as `ServerNow`'s declaration in clock.ts names them. */
+function instantTypes(program: ts.Program): { instant: ts.Type; serverNow: ts.Type } {
+  const checker = program.getTypeChecker();
+  const clock = program.getSourceFile(join(ROOT, TIME_MODULE, "clock.ts"));
+  const declared = clock?.statements.find(
+    (statement): statement is ts.TypeAliasDeclaration =>
+      ts.isTypeAliasDeclaration(statement) && statement.name.text === "ServerNow",
+  );
+  const instantNode =
+    declared !== undefined && ts.isIntersectionTypeNode(declared.type) ? declared.type.types[0] : undefined;
+  if (declared === undefined || instantNode === undefined) throw new Error("time: clock.ts declares no ServerNow");
+  const instant = checker.getTypeFromTypeNode(instantNode);
+  const symbol = instant.getSymbol();
+  if (
+    symbol?.getName() !== "Instant" ||
+    !(symbol.declarations ?? []).some((declaration) => program.isSourceFileDefaultLibrary(declaration.getSourceFile()))
+  ) {
+    throw new Error("time: ServerNow isn't Temporal.Instant and its brand");
+  }
+  return { instant, serverNow: checker.getTypeFromTypeNode(declared.type) };
+}
+
 /**
- * Each parameter in `file`, and each field of a type it declares, whose type is a plain `Temporal.Instant`, alone or
- * in a union, and not a ServerNow, as "file: owner(parameter)" or "file: Owner.field". A request's time reaches such
- * a place with no cast, so the time an action happens at is never one: each that is left is on `PLAIN_INSTANTS` with
- * its reason. An instant inside an array, a map or a promise isn't read, nor a variable, which no caller gives.
+ * Each parameter in `file`, and each field of a type it declares, whose type, alone or in a union, is an instant and
+ * not a ServerNow, as "file: owner(parameter)" or "file: Owner.field": a type the compiler takes for a
+ * `Temporal.Instant` (through an alias, read only, with a brand of its own, a type parameter whose constraint is one)
+ * that a ServerNow's place wouldn't take. A request's time reaches such a place with no cast, so the time an action
+ * happens at is never one: each that is left is on `PLAIN_INSTANTS` with its reason. An instant inside an array, a
+ * tuple, a map, a mapped type or a promise isn't read, nor a variable, which no caller gives.
  */
 export function plainInstants(program: ts.Program, file: string): string[] {
   const source = program.getSourceFile(join(ROOT, file));
   if (source === undefined) throw new Error(`time: ${file} isn't in the program`);
   const checker = program.getTypeChecker();
+  const { instant, serverNow } = instantTypes(program);
+  // By what the compiler lets through, not by name: an intersection with a brand of its own, a type parameter whose
+  // constraint is an instant, `Readonly<Temporal.Instant>`. `any` passes for a ServerNow too, so it stays the lint's.
   const plain = (type: ts.Type): boolean =>
-    (type.isUnion() ? type.types : [type]).some((part) => {
-      if (part.isIntersection()) return false;
-      const symbol = part.getSymbol();
-      return (
-        symbol?.getName() === "Instant" &&
-        (symbol.declarations ?? []).some((declaration) =>
-          program.isSourceFileDefaultLibrary(declaration.getSourceFile()),
-        )
-      );
-    });
+    (type.isUnion() ? type.types : [type]).some(
+      (part) => !checker.isTypeAssignableTo(part, serverNow) && checker.isTypeAssignableTo(part, instant),
+    );
   // The named declarations around `node`, outermost first: "holdSlot(slot)" for a field of `holdSlot`'s `slot`.
   const ownerOf = (node: ts.Node): string => {
     let owner = "";
@@ -321,7 +343,7 @@ const KEPT: readonly { file: string; line: string; why: string }[] = [
  */
 const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly string[] }[] = [
   {
-    why: "a time a row holds, or a day's own time from its date and zone, read as a fact that a decision compares with the clock's sample: never the time the decision is made at",
+    why: "a time a row holds, or a day's own time from its date and zone: a fact that a decision compares with the clock's sample or with another fact, or copies into a row it writes, never the time the decision is made at",
     at: [
       "packages/domain/src/authorization/add-target.ts: AddTargetFacts.viewerJoinedAt",
       "packages/domain/src/authorization/add-target.ts: AddTargetFacts.clubSuspendedAt",
@@ -336,10 +358,14 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
       "packages/domain/src/authorization/read.ts: DropReadFacts.revealAt",
       "packages/domain/src/authorization/read.ts: DropReadFacts.starLeftAt",
       "packages/domain/src/authorization/read.ts: DropReadFacts.starDeletionRequestedAt",
+      "packages/domain/src/authorization/read.ts: notBeforeReveal(at)",
+      "packages/domain/src/authorization/read.ts: notBeforeReveal(revealAt)",
       "packages/domain/src/drops/reserve.ts: reservationExpiry(revealAt)",
       "packages/domain/src/schedule/generate.ts: OwedDay.revealAt",
       "packages/domain/src/schedule/generate.ts: OwedDay.closeAt",
       "packages/domain/src/schedule/settle-change.ts: LatestAssignment.confirmedAt",
+      "packages/domain/src/time/civil.ts: DayInstants.revealAt",
+      "packages/domain/src/time/civil.ts: DayInstants.closeAt",
     ],
   },
   {
@@ -356,29 +382,31 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
     ],
   },
   {
-    why: "an answer's field: a time a command or a read reports to its caller, from the clock's sample or a row, which no decision reads back",
+    why: "an answer's field: an expiry a command or a read reports to its caller, computed from the clock's sample or read from its row, which no decision reads back (the time an action happened at, which an answer reports too, is a ServerNow: `CreatedClub.at`, `LeftClub.leftAt`, `DeviceRegistration.registeredAt`)",
     at: [
       "packages/domain/src/clubs/invitation-preview.ts: InvitationSight.expiresAt",
       "packages/domain/src/clubs/invitation.ts: MadeLink.expiresAt",
-      "packages/domain/src/clubs/leave-club.ts: LeftClub.leftAt",
       "packages/domain/src/drops/reserve.ts: ReservationAnswer.expiresAt",
-      "packages/domain/src/identity/devices.ts: DeviceRegistration.registeredAt",
       "packages/domain/src/media/upload.ts: UploadAnswer.expiresAt",
     ],
   },
   {
-    why: "a helper's own instants, which it orders or cuts to the second for its caller, whatever the caller has: a fact or the sample",
+    why: "a helper's own instants, which it orders, cuts to the second or checks to the microsecond, or writes as the contract's or the database's text, for its caller, whatever the caller has: a fact or the sample",
     at: [
       "packages/domain/src/authorization/add-target.ts: before(a)",
       "packages/domain/src/authorization/add-target.ts: before(b)",
       "packages/domain/src/authorization/days.ts: before(a)",
       "packages/domain/src/authorization/days.ts: before(b)",
       "packages/domain/src/clubs/invitation.ts: wholeSecond(instant)",
+      "packages/domain/src/time/instant.ts: wholeMicroseconds(instant)",
+      "packages/domain/src/time/instant.ts: databaseInstant(instant)",
+      "packages/domain/src/time/instant.ts: contractInstant(instant)",
     ],
   },
   {
-    why: "the database connection's instant type, which binds and reads every instant a query holds, the clock's sample among them",
+    why: "the database connection's instant type (`INSTANT_TYPE`, and each connection's), which binds and reads every instant a query holds, the clock's sample among them",
     at: [
+      "packages/domain/src/time/instant.ts: INSTANT_TYPE.serialize(value)",
       "services/api/src/connection.ts: ApiSql.instant",
       "services/api/src/connection.ts: connect.body(tx).instant",
       "services/api/src/connection.ts: connect(tx).instant",
@@ -387,7 +415,7 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
     ],
   },
   {
-    why: "tools/ops, run by hand on dev only: the instant an operator moves dev's clock to and the two clocks' report (dev-clock.ts), and spike S5's run, which reads the server's time from its answers and the days from their rows, as a client does (spike-time.ts, run.ts)",
+    why: "tools/ops, run by hand on dev only: the instant an operator moves dev's clock to and the two clocks' report (dev-clock.ts), and spike S5's run, which reads the server's time from its answers and the days from their rows, as a client does (spike-time.ts, run.ts); the run's first day is from dev's clock's sample in the club's transaction (`startDay`, `firstDate`, which take a ServerNow)",
     at: [
       "tools/ops/src/dev-clock.ts: DevClockOptions.to",
       "tools/ops/src/dev-clock.ts: DevClockReport.postgresNow",
@@ -396,8 +424,6 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
       "tools/ops/src/run.ts: spikeOnMachine.checks.database.moveClock(to)",
       "tools/ops/src/spike-time.ts: SpikeDay.revealAt",
       "tools/ops/src/spike-time.ts: SpikeDay.closeAt",
-      "tools/ops/src/spike-time.ts: firstDate(now)",
-      "tools/ops/src/spike-time.ts: startDay(now)",
       "tools/ops/src/spike-time.ts: wholeSeconds(instant)",
       "tools/ops/src/spike-time.ts: moveClock(to)",
       "tools/ops/src/spike-time.ts: expectedClubList(serverNow)",
@@ -449,6 +475,13 @@ export function clockReads(file: string, text: string): string[] {
 /** The server's TypeScript: every product file the compiler reads but the browser's pages (apps/web). */
 function serverTypeScript(): string[] {
   return productFiles().filter((file) => /\.(?:ts|mts|cts)$/.test(file) && !file.startsWith(join("apps", "web") + sep));
+}
+
+/** The time module's own code, which the scans above leave out, but for the tests' clock (testing.ts). */
+function timeModule(): string[] {
+  return walk(TIME_MODULE)
+    .filter((file) => file.endsWith(".ts") && !TEST.test(file) && file !== join(TIME_MODULE, "testing.ts"))
+    .sort();
 }
 
 const HEAD = '/// <reference lib="esnext.temporal" />\n';
@@ -701,10 +734,18 @@ const PLAIN: readonly (readonly [string, string, readonly string[]])[] = [
     ["moved(to)"],
   ],
   [
-    "a ServerNow, alone, in a union and as a field, and an array of instants",
+    "an instant with a brand of its own, one read only, and a type parameter whose constraint is an instant",
+    "export function stamped(at: Temporal.Instant & { readonly stamped: true }): boolean {\n  return at.stamped;\n}\n" +
+      "export function fixed(at: Readonly<Temporal.Instant>): bigint {\n  return at.epochNanoseconds;\n}\n" +
+      "export function chosen<T extends Temporal.Instant>(at: T): T {\n  return at;\n}",
+    ["stamped(at)", "fixed(at)", "chosen(at)"],
+  ],
+  [
+    "a ServerNow, alone, in a union, as a field and as a constraint, and an array of instants",
     NOW +
       "export interface Row {\n  readonly at: ServerNow | null;\n}\n" +
       "export function kept(now: ServerNow): ServerNow {\n  return now;\n}\n" +
+      "export function sampled<T extends ServerNow>(now: T): T {\n  return now;\n}\n" +
       "export function many(at: readonly Temporal.Instant[]): number {\n  return at.length;\n}",
     [],
   ],
@@ -725,7 +766,7 @@ function server(): ts.Program {
     ...LEAVES.map(([, text], index) => [join(ROOT, caseFile("leaves", index)), HEAD + text + "\n"] as const),
     ...PLAIN.map(([, text], index) => [join(ROOT, caseFile("plain", index)), HEAD + text + "\n"] as const),
   ]);
-  compiled ??= compile([...serverTypeScript(), join(TIME_MODULE, "clock.ts")], cases);
+  compiled ??= compile([...serverTypeScript(), ...timeModule()], cases);
   return compiled;
 }
 
@@ -916,9 +957,7 @@ describe("only the time module reads a clock (T1)", () => {
     "finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14)",
     () => {
       const program = server();
-      const found = serverTypeScript()
-        .flatMap((file) => plainInstants(program, file))
-        .sort();
+      const found = [...serverTypeScript(), ...timeModule()].flatMap((file) => plainInstants(program, file)).sort();
       const kept = PLAIN_INSTANTS.flatMap((entry) => entry.at).sort();
       expect(found).toEqual(kept);
       for (const entry of PLAIN_INSTANTS) expect(entry.why).not.toBe("");
@@ -927,7 +966,7 @@ describe("only the time module reads a clock (T1)", () => {
   );
 
   it(
-    "finds a plain instant a parameter or a field takes, alone, in a union, optional or through an alias, and leaves a ServerNow alone",
+    "finds a plain instant a parameter or a field takes, alone, in a union, optional, through an alias, branded or as a constraint, and leaves a ServerNow alone",
     () => {
       const program = server();
       // Every case at once, so a failure names each case it reaches, not only the first.

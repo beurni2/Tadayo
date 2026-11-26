@@ -353,8 +353,24 @@ export function render(spec: Spec): Request {
  * author by the membership id every caption card gives out; then the three headers that carry a
  * device's time, and the two that ask a media route for a short answer before it has checked the
  * caller (a 304 for any version, a 206 for one byte). `t` and `If-Modified-Since` since the outside
- * audit's A14, whose reviewer had Home read its time from each and pass.
+ * audit's A14, whose reviewer had Home read its time from each and pass; and, since its third part's review,
+ * whose reviewer had Home answer `server_now` from `?since=` and pass, one more request with every other name a
+ * time might come under at once (`TIME_NAMES`), none of them a parameter of the contract's.
  */
+export const TIME_NAMES = [
+  "since",
+  "before",
+  "after",
+  "until",
+  "from",
+  "date",
+  "day",
+  "time",
+  "ts",
+  "timestamp",
+  "client_time",
+] as const;
+
 export function manipulations(spec: Spec, author: string, later: Temporal.Instant): Spec[] {
   const at = later.toString({ smallestUnit: "second" });
   const date = new Date(later.epochMilliseconds).toUTCString();
@@ -372,6 +388,7 @@ export function manipulations(spec: Spec, author: string, later: Temporal.Instan
   };
   return [
     ...Object.entries(query).map(([name, value]) => ({ ...spec, query: { ...spec.query, [name]: value } })),
+    { ...spec, query: { ...spec.query, ...Object.fromEntries(TIME_NAMES.map((name) => [name, at])) } },
     { ...spec, headers: { ...spec.headers, date } },
     { ...spec, headers: { ...spec.headers, "if-modified-since": date } },
     { ...spec, headers: { ...spec.headers, "x-client-time": at } },

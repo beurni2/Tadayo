@@ -37,6 +37,7 @@ import {
   signedOutCount,
   signedOutStep,
   specsFor,
+  TIME_NAMES,
   UNAUTHENTICATED,
   type Caller,
   type Spec,
@@ -475,7 +476,18 @@ describe("each step of the matrix reports a planted wrong answer", () => {
       expect(signedOutCount(spec(id)), id).toBe(signedOutAnswers);
       await app.close();
     }
-    expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(15);
+    expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(16);
+  });
+
+  it("sends every other name a time might come under in one request, none of them a parameter of the contract's", () => {
+    const named = new Set(operations.flatMap((each) => each.parameters.map((parameter) => parameter.name)));
+    expect(TIME_NAMES.filter((name) => named.has(name))).toEqual([]);
+    const sent = manipulations(spec("getDrop"), "itv_author", LATER).filter((made) =>
+      TIME_NAMES.some((name) => Object.hasOwn(made.query, name)),
+    );
+    expect(sent.map((made) => made.query)).toEqual([
+      Object.fromEntries(TIME_NAMES.map((name) => [name, LATER.toString({ smallestUnit: "second" })])),
+    ]);
   });
 
   // Each wrong answer with the problem cellStep must name for it, so a problem found for another
@@ -582,6 +594,8 @@ describe("each step of the matrix reports a planted wrong answer", () => {
   const tells: [string, (request: FastifyRequest) => boolean][] = [
     ["`now` in the query", (request) => Object.hasOwn(request.query as object, "now")],
     ["`t` in the query", (request) => Object.hasOwn(request.query as object, "t")],
+    ["`since` in the query", (request) => Object.hasOwn(request.query as object, "since")],
+    ["`client_time` in the query", (request) => Object.hasOwn(request.query as object, "client_time")],
     ["`rendition=full` in the query", (request) => (request.query as Record<string, string>).rendition === "full"],
     ["a client time header", (request) => request.headers["x-client-time"] !== undefined],
     ["a Date header", (request) => request.headers.date !== undefined],
