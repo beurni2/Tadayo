@@ -2374,6 +2374,24 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       "videoid",
       "datetaken",
       "emptyslots",
+      // The round-4 review: one-word spellings as a class, two words run together.
+      "providerid",
+      "aspectratio",
+      "createdat",
+      "takenat",
+      "capturedat",
+      "durationms",
+      "slotsremaining",
+      "haspreview",
+      "ishighlight",
+      "alttext",
+      "sourceid",
+      "embedhtml",
+      "dominantcolor",
+      "posterframe",
+      "exifdata",
+      "previewtext",
+      "photo_providerid",
     ])
       expect(neverKey(key), key).toBe(true);
     for (const key of [
@@ -2399,6 +2417,16 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       "held_by",
       "content_type",
       "first_date",
+      // Plain words a never-word starts or ends: none of them is two words run together.
+      "anyone",
+      "hashtag",
+      "timezone",
+      "format",
+      "items",
+      "metadata",
+      "context",
+      "isolated",
+      "valid",
     ])
       expect(neverKey(key), key).toBe(false);
   });
@@ -2729,6 +2757,50 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
     expect(photo.within("caption=m Ben's pho", false)).toEqual([]);
     // Without cuts, a text is found only whole.
     expect(new Needles(["From Ben's photo"]).within("caption=rom Ben's pho", false)).toEqual([]);
+  });
+
+  it("says whether a value holds a needle as `within` finds them, and stops at the first, so a body logged whole costs little against thousands of texts worded alike (the round-4 review)", () => {
+    const short = new Needles(["Ben", "Saturday People"]);
+    const photo = new Needles(["Saturday People", "From Ben's photo", 'Ben said "go" at the pier'], { cuts: true });
+    const values = [
+      "Ben",
+      "Bento",
+      "served saturday people",
+      "Saturday",
+      "trouble: aturday Peopl",
+      "caption=m Ben's pho",
+    ];
+    values.push(JSON.stringify({ caption: 'Ben said "go" at the pier' }), "request", "");
+    for (const value of values)
+      for (const shortInside of [false, true])
+        for (const needles of [short, photo])
+          expect(needles.holds(value, shortInside), `${value} ${String(shortInside)}`).toBe(
+            needles.within(value, shortInside).length > 0,
+          );
+    // The matrix's worlds word their texts alike ("The ferry at dawn" and a world's own mark), so a place
+    // inside a body that holds one starts thousands of texts at once.
+    const states = ["before the reveal", "on the day", "after the day", "in Memories"];
+    const texts: string[] = [];
+    for (let world = 0; world < 1000; world += 1) {
+      const mark = ` ${world.toString(16).padStart(12, "0")}`;
+      for (const text of ["Saturday People", "From Ben", "Ben's pick", "Cleo's pick"]) texts.push(text + mark);
+      for (const state of states) texts.push(`The ferry at dawn${mark} ${state}`);
+    }
+    const alike = new Needles(texts, { cuts: true });
+    const body = `${"x ".repeat(100)}${"from ben's pick the ferry at dawn ".repeat(30)}`;
+    expect(alike.holds(body, false)).toBe(true);
+    expect(alike.holds(`${"x ".repeat(100)}${"r".repeat(1000)}`, false)).toBe(false);
+    const leaking = line({ msg: "request", trouble: body });
+    const alikeFacts = { texts: alike, keptBack: new Needles(), secrets: new Needles() };
+    expect(logProblems(leaking, alikeFacts)).toEqual(["text people wrote at $.trouble (T52)"]);
+    // Every place's run looked up exactly, and a stop at the first: well under a millisecond each, where
+    // collecting every text it holds takes tens of milliseconds and more.
+    const started = performance.now();
+    for (let time = 0; time < 20; time += 1) {
+      alike.holds(body, false);
+      logProblems(leaking, alikeFacts);
+    }
+    expect(performance.now() - started).toBeLessThan(100);
   });
 
   it("catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON", () => {

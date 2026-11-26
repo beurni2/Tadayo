@@ -4,11 +4,13 @@
 // is enough:
 // 1. Fastify's request lines are all off (`LogController` with `disableRequestLogging`): they carry the
 //    path and the query (`Route GET:/v1/... not found`), `req` and `res` objects and an error's message,
-//    which Postgres fills with row values. What is left of Fastify's own are lines about Fastify itself
-//    (the address it listens on, a stream or a hook that failed, a request refused while the server
-//    closes), which carry nothing of a request's, and its warning for an answer sent after one went out
-//    on `reply.raw`, which quotes the request's URL and so keeps only its fixed start (`ownMessage`; the
-//    round-3 review).
+//    which Postgres fills with row values. What is left of Fastify's own is of three kinds. Lines about
+//    Fastify itself (the address it listens on, a request refused while the server closes) carry nothing
+//    of a request's. Lines that pass an error (a hook that failed, a second answer to a request, whose
+//    error quotes the request's URL) keep a fixed message and the error's class and code (layer 3's
+//    `ownMessage` and `safeError`; the round-4 review). And its warning for an answer sent after one went
+//    out on `reply.raw`, which quotes the request's URL in its message, keeps only its fixed start
+//    (`ownMessage`; the round-3 review).
 // 2. The one line a request gets is ours (`logEachRequest`): its random id, the contract's operation id
 //    (for the browser's preflight, `preflight` and the operation it is for: web-origin.ts), the status and
 //    the milliseconds it took. No URL, header, body, address or claim ever goes in it.
@@ -332,10 +334,11 @@ export function fastifyLogging(
  * resets `formatters.bindings` for a child, so `request.log.child({ caption })` would write the caption whole
  * into each of its lines. pino makes a child from its parent's prototype, so the root's own `child` and
  * `setBindings` are the ones every logger of the app calls, Fastify's request loggers included. A child that
- * brings a log formatter of its own gets it with `redactLine` after it, called as pino would call it; one
- * that brings none, or a falsy one, has its parent's, as in pino. Bindings that are absent pass as they
- * are, for pino to refuse or skip (the round-3 review). A request's id (`reqId`) is no field of the list
- * and stays.
+ * brings a log or bindings formatter of its own gets it with `redactLine` after it, called as pino would
+ * call it (the round-4 review: pino runs a child's bindings formatter after our redaction); one that brings
+ * none, or a falsy one, has pino's own (its parent's log formatter; for bindings, none). Falsy bindings pass
+ * as they are, for pino to refuse or skip, as pino's own `!bindings` test does (the round-3 and round-4
+ * reviews). A request's id (`reqId`) is no field of the list and stays.
  */
 export function redactBindings(log: FastifyBaseLogger): void {
   // pino's loggers have it; Fastify's type of them leaves it out.
@@ -346,27 +349,9 @@ export function redactBindings(log: FastifyBaseLogger): void {
   const child = log.child;
   const setBindings = settable.setBindings;
   log.child = function redactedChild(this: FastifyBaseLogger, bindings, options) {
-    const own: unknown = options?.formatters?.log;
-    const formatted =
-      options === undefined || typeof own !== "function"
-        ? options
-        : {
-            ...options,
-            formatters: {
-              ...options.formatters,
-              // pino calls a formatter as a method of the formatters it was given.
-              log: function redactedOwn(this: unknown, fields: object) {
-                return redactLine((own as (fields: object) => unknown).call(this, fields) as Record<string, unknown>);
-              },
-            },
-          };
-    // Fastify's type says bindings are always there; a caller outside TypeScript can leave them out.
-    const given = bindings as typeof bindings | null | undefined;
-    return child.call(
-      this,
-      given === undefined || given === null ? (given as unknown as typeof bindings) : redactLine(given),
-      formatted,
-    );
+    // Fastify's type says bindings are always an object; a caller outside TypeScript can pass anything.
+    const given = bindings as typeof bindings | null | undefined | false | 0 | "";
+    return child.call(this, given ? redactLine(given) : bindings, redactedFormatters(options));
   };
   // A logger with no `setBindings` has no bindings to set later.
   if (setBindings !== undefined)
@@ -374,8 +359,33 @@ export function redactBindings(log: FastifyBaseLogger): void {
       this: unknown,
       bindings: Record<string, unknown> | null | undefined,
     ) {
-      setBindings.call(this, bindings === undefined || bindings === null ? bindings : redactLine(bindings));
+      setBindings.call(this, bindings ? redactLine(bindings) : bindings);
     };
+}
+
+type ChildOptions = Parameters<FastifyBaseLogger["child"]>[1];
+
+/**
+ * A child's options with each formatter of its own that writes a line's fields (`log`) or its bindings
+ * (`bindings`) followed by `redactLine`, called with the `this` pino gives it; what the formatter returns
+ * that is no object goes to pino as it is.
+ */
+function redactedFormatters(options: ChildOptions): ChildOptions {
+  // A caller outside TypeScript can pass null, which pino itself would fail on as it would without this.
+  const formatters = options?.formatters as Record<string, unknown> | null | undefined;
+  if (formatters === undefined || formatters === null) return options;
+  const wrapped: Record<string, unknown> = { ...formatters };
+  let any = false;
+  for (const name of ["log", "bindings"]) {
+    const own = formatters[name];
+    if (typeof own !== "function") continue;
+    any = true;
+    wrapped[name] = function redactedOwn(this: unknown, fields: object): unknown {
+      const out: unknown = (own as (fields: object) => unknown).call(this, fields);
+      return typeof out === "object" && out !== null ? redactLine(out as Record<string, unknown>) : out;
+    };
+  }
+  return any ? { ...options, formatters: wrapped } : options;
 }
 
 /** The one line a request gets, when its answer has gone: id, operation, status and milliseconds. */

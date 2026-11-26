@@ -96,6 +96,10 @@ slice's changes carried over by a three-way merge, which met no conflict.
   `length`, `w`, `h`, `dims`, `mime`, `remaining`, `missing`, `empty` and `slotsleft` (two words read as one, so
   `slots_left`), each with its plural; and a highlight at a word's start (`NEVER_STARTS`: `highlighted`,
   `isHighlighted`). No key the contract serves outside what has opened names one (the served-for-a-reason test).
+- Since rounds 3 and 4 (sections 5.7, F-E, and 5.10, R4-2): `NEVER_STARTS` is tried on two words joined too
+  (`highLighted`, `high_lighted`); one word is read as two run together (`joinedNever`: `providerid`, `createdat`,
+  `aspectratio`, `haspreview`, `ishighlight`); and `NEVER_ENDINGS` gains `color`, `colour`, `remaining`, `missing`,
+  `duration`, `preview`, `timestamp`, `dimension`, `waveform` and `highlight` (`dominantcolor`, `slotsremaining`).
 - `SERVED_FOR_A_REASON`: the keys the contract serves today that a new word names, by schema and key, each with its
   reason: `Occurrence.reveal_at` and `close_at` (T1, the server's times), `expires_at` on `Reservation` (T18),
   `CandidateInvitation`, `InvitationLink`, `InvitationOpen`, `InvitationChanged`, `SignedUpload`, `Upload`,
@@ -134,6 +138,10 @@ slice's changes carried over by a three-way merge, which met no conflict.
   turn, once the last one's lines are written), so each request must have exactly one request line written in its own
   time, and a lost line and a doubled one in the same step no longer cancel out (`lineCounts`, which reads from the
   step's own first line: walking the whole log at each step made round 2's first full run take 2,215 s; section 4).
+- Since rounds 3 and 4 (sections 5.7, F-A, and 5.10, R4-1): with `cuts`, `Needles` also finds a run of 12 characters
+  of a text anywhere inside a longer value (`SHORTEST_RUN`: `caption=rom Ben's pho`), by one exact lookup for each
+  place in the value (`#byRun`); `logProblems` asks `holds`, which stops at the first needle a value holds, with the
+  exact lookups first, so a leaking body costs little however many texts share its wording.
 
 ### 1.4. Redaction at every depth (`services/api/src/logging.ts`)
 
@@ -162,6 +170,10 @@ slice's changes carried over by a three-way merge, which met no conflict.
   since round 2, bindings set later, a child's own formatter's output and a `msg` field blanked, `main`'s paths beneath,
   and a line with an error and no message of its own (`log.error(err)`, `{ err }`, a child's, Fastify's own warning for
   a second answer) given the fixed message.
+- Since rounds 3 and 4 (sections 5.7, F-B and F-D, and 5.10, R4-6 and R4-7): Fastify's warning for an answer sent after
+  one went out on `reply.raw`, which quotes the URL in its message, keeps only `REPLY_SENT_MESSAGE`; `redactBindings`
+  wraps only a child's own formatter that is a function, its `bindings` one as well as its `log` one, called with the
+  `this` pino gives it; and falsy bindings pass as they are, for pino to refuse or skip.
 
 ### 1.5. A request line for Fastify's own answers (`services/api/src/app.ts`, `logging.ts`)
 
@@ -530,7 +542,9 @@ commit, or answered here.
   inside a longer value (`trouble: aturday Peopl`, `caption=rom Ben's pho`). Fixed: `within` also looks up every run of
   12 characters of the value (`SHORTEST_RUN`) and finds each text that holds one (section 1.3). 12, not 8: a request's
   random id in the log, read in runs of 8 against the request strings the matrix gathers, would match one by chance
-  about once in five runs by the review's estimate; in runs of 12, the chance is some 17 million times smaller. The
+  about once in five runs by the review's estimate; in runs of 12, the chance is about a million times smaller (32^4:
+  `within` reads both in lower case, so a character of the id matches a given letter with a chance of 2 in 64; "some 17
+  million" until round 4 corrected it, R4-5). The
   records say it as it is (T16's row, PROGRESS, `logProblems`' doc). Tests: the needle test (the review's two cases,
   upper-cased, and a run of 11 not found) and a planted line, the club's name cut at both ends inside `trouble`. A text
   URL-encoded in a quoted request URL (`Saturday%20People`) is still not found: no route takes free text in its query,
@@ -539,8 +553,10 @@ commit, or answered here.
   put the request's raw URL, query and all, in `msg`, and the header said every message was fixed.** No route touches
   `reply.raw` today, and `main` has the same hole. Fixed: `ownMessage` keeps only its fixed start, `Reply was already
   sent` (`REPLY_SENT_MESSAGE`), without any format arguments; the header's layers 1 and 3 say what is left of Fastify's
-  own lines: lines about Fastify itself, which carry nothing of a request's (every line that carries an error's message
-  or the URL is `LogController`'s, all off under `disableRequestLogging`, as `log-controller.js` reads), and this one. Test: the error-message test's bare app, `GET
+  own lines: lines about Fastify itself, which carry nothing of a request's; lines that pass an error (a hook that
+  failed, a second answer to a request, whose error quotes the URL), which layer 3's `ownMessage` and `safeError` hold to
+  a fixed message and the error's class and code; and this one. (Until round 4, R4-3, this said every line that carries
+  an error's message or the URL is `LogController`'s, which is true only of the request lines.) Test: the error-message test's bare app, `GET
   /raw?caption=SECRET-RAW` on a route that writes the head on `reply.raw` and then sends.
 - **F-C (low, records; T58): the T58 row's "each as strict or stricter" wasn't literally true.** `OPAQUE` drops a
   request string shaped like an id of the API's, where the second commit counted it as text, and the pattern also fits
@@ -593,3 +609,88 @@ freshly made database:
 - K13 to K20 caught, each with its pattern; N6 caught, in 10 of the cell's lines, each found by the step and again by
   the last test (`the API's log: text people wrote at $.trouble`).
 - The control at `573967b`: N6 missed, as registered.
+
+### 5.10. Round 4, at `49c3abf`
+
+One narrow fresh check, by a subagent that hadn't seen the work, of the fourth commit (R4-1 to R4-7: two low, five nits;
+nothing blocker, high or medium). It probed pino 10.4.0's `genLog` and `write` with 26 call shapes, and timed the old
+and new `Needles` on 3,000 worlds of its own. Each is fixed in the fifth commit, or answered here.
+
+- **R4-1 (low): the run lookup's cost when a value leaks.** The fourth commit looked up each place's run of 12 by its
+  first 6 characters and then searched every text that has them; the matrix's worlds word their texts alike ("The ferry
+  at dawn" and a world's mark), so each place inside a leaking body searched thousands of texts. A 1,220-character
+  leaking value cost about 480 ms against 42,000 texts; a regression that logs a body on every line could have run the
+  privacy step into its time limit before it listed the problems. Honest values were unaffected. Fixed: `Needles`
+  indexes every run of 12 of each text longer than 12 (`#byRun`), one exact lookup for each place in a value; a private
+  `#scan` gives each form it finds to a callback until the callback says to stop, with the exact lookups first; `holds`
+  stops at the first, and `logProblems` asks only `holds`; `within` still collects every needle, for the tests that
+  name them. Measured with the review's own load (42,000 texts in 3,000 worlds; the script, `time.mts`, is on `evidence` with round 4's breakages): a 1,220-character leaking
+  value 0.02 ms with `holds` (480 ms before with `within`, and 1.7 ms with the stop alone, without the exact index); an
+  honest value 1.8 µs (1.8 µs before); none of 200,000 random request ids held a text; the heap 207 MB (86 MB before).
+  Test: "says whether a value holds a needle as `within` finds them, and stops at the first, …" (`holds` agrees with
+  `within` on every case of the needle tests; 20 rounds of `holds` and `logProblems` on a leaking 1,220-character
+  value against 8,000 texts worded alike take under 100 ms).
+- **R4-2 (low): one-word spellings were caught by list, not as a class.** `providerid`, `aspectratio`, `createdat`,
+  `takenat`, `capturedat`, `durationms`, `slotsremaining`, `haspreview`, `ishighlight`, `alttext`, `sourceid`,
+  `embedhtml`, `dominantcolor`, `posterframe`, `exifdata` and `previewtext` passed `neverKey`. No contract key uses any
+  of them; T10's whitelist still caught them inside a pre-reveal drop's schemas. Fixed: `joinedNever` reads one word as
+  two run together: a never-word of 3 letters or more and then a never-word of 3 letters or more, a highlight or a short
+  tail (`NEVER_TAILS`: `id`, `ids`, `at`, `on`, `ms`, `text`, `html`, `data`, `frame`, `frames`), or `is` and then a
+  never-word of 3 letters or more or a highlight; a shorter never-word (`w`, `h`, `n`) could start or end any plain word.
+  `NEVER_ENDINGS` gains the media words and counts no plain word ends with (`color`, `colour`, `remaining`, `missing`,
+  `duration`, `preview`, `timestamp`, `dimension`, `waveform`, `highlight`), for `dominantcolor` and `slotsremaining`.
+  Tests: the never-word test (each of the review's 16 and `photo_providerid`; and `anyone`, `hashtag`, `timezone`,
+  `format`, `items`, `metadata`, `context`, `isolated` and `valid` pass); the served-for-a-reason test holds the
+  contract's answers; and none of the 174 property keys in `openapi.yaml` and the schema files changes its verdict
+  (`keys.mts`, on `evidence` with round 4's breakages, against `49c3abf`'s `neverKey`).
+- **R4-3 (nit, records): three records said every Fastify line that carries an error's message or the URL is
+  `LogController`'s.** `reply.js:162` (`{ err: FST_ERR_REP_ALREADY_SENT(url, method) }`), `hooks.js:193`
+  (`server.log.error(err)`) and `reply.js:934` (`reply.log.debug(err)`) aren't; `ownMessage` and `safeError` hold all
+  three, so nothing leaked. Corrected: `logging.ts`' header, layer 1, and 5.7's F-B say what holds them; the fourth
+  commit's journal entry is corrected by the fifth's.
+- **R4-4 (nit, records): the fourth commit's journal entry said the never-word test gained ten keys; it gained nine.**
+  Corrected in the fifth commit's entry.
+- **R4-5 (nit, records): "some 17 million times smaller" for runs of 12 against runs of 8 is about a million**
+  (32^4, since `within` lower-cases both sides). Corrected in 5.7 and in the fifth commit's entry; the conclusion
+  stands.
+- **R4-6 (nit): falsy bindings that aren't null or undefined** (`child(0)`, `child("")`, `child(false)`) became `{}`
+  through `redactLine`, where pino refuses them. Fixed: the wrappers test `!bindings`, pino's own test, in `child` and
+  in `setBindings`. Test: "blanks what a child's own bindings formatter brings, and lets pino refuse falsy bindings as
+  pino does" (each of `0`, `""`, `false`, `null` and `undefined` throws pino's "missing bindings for child Pino").
+- **R4-7 (nit, older than this commit): a child's own `formatters.bindings` wasn't wrapped**, and pino runs it after
+  our redaction, so what the formatter brought in itself (`extra: { deeper: { caption } }`) got only pino's two-level
+  paths. Fixed: `redactedFormatters` wraps a child's own `bindings` formatter as it wraps its `log` one, with
+  `redactLine` after it and the `this` pino gives it (none); what a formatter returns that is no object goes to pino as
+  it is. Test: the same test (the caption the formatter brings is blanked, in the child's lines and after its
+  `setBindings`; the formatter gets the bindings already blanked; a formatter that returns nothing makes no bindings,
+  as in pino).
+
+### 5.11. Breakages for round 4, registered before they are run
+
+As 5.8, on the unit suites only: no matrix row changes, and the matrix calls only `holds`, which K21 and K22 change.
+
+- K21: `holds` collects every needle, as `within` does (no stop at the first): scanner, the `holds` test (`to be less
+  than 100`).
+- K22: `logProblems` asks `within(…).length > 0`, as `49c3abf` had it: scanner, the same test (`to be less than 100`).
+- K23: the run lookup by first characters and a search, as `49c3abf` had it, with the stop at the first kept:
+  registered to pass the scanner tests. The stop alone keeps the test under its bound (1.7 ms against 0.02 ms per
+  value in 5.10's measurement), so the exact index is held by measurement, not by a test.
+- K24: `joinedNever` off: scanner, the never-word test (`providerid`).
+- K25: `NEVER_ENDINGS` as `49c3abf` had it: scanner, the same test (`slotsremaining`).
+- K26: a child's own `bindings` formatter not wrapped, as `49c3abf` had it: logging, "blanks what a child's own
+  bindings formatter brings" (the caption it brings is not blanked: `[redacted]`).
+- K27: falsy bindings other than null and undefined redacted as if present, as `49c3abf` had it: logging, the same test
+  (`child(0)` makes a child: `to throw`).
+
+### 5.12. As run
+
+On the branch's tree with round 4's fixes, uncommitted, with Node 26.13.0, one run at a time, each matrix run on a
+freshly made database:
+
+- `format`, `lint`, `typecheck`, `copy-lint`, `unit` (api 430, worker 160, domain 516, contracts 251, ops 495, web 47)
+  and `tools-tests` (36) pass; `scanner.test.ts` 112 of 112 and `logging.test.ts` 19 of 19.
+- `db-tests` 951 of 951 (125 s); `privacy` 543 of 543 on a fresh cluster in 1,300 s (1,253 s at `49c3abf`; the one more
+  is the scanner's new test, which the privacy config runs too); the step's largest process peaked at 1.8 GB resident
+  (1,831,872 kB; no figure was taken at `49c3abf`).
+- K21, K22 and K24 to K27 caught, each with its pattern: K21's 20 rounds took 2,118 ms and K22's 1,135 ms, against the
+  bound of 100. K23 passed the scanner tests, as registered.

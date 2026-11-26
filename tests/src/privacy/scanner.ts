@@ -644,10 +644,35 @@ const NEVER_STARTS = /^highlight/;
 
 /**
  * Media words and counts no plain word ends with, caught at a word's end too: `filesize`, `imageurl`,
- * `thumbhash`, `dropcount`; but the plain words that do (PLAIN_WORDS).
+ * `thumbhash`, `dropcount`, and the round-4 review's `dominantcolor` and `slotsremaining`; but the plain
+ * words that do (PLAIN_WORDS).
  */
-const NEVER_ENDINGS = /(url|uri|src|size|hash|thumb|thumbnail|width|height|count|total)s?$/;
+const NEVER_ENDINGS =
+  /(url|uri|src|size|hash|thumb|thumbnail|width|height|count|total|color|colour|remaining|missing|duration|preview|timestamp|dimension|waveform|highlight)s?$/;
 const PLAIN_WORDS = new Set(["account", "accounts"]);
+
+/**
+ * Short words that make one word with a never-word before them (the round-4 review): `providerid`,
+ * `createdat`, `durationms`, `alttext`, `embedhtml`, `exifdata`, `posterframe`.
+ */
+const NEVER_TAILS = new Set(["id", "ids", "at", "on", "ms", "text", "html", "data", "frame", "frames"]);
+
+/**
+ * Whether one word of a key is two run together (the round-4 review: `aspectratio`, `haspreview`,
+ * `ishighlight`, `sourceid`): a never-word of 3 letters or more and then a never-word of 3 letters or more,
+ * a highlight or a NEVER_TAILS word; or `is` and then a never-word of 3 letters or more or a highlight. A
+ * shorter never-word (`w`, `h`, `n`) could start or end any plain word.
+ */
+function joinedNever(word: string): boolean {
+  for (let at = 2; at + 2 <= word.length; at += 1) {
+    const head = word.slice(0, at);
+    const tail = word.slice(at);
+    const named = tail.length >= 3 && (NEVER_WORDS.has(tail) || NEVER_STARTS.test(tail));
+    if (head === "is" && named) return true;
+    if (head.length >= 3 && NEVER_WORDS.has(head) && (named || NEVER_TAILS.has(tail))) return true;
+  }
+  return false;
+}
 
 /**
  * A key's words: split at `_`, `-` and a space, before a capital that follows a lower-case letter or a
@@ -672,8 +697,9 @@ export function keyWords(key: string): string[] {
  * Whether a key names one of T10's never-list, a way to reach media, a count, a total, a number, whether
  * there is any, a hidden flag, a position, a size, a preview or a time (a last word `at` or `on`:
  * `committed_at`, `addedOn`), in snake_case or camelCase, as one word or two (`waveForm`, `highLight`,
- * `slots_left`), or starts a word with a highlight (NEVER_STARTS) or ends one with a media word or a count
- * (NEVER_ENDINGS); and every key `main`'s list named (NEVER_KEY).
+ * `slots_left`), or starts a word with a highlight (NEVER_STARTS), runs two together in one word
+ * (`providerid`, `haspreview`: joinedNever) or ends one with a media word or a count (NEVER_ENDINGS); and
+ * every key `main`'s list named (NEVER_KEY).
  */
 export function neverKey(key: string): boolean {
   if (NEVER_KEY.test(key)) return true;
@@ -687,6 +713,7 @@ export function neverKey(key: string): boolean {
       NEVER_WORDS.has(`${word}${words[index + 1] ?? ""}`) ||
       NEVER_STARTS.test(word) ||
       NEVER_STARTS.test(`${word}${words[index + 1] ?? ""}`) ||
+      joinedNever(word) ||
       (NEVER_ENDINGS.test(word) && !PLAIN_WORDS.has(word)),
   );
 }
@@ -2020,9 +2047,12 @@ function listed(found: Map<string, string[]>, key: string, value: string): void 
  * every line, at the end against all it gathered). Each is looked for in any case and also as JSON escapes
  * it inside another string (a body logged whole holds a caption's `"` as `\"`: the round-2 review). With
  * `cuts`, each is also indexed by every SHORTEST_TEXT characters inside it, so a value of SHORTEST_CUT
- * characters or more that is part of one counts too, and so does a run of SHORTEST_RUN characters of one
- * anywhere inside a longer value; text people wrote has it, while tokens and kept-back values, long random
- * strings by the thousand, aren't cut where the API could carry them.
+ * characters or more that is part of one counts too, and by every SHORTEST_RUN characters inside it, so a
+ * run of that many of one anywhere inside a longer value counts in one exact lookup for each place in the
+ * value (the round-4 review: looking each place's run up by its first characters and then inside every
+ * text that has them cost a leaking body thousands of searches at each place, since the worlds' texts
+ * share their wording); text people wrote has it, while tokens and kept-back values, long random strings
+ * by the thousand, aren't cut where the API could carry them.
  */
 export class Needles {
   readonly #needles = new Set<string>();
@@ -2031,9 +2061,11 @@ export class Needles {
   readonly #short: string[] = [];
   readonly #byStart = new Map<string, string[]>();
   readonly #byInside: Map<string, string[]> | undefined;
+  readonly #byRun: Map<string, string[]> | undefined;
 
   constructor(needles: Iterable<string> = [], options: { readonly cuts?: boolean } = {}) {
     this.#byInside = options.cuts === true ? new Map() : undefined;
+    this.#byRun = options.cuts === true ? new Map() : undefined;
     for (const needle of needles) this.add(needle);
   }
 
@@ -2057,6 +2089,12 @@ export class Needles {
         for (let at = 0; at + SHORTEST_TEXT <= form.length; at += 1) starts.add(form.slice(at, at + SHORTEST_TEXT));
         for (const start of starts) listed(this.#byInside, start, form);
       }
+      // A form of SHORTEST_RUN characters or fewer inside a value is found whole, by its start.
+      if (this.#byRun !== undefined && form.length > SHORTEST_RUN) {
+        const runs = new Set<string>();
+        for (let at = 0; at + SHORTEST_RUN <= form.length; at += 1) runs.add(form.slice(at, at + SHORTEST_RUN));
+        for (const run of runs) listed(this.#byRun, run, form);
+      }
     }
     return this;
   }
@@ -2068,23 +2106,42 @@ export class Needles {
    * characters of it.
    */
   within(value: string, shortInside: boolean): string[] {
-    const lower = value.toLowerCase();
     const found = new Set<string>();
-    const needle = (form: string) => found.add(this.#forms.get(form) ?? form);
-    if (this.#forms.has(lower)) needle(lower);
-    if (shortInside) for (const form of this.#short) if (lower.includes(form)) needle(form);
+    this.#scan(value, shortInside, (form) => {
+      found.add(this.#forms.get(form) ?? form);
+      return false;
+    });
+    return [...found];
+  }
+
+  /** Whether `value` holds any needle as `within` finds them, stopping at the first (the round-4 review). */
+  holds(value: string, shortInside: boolean): boolean {
+    let held = false;
+    this.#scan(value, shortInside, () => {
+      held = true;
+      return true;
+    });
+    return held;
+  }
+
+  /**
+   * Each form `within` finds in `value`, given to `take`, until `take` says to stop: the exact lookups
+   * first, so a value that holds text people wrote stops at its first run of it, before the searches
+   * that pay at each place where many texts start alike.
+   */
+  #scan(value: string, shortInside: boolean, take: (form: string) => boolean): void {
+    const lower = value.toLowerCase();
+    if (this.#forms.has(lower) && take(lower)) return;
+    if (this.#byRun !== undefined)
+      for (let at = 0; at + SHORTEST_RUN <= lower.length; at += 1)
+        for (const form of this.#byRun.get(lower.slice(at, at + SHORTEST_RUN)) ?? []) if (take(form)) return;
     for (let at = 0; at + SHORTEST_TEXT <= lower.length; at += 1)
       for (const form of this.#byStart.get(lower.slice(at, at + SHORTEST_TEXT)) ?? [])
-        if (lower.startsWith(form, at)) needle(form);
+        if (lower.startsWith(form, at) && take(form)) return;
     if (this.#byInside !== undefined && lower.length >= SHORTEST_CUT)
       for (const form of this.#byInside.get(lower.slice(0, SHORTEST_TEXT)) ?? [])
-        if (form.includes(lower)) needle(form);
-    if (this.#byInside !== undefined)
-      for (let at = 0; at + SHORTEST_RUN <= lower.length; at += 1) {
-        const run = lower.slice(at, at + SHORTEST_RUN);
-        for (const form of this.#byInside.get(run.slice(0, SHORTEST_TEXT)) ?? []) if (form.includes(run)) needle(form);
-      }
-    return [...found];
+        if (form.includes(lower) && take(form)) return;
+    if (shortInside) for (const form of this.#short) if (lower.includes(form) && take(form)) return;
   }
 }
 
@@ -2119,9 +2176,9 @@ export function logProblems(line: string, facts: LogFacts): string[] {
   for (const key of Object.keys(entry))
     if (!LOG_KEYS.has(key)) problems.push(`a key the API's log doesn't write: ${key}`);
   for (const [value, at] of strings(entry)) {
-    if (facts.texts.within(value, false).length > 0) problems.push(`text people wrote at ${at} (T52)`);
-    if (facts.keptBack.within(value, true).length > 0) problems.push(`a value the world keeps back at ${at}`);
-    if (facts.secrets.within(value, true).length > 0) problems.push(`a request's or answer's token at ${at} (T52)`);
+    if (facts.texts.holds(value, false)) problems.push(`text people wrote at ${at} (T52)`);
+    if (facts.keptBack.holds(value, true)) problems.push(`a value the world keeps back at ${at}`);
+    if (facts.secrets.holds(value, true)) problems.push(`a request's or answer's token at ${at} (T52)`);
     if (JWT.test(value)) problems.push(`a token at ${at} (T52)`);
     for (const pattern of NEVER_VALUE)
       if (pattern.test(value)) problems.push(`a URL, storage path or provider host at ${at}: ${pattern.source}`);

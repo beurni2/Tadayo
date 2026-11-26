@@ -238,6 +238,52 @@ describe("the redaction list (T52)", () => {
     expect(lines.join("")).not.toContain("SECRET-");
   });
 
+  it("blanks what a child's own bindings formatter brings, and lets pino refuse falsy bindings as pino does (the round-4 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const given: unknown[] = [];
+    let self = "unset";
+    const own = {
+      formatters: {
+        bindings: function bring(this: unknown, bindings: Record<string, unknown>) {
+          given.push(bindings);
+          self = typeof this;
+          return { ...bindings, extra: { deeper: { caption: "SECRET-BINDINGS" } } };
+        },
+      },
+    };
+    const formatted = app.log.child({ step: 7, note: "SECRET-GIVEN" }, own);
+    formatted.info("bound");
+    // Its later bindings go through its own formatter too, in pino's `setBindings`.
+    (formatted as unknown as { setBindings(bindings: unknown): void }).setBindings({ later: 1 });
+    formatted.info("later");
+    // A formatter that returns no object is pino's to deal with, as it is without the wrapper.
+    app.log
+      .child({ step: 8 }, { formatters: { bindings: () => undefined } } as unknown as Parameters<
+        typeof app.log.child
+      >[1])
+      .info("none");
+    for (const bindings of [0, "", false, null, undefined])
+      expect(() => app.log.child(bindings as unknown as Record<string, unknown>), String(bindings)).toThrow(
+        "missing bindings for child Pino",
+      );
+    const entries = parse(lines);
+    expect(entries).toHaveLength(3);
+    expect(entries[0]).toMatchObject({
+      msg: "bound",
+      step: 7,
+      note: "[redacted]",
+      extra: { deeper: { caption: "[redacted]" } },
+    });
+    expect(entries[1]).toMatchObject({ msg: "later", later: 1, extra: { deeper: { caption: "[redacted]" } } });
+    expect(entries[2]).toMatchObject({ msg: "none" });
+    expect(entries[2]).not.toHaveProperty("step");
+    // The formatter gets the bindings already blanked, and pino calls it with no `this`.
+    expect(given[0]).toMatchObject({ note: "[redacted]" });
+    expect(given[1]).toEqual({ later: 1 });
+    expect(self).toBe("undefined");
+    expect(lines.join("")).not.toContain("SECRET-");
+  });
+
   it("keeps pino's own redaction of the list beneath it, at the top and one level down, as `main` had (the round-2 review)", () => {
     const options = fastifyLogging({ level: "info" }).logger as unknown as {
       redact: { paths: string[]; censor: string };
