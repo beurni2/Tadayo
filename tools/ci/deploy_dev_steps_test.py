@@ -193,6 +193,59 @@ class WaitCiTest(unittest.TestCase):
                 self.assertEqual(http.requests, [])
 
 
+def ci_job_limits(lines):
+    """Each job's `timeout-minutes` under ci.yml's `jobs:`, the job's own key at the job's
+    indentation, not a step's. A job without one fails: GitHub would give it 360 minutes."""
+    if "jobs:" not in lines:
+        raise AssertionError("ci.yml has no top-level `jobs:`")
+    limits, current = {}, None
+    for line in lines[lines.index("jobs:") + 1:]:
+        if line and not line.startswith(" ") and not line.startswith("#"):
+            break  # the next top-level key
+        job = re.match(r"^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$", line)
+        limit = re.match(r"^    timeout-minutes: (\d+)\s*(?:#.*)?$", line)
+        if job:
+            current = job.group(1)
+            limits[current] = None
+        elif current and limit:
+            limits[current] = int(limit.group(1))
+    unlimited = sorted(name for name, minutes in limits.items() if minutes is None)
+    if unlimited:
+        raise AssertionError(f"ci.yml's job(s) {', '.join(unlimited)} have no timeout-minutes")
+    return limits
+
+
+class CiFitsTheWaitTest(unittest.TestCase):
+    """wait-ci's last look comes (CI_POLLS - 1) * CI_POLL_SECONDS after its first, so a main ci run
+    that passes later than that finds deploy-dev gone, and nothing deploys. A passing run takes at
+    most its longest job's limit and then the `ci` job's, which runs after every other job; queueing
+    for a runner comes on top, which no limit bounds (docs/LIMITATIONS.md, the row of 2026-11-26)."""
+
+    def ci_yml_lines(self):
+        with open(os.path.join(ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8") as f:
+            return f.read().splitlines()
+
+    def test_ci_yml_s_longest_job_and_its_ci_job_fit_in_the_wait(self):
+        limits = ci_job_limits(self.ci_yml_lines())
+        self.assertIn("ci", limits, "ci.yml has no `ci` job")
+        longest = max(minutes for name, minutes in limits.items() if name != "ci")
+        wait = (steps_module.CI_POLLS - 1) * steps_module.CI_POLL_SECONDS
+        self.assertLessEqual((longest + limits["ci"]) * 60, wait,
+                             f"ci.yml's longest job ({longest} minutes) and its ci job "
+                             f"({limits['ci']}) outlast wait-ci's {wait} seconds")
+
+    def test_the_reader_takes_each_job_s_own_limit_and_refuses_a_job_without_one(self):
+        lines = ["jobs:", "  node:", "    timeout-minutes: 15", "    steps:", "      - run: x",
+                 "        timeout-minutes: 99", "  ci:  # the verdict", "    timeout-minutes: 5",
+                 "on:", "  x:", "    timeout-minutes: 7"]
+        self.assertEqual(ci_job_limits(lines), {"node": 15, "ci": 5})
+        with self.assertRaisesRegex(AssertionError, "swift have no timeout-minutes"):
+            ci_job_limits(["jobs:", "  node:", "    timeout-minutes: 15", "  swift:", "    steps:",
+                           "      - timeout-minutes: 30"])
+        with self.assertRaisesRegex(AssertionError, "no top-level `jobs:`"):
+            ci_job_limits(["on:", "  push:"])
+
+
 GOOD_API = answer(401, b'{"code":"UNAUTHENTICATED"}', {
     "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store",
     "content-length": "26", "server": "Fly/abc", "via": "1.1 fly.io"})

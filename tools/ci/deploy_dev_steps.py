@@ -72,7 +72,8 @@ GITHUB_API = "api.github.com"
 CLOUDFLARE_API = "api.cloudflare.com"
 USER_AGENT = "deploy-dev"
 REQUEST_SECONDS = 30
-# A main ci run takes about six minutes; the wait gives it 40.
+# A main ci run takes about 16 minutes (2026-11-26). The last look comes 39 min 40 s after the
+# first; ci.yml's longest job limit and its `ci` job's fit in that (CiFitsTheWaitTest).
 CI_POLLS, CI_POLL_SECONDS = 120, 20
 # Fly's proxy answers 502 to 504 while a Machine is replaced, which deploy-branch has waited for.
 API_TRIES, API_RETRY_SECONDS = 6, 10
