@@ -60,11 +60,13 @@ struct HomeAwaiting: View {
 /// `a11y.reviewMembers`, which replaces handoff 3's label), or, when the review is pending, "Review
 /// {clubName}’s updated members." with no hint (handoff 8's `pending.review.action.vo`, frame 13).
 /// Voice Control still answers to its visible words, Review members, where the spoken label differs
-/// from them (handoffs 3 and 4's check, V-04: WCAG 2.5.3, Label in Name). It does nothing yet: the
-/// proposed roster's review is `G05-members-proposed`, plan PR 7 (FQ85).
+/// from them (handoffs 3 and 4's check, V-04: WCAG 2.5.3, Label in Name). It opens the proposed
+/// roster (`G05-members-proposed`, B1 plan PR 7b), where the creator also decides on a revision
+/// the server made for a name while that decision is pending (FQ145's default).
 struct ReviewMembersButton: View {
     let club: String
     let review: Bool
+    var action: () -> Void = {}
 
     var body: some View {
         if review {
@@ -85,8 +87,7 @@ struct ReviewMembersButton: View {
     }
 
     private var button: some View {
-        Button {
-        } label: {
+        Button(action: action) {
             Text("home.awaiting.action")
         }
         .buttonStyle(.tadayoPrimary)

@@ -27,6 +27,11 @@
         /// makes one in memory (`NewClub`): a test can walk naming the club, its setup list, the
         /// name step and the waiting screen. A test seam, not product.
         static let create = "-TadayoUITestCreate"
+        /// The same, except that once a link is made the server holds a revision of the club made
+        /// that Ben hasn't approved, as it does when someone accepts under a name Ben didn't give
+        /// (FQ84; `NewClub.awaitingBen`): Done for now shows the waiting screen asking for Ben's
+        /// review, and Approve roster there starts the club. A test seam, not product.
+        static let createAwaitingBen = "-TadayoUITestCreateAwaitingBen"
         /// The stand-in services with an account already named and in no club, where I have an
         /// invite checks a pasted link (`Invited`): Debby's link to Sunday people shows its
         /// roster, which Accept this roster leaves waiting on the members, and the club list then
@@ -42,6 +47,11 @@
         /// proposed Leila and Ben hasn't decided (`Approving`): a test can open Leila's proposed
         /// row in Members and approve, or decline into a changed roster. A test seam, not product.
         static let approve = "-TadayoUITestApprove"
+        /// The stand-in services with an account already named, the creator of Sunday people,
+        /// which hasn't started, where the server made a revision for Debby's own name and Ben
+        /// hasn't decided (`Proposing`): a test can open the proposed roster from Home's Review
+        /// members, its setup list, and approve. A test seam, not product.
+        static let propose = "-TadayoUITestPropose"
         /// Debby's link `Invited` knows: made up, no server made it.
         static let invitedLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
         /// Maya's link `Invited` knows, whose Accept joins: made up, no server made it.
@@ -50,23 +60,27 @@
 
         @MainActor static func fakeGraph(
             hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false,
-            creating: Bool = false, invited: Bool = false, changedListed: Bool = false,
-            approving: Bool = false
+            creating: Bool = false, awaitingBen: Bool = false, invited: Bool = false,
+            changedListed: Bool = false, approving: Bool = false, proposing: Bool = false
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
-            let made = creating ? NewClub() : nil
+            let made = creating || awaitingBen ? NewClub(awaitingBen: awaitingBen) : nil
             let invitations = invited || changedListed ? Invited(changedListed: changedListed) : nil
+            let proposal = proposing ? Proposing() : nil
             let listed = inClubs ? TwoClubs.listed : approving ? Approving.listed : []
             let accounts = FakeAccounts(
                 nameFailsThenHangs: nameFailsThenHangs, clubs: listed,
                 thenClubs: inClubs ? TwoClubs.relisted : nil,
-                named: creating || invitations != nil, made: made, joined: invitations)
+                named: made != nil || invitations != nil || proposal != nil, made: made,
+                joined: invitations, proposing: proposal)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let clubs: any ClubService
             if inClubs {
                 clubs = TwoClubs()
             } else if approving {
                 clubs = Approving()
+            } else if let proposal {
+                clubs = proposal
             } else if let made {
                 clubs = made
             } else if let invitations {
@@ -107,23 +121,26 @@
             private let relisted: [ClubSummary]?
             private let made: NewClub?
             private let joined: Invited?
+            private let proposing: Proposing?
             private var listReads = 0
             private var namesTried = 0
             private var account: Account
 
             /// A new account with no club, or, given `clubs` or `named`, Ben's, named and in them,
             /// the list read again giving `thenClubs` when there are some, and listing the club
-            /// `made` holds once it's made, and any club `joined` has joined.
+            /// `made` holds once it's made, any club `joined` has joined, and the club `proposing`
+            /// holds as it stands.
             init(
                 nameFailsThenHangs: Bool = false, clubs: [ClubSummary] = [],
                 thenClubs: [ClubSummary]? = nil, named: Bool = false, made: NewClub? = nil,
-                joined: Invited? = nil
+                joined: Invited? = nil, proposing: Proposing? = nil
             ) {
                 self.nameFailsThenHangs = nameFailsThenHangs
                 listed = clubs
                 relisted = thenClubs
                 self.made = made
                 self.joined = joined
+                self.proposing = proposing
                 account =
                     clubs.isEmpty && !named
                     ? Account(
@@ -171,7 +188,8 @@
                 }
                 return ClubList(
                     serverClock: ServerClock(serverNow: Date(), receivedAt: .now),
-                    clubs: clubs + (made?.listed ?? []) + (joined?.listed ?? []),
+                    clubs: clubs + (made?.listed ?? []) + (joined?.listed ?? [])
+                        + (proposing?.listed ?? []),
                     invitations: joined?.invitations ?? [])
             }
         }
@@ -179,12 +197,26 @@
         /// One club Ben makes, held in memory as the club calls answer it: made with the name
         /// given, then each person proposed joins its open revision, with a link made for them
         /// on asking, which a revoke revokes. Its links are made up for the tests: no server ever
-        /// made them. Every other call is `NoClubs`'.
+        /// made them. With `awaitingBen`, once a link is made the open revision is one the server
+        /// made that Ben hasn't approved (FQ84), whose approval starts the club. Every other call
+        /// is `NoClubs`'.
         final class NewClub: ClubService, @unchecked Sendable {
             private let lock = NSLock()
             private var club: ClubRef?
             private var candidates: [Candidate] = []
             private let none = NoClubs()
+            private let awaitingBen: Bool
+            private var started = false
+
+            init(awaitingBen: Bool = false) {
+                self.awaitingBen = awaitingBen
+            }
+
+            /// Whether the open revision waits on Ben's approval: once a link is made, with
+            /// `awaitingBen`. Read under the lock.
+            private var benDecides: Bool {
+                awaitingBen && candidates.contains { $0.invitation != nil }
+            }
             private static let ben = Person(
                 membershipID: "mem_ben", displayName: "Ben", avatarVersion: nil)
 
@@ -196,21 +228,27 @@
             }
 
             private func summary(_ club: ClubRef) -> ClubSummary {
-                ClubSummary(ref: club, state: .proposed, memberCount: 1, openDay: nil, nextDay: nil)
+                ClubSummary(
+                    ref: club, state: started ? .active : .proposed,
+                    memberCount: started ? 1 + candidates.count : 1, openDay: nil, nextDay: nil)
             }
 
             private func detail(_ club: ClubRef) -> ClubDetail {
                 ClubDetail(
                     serverClock: clock, club: summary(club), rosterVersion: candidates.count,
-                    canPropose: candidates.count < 5,
-                    openRevisionID: candidates.isEmpty ? nil : "rev_new")
+                    canPropose: !started && candidates.count < 5,
+                    openRevisionID: started || candidates.isEmpty ? nil : revisionID)
             }
+
+            /// The open revision's id: the server's own once it waits on Ben.
+            private var revisionID: String { benDecides ? "rev_awaiting" : "rev_new" }
 
             private func revision(_ club: ClubRef) -> RosterRevision {
                 RosterRevision(
-                    id: "rev_new", version: candidates.count, club: club, state: .open,
-                    proposedBy: Self.ben, members: [Self.ben], candidates: candidates,
-                    myDecision: .approved, supersededBy: nil)
+                    id: revisionID, version: candidates.count, club: club,
+                    state: started ? .applied : .open, proposedBy: Self.ben, members: [Self.ben],
+                    candidates: candidates,
+                    myDecision: benDecides && !started ? .pending : .approved, supersededBy: nil)
             }
 
             /// The club made, if it's the one asked for. Callers read it under the lock and throw
@@ -248,7 +286,7 @@
                                     person: Self.ben, position: 1, cover: nil, nextDay: nil,
                                     nextUp: false)
                             ],
-                            openRevision: candidates.isEmpty ? nil : revision(club))
+                            openRevision: started || candidates.isEmpty ? nil : revision(club))
                     }
                 }
                 guard let answer else { throw .notFound }
@@ -324,12 +362,30 @@
             }
 
             func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
-                try await none.rosterRevision(revisionID)
+                let answer: RosterRevision? = lock.withLock {
+                    guard let club, revisionID == self.revisionID else { return nil }
+                    return revision(club)
+                }
+                guard let answer else { throw .notFound }
+                return answer
             }
 
+            /// Ben's approval of the revision waiting on him starts the club.
             func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
                 async throws(APIFailure) -> RosterRevision
-            { try await none.approve(revisionID, expectedVersion: expectedVersion, key: key) }
+            {
+                let answer: Result<RosterRevision, APIFailure> = lock.withLock {
+                    guard let club, benDecides, !started, revisionID == self.revisionID else {
+                        return .failure(.notFound)
+                    }
+                    guard expectedVersion == candidates.count else {
+                        return .failure(.versionConflict)
+                    }
+                    started = true
+                    return .success(revision(club))
+                }
+                return try answer.get()
+            }
 
             func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
                 async throws(APIFailure) -> RosterRevision
@@ -737,6 +793,133 @@
 
             func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
                 try await none.rosterRevision(revisionID)
+            }
+
+            func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
+                try await none.preview(token)
+            }
+
+            func accept(
+                _ token: InvitationToken, revisionID: String, expectedVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> InvitationAcceptance {
+                try await none.accept(
+                    token, revisionID: revisionID, expectedVersion: expectedVersion, key: key)
+            }
+        }
+
+        /// The club calls for Ben, the creator of Sunday people, which hasn't started, where
+        /// Debby accepted Ben's proposal under Debby's own name and the server made a revision
+        /// for it, which Ben must approve (`propose`; FQ84, FQ145). The first Approve gets no
+        /// answer; the next, with the same key (T19), approves, and the club starts: the list,
+        /// the details and Home then show it active. An Approve with another key gets no answer
+        /// either, so a key not kept shows as the line staying. Every other call is `NoClubs`'.
+        final class Proposing: ClubService, @unchecked Sendable {
+            private static let sunday = ClubRef(
+                id: "club_sunday", name: "Sunday people", timezone: "America/New_York",
+                myMembershipID: "mem_ben")
+            private static let ben = Person(
+                membershipID: "mem_ben", displayName: "Ben", avatarVersion: nil)
+
+            private let none = NoClubs()
+            private let lock = NSLock()
+            private var firstKey: IdempotencyKey?
+            private var started = false
+
+            private var clock: ServerClock { ServerClock(serverNow: Date(), receivedAt: .now) }
+
+            /// Sunday people as the club list holds it now.
+            var listed: [ClubSummary] { [summary()] }
+
+            private func summary() -> ClubSummary {
+                let started = lock.withLock { self.started }
+                return ClubSummary(
+                    ref: Self.sunday, state: started ? .active : .proposed,
+                    memberCount: started ? 2 : 1, openDay: nil, nextDay: nil)
+            }
+
+            private func revision() -> RosterRevision {
+                let started = lock.withLock { self.started }
+                return RosterRevision(
+                    id: "rev_debby", version: started ? 3 : 2, club: Self.sunday,
+                    state: started ? .applied : .open, proposedBy: Self.ben, members: [Self.ben],
+                    candidates: [
+                        Candidate(
+                            id: "cand_debby", name: "Debby", proposedBy: Self.ben,
+                            invitation: CandidateInvitation(
+                                id: "inv_debby", state: .accepted,
+                                expiresAt: Date().addingTimeInterval(86_400)))
+                    ],
+                    myDecision: started ? .approved : .pending, supersededBy: nil)
+            }
+
+            func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
+                guard clubID == Self.sunday.id else { throw .notFound }
+                let started = lock.withLock { self.started }
+                return ClubDetail(
+                    serverClock: clock, club: summary(), rosterVersion: started ? 2 : 1,
+                    canPropose: !started, openRevisionID: started ? nil : "rev_debby")
+            }
+
+            func members(of clubID: String) async throws(APIFailure) -> MemberList {
+                guard clubID == Self.sunday.id else { throw .notFound }
+                let started = lock.withLock { self.started }
+                return MemberList(
+                    serverClock: clock, club: Self.sunday,
+                    members: [
+                        Member(
+                            person: Self.ben, position: 1, cover: nil, nextDay: nil, nextUp: false)
+                    ],
+                    openRevision: started ? nil : revision())
+            }
+
+            func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
+                guard revisionID == "rev_debby" else { throw .notFound }
+                return revision()
+            }
+
+            func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            {
+                let approves = lock.withLock {
+                    guard let first = self.firstKey else {
+                        self.firstKey = key
+                        return false
+                    }
+                    guard first == key else { return false }
+                    self.started = true
+                    return true
+                }
+                guard approves else { throw .network }
+                return revision()
+            }
+
+            func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+                try await none.schedule(of: clubID)
+            }
+
+            func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            { try await none.decline(revisionID, expectedVersion: expectedVersion, key: key) }
+
+            func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
+                async throws(APIFailure) -> ClubDetail
+            { try await none.createClub(name: name, timezone: timezone, key: key) }
+
+            func propose(
+                _ names: [String], in clubID: String, expectedRosterVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> RosterRevision {
+                try await none.propose(
+                    names, in: clubID, expectedRosterVersion: expectedRosterVersion, key: key)
+            }
+
+            func createInvitation(for candidateID: String, in clubID: String, key: IdempotencyKey)
+                async throws(APIFailure) -> InvitationLink
+            { try await none.createInvitation(for: candidateID, in: clubID, key: key) }
+
+            func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+                try await none.revokeInvitation(invitationID)
             }
 
             func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {

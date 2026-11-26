@@ -277,6 +277,8 @@ struct TabContent: View {
     let openInvite: () -> Void
     let openAccepted: (MyInvitation) -> Void
     let goHome: () -> Void
+    /// Review members, under a club that hasn't started: its proposed roster.
+    let reviewMembers: () -> Void
     @AccessibilityFocusState private var focus: TabFocus?
     @State private var labelHadFocus = false
 
@@ -287,7 +289,8 @@ struct TabContent: View {
         retryHome: @escaping @MainActor () async -> Void = {},
         switchClub: @escaping () -> Void = {}, createClub: @escaping () -> Void = {},
         openInvite: @escaping () -> Void = {},
-        openAccepted: @escaping (MyInvitation) -> Void = { _ in }, goHome: @escaping () -> Void
+        openAccepted: @escaping (MyInvitation) -> Void = { _ in }, goHome: @escaping () -> Void,
+        reviewMembers: @escaping () -> Void = {}
     ) {
         self.tab = tab
         self.clubs = clubs
@@ -302,6 +305,7 @@ struct TabContent: View {
         self.openInvite = openInvite
         self.openAccepted = openAccepted
         self.goHome = goHome
+        self.reviewMembers = reviewMembers
     }
 
     private var shown: TabShown {
@@ -354,7 +358,7 @@ struct TabContent: View {
                 action: retryHome)
         case .awaiting(let review):
             SetupFooter(bottom: TabGap.footer) {
-                ReviewMembersButton(club: club ?? "", review: review)
+                ReviewMembersButton(club: club ?? "", review: review, action: reviewMembers)
             }
         case .unavailable:
             SetupFooter(bottom: TabGap.footer) {

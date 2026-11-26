@@ -881,6 +881,49 @@ final class FakeClubs: ClubService, @unchecked Sendable {
         #expect(invitations?.state == .loading)
     }
 
+    // MARK: The proposed roster
+
+    @Test func aProposedRosterIsKeptForItsClubInTheSession() async {
+        let root = root(FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))]))
+        #expect(root.proposedRoster(of: sunday.ref) == nil)
+        await root.start()
+        let first = root.proposedRoster(of: sunday.ref)
+        #expect(first?.club == sunday.ref)
+        // Review members again: the same roster, so a decision on it keeps its keys (T19).
+        #expect(root.proposedRoster(of: sunday.ref) === first)
+        let other = root.proposedRoster(of: kitchen.ref)
+        #expect(other !== first && other?.club == kitchen.ref)
+        // Each club keeps its own: Sunday people's is the same after Kitchen table's was opened.
+        #expect(root.proposedRoster(of: sunday.ref) === first)
+        #expect(root.proposedRoster(of: kitchen.ref) === other)
+        await root.leave()
+        #expect(root.proposedRoster(of: sunday.ref) == nil)
+    }
+
+    @Test func leaveSignInForgetsTheProposedRosters() async {
+        let root = root(FakeAccounts(me: [.success(ben)], clubs: [.success(list(kitchen))]))
+        await root.start()
+        weak var roster = root.proposedRoster(of: sunday.ref)
+        #expect(roster != nil)
+        await root.leave()
+        // Nothing of the account left stays in memory, its keys included (T11).
+        #expect(roster == nil)
+    }
+
+    @Test func aProposedRosterNoLongerAProposalReadsTheListAgainAndIsNotKept() async {
+        let clubs = FakeClubs(club: [.failure(.notFound)], members: [.failure(.notFound)])
+        let accounts = FakeAccounts(
+            me: [.success(ben)], clubs: [.success(list(kitchen)), .success(list(kitchen))])
+        let root = root(accounts, clubs: clubs)
+        await root.start()
+        let roster = root.proposedRoster(of: sunday.ref)
+        await roster?.load()
+        #expect(roster?.closed == true)
+        #expect(accounts.calls == ["me", "clubs", "clubs"])
+        let again = root.proposedRoster(of: sunday.ref)
+        #expect(again != nil && again !== roster)
+    }
+
     // MARK: The switcher's lines
 
     @Test func eachClubsLineInTheSwitcher() throws {
