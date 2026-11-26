@@ -28,14 +28,17 @@ struct ClubDetailsDestination: View {
 /// time it's opened, and again on Retry. Until its own read has started it shows loading, never
 /// what an earlier opening left in the model (an old roster, or the answer to a read Back
 /// cancelled), so it slides in loading each time. A cancelled read is made again, as Club
-/// details' is.
+/// details' is. A proposed row whose candidate the viewer has yet to decide on opens G03-approve
+/// for the revision the list showed (`openApproval`).
 struct MembersDestination: View {
     let model: ClubDetailsModel
+    var openApproval: (RosterRevision) -> Void = { _ in }
     @State private var asked = false
 
     var body: some View {
         MembersScreen(
-            members: asked ? model.members : .loading, retry: { await model.loadMembers() }
+            members: asked ? model.members : .loading, retry: { await model.loadMembers() },
+            openApproval: openApproval
         )
         .task {
             guard !asked else { return }

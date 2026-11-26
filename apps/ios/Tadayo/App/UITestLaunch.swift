@@ -38,6 +38,10 @@
         /// row asks for the link (FQ136), and Maya's link then shows the changed roster, which
         /// Accept this roster joins. A test seam, not product.
         static let inviteChanged = "-TadayoUITestInviteChanged"
+        /// The stand-in services with an account already named, in Kitchen table, where Maya has
+        /// proposed Leila and Ben hasn't decided (`Approving`): a test can open Leila's proposed
+        /// row in Members and approve, or decline into a changed roster. A test seam, not product.
+        static let approve = "-TadayoUITestApprove"
         /// Debby's link `Invited` knows: made up, no server made it.
         static let invitedLink = "https://tadayo.app/i#" + String(repeating: "D", count: 43)
         /// Maya's link `Invited` knows, whose Accept joins: made up, no server made it.
@@ -46,19 +50,23 @@
 
         @MainActor static func fakeGraph(
             hangingSend: Bool = false, nameFailsThenHangs: Bool = false, inClubs: Bool = false,
-            creating: Bool = false, invited: Bool = false, changedListed: Bool = false
+            creating: Bool = false, invited: Bool = false, changedListed: Bool = false,
+            approving: Bool = false
         ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
             let made = creating ? NewClub() : nil
             let invitations = invited || changedListed ? Invited(changedListed: changedListed) : nil
+            let listed = inClubs ? TwoClubs.listed : approving ? Approving.listed : []
             let accounts = FakeAccounts(
-                nameFailsThenHangs: nameFailsThenHangs, clubs: inClubs ? TwoClubs.listed : [],
+                nameFailsThenHangs: nameFailsThenHangs, clubs: listed,
                 thenClubs: inClubs ? TwoClubs.relisted : nil,
                 named: creating || invitations != nil, made: made, joined: invitations)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let clubs: any ClubService
             if inClubs {
                 clubs = TwoClubs()
+            } else if approving {
+                clubs = Approving()
             } else if let made {
                 clubs = made
             } else if let invitations {
@@ -606,6 +614,142 @@
             func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
                 async throws(APIFailure) -> RosterRevision
             { try await none.decline(revisionID, expectedVersion: expectedVersion, key: key) }
+        }
+
+        /// The club calls for Ben in Kitchen table, active with five members, where Maya has
+        /// proposed Leila and Ben's decision is pending (`approve`): the first Approve gets no
+        /// answer and the next approves, so the members then list Ben's decision as made; Decline
+        /// answers that the roster changed, and the members then list Maya's newer proposal, of
+        /// Leila with Alex's of Nina, still Ben's to decide. Every other call is `NoClubs`'.
+        final class Approving: ClubService, @unchecked Sendable {
+            private static let kitchen = ClubRef(
+                id: "club_kitchen", name: "Kitchen table", timezone: "America/New_York",
+                myMembershipID: "mem_ben")
+            private static let five: [(name: String, day: Weekday)] = [
+                ("Ben", .monday), ("Maya", .tuesday), ("Alex", .wednesday), ("Sam", .thursday),
+                ("Debby", .friday),
+            ]
+            static let listed = [
+                ClubSummary(
+                    ref: kitchen, state: .active, memberCount: 5, openDay: nil, nextDay: nil)
+            ]
+
+            private let none = NoClubs()
+            private let lock = NSLock()
+            private var approvals = 0
+            private var approved = false
+            private var changed = false
+
+            private var clock: ServerClock { ServerClock(serverNow: Date(), receivedAt: .now) }
+
+            private static func person(_ name: String) -> Person {
+                Person(
+                    membershipID: "mem_\(name.lowercased())", displayName: name, avatarVersion: nil)
+            }
+
+            private func revision() -> RosterRevision {
+                let (changed, approved) = lock.withLock { (self.changed, self.approved) }
+                var candidates = [
+                    Candidate(
+                        id: "cand_leila", name: "Leila", proposedBy: Self.person("Maya"),
+                        invitation: nil)
+                ]
+                if changed {
+                    candidates.append(
+                        Candidate(
+                            id: "cand_nina", name: "Nina", proposedBy: Self.person("Alex"),
+                            invitation: nil))
+                }
+                return RosterRevision(
+                    id: changed ? "rev_2" : "rev_1", version: 1, club: Self.kitchen, state: .open,
+                    proposedBy: Self.person("Maya"),
+                    members: Self.five.map { Self.person($0.name) },
+                    candidates: candidates, myDecision: approved ? .approved : .pending,
+                    supersededBy: nil)
+            }
+
+            func club(_ clubID: String) async throws(APIFailure) -> ClubDetail {
+                guard clubID == Self.kitchen.id else { throw .notFound }
+                return ClubDetail(
+                    serverClock: clock, club: Self.listed[0], rosterVersion: 5, canPropose: true,
+                    openRevisionID: revision().id)
+            }
+
+            func members(of clubID: String) async throws(APIFailure) -> MemberList {
+                guard clubID == Self.kitchen.id else { throw .notFound }
+                return MemberList(
+                    serverClock: clock, club: Self.kitchen,
+                    members: Self.five.enumerated().map { index, member in
+                        Member(
+                            person: Self.person(member.name), position: index + 1, cover: nil,
+                            nextDay: nil, nextUp: false)
+                    },
+                    openRevision: revision())
+            }
+
+            func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+                guard clubID == Self.kitchen.id else { throw .notFound }
+                return ClubWeek(
+                    serverClock: clock, club: Self.kitchen,
+                    assignments: Self.five.map {
+                        WeekdayAssignment(weekday: $0.day, person: Self.person($0.name))
+                    })
+            }
+
+            func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            {
+                let attempt = lock.withLock {
+                    approvals += 1
+                    return approvals
+                }
+                if attempt == 1 { throw .network }
+                lock.withLock { approved = true }
+                return revision()
+            }
+
+            func decline(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)
+                async throws(APIFailure) -> RosterRevision
+            {
+                lock.withLock { changed = true }
+                throw .rosterChanged
+            }
+
+            func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
+                async throws(APIFailure) -> ClubDetail
+            { try await none.createClub(name: name, timezone: timezone, key: key) }
+
+            func propose(
+                _ names: [String], in clubID: String, expectedRosterVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> RosterRevision {
+                try await none.propose(
+                    names, in: clubID, expectedRosterVersion: expectedRosterVersion, key: key)
+            }
+
+            func createInvitation(for candidateID: String, in clubID: String, key: IdempotencyKey)
+                async throws(APIFailure) -> InvitationLink
+            { try await none.createInvitation(for: candidateID, in: clubID, key: key) }
+
+            func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+                try await none.revokeInvitation(invitationID)
+            }
+
+            func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
+                try await none.rosterRevision(revisionID)
+            }
+
+            func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
+                try await none.preview(token)
+            }
+
+            func accept(
+                _ token: InvitationToken, revisionID: String, expectedVersion: Int,
+                key: IdempotencyKey
+            ) async throws(APIFailure) -> InvitationAcceptance {
+                try await none.accept(
+                    token, revisionID: revisionID, expectedVersion: expectedVersion, key: key)
+            }
         }
 
         /// The club calls for an account with no club, which makes none: each fails as if no

@@ -42,6 +42,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.inviteChanged) {
                 return .live(UITestLaunch.fakeGraph(changedListed: true))
             }
+            if process.arguments.contains(UITestLaunch.approve) {
+                return .live(UITestLaunch.fakeGraph(approving: true))
+            }
         #endif
         if isHostingTests(process) { return .inert }
         return configured(
