@@ -14,7 +14,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { KeysUnavailable } from "./identity/token.ts";
-import { ERROR_MESSAGE, fastifyLogging, REDACTED_FIELDS, redactBindings, redacted, requestId } from "./logging.ts";
+import {
+  ERROR_MESSAGE,
+  fastifyLogging,
+  REDACTED_FIELDS,
+  redactBindings,
+  redacted,
+  REPLY_SENT_MESSAGE,
+  requestId,
+} from "./logging.ts";
 import { noStorage, TEST_EMAIL } from "./testing.ts";
 import type { Authenticate } from "./session.ts";
 
@@ -197,6 +205,39 @@ describe("the redaction list (T52)", () => {
     expect(lines.join("")).not.toMatch(/SECRET-|s\.example/);
   });
 
+  it("keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    for (const log of [null, false, undefined]) {
+      // pino reads a falsy formatter as none, so the child keeps its parent's, and the redaction with it.
+      const options = { formatters: { log } } as unknown as Parameters<typeof app.log.child>[1];
+      app.log.child({ step: 4 }, options).info({ caption: "SECRET-FALLBACK" }, "fallback");
+    }
+    let seen: string | undefined;
+    const own = {
+      formatters: {
+        log: function remember(this: { log?: unknown } | undefined, fields: object) {
+          seen = typeof this?.log;
+          return fields;
+        },
+      },
+    };
+    app.log.child({ step: 5 }, own).info({ caption: "SECRET-THIS" }, "this");
+    const settable = app.log.child({ step: 6 }) as unknown as { setBindings(bindings: unknown): void };
+    expect(() => {
+      settable.setBindings(undefined);
+    }).not.toThrow();
+    expect(() => {
+      settable.setBindings(null);
+    }).not.toThrow();
+    const entries = parse(lines);
+    expect(entries).toHaveLength(4);
+    for (const entry of entries.slice(0, 3)) expect(entry).toMatchObject({ msg: "fallback", caption: "[redacted]" });
+    expect(entries[3]).toMatchObject({ msg: "this", caption: "[redacted]" });
+    // pino calls a log formatter as a method of the child's formatters, which hold it.
+    expect(seen).toBe("function");
+    expect(lines.join("")).not.toContain("SECRET-");
+  });
+
   it("keeps pino's own redaction of the list beneath it, at the top and one level down, as `main` had (the round-2 review)", () => {
     const options = fastifyLogging({ level: "info" }).logger as unknown as {
       redact: { paths: string[]; censor: string };
@@ -278,12 +319,31 @@ describe("the redaction list (T52)", () => {
       void reply.send("two");
       return reply;
     });
+    bare.get("/raw", (_request, reply) => {
+      reply.raw.writeHead(200);
+      void reply.send("x");
+      return reply;
+    });
     open.push(bare);
     await bare.inject({ method: "GET", url: "/twice?caption=SECRET-QUERY" });
     const warned = parse(own).filter((entry) => entry.err !== undefined);
     expect(warned.length).toBeGreaterThan(0);
     for (const entry of warned) expect(entry.msg).toBe(ERROR_MESSAGE);
     expect(own.join("")).not.toContain("SECRET-QUERY");
+    // And its warning for an answer sent after one went out on `reply.raw`, whose message quotes the URL
+    // (the round-3 review): only its fixed start stays.
+    own.length = 0;
+    // Fastify then throws its own error for the headers already sent, and the injected request with it.
+    await bare.inject({ method: "GET", url: "/raw?caption=SECRET-RAW" }).catch(() => undefined);
+    const raw = parse(own).filter((entry) => typeof entry.msg === "string" && entry.msg.startsWith(REPLY_SENT_MESSAGE));
+    expect(raw.length).toBeGreaterThan(0);
+    for (const entry of raw) expect(entry.msg).toBe(REPLY_SENT_MESSAGE);
+    expect(own.join("")).not.toContain("SECRET-RAW");
+    // An `err` pino doesn't count as one, being falsy, gets no message either, as in pino.
+    lines.length = 0;
+    app.log.warn({ err: 0 });
+    app.log.warn({ err: "" });
+    for (const entry of parse(lines)) expect(entry).not.toHaveProperty("msg");
   });
 
   it("drops a whole request or answer object logged by mistake, and doesn't merely blank it", async () => {

@@ -2364,6 +2364,16 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       "slots_left",
       "empty_slots",
       "missing",
+      // The round-3 review: a highlight split where no word starts, and the one-word spellings.
+      "highLighted",
+      "high_lighted",
+      "isHighLighted",
+      "HighLighting",
+      "mimetype",
+      "postid",
+      "videoid",
+      "datetaken",
+      "emptyslots",
     ])
       expect(neverKey(key), key).toBe(true);
     for (const key of [
@@ -2693,7 +2703,7 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
     expect(needles.within("Saturday Peopl", false)).toEqual([]);
   });
 
-  it("finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one", () => {
+  it("finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one and a run of 12 of one inside a longer value", () => {
     const caption = 'Ben said "go" at the pier';
     const plain = new Needles(["Saturday People", caption]);
     expect(plain.within("served saturday people", false)).toEqual(["Saturday People"]);
@@ -2709,6 +2719,16 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
     // Shorter than 8, a value could be any word of the log's own inside a sentence.
     expect(cut.within("Saturda", false)).toEqual([]);
     expect(cut.within("request", false)).toEqual([]);
+    // A text cut short at both ends with other words around it, a run of 12 characters of it or more (the
+    // round-3 review), but not a run of 11, which a word of the log's own could share with a text.
+    const photo = new Needles(["Saturday People", "From Ben's photo"], { cuts: true });
+    expect(photo.within("trouble: aturday Peopl", false)).toEqual(["Saturday People"]);
+    expect(photo.within("caption=rom Ben's pho", false)).toEqual(["From Ben's photo"]);
+    expect(photo.within("CAPTION=ROM BEN'S PHO", false)).toEqual(["From Ben's photo"]);
+    expect(photo.within("trouble: aturday Peo", false)).toEqual([]);
+    expect(photo.within("caption=m Ben's pho", false)).toEqual([]);
+    // Without cuts, a text is found only whole.
+    expect(new Needles(["From Ben's photo"]).within("caption=rom Ben's pho", false)).toEqual([]);
   });
 
   it("catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON", () => {
@@ -2722,6 +2742,12 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
       // The round-2 review: a text cut short, or lower-cased.
       ["a club's name cut short", line({ msg: "request", trouble: "Saturday" }), /text people wrote at \$\.trouble/],
       ["a caption lower-cased", line({ msg: String(caption).toLowerCase() }), /text people wrote at \$\.msg/],
+      // The round-3 review: a text cut short at both ends inside a longer value.
+      [
+        "a club's name cut short at both ends inside a message",
+        line({ msg: "request", trouble: "refused at aturday Peop and more" }),
+        /text people wrote at \$\.trouble/,
+      ],
       ["a kept-back value", line({ msg: `version ${String(canary)}` }), /keeps back/],
       [
         "a request's token",

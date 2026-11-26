@@ -563,7 +563,8 @@ const NEVER_KEY = new RegExp(
  * audit's additions (A14): a count, a total, a number, whether there is any, a hidden flag, a position, a
  * preview and a time; and the plain spellings of T10's and T15's own lists the round-2 review found passing:
  * a provider's post or video id, a date taken, a length, a width and height as `w` and `h`, dimensions as
- * `dims`, a MIME type, and what is remaining, missing, empty or left of a day's slots.
+ * `dims`, a MIME type, and what is remaining, missing, empty or left of a day's slots; and their one-word
+ * spellings the round-3 review found passing (`mimetype`, `postid`, `videoid`, `datetaken`, `emptyslots`).
  */
 const NEVER_WORDS = new Set(
   [
@@ -627,10 +628,18 @@ const NEVER_WORDS = new Set(
     "missing",
     "empty",
     "slotsleft",
+    "mimetype",
+    "postid",
+    "videoid",
+    "datetaken",
+    "emptyslot",
   ].flatMap((word) => [word, `${word}s`]),
 );
 
-/** A never-word no plain word starts with, caught at a word's start too: `highlighted`, `highlighting`. */
+/**
+ * A never-word no plain word starts with, caught at a word's start too, alone or joined to the next word:
+ * `highlighted`, `highlighting`, `highLighted`, `high_lighted`.
+ */
 const NEVER_STARTS = /^highlight/;
 
 /**
@@ -677,6 +686,7 @@ export function neverKey(key: string): boolean {
       NEVER_WORDS.has(word) ||
       NEVER_WORDS.has(`${word}${words[index + 1] ?? ""}`) ||
       NEVER_STARTS.test(word) ||
+      NEVER_STARTS.test(`${word}${words[index + 1] ?? ""}`) ||
       (NEVER_ENDINGS.test(word) && !PLAIN_WORDS.has(word)),
   );
 }
@@ -1990,6 +2000,13 @@ export function worldTexts(world: WorldFacts): string[] {
  */
 const SHORTEST_CUT = 8;
 
+/**
+ * A run of text people wrote this long is looked for anywhere inside a longer log string too, a text cut
+ * short with other words around it (the round-3 review: `caption=rom Ben's pho`). Longer than SHORTEST_CUT,
+ * so a random value of the log's own (a request's id) can't hold one by chance.
+ */
+const SHORTEST_RUN = 12;
+
 /** `found`'s list under `key`, with `value` added. */
 function listed(found: Map<string, string[]>, key: string, value: string): void {
   const list = found.get(key);
@@ -2003,8 +2020,9 @@ function listed(found: Map<string, string[]>, key: string, value: string): void 
  * every line, at the end against all it gathered). Each is looked for in any case and also as JSON escapes
  * it inside another string (a body logged whole holds a caption's `"` as `\"`: the round-2 review). With
  * `cuts`, each is also indexed by every SHORTEST_TEXT characters inside it, so a value of SHORTEST_CUT
- * characters or more found inside one counts too; text people wrote has it, while tokens and kept-back
- * values, long random strings by the thousand, aren't cut where the API could carry them.
+ * characters or more that is part of one counts too, and so does a run of SHORTEST_RUN characters of one
+ * anywhere inside a longer value; text people wrote has it, while tokens and kept-back values, long random
+ * strings by the thousand, aren't cut where the API could carry them.
  */
 export class Needles {
   readonly #needles = new Set<string>();
@@ -2046,7 +2064,8 @@ export class Needles {
   /**
    * The needles `value` holds, in any case: `value` itself, and each of SHORTEST_TEXT characters or more
    * inside it; with `shortInside`, each shorter one inside it too; and, with `cuts`, each that holds
-   * `value` when it has SHORTEST_CUT characters or more.
+   * `value` when it has SHORTEST_CUT characters or more, and each that holds a run of SHORTEST_RUN
+   * characters of it.
    */
   within(value: string, shortInside: boolean): string[] {
     const lower = value.toLowerCase();
@@ -2060,6 +2079,11 @@ export class Needles {
     if (this.#byInside !== undefined && lower.length >= SHORTEST_CUT)
       for (const form of this.#byInside.get(lower.slice(0, SHORTEST_TEXT)) ?? [])
         if (form.includes(lower)) needle(form);
+    if (this.#byInside !== undefined)
+      for (let at = 0; at + SHORTEST_RUN <= lower.length; at += 1) {
+        const run = lower.slice(at, at + SHORTEST_RUN);
+        for (const form of this.#byInside.get(run.slice(0, SHORTEST_TEXT)) ?? []) if (form.includes(run)) needle(form);
+      }
     return [...found];
   }
 }
@@ -2077,7 +2101,8 @@ export interface LogFacts {
 /**
  * What is wrong with one line of the API's log (T52, T16; the outside audit's A14): it is a JSON object
  * with only LOG_KEYS, and no string anywhere in it holds text people wrote (whole, one of 6 characters or
- * more inside it, or 8 characters or more of one: Needles), a value a world keeps back, a request's token or
+ * more inside it, a value of 8 characters or more that is part of one, or a run of 12 of one inside a
+ * longer value: Needles), a value a world keeps back, a request's token or
  * any JSON Web Token, a URL, a storage path or a provider's host (NEVER_VALUE, the values check's own
  * marks), in any case and as JSON escapes them. A log carries no content to anyone, so nothing here depends
  * on who asked.

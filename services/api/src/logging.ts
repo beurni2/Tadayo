@@ -2,10 +2,13 @@
 // no caption, comment, note, source or signed URL, token, EXIF, push text or email address, and nothing
 // that names a person: request ids and opaque ids only. Three layers hold that, and any one of them
 // is enough:
-// 1. Fastify's own log lines are all off (`LogController` with `disableRequestLogging`): they carry the
+// 1. Fastify's request lines are all off (`LogController` with `disableRequestLogging`): they carry the
 //    path and the query (`Route GET:/v1/... not found`), `req` and `res` objects and an error's message,
-//    which Postgres fills with row values. What is left of Fastify's is its one line for a request
-//    refused while the server closes, which names no one.
+//    which Postgres fills with row values. What is left of Fastify's own are lines about Fastify itself
+//    (the address it listens on, a stream or a hook that failed, a request refused while the server
+//    closes), which carry nothing of a request's, and its warning for an answer sent after one went out
+//    on `reply.raw`, which quotes the request's URL and so keeps only its fixed start (`ownMessage`; the
+//    round-3 review).
 // 2. The one line a request gets is ours (`logEachRequest`): its random id, the contract's operation id
 //    (for the browser's preflight, `preflight` and the operation it is for: web-origin.ts), the status and
 //    the milliseconds it took. No URL, header, body, address or claim ever goes in it.
@@ -16,9 +19,9 @@
 //    that isn't a plain one or an array (the outside audit's A14: pino's own redaction went one level down,
 //    and read only the spellings it was given). pino's own redaction of the list, at the top and one level
 //    down, stays beneath it, for a child that brings a log formatter of its own (the round-2 review). An
-//    `err` is reduced to its class name and its code. A line's message is the fixed string our code
-//    passes: given an error and no message, pino would copy the error's message into it, so such a line
-//    gets a fixed one (`ownMessage`; the round-2 review).
+//    `err` is reduced to its class name and its code. A line's message is the fixed string our code or
+//    Fastify passes: given an error and no message, pino would copy the error's message into it, so such
+//    a line gets a fixed one (`ownMessage`; the round-2 review).
 // The request id is random, 96 bits, never Fastify's counter and never a header the caller sent.
 //
 // Time is pino's own (`time` in each line), which is not the server's clock (T1): nothing here reads one.
@@ -253,16 +256,29 @@ export function redactLine(fields: Record<string, unknown>): Record<string, unkn
 export const ERROR_MESSAGE = "error";
 
 /**
+ * The fixed start of Fastify's warning for an answer sent after one went out on `reply.raw`
+ * (`safeWriteHead`), whose rest quotes the request's URL, query and all: all of it a line keeps.
+ */
+export const REPLY_SENT_MESSAGE = "Reply was already sent";
+
+/**
  * pino's `hooks.logMethod`: a line that has an error and no message of its own (`log.error(err)`,
- * `log.warn({ err })`) gets ERROR_MESSAGE, since pino would copy the error's message into the line's `msg`,
- * which no field's redaction reaches (the round-2 review: Postgres quotes row values in it, and Fastify's
- * warning for a second answer to a request quotes the request's URL).
+ * `log.warn({ err })`, an `err` pino counts: one that isn't falsy) gets ERROR_MESSAGE, since pino would copy
+ * the error's message into the line's `msg`, which no field's redaction reaches (the round-2 review:
+ * Postgres quotes row values in it, and Fastify's error for a second answer to a request quotes the
+ * request's URL); and Fastify's warning that quotes the URL in its message keeps only REPLY_SENT_MESSAGE,
+ * without any format arguments (the round-3 review).
  */
 function ownMessage(this: unknown, args: unknown[], method: (...args: unknown[]) => void): void {
   const [first, second] = args;
+  // pino's message is the first argument when that is a string, and the second when an object comes first.
+  const at = typeof first === "string" ? 0 : typeof second === "string" ? 1 : undefined;
+  if (at !== undefined && (args[at] as string).startsWith(REPLY_SENT_MESSAGE)) {
+    method.apply(this, [...args.slice(0, at), REPLY_SENT_MESSAGE]);
+    return;
+  }
   const fields = typeof first === "object" && first !== null ? (first as { err?: unknown; msg?: unknown }) : undefined;
-  const erred =
-    first instanceof Error || (fields?.err !== undefined && fields.err !== null && fields.msg === undefined);
+  const erred = first instanceof Error || (Boolean(fields?.err) && fields?.msg === undefined);
   if (erred && second === undefined) method.apply(this, [first, ERROR_MESSAGE]);
   else method.apply(this, args);
 }
@@ -316,33 +332,49 @@ export function fastifyLogging(
  * resets `formatters.bindings` for a child, so `request.log.child({ caption })` would write the caption whole
  * into each of its lines. pino makes a child from its parent's prototype, so the root's own `child` and
  * `setBindings` are the ones every logger of the app calls, Fastify's request loggers included. A child that
- * brings a log formatter of its own gets it with `redactLine` after it. A request's id (`reqId`) is no field
- * of the list and stays.
+ * brings a log formatter of its own gets it with `redactLine` after it, called as pino would call it; one
+ * that brings none, or a falsy one, has its parent's, as in pino. Bindings that are absent pass as they
+ * are, for pino to refuse or skip (the round-3 review). A request's id (`reqId`) is no field of the list
+ * and stays.
  */
 export function redactBindings(log: FastifyBaseLogger): void {
   // pino's loggers have it; Fastify's type of them leaves it out.
-  const settable = log as FastifyBaseLogger & { setBindings?: (bindings: Record<string, unknown>) => void };
+  const settable = log as FastifyBaseLogger & {
+    setBindings?: (bindings: Record<string, unknown> | null | undefined) => void;
+  };
   // eslint-disable-next-line @typescript-eslint/unbound-method -- called below with the logger it is made from
   const child = log.child;
   const setBindings = settable.setBindings;
   log.child = function redactedChild(this: FastifyBaseLogger, bindings, options) {
-    const own = options?.formatters?.log;
+    const own: unknown = options?.formatters?.log;
     const formatted =
-      options === undefined || own === undefined
+      options === undefined || typeof own !== "function"
         ? options
         : {
             ...options,
             formatters: {
               ...options.formatters,
-              log: (fields: object) => redactLine(own(fields) as Record<string, unknown>),
+              // pino calls a formatter as a method of the formatters it was given.
+              log: function redactedOwn(this: unknown, fields: object) {
+                return redactLine((own as (fields: object) => unknown).call(this, fields) as Record<string, unknown>);
+              },
             },
           };
-    return child.call(this, redactLine(bindings), formatted);
+    // Fastify's type says bindings are always there; a caller outside TypeScript can leave them out.
+    const given = bindings as typeof bindings | null | undefined;
+    return child.call(
+      this,
+      given === undefined || given === null ? (given as unknown as typeof bindings) : redactLine(given),
+      formatted,
+    );
   };
   // A logger with no `setBindings` has no bindings to set later.
   if (setBindings !== undefined)
-    settable.setBindings = function redactedSetBindings(this: unknown, bindings: Record<string, unknown>) {
-      setBindings.call(this, redactLine(bindings));
+    settable.setBindings = function redactedSetBindings(
+      this: unknown,
+      bindings: Record<string, unknown> | null | undefined,
+    ) {
+      setBindings.call(this, bindings === undefined || bindings === null ? bindings : redactLine(bindings));
     };
 }
 

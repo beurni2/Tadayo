@@ -517,3 +517,79 @@ freshly made database:
   the branch names each of 190 requests. N5, registered to be missed, was caught in the 5 past cells by Home's judge;
   the 5 cells before the reveal, the review's case, were missed, and only the branch finds them. N3 and N5 are recorded
   as run, not registered again.
+
+### 5.7. Round 3, at `573967b`
+
+One narrow fresh check, by a subagent that hadn't seen the work, of the third commit: production logging first, then
+the scanner after `OPENED_ONLY`'s removal, the log scan and the records (F-A to F-G: three low, four nits; nothing
+blocker, high or medium). It probed pino 10.4.0 and Fastify 5.12.7 with scripts of its own. Each is fixed in the fourth
+commit, or answered here.
+
+- **F-A (low): a cut of someone's text inside a longer log string wasn't found, and four records said it was.** With
+  cuts, `Needles` found a log value of 8 characters or more that sits wholly inside a text, never 8 characters of a text
+  inside a longer value (`trouble: aturday Peopl`, `caption=rom Ben's pho`). Fixed: `within` also looks up every run of
+  12 characters of the value (`SHORTEST_RUN`) and finds each text that holds one (section 1.3). 12, not 8: a request's
+  random id in the log, read in runs of 8 against the request strings the matrix gathers, would match one by chance
+  about once in five runs by the review's estimate; in runs of 12, the chance is some 17 million times smaller. The
+  records say it as it is (T16's row, PROGRESS, `logProblems`' doc). Tests: the needle test (the review's two cases,
+  upper-cased, and a run of 11 not found) and a planted line, the club's name cut at both ends inside `trouble`. A text
+  URL-encoded in a quoted request URL (`Saturday%20People`) is still not found: no route takes free text in its query,
+  and `ownMessage` (F-B) cuts the one Fastify message that quotes a URL.
+- **F-B (low): Fastify's warning for an answer sent after one went out on `reply.raw` (`reply.js`, `safeWriteHead`)
+  put the request's raw URL, query and all, in `msg`, and the header said every message was fixed.** No route touches
+  `reply.raw` today, and `main` has the same hole. Fixed: `ownMessage` keeps only its fixed start, `Reply was already
+  sent` (`REPLY_SENT_MESSAGE`), without any format arguments; the header's layers 1 and 3 say what is left of Fastify's
+  own lines: lines about Fastify itself, which carry nothing of a request's (every line that carries an error's message
+  or the URL is `LogController`'s, all off under `disableRequestLogging`, as `log-controller.js` reads), and this one. Test: the error-message test's bare app, `GET
+  /raw?caption=SECRET-RAW` on a route that writes the head on `reply.raw` and then sends.
+- **F-C (low, records; T58): the T58 row's "each as strict or stricter" wasn't literally true.** `OPAQUE` drops a
+  request string shaped like an id of the API's, where the second commit counted it as text, and the pattern also fits
+  plain snake_case writing (`photo_from_the_beach_in_july`). Answered in the records: the T58 row names the narrowing.
+  T52 allows ids, so an id is no text; a caption shaped like one, in a refused commit only, is skipped, while every
+  stored caption stays a needle through the worlds' texts (`worldTexts`). The pattern is not narrowed to today's
+  prefixes: a new kind of id would then fail an honest line until someone listed it.
+- **F-D (nit): `redactBindings`' wrappers left pino's ways in three edge cases nothing calls today.** A child's falsy
+  log formatter threw on every line, where pino falls back to the parent's; a child's own formatter was called without
+  the `this` pino gives it; and `setBindings(undefined)` threw, where pino does nothing. Fixed: only a function is
+  wrapped, and called as pino calls it; absent bindings pass as they are. Test: "keeps pino's ways: …".
+- **F-E (nit): never-word spellings still missed:** a highlight split where no word starts (`highLighted`,
+  `high_lighted`, `isHighLighted`), and the one-word spellings of round 2's words (`mimetype`, `postid`, `videoid`,
+  `datetaken`, `emptyslots`). Fixed: `NEVER_STARTS` is tried on two words joined too, and the five join `NEVER_WORDS`
+  (section 1.2); each is in the never-word test, and no key the contract serves names one (the served-for-a-reason
+  test).
+- **F-F (nit): `ownMessage` counted more values of `err` as an error than pino does** (`{ err: 0 }`, `false`, `""`).
+  Harmless, but fixed to pino's own test, truthiness. Test: the error-message test.
+- **F-G (nit, records): block 1.2's PR #137 paragraph kept the first commit's "Now" sentence** (16 operations, 10
+  schemas on `OPENED_ONLY`, 34 schemas). Corrected to the state as it is.
+
+### 5.8. Breakages for round 3, registered before they are run
+
+As 5.5. N6 also runs as a control in a worktree at `573967b`, the third commit, with its own matrix.
+
+- K13: no runs (`within`'s run loop off): scanner, the needle test (`aturday Peopl`) and the planted lines (`cut short
+  at both ends`).
+- K14: `NEVER_STARTS` on a word alone, as `573967b` had it: scanner, the never-word test (`highLighted`).
+- K15: the five one-word spellings gone: scanner, the same test (`mimetype`).
+- K16: no `REPLY_SENT_MESSAGE` rule: logging, the error-message test (`SECRET-RAW`).
+- K17: a child's own formatter wrapped whatever it is, as `573967b` had it: logging, "keeps pino's ways" (the falsy one
+  throws: `Cannot read properties of null` or `is not a function`).
+- K18: a child's own formatter called without pino's `this`: logging, the same test (`expected 'undefined' to be
+  'function'`).
+- K19: absent bindings redacted as if present: logging, the same test (`setBindings(undefined)` throws).
+- K20: an `err` counted when it isn't `undefined` or `null`, as `573967b` had it: logging, the error-message test (`{
+  err: 0 }` gets a message).
+- N6: createDrop logs a refused commit's caption less its first and last characters inside a longer value (`refused at
+  … here`): the matrix (`the API's log: text people wrote at $.trouble`). Control: expected missed (F-A).
+
+### 5.9. As run
+
+On the branch's tree with round 3's fixes, uncommitted, with Node 26.13.0, one run at a time, each matrix run on a
+freshly made database:
+
+- `db-tests` 951 of 951 (123 s); `privacy` 542 of 542 on a fresh cluster in 1,253 s (1,219 s at `573967b`: runs of 12
+  added no honest finding, and about 3 % to the time). `format`, `lint`, `typecheck`, `copy-lint`, `unit` (api 429,
+  worker 160, domain 516, contracts 251, ops 495, web 47) and `tools-tests` (36) pass; `scanner.test.ts` 111 of 111
+  and `logging.test.ts` 18 of 18.
+- K13 to K20 caught, each with its pattern; N6 caught, in 10 of the cell's lines, each found by the step and again by
+  the last test (`the API's log: text people wrote at $.trouble`).
+- The control at `573967b`: N6 missed, as registered.
