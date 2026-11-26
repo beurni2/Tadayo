@@ -10,9 +10,17 @@ import { STATUS_CODES } from "node:http";
 import Fastify from "fastify";
 import { describe, expect, it } from "vitest";
 import { answerOf } from "./harness.ts";
-import { contractOperations, readDocument } from "./operations.ts";
+import { contractOperations, isObject, readDocument, resolve, type Json, type JsonObject } from "./operations.ts";
 import {
+  BEFORE_REVEAL,
+  BEFORE_REVEAL_OPERATIONS,
+  Needles,
+  SERVED_FOR_A_REASON,
+  keyWords,
+  logProblems,
+  neverKey,
   scan,
+  worldTexts,
   type Answer,
   type Check,
   type MediaClass,
@@ -28,6 +36,13 @@ import {
 } from "./scanner.ts";
 
 const document = readDocument();
+/** T10's never-list as the scanner read it before the outside audit's A14: a word between underscores. */
+const OLD_NEVER_KEY = new RegExp(
+  "(^|_)(url|uri|href|src|link|token|thumbnail|thumb|poster|blur|blurhash|hash|colour|color|width|height|" +
+    "dimension|aspect|ratio|embed|html|source|provider|alt|exif|captured|capture|duration|size|bytes|highlight|" +
+    "title|waveform|original|media_version)s?(_|$)",
+  "i",
+);
 const operations = new Map(contractOperations(document).map((operation) => [operation.id, operation]));
 
 function operation(id: string) {
@@ -1552,8 +1567,10 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     const sent = await answerOf(app, { method: "GET", url: "/v1/occurrences/occ_sat", headers: {} });
     await app.close();
     const found = scan(sent, context("getOccurrence", cleo));
-    expect(checks(found)).toEqual(["keys", "shape", "values"]);
+    // The day's own list (BEFORE_REVEAL) finds the key too.
+    expect(checks(found)).toEqual(["keys", "shape", "values", "whitelist"]);
     expect(found.find((finding) => finding.check === "shape")?.at).toBe("$.media_url");
+    expect(found.find((finding) => finding.check === "whitelist")?.at).toBe("$");
   });
 });
 
@@ -1788,7 +1805,8 @@ describe("the proposer's invitation link (T7, T14, T52, FQ77; handoff 1)", () =>
     // contract declares no such answer, so nothing there is judged a link, and the key and the URL fail.
     const ok200 = madeBy(ben, link({ url: url(BENS_TOKEN) }), 200);
     expect(at(ok200, "shape")).toContain("status");
-    expect(at(ok200, "keys")).toEqual(["$.url"]);
+    // Its time fails too: nothing there is read as an InvitationLink, whose lapse is served for a reason.
+    expect(at(ok200, "keys")).toEqual(["$.expires_at", "$.url"]);
     expect(at(ok200, "values")).toEqual(["$.invitation_id", "$.url"]);
     // To another member, the link's own URL is the link's id and its token both.
     const toCleo = madeBy(cleo, link({ url: url(BENS_TOKEN) }));
@@ -2068,10 +2086,11 @@ describe("the signed upload URL and an upload's id (T12, T14; TECH-DESIGN sectio
   it("catches a signed upload URL outside createUpload's 201", () => {
     expect(at(scan(answer(upload()), context("getUpload", ben)), "world")).toContain("$.signed_upload");
     expect(at(scan(answer(upload(), 202), context("completeUpload", ben)), "world")).toContain("$.signed_upload");
-    // createUpload declares no 200, so nothing in it is read as an Upload: the URL fails as any URL does.
+    // createUpload declares no 200, so nothing in it is read as an Upload: the URL fails as any URL does,
+    // and each time as any time does, since no schema says why it is served (SERVED_FOR_A_REASON).
     const undeclared = scan(answer(upload(), 200), context("createUpload", ben));
     expect(at(undeclared, "shape")).toContain("status");
-    expect(at(undeclared, "keys")).toEqual(["$.signed_upload.url"]);
+    expect(at(undeclared, "keys")).toEqual(["$.expires_at", "$.signed_upload.url", "$.signed_upload.expires_at"]);
     expect(at(undeclared, "values")).toContain("$.signed_upload.url");
   });
 
@@ -2146,5 +2165,688 @@ describe("the signed upload URL and an upload's id (T12, T14; TECH-DESIGN sectio
     expect(
       at(scan(answer({ code: "INVALID_REQUEST", field: BENS_OBJECT }, 400), context("createUpload", ben)), "values"),
     ).toEqual(["$.field"]);
+  });
+});
+
+describe("the scanner's own key lists and never-words (the outside audit's A14; T10)", () => {
+  const schemas = (document.components as JsonObject).schemas as JsonObject;
+  /** The names of the schemas `node` reaches, through every reference, the components' responses' too. */
+  const reached = (node: Json, into = new Set<string>()): Set<string> => {
+    if (Array.isArray(node)) for (const item of node) reached(item, into);
+    else if (isObject(node)) {
+      if (typeof node.$ref === "string") {
+        const name = node.$ref.startsWith("#/components/schemas/") ? node.$ref.split("/").pop() : undefined;
+        if (name === undefined) reached(resolve(document, node), into);
+        else if (!into.has(name)) {
+          into.add(name);
+          reached(schemas[name] ?? null, into);
+        }
+      } else for (const child of Object.values(node)) reached(child, into);
+    }
+    return into;
+  };
+  const isObjectSchema = (name: string) => {
+    const schema = schemas[name];
+    return isObject(schema) && isObject(schema.properties);
+  };
+  /** The object schemas an operation's answers that succeed reach. */
+  const answered = (id: string): Set<string> => {
+    const into = new Set<string>();
+    for (const [status, response] of operation(id).responses)
+      if (status < 300 && response.json !== undefined) reached(response.json, into);
+    return new Set([...into].filter(isObjectSchema));
+  };
+  const keysOf = (name: string) => Object.keys((schemas[name] as JsonObject).properties as JsonObject);
+  /**
+   * The schemas only what has opened holds, where the key check doesn't look (an opened photo has its width,
+   * height and media version): each is on BEFORE_REVEAL all the same, held to its list (the round-2 review).
+   */
+  const OPENED = [
+    "DropRevealed",
+    "HighlightEntry",
+    "ReactionSummary",
+    "ReplyPreview",
+    "RevealedDayDrop",
+    "RevealedPhoto",
+    "RevealedVideo",
+  ];
+
+  it("holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today", () => {
+    const reach = new Set([...BEFORE_REVEAL_OPERATIONS].flatMap((id) => [...answered(id)]));
+    expect([...reach].sort()).toEqual(Object.keys(BEFORE_REVEAL).sort());
+    for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+      const required = ((schemas[name] as JsonObject).required ?? []) as string[];
+      expect([...list.required].sort(), name).toEqual([...required].sort());
+      expect([...list.required, ...list.optional].sort(), name).toEqual(keysOf(name).sort());
+    }
+    // What only an opened day holds is on the list too, and reaches no day: the day link, which names a
+    // closed day among Home's recent days while the next one collects, is no schema of an opened card's.
+    expect(OPENED.filter((name) => BEFORE_REVEAL[name] === undefined)).toEqual([]);
+    expect(OPENED.filter((name) => reached(schemas[name] ?? null).has("Occurrence"))).toEqual([]);
+  });
+
+  it("finds no object those answers can hold but a named schema's: none inline, none a map", () => {
+    /** The paths of the object schemas `node` holds that aren't a named schema's own, through every reference. */
+    const inline = (node: Json, at: string, seen: Set<string>, found: string[], root = false): string[] => {
+      if (Array.isArray(node)) node.forEach((item, index) => inline(item, `${at}[${String(index)}]`, seen, found));
+      else if (isObject(node)) {
+        if (typeof node.$ref === "string") {
+          const name = node.$ref.startsWith("#/components/schemas/") ? node.$ref.split("/").pop() : undefined;
+          if (name === undefined) inline(resolve(document, node), at, seen, found);
+          else if (!seen.has(name)) {
+            seen.add(name);
+            inline(schemas[name] ?? null, name, seen, found, true);
+          }
+          return found;
+        }
+        const object = isObject(node.properties) || node.additionalProperties !== undefined || node.type === "object";
+        if (object && !root) found.push(at);
+        for (const [key, child] of Object.entries(node)) {
+          // A schema's properties are named by the contract; its examples and descriptions are no schemas.
+          if (key === "properties" && isObject(child))
+            for (const [property, schema] of Object.entries(child)) inline(schema, `${at}.${property}`, seen, found);
+          else if (["items", "additionalProperties", "not"].includes(key)) inline(child, `${at}.${key}`, seen, found);
+          else if (["oneOf", "anyOf", "allOf"].includes(key)) inline(child, `${at}.${key}`, seen, found, root);
+        }
+      }
+      return found;
+    };
+    const found: string[] = [];
+    const seen = new Set<string>();
+    for (const id of BEFORE_REVEAL_OPERATIONS)
+      for (const [status, response] of operation(id).responses)
+        if (status < 300 && response.json !== undefined) inline(response.json, `${id} ${String(status)}`, seen, found);
+    expect(found).toEqual([]);
+    expect(seen.size).toBeGreaterThan(Object.keys(BEFORE_REVEAL).length);
+  });
+
+  it("counts every operation whose answer can name a day or a drop, or that asks about one by its path, as answering before the reveal, or only after", () => {
+    // The ones that answer only about a day that has opened: favourites, Memories, reactions, comments, a
+    // thread's notifications, a drop's media and its video's embed (spec 12, 14, 16 to 19; T12). The
+    // author's own preview answers before the reveal (T11), so it is on BEFORE_REVEAL_OPERATIONS.
+    const onlyOpened = [
+      "clearReaction",
+      "createComment",
+      "getDropMedia",
+      "getEmbed",
+      "listComments",
+      "listFavourites",
+      "listMemories",
+      "removeFavourite",
+      "saveFavourite",
+      "searchMemories",
+      "setReaction",
+      "setThreadNotifications",
+      "updateComment",
+    ];
+    const naming = new Set(["Occurrence", "DropCaption", "DropOwn", "Allowance"]);
+    const fields = new Set(["drop_id", "occurrence_id", "cover_drop_id", "existing_drop_id"]);
+    const names = [...operations.keys()].filter(
+      (id) =>
+        /\{(drop_id|occurrence_id)\}/.test(operation(id).path) ||
+        [...answered(id)].some((schema) => naming.has(schema) || keysOf(schema).some((key) => fields.has(key))),
+    );
+    expect(names.sort()).toEqual([...BEFORE_REVEAL_OPERATIONS, ...onlyOpened].sort());
+  });
+
+  it("reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time", () => {
+    expect(keyWords("thumbnailUrl")).toEqual(["thumbnail", "url"]);
+    expect(keyWords("posterURL")).toEqual(["poster", "url"]);
+    expect(keyWords("photoURLs")).toEqual(["photo", "urls"]);
+    expect(keyWords("URLsList")).toEqual(["urls", "list"]);
+    expect(keyWords("HTMLBody")).toEqual(["html", "body"]);
+    expect(keyWords("drop_count")).toEqual(["drop", "count"]);
+    expect(keyWords("x-Media-Version")).toEqual(["x", "media", "version"]);
+    expect(keyWords("url2x")).toEqual(["url", "2", "x"]);
+    for (const key of [
+      // An acronym's plural, and a never-word written as two (the round-1 review: `main` caught these).
+      "URLs",
+      "image_URLs",
+      "photoURLs",
+      "mediaURLs",
+      "URIs",
+      "HREFs",
+      "SRCs",
+      "EXIFs",
+      "x_ALTs",
+      "TOKENs",
+      "waveForm",
+      "highLight",
+      "HighLight",
+      // A number, whether there is any, a time, and a word with a digit after it.
+      "num_drops",
+      "n_drops",
+      "dropNumber",
+      "dropcount",
+      "has_drops",
+      "hasDrops",
+      "any_added",
+      "anyAdded",
+      "added_on",
+      "created",
+      "timestamp",
+      "last_added_time",
+      "url2",
+      "photoUrl2",
+      "media_url2",
+      "thumbnail2x",
+      "thumbnail_url",
+      "thumbnailUrl",
+      "posterURL",
+      "ImageWidth",
+      "mediaVersion",
+      "drop_count",
+      "hiddenCount",
+      "total",
+      "position",
+      "previewText",
+      "committed_at",
+      "committedAt",
+      "filesize",
+      "imageurl",
+      "thumbhash",
+      "file_sizes",
+      // The plain spellings of T10's and T15's lists the round-2 review found passing.
+      "highlighted",
+      "is_highlighted",
+      "isHighlighted",
+      "post_id",
+      "postId",
+      "video_id",
+      "dateTaken",
+      "date_taken",
+      "lengthSeconds",
+      "w",
+      "h",
+      "dims",
+      "mime_type",
+      "remaining",
+      "slots_left",
+      "empty_slots",
+      "missing",
+      // The round-3 review: a highlight split where no word starts, and the one-word spellings.
+      "highLighted",
+      "high_lighted",
+      "isHighLighted",
+      "HighLighting",
+      "mimetype",
+      "postid",
+      "videoid",
+      "datetaken",
+      "emptyslots",
+      // The round-4 review: one-word spellings as a class, two words run together.
+      "providerid",
+      "aspectratio",
+      "createdat",
+      "takenat",
+      "capturedat",
+      "durationms",
+      "slotsremaining",
+      "haspreview",
+      "ishighlight",
+      "alttext",
+      "sourceid",
+      "embedhtml",
+      "dominantcolor",
+      "posterframe",
+      "exifdata",
+      "previewtext",
+      "photo_providerid",
+    ])
+      expect(neverKey(key), key).toBe(true);
+    for (const key of [
+      "id",
+      "caption",
+      "author",
+      "state",
+      "version",
+      "server_now",
+      "at",
+      "on",
+      "club_today",
+      "my_days",
+      "account",
+      "next_up",
+      "joined_later",
+      "is_star",
+      "name",
+      "company",
+      "slots",
+      "weekday",
+      "headers",
+      "held_by",
+      "content_type",
+      "first_date",
+      // Plain words a never-word starts or ends: none of them is two words run together.
+      "anyone",
+      "hashtag",
+      "timezone",
+      "format",
+      "items",
+      "metadata",
+      "context",
+      "isolated",
+      "valid",
+    ])
+      expect(neverKey(key), key).toBe(false);
+  });
+
+  it("names every key the never-list named before the outside audit's A14, in the contract and planted", () => {
+    const keys = new Set<string>(["URLs", "media_URLs", "SRCs", "x_ALTs", "waveForm", "HighLight", "Thumbnail"]);
+    const into = (node: Json): void => {
+      if (Array.isArray(node)) for (const item of node) into(item);
+      else if (isObject(node)) {
+        if (isObject(node.properties)) for (const key of Object.keys(node.properties)) keys.add(key);
+        for (const child of Object.values(node)) into(child);
+      }
+    };
+    into(document);
+    const old = [...keys].filter((key) => OLD_NEVER_KEY.test(key));
+    expect(old.length).toBeGreaterThan(10);
+    expect(old.filter((key) => !neverKey(key))).toEqual([]);
+  });
+
+  it("holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word", () => {
+    const answers = new Set<string>();
+    for (const found of operations.values())
+      for (const response of found.responses.values()) if (response.json !== undefined) reached(response.json, answers);
+    const named: Record<string, string[]> = {};
+    for (const name of [...answers].filter(isObjectSchema).sort()) {
+      if (OPENED.includes(name)) continue;
+      // The keys T10's never-list named before: a highlight on the viewer's own drop, a link's URL to its
+      // proposer and a signed upload's URL to its owner, each judged by the world check, and what B3 and B7
+      // serve (an embed, a source, the config's providers), each failing until its slice allows it.
+      const words = keysOf(name).filter((key) => neverKey(key) && !OLD_NEVER_KEY.test(key));
+      if (words.length > 0) named[name] = words.sort();
+    }
+    expect(named).toEqual(
+      Object.fromEntries(Object.entries(SERVED_FOR_A_REASON).map(([name, keys]) => [name, [...keys].sort()])),
+    );
+  });
+
+  // The audit's mutants: a key the contract and the route add together. The test's own copy of the
+  // contract names each, so the shape check passes and only this file's own lists and words catch it.
+  const widened = (additions: Record<string, Record<string, Json>>): JsonObject => {
+    const copy = structuredClone(document);
+    const into = (copy.components as JsonObject).schemas as JsonObject;
+    for (const [name, properties] of Object.entries(additions)) {
+      const schema = into[name] as JsonObject;
+      schema.properties = { ...(schema.properties as JsonObject), ...properties };
+    }
+    return copy;
+  };
+  const integer: Json = { type: "integer" };
+  const instantRef: Json = { $ref: "#/components/schemas/Instant" };
+
+  it("catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home", () => {
+    const cases: [string, Record<string, Record<string, Json>>, string, unknown, string, string[]][] = [
+      [
+        "drop_count on the day",
+        { UpcomingDay: { drop_count: integer } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), drop_count: 2 },
+        "$",
+        ["keys", "whitelist"],
+      ],
+      [
+        "hidden_count on the day",
+        { UpcomingDay: { hidden_count: integer } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), hidden_count: 1 },
+        "$",
+        ["keys", "whitelist"],
+      ],
+      [
+        "a list of ids under viewer",
+        { ViewerDay: { drop_ids: { type: "array", items: { type: "string" } } } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), viewer: { ...placeIn(cleo), drop_ids: [] } },
+        "$.viewer",
+        ["whitelist"],
+      ],
+      [
+        "post_id on the day's occurrence",
+        { Occurrence: { post_id: { type: "string" } } },
+        "getOccurrence",
+        { ...upcomingDay([bensCard()]), occurrence: { ...saturday, post_id: "p1" } },
+        "$.occurrence",
+        // A provider's post is a never-word since the round-2 review.
+        ["keys", "whitelist"],
+      ],
+      [
+        "committed_at on an own day",
+        { OwnDay: { committed_at: instantRef } },
+        "getOwnDay",
+        { ...ownDay(allowance(1, 1, 0, 0)), committed_at: "2026-11-06T10:00:00Z" },
+        "$",
+        ["keys", "whitelist"],
+      ],
+      [
+        "filesize on an allowance",
+        { Allowance: { filesize: integer } },
+        "getOwnDay",
+        { ...ownDay(allowance(1, 1, 0, 0)), allowance: { ...allowance(1, 1, 0, 0), filesize: 10 } },
+        "$.allowance",
+        ["keys", "whitelist"],
+      ],
+      [
+        "drop_count on a club",
+        { ClubSummary: { drop_count: integer } },
+        "listClubs",
+        { server_now: "2026-11-07T06:59:59Z", clubs: [{ ...clubSummary(cleo), drop_count: 2 }], invitations: [] },
+        "$.clubs[0]",
+        ["keys", "whitelist"],
+      ],
+      [
+        "drop_count on a waiting Home",
+        { HomeWaiting: { drop_count: integer } },
+        "getHome",
+        { ...waitingHome("2026-11-07T06:59:59Z", []), drop_count: 2 },
+        "$",
+        ["keys", "whitelist"],
+      ],
+    ];
+    for (const [what, additions, id, body, where, caught] of cases) {
+      const found = scan(answer(body), context(id, cleo, { document: widened(additions) }));
+      expect(checks(found), what).toEqual(caught);
+      expect(at(found, "whitelist"), what).toEqual([where]);
+      // With the contract as it is, the shape check finds it too.
+      expect(checks(scan(answer(body), context(id, cleo))), what).toContain("shape");
+    }
+    // And the same day without them passes, so it is each key alone.
+    expect(scan(answer(upcomingDay([bensCard()])), context("getOccurrence", cleo))).toEqual([]);
+  });
+
+  it("catches a camelCase key the contract names, outside the lists and inside them, and passes each key served for a reason", () => {
+    // Outside the lists (an account's Me): the never-words alone.
+    const row = world.accounts.get("acct_cleo");
+    if (row === undefined) throw new Error("the test world has no account for Cleo");
+    const me = {
+      id: "acct_cleo",
+      ...(row.name === null ? {} : { display_name: row.name }),
+      ...(row.avatar === null ? {} : { avatar_version: row.avatar }),
+      age_confirmed: row.ageConfirmed,
+      version: row.version,
+    };
+    const meWidened = { document: widened({ Me: { avatarUrl: { type: "string" } } }) };
+    expect(scan(answer(me), context("getMe", cleo, meWidened))).toEqual([]);
+    const outside = scan(answer({ ...me, avatarUrl: "x" }), context("getMe", cleo, meWidened));
+    expect(checks(outside)).toEqual(["keys"]);
+    expect(at(outside, "keys")).toEqual(["$.avatarUrl"]);
+    // Inside them (a day's ClubRef): the list's finding, and the never-words' beside it.
+    const found = scan(
+      answer({ ...upcomingDay([bensCard()]), club: { ...club(), posterUrl: "x" } }),
+      context("getOccurrence", cleo, { document: widened({ ClubRef: { posterUrl: { type: "string" } } }) }),
+    );
+    expect(at(found, "keys")).toEqual(["$.club.posterUrl"]);
+    expect(at(found, "whitelist")).toEqual(["$.club"]);
+    // The day's own times, a club's count of members and a member's place: all served (the passes above
+    // hold Occurrence's and ClubSummary's), as is a reservation's lapse.
+    const reservation = {
+      id: "rsv_cleo_live",
+      occurrence_id: "occ_sat",
+      media_class: "photo",
+      expires_at: "2026-11-07T06:59:59Z",
+      allowance: allowance(0, 0, 1, 0),
+    };
+    expect(at(scan(answer(reservation, 201), context("createReservation", cleo)), "keys")).toEqual([]);
+  });
+
+  it("catches an object of a schema it holds no list for, and one of no schema, in an answer before the reveal", () => {
+    const stats: Json = { type: "object", properties: { photos: integer } };
+    const additions = { UpcomingDay: { stats } };
+    const found = scan(
+      answer({ ...upcomingDay([bensCard()]), stats: { photos: 1 } }),
+      context("getOccurrence", cleo, { document: widened(additions) }),
+    );
+    expect(at(found, "whitelist")).toEqual(["$", "$.stats"]);
+    // A new schema, named: the day's list finds the key, and no list holds the schema.
+    const named = structuredClone(widened({ UpcomingDay: { stats: { $ref: "#/components/schemas/DayStats" } } }));
+    ((named.components as JsonObject).schemas as JsonObject).DayStats = stats;
+    const foundNamed = scan(
+      answer({ ...upcomingDay([bensCard()]), stats: { photos: 1 } }),
+      context("getOccurrence", cleo, { document: named }),
+    );
+    expect(foundNamed.filter((finding) => finding.check === "whitelist").map((finding) => finding.what)).toEqual([
+      "an UpcomingDay that has stats (T10: this file's own list)",
+      "a DayStats, which this file holds no list for before the reveal (T10)",
+    ]);
+    // An answer of another operation (an account's) isn't held to the lists' closed world.
+    expect(
+      checks(scan(answer({ ...upcomingDay([]), stats: { photos: 1 } }, 200), context("getMe", cleo))),
+    ).not.toContain("whitelist");
+  });
+
+  it("holds what has opened to its list: a day link among a waiting Home's recent days, and an opened card, its photo and its reactions", () => {
+    // The round-2 review: a key on a day link of a Home whose next day still collects, and none of the
+    // never-words, passed every check.
+    const link = { occurrence: pastSaturday, cover_drop_id: "drp_ben" };
+    const homeAt = { now: AFTER_CLOSE };
+    const linkWidened = widened({
+      DayLink: { drops: integer, unseen: integer, contributors: { type: "array", items: { type: "string" } } },
+    });
+    const home = (recent: unknown[]) => waitingHome("2026-11-08T02:00:00Z", recent);
+    expect(scan(answer(home([link])), context("getHome", cleo, { ...homeAt, document: linkWidened }))).toEqual([]);
+    const counted = scan(
+      answer(home([{ ...link, drops: 7, unseen: 3, contributors: [ana, cleo] }])),
+      context("getHome", cleo, { ...homeAt, document: linkWidened }),
+    );
+    expect(checks(counted)).toEqual(["whitelist"]);
+    // One finding for each key: drops, unseen and contributors.
+    expect(at(counted, "whitelist")).toEqual(Array(3).fill("$.recent_days[0]"));
+    // Inside an opened day, where the key check doesn't look: a key on a card, its photo or a reaction.
+    const opened = (card: unknown) =>
+      revealedDay([card], [{ drop_id: "drp_ben", author: person(ben, "Ben"), star_pick: true }]);
+    const cases: [string, Record<string, Record<string, Json>>, unknown, string][] = [
+      [
+        "upcoming on a card",
+        { RevealedDayDrop: { upcoming: integer } },
+        { ...bensRevealedCard(), upcoming: 2 },
+        "$.drops[0]",
+      ],
+      [
+        "next on its photo",
+        { RevealedPhoto: { next: integer } },
+        { ...bensRevealedCard(), photo: { ...bensRevealedCard().photo, next: 1 } },
+        "$.drops[0].photo",
+      ],
+      [
+        "others on a reaction",
+        { ReactionSummary: { others: integer } },
+        bensRevealedCard([{ reaction: "heart", others: 4 }]),
+        "$.drops[0].reactions[0]",
+      ],
+    ];
+    expect(scan(answer(opened(bensRevealedCard())), context("getOccurrence", cleo, { now: OPEN }))).toEqual([]);
+    for (const [what, additions, card, where] of cases) {
+      const found = scan(
+        answer(opened(card)),
+        context("getOccurrence", cleo, { now: OPEN, document: widened(additions) }),
+      );
+      expect(checks(found), what).toEqual(["whitelist"]);
+      expect(at(found, "whitelist"), what).toEqual([where]);
+    }
+  });
+});
+
+describe("the API's log as the scanner reads it (T52, T16; the outside audit's A14)", () => {
+  const facts = {
+    texts: new Needles(worldTexts(world), { cuts: true }),
+    keptBack: new Needles(world.canaries.keys()),
+    secrets: new Needles(["presented-token-of-forty-three-characters-xx"]),
+  };
+  const line = (fields: Record<string, unknown>) =>
+    JSON.stringify({ level: 30, time: 1_762_499_999_000, reqId: "q2Zt0b9aXk1vR3mW", ...fields });
+
+  it("passes the request line and the warnings the API writes", () => {
+    expect(logProblems(line({ op: "getOccurrence", status: 200, ms: 3, msg: "request" }), facts)).toEqual([]);
+    expect(logProblems(line({ op: "getHealth", status: 503, ms: 2001, msg: "request" }), facts)).toEqual([]);
+    expect(
+      logProblems(line({ err: { type: "PostgresError", code: "57014" }, msg: "database out of time" }), facts),
+    ).toEqual([]);
+    expect(logProblems(line({ trouble: "unreachable", msg: "sign-in keys unavailable" }), facts)).toEqual([]);
+  });
+
+  it("holds every text people wrote in the world: captions, comments, names, a club's name and labels, an invitation's names", () => {
+    // The test world with a comment on a drop and a roster on an invitation, which it has neither of.
+    const written = {
+      ...world,
+      drops: new Map(
+        [...world.drops].map(([id, drop], index) => [id, index === 0 ? { ...drop, comments: ["Lovely light"] } : drop]),
+      ),
+      invitations: new Map(
+        [...world.invitations].map(([id, invitation], index) => [
+          id,
+          index === 0 ? { ...invitation, roster: ["Pip Quill"] } : invitation,
+        ]),
+      ),
+    };
+    const texts = worldTexts(written);
+    expect(texts).toContain("Lovely light");
+    expect(texts).toContain("Pip Quill");
+    for (const drop of world.drops.values()) if (drop.caption !== null) expect(texts).toContain(drop.caption);
+    for (const club of world.clubs.values()) {
+      expect(texts).toContain(club.name);
+      for (const label of club.labels.keys()) expect(texts).toContain(label);
+    }
+    for (const member of world.members.values()) if (member.name !== null) expect(texts).toContain(member.name);
+    for (const account of world.accounts.values()) if (account.name !== null) expect(texts).toContain(account.name);
+    for (const invitation of world.invitations.values()) {
+      expect(texts).toContain(invitation.clubName);
+      if (invitation.inviterName !== null) expect(texts).toContain(invitation.inviterName);
+    }
+    expect(world.invitations.size).toBeGreaterThan(0);
+    expect([...world.clubs.values()].some((club) => club.labels.size > 0)).toBe(true);
+  });
+
+  it("finds a needle whole, inside a value when it is 6 characters or more, and a short one inside only when asked", () => {
+    const needles = new Needles(["Ben", "Saturday People", "tok_" + "x".repeat(40)]);
+    expect(needles.size).toBe(3);
+    expect(needles.add("Ben").size).toBe(3);
+    expect(needles.within("Ben", false)).toEqual(["Ben"]);
+    expect(needles.within("Bento", false)).toEqual([]);
+    expect(needles.within("Bento", true)).toEqual(["Ben"]);
+    expect(needles.within("served Saturday People twice", false)).toEqual(["Saturday People"]);
+    expect(needles.within(`a tok_${"x".repeat(40)} here`, false)).toEqual([`tok_${"x".repeat(40)}`]);
+    expect(needles.within("Saturday Peopl", false)).toEqual([]);
+  });
+
+  it("finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one and a run of 12 of one inside a longer value", () => {
+    const caption = 'Ben said "go" at the pier';
+    const plain = new Needles(["Saturday People", caption]);
+    expect(plain.within("served saturday people", false)).toEqual(["Saturday People"]);
+    expect(plain.within("SATURDAY PEOPLE", false)).toEqual(["Saturday People"]);
+    // A body logged whole holds the caption's quotes escaped.
+    expect(plain.within(JSON.stringify({ caption }), false)).toEqual([caption]);
+    expect(plain.within("Saturday", false)).toEqual([]);
+    const cut = new Needles(["Saturday People", caption], { cuts: true });
+    expect(cut.size).toBe(2);
+    expect(cut.within("Saturday", false)).toEqual(["Saturday People"]);
+    expect(cut.within("saturday peopl", false)).toEqual(["Saturday People"]);
+    expect(cut.within("at the pier", false)).toEqual([caption]);
+    // Shorter than 8, a value could be any word of the log's own inside a sentence.
+    expect(cut.within("Saturda", false)).toEqual([]);
+    expect(cut.within("request", false)).toEqual([]);
+    // A text cut short at both ends with other words around it, a run of 12 characters of it or more (the
+    // round-3 review), but not a run of 11, which a word of the log's own could share with a text.
+    const photo = new Needles(["Saturday People", "From Ben's photo"], { cuts: true });
+    expect(photo.within("trouble: aturday Peopl", false)).toEqual(["Saturday People"]);
+    expect(photo.within("caption=rom Ben's pho", false)).toEqual(["From Ben's photo"]);
+    expect(photo.within("CAPTION=ROM BEN'S PHO", false)).toEqual(["From Ben's photo"]);
+    expect(photo.within("trouble: aturday Peo", false)).toEqual([]);
+    expect(photo.within("caption=m Ben's pho", false)).toEqual([]);
+    // Without cuts, a text is found only whole.
+    expect(new Needles(["From Ben's photo"]).within("caption=rom Ben's pho", false)).toEqual([]);
+  });
+
+  it("says whether a value holds a needle as `within` finds them, and stops at the first, so a body logged whole costs little against thousands of texts worded alike (the round-4 review)", () => {
+    const short = new Needles(["Ben", "Saturday People"]);
+    const photo = new Needles(["Saturday People", "From Ben's photo", 'Ben said "go" at the pier'], { cuts: true });
+    const values = [
+      "Ben",
+      "Bento",
+      "served saturday people",
+      "Saturday",
+      "trouble: aturday Peopl",
+      "caption=m Ben's pho",
+    ];
+    values.push(JSON.stringify({ caption: 'Ben said "go" at the pier' }), "request", "");
+    for (const value of values)
+      for (const shortInside of [false, true])
+        for (const needles of [short, photo])
+          expect(needles.holds(value, shortInside), `${value} ${String(shortInside)}`).toBe(
+            needles.within(value, shortInside).length > 0,
+          );
+    // The matrix's worlds word their texts alike ("The ferry at dawn" and a world's own mark), so a place
+    // inside a body that holds one starts thousands of texts at once.
+    const states = ["before the reveal", "on the day", "after the day", "in Memories"];
+    const texts: string[] = [];
+    for (let world = 0; world < 1000; world += 1) {
+      const mark = ` ${world.toString(16).padStart(12, "0")}`;
+      for (const text of ["Saturday People", "From Ben", "Ben's pick", "Cleo's pick"]) texts.push(text + mark);
+      for (const state of states) texts.push(`The ferry at dawn${mark} ${state}`);
+    }
+    const alike = new Needles(texts, { cuts: true });
+    const body = `${"x ".repeat(100)}${"from ben's pick the ferry at dawn ".repeat(30)}`;
+    expect(alike.holds(body, false)).toBe(true);
+    expect(alike.holds(`${"x ".repeat(100)}${"r".repeat(1000)}`, false)).toBe(false);
+    const leaking = line({ msg: "request", trouble: body });
+    const alikeFacts = { texts: alike, keptBack: new Needles(), secrets: new Needles() };
+    expect(logProblems(leaking, alikeFacts)).toEqual(["text people wrote at $.trouble (T52)"]);
+    // Every place's run looked up exactly, and a stop at the first: well under a millisecond each, where
+    // collecting every text it holds takes tens of milliseconds and more.
+    const started = performance.now();
+    for (let time = 0; time < 20; time += 1) {
+      alike.holds(body, false);
+      logProblems(leaking, alikeFacts);
+    }
+    expect(performance.now() - started).toBeLessThan(100);
+  });
+
+  it("catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON", () => {
+    const [caption] = [...world.drops.values()].map((drop) => drop.caption).filter((text) => text !== null);
+    const [canary] = world.canaries.keys();
+    const cases: [string, string, RegExp][] = [
+      ["a caption in a field", line({ msg: "request", op: String(caption) }), /text people wrote at \$\.op/],
+      ["a caption inside a message", line({ msg: `served ${String(caption)} to Ben` }), /text people wrote at \$\.msg/],
+      ["a name, whole", line({ msg: "Ben" }), /text people wrote/],
+      ["a club's name", line({ msg: "Saturday People" }), /text people wrote/],
+      // The round-2 review: a text cut short, or lower-cased.
+      ["a club's name cut short", line({ msg: "request", trouble: "Saturday" }), /text people wrote at \$\.trouble/],
+      ["a caption lower-cased", line({ msg: String(caption).toLowerCase() }), /text people wrote at \$\.msg/],
+      // The round-3 review: a text cut short at both ends inside a longer value.
+      [
+        "a club's name cut short at both ends inside a message",
+        line({ msg: "request", trouble: "refused at aturday Peop and more" }),
+        /text people wrote at \$\.trouble/,
+      ],
+      ["a kept-back value", line({ msg: `version ${String(canary)}` }), /keeps back/],
+      [
+        "a request's token",
+        line({ msg: "presented-token-of-forty-three-characters-xx" }),
+        /a request's or answer's token/,
+      ],
+      [
+        "a request's token inside a value",
+        line({ msg: "refused presented-token-of-forty-three-characters-xx" }),
+        /a request's or answer's token/,
+      ],
+      ["a bearer token", line({ msg: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln" }), /a token at/],
+      ["a URL", line({ msg: "https://store.example/o" }), /a URL, storage path or provider host/],
+      ["a storage path", line({ msg: "uploads/BenObjectKey" }), /a URL, storage path or provider host/],
+      [
+        "a key it doesn't write",
+        line({ msg: "served", served: { home: "[redacted]" } }),
+        /a key the API's log doesn't write: served/,
+      ],
+      ["a line that isn't JSON", "served the day", /isn't JSON/],
+    ];
+    for (const [what, planted, expected] of cases) {
+      const found = logProblems(planted, facts);
+      expect(
+        found.some((problem) => expected.test(problem)),
+        `${what}: ${found.join("; ")}`,
+      ).toBe(true);
+    }
   });
 });
