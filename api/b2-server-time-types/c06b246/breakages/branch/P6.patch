@@ -1,0 +1,10 @@
+--- a/packages/domain/src/time/one-clock.test.ts
++++ b/packages/domain/src/time/one-clock.test.ts
+@@ -259,7 +259,6 @@
+   // A type's members: a union's, each read in turn, and a type parameter's constraint's, so that
+   // `T extends Temporal.Instant | null` is read as the instant and the null its constraint allows.
+   const parts = (type: ts.Type): readonly ts.Type[] => {
+-    if (type.isUnion()) return type.types.flatMap(parts);
+     const constraint = type.isTypeParameter() ? checker.getBaseConstraintOfType(type) : undefined;
+     return constraint === undefined || constraint === type ? [type] : parts(constraint);
+   };

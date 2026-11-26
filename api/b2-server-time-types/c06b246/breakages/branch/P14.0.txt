@@ -1,0 +1,73 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/tests
+
+ ❯ src/privacy/harness.test.ts (100 tests | 3 failed) 1849ms
+   ❯ each step of the matrix reports a planted wrong answer (47)
+     × sends every other name a time might come under in one request, none of them a parameter of the contract's 12ms
+     × reports a route that answers differently for `date` in the query, read as a day's date (T16, Q09) 6ms
+     × reports a route that answers differently for `ts` in the query, read as milliseconds (T16, Q09) 4ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 97 passed (100)
+   Start at  10:55:13
+   Duration  2.83s (tests 69%, import 23%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > sends every other name a time might come under in one request, none of them a parameter of the contract's
+AssertionError: expected [ { …(11) } ] to deeply equal [ { …(11) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "after": "2026-11-08T07:00:00Z",
+      "before": "2026-11-08T07:00:00Z",
+      "client_time": "2026-11-08T07:00:00Z",
+-     "date": "2026-11-08",
+-     "day": "2026-11-08",
++     "date": "2026-11-08T07:00:00Z",
++     "day": "2026-11-08T07:00:00Z",
+      "from": "2026-11-08T07:00:00Z",
+      "since": "2026-11-08T07:00:00Z",
+      "time": "2026-11-08T07:00:00Z",
+-     "timestamp": "1794121200000",
+-     "ts": "1794121200000",
++     "timestamp": "2026-11-08T07:00:00Z",
++     "ts": "2026-11-08T07:00:00Z",
+      "until": "2026-11-08T07:00:00Z",
+    },
+  ]
+
+ ❯ src/privacy/harness.test.ts:490:44
+    488|     // Each in the form a route would read it by (the second review's …
+    489|     // the epoch, or the instant, all of them the same moment past the…
+    490|     expect(sent.map((made) => made.query)).toEqual([
+       |                                            ^
+    491|       {
+    492|         since: "2026-11-08T07:00:00Z",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers differently for `date` in the query, read as a day's date (T16, Q09)
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers differently for `ts` in the query, read as milliseconds (T16, Q09)
+AssertionError: expected Set{} to have a size of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privacy/harness.test.ts:645:96
+    643|       const step = await manipulationStep(app, spec("getDrop"), "itv_a…
+    644|       // One manipulated request, however many ways its answer differs…
+    645|       expect(new Set(step.problems.map((problem) => problem.slice(0, p…
+       |                                                                                                ^
+    646|       expect(step.problems).toContainEqual(expect.stringMatching(/^get…
+    647|       await app.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+

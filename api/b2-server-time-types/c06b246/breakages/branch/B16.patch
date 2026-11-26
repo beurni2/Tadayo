@@ -1,0 +1,16 @@
+--- a/services/api/src/clubs/home.ts
++++ b/services/api/src/clubs/home.ts
+@@ -120,7 +120,12 @@
+     const body = await deps.sql.begin("read only", async (tx) => {
+       const now = await deps.clock.sample(tx);
+       const home = await readHome(tx, account.id, clubId, now);
+-      return home === null ? null : homeBody(now, home);
++      if (home === null) return null;
++      const since = (request.query as Record<string, unknown> | null)?.["since"];
++      const made = homeBody(now, home);
++      return typeof since === "string" && typeof made === "object" && made !== null && !Array.isArray(made)
++        ? { ...made, server_now: since }
++        : made;
+     });
+     return body === null ? problem(reply, "NOT_FOUND") : ok(reply, body);
+   };

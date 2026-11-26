@@ -1,0 +1,22 @@
+--- a/packages/domain/src/time/one-clock.test.ts
++++ b/packages/domain/src/time/one-clock.test.ts
+@@ -266,8 +266,17 @@
+   // By what the compiler lets through, not by name: an intersection with a brand of its own, a type parameter whose
+   // constraint is an instant, `Readonly<Temporal.Instant>`. `any` passes for a ServerNow too, so it stays the lint's.
+   const plain = (type: ts.Type): boolean =>
+-    parts(type).some(
+-      (part) => !checker.isTypeAssignableTo(part, serverNow) && checker.isTypeAssignableTo(part, instant),
++    (type.isUnion() ? type.types : [type]).some(
++      (part) => {
++        if (part.isIntersection()) return false;
++        const symbol = part.getSymbol();
++        return (
++          symbol?.getName() === "Instant" &&
++          (symbol.declarations ?? []).some((declaration) =>
++            program.isSourceFileDefaultLibrary(declaration.getSourceFile()),
++          )
++        );
++      },
+     );
+   // The named declarations around `node`, outermost first: "holdSlot(slot)" for a field of `holdSlot`'s `slot`.
+   const ownerOf = (node: ts.Node): string => {

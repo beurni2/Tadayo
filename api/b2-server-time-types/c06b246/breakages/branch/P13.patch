@@ -1,0 +1,13 @@
+--- a/tests/src/privacy/harness.ts
++++ b/tests/src/privacy/harness.ts
+@@ -397,10 +397,6 @@
+   };
+   return [
+     ...Object.entries(query).map(([name, value]) => ({ ...spec, query: { ...spec.query, [name]: value } })),
+-    {
+-      ...spec,
+-      query: { ...spec.query, ...Object.fromEntries(TIME_NAMES.map((name) => [name, timeText(name, later)])) },
+-    },
+     { ...spec, headers: { ...spec.headers, date } },
+     { ...spec, headers: { ...spec.headers, "if-modified-since": date } },
+     { ...spec, headers: { ...spec.headers, "x-client-time": at } },

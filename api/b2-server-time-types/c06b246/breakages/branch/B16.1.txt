@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68925 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 1 failed | 28 skipped) 111640ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 111310ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 skipped (29)
+   Start at  11:23:05
+   Duration  113.56s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 10, first: [ …(10) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 10,
++   "first": [
++     "active, collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "withdrawn, collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "removed by moderation, collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "held (T29), collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its day suspended, collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its club suspended, collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its day cancelled, collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its author's account being deleted (T27), collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its star gone before the reveal (FQ63), collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++     "its star's account deletion asked before the reveal (FQ63, T27), collecting: getHome, manipulated {\"query\":{\"since\":\"2026-11-08T06:59:59Z\",\"before\":\"2026-11-08T06:59:59Z\",\"after\":\"2026-11-08T06:59:59Z\",\"until\":\"2026-11-08T06:59:59Z\",\"from\":\"2026-11-08T06:59:59Z\",\"date\":\"2026-11-08\",\"day\":\"2026-11-08\",\"time\":\"2026-11-08T06:59:59Z\",\"ts\":\"1794121199999\",\"timestamp\":\"1794121199999\",\"client_time\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: Home's server_now is \"2026-11-08T06:59:59Z\", not \"2026-11-07T06:59:59Z\"",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3218:66
+    3216|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3217|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3218|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3219|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3220|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

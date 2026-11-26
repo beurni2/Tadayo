@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-p3-brk/packages/domain
+
+ ❯ src/time/one-clock.test.ts (12 tests | 1 failed) 6005ms
+   ❯ only the time module reads a clock (T1) (12)
+     × finds a plain instant a parameter or a field takes, alone, in a union, optional, through an alias, branded or as a constraint, and leaves a ServerNow alone 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  10:54:31
+   Duration  6.60s (tests 93%, import 5%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds a plain instant a parameter or a field takes, alone, in a union, optional, through an alias, branded or as a constraint, and leaves a ServerNow alone
+AssertionError: expected [ { what: 'a parameter', …(2) }, …(7) ] to deeply equal [ { what: 'a parameter', …(2) }, …(7) ]
+
+- Expected
++ Received
+
+@@ -40,16 +40,11 @@
+      ],
+      "problems": [],
+      "what": "a parameter typed through an alias",
+    },
+    {
+-     "plain": [
+-       "services/worker/src/now-plain-6.ts: stamped(at)",
+-       "services/worker/src/now-plain-6.ts: fixed(at)",
+-       "services/worker/src/now-plain-6.ts: chosen(at)",
+-       "services/worker/src/now-plain-6.ts: chosenOrNone(at)",
+-     ],
++     "plain": [],
+      "problems": [],
+      "what": "an instant with a brand of its own, one read only, and a type parameter whose constraint is an instant or may be null",
+    },
+    {
+      "plain": [],
+
+ ❯ src/time/one-clock.test.ts:995:21
+    993|         return { what, problems: problems(program, file), plain: plain…
+    994|       });
+    995|       expect(found).toEqual(
+       |                     ^
+    996|         PLAIN.map(([what, , expected], index) => {
+    997|           const file = caseFile("plain", index).split(sep).join("/");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

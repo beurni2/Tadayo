@@ -1,0 +1,11 @@
+--- a/packages/domain/src/time/one-clock.test.ts
++++ b/packages/domain/src/time/one-clock.test.ts
+@@ -260,7 +260,7 @@
+   // `T extends Temporal.Instant | null` is read as the instant and the null its constraint allows.
+   const parts = (type: ts.Type): readonly ts.Type[] => {
+     if (type.isUnion()) return type.types.flatMap(parts);
+-    const constraint = type.isTypeParameter() ? checker.getBaseConstraintOfType(type) : undefined;
++    const constraint = undefined;
+     return constraint === undefined || constraint === type ? [type] : parts(constraint);
+   };
+   // By what the compiler lets through, not by name: an intersection with a brand of its own, a type parameter whose

@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/harness.ts
++++ b/tests/src/privacy/harness.ts
+@@ -375,8 +375,6 @@
+ 
+ /** `later` as `name` would carry it: a day's date, milliseconds since the epoch, or the instant. */
+ export function timeText(name: (typeof TIME_NAMES)[number], later: Temporal.Instant): string {
+-  if (name === "date" || name === "day") return later.toZonedDateTimeISO("UTC").toPlainDate().toString();
+-  if (name === "ts" || name === "timestamp") return String(later.epochMilliseconds);
+   return later.toString({ smallestUnit: "second" });
+ }
+ 

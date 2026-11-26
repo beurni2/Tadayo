@@ -1,0 +1,11 @@
+--- a/packages/domain/src/time/one-clock.test.ts
++++ b/packages/domain/src/time/one-clock.test.ts
+@@ -966,7 +966,7 @@
+     "finds each plain instant the server's code takes on PLAIN_INSTANTS, and nothing there that it doesn't take (the outside audit's A14)",
+     () => {
+       const program = server();
+-      const found = [...serverTypeScript(), ...timeModule()].flatMap((file) => plainInstants(program, file)).sort();
++      const found = [...serverTypeScript()].flatMap((file) => plainInstants(program, file)).sort();
+       const kept = PLAIN_INSTANTS.flatMap((entry) => entry.at).sort();
+       expect(found).toEqual(kept);
+       for (const entry of PLAIN_INSTANTS) expect(entry.why).not.toBe("");

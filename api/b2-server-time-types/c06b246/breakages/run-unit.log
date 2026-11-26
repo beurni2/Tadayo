@@ -1,0 +1,19 @@
+{"name": "P1", "what": "settleLapsed takes a plain instant again", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P2", "what": "homeBody takes a plain instant again, and B15 with it", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P3", "what": "NewRevision.at a plain instant again, a field", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P4", "what": "daysToMake takes ServerNow | Temporal.Instant, a union", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P5", "what": "a kept parameter renamed: wholeSecond(moment)", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P6", "what": "plainInstants reads a whole type only, no union", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P7", "what": "plainInstants reads parameters only, no fields", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P8", "what": "plainInstants matches Temporal.Instant by name again, skipping every intersection (the first commit's)", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P9", "what": "the list test leaves the time module out again", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P10", "what": "notBeforeReveal takes unknown again", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P11", "what": "spike S5's startDay takes a plain instant again (tools/ops)", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P12", "what": "LeftClub.leftAt a plain instant again, an answer's time", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P13", "what": "the matrix's manipulations without the request of time names", "run": "unit: src/privacy/harness.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P14", "what": "the request of time names sends the instant's text under every name again", "run": "unit: src/privacy/harness.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+{"name": "P15", "what": "plainInstants reads a type parameter as itself again, not through its constraint", "run": "unit: src/time/one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "present_but_absent_registered": []}
+slice exit 0
+{"name": "T0", "what": "the slice's one-clock.test.ts on main's code (tests first)", "run": "unit: one-clock.test.ts", "exit": 1, "verdict": "caught", "missing": [], "found_not_kept": 25, "kept_not_found": ["packages/domain/src/authorization/read.ts: notBeforeReveal(at)", "packages/domain/src/authorization/read.ts: notBeforeReveal(revealAt)"], "exactly_as_registered": true}
+{"name": "C0", "what": "main's one-clock.test.ts on main's code, which takes all 25 as plain instants", "run": "unit: one-clock.test.ts", "exit": 0, "verdict": "passed (missed)", "missing": []}
+control exit 0
