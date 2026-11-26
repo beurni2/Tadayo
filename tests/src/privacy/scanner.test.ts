@@ -14,6 +14,7 @@ import { contractOperations, isObject, readDocument, resolve, type Json, type Js
 import {
   BEFORE_REVEAL,
   BEFORE_REVEAL_OPERATIONS,
+  Needles,
   OPENED_ONLY,
   SERVED_FOR_A_REASON,
   keyWords,
@@ -36,7 +37,7 @@ import {
 } from "./scanner.ts";
 
 const document = readDocument();
-/** T10's never-list as the scanner read it before the outside audit's A14: snake_case words alone. */
+/** T10's never-list as the scanner read it before the outside audit's A14: a word between underscores. */
 const OLD_NEVER_KEY = new RegExp(
   "(^|_)(url|uri|href|src|link|token|thumbnail|thumb|poster|blur|blurhash|hash|colour|color|width|height|" +
     "dimension|aspect|ratio|embed|html|source|provider|alt|exif|captured|capture|duration|size|bytes|highlight|" +
@@ -2207,16 +2208,60 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       expect([...list.required].sort(), name).toEqual([...required].sort());
       expect([...list.required, ...list.optional].sort(), name).toEqual(keysOf(name).sort());
     }
+    // What only an opened day holds reaches no day, but a day link's own, which the world check holds to a
+    // closed day: an opened day that names a day still to open (Home's `next`, the revealed day's
+    // `add_target`) is on BEFORE_REVEAL, held to its list.
+    expect([...OPENED_ONLY].filter((name) => reached(schemas[name] ?? null).has("Occurrence"))).toEqual(["DayLink"]);
   });
 
-  it("counts every operation whose answer can name a day or a drop as answering before the reveal, or only after", () => {
-    // The ones that answer only about a day that has opened: favourites, Memories, reactions, comments and
-    // a thread's notifications (spec 16 to 19).
+  it("finds no object those answers can hold but a named schema's: none inline, none a map", () => {
+    /** The paths of the object schemas `node` holds that aren't a named schema's own, through every reference. */
+    const inline = (node: Json, at: string, seen: Set<string>, found: string[], root = false): string[] => {
+      if (Array.isArray(node)) node.forEach((item, index) => inline(item, `${at}[${String(index)}]`, seen, found));
+      else if (isObject(node)) {
+        if (typeof node.$ref === "string") {
+          const name = node.$ref.startsWith("#/components/schemas/") ? node.$ref.split("/").pop() : undefined;
+          if (name === undefined) inline(resolve(document, node), at, seen, found);
+          else if (!seen.has(name)) {
+            seen.add(name);
+            inline(schemas[name] ?? null, name, seen, found, true);
+          }
+          return found;
+        }
+        const object = isObject(node.properties) || node.additionalProperties !== undefined || node.type === "object";
+        if (object && !root) found.push(at);
+        for (const [key, child] of Object.entries(node)) {
+          // A schema's properties are named by the contract; its examples and descriptions are no schemas.
+          if (key === "properties" && isObject(child))
+            for (const [property, schema] of Object.entries(child)) inline(schema, `${at}.${property}`, seen, found);
+          else if (["items", "additionalProperties", "not"].includes(key)) inline(child, `${at}.${key}`, seen, found);
+          else if (["oneOf", "anyOf", "allOf"].includes(key)) inline(child, `${at}.${key}`, seen, found, root);
+        }
+      }
+      return found;
+    };
+    const found: string[] = [];
+    const seen = new Set<string>();
+    for (const id of BEFORE_REVEAL_OPERATIONS)
+      for (const [status, response] of operation(id).responses)
+        if (status < 300 && response.json !== undefined) inline(response.json, `${id} ${String(status)}`, seen, found);
+    expect(found).toEqual([]);
+    expect(seen.size).toBeGreaterThan(Object.keys(BEFORE_REVEAL).length);
+  });
+
+  it("counts every operation whose answer can name a day or a drop, or that asks about one by its path, as answering before the reveal, or only after", () => {
+    // The ones that answer only about a day that has opened: favourites, Memories, reactions, comments, a
+    // thread's notifications, a drop's media and its video's embed (spec 12, 14, 16 to 19; T12). The
+    // author's own preview answers before the reveal (T11), so it is on BEFORE_REVEAL_OPERATIONS.
     const onlyOpened = [
       "clearReaction",
       "createComment",
+      "getDropMedia",
+      "getEmbed",
+      "listComments",
       "listFavourites",
       "listMemories",
+      "removeFavourite",
       "saveFavourite",
       "searchMemories",
       "setReaction",
@@ -2225,8 +2270,10 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
     ];
     const naming = new Set(["Occurrence", "DropCaption", "DropOwn", "Allowance"]);
     const fields = new Set(["drop_id", "occurrence_id", "cover_drop_id", "existing_drop_id"]);
-    const names = [...operations.keys()].filter((id) =>
-      [...answered(id)].some((schema) => naming.has(schema) || keysOf(schema).some((key) => fields.has(key))),
+    const names = [...operations.keys()].filter(
+      (id) =>
+        /\{(drop_id|occurrence_id)\}/.test(operation(id).path) ||
+        [...answered(id)].some((schema) => naming.has(schema) || keysOf(schema).some((key) => fields.has(key))),
     );
     expect(names.sort()).toEqual([...BEFORE_REVEAL_OPERATIONS, ...onlyOpened].sort());
   });
@@ -2234,10 +2281,44 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
   it("reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time", () => {
     expect(keyWords("thumbnailUrl")).toEqual(["thumbnail", "url"]);
     expect(keyWords("posterURL")).toEqual(["poster", "url"]);
+    expect(keyWords("photoURLs")).toEqual(["photo", "urls"]);
+    expect(keyWords("URLsList")).toEqual(["urls", "list"]);
     expect(keyWords("HTMLBody")).toEqual(["html", "body"]);
     expect(keyWords("drop_count")).toEqual(["drop", "count"]);
     expect(keyWords("x-Media-Version")).toEqual(["x", "media", "version"]);
+    expect(keyWords("url2x")).toEqual(["url", "2", "x"]);
     for (const key of [
+      // An acronym's plural, and a never-word written as two (the round-1 review: `main` caught these).
+      "URLs",
+      "image_URLs",
+      "photoURLs",
+      "mediaURLs",
+      "URIs",
+      "HREFs",
+      "SRCs",
+      "EXIFs",
+      "x_ALTs",
+      "TOKENs",
+      "waveForm",
+      "highLight",
+      "HighLight",
+      // A number, whether there is any, a time, and a word with a digit after it.
+      "num_drops",
+      "n_drops",
+      "dropNumber",
+      "dropcount",
+      "has_drops",
+      "hasDrops",
+      "any_added",
+      "anyAdded",
+      "added_on",
+      "created",
+      "timestamp",
+      "last_added_time",
+      "url2",
+      "photoUrl2",
+      "media_url2",
+      "thumbnail2x",
       "thumbnail_url",
       "thumbnailUrl",
       "posterURL",
@@ -2256,8 +2337,40 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
       "file_sizes",
     ])
       expect(neverKey(key), key).toBe(true);
-    for (const key of ["id", "caption", "author", "state", "version", "server_now", "at", "club_today", "my_days"])
+    for (const key of [
+      "id",
+      "caption",
+      "author",
+      "state",
+      "version",
+      "server_now",
+      "at",
+      "on",
+      "club_today",
+      "my_days",
+      "account",
+      "next_up",
+      "joined_later",
+      "is_star",
+      "name",
+      "company",
+    ])
       expect(neverKey(key), key).toBe(false);
+  });
+
+  it("names every key the never-list named before the outside audit's A14, in the contract and planted", () => {
+    const keys = new Set<string>(["URLs", "media_URLs", "SRCs", "x_ALTs", "waveForm", "HighLight", "Thumbnail"]);
+    const into = (node: Json): void => {
+      if (Array.isArray(node)) for (const item of node) into(item);
+      else if (isObject(node)) {
+        if (isObject(node.properties)) for (const key of Object.keys(node.properties)) keys.add(key);
+        for (const child of Object.values(node)) into(child);
+      }
+    };
+    into(document);
+    const old = [...keys].filter((key) => OLD_NEVER_KEY.test(key));
+    expect(old.length).toBeGreaterThan(10);
+    expect(old.filter((key) => !neverKey(key))).toEqual([]);
   });
 
   it("holds the keys served for a reason to the contract's answers: each is served, and no other key outside what opens names a never-word", () => {
@@ -2370,12 +2483,29 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
     expect(scan(answer(upcomingDay([bensCard()])), context("getOccurrence", cleo))).toEqual([]);
   });
 
-  it("catches a camelCase key the contract names outside the lists, and passes each key served for a reason", () => {
+  it("catches a camelCase key the contract names, outside the lists and inside them, and passes each key served for a reason", () => {
+    // Outside the lists (an account's Me): the never-words alone.
+    const row = world.accounts.get("acct_cleo");
+    if (row === undefined) throw new Error("the test world has no account for Cleo");
+    const me = {
+      id: "acct_cleo",
+      ...(row.name === null ? {} : { display_name: row.name }),
+      ...(row.avatar === null ? {} : { avatar_version: row.avatar }),
+      age_confirmed: row.ageConfirmed,
+      version: row.version,
+    };
+    const meWidened = { document: widened({ Me: { avatarUrl: { type: "string" } } }) };
+    expect(scan(answer(me), context("getMe", cleo, meWidened))).toEqual([]);
+    const outside = scan(answer({ ...me, avatarUrl: "x" }), context("getMe", cleo, meWidened));
+    expect(checks(outside)).toEqual(["keys"]);
+    expect(at(outside, "keys")).toEqual(["$.avatarUrl"]);
+    // Inside them (a day's ClubRef): the list's finding, and the never-words' beside it.
     const found = scan(
       answer({ ...upcomingDay([bensCard()]), club: { ...club(), posterUrl: "x" } }),
       context("getOccurrence", cleo, { document: widened({ ClubRef: { posterUrl: { type: "string" } } }) }),
     );
     expect(at(found, "keys")).toEqual(["$.club.posterUrl"]);
+    expect(at(found, "whitelist")).toEqual(["$.club"]);
     // The day's own times, a club's count of members and a member's place: all served (the passes above
     // hold Occurrence's and ClubSummary's), as is a reservation's lapse.
     const reservation = {
@@ -2416,9 +2546,9 @@ describe("the scanner's own key lists and never-words (the outside audit's A14; 
 
 describe("the API's log as the scanner reads it (T52, T16; the outside audit's A14)", () => {
   const facts = {
-    texts: new Set(worldTexts(world)),
-    keptBack: new Set(world.canaries.keys()),
-    secrets: new Set(["presented-token-of-forty-three-characters-xx"]),
+    texts: new Needles(worldTexts(world)),
+    keptBack: new Needles(world.canaries.keys()),
+    secrets: new Needles(["presented-token-of-forty-three-characters-xx"]),
   };
   const line = (fields: Record<string, unknown>) =>
     JSON.stringify({ level: 30, time: 1_762_499_999_000, reqId: "q2Zt0b9aXk1vR3mW", ...fields });
@@ -2433,10 +2563,47 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
   });
 
   it("holds every text people wrote in the world: captions, comments, names, a club's name and labels, an invitation's names", () => {
-    const texts = worldTexts(world);
+    // The test world with a comment on a drop and a roster on an invitation, which it has neither of.
+    const written = {
+      ...world,
+      drops: new Map(
+        [...world.drops].map(([id, drop], index) => [id, index === 0 ? { ...drop, comments: ["Lovely light"] } : drop]),
+      ),
+      invitations: new Map(
+        [...world.invitations].map(([id, invitation], index) => [
+          id,
+          index === 0 ? { ...invitation, roster: ["Pip Quill"] } : invitation,
+        ]),
+      ),
+    };
+    const texts = worldTexts(written);
+    expect(texts).toContain("Lovely light");
+    expect(texts).toContain("Pip Quill");
     for (const drop of world.drops.values()) if (drop.caption !== null) expect(texts).toContain(drop.caption);
-    for (const club of world.clubs.values()) expect(texts).toContain(club.name);
+    for (const club of world.clubs.values()) {
+      expect(texts).toContain(club.name);
+      for (const label of club.labels.keys()) expect(texts).toContain(label);
+    }
     for (const member of world.members.values()) if (member.name !== null) expect(texts).toContain(member.name);
+    for (const account of world.accounts.values()) if (account.name !== null) expect(texts).toContain(account.name);
+    for (const invitation of world.invitations.values()) {
+      expect(texts).toContain(invitation.clubName);
+      if (invitation.inviterName !== null) expect(texts).toContain(invitation.inviterName);
+    }
+    expect(world.invitations.size).toBeGreaterThan(0);
+    expect([...world.clubs.values()].some((club) => club.labels.size > 0)).toBe(true);
+  });
+
+  it("finds a needle whole, inside a value when it is 6 characters or more, and a short one inside only when asked", () => {
+    const needles = new Needles(["Ben", "Saturday People", "tok_" + "x".repeat(40)]);
+    expect(needles.size).toBe(3);
+    expect(needles.add("Ben").size).toBe(3);
+    expect(needles.within("Ben", false)).toEqual(["Ben"]);
+    expect(needles.within("Bento", false)).toEqual([]);
+    expect(needles.within("Bento", true)).toEqual(["Ben"]);
+    expect(needles.within("served Saturday People twice", false)).toEqual(["Saturday People"]);
+    expect(needles.within(`a tok_${"x".repeat(40)} here`, false)).toEqual([`tok_${"x".repeat(40)}`]);
+    expect(needles.within("Saturday Peopl", false)).toEqual([]);
   });
 
   it("catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON", () => {
@@ -2448,7 +2615,16 @@ describe("the API's log as the scanner reads it (T52, T16; the outside audit's A
       ["a name, whole", line({ msg: "Ben" }), /text people wrote/],
       ["a club's name", line({ msg: "Saturday People" }), /text people wrote/],
       ["a kept-back value", line({ msg: `version ${String(canary)}` }), /keeps back/],
-      ["a request's token", line({ msg: "presented-token-of-forty-three-characters-xx" }), /a request's token/],
+      [
+        "a request's token",
+        line({ msg: "presented-token-of-forty-three-characters-xx" }),
+        /a request's or answer's token/,
+      ],
+      [
+        "a request's token inside a value",
+        line({ msg: "refused presented-token-of-forty-three-characters-xx" }),
+        /a request's or answer's token/,
+      ],
       ["a bearer token", line({ msg: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln" }), /a token at/],
       ["a URL", line({ msg: "https://store.example/o" }), /a URL, storage path or provider host/],
       ["a storage path", line({ msg: "uploads/BenObjectKey" }), /a URL, storage path or provider host/],

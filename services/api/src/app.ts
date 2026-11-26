@@ -45,7 +45,7 @@ import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./
 import { registerDeviceHandler, removeDeviceHandler } from "./identity/devices.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
-import { fastifyLogging, logEachRequest, requestLine } from "./logging.ts";
+import { fastifyLogging, logEachRequest, redactBindings, requestLine } from "./logging.ts";
 import { installGate } from "./session.ts";
 import { END_SECONDS } from "./shutdown.ts";
 import { WEB_OPERATION, allowWebOrigin, preflight } from "./web-origin.ts";
@@ -240,6 +240,8 @@ export function buildApp(deps: Deps): FastifyInstance {
     },
     clientErrorHandler: clientError,
   });
+  // Before any request's logger is made from it.
+  redactBindings(app.log);
   const routes: string[] = [];
   recorded.set(app, routes);
   app.addHook("onRoute", (route) => {

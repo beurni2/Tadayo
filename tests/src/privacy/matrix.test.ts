@@ -96,6 +96,7 @@ import {
   answerOf,
   render,
   routeProblems,
+  sentTo,
   said,
   signedOutCount,
   signedOutStep,
@@ -174,7 +175,7 @@ import {
   sameAnswer,
   type RosterSeen,
 } from "./roster.ts";
-import { contractOperations, readDocument } from "./operations.ts";
+import { contractOperations, isObject, readDocument } from "./operations.ts";
 import {
   completedProblems,
   completeExpected,
@@ -209,6 +210,8 @@ import {
   type ScheduleSeen,
 } from "./schedule.ts";
 import {
+  Needles,
+  keyWords,
   scan,
   type Answer,
   type MediaClass,
@@ -366,19 +369,111 @@ let photo: Buffer;
  * The API's log, as the matrix's app writes it at production's level (fly.toml's LOG_LEVEL, `info`), and
  * how far the scanner has read it (T52, T16; the outside audit's A14). Each step's scanner reads the lines
  * written since, against everything a log must never hold that the matrix has met so far: the text people
- * wrote and the values kept back in every world made, and every token a request carried.
+ * wrote and the values kept back in every world made, the text every request carried (a caption a refused
+ * commit never stored), and every token a request carried or an answer gave; and holds them to one request
+ * line for each request sent since. The last test reads every line again, against all of it.
  */
 const logLines: string[] = [];
 let logRead = 0;
+/** How many requests the app had been sent at the last read. */
+let logSent = 0;
 /** The answers the scanner read, each of which wrote one request line. */
 let logAnswers = 0;
-const logFacts = { texts: new Set<string>(), keptBack: new Set<string>(), secrets: new Set<string>() };
+const logFacts = { texts: new Needles(), keptBack: new Needles(), secrets: new Needles() };
 
-/** The lines written since the last read, through the log's scan: each problem as a line, into `wrong`. */
+/** Whether a line of the log is a request's line. */
+const isRequestLine = (line: string) => {
+  try {
+    const entry: unknown = JSON.parse(line);
+    return isObject(entry) && entry.msg === "request";
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * The lines written since the last read, through the log's scan, and one request line for each request
+ * sent since: each problem as a line, into `wrong`.
+ */
 function readLog(wrong: string[], where: string): void {
-  for (const line of logLines.slice(logRead))
+  const lines = logLines.slice(logRead);
+  for (const line of lines)
     for (const problem of logProblems(line, logFacts)) wrong.push(`${where}, the API's log: ${problem}`);
+  const requests = lines.filter(isRequestLine).length;
+  const sent = sentTo(app) - logSent;
+  if (requests !== sent)
+    wrong.push(`${where}, the API's log: ${String(requests)} request lines for ${String(sent)} requests`);
   logRead = logLines.length;
+  logSent = sentTo(app);
+}
+
+/** Every enum value the contract names: an operation's or a state's name, which a log may hold. */
+const ENUM_VALUES = new Set<string>();
+(function enums(node: unknown): void {
+  if (Array.isArray(node)) for (const item of node) enums(item);
+  else if (isObject(node)) {
+    if (Array.isArray(node.enum)) for (const value of node.enum) if (typeof value === "string") ENUM_VALUES.add(value);
+    for (const child of Object.values(node)) enums(child);
+  }
+})(document);
+
+/** A string of `value`'s, at any depth. */
+function* stringsIn(value: unknown): Generator<string> {
+  if (typeof value === "string") yield value;
+  else if (Array.isArray(value)) for (const item of value) yield* stringsIn(item);
+  else if (isObject(value)) for (const child of Object.values(value)) yield* stringsIn(child);
+}
+
+/**
+ * The text `spec` carries, which no log may hold: each string of its body and query of 6 characters or more
+ * but an id, a date or an instant, and a value the contract enumerates (T52; the round-1 review: a caption a
+ * refused commit never stored, or a search's words, are in no world).
+ */
+function textsOf(spec: Spec): string[] {
+  const found: string[] = [];
+  const take = (value: string) => {
+    if (
+      value.length >= 6 &&
+      !ENUM_VALUES.has(value) &&
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) &&
+      !/^\d{4}-\d{2}-\d{2}/.test(value)
+    )
+      found.push(value);
+  };
+  for (const value of Object.values(spec.query)) take(value);
+  if (spec.body !== undefined) {
+    try {
+      for (const value of stringsIn(JSON.parse(spec.body))) take(value);
+    } catch {
+      // A body that isn't JSON is refused before any handler reads it.
+    }
+  }
+  return found;
+}
+
+/**
+ * The tokens an answer gives, which no log may hold: each string under a key that names a token, a secret or
+ * a URL, whole, and each run of 20 URL-safe characters or more inside it (an invitation link's token).
+ */
+function answerSecrets(answer: Answer): string[] {
+  const found: string[] = [];
+  let body: unknown;
+  try {
+    body = JSON.parse(answer.body);
+  } catch {
+    return found;
+  }
+  const walk = (value: unknown, key: string): void => {
+    if (typeof value === "string") {
+      if (keyWords(key).some((word) => ["token", "secret", "url"].includes(word))) {
+        found.push(value);
+        for (const run of value.match(/[A-Za-z0-9_-]{20,}/g) ?? []) found.push(run);
+      }
+    } else if (Array.isArray(value)) for (const item of value) walk(item, key);
+    else if (isObject(value)) for (const [child, inner] of Object.entries(value)) walk(inner, child);
+  };
+  walk(body, "");
+  return found;
 }
 
 /** The tokens and secrets `spec` carries, which no log may hold: its bearer token and its body's. */
@@ -1025,7 +1120,8 @@ function scanner(
     for (const { spec, answer } of step.answers) {
       counted.answers += 1;
       logAnswers += 1;
-      for (const secret of secretsOf(spec)) logFacts.secrets.add(secret);
+      for (const secret of [...secretsOf(spec), ...answerSecrets(answer)]) logFacts.secrets.add(secret);
+      for (const text of textsOf(spec)) logFacts.texts.add(text);
       const context = {
         document,
         operation: spec.operation,
@@ -4418,13 +4514,17 @@ describe("callers without a session, in each state of the drop and phase of the 
 });
 
 describe("the API's log, at production's level (T52, T16; the outside audit's A14)", () => {
-  it("wrote a request line for every answer the scanner read, and no line holds content, a kept-back value or a token", () => {
+  it("wrote one request line for every request, and no line holds content, a kept-back value or a token", () => {
     const wrong: string[] = [];
     readLog(wrong, "after every cell");
-    expect(wrong).toEqual([]);
+    // Every line again, against all the matrix gathered: a token an answer gave after its line was read, or
+    // text a later request carried.
+    for (const [index, line] of logLines.entries())
+      for (const problem of logProblems(line, logFacts)) wrong.push(`line ${String(index)}, read again: ${problem}`);
+    expect(wrong.slice(0, 40)).toEqual([]);
     expect(logAnswers).toBeGreaterThan(0);
-    const requests = logLines.filter((line) => (JSON.parse(line) as { msg?: unknown }).msg === "request");
-    expect(requests.length).toBeGreaterThanOrEqual(logAnswers);
+    expect(logLines.filter(isRequestLine)).toHaveLength(sentTo(app));
+    expect(sentTo(app)).toBeGreaterThanOrEqual(logAnswers);
     // The scan had something to look for.
     expect(logFacts.texts.size).toBeGreaterThan(0);
     expect(logFacts.keptBack.size).toBeGreaterThan(0);

@@ -47,8 +47,10 @@
 //   that isn't is refused as such. The pager's row is to check its cursors, to hold its random
 //   handles to 24 to 32 bytes, and to put a version tag inside the encoded bytes or in whole groups
 //   of 4 characters (rows.ts);
-// - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
-//   copy, so a contract change alone can't widen it);
+// - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it, and every object of a
+//   schema an answer can hold before a day's reveal is exactly its list (BEFORE_REVEAL); in an answer of
+//   BEFORE_REVEAL_OPERATIONS, no object of a schema on neither list, or of none (this file's own copies,
+//   so a contract change alone can't widen them: the outside audit's A14);
 // - world: each of these an answer names is the world's and the viewer's to see:
 //   - a card's drop, in an audience holding an active interval of the viewer, or the viewer's own
 //     for an own card, with the drop's own author and caption;
@@ -75,8 +77,9 @@
 //   - nothing opened before its day opens, and who reacted only for the drop's author while their
 //     interval is active (FQ73);
 // - keys: no key that names a URL, a token, a provider, dimensions, colours, a highlight or another
-//   of T10's never-list, but inside what has opened, the viewer's own card and the viewer's own
-//   highlight pointer;
+//   of T10's never-list, a count, a total, a hidden flag, a position, a preview or a time, in
+//   snake_case or camelCase (neverKey), but inside what has opened, the viewer's own card, the viewer's
+//   own highlight pointer and the keys served for a reason (SERVED_FOR_A_REASON);
 // - values: text people wrote must be text the viewer may read (a person's name only if the viewer
 //   may know the person, a roster label of a club they are in, or, of one they left, only from a
 //   revision made before they left), as the world stored it, and is then served as written (T13
@@ -411,8 +414,9 @@ const MEDIA_CLASSES = new Set(["photo", "external_video"]);
 /**
  * The operations whose answers can hold a day or a drop before its reveal (T10; the outside audit's A14):
  * a day, Home, a drop's detail, the author's own day and drops and what each add, edit, removal,
- * highlight, hide and reservation answers, and the clubs and members, which hold a club's open and next
- * day. In their answers that succeed, every object is of a schema BEFORE_REVEAL or OPENED_ONLY names.
+ * highlight, hide and reservation answers, the clubs and members, which hold a club's open and next day,
+ * and the author's own preview of a drop (T11, built by B3). In their answers that succeed, every object
+ * is of a schema BEFORE_REVEAL or OPENED_ONLY names.
  */
 export const BEFORE_REVEAL_OPERATIONS: ReadonlySet<string> = new Set([
   "getOccurrence",
@@ -431,20 +435,22 @@ export const BEFORE_REVEAL_OPERATIONS: ReadonlySet<string> = new Set([
   "getClub",
   "createClub",
   "listMembers",
+  "getAuthorPreview",
 ]);
 
 /**
- * The schemas only an opened day holds. The world check refuses each before its day opens (a revealed
- * card or day, an opened reference), and the key check doesn't look inside what has opened.
+ * The schemas only an opened day holds, and nothing of a day before its reveal. The world check refuses
+ * each before its day opens (a revealed card, an opened reference, a link to a closed day), and the key
+ * check doesn't look inside what has opened. An opened day that also names a day still to open (Home's
+ * open day and its `next`, the revealed day and its `add_target`) has its own list (BEFORE_REVEAL); a
+ * test holds that none of these reaches a day but a day link's own.
  */
 export const OPENED_ONLY: ReadonlySet<string> = new Set([
   "DayLink",
   "DropRevealed",
   "HighlightEntry",
-  "HomeDay",
   "ReactionSummary",
   "ReplyPreview",
-  "RevealedDay",
   "RevealedDayDrop",
   "RevealedPhoto",
   "RevealedVideo",
@@ -498,9 +504,13 @@ export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
     optional: [],
   },
   DropVersion: { required: ["drop_id", "state", "version"], optional: [] },
+  // The author's own preview of their link, to its author alone (T11, T40): built by B3.
+  ExternalVideoPreview: { required: ["provider", "original_url"], optional: [] },
   HiddenDrop: { required: ["drop_id", "hidden"], optional: [] },
   HighlightPointer: { required: ["version"], optional: ["drop_id"] },
   HomeAwaitingActivation: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+  // Home's open day: opened, but its `next` is the club's next day, still collecting.
+  HomeDay: { required: ["mode", "server_now", "club", "club_today", "day", "recent_days"], optional: ["next"] },
   HomeNoDays: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
   HomePaused: { required: ["mode", "server_now", "club", "club_today", "recent_days"], optional: [] },
   HomeUnavailable: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
@@ -519,6 +529,11 @@ export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
   ReleasedReservation: { required: ["id", "state"], optional: ["drop_id", "allowance"] },
   RemovedDrop: { required: ["drop_id", "state"], optional: ["allowance", "highlight"] },
   Reservation: { required: ["id", "occurrence_id", "media_class", "expires_at", "allowance"], optional: [] },
+  // The opened day: its `add_target` is the star's next day, still collecting.
+  RevealedDay: {
+    required: ["stage", "server_now", "occurrence", "club", "viewer", "drops", "highlights"],
+    optional: ["add_target", "next_cursor"],
+  },
   RosterRevision: {
     required: ["id", "version", "club", "state", "proposed_by", "members", "candidates", "my_decision"],
     optional: ["superseded_by"],
@@ -532,8 +547,21 @@ export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
 };
 
 /**
+ * T10's never-list as `main` held it before the outside audit's A14: a word of the list between
+ * underscores or a key's ends, in any case (`thumbnail_url`, `URLs`, `media_URLs`, `waveForm`). neverKey
+ * names every key this names, and more.
+ */
+const NEVER_KEY = new RegExp(
+  "(^|_)(url|uri|href|src|link|token|thumbnail|thumb|poster|blur|blurhash|hash|colour|color|width|height|" +
+    "dimension|aspect|ratio|embed|html|source|provider|alt|exif|captured|capture|duration|size|bytes|highlight|" +
+    "title|waveform|original|media_version)s?(_|$)",
+  "i",
+);
+
+/**
  * T10's never-list and the ways to reach media, as words of a key, each also in its plural; and the
- * outside audit's additions (A14): a count, a total, a hidden flag, a position, a size and a preview.
+ * outside audit's additions (A14): a count, a total, a number, whether there is any, a hidden flag, a
+ * position, a preview and a time.
  */
 const NEVER_WORDS = new Set(
   [
@@ -573,39 +601,66 @@ const NEVER_WORDS = new Set(
     "original",
     "count",
     "total",
+    "n",
+    "num",
+    "number",
+    "has",
+    "any",
     "hidden",
     "position",
     "preview",
+    "time",
+    "timestamp",
+    "created",
+    "updated",
   ].flatMap((word) => [word, `${word}s`]),
 );
 
-/** Media words no plain word ends with, caught at a word's end too: `filesize`, `imageurl`, `thumbhash`. */
-const NEVER_ENDINGS = /(url|uri|src|size|hash|thumb|thumbnail|width|height)s?$/;
+/**
+ * Media words and counts no plain word ends with, caught at a word's end too: `filesize`, `imageurl`,
+ * `thumbhash`, `dropcount`; but the plain words that do (PLAIN_WORDS).
+ */
+const NEVER_ENDINGS = /(url|uri|src|size|hash|thumb|thumbnail|width|height|count|total)s?$/;
+const PLAIN_WORDS = new Set(["account", "accounts"]);
 
 /**
  * A key's words: split at `_`, `-` and a space, before a capital that follows a lower-case letter or a
- * digit, and before the last capital of a run that a lower-case letter follows; lower-cased.
- * `thumbnailUrl` is thumbnail and url, `posterURL` poster and url, `HTMLBody` html and body.
+ * digit, before the last capital of a run that a lower-case letter follows (but an acronym's plural `s`,
+ * which stays with it), and between letters and digits; lower-cased. `thumbnailUrl` is thumbnail and
+ * url, `posterURL` poster and url, `photoURLs` photo and urls, `HTMLBody` html and body, `url2x` url,
+ * 2 and x.
  */
 export function keyWords(key: string): string[] {
   return key
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/([A-Z]{2,})s(?![a-z])/g, "$1S")
     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+    .replace(/([A-Za-z])([0-9])/g, "$1_$2")
+    .replace(/([0-9])([A-Za-z])/g, "$1_$2")
     .toLowerCase()
     .split(/[_\- ]+/)
     .filter((word) => word !== "");
 }
 
 /**
- * Whether a key names one of T10's never-list, a way to reach media, a count, a total, a hidden flag, a
- * position, a size, a preview or a time (a last word `at`: `committed_at`, `committedAt`), in snake_case
- * or camelCase, or ends a word with a media word (NEVER_ENDINGS).
+ * Whether a key names one of T10's never-list, a way to reach media, a count, a total, a number, whether
+ * there is any, a hidden flag, a position, a size, a preview or a time (a last word `at` or `on`:
+ * `committed_at`, `addedOn`), in snake_case or camelCase, as one word or two (`waveForm`, `highLight`),
+ * or ends a word with a media word or a count (NEVER_ENDINGS); and every key `main`'s list named
+ * (NEVER_KEY).
  */
 export function neverKey(key: string): boolean {
+  if (NEVER_KEY.test(key)) return true;
   const words = keyWords(key);
-  if (words.length > 1 && words.at(-1) === "at") return true;
+  const last = words.at(-1);
+  if (words.length > 1 && (last === "at" || last === "on")) return true;
   if (/_media_versions?_/.test(`_${words.join("_")}_`)) return true;
-  return words.some((word) => NEVER_WORDS.has(word) || NEVER_ENDINGS.test(word));
+  return words.some(
+    (word, index) =>
+      NEVER_WORDS.has(word) ||
+      NEVER_WORDS.has(`${word}${words[index + 1] ?? ""}`) ||
+      (NEVER_ENDINGS.test(word) && !PLAIN_WORDS.has(word)),
+  );
 }
 
 /**
@@ -1910,14 +1965,60 @@ export function worldTexts(world: WorldFacts): string[] {
   return texts;
 }
 
+/**
+ * Strings a log line must not hold, each indexed by its first SHORTEST_TEXT characters, so a line's few
+ * short values are read against tens of thousands of them in a few lookups each (the privacy matrix reads
+ * every line, at the end against all it gathered).
+ */
+export class Needles {
+  readonly #all = new Set<string>();
+  readonly #short: string[] = [];
+  readonly #byStart = new Map<string, string[]>();
+
+  constructor(needles: Iterable<string> = []) {
+    for (const needle of needles) this.add(needle);
+  }
+
+  get size(): number {
+    return this.#all.size;
+  }
+
+  add(needle: string): this {
+    if (needle === "" || this.#all.has(needle)) return this;
+    this.#all.add(needle);
+    if (needle.length < SHORTEST_TEXT) this.#short.push(needle);
+    else {
+      const start = needle.slice(0, SHORTEST_TEXT);
+      const found = this.#byStart.get(start);
+      if (found === undefined) this.#byStart.set(start, [needle]);
+      else found.push(needle);
+    }
+    return this;
+  }
+
+  /**
+   * The needles `value` holds: `value` itself, and each of SHORTEST_TEXT characters or more inside it;
+   * with `shortInside`, each shorter one inside it too.
+   */
+  within(value: string, shortInside: boolean): string[] {
+    const found = new Set<string>();
+    if (this.#all.has(value)) found.add(value);
+    if (shortInside) for (const needle of this.#short) if (value.includes(needle)) found.add(needle);
+    for (let at = 0; at + SHORTEST_TEXT <= value.length; at += 1)
+      for (const needle of this.#byStart.get(value.slice(at, at + SHORTEST_TEXT)) ?? [])
+        if (value.startsWith(needle, at)) found.add(needle);
+    return [...found];
+  }
+}
+
 /** What a log must never hold, gathered from every world the matrix made: T52 has no viewer. */
 export interface LogFacts {
-  /** Text people wrote. */
-  readonly texts: ReadonlySet<string>;
+  /** Text people wrote: in the worlds, and in the requests (a caption a refused commit carried). */
+  readonly texts: Needles;
   /** Values the worlds keep back (their canaries). */
-  readonly keptBack: ReadonlySet<string>;
-  /** The bearer tokens and invitation tokens the requests carried. */
-  readonly secrets: ReadonlySet<string>;
+  readonly keptBack: Needles;
+  /** The tokens and secrets the requests carried and the answers gave (a bearer token, a link's token). */
+  readonly secrets: Needles;
 }
 
 /**
@@ -1939,12 +2040,9 @@ export function logProblems(line: string, facts: LogFacts): string[] {
   for (const key of Object.keys(entry))
     if (!LOG_KEYS.has(key)) problems.push(`a key the API's log doesn't write: ${key}`);
   for (const [value, at] of strings(entry)) {
-    for (const text of facts.texts) {
-      if (value === text || (text.length >= SHORTEST_TEXT && value.includes(text)))
-        problems.push(`text people wrote at ${at} (T52)`);
-    }
-    for (const kept of facts.keptBack) if (value.includes(kept)) problems.push(`a value the world keeps back at ${at}`);
-    for (const secret of facts.secrets) if (value.includes(secret)) problems.push(`a request's token at ${at} (T52)`);
+    if (facts.texts.within(value, false).length > 0) problems.push(`text people wrote at ${at} (T52)`);
+    if (facts.keptBack.within(value, true).length > 0) problems.push(`a value the world keeps back at ${at}`);
+    if (facts.secrets.within(value, true).length > 0) problems.push(`a request's or answer's token at ${at} (T52)`);
     if (JWT.test(value)) problems.push(`a token at ${at} (T52)`);
     for (const pattern of NEVER_VALUE)
       if (pattern.test(value)) problems.push(`a URL, storage path or provider host at ${at}: ${pattern.source}`);

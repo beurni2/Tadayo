@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { KeysUnavailable } from "./identity/token.ts";
-import { REDACTED_FIELDS, requestId } from "./logging.ts";
+import { REDACTED_FIELDS, redacted, requestId } from "./logging.ts";
 import { noStorage, TEST_EMAIL } from "./testing.ts";
 import type { Authenticate } from "./session.ts";
 
@@ -109,6 +109,56 @@ describe("the redaction list (T52)", () => {
       bytes: "[redacted]",
       looped: { id: "drp_1", self: "[circular]" },
     });
+  });
+
+  it("blanks a key the list doesn't spell when a word of it is a content word, and keeps the request line's own keys (the round-1 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const marker = "MARKER-must-never-appear";
+    const spelled = [
+      "signed_upload_url",
+      "signedUploadUrl",
+      "media_url",
+      "photoUrl",
+      "photoURLs",
+      "avatar_url",
+      "thumbnail_url",
+      "object_key",
+      "storage_path",
+      "post_id",
+      "provider_post_id",
+      "drop_caption",
+      "captionText",
+      "comment_text",
+      "search_text",
+      "labels",
+      "clubName2",
+    ];
+    app.log.info({ deep: [{ inside: Object.fromEntries(spelled.map((key) => [key, marker])) }] }, "spelled");
+    expect(lines.join("")).not.toContain(marker);
+    for (const key of spelled) expect(redacted(key), key).toBe(true);
+    for (const key of ["reqId", "op", "preflight", "status", "ms", "trouble", "mode", "timezone", "id", "drop_id"])
+      expect(redacted(key), key).toBe(false);
+  });
+
+  it("blanks a child logger's bindings as it blanks a line's own fields, and keeps a request's id", async () => {
+    const { app, lines, inject } = await logged(() => Promise.resolve(READY));
+    app.log
+      .child({ caption: "SECRET-CAPTION", club: { name: "Club Name Here" }, photoUrl: "https://s.example/o" })
+      .info({ op: "probe" }, "child line");
+    app.log.child({ step: 1 }).child({ comment_text: "SECRET-COMMENT" }).info("grandchild line");
+    const [child, grandchild] = parse(lines);
+    expect(child).toMatchObject({
+      msg: "child line",
+      op: "probe",
+      caption: "[redacted]",
+      club: { name: "[redacted]" },
+    });
+    expect(grandchild).toMatchObject({ msg: "grandchild line", step: 1, comment_text: "[redacted]" });
+    expect(lines.join("")).not.toMatch(/SECRET-CAPTION|SECRET-COMMENT|Club Name Here|s\.example/);
+    lines.length = 0;
+    await inject({ method: "GET", url: "/v1/me" });
+    const [line] = parse(lines);
+    expect(line?.reqId).toMatch(/^[A-Za-z0-9_-]{16}$/);
   });
 
   it("names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email", () => {

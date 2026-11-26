@@ -9,10 +9,12 @@
 // 2. The one line a request gets is ours (`logEachRequest`): its random id, the contract's operation id
 //    (for the browser's preflight, `preflight` and the operation it is for: web-origin.ts), the status and
 //    the milliseconds it took. No URL, header, body, address or claim ever goes in it.
-// 3. Whatever else a later change logs goes through `redact`, which blanks every field that could hold
-//    content at any depth, under any of its spellings (`signedURL`, `Caption`), and any object that isn't
-//    a plain one or an array; an `err` is reduced to its class name and its code (the outside audit's A14:
-//    pino's own redaction went one level down).
+// 3. Whatever else a later change logs, in a line's own fields or a child logger's bindings, goes through
+//    `redact`, which blanks every field that could hold content at any depth: a key on the list in any case
+//    and with or without `_` and `-` (`signedURL`, `Caption`), and a key with a word of REDACTED_WORDS in
+//    it (`signed_upload_url`, `captionText`, `storage_path`); and any object that isn't a plain one or an
+//    array. An `err` is reduced to its class name and its code (the outside audit's A14: pino's own
+//    redaction went one level down, and read only the spellings it was given).
 // The request id is random, 96 bits, never Fastify's counter and never a header the caller sent.
 //
 // Time is pino's own (`time` in each line), which is not the server's clock (T1): nothing here reads one.
@@ -20,6 +22,7 @@
 import { randomBytes } from "node:crypto";
 import {
   LogController,
+  type FastifyBaseLogger,
   type FastifyInstance,
   type FastifyReply,
   type FastifyRequest,
@@ -137,9 +140,69 @@ export const REDACTED_FIELDS = [
   "params",
 ] as const;
 
+/**
+ * The words that blank a key wherever they stand in it, as a word of its own (the round-1 review: a key the
+ * list doesn't spell, such as `media_url`, `photoUrl` or `object_key`, came out whole): an address, a
+ * credential, a storage path, text people wrote, a name and a provider's post. Not the request line's own
+ * keys' words (`req` of `reqId`, `op`, `ms`).
+ */
+export const REDACTED_WORDS = [
+  "authorization",
+  "cookie",
+  "token",
+  "jwt",
+  "secret",
+  "password",
+  "signature",
+  "key",
+  "url",
+  "uri",
+  "href",
+  "link",
+  "path",
+  "provider",
+  "post",
+  "caption",
+  "comment",
+  "note",
+  "text",
+  "body",
+  "title",
+  "message",
+  "payload",
+  "exif",
+  "metadata",
+  "email",
+  "phone",
+  "name",
+  "label",
+] as const;
+
 /** A key as `redact` matches it: lower case, with `_` and `-` taken out. */
 const squash = (key: string) => key.toLowerCase().replace(/[_-]/g, "");
 const REDACTED = new Set<string>(REDACTED_FIELDS.map(squash));
+const WORDS = new Set<string>(REDACTED_WORDS.flatMap((word) => [word, `${word}s`]));
+
+/**
+ * A key's words, as the leak scanner reads them: split at `_`, `-` and a space, at a capital after a small
+ * letter or a digit, at the last capital of a run before a small letter (an acronym's plural `s` staying
+ * with it), and between letters and digits; lower case.
+ */
+function wordsOf(key: string): string[] {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/([A-Z]{2,})s(?![a-z])/g, "$1S")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+    .replace(/([A-Za-z])([0-9])/g, "$1_$2")
+    .replace(/([0-9])([A-Za-z])/g, "$1_$2")
+    .toLowerCase()
+    .split(/[_\- ]+/);
+}
+
+/** Whether `redact` blanks a key: on the list in any of its spellings, or with a word of REDACTED_WORDS. */
+export function redacted(key: string): boolean {
+  return REDACTED.has(squash(key)) || wordsOf(key).some((word) => WORDS.has(word));
+}
 
 /**
  * `value` as a log line may hold it: each key on the list blanked at any depth, inside arrays too, and any
@@ -155,13 +218,16 @@ function redact(value: unknown, within: Set<object>): unknown {
   const out = Array.isArray(value)
     ? value.map((item: unknown) => redact(item, within))
     : Object.fromEntries(
-        Object.entries(value).map(([key, child]) => [key, REDACTED.has(squash(key)) ? BLANKED : redact(child, within)]),
+        Object.entries(value).map(([key, child]) => [key, redacted(key) ? BLANKED : redact(child, within)]),
       );
   within.delete(value);
   return out;
 }
 
-/** A line's own fields, `redact`ed, but its `err`, which its serializer reduces to a class and a code. */
+/**
+ * A line's own fields, or a child logger's bindings, `redact`ed, but its `err`, which its serializer reduces
+ * to a class and a code.
+ */
 export function redactLine(fields: Record<string, unknown>): Record<string, unknown> {
   const { err, ...rest } = fields;
   const out = redact(rest, new Set()) as Record<string, unknown>;
@@ -198,6 +264,7 @@ export function fastifyLogging(
       ...(config.stream === undefined ? {} : { stream: config.stream }),
       // Not the process id or the machine's name: a line is the request's, nothing about where it ran.
       base: null,
+      // A line's own fields; a child logger's bindings are `redactBindings`'.
       formatters: { log: redactLine },
       serializers: { err: safeError, req: () => undefined, res: () => undefined },
       // Fastify types a serializer's result as its own request, error and answer shapes; these return less.
@@ -205,6 +272,21 @@ export function fastifyLogging(
     logController: new LogController({ disableRequestLogging: true }),
     genReqId: requestId,
     requestIdHeader: false,
+  };
+}
+
+/**
+ * Every child logger's bindings `redact`ed as it is made, its children's too (the round-1 review): pino's
+ * `formatters.log` reads only a line's own fields, and pino resets `formatters.bindings` for a child, so
+ * `request.log.child({ caption })` would write the caption whole into each of its lines. pino makes a child
+ * from its parent's prototype, so the root's own `child` is the one every logger of the app calls, Fastify's
+ * request loggers included. A request's id (`reqId`) is no field of the list and stays.
+ */
+export function redactBindings(log: FastifyBaseLogger): void {
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- called below with the logger it is made from
+  const child = log.child;
+  log.child = function redactedChild(this: FastifyBaseLogger, bindings, options) {
+    return child.call(this, redactLine(bindings), options);
   };
 }
 
@@ -224,7 +306,9 @@ export function requestLine(request: FastifyRequest, reply: FastifyReply): void 
 /**
  * `requestLine` for every request a route or the not-found handler answers. Fastify runs no hook for an answer
  * it gives before routing (an id past its limit, a broken escape), so `buildApp`'s `frameworkErrors` writes
- * that request's line itself, and every answer has one (the privacy matrix counts them: the outside audit's A14).
+ * that request's line itself, and every request Fastify reads has one (the privacy matrix counts them: the
+ * outside audit's A14). A connection Node's parser refuses before there is a request (`clientError`'s raw
+ * 400) has none: it has no request, no id and nothing of the caller's to log.
  */
 export function logEachRequest(app: FastifyInstance): void {
   app.addHook("onResponse", (request, reply, done) => {
