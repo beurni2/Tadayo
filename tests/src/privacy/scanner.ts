@@ -47,8 +47,10 @@
 //   that isn't is refused as such. The pager's row is to check its cursors, to hold its random
 //   handles to 24 to 32 bytes, and to put a version tag inside the encoded bytes or in whole groups
 //   of 4 characters (rows.ts);
-// - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
-//   copy, so a contract change alone can't widen it);
+// - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it, and every object of a
+//   schema an answer can hold before a day's reveal, opened or not, is exactly its list (BEFORE_REVEAL);
+//   in an answer of BEFORE_REVEAL_OPERATIONS, no object of a schema off the list, or of none (this file's
+//   own copies, so a contract change alone can't widen them: the outside audit's A14);
 // - world: each of these an answer names is the world's and the viewer's to see:
 //   - a card's drop, in an audience holding an active interval of the viewer, or the viewer's own
 //     for an own card, with the drop's own author and caption;
@@ -75,8 +77,9 @@
 //   - nothing opened before its day opens, and who reacted only for the drop's author while their
 //     interval is active (FQ73);
 // - keys: no key that names a URL, a token, a provider, dimensions, colours, a highlight or another
-//   of T10's never-list, but inside what has opened, the viewer's own card and the viewer's own
-//   highlight pointer;
+//   of T10's never-list, a count, a total, a hidden flag, a position, a preview or a time, in
+//   snake_case or camelCase (neverKey), but inside what has opened, the viewer's own card, the viewer's
+//   own highlight pointer and the keys served for a reason (SERVED_FOR_A_REASON);
 // - values: text people wrote must be text the viewer may read (a person's name only if the viewer
 //   may know the person, a roster label of a club they are in, or, of one they left, only from a
 //   revision made before they left), as the world stored it, and is then served as written (T13
@@ -408,13 +411,340 @@ const CAPTION_CARD = { required: ["view", "id", "author", "media_class"], option
 const CARD_AUTHOR = { required: ["membership_id", "display_name"], optional: ["avatar_version"] };
 const MEDIA_CLASSES = new Set(["photo", "external_video"]);
 
-/** A key that names one of T10's never-list or a way to reach media, as a word of the key. */
-export const NEVER_KEY = new RegExp(
+/**
+ * The operations whose answers can hold a day or a drop before its reveal (T10; the outside audit's A14):
+ * a day, Home, a drop's detail, the author's own day and drops and what each add, edit, removal,
+ * highlight, hide and reservation answers, the clubs and members, which hold a club's open and next day,
+ * and the author's own preview of a drop (T11, built by B3). In their answers that succeed, every object
+ * is of a schema BEFORE_REVEAL names.
+ */
+export const BEFORE_REVEAL_OPERATIONS: ReadonlySet<string> = new Set([
+  "getOccurrence",
+  "getHome",
+  "getDrop",
+  "getOwnDay",
+  "listMyDrops",
+  "createDrop",
+  "updateDrop",
+  "removeDrop",
+  "setHighlight",
+  "hideDrop",
+  "createReservation",
+  "releaseReservation",
+  "listClubs",
+  "getClub",
+  "createClub",
+  "listMembers",
+  "getAuthorPreview",
+]);
+
+export interface KeyList {
+  readonly required: readonly string[];
+  readonly optional: readonly string[];
+}
+
+/**
+ * T10's lists for every object an answer of BEFORE_REVEAL_OPERATIONS can hold, by its schema: this file's
+ * own copy, so a key the contract and a route add together still fails here (the outside audit's A14).
+ * The scan holds each object of these schemas to its list exactly, in every answer and phase. What has
+ * opened is on it too (a revealed card and its media, reactions and reply, a highlight, a day link): it
+ * sits in the same answers as a day still to open (Home's `next` and recent days, the revealed day's
+ * `add_target`), and the key check doesn't look inside what has opened, so only a list stops a key there
+ * that counts or flags the day still hidden (the round-2 review). A test reads the contract: these are
+ * every object schema those answers reach, and each list is its schema's keys today.
+ */
+export const BEFORE_REVEAL: Readonly<Record<string, KeyList>> = {
+  Allowance: {
+    required: [
+      "added",
+      "reserved",
+      "limit",
+      "photo_added",
+      "photo_reserved",
+      "photo_limit",
+      "external_added",
+      "external_reserved",
+      "external_limit",
+      "is_star",
+    ],
+    optional: [],
+  },
+  Candidate: { required: ["id", "name", "proposed_by"], optional: ["invitation"] },
+  CandidateInvitation: { required: ["id", "state", "expires_at"], optional: [] },
+  ClubDetail: { required: ["server_now", "club", "roster_version", "can_propose"], optional: ["open_revision_id"] },
+  ClubList: { required: ["server_now", "clubs", "invitations"], optional: [] },
+  ClubRef: { required: ["id", "name", "timezone", "my_membership_id"], optional: [] },
+  ClubSummary: {
+    required: ["id", "name", "timezone", "my_membership_id", "state", "member_count"],
+    optional: ["open_day", "next_day"],
+  },
+  // A closed day, among Home's recent days while the next one collects (the round-2 review).
+  DayLink: { required: ["occurrence"], optional: ["cover_drop_id"] },
+  DropCaption: CAPTION_CARD,
+  DropDetail: { required: ["server_now", "occurrence", "club", "drop"], optional: [] },
+  DropOwn: {
+    required: ["view", "id", "author", "media_class", "highlight", "state", "version"],
+    optional: ["caption"],
+  },
+  DropRevealed: {
+    required: ["view", "id", "author", "media_class", "highlight", "reactions", "viewer_favourite"],
+    optional: ["caption", "photo", "video", "viewer_reaction"],
+  },
+  DropReceipt: {
+    required: ["drop_id", "occurrence", "media_class", "state", "version", "allowance", "highlight"],
+    optional: [],
+  },
+  DropVersion: { required: ["drop_id", "state", "version"], optional: [] },
+  // The author's own preview of their link, to its author alone (T11, T40): built by B3.
+  ExternalVideoPreview: { required: ["provider", "original_url"], optional: [] },
+  HiddenDrop: { required: ["drop_id", "hidden"], optional: [] },
+  HighlightEntry: { required: ["drop_id", "author", "star_pick"], optional: [] },
+  HighlightPointer: { required: ["version"], optional: ["drop_id"] },
+  HomeAwaitingActivation: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+  // Home's open day: opened, but its `next` is the club's next day, still collecting.
+  HomeDay: { required: ["mode", "server_now", "club", "club_today", "day", "recent_days"], optional: ["next"] },
+  HomeNoDays: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+  HomePaused: { required: ["mode", "server_now", "club", "club_today", "recent_days"], optional: [] },
+  HomeUnavailable: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+  HomeWaiting: { required: ["mode", "server_now", "club", "club_today", "next", "recent_days"], optional: [] },
+  Member: { required: ["person", "position", "next_up"], optional: ["cover", "next_day"] },
+  Members: { required: ["server_now", "club", "members"], optional: ["open_revision"] },
+  MyInvitation: { required: ["invitation_id", "club_name", "inviter_name", "state"], optional: [] },
+  Occurrence: { required: ["id", "club_id", "star", "local_date", "reveal_at", "close_at", "phase"], optional: [] },
+  OwnContribution: {
+    required: ["drop_id", "club", "occurrence", "media_class", "state", "version"],
+    optional: ["caption"],
+  },
+  OwnContributionPage: { required: ["items"], optional: ["next_cursor"] },
+  OwnDay: { required: ["server_now", "occurrence", "club", "allowance", "highlight", "drops"], optional: [] },
+  Person: CARD_AUTHOR,
+  ReactionSummary: { required: ["reaction"], optional: ["people"] },
+  ReleasedReservation: { required: ["id", "state"], optional: ["drop_id", "allowance"] },
+  RemovedDrop: { required: ["drop_id", "state"], optional: ["allowance", "highlight"] },
+  ReplyPreview: { required: ["comment_id", "author", "media_version"], optional: [] },
+  Reservation: { required: ["id", "occurrence_id", "media_class", "expires_at", "allowance"], optional: [] },
+  // The opened day: its `add_target` is the star's next day, still collecting.
+  RevealedDay: {
+    required: ["stage", "server_now", "occurrence", "club", "viewer", "drops", "highlights"],
+    optional: ["add_target", "next_cursor"],
+  },
+  RevealedDayDrop: {
+    required: ["view", "id", "author", "media_class", "highlight", "reactions", "viewer_favourite", "section"],
+    optional: ["caption", "photo", "video", "viewer_reaction", "reply_preview"],
+  },
+  RevealedPhoto: { required: ["width", "height", "media_version"], optional: [] },
+  RevealedVideo: { required: ["provider"], optional: [] },
+  RosterRevision: {
+    required: ["id", "version", "club", "state", "proposed_by", "members", "candidates", "my_decision"],
+    optional: ["superseded_by"],
+  },
+  UnavailableDay: { required: ["stage", "server_now", "occurrence", "club", "viewer"], optional: [] },
+  UpcomingDay: {
+    required: ["stage", "server_now", "occurrence", "club", "viewer", "drops"],
+    optional: ["add_target", "next_cursor"],
+  },
+  ViewerDay: { required: ["is_star", "joined_later"], optional: [] },
+};
+
+/**
+ * T10's never-list as `main` held it before the outside audit's A14: a word of the list between
+ * underscores or a key's ends, in any case (`thumbnail_url`, `URLs`, `media_URLs`, `waveForm`). neverKey
+ * names every key this names, and more.
+ */
+const NEVER_KEY = new RegExp(
   "(^|_)(url|uri|href|src|link|token|thumbnail|thumb|poster|blur|blurhash|hash|colour|color|width|height|" +
     "dimension|aspect|ratio|embed|html|source|provider|alt|exif|captured|capture|duration|size|bytes|highlight|" +
     "title|waveform|original|media_version)s?(_|$)",
   "i",
 );
+
+/**
+ * T10's never-list and the ways to reach media, as words of a key, each also in its plural; the outside
+ * audit's additions (A14): a count, a total, a number, whether there is any, a hidden flag, a position, a
+ * preview and a time; and the plain spellings of T10's and T15's own lists the round-2 review found passing:
+ * a provider's post or video id, a date taken, a length, a width and height as `w` and `h`, dimensions as
+ * `dims`, a MIME type, and what is remaining, missing, empty or left of a day's slots; and their one-word
+ * spellings the round-3 review found passing (`mimetype`, `postid`, `videoid`, `datetaken`, `emptyslots`).
+ */
+const NEVER_WORDS = new Set(
+  [
+    "url",
+    "uri",
+    "href",
+    "src",
+    "link",
+    "token",
+    "thumbnail",
+    "thumb",
+    "poster",
+    "blur",
+    "blurhash",
+    "hash",
+    "colour",
+    "color",
+    "width",
+    "height",
+    "dimension",
+    "aspect",
+    "ratio",
+    "embed",
+    "html",
+    "source",
+    "provider",
+    "alt",
+    "exif",
+    "captured",
+    "capture",
+    "duration",
+    "size",
+    "bytes",
+    "highlight",
+    "title",
+    "waveform",
+    "original",
+    "count",
+    "total",
+    "n",
+    "num",
+    "number",
+    "has",
+    "any",
+    "hidden",
+    "position",
+    "preview",
+    "time",
+    "timestamp",
+    "created",
+    "updated",
+    "post",
+    "video",
+    "taken",
+    "length",
+    "w",
+    "h",
+    "dims",
+    "mime",
+    "remaining",
+    "missing",
+    "empty",
+    "slotsleft",
+    "mimetype",
+    "postid",
+    "videoid",
+    "datetaken",
+    "emptyslot",
+  ].flatMap((word) => [word, `${word}s`]),
+);
+
+/**
+ * A never-word no plain word starts with, caught at a word's start too, alone or joined to the next word:
+ * `highlighted`, `highlighting`, `highLighted`, `high_lighted`.
+ */
+const NEVER_STARTS = /^highlight/;
+
+/**
+ * Media words and counts no plain word ends with, caught at a word's end too: `filesize`, `imageurl`,
+ * `thumbhash`, `dropcount`, and the round-4 review's `dominantcolor` and `slotsremaining`; but the plain
+ * words that do (PLAIN_WORDS).
+ */
+const NEVER_ENDINGS =
+  /(url|uri|src|size|hash|thumb|thumbnail|width|height|count|total|color|colour|remaining|missing|duration|preview|timestamp|dimension|waveform|highlight)s?$/;
+const PLAIN_WORDS = new Set(["account", "accounts"]);
+
+/**
+ * Short words that make one word with a never-word before them (the round-4 review): `providerid`,
+ * `createdat`, `durationms`, `alttext`, `embedhtml`, `exifdata`, `posterframe`.
+ */
+const NEVER_TAILS = new Set(["id", "ids", "at", "on", "ms", "text", "html", "data", "frame", "frames"]);
+
+/**
+ * Whether one word of a key is two run together (the round-4 review: `aspectratio`, `haspreview`,
+ * `ishighlight`, `sourceid`): a never-word of 3 letters or more and then a never-word of 3 letters or more,
+ * a highlight or a NEVER_TAILS word; or `is` and then a never-word of 3 letters or more or a highlight. A
+ * shorter never-word (`w`, `h`, `n`) could start or end any plain word.
+ */
+function joinedNever(word: string): boolean {
+  for (let at = 2; at + 2 <= word.length; at += 1) {
+    const head = word.slice(0, at);
+    const tail = word.slice(at);
+    const named = tail.length >= 3 && (NEVER_WORDS.has(tail) || NEVER_STARTS.test(tail));
+    if (head === "is" && named) return true;
+    if (head.length >= 3 && NEVER_WORDS.has(head) && (named || NEVER_TAILS.has(tail))) return true;
+  }
+  return false;
+}
+
+/**
+ * A key's words: split at `_`, `-` and a space, before a capital that follows a lower-case letter or a
+ * digit, before the last capital of a run that a lower-case letter follows (but an acronym's plural `s`,
+ * which stays with it), and between letters and digits; lower-cased. `thumbnailUrl` is thumbnail and
+ * url, `posterURL` poster and url, `photoURLs` photo and urls, `HTMLBody` html and body, `url2x` url,
+ * 2 and x.
+ */
+export function keyWords(key: string): string[] {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/([A-Z]{2,})s(?![a-z])/g, "$1S")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+    .replace(/([A-Za-z])([0-9])/g, "$1_$2")
+    .replace(/([0-9])([A-Za-z])/g, "$1_$2")
+    .toLowerCase()
+    .split(/[_\- ]+/)
+    .filter((word) => word !== "");
+}
+
+/**
+ * Whether a key names one of T10's never-list, a way to reach media, a count, a total, a number, whether
+ * there is any, a hidden flag, a position, a size, a preview or a time (a last word `at` or `on`:
+ * `committed_at`, `addedOn`), in snake_case or camelCase, as one word or two (`waveForm`, `highLight`,
+ * `slots_left`), or starts a word with a highlight (NEVER_STARTS), runs two together in one word
+ * (`providerid`, `haspreview`: joinedNever) or ends one with a media word or a count (NEVER_ENDINGS); and
+ * every key `main`'s list named (NEVER_KEY).
+ */
+export function neverKey(key: string): boolean {
+  if (NEVER_KEY.test(key)) return true;
+  const words = keyWords(key);
+  const last = words.at(-1);
+  if (words.length > 1 && (last === "at" || last === "on")) return true;
+  if (/_media_versions?_/.test(`_${words.join("_")}_`)) return true;
+  return words.some(
+    (word, index) =>
+      NEVER_WORDS.has(word) ||
+      NEVER_WORDS.has(`${word}${words[index + 1] ?? ""}`) ||
+      NEVER_STARTS.test(word) ||
+      NEVER_STARTS.test(`${word}${words[index + 1] ?? ""}`) ||
+      joinedNever(word) ||
+      (NEVER_ENDINGS.test(word) && !PLAIN_WORDS.has(word)),
+  );
+}
+
+/**
+ * The keys the contract serves for a reason that neverKey names, by schema: the server's own times of a
+ * day (T1), when a reservation, an invitation's link, an upload, its signed URL or a resolved source
+ * lapses (T7, T12, T18, T40), when a membership ended, a device registered or a deletion was asked
+ * (spec 23), a club's count of members and a member's place in its order (book p24), a hide's own flag
+ * and whether push shows a text's preview (spec 18). Every other key neverKey names fails, outside what
+ * has opened and the viewer's own card; a test holds this list to the contract's answers.
+ */
+export const SERVED_FOR_A_REASON: Readonly<Record<string, readonly string[]>> = {
+  Occurrence: ["reveal_at", "close_at"],
+  Reservation: ["expires_at"],
+  CandidateInvitation: ["expires_at"],
+  InvitationLink: ["expires_at"],
+  InvitationOpen: ["expires_at"],
+  InvitationChanged: ["expires_at"],
+  SignedUpload: ["expires_at"],
+  Upload: ["expires_at"],
+  UploadStatus: ["expires_at"],
+  Source: ["expires_at"],
+  LeftClub: ["left_at"],
+  DeviceRegistration: ["registered_at"],
+  AccountDeletion: ["requested_at"],
+  ClubSummary: ["member_count"],
+  Member: ["position"],
+  HiddenDrop: ["hidden"],
+  NotificationPreferences: ["text_previews"],
+};
 
 /** A value that is a URL, a storage path or a provider's host. */
 export const NEVER_VALUE = [
@@ -888,7 +1218,7 @@ function walk(
   }
 }
 
-function exactKeys(node: JsonObject, list: { required: string[]; optional: string[] }): string[] {
+function exactKeys(node: JsonObject, list: KeyList): string[] {
   const allowed = new Set([...list.required, ...list.optional]);
   return [
     ...Object.keys(node)
@@ -896,6 +1226,11 @@ function exactKeys(node: JsonObject, list: { required: string[]; optional: strin
       .map((key) => `has ${key}`),
     ...list.required.filter((key) => !Object.hasOwn(node, key)).map((key) => `lacks ${key}`),
   ];
+}
+
+/** "an" before a schema whose name starts with a vowel (an Occurrence, an Allowance), "a" before any other. */
+function schemaArticle(name: string): string {
+  return /^[AEIOU]/.test(name) ? "an" : "a";
 }
 
 /** The drop ids inside an object that holds one day (`occurrence`), each with its path. */
@@ -1135,6 +1470,24 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     else
       for (const problem of exactKeys(node.author, CARD_AUTHOR))
         find("whitelist", `${at}.author`, `${problem} (T10, FQ74)`);
+  }
+  // whitelist: every object of a schema an answer can hold before a day's reveal, opened or not, against
+  // this file's own list of its keys; and in a successful answer of BEFORE_REVEAL_OPERATIONS, no object of
+  // a schema off the list, or of none (the outside audit's A14).
+  const beforeReveal = answer.status < 300 && BEFORE_REVEAL_OPERATIONS.has(context.operation.id);
+  for (const [node, at] of objects(body)) {
+    const kind = walked.names.get(at);
+    const list = kind === undefined ? undefined : BEFORE_REVEAL[kind];
+    if (kind !== undefined && list !== undefined) {
+      for (const problem of exactKeys(node, list))
+        find("whitelist", at, `${schemaArticle(kind)} ${kind} that ${problem} (T10: this file's own list)`);
+    } else if (beforeReveal) {
+      find(
+        "whitelist",
+        at,
+        `${kind === undefined ? "an object of no schema" : `${schemaArticle(kind)} ${kind}`}, which this file holds no list for before the reveal (T10)`,
+      );
+    }
   }
 
   // world: every card, drop reference, person, day, club, allowance and day link against the
@@ -1533,8 +1886,9 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     if (node.stage === "revealed" && !reader.opened(day)) find("world", at, "a revealed day before it opens (T10)");
   }
 
-  // keys: nothing that names media, but inside what has opened, the viewer's own card, and the
-  // viewer's own highlight pointer (HighlightPointer, held to the viewer's own drop above).
+  // keys: nothing that names media, a count, a total, a hidden flag, a position, a size, a preview or a
+  // time, but inside what has opened, the viewer's own card, the viewer's own highlight pointer
+  // (HighlightPointer, held to the viewer's own drop above) and the keys served for a reason.
   const opened = (node: JsonObject) =>
     (node.view === "revealed" && reader.opened(reader.drop(node.id)?.day)) ||
     (node.stage === "revealed" && isObject(node.occurrence) && reader.opened(node.occurrence.id));
@@ -1542,15 +1896,21 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     if (Array.isArray(value)) {
       for (const [index, item] of value.entries()) keys(item, `${at}[${String(index)}]`);
     } else if (isObject(value) && !opened(value) && !ownCards.has(value)) {
+      const served = SERVED_FOR_A_REASON[walked.names.get(at) ?? ""] ?? [];
       for (const [key, child] of Object.entries(value)) {
         const path = `${at}.${key}`;
         if (
-          NEVER_KEY.test(key) &&
+          neverKey(key) &&
+          !served.includes(key) &&
           walked.names.get(path) !== "HighlightPointer" &&
           !ownLinkUrls.has(path) &&
           !ownUploadUrls.has(path)
         )
-          find("keys", path, "a key that names a URL, token, provider, dimension, colour or highlight (T10)");
+          find(
+            "keys",
+            path,
+            "a key that names a URL, token, provider, dimension, colour, highlight, count, position, size, preview or time (T10)",
+          );
         keys(child, path);
       }
     }
@@ -1620,4 +1980,208 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     }
   }
   return findings;
+}
+
+/**
+ * The keys a line of the API's log has (services/api/src/logging.ts): pino's level, time and message, the
+ * request's random id, the request line's operation, preflight, status and milliseconds, an error as its
+ * class and code, and the sign-in keys' trouble.
+ */
+export const LOG_KEYS: ReadonlySet<string> = new Set([
+  "level",
+  "time",
+  "msg",
+  "reqId",
+  "op",
+  "preflight",
+  "status",
+  "ms",
+  "err",
+  "trouble",
+]);
+
+/** A JSON Web Token, as a session's bearer token is: a header and a body in base64url, each from `{"`. */
+const JWT = /eyJ[A-Za-z0-9_-]+\.eyJ/;
+
+/** Every text people wrote in `world`: captions, comments, names, a club's name and labels, an invitation's names. */
+export function worldTexts(world: WorldFacts): string[] {
+  const texts: string[] = [];
+  for (const drop of world.drops.values()) {
+    if (drop.caption !== null) texts.push(drop.caption);
+    texts.push(...drop.comments);
+  }
+  for (const member of world.members.values()) if (member.name !== null) texts.push(member.name);
+  for (const club of world.clubs.values()) texts.push(club.name, ...club.labels.keys());
+  for (const account of world.accounts.values()) if (account.name !== null) texts.push(account.name);
+  for (const invitation of world.invitations.values()) {
+    texts.push(invitation.clubName, ...(invitation.roster ?? []));
+    if (invitation.inviterName !== null) texts.push(invitation.inviterName);
+  }
+  return texts;
+}
+
+/**
+ * A log string this long or longer is looked for inside text people wrote too, as a text cut short or
+ * trimmed (the round-2 review: `Saturday` from the club "Saturday People"). A shorter one could be a word
+ * of the log's own (`request`) inside an ordinary sentence.
+ */
+const SHORTEST_CUT = 8;
+
+/**
+ * A run of text people wrote this long is looked for anywhere inside a longer log string too, a text cut
+ * short with other words around it (the round-3 review: `caption=rom Ben's pho`). Longer than SHORTEST_CUT,
+ * so a random value of the log's own (a request's id) can't hold one by chance.
+ */
+const SHORTEST_RUN = 12;
+
+/** `found`'s list under `key`, with `value` added. */
+function listed(found: Map<string, string[]>, key: string, value: string): void {
+  const list = found.get(key);
+  if (list === undefined) found.set(key, [value]);
+  else list.push(value);
+}
+
+/**
+ * Strings a log line must not hold, each indexed by its first SHORTEST_TEXT characters, so a line's few
+ * short values are read against tens of thousands of them in a few lookups each (the privacy matrix reads
+ * every line, at the end against all it gathered). Each is looked for in any case and also as JSON escapes
+ * it inside another string (a body logged whole holds a caption's `"` as `\"`: the round-2 review). With
+ * `cuts`, each is also indexed by every SHORTEST_TEXT characters inside it, so a value of SHORTEST_CUT
+ * characters or more that is part of one counts too, and by every SHORTEST_RUN characters inside it, so a
+ * run of that many of one anywhere inside a longer value counts in one exact lookup for each place in the
+ * value (the round-4 review: looking each place's run up by its first characters and then inside every
+ * text that has them cost a leaking body thousands of searches at each place, since the worlds' texts
+ * share their wording); text people wrote has it, while tokens and kept-back values, long random strings
+ * by the thousand, aren't cut where the API could carry them.
+ */
+export class Needles {
+  readonly #needles = new Set<string>();
+  /** Each needle's forms, lower case, with the needle they are of. */
+  readonly #forms = new Map<string, string>();
+  readonly #short: string[] = [];
+  readonly #byStart = new Map<string, string[]>();
+  readonly #byInside: Map<string, string[]> | undefined;
+  readonly #byRun: Map<string, string[]> | undefined;
+
+  constructor(needles: Iterable<string> = [], options: { readonly cuts?: boolean } = {}) {
+    this.#byInside = options.cuts === true ? new Map() : undefined;
+    this.#byRun = options.cuts === true ? new Map() : undefined;
+    for (const needle of needles) this.add(needle);
+  }
+
+  get size(): number {
+    return this.#needles.size;
+  }
+
+  add(needle: string): this {
+    if (needle === "" || this.#needles.has(needle)) return this;
+    this.#needles.add(needle);
+    for (const form of new Set([needle, JSON.stringify(needle).slice(1, -1)].map((one) => one.toLowerCase()))) {
+      if (this.#forms.has(form)) continue;
+      this.#forms.set(form, needle);
+      if (form.length < SHORTEST_TEXT) {
+        this.#short.push(form);
+        continue;
+      }
+      listed(this.#byStart, form.slice(0, SHORTEST_TEXT), form);
+      if (this.#byInside !== undefined && form.length > SHORTEST_CUT) {
+        const starts = new Set<string>();
+        for (let at = 0; at + SHORTEST_TEXT <= form.length; at += 1) starts.add(form.slice(at, at + SHORTEST_TEXT));
+        for (const start of starts) listed(this.#byInside, start, form);
+      }
+      // A form of SHORTEST_RUN characters or fewer inside a value is found whole, by its start.
+      if (this.#byRun !== undefined && form.length > SHORTEST_RUN) {
+        const runs = new Set<string>();
+        for (let at = 0; at + SHORTEST_RUN <= form.length; at += 1) runs.add(form.slice(at, at + SHORTEST_RUN));
+        for (const run of runs) listed(this.#byRun, run, form);
+      }
+    }
+    return this;
+  }
+
+  /**
+   * The needles `value` holds, in any case: `value` itself, and each of SHORTEST_TEXT characters or more
+   * inside it; with `shortInside`, each shorter one inside it too; and, with `cuts`, each that holds
+   * `value` when it has SHORTEST_CUT characters or more, and each that holds a run of SHORTEST_RUN
+   * characters of it.
+   */
+  within(value: string, shortInside: boolean): string[] {
+    const found = new Set<string>();
+    this.#scan(value, shortInside, (form) => {
+      found.add(this.#forms.get(form) ?? form);
+      return false;
+    });
+    return [...found];
+  }
+
+  /** Whether `value` holds any needle as `within` finds them, stopping at the first (the round-4 review). */
+  holds(value: string, shortInside: boolean): boolean {
+    let held = false;
+    this.#scan(value, shortInside, () => {
+      held = true;
+      return true;
+    });
+    return held;
+  }
+
+  /**
+   * Each form `within` finds in `value`, given to `take`, until `take` says to stop: the exact lookups
+   * first, so a value that holds text people wrote stops at its first run of it, before the searches
+   * that pay at each place where many texts start alike.
+   */
+  #scan(value: string, shortInside: boolean, take: (form: string) => boolean): void {
+    const lower = value.toLowerCase();
+    if (this.#forms.has(lower) && take(lower)) return;
+    if (this.#byRun !== undefined)
+      for (let at = 0; at + SHORTEST_RUN <= lower.length; at += 1)
+        for (const form of this.#byRun.get(lower.slice(at, at + SHORTEST_RUN)) ?? []) if (take(form)) return;
+    for (let at = 0; at + SHORTEST_TEXT <= lower.length; at += 1)
+      for (const form of this.#byStart.get(lower.slice(at, at + SHORTEST_TEXT)) ?? [])
+        if (lower.startsWith(form, at) && take(form)) return;
+    if (this.#byInside !== undefined && lower.length >= SHORTEST_CUT)
+      for (const form of this.#byInside.get(lower.slice(0, SHORTEST_TEXT)) ?? [])
+        if (form.includes(lower) && take(form)) return;
+    if (shortInside) for (const form of this.#short) if (lower.includes(form) && take(form)) return;
+  }
+}
+
+/** What a log must never hold, gathered from every world the matrix made: T52 has no viewer. */
+export interface LogFacts {
+  /** Text people wrote: in the worlds, and in the requests (a caption a refused commit carried); with `cuts`. */
+  readonly texts: Needles;
+  /** Values the worlds keep back (their canaries). */
+  readonly keptBack: Needles;
+  /** The tokens and secrets the requests carried and the answers gave (a bearer token, a link's token). */
+  readonly secrets: Needles;
+}
+
+/**
+ * What is wrong with one line of the API's log (T52, T16; the outside audit's A14): it is a JSON object
+ * with only LOG_KEYS, and no string anywhere in it holds text people wrote (whole, one of 6 characters or
+ * more inside it, a value of 8 characters or more that is part of one, or a run of 12 of one inside a
+ * longer value: Needles), a value a world keeps back, a request's token or
+ * any JSON Web Token, a URL, a storage path or a provider's host (NEVER_VALUE, the values check's own
+ * marks), in any case and as JSON escapes them. A log carries no content to anyone, so nothing here depends
+ * on who asked.
+ */
+export function logProblems(line: string, facts: LogFacts): string[] {
+  let entry: unknown;
+  try {
+    entry = JSON.parse(line);
+  } catch {
+    return ["a line that isn't JSON"];
+  }
+  if (!isObject(entry)) return ["a line that isn't a JSON object"];
+  const problems: string[] = [];
+  for (const key of Object.keys(entry))
+    if (!LOG_KEYS.has(key)) problems.push(`a key the API's log doesn't write: ${key}`);
+  for (const [value, at] of strings(entry)) {
+    if (facts.texts.holds(value, false)) problems.push(`text people wrote at ${at} (T52)`);
+    if (facts.keptBack.holds(value, true)) problems.push(`a value the world keeps back at ${at}`);
+    if (facts.secrets.holds(value, true)) problems.push(`a request's or answer's token at ${at} (T52)`);
+    if (JWT.test(value)) problems.push(`a token at ${at} (T52)`);
+    for (const pattern of NEVER_VALUE)
+      if (pattern.test(value)) problems.push(`a URL, storage path or provider host at ${at}: ${pattern.source}`);
+  }
+  return problems;
 }

@@ -2,17 +2,27 @@
 // finds no email address"): no caption, comment, note, source or signed URL, token, EXIF, push text or
 // email address, and nothing that names a person. Fastify's own request lines are off, a request gets
 // one line of ours (its random id, the operation, the status, the milliseconds), whatever else a
-// change logs goes through the redaction list, and an error is its class and its code.
+// change logs goes through the redaction list at any depth (the outside audit's A14), and an error is
+// its class and its code.
 
+import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import type { Account, Clock } from "@tadayo/domain";
 import { Refused } from "@tadayo/domain";
-import type { FastifyInstance, InjectOptions } from "fastify";
+import Fastify, { type FastifyInstance, type InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 import { KeysUnavailable } from "./identity/token.ts";
-import { REDACTED_FIELDS, requestId } from "./logging.ts";
+import {
+  ERROR_MESSAGE,
+  fastifyLogging,
+  REDACTED_FIELDS,
+  redactBindings,
+  redacted,
+  REPLY_SENT_MESSAGE,
+  requestId,
+} from "./logging.ts";
 import { noStorage, TEST_EMAIL } from "./testing.ts";
 import type { Authenticate } from "./session.ts";
 
@@ -57,11 +67,14 @@ async function logged(
 const parse = (lines: readonly string[]) => lines.map((line) => JSON.parse(line) as Record<string, unknown>);
 
 describe("the redaction list (T52)", () => {
-  it("blanks every listed field, at the top and one level down", async () => {
+  it("blanks every listed field, at the top, one level down and four levels down in a list", async () => {
     const { app, lines } = await logged(() => Promise.resolve(READY));
     const marker = "MARKER-must-never-appear";
     for (const field of REDACTED_FIELDS) {
-      app.log.info({ [field]: marker, wrapper: { [field]: marker } }, "probe");
+      app.log.info(
+        { [field]: marker, wrapper: { [field]: marker }, served: { home: { drops: [{ [field]: marker }] } } },
+        "probe",
+      );
     }
     expect(lines).toHaveLength(REDACTED_FIELDS.length);
     for (const entry of parse(lines)) {
@@ -69,6 +82,217 @@ describe("the redaction list (T52)", () => {
     }
     expect(parse(lines)[0]).toMatchObject({ msg: "probe" });
     expect(lines.join("")).toContain("[redacted]");
+  });
+
+  it("blanks Home's whole answer logged by mistake, a field under another spelling and anything that isn't plain data (the outside audit's A14)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const caption = "a caption that must never be logged: sunset at the pier";
+    const body = {
+      mode: "day",
+      club: { id: "clb_1", name: "Saturday People", timezone: "Europe/London" },
+      day: { drops: [{ id: "drp_1", caption, author: { membership_id: "itv_1", display_name: "Ben" } }] },
+    };
+    class Holder {
+      readonly inside: string;
+      constructor(inside: string) {
+        this.inside = inside;
+      }
+    }
+    const looped: Record<string, unknown> = { id: "drp_1" };
+    looped.self = looped;
+    app.log.info({ served: { home: body } }, "served");
+    app.log.info({ Caption: caption, signedURL: "https://s.example/o", "display-name": "Ben" }, "spelled");
+    app.log.info({ held: new Holder(caption), bytes: Buffer.from(caption), looped }, "objects");
+    const text = lines.join("");
+    for (const content of [caption, "Saturday People", "Ben", "https://s.example"]) expect(text).not.toContain(content);
+    const [served, spelled, objects] = parse(lines);
+    // Ids, modes and timezones are left as they are: the line still says what happened.
+    expect(served).toMatchObject({
+      msg: "served",
+      served: { home: { mode: "day", club: { id: "clb_1", name: "[redacted]", timezone: "Europe/London" } } },
+    });
+    expect(spelled).toMatchObject({ Caption: "[redacted]", signedURL: "[redacted]", "display-name": "[redacted]" });
+    expect(objects).toMatchObject({
+      held: "[redacted]",
+      bytes: "[redacted]",
+      looped: { id: "drp_1", self: "[circular]" },
+    });
+  });
+
+  it("blanks a key the list doesn't spell when a word of it is a content word, and keeps the request line's own keys (the round-1 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const marker = "MARKER-must-never-appear";
+    const spelled = [
+      "signed_upload_url",
+      "signedUploadUrl",
+      "media_url",
+      "photoUrl",
+      "photoURLs",
+      "avatar_url",
+      "thumbnail_url",
+      "object_key",
+      "storage_path",
+      "post_id",
+      "provider_post_id",
+      "drop_caption",
+      "captionText",
+      "comment_text",
+      "search_text",
+      "labels",
+      "clubName2",
+      // The round-2 review.
+      "search_query",
+      "searchQuery",
+      "content",
+      "reason",
+      "username",
+      "nickname",
+    ];
+    app.log.info({ deep: [{ inside: Object.fromEntries(spelled.map((key) => [key, marker])) }] }, "spelled");
+    expect(lines.join("")).not.toContain(marker);
+    for (const key of spelled) expect(redacted(key), key).toBe(true);
+    for (const key of ["reqId", "op", "preflight", "status", "ms", "trouble", "mode", "timezone", "id", "drop_id"])
+      expect(redacted(key), key).toBe(false);
+  });
+
+  it("blanks a child logger's bindings as it blanks a line's own fields, and keeps a request's id", async () => {
+    const { app, lines, inject } = await logged(() => Promise.resolve(READY));
+    app.log
+      .child({ caption: "SECRET-CAPTION", club: { name: "Club Name Here" }, photoUrl: "https://s.example/o" })
+      .info({ op: "probe" }, "child line");
+    app.log.child({ step: 1 }).child({ comment_text: "SECRET-COMMENT" }).info("grandchild line");
+    const [child, grandchild] = parse(lines);
+    expect(child).toMatchObject({
+      msg: "child line",
+      op: "probe",
+      caption: "[redacted]",
+      club: { name: "[redacted]" },
+    });
+    expect(grandchild).toMatchObject({ msg: "grandchild line", step: 1, comment_text: "[redacted]" });
+    expect(lines.join("")).not.toMatch(/SECRET-CAPTION|SECRET-COMMENT|Club Name Here|s\.example/);
+    lines.length = 0;
+    await inject({ method: "GET", url: "/v1/me" });
+    const [line] = parse(lines);
+    expect(line?.reqId).toMatch(/^[A-Za-z0-9_-]{16}$/);
+  });
+
+  it("blanks bindings set later, a child's whose own log formatter would keep them, and a `msg` among a line's fields (the round-2 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const later = app.log.child({ step: 2 });
+    (later as unknown as { setBindings(bindings: object): void }).setBindings({
+      caption: "SECRET-SET-CAPTION",
+      deep: { inner: { comment_text: "SECRET-SET-COMMENT" } },
+    });
+    later.info("set later");
+    app.log
+      .child({ step: 3 }, { formatters: { log: (fields: object) => fields } })
+      .info({ caption: "SECRET-OWN-CAPTION", deep: { inner: { photoUrl: "https://s.example/own" } } }, "own formatter");
+    app.log.info({ msg: "SECRET-MSG-FIELD", op: "probe" });
+    const [set, own, field] = parse(lines);
+    expect(set).toMatchObject({
+      msg: "set later",
+      step: 2,
+      caption: "[redacted]",
+      deep: { inner: { comment_text: "[redacted]" } },
+    });
+    expect(own).toMatchObject({
+      msg: "own formatter",
+      step: 3,
+      caption: "[redacted]",
+      deep: { inner: { photoUrl: "[redacted]" } },
+    });
+    expect(field).toMatchObject({ msg: "[redacted]", op: "probe" });
+    expect(lines.join("")).not.toMatch(/SECRET-|s\.example/);
+  });
+
+  it("keeps pino's ways: a child's falsy log formatter falls back to its parent's, a formatter is called as pino calls it, and absent bindings pass (the round-3 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    for (const log of [null, false, undefined]) {
+      // pino reads a falsy formatter as none, so the child keeps its parent's, and the redaction with it.
+      const options = { formatters: { log } } as unknown as Parameters<typeof app.log.child>[1];
+      app.log.child({ step: 4 }, options).info({ caption: "SECRET-FALLBACK" }, "fallback");
+    }
+    let seen: string | undefined;
+    const own = {
+      formatters: {
+        log: function remember(this: { log?: unknown } | undefined, fields: object) {
+          seen = typeof this?.log;
+          return fields;
+        },
+      },
+    };
+    app.log.child({ step: 5 }, own).info({ caption: "SECRET-THIS" }, "this");
+    const settable = app.log.child({ step: 6 }) as unknown as { setBindings(bindings: unknown): void };
+    expect(() => {
+      settable.setBindings(undefined);
+    }).not.toThrow();
+    expect(() => {
+      settable.setBindings(null);
+    }).not.toThrow();
+    const entries = parse(lines);
+    expect(entries).toHaveLength(4);
+    for (const entry of entries.slice(0, 3)) expect(entry).toMatchObject({ msg: "fallback", caption: "[redacted]" });
+    expect(entries[3]).toMatchObject({ msg: "this", caption: "[redacted]" });
+    // pino calls a log formatter as a method of the child's formatters, which hold it.
+    expect(seen).toBe("function");
+    expect(lines.join("")).not.toContain("SECRET-");
+  });
+
+  it("blanks what a child's own bindings formatter brings, and lets pino refuse falsy bindings as pino does (the round-4 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const given: unknown[] = [];
+    let self = "unset";
+    const own = {
+      formatters: {
+        bindings: function bring(this: unknown, bindings: Record<string, unknown>) {
+          given.push(bindings);
+          self = typeof this;
+          return { ...bindings, extra: { deeper: { caption: "SECRET-BINDINGS" } } };
+        },
+      },
+    };
+    const formatted = app.log.child({ step: 7, note: "SECRET-GIVEN" }, own);
+    formatted.info("bound");
+    // Its later bindings go through its own formatter too, in pino's `setBindings`.
+    (formatted as unknown as { setBindings(bindings: unknown): void }).setBindings({ later: 1 });
+    formatted.info("later");
+    // A formatter that returns no object is pino's to deal with, as it is without the wrapper.
+    app.log
+      .child({ step: 8 }, { formatters: { bindings: () => undefined } } as unknown as Parameters<
+        typeof app.log.child
+      >[1])
+      .info("none");
+    for (const bindings of [0, "", false, null, undefined])
+      expect(() => app.log.child(bindings as unknown as Record<string, unknown>), String(bindings)).toThrow(
+        "missing bindings for child Pino",
+      );
+    const entries = parse(lines);
+    expect(entries).toHaveLength(3);
+    expect(entries[0]).toMatchObject({
+      msg: "bound",
+      step: 7,
+      note: "[redacted]",
+      extra: { deeper: { caption: "[redacted]" } },
+    });
+    expect(entries[1]).toMatchObject({ msg: "later", later: 1, extra: { deeper: { caption: "[redacted]" } } });
+    expect(entries[2]).toMatchObject({ msg: "none" });
+    expect(entries[2]).not.toHaveProperty("step");
+    // The formatter gets the bindings already blanked, and pino calls it with no `this`.
+    expect(given[0]).toMatchObject({ note: "[redacted]" });
+    expect(given[1]).toEqual({ later: 1 });
+    expect(self).toBe("undefined");
+    expect(lines.join("")).not.toContain("SECRET-");
+  });
+
+  it("keeps pino's own redaction of the list beneath it, at the top and one level down, as `main` had (the round-2 review)", () => {
+    const options = fastifyLogging({ level: "info" }).logger as unknown as {
+      redact: { paths: string[]; censor: string };
+    };
+    expect(options.redact.censor).toBe("[redacted]");
+    for (const field of REDACTED_FIELDS) {
+      expect(options.redact.paths, field).toContain(field);
+      expect(options.redact.paths, field).toContain(`*.${field}`);
+    }
   });
 
   it("names the fields T52 lists: captions, comments, notes, source and signed URLs, tokens, EXIF, push text, email", () => {
@@ -86,6 +310,7 @@ describe("the redaction list (T52)", () => {
       "email",
       "phone",
       "display_name",
+      "name",
       "headers",
       "body",
       "query",
@@ -111,6 +336,60 @@ describe("the redaction list (T52)", () => {
     app.log.error({ err: "ana@example.invalid said so" }, "failed");
     app.log.error({ err: null }, "failed");
     expect(lines.join("")).not.toContain("ana@");
+  });
+
+  it("gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const error = () =>
+      Object.assign(new Error(`duplicate key value (caption)=(SECRET-ROW) ${TEST_EMAIL}`), { code: "23505" });
+    app.log.error(error());
+    app.log.error({ err: error() });
+    app.log.child({ step: 1 }).warn({ err: error() });
+    app.log.error({ err: "SECRET-STRING-ERROR" });
+    const entries = parse(lines);
+    expect(entries).toHaveLength(4);
+    for (const entry of entries.slice(0, 3)) {
+      expect(entry).toMatchObject({ msg: ERROR_MESSAGE, err: { type: "Error", code: "23505" } });
+    }
+    expect(lines.join("")).not.toMatch(/SECRET-ROW|duplicate|example\.invalid|SECRET-STRING-ERROR/);
+    // A message of its own stays.
+    lines.length = 0;
+    app.log.error({ err: error() }, "failed");
+    expect(parse(lines)[0]).toMatchObject({ msg: "failed" });
+    // Fastify's own warning for a second answer to a request, whose error quotes the request's URL.
+    const own: string[] = [];
+    const bare = Fastify(fastifyLogging({ level: "info", stream: { write: (line) => void own.push(line) } }));
+    redactBindings(bare.log);
+    bare.get("/twice", (_request, reply) => {
+      void reply.send("one");
+      void reply.send("two");
+      return reply;
+    });
+    bare.get("/raw", (_request, reply) => {
+      reply.raw.writeHead(200);
+      void reply.send("x");
+      return reply;
+    });
+    open.push(bare);
+    await bare.inject({ method: "GET", url: "/twice?caption=SECRET-QUERY" });
+    const warned = parse(own).filter((entry) => entry.err !== undefined);
+    expect(warned.length).toBeGreaterThan(0);
+    for (const entry of warned) expect(entry.msg).toBe(ERROR_MESSAGE);
+    expect(own.join("")).not.toContain("SECRET-QUERY");
+    // And its warning for an answer sent after one went out on `reply.raw`, whose message quotes the URL
+    // (the round-3 review): only its fixed start stays.
+    own.length = 0;
+    // Fastify then throws its own error for the headers already sent, and the injected request with it.
+    await bare.inject({ method: "GET", url: "/raw?caption=SECRET-RAW" }).catch(() => undefined);
+    const raw = parse(own).filter((entry) => typeof entry.msg === "string" && entry.msg.startsWith(REPLY_SENT_MESSAGE));
+    expect(raw.length).toBeGreaterThan(0);
+    for (const entry of raw) expect(entry.msg).toBe(REPLY_SENT_MESSAGE);
+    expect(own.join("")).not.toContain("SECRET-RAW");
+    // An `err` pino doesn't count as one, being falsy, gets no message either, as in pino.
+    lines.length = 0;
+    app.log.warn({ err: 0 });
+    app.log.warn({ err: "" });
+    for (const entry of parse(lines)) expect(entry).not.toHaveProperty("msg");
   });
 
   it("drops a whole request or answer object logged by mistake, and doesn't merely blank it", async () => {
@@ -176,8 +455,31 @@ describe("a request's log line", () => {
     await inject({ method: "GET", url: `/v1/drops/${"a".repeat(101)}` });
     await inject({ method: "PATCH", url: "/v1/me", headers: { "content-type": "application/json" }, payload: "{bad" });
     const messages = parse(lines).map((entry) => entry["msg"]);
-    expect(messages).toEqual(["request", "request"].slice(0, messages.length));
+    // Ours alone, one each: the id past its limit too, which Fastify answers before routing.
+    expect(messages).toEqual(["request", "request", "request"]);
     expect(lines.join("")).not.toMatch(/incoming request|not found|request completed|request errored|\/v1\/nope/);
+  });
+
+  it("is written for an answer Fastify gives before routing too: an id past its limit, a broken escape (the outside audit's A14)", async () => {
+    const { inject, lines } = await logged(() => Promise.resolve(READY));
+    const urls = [
+      `/v1/clubs/${"a".repeat(101)}`,
+      `/v1/clubs/${"b".repeat(4096)}`,
+      "/v1/clubs/%zz",
+      "/v1/clubs/%",
+      "/v1/clubs/%E0%A4%A",
+    ];
+    for (const url of urls) {
+      const answer = await inject({ method: "GET", url });
+      expect(answer.statusCode).toBe(404);
+    }
+    const entries = parse(lines);
+    expect(entries).toHaveLength(urls.length);
+    for (const entry of entries) {
+      expect(entry).toMatchObject({ level: 30, msg: "request", status: 404 });
+      expect(Object.keys(entry).sort()).toEqual(["level", "ms", "msg", "reqId", "status", "time"]);
+    }
+    expect(lines.join("")).not.toMatch(/clubs|aaaa|bbbb|%zz|%E0/);
   });
 
   it("honours the level: silent says nothing, warn says no request line", async () => {

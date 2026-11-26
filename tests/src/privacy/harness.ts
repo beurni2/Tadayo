@@ -165,6 +165,14 @@ const DATE_LAG_MS = 5_000;
  */
 const lastDates = new WeakMap<FastifyInstance, number>();
 
+/** How many requests answerOf has sent each app: the privacy matrix holds its log to one line for each. */
+const sent = new WeakMap<FastifyInstance, number>();
+
+/** How many requests answerOf has sent `app`. */
+export function sentTo(app: FastifyInstance): number {
+  return sent.get(app) ?? 0;
+}
+
 /**
  * The answer `app` gives `request`, in the scanner's shape, with its clock: the Dates it may carry,
  * from the later of an earlier answer's Date and the second it was asked in less DATE_LAG_MS, to the
@@ -176,6 +184,9 @@ const lastDates = new WeakMap<FastifyInstance, number>();
  */
 export async function answerOf(app: FastifyInstance, request: Request): Promise<Answer> {
   await new Promise((resolve) => setImmediate(resolve));
+  // Counted once what the last request left to write is written, so a line the app writes from here on is
+  // this request's (the privacy matrix holds each request to one line).
+  sent.set(app, sentTo(app) + 1);
   const from = Date.now();
   const response = await app.inject({
     method: request.method as "GET",
