@@ -1,0 +1,1099 @@
+{
+  "G03-approve-two": {
+    "visible": [
+      "New member",
+      "Members",
+      "Invite Leila and Nina?",
+      "To Kitchen table · 5 current members",
+      "Leila",
+      "Proposed by Ben",
+      "Nina",
+      "Proposed by Alex",
+      "Leila and Nina must accept the exact roster. Every existing member must approve the same roster. Either can happen first.",
+      "Leila and Nina will see only drops shared after joining.",
+      "We don’t identify who declined. Nobody is asked to give a reason.",
+      "Approve Leila and Nina",
+      "Decline"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Members",
+        "target": [
+          8,
+          56,
+          102.6796875,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Members",
+        "inputLabels": [
+          "Back",
+          "Members"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          102.6796875,
+          44
+        ]
+      },
+      {
+        "label": "Approve Leila and Nina",
+        "voiceOver": "Approve Leila and Nina joining Kitchen table.",
+        "hint": null,
+        "target": [
+          20,
+          704,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "action": "approveRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Approve Leila and Nina"
+        ],
+        "viewportTarget": [
+          20,
+          704,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Decline",
+        "voiceOver": "Decline Leila and Nina joining Kitchen table.",
+        "hint": "No reason is required.",
+        "target": [
+          20,
+          766,
+          353,
+          44
+        ],
+        "kind": "text",
+        "action": "declineRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Decline"
+        ],
+        "viewportTarget": [
+          20,
+          766,
+          353,
+          44
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Leila. Proposed by Ben.",
+        "kind": "candidate-summary",
+        "target": [
+          20,
+          224,
+          353,
+          68
+        ],
+        "avatarDecorative": true
+      },
+      {
+        "label": "Nina. Proposed by Alex.",
+        "kind": "candidate-summary",
+        "target": [
+          20,
+          308,
+          353,
+          68
+        ],
+        "avatarDecorative": true
+      }
+    ],
+    "viewportOffset": 0,
+    "notes": [
+      "Maya reviews one whole revision, with one 68-point initial-avatar block per candidate in revision order. No per-candidate action. The requested five-current-plus-two-candidate scene is a layout-only stress fixture, not a valid six-person API seed. The default body ends above the two fixed decision targets, with the shield note fully visible."
+    ]
+  },
+  "G03-approve-unavailable": {
+    "visible": [
+      "New member",
+      "Members",
+      "This invitation is no longer available."
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Members",
+        "target": [
+          8,
+          56,
+          102.6796875,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Members",
+        "inputLabels": [
+          "Back",
+          "Members"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          102.6796875,
+          44
+        ]
+      }
+    ],
+    "semantics": [],
+    "viewportOffset": 0,
+    "notes": [
+      "Same neutral end for a missing, ended or inaccessible revision. No roster, proposer, cause, extra line or duplicate primary action. Native Back to Members rereads the current authorized list."
+    ]
+  },
+  "G03-approve-reviewing": {
+    "visible": [
+      "New member",
+      "Members",
+      "Loading proposed members…"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Members",
+        "target": [
+          8,
+          56,
+          102.6796875,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Members",
+        "inputLabels": [
+          "Back",
+          "Members"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          102.6796875,
+          44
+        ]
+      }
+    ],
+    "semantics": [],
+    "viewportOffset": 0,
+    "notes": [
+      "Review members reads the current Members answer and its open revision. No old proposal or cached candidate remains during the read; no decision is replayed. Back to Members remains available."
+    ]
+  },
+  "G03-approve-review-failed": {
+    "visible": [
+      "New member",
+      "Members",
+      "Couldn’t load proposed members.",
+      "Check your connection and try again.",
+      "Retry"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Members",
+        "target": [
+          8,
+          56,
+          102.6796875,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Members",
+        "inputLabels": [
+          "Back",
+          "Members"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          102.6796875,
+          44
+        ]
+      },
+      {
+        "label": "Retry",
+        "voiceOver": "Retry",
+        "hint": "Try loading proposed members again.",
+        "target": [
+          20,
+          738,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          738,
+          353,
+          50
+        ]
+      }
+    ],
+    "semantics": [],
+    "viewportOffset": 0,
+    "notes": [
+      "Network/no-answer form. An answered refusal/server error keeps the title and uses Try again. Retry repeats this current-members read; no old decision is resent."
+    ]
+  },
+  "G05-members-with-proposed": {
+    "visible": [
+      "Members",
+      "Club details",
+      "Kitchen table",
+      "Each person has a day.",
+      "Ben",
+      "Monday",
+      "Maya · You",
+      "Tuesday",
+      "Alex",
+      "Wednesday",
+      "Sam",
+      "Thursday",
+      "Debby",
+      "Friday",
+      "Leila",
+      "Proposed by Ben",
+      "Proposed",
+      "5 members · New York",
+      "7 AM to 1 AM the next morning."
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Club details",
+        "target": [
+          8,
+          56,
+          119.6015625,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Club details",
+        "inputLabels": [
+          "Back",
+          "Club details"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          119.6015625,
+          44
+        ]
+      },
+      {
+        "label": "Leila",
+        "voiceOver": "Leila. Proposed by Ben. Proposed.",
+        "hint": "Review the proposed roster for Kitchen table.",
+        "target": [
+          20,
+          601,
+          353,
+          106
+        ],
+        "kind": "native-disclosure-row",
+        "route": "G03-approve",
+        "scope": "whole current revision",
+        "inputLabels": [
+          "Leila"
+        ],
+        "viewportTarget": [
+          20,
+          601,
+          353,
+          106
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. Monday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          221,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Maya. You. Tuesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          297,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Alex. Wednesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          373,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Sam. Thursday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          449,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Debby. Friday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          525,
+          353,
+          76
+        ]
+      }
+    ],
+    "viewportOffset": 0,
+    "notes": [
+      "Maya’s decision is pending. Leila’s whole proposed row has a disclosure chevron and opens the whole current revision, not a Leila-only decision. Current members are static and the footer counts five, excluding Leila."
+    ]
+  },
+  "G05-members-with-proposed-decided": {
+    "visible": [
+      "Members",
+      "Club details",
+      "Kitchen table",
+      "Each person has a day.",
+      "Ben",
+      "Monday",
+      "Maya · You",
+      "Tuesday",
+      "Alex",
+      "Wednesday",
+      "Sam",
+      "Thursday",
+      "Debby",
+      "Friday",
+      "Leila",
+      "Proposed by Ben",
+      "Proposed",
+      "5 members · New York",
+      "7 AM to 1 AM the next morning."
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Club details",
+        "target": [
+          8,
+          56,
+          119.6015625,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Club details",
+        "inputLabels": [
+          "Back",
+          "Club details"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          119.6015625,
+          44
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. Monday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          221,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Maya. You. Tuesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          297,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Alex. Wednesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          373,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Sam. Thursday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          449,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Debby. Friday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          525,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Leila. Proposed by Ben. Proposed.",
+        "kind": "static-proposed-member",
+        "target": [
+          20,
+          601,
+          353,
+          106
+        ],
+        "hint": null,
+        "button": false
+      }
+    ],
+    "viewportOffset": 0,
+    "notes": [
+      "Maya has an own decision already recorded for the displayed open revision. The proposed row is static: no chevron, button trait, hint or decision disclosure. A fresh server response after a decline may remove the ended proposal for everyone; never retain this row from cache to force the same picture."
+    ]
+  },
+  "G05-members-proposed-approve": {
+    "visible": [
+      "Members",
+      "Back",
+      "Proposed roster",
+      "Sunday people",
+      "These names are a proposal, not an active member list.",
+      "Ben · You",
+      "Debby",
+      "Manage invitations",
+      "Review and approve the updated roster before Sunday people can start.",
+      "We don’t identify who declined. Nobody is asked to give a reason.",
+      "Approve roster",
+      "Decline"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Sunday people",
+        "target": [
+          8,
+          56,
+          71.5703125,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Sunday people",
+        "inputLabels": [
+          "Back",
+          "Sunday people"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          71.5703125,
+          44
+        ]
+      },
+      {
+        "label": "Manage invitations",
+        "voiceOver": "Manage invitations",
+        "hint": "Open your invitation list for Sunday people.",
+        "target": [
+          20,
+          410,
+          353,
+          44
+        ],
+        "kind": "native-text-action",
+        "route": "G01-invite-people",
+        "viewportTarget": [
+          20,
+          410,
+          353,
+          44
+        ]
+      },
+      {
+        "label": "Approve roster",
+        "voiceOver": "Approve roster for Sunday people.",
+        "hint": null,
+        "target": [
+          20,
+          704,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "action": "approveRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Approve roster"
+        ],
+        "viewportTarget": [
+          20,
+          704,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Decline",
+        "voiceOver": "Decline roster for Sunday people.",
+        "hint": "No reason is required.",
+        "target": [
+          20,
+          766,
+          353,
+          44
+        ],
+        "kind": "text",
+        "action": "declineRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Decline"
+        ],
+        "viewportTarget": [
+          20,
+          766,
+          353,
+          44
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. You.",
+        "kind": "proposed-roster-person",
+        "target": [
+          20,
+          282,
+          353,
+          52
+        ]
+      },
+      {
+        "label": "Debby.",
+        "kind": "proposed-roster-person",
+        "target": [
+          20,
+          334,
+          353,
+          52
+        ]
+      }
+    ],
+    "viewportOffset": 0,
+    "notes": [
+      "Ben approves this exact server-created name revision on the proposed-roster screen itself. Names are not active memberships: no weekdays, acceptance labels, counts or approval progress. Debby’s prior label is not invented. Manage invitations stays a creator-only text route, separate from the pending decision."
+    ]
+  },
+  "G03-approve-two-dark": {
+    "visible": [
+      "New member",
+      "Members",
+      "Invite Leila and Nina?",
+      "To Kitchen table · 5 current members",
+      "Leila",
+      "Proposed by Ben",
+      "Nina",
+      "Proposed by Alex",
+      "Leila and Nina must accept the exact roster. Every existing member must approve the same roster. Either can happen first.",
+      "Leila and Nina will see only drops shared after joining.",
+      "We don’t identify who declined. Nobody is asked to give a reason.",
+      "Approve Leila and Nina",
+      "Decline"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Members",
+        "target": [
+          8,
+          56,
+          102.6796875,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Members",
+        "inputLabels": [
+          "Back",
+          "Members"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          102.6796875,
+          44
+        ]
+      },
+      {
+        "label": "Approve Leila and Nina",
+        "voiceOver": "Approve Leila and Nina joining Kitchen table.",
+        "hint": null,
+        "target": [
+          20,
+          704,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "action": "approveRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Approve Leila and Nina"
+        ],
+        "viewportTarget": [
+          20,
+          704,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Decline",
+        "voiceOver": "Decline Leila and Nina joining Kitchen table.",
+        "hint": "No reason is required.",
+        "target": [
+          20,
+          766,
+          353,
+          44
+        ],
+        "kind": "text",
+        "action": "declineRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Decline"
+        ],
+        "viewportTarget": [
+          20,
+          766,
+          353,
+          44
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Leila. Proposed by Ben.",
+        "kind": "candidate-summary",
+        "target": [
+          20,
+          224,
+          353,
+          68
+        ],
+        "avatarDecorative": true
+      },
+      {
+        "label": "Nina. Proposed by Alex.",
+        "kind": "candidate-summary",
+        "target": [
+          20,
+          308,
+          353,
+          68
+        ],
+        "avatarDecorative": true
+      }
+    ],
+    "viewportOffset": 0,
+    "notes": [
+      "Maya reviews one whole revision, with one 68-point initial-avatar block per candidate in revision order. No per-candidate action. The requested five-current-plus-two-candidate scene is a layout-only stress fixture, not a valid six-person API seed. The default body ends above the two fixed decision targets, with the shield note fully visible."
+    ]
+  },
+  "G03-approve-two-xl": {
+    "visible": [
+      "New member",
+      "Members",
+      "Invite Leila and Nina?",
+      "To Kitchen table · 5 current members",
+      "Leila",
+      "Proposed by Ben",
+      "Nina",
+      "Proposed by Alex",
+      "Leila and Nina must accept the exact roster. Every existing member must approve the same roster. Either can happen first.",
+      "Leila and Nina will see only drops shared after joining.",
+      "We don’t identify who declined. Nobody is asked to give a reason.",
+      "Approve Leila and Nina",
+      "Decline"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Members",
+        "target": [
+          8,
+          56,
+          102.6796875,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Members",
+        "inputLabels": [
+          "Back",
+          "Members"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          102.6796875,
+          44
+        ]
+      },
+      {
+        "label": "Approve Leila and Nina",
+        "voiceOver": "Approve Leila and Nina joining Kitchen table.",
+        "hint": null,
+        "target": [
+          20,
+          2363,
+          353,
+          207
+        ],
+        "kind": "primary",
+        "action": "approveRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Approve Leila and Nina"
+        ],
+        "viewportTarget": [
+          20,
+          2001,
+          353,
+          207
+        ]
+      },
+      {
+        "label": "Decline",
+        "voiceOver": "Decline Leila and Nina joining Kitchen table.",
+        "hint": "No reason is required.",
+        "target": [
+          20,
+          2582,
+          353,
+          77
+        ],
+        "kind": "text",
+        "action": "declineRoster",
+        "scope": "whole revision",
+        "inputLabels": [
+          "Decline"
+        ],
+        "viewportTarget": [
+          20,
+          2220,
+          353,
+          77
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Leila. Proposed by Ben.",
+        "kind": "candidate-summary",
+        "target": [
+          20,
+          485,
+          353,
+          218
+        ],
+        "avatarDecorative": true
+      },
+      {
+        "label": "Nina. Proposed by Alex.",
+        "kind": "candidate-summary",
+        "target": [
+          20,
+          719,
+          353,
+          218
+        ],
+        "avatarDecorative": true
+      }
+    ],
+    "viewportOffset": 362,
+    "notes": [
+      "Maya reviews one whole revision, with one 68-point initial-avatar block per candidate in revision order. No per-candidate action. The requested five-current-plus-two-candidate scene is a layout-only stress fixture, not a valid six-person API seed. AX5 proof is scrolled to both candidate blocks; heading/context are above and explanation/actions below in the same scroll. Native navigation remains reachable."
+    ]
+  },
+  "G05-members-with-proposed-dark": {
+    "visible": [
+      "Members",
+      "Club details",
+      "Kitchen table",
+      "Each person has a day.",
+      "Ben",
+      "Monday",
+      "Maya · You",
+      "Tuesday",
+      "Alex",
+      "Wednesday",
+      "Sam",
+      "Thursday",
+      "Debby",
+      "Friday",
+      "Leila",
+      "Proposed by Ben",
+      "Proposed",
+      "5 members · New York",
+      "7 AM to 1 AM the next morning."
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Club details",
+        "target": [
+          8,
+          56,
+          119.6015625,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Club details",
+        "inputLabels": [
+          "Back",
+          "Club details"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          119.6015625,
+          44
+        ]
+      },
+      {
+        "label": "Leila",
+        "voiceOver": "Leila. Proposed by Ben. Proposed.",
+        "hint": "Review the proposed roster for Kitchen table.",
+        "target": [
+          20,
+          601,
+          353,
+          106
+        ],
+        "kind": "native-disclosure-row",
+        "route": "G03-approve",
+        "scope": "whole current revision",
+        "inputLabels": [
+          "Leila"
+        ],
+        "viewportTarget": [
+          20,
+          601,
+          353,
+          106
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. Monday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          221,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Maya. You. Tuesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          297,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Alex. Wednesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          373,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Sam. Thursday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          449,
+          353,
+          76
+        ]
+      },
+      {
+        "label": "Debby. Friday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          525,
+          353,
+          76
+        ]
+      }
+    ],
+    "viewportOffset": 0,
+    "notes": [
+      "Maya’s decision is pending. Leila’s whole proposed row has a disclosure chevron and opens the whole current revision, not a Leila-only decision. Current members are static and the footer counts five, excluding Leila."
+    ]
+  },
+  "G05-members-with-proposed-xl": {
+    "visible": [
+      "Members",
+      "Club details",
+      "Kitchen table",
+      "Each person has a day.",
+      "Ben",
+      "Monday",
+      "Maya · You",
+      "Tuesday",
+      "Alex",
+      "Wednesday",
+      "Sam",
+      "Thursday",
+      "Debby",
+      "Friday",
+      "Leila",
+      "Proposed by Ben",
+      "Proposed",
+      "5 members · New York",
+      "7 AM to 1 AM the next morning."
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Club details",
+        "target": [
+          8,
+          56,
+          119.6015625,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Club details",
+        "inputLabels": [
+          "Back",
+          "Club details"
+        ],
+        "viewportTarget": [
+          8,
+          56,
+          119.6015625,
+          44
+        ]
+      },
+      {
+        "label": "Leila",
+        "voiceOver": "Leila. Proposed by Ben. Proposed.",
+        "hint": "Review the proposed roster for Kitchen table.",
+        "target": [
+          20,
+          1240,
+          353,
+          275
+        ],
+        "kind": "native-disclosure-row",
+        "route": "G03-approve",
+        "scope": "whole current revision",
+        "inputLabels": [
+          "Leila"
+        ],
+        "viewportTarget": [
+          20,
+          259,
+          353,
+          275
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. Monday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          445,
+          353,
+          159
+        ]
+      },
+      {
+        "label": "Maya. You. Tuesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          604,
+          353,
+          159
+        ]
+      },
+      {
+        "label": "Alex. Wednesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          763,
+          353,
+          159
+        ]
+      },
+      {
+        "label": "Sam. Thursday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          922,
+          353,
+          159
+        ]
+      },
+      {
+        "label": "Debby. Friday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          1081,
+          353,
+          159
+        ]
+      }
+    ],
+    "viewportOffset": 981,
+    "notes": [
+      "Maya’s decision is pending. Leila’s whole proposed row has a disclosure chevron and opens the whole current revision, not a Leila-only decision. Current members are static and the footer counts five, excluding Leila. AX5 proof is scrolled to the proposed row and footer; full heading/current roster remain above in the same scroll."
+    ]
+  }
+}
