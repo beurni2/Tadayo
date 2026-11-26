@@ -122,6 +122,7 @@ export {
   type RevokeInvitationInput,
 } from "./clubs/invitation.ts";
 export { acceptInvitation, type Acceptance, type AcceptInvitationInput } from "./clubs/accept-invitation.ts";
+export { removeCandidate, type RemoveCandidateInput } from "./clubs/remove-candidate.ts";
 export { applyIfReady, type AppliedRoster } from "./clubs/apply-roster.ts";
 export { approveRoster, declineRoster, type RosterDecisionInput } from "./clubs/decide-roster.ts";
 export { leaveClub, type Contributions, type LeaveClubInput, type LeftClub } from "./clubs/leave-club.ts";

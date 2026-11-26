@@ -1,12 +1,12 @@
 /// <reference lib="esnext.temporal" />
-// The four roster routes as the contract has them (the contract's `proposeRoster`, `getRosterRevision`,
-// `createInvitation` and `revokeInvitation`; T7, T14, T19, T33, T52, T55), with no database: the
+// The roster routes as the contract has them (the contract's `proposeRoster`, `getRosterRevision`,
+// `createInvitation`, `revokeInvitation` and `removeCandidate`; T7, T14, T19, T33, T52, T55), with no database: the
 // serializers' field lists, held against every example the contract gives, read from the contract and not
 // copied by hand; everything refused before a command runs; and what each route answers. The commands,
 // their receipts and the read are on Postgres (tests/src/db/propose-roster.test.ts and
 // invitation.test.ts), and every role's answers are the privacy matrix's (tests/src/privacy/roster.ts).
 
-import { InvitationLink, RevokedInvitation, RosterRevision } from "@tadayo/contracts";
+import { InvitationLink, RemovedCandidate, RevokedInvitation, RosterRevision } from "@tadayo/contracts";
 // The examples aren't among the contract package's exports, and that package changes only in its own PR
 // (docs/TECH-DESIGN.md section 3), so this test reads the file where it is.
 import { successExamples } from "../../../../packages/contracts/src/fixtures/examples.ts";
@@ -332,6 +332,15 @@ describe("what the roster routes answer", () => {
     expect(got.headers).toMatchObject(headers);
   });
 
+  it("answers a removal with 200 and the candidate's id, with no key and no body (FQ148)", async () => {
+    const answer = await appFor(() => Promise.resolve({ candidateId: "cand_1" }));
+    const got = await answer({ method: "DELETE", url: "/v1/candidates/cand_1" });
+    expect(got.status).toBe(200);
+    expect(JSON.parse(got.body)).toEqual({ candidate_id: "cand_1", state: "removed" });
+    expect(RemovedCandidate.strict().safeParse(JSON.parse(got.body)).success).toBe(true);
+    expect(got.headers).toMatchObject(headers);
+  });
+
   it("answers the neutral not-found when the read finds no revision, and never a 200 with an empty body (T14)", async () => {
     const answer = await appFor(() => Promise.resolve(null));
     const got = await answer({ method: "GET", url: "/v1/rosters/rev_1" });
@@ -367,6 +376,11 @@ describe("what the roster routes answer", () => {
           ["NOT_ALLOWED", 403, '{"code":"NOT_ALLOWED"}'],
         ],
       ],
+      [
+        "removeCandidate",
+        { method: "DELETE", url: "/v1/candidates/cand_1" },
+        [["NOT_FOUND", 404, '{"code":"NOT_FOUND"}']],
+      ],
     ];
     for (const [operation, request, refusals] of requests) {
       for (const [code, status, body] of refusals) {
@@ -387,6 +401,7 @@ describe("what the roster routes answer", () => {
       post(ROSTER, PROPOSAL),
       post(LINKS, LINK),
       { method: "DELETE", url: "/v1/invitations/inv_1" } as const,
+      { method: "DELETE", url: "/v1/candidates/cand_1" } as const,
       { method: "GET", url: "/v1/rosters/rev_1" } as const,
     ]) {
       expect(await answer(request)).toMatchObject({ status: 500, body: "" });

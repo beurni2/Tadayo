@@ -20,6 +20,7 @@ import {
   proposeRoster,
   readRevision,
   Refused,
+  removeCandidate,
   revokeInvitation,
   type CreateInvitationInput,
   type MadeLink,
@@ -224,5 +225,20 @@ export function revokeInvitationHandler(deps: Deps): Handler {
       throw error;
     }
     return ok(reply, { invitation_id: revoked.invitationId, state: "revoked" });
+  };
+}
+
+export function removeCandidateHandler(deps: Deps): Handler {
+  return async (request, reply) => {
+    const account = signedIn(request);
+    const input = { userId: account.id, candidateId: parameter(request.params, "candidate_id") };
+    let removed: { readonly candidateId: string };
+    try {
+      removed = await deps.sql.begin((tx) => removeCandidate(tx, deps.clock, input));
+    } catch (error) {
+      if (error instanceof Refused) return refusal(reply, error);
+      throw error;
+    }
+    return ok(reply, { candidate_id: removed.candidateId, state: "removed" });
   };
 }
