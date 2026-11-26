@@ -1,0 +1,10 @@
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -241,7 +241,6 @@
+     clientErrorHandler: clientError,
+   });
+   // Before any request's logger is made from it.
+-  redactBindings(app.log);
+   const routes: string[] = [];
+   recorded.set(app, routes);
+   app.addHook("onRoute", (route) => {

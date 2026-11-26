@@ -1,0 +1,74 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (109 tests | 2 failed) 530ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (9)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 23ms
+     × counts every operation whose answer can name a day or a drop, or that asks about one by its path, as answering before the reveal, or only after 4ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 107 passed (109)
+   Start at  01:43:10
+   Duration  1.21s (tests 49%, import 38%, transform 13%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: expected [ 'Allowance', 'Candidate', …(42) ] to deeply equal [ 'Allowance', 'Candidate', …(43) ]
+
+- Expected
++ Received
+
+@@ -11,11 +11,10 @@
+    "DropDetail",
+    "DropOwn",
+    "DropReceipt",
+    "DropRevealed",
+    "DropVersion",
+-   "ExternalVideoPreview",
+    "HiddenDrop",
+    "HighlightEntry",
+    "HighlightPointer",
+    "HomeAwaitingActivation",
+    "HomeDay",
+
+ ❯ src/privacy/scanner.test.ts:2204:31
+    2202|   it("holds its own key list for every object schema an answer can hol…
+    2203|     const reach = new Set([...BEFORE_REVEAL_OPERATIONS].flatMap((id) =…
+    2204|     expect([...reach].sort()).toEqual([...Object.keys(BEFORE_REVEAL), …
+       |                               ^
+    2205|     expect(Object.keys(BEFORE_REVEAL).filter((name) => OPENED_ONLY.has…
+    2206|     for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > counts every operation whose answer can name a day or a drop, or that asks about one by its path, as answering before the reveal, or only after
+AssertionError: expected [ Array(30) ] to deeply equal [ Array(29) ]
+
+- Expected
++ Received
+
+@@ -2,10 +2,11 @@
+    "clearReaction",
+    "createClub",
+    "createComment",
+    "createDrop",
+    "createReservation",
++   "getAuthorPreview",
+    "getClub",
+    "getDrop",
+    "getDropMedia",
+    "getEmbed",
+    "getHome",
+
+ ❯ src/privacy/scanner.test.ts:2278:26
+    2276|         [...answered(id)].some((schema) => naming.has(schema) || keysO…
+    2277|     );
+    2278|     expect(names.sort()).toEqual([...BEFORE_REVEAL_OPERATIONS, ...only…
+       |                          ^
+    2279|   });
+    2280|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

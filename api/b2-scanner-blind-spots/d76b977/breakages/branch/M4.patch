@@ -1,0 +1,10 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -292,6 +292,7 @@
+ 
+ /** The one line a request gets, when its answer has gone: id, operation, status and milliseconds. */
+ export function requestLine(request: FastifyRequest, reply: FastifyReply): void {
++  if (request.routeOptions.config.operation === "getHealth") request.log.info({ op: "getHealth" }, "request");
+   request.log.info(
+     {
+       op: request.routeOptions.config.operation,

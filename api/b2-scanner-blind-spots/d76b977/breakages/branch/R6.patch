@@ -1,0 +1,29 @@
+--- a/packages/contracts/openapi.yaml
++++ b/packages/contracts/openapi.yaml
+@@ -13789,7 +13789,14 @@
+         is_star:
+           type: boolean
+         joined_later:
+-          type: boolean
++          type: object
++          properties:
++            count:
++              type: integer
++              minimum: 0
++              maximum: 9007199254740991
++          required:
++            - count
+       required:
+         - is_star
+         - joined_later
+--- a/packages/contracts/src/schemas/days.ts
++++ b/packages/contracts/src/schemas/days.ts
+@@ -168,7 +168,7 @@
+     "whether their membership began after the day started collecting, so the app can say the day may be " +
+     "partly visible to them without any number (spec 07, F02-joined-later). It comes from the caller's own " +
+     "membership, never from whether hidden drops exist (T15).",
+-  z.object({ is_star: z.boolean(), joined_later: z.boolean() }),
++  z.object({ is_star: z.boolean(), joined_later: z.object({ count: z.int().min(0) }) }),
+ );
+ 
+ const dayBase = {

@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (109 tests | 1 failed) 487ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (9)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 108 passed (109)
+   Start at  01:43:02
+   Duration  1.23s (tests 44%, import 43%, transform 13%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: expected [ 'DayLink', 'HomeDay', 'RevealedDay' ] to deeply equal [ 'DayLink' ]
+
+- Expected
++ Received
+
+  [
+    "DayLink",
++   "HomeDay",
++   "RevealedDay",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2214:97
+    2212|     // closed day: an opened day that names a day still to open (Home'…
+    2213|     // `add_target`) is on BEFORE_REVEAL, held to its list.
+    2214|     expect([...OPENED_ONLY].filter((name) => reached(schemas[name] ?? …
+       |                                                                                                 ^
+    2215|   });
+    2216|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

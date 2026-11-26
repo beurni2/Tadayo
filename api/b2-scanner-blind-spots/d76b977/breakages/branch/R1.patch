@@ -1,0 +1,26 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -633,7 +633,6 @@
+ export function keyWords(key: string): string[] {
+   return key
+     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+-    .replace(/([A-Z]{2,})s(?![a-z])/g, "$1S")
+     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+     .replace(/([A-Za-z])([0-9])/g, "$1_$2")
+     .replace(/([0-9])([A-Za-z])/g, "$1_$2")
+@@ -650,7 +649,6 @@
+  * (NEVER_KEY).
+  */
+ export function neverKey(key: string): boolean {
+-  if (NEVER_KEY.test(key)) return true;
+   const words = keyWords(key);
+   const last = words.at(-1);
+   if (words.length > 1 && (last === "at" || last === "on")) return true;
+@@ -658,7 +656,6 @@
+   return words.some(
+     (word, index) =>
+       NEVER_WORDS.has(word) ||
+-      NEVER_WORDS.has(`${word}${words[index + 1] ?? ""}`) ||
+       (NEVER_ENDINGS.test(word) && !PLAIN_WORDS.has(word)),
+   );
+ }

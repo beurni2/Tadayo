@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (109 tests | 1 failed) 533ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (9)
+     × reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time 17ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 108 passed (109)
+   Start at  01:51:07
+   Duration  1.38s (import 44%, tests 44%, transform 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time
+AssertionError: expected [ 'url2x' ] to deeply equal [ 'url', '2', 'x' ]
+
+- Expected
++ Received
+
+  [
+-   "url",
+-   "2",
+-   "x",
++   "url2x",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2289:31
+    2287|     expect(keyWords("drop_count")).toEqual(["drop", "count"]);
+    2288|     expect(keyWords("x-Media-Version")).toEqual(["x", "media", "versio…
+    2289|     expect(keyWords("url2x")).toEqual(["url", "2", "x"]);
+       |                               ^
+    2290|     for (const key of [
+    2291|       // An acronym's plural, and a never-word written as two (the rou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

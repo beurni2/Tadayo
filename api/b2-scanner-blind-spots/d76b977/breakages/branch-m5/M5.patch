@@ -1,0 +1,14 @@
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -137,7 +137,10 @@
+     try {
+       response = await deps.sql.begin((tx) => proposeRoster(tx, deps.clock, input, rosterRevisionBody));
+     } catch (error) {
+-      if (error instanceof Refused) return refusal(reply, error);
++      if (error instanceof Refused) {
++        request.log.info({ trouble: input.add[0]?.label ?? "none" }, "proposal refused");
++        return refusal(reply, error);
++      }
+       throw error;
+     }
+     return created(reply, response);

@@ -1,0 +1,32 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -449,6 +449,8 @@
+   "DayLink",
+   "DropRevealed",
+   "HighlightEntry",
++  "HomeDay",
++  "RevealedDay",
+   "ReactionSummary",
+   "ReplyPreview",
+   "RevealedDayDrop",
+@@ -509,8 +511,6 @@
+   HiddenDrop: { required: ["drop_id", "hidden"], optional: [] },
+   HighlightPointer: { required: ["version"], optional: ["drop_id"] },
+   HomeAwaitingActivation: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+-  // Home's open day: opened, but its `next` is the club's next day, still collecting.
+-  HomeDay: { required: ["mode", "server_now", "club", "club_today", "day", "recent_days"], optional: ["next"] },
+   HomeNoDays: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+   HomePaused: { required: ["mode", "server_now", "club", "club_today", "recent_days"], optional: [] },
+   HomeUnavailable: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+@@ -529,11 +529,6 @@
+   ReleasedReservation: { required: ["id", "state"], optional: ["drop_id", "allowance"] },
+   RemovedDrop: { required: ["drop_id", "state"], optional: ["allowance", "highlight"] },
+   Reservation: { required: ["id", "occurrence_id", "media_class", "expires_at", "allowance"], optional: [] },
+-  // The opened day: its `add_target` is the star's next day, still collecting.
+-  RevealedDay: {
+-    required: ["stage", "server_now", "occurrence", "club", "viewer", "drops", "highlights"],
+-    optional: ["add_target", "next_cursor"],
+-  },
+   RosterRevision: {
+     required: ["id", "version", "club", "state", "proposed_by", "members", "candidates", "my_decision"],
+     optional: ["superseded_by"],

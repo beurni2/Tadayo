@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (14 tests | 1 failed) 240ms
+   ❯ the redaction list (T52) (7)
+     × blanks a child logger's bindings as it blanks a line's own fields, and keeps a request's id 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  01:43:12
+   Duration  825ms (import 40%, tests 34%, transform 25%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks a child logger's bindings as it blanks a line's own fields, and keeps a request's id
+AssertionError: expected { Object (level, time, ...) } to match object { Object (msg, op, ...) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "caption": "[redacted]",
++   "caption": "SECRET-CAPTION",
+    "club": {
+-     "name": "[redacted]",
++     "name": "Club Name Here",
+    },
+    "msg": "child line",
+    "op": "probe",
+  }
+
+ ❯ src/logging.test.ts:150:19
+    148|     app.log.child({ step: 1 }).child({ comment_text: "SECRET-COMMENT" …
+    149|     const [child, grandchild] = parse(lines);
+    150|     expect(child).toMatchObject({
+       |                   ^
+    151|       msg: "child line",
+    152|       op: "probe",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

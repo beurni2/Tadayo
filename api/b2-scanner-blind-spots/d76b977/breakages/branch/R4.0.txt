@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (109 tests | 2 failed) 507ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (4)
+     × finds a needle whole, inside a value when it is 6 characters or more, and a short one inside only when asked 10ms
+     × catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 107 passed (109)
+   Start at  01:43:04
+   Duration  1.28s (tests 45%, import 43%, transform 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > finds a needle whole, inside a value when it is 6 characters or more, and a short one inside only when asked
+AssertionError: expected [] to deeply equal [ 'Saturday People' ]
+
+- Expected
++ Received
+
+- [
+-   "Saturday People",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2604:67
+    2602|     expect(needles.within("Bento", false)).toEqual([]);
+    2603|     expect(needles.within("Bento", true)).toEqual(["Ben"]);
+    2604|     expect(needles.within("served Saturday People twice", false)).toEq…
+       |                                                                   ^
+    2605|     expect(needles.within(`a tok_${"x".repeat(40)} here`, false)).toEq…
+    2606|     expect(needles.within("Saturday Peopl", false)).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON
+AssertionError: a caption inside a message: : expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2643:9
+    2641|         found.some((problem) => expected.test(problem)),
+    2642|         `${what}: ${found.join("; ")}`,
+    2643|       ).toBe(true);
+       |         ^
+    2644|     }
+    2645|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

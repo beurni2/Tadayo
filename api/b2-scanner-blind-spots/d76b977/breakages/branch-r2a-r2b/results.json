@@ -1,0 +1,26 @@
+[
+ {
+  "name": "R2a",
+  "what": "R2 without the split at digits: the new never-words, a last word `on` and a count at a word's end gone",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "num_drops"
+  ],
+  "missing": []
+ },
+ {
+  "name": "R2b",
+  "what": "the split between letters and digits gone",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "url2x"
+  ],
+  "missing": []
+ }
+]

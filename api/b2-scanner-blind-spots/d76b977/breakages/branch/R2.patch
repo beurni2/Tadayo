@@ -1,0 +1,48 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -601,18 +601,9 @@
+     "original",
+     "count",
+     "total",
+-    "n",
+-    "num",
+-    "number",
+-    "has",
+-    "any",
+     "hidden",
+     "position",
+     "preview",
+-    "time",
+-    "timestamp",
+-    "created",
+-    "updated",
+   ].flatMap((word) => [word, `${word}s`]),
+ );
+ 
+@@ -620,7 +611,7 @@
+  * Media words and counts no plain word ends with, caught at a word's end too: `filesize`, `imageurl`,
+  * `thumbhash`, `dropcount`; but the plain words that do (PLAIN_WORDS).
+  */
+-const NEVER_ENDINGS = /(url|uri|src|size|hash|thumb|thumbnail|width|height|count|total)s?$/;
++const NEVER_ENDINGS = /(url|uri|src|size|hash|thumb|thumbnail|width|height)s?$/;
+ const PLAIN_WORDS = new Set(["account", "accounts"]);
+ 
+ /**
+@@ -635,8 +626,6 @@
+     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+     .replace(/([A-Z]{2,})s(?![a-z])/g, "$1S")
+     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+-    .replace(/([A-Za-z])([0-9])/g, "$1_$2")
+-    .replace(/([0-9])([A-Za-z])/g, "$1_$2")
+     .toLowerCase()
+     .split(/[_\- ]+/)
+     .filter((word) => word !== "");
+@@ -653,7 +642,7 @@
+   if (NEVER_KEY.test(key)) return true;
+   const words = keyWords(key);
+   const last = words.at(-1);
+-  if (words.length > 1 && (last === "at" || last === "on")) return true;
++  if (words.length > 1 && last === "at") return true;
+   if (/_media_versions?_/.test(`_${words.join("_")}_`)) return true;
+   return words.some(
+     (word, index) =>

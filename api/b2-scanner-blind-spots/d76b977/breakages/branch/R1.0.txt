@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (109 tests | 2 failed) 504ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (9)
+     × reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time 14ms
+     × names every key the never-list named before the outside audit's A14, in the contract and planted 6ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 107 passed (109)
+   Start at  01:42:59
+   Duration  1.19s (tests 47%, import 40%, transform 13%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time
+AssertionError: expected [ 'photo', 'ur', 'ls' ] to deeply equal [ 'photo', 'urls' ]
+
+- Expected
++ Received
+
+  [
+    "photo",
+-   "urls",
++   "ur",
++   "ls",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2284:35
+    2282|     expect(keyWords("thumbnailUrl")).toEqual(["thumbnail", "url"]);
+    2283|     expect(keyWords("posterURL")).toEqual(["poster", "url"]);
+    2284|     expect(keyWords("photoURLs")).toEqual(["photo", "urls"]);
+       |                                   ^
+    2285|     expect(keyWords("URLsList")).toEqual(["urls", "list"]);
+    2286|     expect(keyWords("HTMLBody")).toEqual(["html", "body"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > names every key the never-list named before the outside audit's A14, in the contract and planted
+AssertionError: expected [ 'URLs', 'media_URLs', 'SRCs', …(3) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "URLs",
++   "media_URLs",
++   "SRCs",
++   "x_ALTs",
++   "waveForm",
++   "HighLight",
++ ]
+
+ ❯ src/privacy/scanner.test.ts:2373:49
+    2371|     const old = [...keys].filter((key) => OLD_NEVER_KEY.test(key));
+    2372|     expect(old.length).toBeGreaterThan(10);
+    2373|     expect(old.filter((key) => !neverKey(key))).toEqual([]);
+       |                                                 ^
+    2374|   });
+    2375|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

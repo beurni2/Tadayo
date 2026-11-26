@@ -1,0 +1,14 @@
+ci: db-tests: `test:db` in tests
++ pnpm -r --workspace-concurrency=1 run test:db
+Scope: 7 of 8 workspace projects
+$ vitest run --config vitest.db.config.ts
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+
+ Test Files  50 passed (50)
+      Tests  951 passed (951)
+   Start at  01:20:33
+   Duration  122.65s (tests 93%, import 7%)
+
+db-tests rc=0 secs=123

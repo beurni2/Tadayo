@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (109 tests | 1 failed) 527ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (4)
+     × holds every text people wrote in the world: captions, comments, names, a club's name and labels, an invitation's names 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 108 passed (109)
+   Start at  01:43:06
+   Duration  1.27s (tests 47%, import 40%, transform 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > holds every text people wrote in the world: captions, comments, names, a club's name and labels, an invitation's names
+AssertionError: expected [ 'From Ben', …(28) ] to include 'Lovely light'
+ ❯ src/privacy/scanner.test.ts:2580:19
+    2578|     };
+    2579|     const texts = worldTexts(written);
+    2580|     expect(texts).toContain("Lovely light");
+       |                   ^
+    2581|     expect(texts).toContain("Pip Quill");
+    2582|     for (const drop of world.drops.values()) if (drop.caption !== null…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

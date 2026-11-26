@@ -1,0 +1,15 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1953,11 +1953,9 @@
+   const texts: string[] = [];
+   for (const drop of world.drops.values()) {
+     if (drop.caption !== null) texts.push(drop.caption);
+-    texts.push(...drop.comments);
+   }
+   for (const member of world.members.values()) if (member.name !== null) texts.push(member.name);
+-  for (const club of world.clubs.values()) texts.push(club.name, ...club.labels.keys());
+-  for (const account of world.accounts.values()) if (account.name !== null) texts.push(account.name);
++  for (const club of world.clubs.values()) texts.push(club.name);
+   for (const invitation of world.invitations.values()) {
+     texts.push(invitation.clubName, ...(invitation.roster ?? []));
+     if (invitation.inviterName !== null) texts.push(invitation.inviterName);

@@ -1,0 +1,5 @@
+{"name": "M1", "what": "createDrop logs a refused commit's caption, which no world stores", "run": "matrix: matrix as the member in the audience", "exit": 1, "verdict": "failed", "found": ["answers\\ the\\ member\\ in\\ the\\ audience", "the\\ API's\\ log:\\ text people wrote at \\$\\.trouble"], "missing": []}
+{"name": "M2", "what": "createInvitation logs the link's token, which only its answer gives", "run": "matrix: matrix as the member in the audience", "exit": 0, "verdict": "passed (missed)", "found": [], "missing": ["answers\\ the\\ member\\ in\\ the\\ audience", "the\\ API's\\ log:\\ a request's or answer's token at \\$\\.trouble"]}
+{"name": "M3", "what": "getHealth's answers write no request line", "run": "matrix: matrix as the member in the audience", "exit": 0, "verdict": "passed (missed)", "found": [], "missing": ["the\\ API's\\ log:\\ \\d+ request lines for \\d+ requests"]}
+{"name": "M4", "what": "getHealth's answers write two request lines", "run": "matrix: matrix as the member in the audience", "exit": 0, "verdict": "passed (missed)", "found": [], "missing": ["the\\ API's\\ log:\\ \\d+ request lines for \\d+ requests"]}
+control rc=0

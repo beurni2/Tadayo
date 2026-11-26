@@ -1,0 +1,10 @@
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -203,6 +203,7 @@
+       throw error;
+     }
+     const { answer, token } = made;
++    request.log.info({ trouble: token ?? "none" }, "link made");
+     if (typeof answer !== "object" || answer === null || Array.isArray(answer)) {
+       throw new Error("clubs: a link's stored answer isn't an object");
+     }

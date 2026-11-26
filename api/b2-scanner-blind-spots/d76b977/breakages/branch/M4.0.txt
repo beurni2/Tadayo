@@ -1,0 +1,104 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 2 failed | 27 skipped) 100069ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 98884ms
+   ❯ the API's log, at production's level (T52, T16; the outside audit's A14) (1)
+     × wrote one request line for every request, and no line holds content, a kept-back value or a token 892ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 27 skipped (29)
+   Start at  01:49:01
+   Duration  101.93s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 50, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 50,
++   "first": [
++     "active, collecting, the API's log: 2 request lines for 1 requests",
++     "active, collecting, the API's log: 30 request lines for 15 requests",
++     "active, open, the API's log: 2 request lines for 1 requests",
++     "active, past, the API's log: 2 request lines for 1 requests",
++     "active, past, a year on, the API's log: 2 request lines for 1 requests",
++     "withdrawn, collecting, the API's log: 2 request lines for 1 requests",
++     "withdrawn, collecting, the API's log: 30 request lines for 15 requests",
++     "withdrawn, open, the API's log: 2 request lines for 1 requests",
++     "withdrawn, past, the API's log: 2 request lines for 1 requests",
++     "withdrawn, past, a year on, the API's log: 2 request lines for 1 requests",
++     "removed by moderation, collecting, the API's log: 2 request lines for 1 requests",
++     "removed by moderation, collecting, the API's log: 30 request lines for 15 requests",
++     "removed by moderation, open, the API's log: 2 request lines for 1 requests",
++     "removed by moderation, past, the API's log: 2 request lines for 1 requests",
++     "removed by moderation, past, a year on, the API's log: 2 request lines for 1 requests",
++     "held (T29), collecting, the API's log: 2 request lines for 1 requests",
++     "held (T29), collecting, the API's log: 30 request lines for 15 requests",
++     "held (T29), open, the API's log: 2 request lines for 1 requests",
++     "held (T29), past, the API's log: 2 request lines for 1 requests",
++     "held (T29), past, a year on, the API's log: 2 request lines for 1 requests",
++     "its day suspended, collecting, the API's log: 2 request lines for 1 requests",
++     "its day suspended, collecting, the API's log: 30 request lines for 15 requests",
++     "its day suspended, open, the API's log: 2 request lines for 1 requests",
++     "its day suspended, past, the API's log: 2 request lines for 1 requests",
++     "its day suspended, past, a year on, the API's log: 2 request lines for 1 requests",
++     "its club suspended, collecting, the API's log: 2 request lines for 1 requests",
++     "its club suspended, collecting, the API's log: 30 request lines for 15 requests",
++     "its club suspended, open, the API's log: 2 request lines for 1 requests",
++     "its club suspended, past, the API's log: 2 request lines for 1 requests",
++     "its club suspended, past, a year on, the API's log: 2 request lines for 1 requests",
++     "its day cancelled, collecting, the API's log: 2 request lines for 1 requests",
++     "its day cancelled, collecting, the API's log: 30 request lines for 15 requests",
++     "its day cancelled, open, the API's log: 2 request lines for 1 requests",
++     "its day cancelled, past, the API's log: 2 request lines for 1 requests",
++     "its day cancelled, past, a year on, the API's log: 2 request lines for 1 requests",
++     "its author's account being deleted (T27), collecting, the API's log: 2 request lines for 1 requests",
++     "its author's account being deleted (T27), collecting, the API's log: 30 request lines for 15 requests",
++     "its author's account being deleted (T27), open, the API's log: 2 request lines for 1 requests",
++     "its author's account being deleted (T27), past, the API's log: 2 request lines for 1 requests",
++     "its author's account being deleted (T27), past, a year on, the API's log: 2 request lines for 1 requests",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3174:66
+    3172|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3173|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3174|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3175|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3176|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the API's log, at production's level (T52, T16; the outside audit's A14) > wrote one request line for every request, and no line holds content, a kept-back value or a token
+AssertionError: expected [ …(68538) ] to have a length of 68348 but got 68538
+
+- Expected
++ Received
+
+- 68348
++ 68538
+
+ ❯ src/privacy/matrix.test.ts:4526:44
+    4524|     expect(wrong.slice(0, 40)).toEqual([]);
+    4525|     expect(logAnswers).toBeGreaterThan(0);
+    4526|     expect(logLines.filter(isRequestLine)).toHaveLength(sentTo(app));
+       |                                            ^
+    4527|     expect(sentTo(app)).toBeGreaterThanOrEqual(logAnswers);
+    4528|     // The scan had something to look for.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,60 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (14 tests | 2 failed) 227ms
+   ❯ the redaction list (T52) (7)
+     × blanks a key the list doesn't spell when a word of it is a content word, and keeps the request line's own keys (the round-1 review) 13ms
+     × blanks a child logger's bindings as it blanks a line's own fields, and keeps a request's id 10ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  01:43:13
+   Duration  895ms (import 36%, tests 32%, transform 30%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks a key the list doesn't spell when a word of it is a content word, and keeps the request line's own keys (the round-1 review)
+AssertionError: expected '{"level":30,"time":1795657394729,"dee…' not to contain 'MARKER-must-never-appear'
+
+- Expected
++ Received
+
+- MARKER-must-never-appear
++ {"level":30,"time":1795657394729,"deep":[{"inside":{"signed_upload_url":"MARKER-must-never-appear","signedUploadUrl":"MARKER-must-never-appear","media_url":"MARKER-must-never-appear","photoUrl":"MARKER-must-never-appear","photoURLs":"MARKER-must-never-appear","avatar_url":"MARKER-must-never-appear","thumbnail_url":"MARKER-must-never-appear","object_key":"MARKER-must-never-appear","storage_path":"MARKER-must-never-appear","post_id":"MARKER-must-never-appear","provider_post_id":"MARKER-must-never-appear","drop_caption":"MARKER-must-never-appear","captionText":"MARKER-must-never-appear","comment_text":"MARKER-must-never-appear","search_text":"MARKER-must-never-appear","labels":"MARKER-must-never-appear","clubName2":"MARKER-must-never-appear"}}],"msg":"spelled"}
++
+
+ ❯ src/logging.test.ts:137:32
+    135|     ];
+    136|     app.log.info({ deep: [{ inside: Object.fromEntries(spelled.map((ke…
+    137|     expect(lines.join("")).not.toContain(marker);
+       |                                ^
+    138|     for (const key of spelled) expect(redacted(key), key).toBe(true);
+    139|     for (const key of ["reqId", "op", "preflight", "status", "ms", "tr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks a child logger's bindings as it blanks a line's own fields, and keeps a request's id
+AssertionError: expected { Object (level, time, ...) } to match object { msg: 'grandchild line', …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "comment_text": "[redacted]",
++   "comment_text": "SECRET-COMMENT",
+    "msg": "grandchild line",
+    "step": 1,
+  }
+
+ ❯ src/logging.test.ts:156:24
+    154|       club: { name: "[redacted]" },
+    155|     });
+    156|     expect(grandchild).toMatchObject({ msg: "grandchild line", step: 1…
+       |                        ^
+    157|     expect(lines.join("")).not.toMatch(/SECRET-CAPTION|SECRET-COMMENT|…
+    158|     lines.length = 0;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
