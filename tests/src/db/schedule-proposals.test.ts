@@ -45,8 +45,8 @@ interface FirstDays {
   proposal: string;
 }
 
-/** A club of `count` in its first days: each member holds the days spec 05 proposes, nobody has confirmed. */
-async function firstDays(tx: Tx, count: 2 | 3 | 4 | 6): Promise<FirstDays> {
+/** A club of `count` in its first days, in London's zone unless `timezone` names another: each member holds the days spec 05 proposes, nobody has confirmed. */
+async function firstDays(tx: Tx, count: 2 | 3 | 4 | 6, timezone = "Europe/London"): Promise<FirstDays> {
   const users: string[] = [];
   for (let index = 0; index < count; index += 1) users.push(await newUser(tx, `Member ${String(index + 1)}`));
   const [creator, ...others] = users;
@@ -55,7 +55,7 @@ async function firstDays(tx: Tx, count: 2 | 3 | 4 | 6): Promise<FirstDays> {
   const first = newId("mem");
   await tx`
     INSERT INTO app.clubs (id, name, timezone, creator_interval_id, created_at)
-    VALUES (${club}, 'First days', 'Europe/London', ${first}, ${AT.created})
+    VALUES (${club}, 'First days', ${timezone}, ${first}, ${AT.created})
   `;
   await tx`
     INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
@@ -1110,8 +1110,8 @@ describe("a proposal's week, proposed again (0013; FQ102)", () => {
 
 describe("a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, FQ129 to FQ131)", () => {
   /** A club of `count` whose first days applied: each member confirmed the days proposed for them. */
-  async function applied(tx: Tx, count: 2 | 4 = 2): Promise<FirstDays> {
-    const w = await firstDays(tx, count);
+  async function applied(tx: Tx, count: 2 | 4 = 2, timezone?: string): Promise<FirstDays> {
+    const w = await firstDays(tx, count, timezone);
     for (const [index, interval] of w.members.entries()) {
       const days = (count === 2 ? [WEEK[index], WEEK[index + 3]] : [WEEK[index]]) as (keyof typeof FIRST)[];
       await confirm(tx, w, interval, days);
@@ -1220,15 +1220,22 @@ describe("a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, 
       await refused({ replaced_by: w.proposal }, /open, at version 1, in its one week/);
       await refused({ week_revision: 2 }, /open, at version 1, in its one week/);
       await refused({ schedule_version_id: w.version }, /no week of its own/);
-      // The club's local date at AT.edited is Friday 6 November: not the day before or after, nor the Monday after.
+      // The pick is from the club's local date at the instant it opened, which the command works out in the
+      // club's zone (tests/src/db/membership-change.test.ts holds that, and a zone with an older name too).
+      // Postgres resolves no zone (ADR-008; the outside audit's A11): it refuses a date no zone puts at that
+      // instant, every zone's offset lying between -12 and +14 hours. At AT.edited, 22:00 UTC on Friday
+      // 6 November, the date is the 6th, or the 7th at +2 or more (Kyiv's Saturday): never the 5th, the 8th
+      // or the Monday after.
       await refused({ effective_from: "2026-11-05" }, /local date it opened on/);
-      await refused({ effective_from: "2026-11-07" }, /local date it opened on/);
+      await refused({ effective_from: "2026-11-08" }, /local date it opened on/);
       await refused({ effective_from: "2026-11-09" }, /local date it opened on/);
-      // Its own time zone's date, not UTC's: 23:30 UTC on 30 June is 1 July in London.
+      // Each bound to the microsecond: 1 July begins at +14 (Kiritimati) 14 hours before its midnight by UTC's
+      // clock, and ends at -12 12 hours after its last moment by UTC's.
       await refused(
-        { created_at: new Date("2026-06-30T23:30:00Z"), effective_from: "2026-06-30" },
+        { created_at: "2026-06-30T09:59:59.999999Z", effective_from: "2026-07-01" },
         /local date it opened on/,
       );
+      await refused({ created_at: "2026-07-02T12:00:00Z", effective_from: "2026-07-01" }, /local date it opened on/);
       await proposePick(tx, w.club);
       await checkAsAtCommit(tx);
       // And only one is open at a time.
@@ -1237,6 +1244,24 @@ describe("a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, 
     await rolledBack(app, async (tx) => {
       const w = await applied(tx);
       await proposePick(tx, w.club, { created_at: new Date("2026-06-30T23:30:00Z"), effective_from: "2026-07-01" });
+      await checkAsAtCommit(tx);
+    });
+    for (const createdAt of ["2026-06-30T10:00:00Z", "2026-07-02T11:59:59.999999Z"]) {
+      await rolledBack(app, async (tx) => {
+        const w = await applied(tx);
+        await proposePick(tx, w.club, { created_at: createdAt, effective_from: "2026-07-01" });
+        await checkAsAtCommit(tx);
+      });
+    }
+  });
+
+  it("never resolves the club's zone: a club whose zone no Postgres knows still opens a pick (ADR-008; the outside audit's A11)", async () => {
+    await rolledBack(app, async (tx) => {
+      // A name in the shape the clubs table takes that no zone list has. The command never writes one (its
+      // zone is one Temporal resolves: packages/domain/src/time/civil.ts `clubTimeZone`), but where Node and
+      // Postgres disagree about a name, as about US/Eastern on Ubuntu's Postgres 16, this is what Postgres sees.
+      const w = await applied(tx, 2, "Nowhere/Tadayo");
+      await proposePick(tx, w.club);
       await checkAsAtCommit(tx);
     });
   });

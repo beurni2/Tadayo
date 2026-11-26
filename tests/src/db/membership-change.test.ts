@@ -436,6 +436,37 @@ describe("when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131)", () => {
     });
   });
 
+  it("opens a pick in a club whose zone has an older name Postgres needn't know: TypeScript resolves the zone, Postgres compares (ADR-008; the outside audit's A11)", async () => {
+    await rolledBack(db, async (tx) => {
+      // US/Eastern is New York's zone under its older name. Node keeps the name as given, and some Postgres
+      // builds leave the older names out (Ubuntu's Postgres 16, here), so a Postgres that resolved the club's
+      // zone would refuse the join after the first days, for good.
+      const c = await foundedBy(tx, clock, "Ben", "US/Eastern");
+      const [club] = await tx<{ timezone: string }[]>`SELECT timezone FROM app.clubs WHERE id = ${c.club}`;
+      expect(club?.timezone).toBe("US/Eastern");
+      await join(tx, c, "Maya", "Ben");
+      await confirmOwn(tx, c, "Ben");
+      expect(await confirmOwn(tx, c, "Maya")).toMatchObject({ state: "applied" });
+      await join(tx, c, "Alex", "Ben");
+      const [pick] = await picks(tx, c);
+      expect(pick).toMatchObject({ state: "open", effective_from: TODAY });
+      expect(await heldAtFirst(tx, c, pick?.id ?? "")).toEqual({ Alex: ["wednesday", "saturday"] });
+      expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "applied", myState: "confirmed" });
+    });
+  });
+
+  it("opens the pick from the club's own date, not UTC's: a join on Sunday evening in New York, Monday by UTC (T1)", async () => {
+    await rolledBack(db, async (tx) => {
+      const c = await pair(tx);
+      // Sunday 15 November at 22:00 in New York, which is 03:00 on Monday the 16th by UTC.
+      current = Temporal.Instant.from("2026-11-16T03:00:00.123456Z");
+      clock.set(current);
+      await make(tx, c);
+      await join(tx, c, "Alex", "Ben");
+      expect(await picks(tx, c)).toMatchObject([{ state: "open", effective_from: "2026-11-15" }]);
+    });
+  });
+
   it("keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)", async () => {
     await rolledBack(db, async (tx) => {
       const c = await three(tx);

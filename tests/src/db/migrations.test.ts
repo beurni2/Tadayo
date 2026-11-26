@@ -438,3 +438,110 @@ describe("0010: each role's allowance, over counters made before it (T17, T57; a
     ).rejects.toBe(rollback);
   });
 });
+
+describe("the schema resolves no time zone: TypeScript does, and Postgres only compares (ADR-008; the outside audit's A11)", () => {
+  /**
+   * The ways SQL names or resolves a zone. A cast between a date or a timestamp and a timestamptz takes the
+   * session's zone without naming one, and is left to review: the schema's own casts are date to timestamp,
+   * which takes none.
+   */
+  const ZONES: readonly (readonly [what: string, pattern: RegExp])[] = [
+    ["AT TIME ZONE or AT LOCAL", /\bAT\s+(?:TIME\s+ZONE|LOCAL)\b/i],
+    ["timezone()", /\btimezone\(|\btimezone\s+\(\s*(?:'|\$|\w+\.)/i],
+    ["the zone lists", /\bpg_timezone_(?:names|abbrevs)\b/i],
+    [
+      "a setting of the zone",
+      /\bSET\s+(?:SESSION\s+|LOCAL\s+)?"?(?:TIME\s+ZONE|timezone)\b|\bset_config\s*\(\s*'timezone'/i,
+    ],
+  ];
+
+  const resolves = (text: string): string[] => ZONES.filter(([, pattern]) => pattern.test(text)).map(([what]) => what);
+
+  /**
+   * The text of each function, view, constraint, default, index and trigger of app's. A function is read whole, as
+   * Postgres prints it: its settings (`SET "TimeZone" TO 'UTC'`) and its body, which for a body in SQL's standard form
+   * (`RETURN …`, `BEGIN ATOMIC …`) is kept apart from `prosrc`, empty for it. An aggregate, which Postgres doesn't
+   * print, does its work in functions of its own, read here too.
+   */
+  const schemaTexts = (sql: Tx) => sql<{ what: string; text: string }[]>`
+    SELECT 'function ' || p.oid::regprocedure::text AS what,
+           CASE WHEN p.prokind = 'a' THEN p.prosrc ELSE pg_catalog.pg_get_functiondef(p.oid) END AS text
+      FROM pg_catalog.pg_proc p WHERE p.pronamespace = 'app'::regnamespace
+    UNION ALL
+    SELECT 'view ' || c.relname, pg_catalog.pg_get_viewdef(c.oid)
+      FROM pg_catalog.pg_class c WHERE c.relnamespace = 'app'::regnamespace AND c.relkind IN ('v', 'm')
+    UNION ALL
+    SELECT 'constraint ' || k.conname, pg_catalog.pg_get_constraintdef(k.oid)
+      FROM pg_catalog.pg_constraint k WHERE k.connamespace = 'app'::regnamespace
+    UNION ALL
+    SELECT 'default of ' || d.adrelid::regclass::text, pg_catalog.pg_get_expr(d.adbin, d.adrelid)
+      FROM pg_catalog.pg_attrdef d JOIN pg_catalog.pg_class c ON c.oid = d.adrelid
+     WHERE c.relnamespace = 'app'::regnamespace
+    UNION ALL
+    SELECT 'index ' || c.relname, pg_catalog.pg_get_indexdef(c.oid)
+      FROM pg_catalog.pg_class c WHERE c.relnamespace = 'app'::regnamespace AND c.relkind IN ('i', 'I')
+    UNION ALL
+    SELECT 'trigger ' || t.tgname, pg_catalog.pg_get_triggerdef(t.oid)
+      FROM pg_catalog.pg_trigger t JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
+     WHERE c.relnamespace = 'app'::regnamespace AND NOT t.tgisinternal`;
+
+  const found = (rows: readonly { what: string; text: string }[]): string[] =>
+    rows.flatMap((row) => resolves(row.text).map((what) => `${row.what}: ${what}`));
+
+  it("finds none in a function, view, constraint, default, index or trigger of app's, nor in a function's settings", async () => {
+    const rows = await admin.begin((tx) => schemaTexts(tx));
+    // The schema has each kind of object the check reads, so an empty answer isn't a check that read nothing.
+    for (const kind of ["function ", "constraint ", "default of ", "index ", "trigger "]) {
+      expect(
+        rows.some((row) => row.what.startsWith(kind)),
+        kind,
+      ).toBe(true);
+    }
+    expect(found(rows)).toEqual([]);
+  });
+
+  it("reads a function's body and its settings, and a view, from the live schema", async () => {
+    const rollback = new Error("rolled back");
+    await expect(
+      admin.begin(async (tx) => {
+        await tx.unsafe(`
+          CREATE FUNCTION app.zone_probe_body(at timestamptz) RETURNS date LANGUAGE sql
+            RETURN (at AT TIME ZONE 'Europe/London')::date;
+          CREATE FUNCTION app.zone_probe_setting() RETURNS int LANGUAGE sql SET timezone = 'UTC'
+            RETURN 1;
+          CREATE VIEW app.zone_probe_view AS SELECT name FROM pg_catalog.pg_timezone_names;`);
+        expect(found(await schemaTexts(tx))).toEqual([
+          "function app.zone_probe_body(timestamp with time zone): AT TIME ZONE or AT LOCAL",
+          "function app.zone_probe_setting(): a setting of the zone",
+          "view zone_probe_view: the zone lists",
+        ]);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it("catches each way, and leaves a date's cast, a column named timezone and the zone a test names alone", () => {
+    for (const text of [
+      "(NEW.created_at AT TIME ZONE c.timezone)::date",
+      "SELECT x at  time zone 'UTC'",
+      "NEW.created_at AT LOCAL",
+      "pg_catalog.timezone(c.timezone, NEW.created_at)",
+      "SELECT name FROM pg_catalog.pg_timezone_names",
+      "SELECT abbrev FROM pg_timezone_abbrevs",
+      "SET TIME ZONE 'Europe/London'",
+      "SET LOCAL timezone = 'UTC'",
+      "SELECT pg_catalog.set_config('timezone', 'UTC', true)",
+      `SET "TimeZone" TO 'UTC'`,
+    ]) {
+      expect(resolves(text), text).not.toEqual([]);
+    }
+    for (const text of [
+      "SELECT c.timezone FROM app.clubs c",
+      "pg_catalog.date_trunc('week', o.local_date::pg_catalog.timestamp)",
+      "EXTRACT(epoch FROM NEW.effective_from::pg_catalog.timestamp)",
+      "timezone text NOT NULL CHECK (pg_catalog.char_length(timezone) <= 64)",
+    ]) {
+      expect(resolves(text), text).toEqual([]);
+    }
+  });
+});

@@ -993,3 +993,117 @@ describe("only the time module reads a clock (T1)", () => {
     TIMEOUT,
   );
 });
+
+// Nor does SQL resolve a zone: the time module resolves every one with Temporal, and Postgres only compares instants
+// and dates (ADR-008). Postgres's zone list is its own, and need not have a name Node takes: Node keeps an older name as
+// given (US/Eastern, Europe/Kiev), and some Postgres builds leave those names out (Ubuntu's Postgres 16 does), so a
+// trigger that resolved the club's zone failed every join after the first days in such a club (the outside audit's
+// A11). The scan reads the server's code and SQL a line at a time, as the clock's does; the live schema's own check,
+// after every migration has run, is tests/src/db/migrations.test.ts's. A cast between a date or a timestamp and a
+// timestamptz takes the session's zone without naming one, and is left to review.
+
+/** The ways SQL names or resolves a zone: those tests/src/db/migrations.test.ts reads the live schema for, and the client's setting. */
+const ZONES = [
+  { what: "AT TIME ZONE or AT LOCAL", pattern: /\bAT\s+(?:TIME\s+ZONE|LOCAL)\b/i },
+  // A call, `timezone(` or with a space before an argument, not prose's "timezone (T2)".
+  { what: "timezone()", pattern: /\btimezone\(|\btimezone\s+\(\s*(?:'|\$|\w+\.)/i },
+  { what: "the zone lists", pattern: /\bpg_timezone_(?:names|abbrevs)\b/i },
+  {
+    what: "a setting of the zone",
+    pattern: /\bSET\s+(?:SESSION\s+|LOCAL\s+)?"?(?:TIME\s+ZONE|timezone)\b|\bset_config\s*\(\s*'timezone'/i,
+  },
+  // The database client's setting of the session's zone, in the case Postgres's setting has (a field named
+  // `timezone` is a club's or a device's zone name).
+  { what: "the client's TimeZone setting", pattern: /\bTimeZone\s*:/ },
+] as const;
+
+/** Lines that name a zone in SQL, each with its reason. */
+const ZONES_KEPT: readonly { file: string; line: string; why: string }[] = [
+  {
+    file: join("db", "migrations", "0015_new_member_day.sql"),
+    line: "IF NEW.effective_from IS DISTINCT FROM (SELECT (NEW.created_at AT TIME ZONE c.timezone)::date",
+    why: "0015 has run in every environment and is never edited; 0019 replaces app.schedule_change_start_guard with a check that resolves no zone, which the live schema's check holds",
+  },
+];
+
+/** Each line of `text` that names or resolves a zone in SQL, as "file:line: what", leaving out the lines kept. */
+export function zoneResolutions(file: string, text: string): string[] {
+  const found: string[] = [];
+  text.split("\n").forEach((line, index) => {
+    if (ZONES_KEPT.some((kept) => kept.file === file && kept.line === line.trim())) return;
+    for (const zone of ZONES) {
+      if (zone.pattern.test(line)) found.push(`${file}:${String(index + 1)}: ${zone.what}`);
+    }
+  });
+  return found;
+}
+
+describe("only the time module resolves a time zone; SQL compares instants and dates (ADR-008, T2; the outside audit's A11)", () => {
+  it("finds no code or SQL of the server's that names or resolves one", () => {
+    const found = productFiles().flatMap((file) => zoneResolutions(file, readFileSync(join(ROOT, file), "utf8")));
+    expect(found).toEqual([]);
+  });
+
+  it("keeps only lines that are still there, each with its reason", () => {
+    for (const kept of ZONES_KEPT) {
+      const lines = readFileSync(join(ROOT, kept.file), "utf8")
+        .split("\n")
+        .map((line) => line.trim());
+      expect(lines, kept.file).toContain(kept.line);
+      expect(kept.why).not.toBe("");
+    }
+  });
+
+  it("catches each way of naming or resolving one", () => {
+    for (const line of [
+      "IF NEW.effective_from <> (NEW.created_at AT TIME ZONE c.timezone)::date THEN",
+      "SELECT x at  time zone 'UTC'",
+      "SELECT NEW.created_at AT LOCAL",
+      "SELECT pg_catalog.timezone(c.timezone, NEW.created_at)",
+      "SELECT timezone ('Europe/London', o.reveal_at)",
+      "SELECT name FROM pg_catalog.pg_timezone_names",
+      "SELECT abbrev FROM pg_timezone_abbrevs",
+      "SET TIME ZONE 'Europe/London';",
+      "await sql`SET LOCAL timezone = 'UTC'`;",
+      "ALTER ROLE tadayo_app SET timezone TO 'UTC';",
+      `ALTER FUNCTION app.f() SET "TimeZone" TO 'UTC';`,
+      "SELECT pg_catalog.set_config('timezone', 'UTC', true)",
+      "const sql = postgres(url, { connection: { TimeZone: 'UTC' } });",
+    ]) {
+      expect(zoneResolutions("x.sql", line), line).toHaveLength(1);
+    }
+  });
+
+  it("keeps every zone's offset between -12 and +14 hours to 2036, the bound migration 0019's check of a pick's date takes", () => {
+    const sql = readFileSync(join(ROOT, "db", "migrations", "0019_pick_date_without_zone.sql"), "utf8");
+    // A date begins at +14, 14 hours before its midnight by UTC's clock, and ends at -12, 36 hours after it.
+    expect(sql).toContain("since_midnight < -14 * 3600 OR since_midnight >= 36 * 3600");
+    const end = Temporal.Instant.from("2037-01-01T00:00:00Z");
+    const outside: string[] = [];
+    // Every zone Node lists, and Etc's two ends, which Temporal resolves though Node doesn't list them.
+    for (const zone of [...Intl.supportedValuesOf("timeZone"), "Etc/GMT+12", "Etc/GMT-14"]) {
+      let at: Temporal.ZonedDateTime | null = Temporal.Instant.from("2026-01-01T00:00:00Z").toZonedDateTimeISO(zone);
+      while (at !== null && Temporal.Instant.compare(at.toInstant(), end) < 0) {
+        const hours = at.offsetNanoseconds / 3_600_000_000_000;
+        if (hours < -12 || hours > 14) outside.push(`${zone} at ${at.toString()}`);
+        at = at.getTimeZoneTransition("next");
+      }
+    }
+    expect(outside).toEqual([]);
+  });
+
+  it("leaves a column named timezone, the time module's own name for it, and a date's cast alone", () => {
+    for (const line of [
+      "SELECT c.timezone FROM app.clubs c WHERE c.id = ${clubId} FOR UPDATE",
+      "timezone = clubTimeZone(input.timezone);",
+      "readonly timezone: string;",
+      "timezone text NOT NULL CHECK (",
+      "pg_catalog.date_trunc('week', o.local_date::pg_catalog.timestamp)",
+      "EXTRACT(epoch FROM NEW.effective_from::pg_catalog.timestamp)",
+      "now.toZonedDateTimeISO(clubTimeZone(timezone)).toPlainDate()",
+      '"timezone (T2). Clients target its id, never a weekday (spec 05).",',
+    ]) {
+      expect(zoneResolutions("x.ts", line), line).toEqual([]);
+    }
+  });
+});
