@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (111 tests | 1 failed) 571ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (5)
+     × finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 110 passed (111)
+   Start at  02:45:28
+   Duration  1.31s (tests 48%, import 41%, transform 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one
+AssertionError: expected [] to deeply equal [ 'Ben said "go" at the pier' ]
+
+- Expected
++ Received
+
+- [
+-   "Ben said \"go\" at the pier",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2702:62
+    2700|     expect(plain.within("SATURDAY PEOPLE", false)).toEqual(["Saturday …
+    2701|     // A body logged whole holds the caption's quotes escaped.
+    2702|     expect(plain.within(JSON.stringify({ caption }), false)).toEqual([…
+       |                                                              ^
+    2703|     expect(plain.within("Saturday", false)).toEqual([]);
+    2704|     const cut = new Needles(["Saturday People", caption], { cuts: true…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

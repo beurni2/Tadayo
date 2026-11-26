@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (111 tests | 2 failed) 555ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (5)
+     × finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one 10ms
+     × catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 109 passed (111)
+   Start at  02:45:26
+   Duration  1.27s (tests 49%, import 38%, transform 13%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one
+AssertionError: expected [] to deeply equal [ 'Saturday People' ]
+
+- Expected
++ Received
+
+- [
+-   "Saturday People",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2699:59
+    2697|     const caption = 'Ben said "go" at the pier';
+    2698|     const plain = new Needles(["Saturday People", caption]);
+    2699|     expect(plain.within("served saturday people", false)).toEqual(["Sa…
+       |                                                           ^
+    2700|     expect(plain.within("SATURDAY PEOPLE", false)).toEqual(["Saturday …
+    2701|     // A body logged whole holds the caption's quotes escaped.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON
+AssertionError: a caption lower-cased: : expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2751:9
+    2749|         found.some((problem) => expected.test(problem)),
+    2750|         `${what}: ${found.join("; ")}`,
+    2751|       ).toBe(true);
+       |         ^
+    2752|     }
+    2753|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

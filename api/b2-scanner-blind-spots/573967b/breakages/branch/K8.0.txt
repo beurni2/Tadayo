@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (17 tests | 1 failed) 223ms
+   ❯ the redaction list (T52) (10)
+     × blanks bindings set later, a child's whose own log formatter would keep them, and a `msg` among a line's fields (the round-2 review) 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:45:33
+   Duration  754ms (import 37%, tests 35%, transform 27%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks bindings set later, a child's whose own log formatter would keep them, and a `msg` among a line's fields (the round-2 review)
+AssertionError: expected { Object (level, time, ...) } to match object { msg: 'set later', step: 2, …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "caption": "[redacted]",
+    "deep": {
+      "inner": {
+-       "comment_text": "[redacted]",
++       "comment_text": "SECRET-SET-COMMENT",
+      },
+    },
+    "msg": "set later",
+    "step": 2,
+  }
+
+ ❯ src/logging.test.ts:184:17
+    182|     app.log.info({ msg: "SECRET-MSG-FIELD", op: "probe" });
+    183|     const [set, own, field] = parse(lines);
+    184|     expect(set).toMatchObject({
+       |                 ^
+    185|       msg: "set later",
+    186|       step: 2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

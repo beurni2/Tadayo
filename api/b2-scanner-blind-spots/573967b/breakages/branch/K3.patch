@@ -1,0 +1,10 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -676,7 +676,6 @@
+     (word, index) =>
+       NEVER_WORDS.has(word) ||
+       NEVER_WORDS.has(`${word}${words[index + 1] ?? ""}`) ||
+-      NEVER_STARTS.test(word) ||
+       (NEVER_ENDINGS.test(word) && !PLAIN_WORDS.has(word)),
+   );
+ }

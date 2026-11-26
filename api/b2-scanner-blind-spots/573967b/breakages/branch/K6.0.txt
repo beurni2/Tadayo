@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (111 tests | 2 failed) 491ms
+   ❯ the API's log as the scanner reads it (T52, T16; the outside audit's A14) (5)
+     × finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one 10ms
+     × catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON 3ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 109 passed (111)
+   Start at  02:45:30
+   Duration  1.15s (tests 49%, import 37%, transform 14%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > finds a needle in any case and as JSON escapes it, and, with cuts, a value of 8 characters or more inside one
+AssertionError: expected [] to deeply equal [ 'Saturday People' ]
+
+- Expected
++ Received
+
+- [
+-   "Saturday People",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2706:43
+    2704|     const cut = new Needles(["Saturday People", caption], { cuts: true…
+    2705|     expect(cut.size).toBe(2);
+    2706|     expect(cut.within("Saturday", false)).toEqual(["Saturday People"]);
+       |                                           ^
+    2707|     expect(cut.within("saturday peopl", false)).toEqual(["Saturday Peo…
+    2708|     expect(cut.within("at the pier", false)).toEqual([caption]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the API's log as the scanner reads it (T52, T16; the outside audit's A14) > catches a caption, a name, a club's name, a kept-back value, a token, a URL, a key it doesn't write and a line that isn't JSON
+AssertionError: a club's name cut short: : expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2751:9
+    2749|         found.some((problem) => expected.test(problem)),
+    2750|         `${what}: ${found.join("; ")}`,
+    2751|       ).toBe(true);
+       |         ^
+    2752|     }
+    2753|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14c-ctl/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 1 failed | 27 skipped) 81617ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 80418ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 27 skipped (29)
+   Start at  04:21:27
+   Duration  83.18s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 5, first: [ …(5) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 5,
++   "first": [
++     "active, past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_ykX3p_ebgxTFhqyR-KgW8A\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_Cv-1TJJy6p-PQy8LEg4bVg\",\"id\":\"occ_3C9cssFUFah_QlNgBNnITQ\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 53229fc7cda4\",\"membership_id\":\"mem_zNaXweu9yXWnUMXTzG0KUA\"}}}], not [{\"cover_drop_id\":\"drp_ykX3p_ebgxTFhqyR-KgW8A\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_Cv-1TJJy6p-PQy8LEg4bVg\",\"id\":\"occ_3C9cssFUFah_QlNgBNnITQ\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 53229fc7cda4\",\"membership_id\":\"mem_zNaXweu9yXWnUMXTzG0KUA\"}}}]",
++     "withdrawn, past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_0P43GwdnXEp3T1aeDFFsUw\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_75M234mTRUuESB6Ug4rmRg\",\"id\":\"occ_QDnx36ZccXyGLL1a80-MJg\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 4b1ad287c9c2\",\"membership_id\":\"mem_IBpi3Hgf4VsQLreMOyQVng\"}}}], not [{\"cover_drop_id\":\"drp_0P43GwdnXEp3T1aeDFFsUw\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_75M234mTRUuESB6Ug4rmRg\",\"id\":\"occ_QDnx36ZccXyGLL1a80-MJg\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 4b1ad287c9c2\",\"membership_id\":\"mem_IBpi3Hgf4VsQLreMOyQVng\"}}}]",
++     "removed by moderation, past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_erChfM1R762svC-x-oyoMg\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_7xIdZ4pkWzMWKn8-YIg33g\",\"id\":\"occ_AJ5o1Hbx7Rbd_e5zHM6UZQ\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 627d46a5aef0\",\"membership_id\":\"mem_e7eyzmmlI7YJMJeSYGYPYA\"}}}], not [{\"cover_drop_id\":\"drp_erChfM1R762svC-x-oyoMg\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_7xIdZ4pkWzMWKn8-YIg33g\",\"id\":\"occ_AJ5o1Hbx7Rbd_e5zHM6UZQ\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 627d46a5aef0\",\"membership_id\":\"mem_e7eyzmmlI7YJMJeSYGYPYA\"}}}]",
++     "held (T29), past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_l0C9nBsEemXkbE4LlXIuDA\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_MVI9fFvP2utJ4gP8u3-xZQ\",\"id\":\"occ_s3QSPw4TyDtk0lf8JtY1xA\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana c3fd165fd1d7\",\"membership_id\":\"mem_sOCR4npiz3Ch2D6CT4_ppg\"}}}], not [{\"cover_drop_id\":\"drp_l0C9nBsEemXkbE4LlXIuDA\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_MVI9fFvP2utJ4gP8u3-xZQ\",\"id\":\"occ_s3QSPw4TyDtk0lf8JtY1xA\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana c3fd165fd1d7\",\"membership_id\":\"mem_sOCR4npiz3Ch2D6CT4_ppg\"}}}]",
++     "its author's account being deleted (T27), past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_O320IIBfxH5iDLOu3Vtz5w\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_8E9g4HYUBxLbR1RyNS6XFg\",\"id\":\"occ_0r1ErNvu9GyqOpoEGVihgA\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 95651fb1c08e\",\"membership_id\":\"mem_XbydYrQmpaf2hk2iy9hkGQ\"}}}], not [{\"cover_drop_id\":\"drp_O320IIBfxH5iDLOu3Vtz5w\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_8E9g4HYUBxLbR1RyNS6XFg\",\"id\":\"occ_0r1ErNvu9GyqOpoEGVihgA\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 95651fb1c08e\",\"membership_id\":\"mem_XbydYrQmpaf2hk2iy9hkGQ\"}}}]",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3174:66
+    3172|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3173|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3174|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3175|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3176|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

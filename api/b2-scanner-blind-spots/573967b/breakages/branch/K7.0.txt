@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (17 tests | 1 failed) 241ms
+   ❯ the redaction list (T52) (10)
+     × gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review) 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:45:31
+   Duration  833ms (import 34%, tests 33%, transform 32%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review)
+AssertionError: expected { Object (level, time, ...) } to match object { msg: 'error', …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "err": {
+      "code": "23505",
+      "type": "Error",
+    },
+-   "msg": "error",
++   "msg": "duplicate key value (caption)=(SECRET-ROW) signed-in.person@example.invalid",
+  }
+
+ ❯ src/logging.test.ts:265:21
+    263|     expect(entries).toHaveLength(4);
+    264|     for (const entry of entries.slice(0, 3)) {
+    265|       expect(entry).toMatchObject({ msg: ERROR_MESSAGE, err: { type: "…
+       |                     ^
+    266|     }
+    267|     expect(lines.join("")).not.toMatch(/SECRET-ROW|duplicate|example\.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

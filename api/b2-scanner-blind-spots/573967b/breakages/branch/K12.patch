@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -245,7 +245,7 @@
+ export function redactLine(fields: Record<string, unknown>): Record<string, unknown> {
+   const { err, msg, ...rest } = fields;
+   const out = redact(rest, new Set()) as Record<string, unknown>;
+-  if (msg !== undefined) out.msg = BLANKED;
++  if (msg !== undefined) out.msg = msg;
+   return err === undefined ? out : { ...out, err };
+ }
+ 

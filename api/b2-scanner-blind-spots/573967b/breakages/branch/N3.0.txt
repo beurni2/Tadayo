@@ -1,0 +1,147 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+stdout | src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14, T27, T53) > answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find
+callers without a session: 183160 answers scanned
+
+stdout | src/privacy/matrix.test.ts > the API's log, at production's level (T52, T16; the outside audit's A14) > wrote one request line for every request, and no line holds content, a kept-back value or a token
+the API's log: 192681 lines read twice, for 183161 requests, against 857 texts, 162 kept-back values and 46 tokens
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 2 failed | 27 skipped) 93104ms
+   ❯ callers without a session, in each state of the drop and phase of the day (T14, T27, T53) (1)
+     × answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find 89847ms
+   ❯ the API's log, at production's level (T52, T16; the outside audit's A14) (1)
+     × wrote one request line for every request, and no line holds content, a kept-back value or a token 2983ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 27 skipped (29)
+   Start at  04:10:22
+   Duration  94.65s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14, T27, T53) > answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find
+AssertionError: expected { count: 19040, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 19040,
++   "first": [
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a request's or answer's token at $.trouble (T52)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:4554:64
+    4552|     }
+    4553|     console.log(`callers without a session: ${String(counted.answers)}…
+    4554|     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual…
+       |                                                                ^
+    4555|     expect(counted.answers).toBe(counted.expected);
+    4556|     expect(counted.answers).toBeGreaterThan(STATES.length * Object.key…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the API's log, at production's level (T52, T16; the outside audit's A14) > wrote one request line for every request, and no line holds content, a kept-back value or a token
+AssertionError: expected [ …(40) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "line 3, read again: a value the world keeps back at $.trouble",
++   "line 3, read again: a request's or answer's token at $.trouble (T52)",
++   "line 23, read again: a value the world keeps back at $.trouble",
++   "line 23, read again: a request's or answer's token at $.trouble (T52)",
++   "line 43, read again: a value the world keeps back at $.trouble",
++   "line 43, read again: a request's or answer's token at $.trouble (T52)",
++   "line 63, read again: a value the world keeps back at $.trouble",
++   "line 63, read again: a request's or answer's token at $.trouble (T52)",
++   "line 83, read again: a value the world keeps back at $.trouble",
++   "line 83, read again: a request's or answer's token at $.trouble (T52)",
++   "line 107, read again: a value the world keeps back at $.trouble",
++   "line 107, read again: a request's or answer's token at $.trouble (T52)",
++   "line 109, read again: a value the world keeps back at $.trouble",
++   "line 109, read again: a request's or answer's token at $.trouble (T52)",
++   "line 111, read again: a value the world keeps back at $.trouble",
++   "line 111, read again: a request's or answer's token at $.trouble (T52)",
++   "line 167, read again: a value the world keeps back at $.trouble",
++   "line 167, read again: a request's or answer's token at $.trouble (T52)",
++   "line 169, read again: a value the world keeps back at $.trouble",
++   "line 169, read again: a request's or answer's token at $.trouble (T52)",
++   "line 171, read again: a value the world keeps back at $.trouble",
++   "line 171, read again: a request's or answer's token at $.trouble (T52)",
++   "line 227, read again: a value the world keeps back at $.trouble",
++   "line 227, read again: a request's or answer's token at $.trouble (T52)",
++   "line 229, read again: a value the world keeps back at $.trouble",
++   "line 229, read again: a request's or answer's token at $.trouble (T52)",
++   "line 231, read again: a value the world keeps back at $.trouble",
++   "line 231, read again: a request's or answer's token at $.trouble (T52)",
++   "line 287, read again: a value the world keeps back at $.trouble",
++   "line 287, read again: a request's or answer's token at $.trouble (T52)",
++   "line 289, read again: a value the world keeps back at $.trouble",
++   "line 289, read again: a request's or answer's token at $.trouble (T52)",
++   "line 291, read again: a value the world keeps back at $.trouble",
++   "line 291, read again: a request's or answer's token at $.trouble (T52)",
++   "line 347, read again: a value the world keeps back at $.trouble",
++   "line 347, read again: a request's or answer's token at $.trouble (T52)",
++   "line 349, read again: a value the world keeps back at $.trouble",
++   "line 349, read again: a request's or answer's token at $.trouble (T52)",
++   "line 351, read again: a value the world keeps back at $.trouble",
++   "line 351, read again: a request's or answer's token at $.trouble (T52)",
++ ]
+
+ ❯ src/privacy/matrix.test.ts:4573:32
+    4571|         `${String(logFacts.secrets.size)} tokens`,
+    4572|     );
+    4573|     expect(wrong.slice(0, 40)).toEqual([]);
+       |                                ^
+    4574|     expect(logAnswers).toBeGreaterThan(0);
+    4575|     expect(lineCounts(0, 0)).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

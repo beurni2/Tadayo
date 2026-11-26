@@ -1,0 +1,20 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -2026,7 +2026,7 @@
+   add(needle: string): this {
+     if (needle === "" || this.#needles.has(needle)) return this;
+     this.#needles.add(needle);
+-    for (const form of new Set([needle, JSON.stringify(needle).slice(1, -1)].map((one) => one.toLowerCase()))) {
++    for (const form of new Set([needle, JSON.stringify(needle).slice(1, -1)].map((one) => one))) {
+       if (this.#forms.has(form)) continue;
+       this.#forms.set(form, needle);
+       if (form.length < SHORTEST_TEXT) {
+@@ -2049,7 +2049,7 @@
+    * `value` when it has SHORTEST_CUT characters or more.
+    */
+   within(value: string, shortInside: boolean): string[] {
+-    const lower = value.toLowerCase();
++    const lower = value;
+     const found = new Set<string>();
+     const needle = (form: string) => found.add(this.#forms.get(form) ?? form);
+     if (this.#forms.has(lower)) needle(lower);

@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (111 tests | 2 failed) 480ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (10)
+     × reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time 10ms
+     × catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home 27ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 109 passed (111)
+   Start at  02:45:23
+   Duration  1.15s (tests 46%, import 42%, transform 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > reads a key's words in snake_case and camelCase, and finds a never-word, a word's media ending and a time
+AssertionError: post_id: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/privacy/scanner.test.ts:2368:34
+    2366|       "missing",
+    2367|     ])
+    2368|       expect(neverKey(key), key).toBe(true);
+       |                                  ^
+    2369|     for (const key of [
+    2370|       "id",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > catches the audit's keys around the cards once the contract names them: on the day, under its viewer, an own day, an allowance, a club and a waiting Home
+AssertionError: post_id on the day's occurrence: expected [ 'whitelist' ] to deeply equal [ 'keys', 'whitelist' ]
+
+- Expected
++ Received
+
+  [
+-   "keys",
+    "whitelist",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2513:35
+    2511|     for (const [what, additions, id, body, where, caught] of cases) {
+    2512|       const found = scan(answer(body), context(id, cleo, { document: w…
+    2513|       expect(checks(found), what).toEqual(caught);
+       |                                   ^
+    2514|       expect(at(found, "whitelist"), what).toEqual([where]);
+    2515|       // With the contract as it is, the shape check finds it too.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

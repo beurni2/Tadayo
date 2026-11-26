@@ -1,0 +1,298 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+stdout | src/privacy/matrix.test.ts > the API's log, at production's level (T52, T16; the outside audit's A14) > wrote one request line for every request, and no line holds content, a kept-back value or a token
+the API's log: 68348 lines read twice, for 68348 requests, against 888 texts, 683 kept-back values and 516 tokens
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 2 failed | 27 skipped) 91543ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 90143ms
+   ❯ the API's log, at production's level (T52, T16; the outside audit's A14) (1)
+     × wrote one request line for every request, and no line holds content, a kept-back value or a token 1064ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 27 skipped (29)
+   Start at  04:12:05
+   Duration  93.14s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 190, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 190,
++   "first": [
++     "active, collecting, the API's log: 0 request lines for request 1724",
++     "active, collecting, the API's log: 2 request lines for request 1725",
++     "active, collecting, the API's log: 0 request lines for request 1726",
++     "active, collecting, the API's log: 2 request lines for request 1727",
++     "active, collecting, the API's log: 0 request lines for request 1728",
++     "active, collecting, the API's log: 2 request lines for request 1729",
++     "active, collecting, the API's log: 0 request lines for request 1730",
++     "active, collecting, the API's log: 2 request lines for request 1731",
++     "active, collecting, the API's log: 0 request lines for request 1732",
++     "active, collecting, the API's log: 2 request lines for request 1733",
++     "active, collecting, the API's log: 0 request lines for request 1734",
++     "active, collecting, the API's log: 2 request lines for request 1735",
++     "active, collecting, the API's log: 0 request lines for request 1736",
++     "active, collecting, the API's log: 2 request lines for request 1737",
++     "active, collecting, the API's log: 0 request lines for request 1738",
++     "active, collecting, the API's log: 2 request lines for request 1739",
++     "active, open, the API's log: 0 request lines for request 3589",
++     "active, past, the API's log: 2 request lines for request 4970",
++     "active, past, a year on, the API's log: 0 request lines for request 6348",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8607",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8608",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8609",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8610",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8611",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8612",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8613",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8614",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8615",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8616",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8617",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8618",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8619",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8620",
++     "withdrawn, collecting, the API's log: 2 request lines for request 8621",
++     "withdrawn, collecting, the API's log: 0 request lines for request 8622",
++     "withdrawn, open, the API's log: 2 request lines for request 10472",
++     "withdrawn, past, the API's log: 0 request lines for request 11853",
++     "withdrawn, past, a year on, the API's log: 2 request lines for request 13231",
++     "removed by moderation, collecting, the API's log: 0 request lines for request 15490",
++     "removed by moderation, collecting, the API's log: 2 request lines for request 15491",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3218:66
+    3216|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3217|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3218|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3219|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3220|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the API's log, at production's level (T52, T16; the outside audit's A14) > wrote one request line for every request, and no line holds content, a kept-back value or a token
+AssertionError: expected [ …(190) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "0 request lines for request 1724",
++   "2 request lines for request 1725",
++   "0 request lines for request 1726",
++   "2 request lines for request 1727",
++   "0 request lines for request 1728",
++   "2 request lines for request 1729",
++   "0 request lines for request 1730",
++   "2 request lines for request 1731",
++   "0 request lines for request 1732",
++   "2 request lines for request 1733",
++   "0 request lines for request 1734",
++   "2 request lines for request 1735",
++   "0 request lines for request 1736",
++   "2 request lines for request 1737",
++   "0 request lines for request 1738",
++   "2 request lines for request 1739",
++   "0 request lines for request 3589",
++   "2 request lines for request 4970",
++   "0 request lines for request 6348",
++   "2 request lines for request 8607",
++   "0 request lines for request 8608",
++   "2 request lines for request 8609",
++   "0 request lines for request 8610",
++   "2 request lines for request 8611",
++   "0 request lines for request 8612",
++   "2 request lines for request 8613",
++   "0 request lines for request 8614",
++   "2 request lines for request 8615",
++   "0 request lines for request 8616",
++   "2 request lines for request 8617",
++   "0 request lines for request 8618",
++   "2 request lines for request 8619",
++   "0 request lines for request 8620",
++   "2 request lines for request 8621",
++   "0 request lines for request 8622",
++   "2 request lines for request 10472",
++   "0 request lines for request 11853",
++   "2 request lines for request 13231",
++   "0 request lines for request 15490",
++   "2 request lines for request 15491",
++   "0 request lines for request 15492",
++   "2 request lines for request 15493",
++   "0 request lines for request 15494",
++   "2 request lines for request 15495",
++   "0 request lines for request 15496",
++   "2 request lines for request 15497",
++   "0 request lines for request 15498",
++   "2 request lines for request 15499",
++   "0 request lines for request 15500",
++   "2 request lines for request 15501",
++   "0 request lines for request 15502",
++   "2 request lines for request 15503",
++   "0 request lines for request 15504",
++   "2 request lines for request 15505",
++   "0 request lines for request 17355",
++   "2 request lines for request 18736",
++   "0 request lines for request 20114",
++   "2 request lines for request 22373",
++   "0 request lines for request 22374",
++   "2 request lines for request 22375",
++   "0 request lines for request 22376",
++   "2 request lines for request 22377",
++   "0 request lines for request 22378",
++   "2 request lines for request 22379",
++   "0 request lines for request 22380",
++   "2 request lines for request 22381",
++   "0 request lines for request 22382",
++   "2 request lines for request 22383",
++   "0 request lines for request 22384",
++   "2 request lines for request 22385",
++   "0 request lines for request 22386",
++   "2 request lines for request 22387",
++   "0 request lines for request 22388",
++   "2 request lines for request 24238",
++   "0 request lines for request 25619",
++   "2 request lines for request 26997",
++   "0 request lines for request 29256",
++   "2 request lines for request 29257",
++   "0 request lines for request 29258",
++   "2 request lines for request 29259",
++   "0 request lines for request 29260",
++   "2 request lines for request 29261",
++   "0 request lines for request 29262",
++   "2 request lines for request 29263",
++   "0 request lines for request 29264",
++   "2 request lines for request 29265",
++   "0 request lines for request 29266",
++   "2 request lines for request 29267",
++   "0 request lines for request 29268",
++   "2 request lines for request 29269",
++   "0 request lines for request 29270",
++   "2 request lines for request 29271",
++   "0 request lines for request 31093",
++   "2 request lines for request 32462",
++   "0 request lines for request 33831",
++   "2 request lines for request 36081",
++   "0 request lines for request 36082",
++   "2 request lines for request 36083",
++   "0 request lines for request 36084",
++   "2 request lines for request 36085",
++   "0 request lines for request 36086",
++   "2 request lines for request 36087",
++   "0 request lines for request 36088",
++   "2 request lines for request 36089",
++   "0 request lines for request 36090",
++   "2 request lines for request 36091",
++   "0 request lines for request 36092",
++   "2 request lines for request 36093",
++   "0 request lines for request 36094",
++   "2 request lines for request 36095",
++   "0 request lines for request 36096",
++   "2 request lines for request 37870",
++   "0 request lines for request 39191",
++   "2 request lines for request 40512",
++   "0 request lines for request 42713",
++   "2 request lines for request 42714",
++   "0 request lines for request 42715",
++   "2 request lines for request 42716",
++   "0 request lines for request 42717",
++   "2 request lines for request 42718",
++   "0 request lines for request 42719",
++   "2 request lines for request 42720",
++   "0 request lines for request 42721",
++   "2 request lines for request 42722",
++   "0 request lines for request 42723",
++   "2 request lines for request 42724",
++   "0 request lines for request 42725",
++   "2 request lines for request 42726",
++   "0 request lines for request 42727",
++   "2 request lines for request 42728",
++   "0 request lines for request 44550",
++   "2 request lines for request 45919",
++   "0 request lines for request 47288",
++   "2 request lines for request 49538",
++   "0 request lines for request 49539",
++   "2 request lines for request 49540",
++   "0 request lines for request 49541",
++   "2 request lines for request 49542",
++   "0 request lines for request 49543",
++   "2 request lines for request 49544",
++   "0 request lines for request 49545",
++   "2 request lines for request 49546",
++   "0 request lines for request 49547",
++   "2 request lines for request 49548",
++   "0 request lines for request 49549",
++   "2 request lines for request 49550",
++   "0 request lines for request 49551",
++   "2 request lines for request 49552",
++   "0 request lines for request 49553",
++   "2 request lines for request 51403",
++   "0 request lines for request 52784",
++   "2 request lines for request 54162",
++   "0 request lines for request 56421",
++   "2 request lines for request 56422",
++   "0 request lines for request 56423",
++   "2 request lines for request 56424",
++   "0 request lines for request 56425",
++   "2 request lines for request 56426",
++   "0 request lines for request 56427",
++   "2 request lines for request 56428",
++   "0 request lines for request 56429",
++   "2 request lines for request 56430",
++   "0 request lines for request 56431",
++   "2 request lines for request 56432",
++   "0 request lines for request 56433",
++   "2 request lines for request 56434",
++   "0 request lines for request 56435",
++   "2 request lines for request 56436",
++   "0 request lines for request 58258",
++   "2 request lines for request 59627",
++   "0 request lines for request 60996",
++   "2 request lines for request 63246",
++   "0 request lines for request 63247",
++   "2 request lines for request 63248",
++   "0 request lines for request 63249",
++   "2 request lines for request 63250",
++   "0 request lines for request 63251",
++   "2 request lines for request 63252",
++   "0 request lines for request 63253",
++   "2 request lines for request 63254",
++   "0 request lines for request 63255",
++   "2 request lines for request 63256",
++   "0 request lines for request 63257",
++   "2 request lines for request 63258",
++   "0 request lines for request 63259",
++   "2 request lines for request 63260",
++   "0 request lines for request 63261",
++   "2 request lines for request 65083",
++   "0 request lines for request 66452",
++   "2 request lines for request 67821",
++ ]
+
+ ❯ src/privacy/matrix.test.ts:4575:30
+    4573|     expect(wrong.slice(0, 40)).toEqual([]);
+    4574|     expect(logAnswers).toBeGreaterThan(0);
+    4575|     expect(lineCounts(0, 0)).toEqual([]);
+       |                              ^
+    4576|     expect(logLines.filter(isRequestLine)).toHaveLength(sentTo(app));
+    4577|     expect(sentTo(app)).toBeGreaterThanOrEqual(logAnswers);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,21 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -615,18 +615,6 @@
+     "timestamp",
+     "created",
+     "updated",
+-    "post",
+-    "video",
+-    "taken",
+-    "length",
+-    "w",
+-    "h",
+-    "dims",
+-    "mime",
+-    "remaining",
+-    "missing",
+-    "empty",
+-    "slotsleft",
+   ].flatMap((word) => [word, `${word}s`]),
+ );
+ 

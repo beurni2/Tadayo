@@ -1,0 +1,146 @@
+[
+ {
+  "name": "K1",
+  "what": "what has opened back off the lists as d76b977 had it: the day link's and the seven opened schemas' lists gone, and the closed world skipping them",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "holds its own key list for every object schema an answer can hold before a day",
+   "holds what has opened to its list"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K2",
+  "what": "the round's new never-words gone: a post, a video, taken, a length, w, h, dims, mime, remaining, missing, empty, slots left",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "post_id"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K3",
+  "what": "a highlight at a word's start no longer caught",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "reads a key's words in snake_case and camelCase",
+   "highlighted"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K4",
+  "what": "the log's needles matched in their own case only",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "finds a needle in any case and as JSON escapes it",
+   "saturday people"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K5",
+  "what": "the log's needles not looked for as JSON escapes them",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "finds a needle in any case and as JSON escapes it",
+   "JSON\\.stringify\\(\\{ caption \\}\\)"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K6",
+  "what": "no cuts: a value inside a text people wrote no longer found",
+  "run": "unit: tests src/privacy/scanner.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "finds a needle in any case and as JSON escapes it",
+   "catches a caption, a name, a club's name, a kept-back value",
+   "cut short"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K7",
+  "what": "a line with an error and no message of its own: pino's copy of the error's message (no logMethod hook)",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "gives a line with an error and no message of its own a fixed one"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K8",
+  "what": "bindings set later not redacted (setBindings unpatched)",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "FAILED, words missing",
+  "found": [
+   "blanks bindings set later"
+  ],
+  "missing": [
+   "SECRET-SET-CAPTION"
+  ]
+ },
+ {
+  "name": "K9",
+  "what": "a child's own log formatter not followed by redactLine",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "blanks bindings set later",
+   "photoUrl"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K10",
+  "what": "pino's own redaction of the list, main's, gone from beneath",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "keeps pino's own redaction of the list beneath it"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K11",
+  "what": "the round's new content words gone: content, query, search, reason, username, nickname",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "blanks a key the list doesn't spell when a word of it is a content word",
+   "MARKER-must-never-appear"
+  ],
+  "missing": []
+ },
+ {
+  "name": "K12",
+  "what": "a `msg` among a line's fields not blanked",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "blanks bindings set later",
+   "SECRET-MSG-FIELD"
+  ],
+  "missing": []
+ }
+]

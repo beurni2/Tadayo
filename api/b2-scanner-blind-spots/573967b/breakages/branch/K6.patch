@@ -1,0 +1,11 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -2057,7 +2057,7 @@
+     for (let at = 0; at + SHORTEST_TEXT <= lower.length; at += 1)
+       for (const form of this.#byStart.get(lower.slice(at, at + SHORTEST_TEXT)) ?? [])
+         if (lower.startsWith(form, at)) needle(form);
+-    if (this.#byInside !== undefined && lower.length >= SHORTEST_CUT)
++    if (this.#byInside !== undefined && lower.length < 0)
+       for (const form of this.#byInside.get(lower.slice(0, SHORTEST_TEXT)) ?? [])
+         if (form.includes(lower)) needle(form);
+     return [...found];

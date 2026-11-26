@@ -1,0 +1,16 @@
++ pnpm run typecheck
+$ pnpm -r --if-present typecheck
+packages/domain typecheck$ tsc -p tsconfig.json
+packages/contracts typecheck$ tsc -p tsconfig.json
+apps/web typecheck$ tsc -p tsconfig.json
+apps/web typecheck: Done
+packages/domain typecheck: Done
+services/worker typecheck$ tsc -p tsconfig.json
+tools/ops typecheck$ tsc -p tsconfig.json
+packages/contracts typecheck: Done
+services/api typecheck$ tsc -p tsconfig.json
+services/worker typecheck: Done
+tools/ops typecheck: Done
+services/api typecheck: Done
+tests typecheck$ tsc -p tsconfig.json
+tests typecheck: Done

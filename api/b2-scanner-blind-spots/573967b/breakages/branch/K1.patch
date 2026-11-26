@@ -1,0 +1,60 @@
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -478,17 +478,11 @@
+     required: ["id", "name", "timezone", "my_membership_id", "state", "member_count"],
+     optional: ["open_day", "next_day"],
+   },
+-  // A closed day, among Home's recent days while the next one collects (the round-2 review).
+-  DayLink: { required: ["occurrence"], optional: ["cover_drop_id"] },
+   DropCaption: CAPTION_CARD,
+   DropDetail: { required: ["server_now", "occurrence", "club", "drop"], optional: [] },
+   DropOwn: {
+     required: ["view", "id", "author", "media_class", "highlight", "state", "version"],
+     optional: ["caption"],
+-  },
+-  DropRevealed: {
+-    required: ["view", "id", "author", "media_class", "highlight", "reactions", "viewer_favourite"],
+-    optional: ["caption", "photo", "video", "viewer_reaction"],
+   },
+   DropReceipt: {
+     required: ["drop_id", "occurrence", "media_class", "state", "version", "allowance", "highlight"],
+@@ -498,7 +492,6 @@
+   // The author's own preview of their link, to its author alone (T11, T40): built by B3.
+   ExternalVideoPreview: { required: ["provider", "original_url"], optional: [] },
+   HiddenDrop: { required: ["drop_id", "hidden"], optional: [] },
+-  HighlightEntry: { required: ["drop_id", "author", "star_pick"], optional: [] },
+   HighlightPointer: { required: ["version"], optional: ["drop_id"] },
+   HomeAwaitingActivation: { required: ["mode", "server_now", "club", "club_today"], optional: [] },
+   // Home's open day: opened, but its `next` is the club's next day, still collecting.
+@@ -518,22 +511,14 @@
+   OwnContributionPage: { required: ["items"], optional: ["next_cursor"] },
+   OwnDay: { required: ["server_now", "occurrence", "club", "allowance", "highlight", "drops"], optional: [] },
+   Person: CARD_AUTHOR,
+-  ReactionSummary: { required: ["reaction"], optional: ["people"] },
+   ReleasedReservation: { required: ["id", "state"], optional: ["drop_id", "allowance"] },
+   RemovedDrop: { required: ["drop_id", "state"], optional: ["allowance", "highlight"] },
+-  ReplyPreview: { required: ["comment_id", "author", "media_version"], optional: [] },
+   Reservation: { required: ["id", "occurrence_id", "media_class", "expires_at", "allowance"], optional: [] },
+   // The opened day: its `add_target` is the star's next day, still collecting.
+   RevealedDay: {
+     required: ["stage", "server_now", "occurrence", "club", "viewer", "drops", "highlights"],
+     optional: ["add_target", "next_cursor"],
+   },
+-  RevealedDayDrop: {
+-    required: ["view", "id", "author", "media_class", "highlight", "reactions", "viewer_favourite", "section"],
+-    optional: ["caption", "photo", "video", "viewer_reaction", "reply_preview"],
+-  },
+-  RevealedPhoto: { required: ["width", "height", "media_version"], optional: [] },
+-  RevealedVideo: { required: ["provider"], optional: [] },
+   RosterRevision: {
+     required: ["id", "version", "club", "state", "proposed_by", "members", "candidates", "my_decision"],
+     optional: ["superseded_by"],
+@@ -1444,7 +1429,7 @@
+     if (kind !== undefined && list !== undefined) {
+       for (const problem of exactKeys(node, list))
+         find("whitelist", at, `${schemaArticle(kind)} ${kind} that ${problem} (T10: this file's own list)`);
+-    } else if (beforeReveal) {
++    } else if (beforeReveal && !(kind !== undefined && ["DayLink", "DropRevealed", "HighlightEntry", "ReactionSummary", "ReplyPreview", "RevealedDayDrop", "RevealedPhoto", "RevealedVideo"].includes(kind))) {
+       find(
+         "whitelist",
+         at,

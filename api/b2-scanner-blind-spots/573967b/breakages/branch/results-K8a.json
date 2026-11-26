@@ -1,0 +1,14 @@
+[
+ {
+  "name": "K8a",
+  "what": "K8 again: bindings set later not redacted, found two levels down",
+  "run": "unit: services/api src/logging.test.ts",
+  "exit": 1,
+  "verdict": "caught",
+  "found": [
+   "blanks bindings set later",
+   "SECRET-SET-COMMENT"
+  ],
+  "missing": []
+ }
+]

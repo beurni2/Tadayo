@@ -1,0 +1,11 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -340,7 +340,7 @@
+     return child.call(this, redactLine(bindings), formatted);
+   };
+   // A logger with no `setBindings` has no bindings to set later.
+-  if (setBindings !== undefined)
++  if (setBindings === null)
+     settable.setBindings = function redactedSetBindings(this: unknown, bindings: Record<string, unknown>) {
+       setBindings.call(this, redactLine(bindings));
+     };

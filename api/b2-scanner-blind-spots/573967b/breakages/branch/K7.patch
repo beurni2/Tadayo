@@ -1,0 +1,10 @@
+--- a/services/api/src/logging.ts
++++ b/services/api/src/logging.ts
+@@ -300,7 +300,6 @@
+       // A line's own fields; a logger's bindings are `redactBindings`'.
+       formatters: { log: redactLine },
+       redact: { paths: PATHS, censor: BLANKED },
+-      hooks: { logMethod: ownMessage },
+       serializers: { err: safeError, req: () => undefined, res: () => undefined },
+       // Fastify types a serializer's result as its own request, error and answer shapes; these return less.
+     } as unknown as NonNullable<FastifyServerOptions["logger"]>,

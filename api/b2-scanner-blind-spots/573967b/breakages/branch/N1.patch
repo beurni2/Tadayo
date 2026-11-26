@@ -1,0 +1,14 @@
+--- a/services/api/src/drops/drops.ts
++++ b/services/api/src/drops/drops.ts
+@@ -85,7 +85,10 @@
+     try {
+       response = await deps.sql.begin((tx) => createDrop(tx, deps.clock, input, dropRender));
+     } catch (error) {
+-      if (error instanceof Refused) return refusal(reply, error);
++      if (error instanceof Refused) {
++        request.log.info({ trouble: reservationId ?? "none" }, "commit refused");
++        return refusal(reply, error);
++      }
+       throw error;
+     }
+     return created(reply, response);

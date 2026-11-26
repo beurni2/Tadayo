@@ -1,0 +1,4 @@
++ pnpm run copy-lint
+$ node packages/domain/src/copy/cli.ts
+copy lint: exception: "Sent" allowed in "Sent to %@", the value of auth.code.sentTo in apps/ios/Tadayo/Localizable.xcstrings [banned-word], by FQ68 (ADR-029): T41's ban on Sent covers a drop's states, and the sign-in code screen (A02-code) says where the code went; found 1 time(s)
+copy lint: 6 string file(s), 0 finding(s)

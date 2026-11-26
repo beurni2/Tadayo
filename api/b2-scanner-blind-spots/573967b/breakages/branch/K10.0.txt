@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (17 tests | 1 failed) 189ms
+   ❯ the redaction list (T52) (10)
+     × keeps pino's own redaction of the list beneath it, at the top and one level down, as `main` had (the round-2 review) 3ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:45:36
+   Duration  725ms (import 41%, tests 32%, transform 27%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > keeps pino's own redaction of the list beneath it, at the top and one level down, as `main` had (the round-2 review)
+TypeError: Cannot read properties of undefined (reading 'censor')
+ ❯ src/logging.test.ts:204:27
+    202|       redact: { paths: string[]; censor: string };
+    203|     };
+    204|     expect(options.redact.censor).toBe("[redacted]");
+       |                           ^
+    205|     for (const field of REDACTED_FIELDS) {
+    206|       expect(options.redact.paths, field).toContain(field);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

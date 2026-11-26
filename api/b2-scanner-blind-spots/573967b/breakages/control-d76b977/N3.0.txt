@@ -1,0 +1,144 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14c-ctl/tests
+
+stdout | src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14, T27, T53) > answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find
+callers without a session: 183160 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 2 failed | 27 skipped) 73828ms
+   ❯ callers without a session, in each state of the drop and phase of the day (T14, T27, T53) (1)
+     × answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find 70840ms
+   ❯ the API's log, at production's level (T52, T16; the outside audit's A14) (1)
+     × wrote one request line for every request, and no line holds content, a kept-back value or a token 2706ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 27 skipped (29)
+   Start at  04:18:32
+   Duration  75.38s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14, T27, T53) > answers each the same whatever the ids name, the gate's one 401, the neutral not-found for a public route that names something, or the health check's 204, and leaks nothing the scanner can find
+AssertionError: expected { count: 9520, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 9520,
++   "first": [
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++     "active, collecting, the API's log: a value the world keeps back at $.trouble",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:4510:64
+    4508|     }
+    4509|     console.log(`callers without a session: ${String(counted.answers)}…
+    4510|     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual…
+       |                                                                ^
+    4511|     expect(counted.answers).toBe(counted.expected);
+    4512|     expect(counted.answers).toBeGreaterThan(STATES.length * Object.key…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/matrix.test.ts > the API's log, at production's level (T52, T16; the outside audit's A14) > wrote one request line for every request, and no line holds content, a kept-back value or a token
+AssertionError: expected [ …(40) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "line 3, read again: a value the world keeps back at $.trouble",
++   "line 23, read again: a value the world keeps back at $.trouble",
++   "line 43, read again: a value the world keeps back at $.trouble",
++   "line 63, read again: a value the world keeps back at $.trouble",
++   "line 83, read again: a value the world keeps back at $.trouble",
++   "line 107, read again: a value the world keeps back at $.trouble",
++   "line 109, read again: a value the world keeps back at $.trouble",
++   "line 111, read again: a value the world keeps back at $.trouble",
++   "line 167, read again: a value the world keeps back at $.trouble",
++   "line 169, read again: a value the world keeps back at $.trouble",
++   "line 171, read again: a value the world keeps back at $.trouble",
++   "line 227, read again: a value the world keeps back at $.trouble",
++   "line 229, read again: a value the world keeps back at $.trouble",
++   "line 231, read again: a value the world keeps back at $.trouble",
++   "line 287, read again: a value the world keeps back at $.trouble",
++   "line 289, read again: a value the world keeps back at $.trouble",
++   "line 291, read again: a value the world keeps back at $.trouble",
++   "line 347, read again: a value the world keeps back at $.trouble",
++   "line 349, read again: a value the world keeps back at $.trouble",
++   "line 351, read again: a value the world keeps back at $.trouble",
++   "line 407, read again: a value the world keeps back at $.trouble",
++   "line 409, read again: a value the world keeps back at $.trouble",
++   "line 411, read again: a value the world keeps back at $.trouble",
++   "line 467, read again: a value the world keeps back at $.trouble",
++   "line 469, read again: a value the world keeps back at $.trouble",
++   "line 471, read again: a value the world keeps back at $.trouble",
++   "line 527, read again: a value the world keeps back at $.trouble",
++   "line 529, read again: a value the world keeps back at $.trouble",
++   "line 531, read again: a value the world keeps back at $.trouble",
++   "line 587, read again: a value the world keeps back at $.trouble",
++   "line 589, read again: a value the world keeps back at $.trouble",
++   "line 591, read again: a value the world keeps back at $.trouble",
++   "line 647, read again: a value the world keeps back at $.trouble",
++   "line 649, read again: a value the world keeps back at $.trouble",
++   "line 651, read again: a value the world keeps back at $.trouble",
++   "line 707, read again: a value the world keeps back at $.trouble",
++   "line 709, read again: a value the world keeps back at $.trouble",
++   "line 711, read again: a value the world keeps back at $.trouble",
++   "line 767, read again: a value the world keeps back at $.trouble",
++   "line 769, read again: a value the world keeps back at $.trouble",
++ ]
+
+ ❯ src/privacy/matrix.test.ts:4524:32
+    4522|     for (const [index, line] of logLines.entries())
+    4523|       for (const problem of logProblems(line, logFacts)) wrong.push(`l…
+    4524|     expect(wrong.slice(0, 40)).toEqual([]);
+       |                                ^
+    4525|     expect(logAnswers).toBeGreaterThan(0);
+    4526|     expect(logLines.filter(isRequestLine)).toHaveLength(sentTo(app));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

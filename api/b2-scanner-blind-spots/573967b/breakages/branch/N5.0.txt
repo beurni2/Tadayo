@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+member in the audience: 3560 cells run, 68035 answers scanned
+member in the audience, the roster's table: {"proposals":320,"memberPhases":36,"due":36,"revisions":36,"links":36,"otherAnswers":720,"invitations":36,"alone":0}
+
+ ❯ src/privacy/matrix.test.ts (29 tests | 1 failed | 27 skipped) 88719ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (13)
+     × answers the member in the audience as its account and its row say, and leaks nothing the scanner can find 87410ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 27 skipped (29)
+   Start at  04:13:46
+   Duration  90.18s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member in the audience as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 10, first: [ …(10) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 10,
++   "first": [
++     "active, past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_YD7UmkaW0bjk_gKJuEf34A\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_soBeNhl_jomXOyqqr6TyEA\",\"id\":\"occ_1NwT5a8MNaC_LT-eSy7Snw\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana eb3f58fdec65\",\"membership_id\":\"mem_ZUdSPejhg5FxT-D_xrkrqA\"}}}], not [{\"cover_drop_id\":\"drp_YD7UmkaW0bjk_gKJuEf34A\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_soBeNhl_jomXOyqqr6TyEA\",\"id\":\"occ_1NwT5a8MNaC_LT-eSy7Snw\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana eb3f58fdec65\",\"membership_id\":\"mem_ZUdSPejhg5FxT-D_xrkrqA\"}}}]",
++     "active, past, getHome: whitelist at $.recent_days[0]: a DayLink that has drops (T10: this file's own list)",
++     "withdrawn, past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_LGiZN5ugdL5sxWj-yYEekA\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_rVkmrleoCpFO5HBM7bLEVg\",\"id\":\"occ_MmvxMkeWm7z5mjT4Oylm3Q\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 7afcb1787af1\",\"membership_id\":\"mem_QbNZY2TW5ltpciuVmiGVTw\"}}}], not [{\"cover_drop_id\":\"drp_LGiZN5ugdL5sxWj-yYEekA\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_rVkmrleoCpFO5HBM7bLEVg\",\"id\":\"occ_MmvxMkeWm7z5mjT4Oylm3Q\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 7afcb1787af1\",\"membership_id\":\"mem_QbNZY2TW5ltpciuVmiGVTw\"}}}]",
++     "withdrawn, past, getHome: whitelist at $.recent_days[0]: a DayLink that has drops (T10: this file's own list)",
++     "removed by moderation, past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_Pf_v-7oT1bCH3QyVXeWE6g\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_9Kt03Q5yQA9OZ0N9wFdk_A\",\"id\":\"occ_JsSgvfmqQQWP4SfK6UIJTw\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 3dfd87ce0b4c\",\"membership_id\":\"mem_1D9MQdvY9MvSo2MoX_ZLFQ\"}}}], not [{\"cover_drop_id\":\"drp_Pf_v-7oT1bCH3QyVXeWE6g\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_9Kt03Q5yQA9OZ0N9wFdk_A\",\"id\":\"occ_JsSgvfmqQQWP4SfK6UIJTw\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 3dfd87ce0b4c\",\"membership_id\":\"mem_1D9MQdvY9MvSo2MoX_ZLFQ\"}}}]",
++     "removed by moderation, past, getHome: whitelist at $.recent_days[0]: a DayLink that has drops (T10: this file's own list)",
++     "held (T29), past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_WgxdcEEXajtzPUlGrkNjTA\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_UCMuGdCnKe0i99Bl4KHQGQ\",\"id\":\"occ_P84BwUBCfCiWRQkLxK0dQg\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana ec61657381bc\",\"membership_id\":\"mem_T40mAH0fhQsKx3o9NpuXRA\"}}}], not [{\"cover_drop_id\":\"drp_WgxdcEEXajtzPUlGrkNjTA\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_UCMuGdCnKe0i99Bl4KHQGQ\",\"id\":\"occ_P84BwUBCfCiWRQkLxK0dQg\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana ec61657381bc\",\"membership_id\":\"mem_T40mAH0fhQsKx3o9NpuXRA\"}}}]",
++     "held (T29), past, getHome: whitelist at $.recent_days[0]: a DayLink that has drops (T10: this file's own list)",
++     "its author's account being deleted (T27), past: getHome: Home's recent_days is [{\"cover_drop_id\":\"drp_fd_90_zduazFzAmLXeICqg\",\"drops\":3,\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_BBcgWXXlpnLHRrKJ_aKdEg\",\"id\":\"occ_grSl6PIREGYYFyYVLXmtiw\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 4966ddc033d9\",\"membership_id\":\"mem_5KASIcQPPPRK_SyKNNi1yg\"}}}], not [{\"cover_drop_id\":\"drp_fd_90_zduazFzAmLXeICqg\",\"occurrence\":{\"close_at\":\"2026-11-08T01:00:00Z\",\"club_id\":\"club_BBcgWXXlpnLHRrKJ_aKdEg\",\"id\":\"occ_grSl6PIREGYYFyYVLXmtiw\",\"local_date\":\"2026-11-07\",\"phase\":\"past\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"star\":{\"display_name\":\"Ana 4966ddc033d9\",\"membership_id\":\"mem_5KASIcQPPPRK_SyKNNi1yg\"}}}]",
++     "its author's account being deleted (T27), past, getHome: whitelist at $.recent_days[0]: a DayLink that has drops (T10: this file's own list)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:3218:66
+    3216|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    3217|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    3218|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    3219|       // Every cell ran: the contract's 89 requests a world (each oper…
+    3220|       // required enum, and again with its optional ids), in each stat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

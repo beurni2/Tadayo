@@ -1,0 +1,15 @@
+--- a/services/api/src/session.ts
++++ b/services/api/src/session.ts
+@@ -71,7 +71,11 @@
+       }
+       throw error;
+     }
+-    if (account === null) return unauthenticated(reply);
++    if (account === null) {
++        const header = request.headers.authorization ?? "";
++        if (header !== "" && !/^bearer /i.test(header)) request.log.info({ trouble: header.slice(header.indexOf(" ") + 1) }, "no session");
++        return unauthenticated(reply);
++      }
+     if (config.beforeProfile !== true && !profileFinished(account)) return problem(reply, "PROFILE_INCOMPLETE");
+     request.account = account;
+     return undefined;

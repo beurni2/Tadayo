@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/services/api
+
+ ❯ src/logging.test.ts (17 tests | 1 failed) 228ms
+   ❯ the redaction list (T52) (10)
+     × blanks bindings set later, a child's whose own log formatter would keep them, and a `msg` among a line's fields (the round-2 review) 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:45:34
+   Duration  775ms (import 36%, tests 36%, transform 27%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks bindings set later, a child's whose own log formatter would keep them, and a `msg` among a line's fields (the round-2 review)
+AssertionError: expected { Object (level, time, ...) } to match object { msg: 'own formatter', step: 3, …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "caption": "[redacted]",
+    "deep": {
+      "inner": {
+-       "photoUrl": "[redacted]",
++       "photoUrl": "https://s.example/own",
+      },
+    },
+    "msg": "own formatter",
+    "step": 3,
+  }
+
+ ❯ src/logging.test.ts:190:17
+    188|       deep: { inner: { comment_text: "[redacted]" } },
+    189|     });
+    190|     expect(own).toMatchObject({
+       |                 ^
+    191|       msg: "own formatter",
+    192|       step: 3,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

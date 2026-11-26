@@ -1,0 +1,95 @@
+
+ RUN  v5.0.5 /home/user/tadayo-a14b/tests
+
+ ❯ src/privacy/scanner.test.ts (111 tests | 2 failed) 468ms
+   ❯ the scanner's own key lists and never-words (the outside audit's A14; T10) (10)
+     × holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today 12ms
+     × holds what has opened to its list: a day link among a waiting Home's recent days, and an opened card, its photo and its reactions 6ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 109 passed (111)
+   Start at  02:45:21
+   Duration  1.41s (import 44%, tests 37%, transform 19%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds its own key list for every object schema an answer can hold before a day's reveal, each the contract's keys today
+AssertionError: expected [ 'Allowance', 'Candidate', …(43) ] to deeply equal [ 'Allowance', 'Candidate', …(35) ]
+
+- Expected
++ Received
+
+@@ -4,17 +4,20 @@
+    "CandidateInvitation",
+    "ClubDetail",
+    "ClubList",
+    "ClubRef",
+    "ClubSummary",
++   "DayLink",
+    "DropCaption",
+    "DropDetail",
+    "DropOwn",
+    "DropReceipt",
++   "DropRevealed",
+    "DropVersion",
+    "ExternalVideoPreview",
+    "HiddenDrop",
++   "HighlightEntry",
+    "HighlightPointer",
+    "HomeAwaitingActivation",
+    "HomeDay",
+    "HomeNoDays",
+    "HomePaused",
+@@ -26,14 +29,19 @@
+    "Occurrence",
+    "OwnContribution",
+    "OwnContributionPage",
+    "OwnDay",
+    "Person",
++   "ReactionSummary",
+    "ReleasedReservation",
+    "RemovedDrop",
++   "ReplyPreview",
+    "Reservation",
+    "RevealedDay",
++   "RevealedDayDrop",
++   "RevealedPhoto",
++   "RevealedVideo",
+    "RosterRevision",
+    "UnavailableDay",
+    "UpcomingDay",
+    "ViewerDay",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:2216:31
+    2214|   it("holds its own key list for every object schema an answer can hol…
+    2215|     const reach = new Set([...BEFORE_REVEAL_OPERATIONS].flatMap((id) =…
+    2216|     expect([...reach].sort()).toEqual(Object.keys(BEFORE_REVEAL).sort(…
+       |                               ^
+    2217|     for (const [name, list] of Object.entries(BEFORE_REVEAL)) {
+    2218|       const required = ((schemas[name] as JsonObject).required ?? []) …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the scanner's own key lists and never-words (the outside audit's A14; T10) > holds what has opened to its list: a day link among a waiting Home's recent days, and an opened card, its photo and its reactions
+AssertionError: expected [] to deeply equal [ 'whitelist' ]
+
+- Expected
++ Received
+
+- [
+-   "whitelist",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:2596:29
+    2594|       context("getHome", cleo, { ...homeAt, document: linkWidened }),
+    2595|     );
+    2596|     expect(checks(counted)).toEqual(["whitelist"]);
+       |                             ^
+    2597|     // One finding for each key: drops, unseen and contributors.
+    2598|     expect(at(counted, "whitelist")).toEqual(Array(3).fill("$.recent_d…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
