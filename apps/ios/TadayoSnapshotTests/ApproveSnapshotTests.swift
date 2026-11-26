@@ -54,7 +54,7 @@ final class ApproveSnapshotTests: XCTestCase {
         XCTAssertTrue(
             elements.contains { $0.label == "Invite Leila?" && $0.isHeader }, "\(elements)")
         XCTAssertTrue(
-            elements.contains { $0.label == "To Kitchen table · 5 current members" },
+            elements.contains { $0.label == "To Kitchen table\u{00A0}· 5 current members" },
             "\(elements)")
         // The name and its proposer, one element; the avatar isn't read.
         XCTAssertTrue(elements.contains { $0.label == "Leila, Proposed by Ben" }, "\(elements)")
@@ -142,7 +142,7 @@ final class ApproveSnapshotTests: XCTestCase {
         XCTAssertTrue(elements.contains { $0.label == "Nina, Proposed by Alex" }, "\(elements)")
         // The count is the members', never the candidates'.
         XCTAssertTrue(
-            elements.contains { $0.label == "To Kitchen table · 5 current members" },
+            elements.contains { $0.label == "To Kitchen table\u{00A0}· 5 current members" },
             "\(elements)")
         XCTAssertTrue(
             elements.contains { $0.label == "Approve Leila and Nina joining Kitchen table." },

@@ -105,7 +105,7 @@ final class ApproveUITests: XCTestCase {
         XCTAssertTrue(element("Debby. Friday.", in: app).exists)
         leila.tap()
         XCTAssertTrue(app.staticTexts["Invite Leila?"].waitForExistence(timeout: 5))
-        XCTAssertTrue(element("To Kitchen table · 5 current members", in: app).exists)
+        XCTAssertTrue(element("To Kitchen table\u{00A0}· 5 current members", in: app).exists)
     }
 
     /// Whether `condition` holds within `timeout` seconds, read every 0.2 s.
