@@ -10,6 +10,10 @@
 // lock the upload `FOR KEY SHARE`, never wait on it. Under the lock it reads the state and the expiry again: another
 // run of the same event may have recorded first, or the upload may have lapsed during the work, and then nothing is
 // written (its renditions, already stored, are found by its key: docs/plans/api-b2-spike-prepare.md section 4.5).
+//
+// Both say when an upload is still `preparing` but has lapsed: its preparation never finished and never will, and
+// the worker ends its event as a dead letter, `upload.lapsed`, so a photo lost that way is never a quiet done (the
+// outside audit's B1, reviewed; docs/plans/api-b2-worker-storage-retry.md section 5).
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
@@ -71,16 +75,22 @@ function oneOf<T extends string>(values: readonly T[], value: unknown, what: str
 
 /**
  * The upload `id` while it waits for its preparation: `preparing`, and live at `at` (an upload is nobody's from its
- * `expires_at` on: docs/plans/api-b2-spike-uploads.md section 0.6). Null for anything else, which has nothing to
- * prepare. No lock.
+ * `expires_at` on: docs/plans/api-b2-spike-uploads.md section 0.6). `lapsed` for one still `preparing` whose
+ * `expires_at` has come, whose preparation never finished; null for anything else, which has nothing to prepare. No
+ * lock.
  */
-export async function uploadToPrepare(tx: QuerySql, id: string, at: ServerNow): Promise<UploadToPrepare | null> {
+export async function uploadToPrepare(
+  tx: QuerySql,
+  id: string,
+  at: ServerNow,
+): Promise<UploadToPrepare | "lapsed" | null> {
   if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
   const rows = await bound(tx)`
-    SELECT id, owner_user_id, purpose, object_key, content_type FROM app.uploads
-     WHERE id = ${id} AND state = 'preparing' AND expires_at > ${at}`;
+    SELECT id, owner_user_id, purpose, object_key, content_type, expires_at > ${at} AS live FROM app.uploads
+     WHERE id = ${id} AND state = 'preparing'`;
   const row = rows[0];
   if (row === undefined) return null;
+  if (row["live"] !== true) return "lapsed";
   const { owner_user_id: owner, object_key: objectKey } = row;
   if (typeof owner !== "string" || typeof objectKey !== "string") {
     throw new Error("media: an upload came back in a shape the preparation doesn't know");
@@ -97,26 +107,26 @@ export async function uploadToPrepare(tx: QuerySql, id: string, at: ServerNow): 
 /**
  * Records `outcome` for the upload `id`, in `tx`: its row `FOR NO KEY UPDATE`, the clock after the lock (T1), and,
  * if it is still `preparing` and live, its renditions' rows and its new state, hash and version, or its rejection.
- * Returns the clock's sample and whether it wrote anything. An upload no longer `preparing`, or lapsed, is left as
- * it is.
+ * Returns the clock's sample, whether it wrote anything, and whether the upload is still `preparing` but lapsed. An
+ * upload no longer `preparing`, or lapsed, is left as it is.
  */
 export async function recordPreparation(
   tx: QuerySql & ClockSql,
   clock: Clock,
   id: string,
   outcome: Preparation,
-): Promise<{ readonly at: ServerNow; readonly recorded: boolean }> {
+): Promise<{ readonly at: ServerNow; readonly recorded: boolean; readonly lapsed: boolean }> {
   if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
   const rows = await bound(tx)`SELECT state, expires_at FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
   const at = await clock.sample(tx);
   const row = rows[0];
-  if (row?.["state"] !== "preparing") return { at, recorded: false };
+  if (row?.["state"] !== "preparing") return { at, recorded: false, lapsed: false };
   const expiresAt = row["expires_at"];
   if (!(expiresAt instanceof Temporal.Instant)) throw new Error("media: an upload came back with no expiry");
-  if (Temporal.Instant.compare(expiresAt, at) <= 0) return { at, recorded: false };
+  if (Temporal.Instant.compare(expiresAt, at) <= 0) return { at, recorded: false, lapsed: true };
   if (outcome.state === "rejected") {
     await bound(tx)`UPDATE app.uploads SET state = 'rejected', rejection = ${outcome.rejection} WHERE id = ${id}`;
-    return { at, recorded: true };
+    return { at, recorded: true, lapsed: false };
   }
   if (outcome.contentHash.length !== 32) throw new TypeError("media: the content hash is 32 bytes");
   for (const rendition of outcome.renditions) {
@@ -130,5 +140,5 @@ export async function recordPreparation(
     UPDATE app.uploads SET state = ${outcome.state}, content_hash = ${outcome.contentHash},
                            content_version = ${newId("mv")}
      WHERE id = ${id}`;
-  return { at, recorded: true };
+  return { at, recorded: true, lapsed: false };
 }
