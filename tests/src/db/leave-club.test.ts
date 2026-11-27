@@ -446,6 +446,28 @@ describe("the receipt of a leave (T19)", () => {
       expect(await membership(tx, member(w, 1))).toMatchObject({ state: "left", contributions: "keep" });
     });
   });
+
+  it("answers a former member's retry from their own receipt, though another account left with the same key and joined again (the outside audit's B8)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 4);
+      const key = randomUUID();
+      const first = await leaving(tx, user(w, 1), w.club, "keep", key);
+      // Another member leaves under the same key, then joins again: their receipt is older than their new
+      // interval, which is what keeps their own key from answering them (FQ112), and only theirs.
+      await leaving(tx, user(w, 2), w.club, "withdraw", key);
+      clock.set(FIRST.add({ hours: 1 }));
+      const open = await propose(tx, clock, user(w, 0), w.club, ["Alex"]);
+      const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(open, 0));
+      await acceptWith(tx, clock, user(w, 2), made.token, open.id, 1);
+      await approve(tx, clock, user(w, 3), open.id, 1);
+      const back = await plain(tx)<{ interval_id: string }[]>`
+        SELECT interval_id FROM app.memberships WHERE club_id = ${w.club} AND user_id = ${user(w, 2)} AND state = 'active'`;
+      expect(back).toHaveLength(1);
+      clock.set(FIRST.add({ hours: 2 }));
+      const again = await leaving(tx, user(w, 1), w.club, "keep", key);
+      expect(JSON.stringify(again)).toBe(JSON.stringify(first));
+    });
+  });
 });
 
 describe("who may leave (T9, T14)", () => {

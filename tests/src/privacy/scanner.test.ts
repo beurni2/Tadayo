@@ -789,7 +789,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     }
   });
 
-  it("catches an avatar version that isn't the person's own account's, or none where the account has one (FQ74; the outside audit's B8)", () => {
+  it("catches an avatar version that isn't the person's own account's, or none where the account has one, or one while the account is being deleted (the contract's Person; the outside audit's B8)", () => {
     const shown = (who: object, avatar_version: string) => ({ ...who, avatar_version });
     for (const [card, viewer] of [
       // Cleo's avatar beside Ben, whose account has none; Cleo's left out; and a version her account doesn't hold.
@@ -801,6 +801,16 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       expect(checks(found), JSON.stringify(card)).toEqual(["world"]);
       expect(at(found, "world"), JSON.stringify(card)).toEqual(["$.drops[0].author.avatar_version"]);
     }
+    // While Cleo's account is being deleted, her name stays and no avatar shows, though the account still has one.
+    const accounts = new Map(world.accounts).set(
+      acct(cleo),
+      accountOf("Cleo", 4, { avatar: "v_avatar_cleo", state: "deleting", deletionRequestedAt: COLLECTING }),
+    );
+    const deleting = { world: { ...world, accounts } };
+    const withAvatar = scan(answer(upcomingDay([cleosCard()], ben)), context("getOccurrence", ben, deleting));
+    expect(at(withAvatar, "world")).toEqual(["$.drops[0].author.avatar_version"]);
+    const withNone = upcomingDay([{ ...cleosCard(), author: person(cleo, "Cleo") }], ben);
+    expect(at(scan(answer(withNone), context("getOccurrence", ben, deleting)), "world")).toEqual([]);
     // Every person is held to it: among who reacted, too.
     const heart = { reaction: "heart", people: [person(cleo, "Cleo")] };
     const toBen = revealedDay([bensRevealedCard([heart])], [], ben);
@@ -809,7 +819,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     ]);
   });
 
-  it("catches a media class that isn't its drop's or its reservation's own: on a card, in Your drops and on a reservation (the outside audit's B8)", () => {
+  it("catches a media class that isn't its drop's or its reservation's own: on a card, in Your drops and on a reservation, and a reservation the world doesn't have (the outside audit's B8)", () => {
     // Ben's photo called a link, on his caption card to Cleo and on his own card to him.
     const caption = upcomingDay([{ ...bensCard(), media_class: "external_video" }]);
     expect(at(scan(answer(caption), context("getOccurrence", cleo)), "world")).toEqual(["$.drops[0].media_class"]);
@@ -830,6 +840,9 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "$.media_class",
     ]);
     expect(at(scan(answer(slot("photo"), 201), context("createReservation", cleo)), "world")).toEqual([]);
+    // And a reservation the world doesn't hold, which has no media class to compare with.
+    const unknown = { ...slot("photo"), id: "rsv_nobody" };
+    expect(at(scan(answer(unknown, 201), context("createReservation", cleo)), "world")).toContain("$");
   });
 
   it("catches someone else's drop where the schema says the viewer's own: Your drops, DUPLICATE_DROP, a receipt", () => {
@@ -1204,8 +1217,9 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   });
 
   it("catches a day or a club outside the viewer's clubs by its bare id: a reservation's day, a block's and a leaving's clubs (T14)", () => {
+    // Cleo's own slot, as the world holds it, but for a day of a club she isn't in.
     const reservation = {
-      id: "rsv_new",
+      id: "rsv_cleo",
       occurrence_id: "occ_far",
       media_class: "photo",
       expires_at: "2026-11-07T06:59:59Z",

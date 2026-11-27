@@ -64,9 +64,10 @@
 //     viewer has an interval in, active or not; a ClubSummary only from one they are an active
 //     member of, with their active interval;
 //   - a person only from such a club, under the name members see, with the avatar version of their
-//     account while both their interval and the viewer's are active (FQ74; the outside audit's B8)
-//     and none once either has ended, and never one who joined after the viewer's last interval
-//     there ended (FQ75);
+//     account while both their interval and the viewer's are active and their account is (the
+//     contract's Person; the outside audit's B8), and none once either interval has ended
+//     (FQ75) or while the account is being deleted (spec 23), and never one who joined after the
+//     viewer's last interval there ended (FQ75);
 //   - an allowance that counts no more than the viewer's own drops in its day, photos and video links
 //     alike, but those withdrawn before its reveal, and the viewer's reservations in it still live at
 //     the answer's instant, with the limits of the viewer's own role in that day, the star's or anyone
@@ -1622,6 +1623,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       else {
         if (node.display_name !== member.name) find("world", `${at}.display_name`, "not the name members see (FQ75)");
         const active = reader.activeClubs.has(member.club);
+        const account = world.accounts.get(member.account);
         if (member.leftAt !== null || !active) {
           if (node.avatar_version !== undefined)
             find(
@@ -1629,8 +1631,15 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
               `${at}.avatar_version`,
               "an avatar version once the person's or the viewer's interval has ended (FQ75)",
             );
-        } else if ((node.avatar_version ?? null) !== (world.accounts.get(member.account)?.avatar ?? null)) {
-          find("world", `${at}.avatar_version`, "not the avatar version of the person's own account (FQ74)");
+        } else if (account?.state !== "active") {
+          if (node.avatar_version !== undefined)
+            find("world", `${at}.avatar_version`, "an avatar version of an account that isn't active (spec 23)");
+        } else if ((node.avatar_version ?? null) !== account.avatar) {
+          find(
+            "world",
+            `${at}.avatar_version`,
+            "not the avatar version of the person's own account (the contract's Person)",
+          );
         }
         if (!reader.knows(membership))
           find("world", at, "a person who joined after the viewer's last interval in the club ended (T14)");
@@ -1638,7 +1647,8 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     }
     if (kind === "Reservation") {
       const slot = typeof node.id === "string" ? world.reservations.get(node.id) : undefined;
-      if (slot !== undefined && node.media_class !== slot.media)
+      if (slot === undefined) find("world", at, "a reservation this world doesn't have");
+      else if (node.media_class !== slot.media)
         find("world", `${at}.media_class`, "not the reservation's own media class");
     }
     if (kind === "Me") {
