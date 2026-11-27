@@ -373,6 +373,9 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
       "packages/domain/src/schedule/settle-change.ts: LatestAssignment.confirmedAt",
       "packages/domain/src/time/civil.ts: DayInstants.revealAt",
       "packages/domain/src/time/civil.ts: DayInstants.closeAt",
+      // When an outbox event was written, whose age at the sample says how long Storage away is waited out (B1).
+      "services/worker/src/outbox.ts: OutboxEvent.createdAt",
+      "services/worker/src/outbox.ts: claimNext.rows.created_at",
     ],
   },
   {
@@ -387,6 +390,10 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
       "packages/domain/src/media/upload.ts: UploadRow.expiresAt",
       "packages/domain/src/media/upload.ts: SlotRow.expiresAt",
     ],
+  },
+  {
+    why: "a claim's lease's end: computed from the claim's own sample and written to the event's row, then matched with that row's `available_at` to know the claim a failure came from (outbox.ts, item 3; the outside audit's B1, reviewed), never compared with a later sample",
+    at: ["services/worker/src/outbox.ts: Claim.leaseUntil", "services/worker/src/outbox.ts: recordFailure(leaseUntil)"],
   },
   {
     why: "an answer's field: an expiry a command or a read reports to its caller, computed from the clock's sample or read from its row, which no decision reads back (the time an action happened at, which an answer reports too, is a ServerNow: `CreatedClub.at`, `LeftClub.leftAt`, `DeviceRegistration.registeredAt`)",
