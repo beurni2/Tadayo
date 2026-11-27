@@ -36,7 +36,8 @@ struct SignInFlow: View {
                     switch page {
                     case .linkEntry:
                         if let entry = model.linkEntry ?? shownEntry {
-                            LinkEntryScreen(model: entry, focus: focus) { await entry.proceed() }
+                            LinkEntryScreen(
+                                model: entry, proceed: { await entry.proceed() }, focus: focus)
                         }
                     case .email:
                         EmailScreen(model: model, focus: focus)
