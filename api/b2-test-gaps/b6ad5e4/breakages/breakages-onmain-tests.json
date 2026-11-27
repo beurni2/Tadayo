@@ -1,0 +1,24 @@
+[
+ {
+  "name": "R1",
+  "what": "reserveReceipt's SELECT without the account",
+  "suite": "tests --config vitest.db.config.ts src/db/create-club.test.ts",
+  "exit": 0,
+  "failed": 0,
+  "names": [],
+  "words": "replays each account's own answer under a key both used",
+  "caught": false,
+  "restored": true
+ },
+ {
+  "name": "R3",
+  "what": "update-me's SELECT of the receipt without the account",
+  "suite": "tests --config vitest.db.config.ts src/db/update-me.test.ts",
+  "exit": 0,
+  "failed": 0,
+  "names": [],
+  "words": "replays each account's own answer under a key both used",
+  "caught": false,
+  "restored": true
+ }
+]

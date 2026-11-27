@@ -1,0 +1,8 @@
+06:06:36
+D3. the copy given CREATE for tadayo_app, which the original doesn't give: CAUGHT
+   tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts: exit 1, 0 failed: ["setup: the privacy matrix's setup refused: tadayo_privacy gives other rights than postgres: public CONNECT yes, public CREATE no, public TEMPORARY yes, tadayo_app CONNECT yes, tadayo_app CREATE yes, tadayo_app TEMPORARY yes against public CONNECT yes, public CREATE no, public TEMPORARY yes, tadayo_app CONN", "setup: \u23af\u23af\u23af\u23af\u23af\u23af\u23af Startup Error \u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af", "setup: TypeError: code.charCodeAt is not a function"]
+D6. a setting of the original's own, which the copy wouldn't keep: CAUGHT
+   tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts: exit 1, 0 failed: ["setup: the privacy matrix's setup refused: postgres has settings of its own (ALTER DATABASE or ALTER ROLE \u2026 IN DATABASE), which a copy wouldn't keep", "setup: \u23af\u23af\u23af\u23af\u23af\u23af\u23af Startup Error \u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af", "setup: TypeError: code.charCodeAt is not a function"]
+D7. the admin's URL naming the server by another host: CAUGHT
+   tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts: exit 1, 0 failed: ["setup: the privacy matrix's setup refused: DATABASE_URL and DATABASE_ADMIN_URL name different servers", "setup: \u23af\u23af\u23af\u23af\u23af\u23af\u23af Startup Error \u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af", "setup: TypeError: code.charCodeAt is not a function"]
+06:06:38

@@ -1,0 +1,25 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b8/tests
+
+No test files found, exiting with code 1
+
+filter: src/privacy/own-database.test.ts
+include: src/privacy/**/*.test.ts
+exclude:  **/node_modules/**, **/.git/**
+
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: code.charCodeAt is not a function
+    at extractInlineSourceMap (file:///home/user/tadayo-b8/node_modules/.pnpm/vite@8.3.5_@types+node@26.6.6_yaml@2.9.1/node_modules/vite/dist/node/module-runner.js:366:57)
+    at EvaluatedModules.getModuleSourceMapById (file:///home/user/tadayo-b8/node_modules/.pnpm/vite@8.3.5_@types+node@26.6.6_yaml@2.9.1/node_modules/vite/dist/node/module-runner.js:355:19)
+    at getRunnerSourceMap (file:///home/user/tadayo-b8/node_modules/.pnpm/vite@8.3.5_@types+node@26.6.6_yaml@2.9.1/node_modules/vite/dist/node/module-runner.js:952:31)
+    at mapSourcePosition (file:///home/user/tadayo-b8/node_modules/.pnpm/vite@8.3.5_@types+node@26.6.6_yaml@2.9.1/node_modules/vite/dist/node/module-runner.js:991:18)
+    at wrapCallSite (file:///home/user/tadayo-b8/node_modules/.pnpm/vite@8.3.5_@types+node@26.6.6_yaml@2.9.1/node_modules/vite/dist/node/module-runner.js:1075:17)
+    at Error.prepareStackTrace (file:///home/user/tadayo-b8/node_modules/.pnpm/vite@8.3.5_@types+node@26.6.6_yaml@2.9.1/node_modules/vite/dist/node/module-runner.js:1102:78)
+    at prepareStackTraceCallback (node:internal/errors:150:29)
+    at parseErrorStacktrace (file:///home/user/tadayo-b8/node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/source-map.DdKI5IHB.js:1736:21)
+    at Object.parseErrorStacktrace (file:///home/user/tadayo-b8/node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/index.1TqnEahn.js:3285:11)
+    at printErrorInner (file:///home/user/tadayo-b8/node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/index.1TqnEahn.js:3312:25)
+
+
+

@@ -1,0 +1,244 @@
+[
+ {
+  "name": "R1",
+  "what": "reserveReceipt's SELECT without the account",
+  "suite": "tests --config vitest.db.config.ts src/db/create-club.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "one club per key (T19) replays each account's own answer under a key both used, and never the other's (the outside audit's B8)"
+  ],
+  "words": "replays each account's own answer under a key both used",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "R2",
+  "what": "completeReceipt's UPDATE without the account",
+  "suite": "tests --config vitest.db.config.ts src/db/create-club.test.ts",
+  "exit": 1,
+  "failed": 2,
+  "names": [
+   "one club per key (T19) keeps a key the caller's own: the same key from another account makes that account's club",
+   "one club per key (T19) replays each account's own answer under a key both used, and never the other's (the outside audit's B8)"
+  ],
+  "words": "replays each account's own answer under a key both used",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "R3",
+  "what": "update-me's SELECT of the receipt without the account",
+  "suite": "tests --config vitest.db.config.ts src/db/update-me.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the idempotency key (T19) replays each account's own answer under a key both used, and never the other's (the outside audit's B8)"
+  ],
+  "words": "replays each account's own answer under a key both used",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "R4",
+  "what": "update-me's UPDATE of the receipt without the account",
+  "suite": "tests --config vitest.db.config.ts src/db/update-me.test.ts",
+  "exit": 1,
+  "failed": 2,
+  "names": [
+   "the idempotency key (T19) belongs to the account: another account's use of the same key is its own request",
+   "the idempotency key (T19) replays each account's own answer under a key both used, and never the other's (the outside audit's B8)"
+  ],
+  "words": "replays each account's own answer under a key both used",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "L1",
+  "what": "leaveClub's read of a former member's receipt without the account",
+  "suite": "tests --config vitest.db.config.ts src/db/leave-club.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the receipt of a leave (T19) answers a former member's retry from their own receipt, though another account left with the same key and joined again (the outside audit's B8)"
+  ],
+  "words": "answers a former member's retry from their own receipt",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "S1",
+  "what": "the card's media class compare removed",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/scanner.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the leak scanner catches each planted leak with its own check catches a media class that isn't its drop's or its reservation's own: on a card, in Your drops and on a reservation, and a reservation the world doesn't have (the outside audit's B8)"
+  ],
+  "words": "catches a media class that isn't its drop's",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "S2",
+  "what": "the reference's media class compare removed",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/scanner.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the leak scanner catches each planted leak with its own check catches a media class that isn't its drop's or its reservation's own: on a card, in Your drops and on a reservation, and a reservation the world doesn't have (the outside audit's B8)"
+  ],
+  "words": "catches a media class that isn't its drop's",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "S3",
+  "what": "the reservation's media class compare removed",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/scanner.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the leak scanner catches each planted leak with its own check catches a media class that isn't its drop's or its reservation's own: on a card, in Your drops and on a reservation, and a reservation the world doesn't have (the outside audit's B8)"
+  ],
+  "words": "catches a media class that isn't its drop's",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "S4",
+  "what": "the active person's avatar version compare removed",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/scanner.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the leak scanner catches each planted leak with its own check catches an avatar version that isn't the person's own account's, or none where the account has one, or one while the account is being deleted (the contract's Person; the outside audit's B8)"
+  ],
+  "words": "catches an avatar version that isn't the person's own account's",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "S5",
+  "what": "the avatar compare back to the first commit's, blind to the account's state",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/scanner.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the leak scanner catches each planted leak with its own check catches an avatar version that isn't the person's own account's, or none where the account has one, or one while the account is being deleted (the contract's Person; the outside audit's B8)"
+  ],
+  "words": "catches an avatar version that isn't the person's own account's",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "S6",
+  "what": "a reservation the world doesn't have let through",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/scanner.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the leak scanner catches each planted leak with its own check catches a media class that isn't its drop's or its reservation's own: on a card, in Your drops and on a reservation, and a reservation the world doesn't have (the outside audit's B8)"
+  ],
+  "words": "catches a media class that isn't its drop's",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "D1",
+  "what": "global-setup without the two process.env lines",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the matrix's own database (the outside audit's B8) is a copy of the migrated database ci gives, reached as tadayo_app and as the admin, with the rights PUBLIC and tadayo_app have on the original and tadayo_app's time limits there"
+  ],
+  "words": "is a copy of the migrated database ci gives",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "D2",
+  "what": "the privacy config back to the database tests' setup",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the matrix's own database (the outside audit's B8) is a copy of the migrated database ci gives, reached as tadayo_app and as the admin, with the rights PUBLIC and tadayo_app have on the original and tadayo_app's time limits there"
+  ],
+  "words": "is a copy of the migrated database ci gives",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "D3",
+  "what": "the copy given CREATE for tadayo_app, which the original doesn't give",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts",
+  "exit": 1,
+  "failed": 0,
+  "names": [
+   "setup: the privacy matrix's setup refused: tadayo_privacy gives other rights than postgres: public CONNECT yes, public CREATE no, public TEMPORARY yes, tadayo_app CONNECT yes, tadayo_app CREATE yes, tadayo_app TEMPORARY yes against public CONNECT yes, public CREATE no, public TEMPORARY yes, tadayo_app CONN",
+   "setup: \u23af\u23af\u23af\u23af\u23af\u23af\u23af Startup Error \u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af",
+   "setup: TypeError: code.charCodeAt is not a function"
+  ],
+  "words": "gives other rights than",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "D4",
+  "what": "D3 with the setup's compare removed",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the matrix's own database (the outside audit's B8) is a copy of the migrated database ci gives, reached as tadayo_app and as the admin, with the rights PUBLIC and tadayo_app have on the original and tadayo_app's time limits there"
+  ],
+  "words": "is a copy of the migrated database ci gives",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "D5",
+  "what": "a time limit of tadayo_app's turned off on the copy alone",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts",
+  "exit": 1,
+  "failed": 1,
+  "names": [
+   "the matrix's own database (the outside audit's B8) is a copy of the migrated database ci gives, reached as tadayo_app and as the admin, with the rights PUBLIC and tadayo_app have on the original and tadayo_app's time limits there"
+  ],
+  "words": "is a copy of the migrated database ci gives",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "D6",
+  "what": "a setting of the original's own, which the copy wouldn't keep",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts",
+  "exit": 1,
+  "failed": 0,
+  "names": [
+   "setup: the privacy matrix's setup refused: postgres has settings of its own (ALTER DATABASE or ALTER ROLE \u2026 IN DATABASE), which a copy wouldn't keep",
+   "setup: \u23af\u23af\u23af\u23af\u23af\u23af\u23af Startup Error \u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af",
+   "setup: TypeError: code.charCodeAt is not a function"
+  ],
+  "words": "has settings of its own",
+  "caught": true,
+  "restored": true
+ },
+ {
+  "name": "D7",
+  "what": "the admin's URL naming the server by another host",
+  "suite": "tests --config vitest.privacy.config.ts src/privacy/own-database.test.ts",
+  "exit": 1,
+  "failed": 0,
+  "names": [
+   "setup: the privacy matrix's setup refused: DATABASE_URL and DATABASE_ADMIN_URL name different servers",
+   "setup: \u23af\u23af\u23af\u23af\u23af\u23af\u23af Startup Error \u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af",
+   "setup: TypeError: code.charCodeAt is not a function"
+  ],
+  "words": "name different servers",
+  "caught": true,
+  "restored": true
+ }
+]
