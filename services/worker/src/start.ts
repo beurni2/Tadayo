@@ -9,11 +9,15 @@
 // (NODE_ENV=production) so does neither, so a start as root alone never reads a setting (the audit's A6). With one, it
 // sweeps that user once before anything else, so nothing a photo left before a restart is alive beside the first photo
 // it prepares; a sweep that fails stops it.
+// It reads TADAYO_SAFETY_PROVIDER too, before it sweeps or connects: each environment names the provider that screens
+// its photos (./safety.ts; the outside audit's B7), and one left unset or unknown stops it.
 
 import { prepareClock, type Clock } from "@tadayo/domain";
 import { connect, type WorkerSql } from "./connection.ts";
 import { idsOf, photoUserFor, sweep, SweepFailed, type PhotoUser } from "./privileges.ts";
+import { safetyProviderFor, type SafetyProvider } from "./safety.ts";
 import { workerStorage, type WorkerStorage } from "./storage.ts";
+import { Fault } from "@tadayo/domain/fault";
 
 export interface Started {
   sql: WorkerSql;
@@ -21,6 +25,8 @@ export interface Started {
   storage: WorkerStorage;
   /** The user each photo's process runs as, or undefined when photos are prepared in the worker's own. */
   photoUser: PhotoUser | undefined;
+  /** The provider that screens each photo, as TADAYO_SAFETY_PROVIDER names it. */
+  safety: SafetyProvider;
 }
 
 /**
@@ -33,17 +39,20 @@ export async function startWorker(
 ): Promise<Started> {
   const photoUser = photoUserFor(env, idsOf(), passwd);
   const url = env.DATABASE_URL;
-  if (url === undefined || url === "") throw new Error("worker: DATABASE_URL isn't set");
+  if (url === undefined || url === "") throw new Fault("worker_start_1", "worker: DATABASE_URL isn't set");
   const project = env.SUPABASE_URL;
-  if (project === undefined || project === "") throw new Error("worker: SUPABASE_URL isn't set");
+  if (project === undefined || project === "") throw new Fault("worker_start_2", "worker: SUPABASE_URL isn't set");
   const serviceKey = env.SUPABASE_SERVICE_KEY;
-  if (serviceKey === undefined || serviceKey === "") throw new Error("worker: SUPABASE_SERVICE_KEY isn't set");
+  if (serviceKey === undefined || serviceKey === "")
+    throw new Fault("worker_start_3", "worker: SUPABASE_SERVICE_KEY isn't set");
   const storage = workerStorage({ projectUrl: project, serviceKey });
+  const safety = safetyProviderFor(env.TADAYO_SAFETY_PROVIDER);
   if (photoUser !== undefined) {
     try {
       await sweep(photoUser);
     } catch (error) {
-      throw new Error(
+      throw new Fault(
+        "worker_start_4",
         error instanceof SweepFailed && error.why === "left"
           ? "worker: what the photo user left couldn't all be removed as it started"
           : "worker: the photo user's processes couldn't all be ended as it started",
@@ -53,7 +62,7 @@ export async function startWorker(
   }
   const sql = connect(url);
   try {
-    return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql), storage, photoUser };
+    return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql), storage, photoUser, safety };
   } catch (error) {
     await sql.end();
     throw error;

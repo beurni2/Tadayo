@@ -17,6 +17,7 @@
 import { X509Certificate } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { Fault } from "../fault.ts";
 
 /** Supabase's root, as a file: psql takes it so (`PGSSLROOTCERT`), the driver as text. */
 export const SUPABASE_ROOT_CA_PATH = fileURLToPath(new URL("./supabase-root-2021.crt", import.meta.url));
@@ -41,7 +42,7 @@ const ONE_CERTIFICATE = /^-----BEGIN CERTIFICATE-----\r?\n[A-Za-z0-9+/=\r\n]+---
  * beside the root, a key, or another root never reaches the driver.
  */
 export function checkPinnedRoot(pem: string): void {
-  const refused = (why: string) => new Error(`supabase-root-2021.crt isn't Supabase's root: ${why}`);
+  const refused = (why: string) => new Fault("ssl_1", `supabase-root-2021.crt isn't Supabase's root: ${why}`);
   if (!ONE_CERTIFICATE.test(pem)) throw refused("it must be one certificate in PEM, and nothing else");
   let fingerprint: string;
   try {

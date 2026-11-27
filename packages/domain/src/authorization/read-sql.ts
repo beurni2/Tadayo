@@ -34,6 +34,7 @@ import {
   type MembershipState,
   type ReadWhat,
 } from "./read.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 // The values are typed `never` so that postgres.js's own tagged template, whose values are its
 // parameter types, fits; each function below binds only strings, nulls, booleans and Temporal.Instants,
@@ -63,7 +64,8 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** Throws unless `viewer` is an account id: the session's, so anything else is the caller's mistake. */
 export function checkViewer(viewer: unknown): void {
-  if (typeof viewer !== "string" || !ID.test(viewer)) throw new TypeError("authorization: the viewer is an account id");
+  if (typeof viewer !== "string" || !ID.test(viewer))
+    throw new InputFault("read_sql_1", "authorization: the viewer is an account id");
 }
 
 /**
@@ -120,7 +122,7 @@ const DAY: readonly DayStatus[] = ["scheduled", "suspended", "cancelled"];
 
 function oneOf<T extends string>(value: unknown, allowed: readonly T[], what: string): T {
   if (typeof value === "string" && (allowed as readonly string[]).includes(value)) return value as T;
-  throw new Error(`authorization: ${what} came back as ${String(value)}`);
+  throw new Fault("read_sql_2", `authorization: ${what} came back as ${String(value)}`);
 }
 
 function orNull<T>(value: unknown, read: (v: unknown) => T): T | null {
@@ -129,7 +131,10 @@ function orNull<T>(value: unknown, read: (v: unknown) => T): T | null {
 
 function instant(value: unknown, what: string): Temporal.Instant {
   if (value instanceof Temporal.Instant) return value;
-  throw new Error(`authorization: ${what} came back as ${typeof value}, not a Temporal.Instant: use INSTANT_TYPE`);
+  throw new Fault(
+    "read_sql_3",
+    `authorization: ${what} came back as ${typeof value}, not a Temporal.Instant: use INSTANT_TYPE`,
+  );
 }
 
 /**
@@ -165,7 +170,7 @@ async function dropReadFacts(
   now: ServerNow,
 ): Promise<DropReadFacts | null> {
   checkViewer(viewer);
-  if (typeof drop !== "string") throw new TypeError("authorization: the drop is an id");
+  if (typeof drop !== "string") throw new InputFault("read_sql_4", "authorization: the drop is an id");
   const id = ID.test(drop) ? drop : null;
   const rows = await bound(sql)`
     SELECT ${now}::pg_catalog.timestamptz AS now, f.*
@@ -198,10 +203,10 @@ async function dropReadFacts(
       ) AS f ON true`;
   const row = rows[0];
   if (row === undefined || !instant(row["now"], "now").equals(now))
-    throw new Error("authorization: the facts came back without the server's time");
+    throw new Fault("read_sql_5", "authorization: the facts came back without the server's time");
   if (row["drop_state"] === null) return null;
   if (typeof row["blocked"] !== "boolean")
-    throw new Error("authorization: the block check came back without an answer");
+    throw new Fault("read_sql_6", "authorization: the block check came back without an answer");
   return {
     viewerAccount: orNull(row["viewer_account"], (v) => oneOf(v, ACCOUNT, "the viewer's account")),
     viewerInterval: orNull(row["viewer_interval"], (v) => oneOf(v, MEMBERSHIP, "the viewer's interval")),

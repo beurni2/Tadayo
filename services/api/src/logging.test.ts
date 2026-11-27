@@ -9,6 +9,7 @@ import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import type { Account, Clock } from "@tadayo/domain";
 import { Refused } from "@tadayo/domain";
+import { Fault, InputFault, RangeFault } from "@tadayo/domain/fault";
 import Fastify, { type FastifyInstance, type InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
@@ -572,5 +573,26 @@ describe("the log test: what reaches the log across the answers a request can ge
     expect(entries.find((entry) => entry["msg"] === "request failed")).toMatchObject({
       err: { type: "Error", code: "XX000" },
     });
+  });
+
+  it("logs a failure of the code's own by its class and site code, and never its message (the outside audit's B7)", async () => {
+    // Before B7 such an error was a plain Error with no code, so its line said "Error" and nothing else.
+    const faults = [
+      new Fault("propose_roster_6", `clubs: the club vanished under its own lock (${SUBJECT}, ${TEST_EMAIL})`),
+      new InputFault("upload_1", `media: the caller is an account id, not ${TOKEN}`),
+      new RangeFault("civil_1", `time: ${CAPTION} isn't an IANA time zone (T2, FQ19)`),
+    ];
+    for (const fault of faults) {
+      const { inject, lines } = await logged(() => Promise.reject(fault));
+      expect((await inject({ method: "GET", url: "/v1/me", headers: carrying })).statusCode).toBe(500);
+      const failed = parse(lines).filter((entry) => entry["msg"] === "request failed");
+      expect(
+        failed.map((entry) => entry["err"]),
+        fault.code,
+      ).toEqual([{ type: fault.name, code: fault.code }]);
+      const text = lines.join("");
+      for (const marker of MARKERS) expect(text, marker).not.toContain(marker);
+      expect(text, fault.code).not.toContain(fault.message.slice(0, 12));
+    }
   });
 });

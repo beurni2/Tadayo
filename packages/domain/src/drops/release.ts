@@ -27,6 +27,7 @@ import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
 import { allowanceOf, type Allowance } from "./allowance.ts";
 import { freeSlot, lockCounter, settleLapsed, type CounterKey } from "./counter.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export interface ReleaseReservationInput {
   /** The account the gate loaded. */
@@ -72,7 +73,7 @@ function slotOf(row: Readonly<Record<string, unknown>> | undefined): SlotRow | n
     !(STATES as readonly string[]).includes(state) ||
     !(dropId === null || typeof dropId === "string")
   ) {
-    throw new Error("drops: a reservation came back in a shape the command doesn't know");
+    throw new Fault("release_1", "drops: a reservation came back in a shape the command doesn't know");
   }
   return { day, interval, state: state as SlotRow["state"], dropId };
 }
@@ -84,8 +85,9 @@ export async function releaseReservation(
   input: ReleaseReservationInput,
 ): Promise<ReleasedAnswer> {
   const { userId, reservationId } = input;
-  if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("drops: the caller is an account id");
-  if (typeof reservationId !== "string") throw new TypeError("drops: the reservation is an id");
+  if (typeof userId !== "string" || !ID.test(userId))
+    throw new InputFault("release_2", "drops: the caller is an account id");
+  if (typeof reservationId !== "string") throw new InputFault("release_3", "drops: the reservation is an id");
   // An id that can't be one names no reservation, as one nobody has.
   if (!ID.test(reservationId)) throw new Refused("NOT_FOUND");
 
@@ -123,7 +125,7 @@ export async function releaseReservation(
         SELECT occurrence_id, interval_id, state, drop_id FROM app.reservations WHERE id = ${reservationId}`
     )[0],
   );
-  if (now === null) throw new Error("drops: the reservation this command holds is gone");
+  if (now === null) throw new Fault("release_4", "drops: the reservation this command holds is gone");
   let state = now.state;
   if (state === "live") {
     row = await freeSlot(tx, key, reservationId, at);

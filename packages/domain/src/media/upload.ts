@@ -46,6 +46,7 @@ import { Refused } from "../refused.ts";
 import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import { UPLOAD_MAX_BYTES, UPLOAD_REJECTIONS, type UploadRejection } from "./limits.ts";
 import { newObjectKey, uploadExpiry } from "./object.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export const UPLOAD_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type UploadContentType = (typeof UPLOAD_CONTENT_TYPES)[number];
@@ -112,31 +113,32 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function checkCaller(userId: unknown): void {
-  if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("media: the caller is an account id");
+  if (typeof userId !== "string" || !ID.test(userId))
+    throw new InputFault("upload_1", "media: the caller is an account id");
 }
 
 function check(input: CreateDropPhotoUploadInput): void {
   checkCaller(input.userId);
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("media: the idempotency key is a UUID");
+    throw new InputFault("upload_2", "media: the idempotency key is a UUID");
   }
-  if (typeof input.reservationId !== "string") throw new TypeError("media: the reservation is an id");
+  if (typeof input.reservationId !== "string") throw new InputFault("upload_3", "media: the reservation is an id");
   if (!(UPLOAD_CONTENT_TYPES as readonly string[]).includes(input.contentType)) {
-    throw new TypeError("media: the type is JPEG, PNG or WebP");
+    throw new InputFault("upload_4", "media: the type is JPEG, PNG or WebP");
   }
   if (!Number.isInteger(input.byteSize) || input.byteSize < 1 || input.byteSize > UPLOAD_MAX_BYTES) {
-    throw new TypeError("media: the size is 1 byte to 20 MiB");
+    throw new InputFault("upload_5", "media: the size is 1 byte to 20 MiB");
   }
 }
 
 function instantOf(value: unknown, what: string): Temporal.Instant {
   if (value instanceof Temporal.Instant) return value;
-  throw new Error(`media: ${what} came back as no instant`);
+  throw new Fault("upload_6", `media: ${what} came back as no instant`);
 }
 
 function oneOf<T extends string>(values: readonly T[], value: unknown, what: string): T {
   if (typeof value === "string" && (values as readonly string[]).includes(value)) return value as T;
-  throw new Error(`media: ${what} came back as something the command doesn't know`);
+  throw new Fault("upload_7", `media: ${what} came back as something the command doesn't know`);
 }
 
 interface UploadRow extends OwnUpload {
@@ -149,7 +151,7 @@ function uploadOf(row: Readonly<Record<string, unknown>> | undefined): UploadRow
   if (row === undefined) return null;
   const { id, owner_user_id: owner, object_key: objectKey, rejection } = row;
   if (typeof id !== "string" || typeof owner !== "string" || typeof objectKey !== "string") {
-    throw new Error("media: an upload came back in a shape the command doesn't know");
+    throw new Fault("upload_8", "media: an upload came back in a shape the command doesn't know");
   }
   const expiresAt = instantOf(row["expires_at"], "an upload's expiry");
   return {
@@ -204,7 +206,7 @@ function slotOf(row: Readonly<Record<string, unknown>> | undefined): SlotRow | n
     typeof mediaClass !== "string" ||
     typeof state !== "string"
   ) {
-    throw new Error("media: a reservation came back in a shape the command doesn't know");
+    throw new Fault("upload_9", "media: a reservation came back in a shape the command doesn't know");
   }
   return { day, interval, mediaClass, state, expiresAt: instantOf(row["expires_at"], "a reservation's expiry") };
 }
@@ -261,7 +263,7 @@ export async function createDropPhotoUpload(
   const stored = await reserveAsMember(tx, receipt, first, interval);
   if (stored !== null) {
     const id = (stored.replay as { readonly id?: unknown } | null)?.id;
-    if (typeof id !== "string") throw new Error("media: a stored upload answer names no upload");
+    if (typeof id !== "string") throw new Fault("upload_10", "media: a stored upload answer names no upload");
     const upload = await uploadById(tx, id, "");
     const pending = ownsUpload(upload, userId, first) && upload.answer.state === "pending";
     return { body: stored.replay, toSign: pending ? toSignOf(upload, first) : null };
@@ -272,7 +274,7 @@ export async function createDropPhotoUpload(
   const key: CounterKey = { day: seen.day, interval, club: facts.day.clubId };
   await lockCounter(tx, key);
   const slot = await slotById(tx, reservationId, "FOR SHARE");
-  if (slot === null) throw new Error("media: the reservation this command holds is gone");
+  if (slot === null) throw new Fault("upload_11", "media: the reservation this command holds is gone");
 
   // 4. The clock.
   const at = await clock.sample(tx);
@@ -324,7 +326,7 @@ export interface OwnUploadInput {
 /** The caller's own upload while it lives, with no lock, read in `tx` at `now`. Throws `Refused` NOT_FOUND. */
 export async function readOwnUpload(tx: QuerySql, input: OwnUploadInput, now: ServerNow): Promise<OwnUpload> {
   checkCaller(input.userId);
-  if (typeof input.uploadId !== "string") throw new TypeError("media: the upload is an id");
+  if (typeof input.uploadId !== "string") throw new InputFault("upload_12", "media: the upload is an id");
   if (!ID.test(input.uploadId)) throw new Refused("NOT_FOUND");
   const row = await uploadById(tx, input.uploadId, "");
   if (!ownsUpload(row, input.userId, now)) throw new Refused("NOT_FOUND");
@@ -342,7 +344,7 @@ export async function markPreparing(
   input: OwnUploadInput,
 ): Promise<UploadAnswer> {
   checkCaller(input.userId);
-  if (typeof input.uploadId !== "string") throw new TypeError("media: the upload is an id");
+  if (typeof input.uploadId !== "string") throw new InputFault("upload_13", "media: the upload is an id");
   if (!ID.test(input.uploadId)) throw new Refused("NOT_FOUND");
   const row = await uploadById(tx, input.uploadId, "FOR NO KEY UPDATE");
   const at = await clock.sample(tx);

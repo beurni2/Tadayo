@@ -33,6 +33,7 @@
 // is a `StorageUnavailable` with a fixed message, which the route answers 503 with no body.
 
 import { storageProject, storageServiceKey, storageStatus } from "@tadayo/domain";
+import { InputFault } from "@tadayo/domain/fault";
 
 /** The bucket of originals, private, with D09's limits (tools/ops/src/storage-setup.ts). */
 export const UPLOADS_BUCKET = "uploads";
@@ -73,7 +74,8 @@ export class StorageUnavailable extends Error {
 
 /** An object key as the server makes it (packages/domain/src/media/object.ts), or a programming error. */
 function checkedKey(objectKey: string): string {
-  if (!/^[A-Za-z0-9_-]{32}$/.test(objectKey)) throw new TypeError("storage: an object key is 32 base64url characters");
+  if (!/^[A-Za-z0-9_-]{32}$/.test(objectKey))
+    throw new InputFault("api_storage_1", "storage: an object key is 32 base64url characters");
   return objectKey;
 }
 

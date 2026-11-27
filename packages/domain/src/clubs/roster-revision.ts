@@ -34,6 +34,7 @@ import { activeMemberships } from "../authorization/member.ts";
 import type { FragmentSql, QuerySql } from "../authorization/read-sql.ts";
 import { person, personOf, type SchedulePerson } from "../schedule/week.ts";
 import type { ServerNow } from "../time/clock.ts";
+import { Fault } from "../fault.ts";
 
 export type LinkState = "live" | "accepted" | "used" | "revoked" | "expired";
 export type RevisionState = "open" | "applied" | "did_not_go_ahead" | "superseded";
@@ -87,7 +88,7 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 function shape(): Error {
-  return new Error("clubs: the roster revision came back in a shape the schema doesn't allow");
+  return new Fault("roster_revision_1", "clubs: the roster revision came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {

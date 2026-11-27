@@ -18,6 +18,7 @@
 
 import { wholeMicroseconds } from "../time/instant.ts";
 import type { ServerNow } from "../time/clock.ts";
+import { InputFault } from "../fault.ts";
 
 export type ReadWhat = "caption" | "media" | "reactions";
 export const READS: readonly ReadWhat[] = ["caption", "media", "reactions"];
@@ -118,13 +119,14 @@ export function notBeforeReveal(at: Temporal.Instant | null, revealAt: Temporal.
 /** Throws unless `what` is one of the three reads and `now` an instant Postgres keeps exactly. */
 export function checkRead(what: unknown, now: unknown): void {
   if (!READS.includes(what as ReadWhat)) {
-    throw new TypeError(`authorization: ${String(what)} isn't one of ${READS.join(", ")}`);
+    throw new InputFault("read_1", `authorization: ${String(what)} isn't one of ${READS.join(", ")}`);
   }
   checkNow(now);
 }
 
 /** Throws unless `now` is an instant Postgres keeps exactly. */
 export function checkNow(now: unknown): void {
-  if (!(now instanceof Temporal.Instant)) throw new TypeError("authorization: now is the server's time, a ServerNow");
+  if (!(now instanceof Temporal.Instant))
+    throw new InputFault("read_2", "authorization: now is the server's time, a ServerNow");
   wholeMicroseconds(now, "now");
 }

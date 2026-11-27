@@ -32,6 +32,7 @@ import { person, personOf, type SchedulePerson } from "../schedule/week.ts";
 import { clubTimeZone } from "../time/civil.ts";
 import type { ServerNow } from "../time/clock.ts";
 import { readableRevisions, sightOf, type RevisionSight } from "./roster-revision.ts";
+import { Fault } from "../fault.ts";
 
 export interface MemberRow {
   readonly person: SchedulePerson;
@@ -66,7 +67,7 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 function shape(): Error {
-  return new Error("clubs: the roster came back in a shape the schema doesn't allow");
+  return new Fault("members_1", "clubs: the roster came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {

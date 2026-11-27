@@ -44,6 +44,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import type { ServerNow } from "../time/clock.ts";
 import { CLUB_SIZE } from "./club.ts";
 import { linkFacts, namesNothing, tokenHash, type LinkFacts } from "./invitation-facts.ts";
+import { Fault } from "../fault.ts";
 
 export interface InvitationRosterEntry {
   readonly name: string;
@@ -104,7 +105,7 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
   if (!mine && facts.holdsAnother) return null;
   // 7. Names the answer can't do without.
   const roster = facts.roster;
-  if (roster === null) throw new Error("clubs: an open candidate is on no open revision");
+  if (roster === null) throw new Fault("invitation_preview_1", "clubs: an open candidate is on no open revision");
   if (facts.inviterName === null || roster.members.length === 0) return null;
   // 8. Six already.
   if (facts.members >= CLUB_SIZE) return { state: "full", inviterName: facts.inviterName };

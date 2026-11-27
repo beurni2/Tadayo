@@ -3,8 +3,10 @@
 // letters run against Postgres in tests/src/db/worker-outbox.test.ts.
 
 import { describe, expect, it } from "vitest";
+import { Fault, InputFault, RangeFault } from "@tadayo/domain/fault";
 import { ImageProcessFailed, ImageTimeout } from "./image-process.ts";
 import { BACKOFF_SECONDS, backoffSeconds, FailedForGood, failureCode, LEASE_SECONDS, MAX_ATTEMPTS } from "./outbox.ts";
+import { PrivilegeFault } from "./privileges.ts";
 import { StorageUnavailable } from "./storage.ts";
 
 describe("the retries (T54)", () => {
@@ -32,6 +34,16 @@ describe("a failure's code (T52)", () => {
     expect(failureCode(new ImageProcessFailed())).toBe("image.process_failed");
     expect(failureCode(new FailedForGood("purpose.avatar"))).toBe("purpose.avatar");
     expect(failureCode(new FailedForGood("payload"))).toBe("payload");
+  });
+
+  it("is a fault's site code, which names where the code's own failure came from (the outside audit's B7)", () => {
+    // Before B7 such an error had no code, and its event was recorded as `unknown`.
+    expect(failureCode(new Fault("prepare_3", "media: upl_secret came back in a shape"))).toBe("prepare_3");
+    expect(failureCode(new InputFault("prepare_2", "media: the upload is an id"))).toBe("prepare_2");
+    expect(failureCode(new RangeFault("worker_outbox_1", "outbox: attempts count from 1"))).toBe("worker_outbox_1");
+    expect(failureCode(new PrivilegeFault("worker_privileges_9", "worker: the sweep said x"))).toBe(
+      "worker_privileges_9",
+    );
   });
 
   it("is Postgres's SQLSTATE for a database error, and the system's code for a lost connection", () => {
@@ -64,6 +76,8 @@ describe("a failure's code (T52)", () => {
       "sys.econnreset",
       "unknown",
       "lease_lapsed",
+      "worker_privileges_20",
+      `${"a".repeat(29)}_99`,
     ]) {
       expect(code).toMatch(/^[A-Za-z0-9_.:-]{1,200}$/);
     }

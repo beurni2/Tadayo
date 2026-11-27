@@ -4,6 +4,8 @@
 // - `.html` (apps/web): the text between tags and the attributes people read or hear.
 // A file kind the lint doesn't know is an error, so a new kind is added here on purpose.
 
+import { Fault } from "../fault.ts";
+
 export const STRING_FILE_EXTENSIONS = [".xcstrings", ".strings", ".html"] as const;
 
 export function isStringFile(path: string): boolean {
@@ -25,7 +27,7 @@ export function extractEntries(path: string, content: string): StringEntry[] {
   const bare = (text: string): StringEntry => ({ key: null, text });
   if (path.endsWith(".strings")) return fromStrings(content).map(bare);
   if (path.endsWith(".html")) return fromHtml(content).map(bare);
-  throw new Error(`The copy lint can't read ${path}: not a string file it knows`);
+  throw new Fault("extract_1", `The copy lint can't read ${path}: not a string file it knows`);
 }
 
 // A catalog's key is copy too (Xcode often uses the English text as the key), so it is read

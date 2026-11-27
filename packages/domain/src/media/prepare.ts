@@ -21,6 +21,7 @@ import {
   type UploadPurpose,
   type UploadRejection,
 } from "./upload.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /** An upload waiting for its preparation, as the worker needs it. */
 export interface UploadToPrepare {
@@ -66,7 +67,7 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 function oneOf<T extends string>(values: readonly T[], value: unknown, what: string): T {
   if (typeof value === "string" && (values as readonly string[]).includes(value)) return value as T;
-  throw new Error(`media: ${what} came back as something the preparation doesn't know`);
+  throw new Fault("prepare_1", `media: ${what} came back as something the preparation doesn't know`);
 }
 
 /**
@@ -75,7 +76,7 @@ function oneOf<T extends string>(values: readonly T[], value: unknown, what: str
  * prepare. No lock.
  */
 export async function uploadToPrepare(tx: QuerySql, id: string, at: ServerNow): Promise<UploadToPrepare | null> {
-  if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
+  if (typeof id !== "string" || !ID.test(id)) throw new InputFault("prepare_2", "media: the upload is an id");
   const rows = await bound(tx)`
     SELECT id, owner_user_id, purpose, object_key, content_type FROM app.uploads
      WHERE id = ${id} AND state = 'preparing' AND expires_at > ${at}`;
@@ -83,7 +84,7 @@ export async function uploadToPrepare(tx: QuerySql, id: string, at: ServerNow): 
   if (row === undefined) return null;
   const { owner_user_id: owner, object_key: objectKey } = row;
   if (typeof owner !== "string" || typeof objectKey !== "string") {
-    throw new Error("media: an upload came back in a shape the preparation doesn't know");
+    throw new Fault("prepare_3", "media: an upload came back in a shape the preparation doesn't know");
   }
   return {
     id,
@@ -106,19 +107,20 @@ export async function recordPreparation(
   id: string,
   outcome: Preparation,
 ): Promise<{ readonly at: ServerNow; readonly recorded: boolean }> {
-  if (typeof id !== "string" || !ID.test(id)) throw new TypeError("media: the upload is an id");
+  if (typeof id !== "string" || !ID.test(id)) throw new InputFault("prepare_4", "media: the upload is an id");
   const rows = await bound(tx)`SELECT state, expires_at FROM app.uploads WHERE id = ${id} FOR NO KEY UPDATE`;
   const at = await clock.sample(tx);
   const row = rows[0];
   if (row?.["state"] !== "preparing") return { at, recorded: false };
   const expiresAt = row["expires_at"];
-  if (!(expiresAt instanceof Temporal.Instant)) throw new Error("media: an upload came back with no expiry");
+  if (!(expiresAt instanceof Temporal.Instant))
+    throw new Fault("prepare_5", "media: an upload came back with no expiry");
   if (Temporal.Instant.compare(expiresAt, at) <= 0) return { at, recorded: false };
   if (outcome.state === "rejected") {
     await bound(tx)`UPDATE app.uploads SET state = 'rejected', rejection = ${outcome.rejection} WHERE id = ${id}`;
     return { at, recorded: true };
   }
-  if (outcome.contentHash.length !== 32) throw new TypeError("media: the content hash is 32 bytes");
+  if (outcome.contentHash.length !== 32) throw new InputFault("prepare_6", "media: the content hash is 32 bytes");
   for (const rendition of outcome.renditions) {
     await bound(tx)`
       INSERT INTO app.upload_renditions (upload_id, kind, object_key, width, height, byte_size, created_at)

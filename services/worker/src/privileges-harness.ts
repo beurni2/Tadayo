@@ -804,6 +804,7 @@ say({
         SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
         TADAYO_ENVIRONMENT: "dev",
         TADAYO_PHOTO_USER: "harness-photo",
+        TADAYO_SAFETY_PROVIDER: "none",
       },
       () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
     );
@@ -835,6 +836,7 @@ say({
         SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
         TADAYO_ENVIRONMENT: "dev",
         TADAYO_PHOTO_USER: "harness-photo",
+        TADAYO_SAFETY_PROVIDER: "none",
       },
       () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
     );

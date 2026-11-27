@@ -28,6 +28,7 @@ import { clubTimeZone } from "../time/civil.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
 import { daysToMake, type GenerationFacts, type WeekVersion } from "./generate.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
 
@@ -40,7 +41,7 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function shape(): Error {
-  return new Error("schedule: a club's week came back in a shape the schema doesn't allow");
+  return new Fault("make_days_1", "schedule: a club's week came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -97,7 +98,8 @@ function versionOf(value: unknown): WeekVersion {
  * none, and when no club has that id.
  */
 export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: string): Promise<number> {
-  if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeError("schedule: the club is a club id");
+  if (typeof clubId !== "string" || !ID.test(clubId))
+    throw new InputFault("make_days_2", "schedule: the club is a club id");
 
   // 1. The club's row.
   const [club] = await bound(tx)`SELECT timezone FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;

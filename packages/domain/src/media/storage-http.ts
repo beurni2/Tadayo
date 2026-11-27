@@ -6,16 +6,22 @@
  * The project's URL, which must be `https://<twenty letters>.supabase.co`, as the sign-in verifier requires, without
  * its trailing slash; else an error that names the setting, never its value. `who` names the process.
  */
+import { Fault } from "../fault.ts";
+
 export function storageProject(value: string, who: string): string {
   const match = /^https:\/\/([a-z]{20})\.supabase\.co\/?$/.exec(value);
-  if (!match) throw new Error(`${who}: SUPABASE_URL isn't a project's URL, https://<its 20 letters>.supabase.co`);
+  if (!match)
+    throw new Fault(
+      "storage_http_1",
+      `${who}: SUPABASE_URL isn't a project's URL, https://<its 20 letters>.supabase.co`,
+    );
   return `https://${match[1] ?? ""}.supabase.co`;
 }
 
 /** The service key as it is, or an error that names the setting, never its value. `who` names the process. */
 export function storageServiceKey(value: string, who: string): string {
   if (typeof value !== "string" || value === "" || /\s/.test(value)) {
-    throw new Error(`${who}: SUPABASE_SERVICE_KEY isn't a key`);
+    throw new Fault("storage_http_2", `${who}: SUPABASE_SERVICE_KEY isn't a key`);
   }
   return value;
 }

@@ -28,6 +28,7 @@ import { newId } from "../ids.ts";
 import { clubTimeZone } from "../time/civil.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
 import { daysPerMember, proposedWeek } from "./propose.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 type Bound<R> = (
   template: TemplateStringsArray,
@@ -78,18 +79,18 @@ async function latestWeek(tx: QuerySql, clubId: string): Promise<LatestWeek> {
     typeof confirmed !== "boolean" ||
     (lastMade !== null && typeof lastMade !== "string")
   ) {
-    throw new Error("schedule: the club's latest week came back in a shape the schema doesn't allow");
+    throw new Fault("open_1", "schedule: the club's latest week came back in a shape the schema doesn't allow");
   }
   return { id, effectiveFrom, confirmed, lastMade };
 }
 
 /** Opens the first days of `clubId` in `tx`, a READ COMMITTED transaction. */
 export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubId: string): Promise<OpenedFirstDays> {
-  if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeError("schedule: the club is a club id");
+  if (typeof clubId !== "string" || !ID.test(clubId)) throw new InputFault("open_2", "schedule: the club is a club id");
   const [club] = await bound(tx)`SELECT timezone FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
-  if (club === undefined) throw new Error("schedule: no such club to open the first days of");
+  if (club === undefined) throw new Fault("open_3", "schedule: no such club to open the first days of");
   const timezone = club["timezone"];
-  if (typeof timezone !== "string") throw new Error("schedule: a club came back without its timezone");
+  if (typeof timezone !== "string") throw new Fault("open_4", "schedule: a club came back without its timezone");
   const [existing] = await bound(tx)`
     SELECT EXISTS (SELECT FROM app.schedule_versions WHERE club_id = ${clubId}) AS scheduled,
            EXISTS (SELECT FROM app.schedule_proposals WHERE club_id = ${clubId}) AS proposed,
@@ -100,7 +101,8 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
   // Again only when every proposal the club has had is first days that ended with no successor.
   const again = existing?.["scheduled"] === true && existing["proposed"] === true && existing["standing"] === false;
   if (!first && !again) {
-    throw new Error(
+    throw new Fault(
+      "open_5",
       "schedule: the first days are opened once, for a club with no schedule yet, or again once all before them ended",
     );
   }
@@ -146,7 +148,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
     const interval = member["interval_id"];
     const days = week[index];
     if (typeof interval !== "string" || days === undefined) {
-      throw new Error("schedule: a member came back without their interval or their proposed days");
+      throw new Fault("open_6", "schedule: a member came back without their interval or their proposed days");
     }
     await bound(tx)`
       INSERT INTO app.schedule_proposal_members (proposal_id, club_id, interval_id)

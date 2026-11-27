@@ -11,6 +11,7 @@
 import { REVEAL_TIME, clubTimeZone, resolveCivilTime } from "../time/civil.ts";
 import type { ServerNow } from "../time/clock.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
+import { Fault, RangeFault } from "../fault.ts";
 
 const LEAD_NANOSECONDS = 24n * 3_600_000_000_000n;
 
@@ -25,7 +26,7 @@ export function firstDate(
   notBefore?: Temporal.PlainDate,
 ): Temporal.PlainDate {
   const isoDay = WEEKDAYS.indexOf(weekday) + 1;
-  if (isoDay === 0) throw new RangeError(`schedule: ${weekday} can't be someone's day (T6)`);
+  if (isoDay === 0) throw new RangeFault("first_date_1", `schedule: ${weekday} can't be someone's day (T6)`);
   const club = clubTimeZone(zone);
   const earliest = confirmedAt.epochNanoseconds + LEAD_NANOSECONDS;
   // The weekday's first date on or after the confirmation's own local date, then week by week. Its
@@ -37,5 +38,5 @@ export function firstDate(
     if (resolveCivilTime(date, REVEAL_TIME, club).epochNanoseconds >= earliest) return date;
     date = date.add({ days: 7 });
   }
-  throw new Error(`schedule: no first date for ${weekday} after ${confirmedAt.toString()} in ${club}`);
+  throw new Fault("first_date_2", `schedule: no first date for ${weekday} after ${confirmedAt.toString()} in ${club}`);
 }

@@ -15,6 +15,7 @@ import { createHash } from "node:crypto";
 import { activeMemberships } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
 import type { ServerNow } from "../time/clock.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /** The contract's `InvitationToken`: base64url, 43 to 128 characters. */
 const TOKEN = /^[A-Za-z0-9_-]{43,128}$/;
@@ -93,7 +94,7 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const HASH = /^[0-9a-f]{64}$/;
 
 function shape(): Error {
-  return new Error("clubs: an invitation came back in a shape the schema doesn't allow");
+  return new Fault("invitation_facts_1", "clubs: an invitation came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -165,8 +166,10 @@ export async function linkFacts(
   hash: string,
   now: ServerNow,
 ): Promise<LinkFacts | null> {
-  if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("clubs: the caller is an account id");
-  if (typeof hash !== "string" || !HASH.test(hash)) throw new TypeError("clubs: a token's hash is 64 hex digits");
+  if (typeof userId !== "string" || !ID.test(userId))
+    throw new InputFault("invitation_facts_2", "clubs: the caller is an account id");
+  if (typeof hash !== "string" || !HASH.test(hash))
+    throw new InputFault("invitation_facts_3", "clubs: a token's hash is 64 hex digits");
   const rows = await bound(sql)`
     SELECT i.id AS invitation_id, i.revoked_at IS NOT NULL AS revoked, i.replaced_by_id IS NOT NULL AS replaced,
            i.bound_user_id, i.expires_at, i.expires_at <= ${now}::pg_catalog.timestamptz AS past_expiry,
