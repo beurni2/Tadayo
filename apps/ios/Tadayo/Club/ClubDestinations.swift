@@ -3,17 +3,20 @@ import TadayoCore
 
 /// Club details as a club tab's stack shows it, bound to the selected club's model
 /// (`RootModel.clubDetails()`): it reads the details the first time it shows, and again on
-/// Retry. Coming back from the members list reads nothing again. A read cancelled while the
-/// screen stays (its task ended by the system, the answer dropped) is made again the next time it
-/// shows, so loading never stays with no read behind it.
+/// Retry. Coming back from the members list reads nothing again; coming back from Invite
+/// someone's screens reads the details again, quietly (the tabs, `refreshDetails`). A read
+/// cancelled while the screen stays (its task ended by the system, the answer dropped) is made
+/// again the next time it shows, so loading never stays with no read behind it.
 struct ClubDetailsDestination: View {
     let model: ClubDetailsModel
     let openMembers: () -> Void
+    var invite: () -> Void = {}
     @State private var asked = false
 
     var body: some View {
         ClubDetailsScreen(
-            details: model.details, retry: { await model.loadDetails() }, openMembers: openMembers
+            details: model.details, retry: { await model.loadDetails() }, openMembers: openMembers,
+            canInvite: model.canInvite, invite: invite
         )
         .task {
             guard !asked else { return }
@@ -29,16 +32,19 @@ struct ClubDetailsDestination: View {
 /// what an earlier opening left in the model (an old roster, or the answer to a read Back
 /// cancelled), so it slides in loading each time. A cancelled read is made again, as Club
 /// details' is. A proposed row whose candidate the viewer has yet to decide on opens G03-approve
-/// for the revision the list showed (`openApproval`).
+/// for the revision the list showed (`openApproval`); the proposer's own decided row opens the
+/// person's invitation page (`openInvitation`).
 struct MembersDestination: View {
     let model: ClubDetailsModel
     var openApproval: (RosterRevision) -> Void = { _ in }
+    var openInvitation: (String) -> Void = { _ in }
     @State private var asked = false
 
     var body: some View {
         MembersScreen(
             members: asked ? model.members : .loading, retry: { await model.loadMembers() },
-            openApproval: openApproval
+            openApproval: openApproval,
+            openInvitation: model.opensInvitations ? openInvitation : nil
         )
         .task {
             guard !asked else { return }
