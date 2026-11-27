@@ -1,0 +1,78 @@
+--- 05:46:32 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-27-054632.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-27 05:46:32.00 +0000
+pid: 25911
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.A272C9E7-929F-4337-A5CA-0F98638CB7F1
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 25911, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 05:46:44 UTC, /Library/Logs/DiagnosticReports/JetsamEvent-2026-11-27-054643.ips
+bug_type: 298
+timestamp: 2026-11-27 05:46:43.00 +0000
+largestProcess: SimMetalHost (iPhone 17: default
+killed: AudioConverterHardenedService, pid 561 (idle-exit)
+killed: SetStoreUpdateService, pid 591 (idle-exit)
+killed: uarpd, pid 101 (idle-exit)
+killed: uarpassetmanagerd, pid 106 (idle-exit)
+killed: com.apple.audio.SandboxHelper, pid 611 (idle-exit)
+killed: assessmentagent, pid 628 (idle-exit)
+killed: AssetCacheTetheratorService, pid 633 (idle-exit)
+killed: corerepaird, pid 145 (idle-exit)
+killed: ReportCrashService, pid 25946 (per-process-limit)
+--- 05:51:27 UTC, /Users/runner/Library/Logs/DiagnosticReports/searchd-2026-11-27-055127.ips
+name: searchd
+app_name: searchd
+bug_type: 309
+timestamp: 2026-11-27 05:51:27.00 +0000
+pid: 23428
+procName: searchd
+procPath: /Volumes/VOLUME/*/Search.framework/searchd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.A272C9E7-929F-4337-A5CA-0F98638CB7F1
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 23428, "byProc": "searchd", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 05:53:01 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-27-054917_sat12-bq155-622052ae-1269-4d71-a525-22d529ef4004-B28084706885.diag
+Date/Time:        2026-11-27 05:42:00.845 +0000
+End time:         2026-11-27 05:44:06.598 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 5024DE0C-E1CC-49CE-AECB-70DAEAFE83C1
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x195c14000
+
+Command:          STExtractionService
+Path:             /private/var/run/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.A272C9E7-929F-4337-A5CA-0F98638CB7F1"(2819)
+On Behalf Of:     87 samples UNKNOWN [23271] (86 samples originated by UNKNOWN [23207, 23341], 1 sample originated by trustd [23304])
+Architecture:     arm64
+Parent:           UNKNOWN [23035]
+PID:              24281
+
+--- 05:56:59 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-27-055301_sat12-bq155-622052ae-1269-4d71-a525-22d529ef4004-B28084706885.diag
+Date/Time:        2026-11-27 04:46:51.662 +0000
+End time:         2026-11-27 05:46:06.553 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 34FB37FD-5C09-45CC-8901-97C4025B2987
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x195c14000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x19e110000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(800)
+On Behalf Of:     154 samples UNKNOWN [6117, 22020, 22946, 25946, 53326, 53536, 58273] (154 samples originated by UNKNOWN [222, 22946, 25946, 53326, 53536, 58273])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              700
