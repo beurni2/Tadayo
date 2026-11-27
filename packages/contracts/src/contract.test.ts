@@ -318,6 +318,21 @@ describe("the document", () => {
     }
   });
 
+  it("says in its rules that any operation may answer a bare 500 or 503, which no operation lists but the health check (the outside audit's B8)", () => {
+    const description = (document.info as JsonObject).description as string;
+    const rule = description.split("\n").filter((line) => line.startsWith("- Any operation may also answer"));
+    expect(rule).toEqual([
+      "- Any operation may also answer 500 when the server fails, or 503 when something it depends on is out of reach for now (sign-in's keys, Storage, or the database out of time on a lock or a statement). Either comes with no body and with Cache-Control: private, no-store, and no operation lists either but getHealth, whose 503 is its answer. An app sends a retry under the same Idempotency-Key (T19).",
+    ]);
+    for (const operation of operations) {
+      const responses = operation.responses as JsonObject;
+      expect(responses["500"], operation.operationId as string).toBeUndefined();
+      expect(Object.hasOwn(responses, "503"), operation.operationId as string).toBe(
+        operation.operationId === "getHealth",
+      );
+    }
+  });
+
   it("works before the profile is complete for exactly the account's own setup routes (FQ13, FQ69)", () => {
     expect(
       OPERATIONS.filter((op) => op.beforeProfile)
