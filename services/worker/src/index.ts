@@ -42,7 +42,11 @@ export {
   finishEvent,
   LEASE_SECONDS,
   MAX_ATTEMPTS,
+  OUTAGE_SECONDS,
+  OUTAGE_WAIT_SECONDS,
+  outageWaitSeconds,
   outboxPass,
+  Unavailable,
   type Claim,
   type Handler,
   type OutboxEvent,
@@ -51,10 +55,13 @@ export {
 } from "./outbox.ts";
 export {
   contentHash,
+  MISSING_REJECTED_AT,
+  OriginalMissing,
   PREPARE_TOPIC,
   prepareHandler,
   preparedLine,
   prepareUpload,
+  UPLOAD_LAPSED,
   type PrepareDeps,
   type Prepping,
 } from "./prepare.ts";
@@ -63,6 +70,7 @@ export { startWorker, type Started } from "./start.ts";
 export {
   RENDITIONS_BUCKET,
   renditionKey,
+  StorageRefused,
   StorageUnavailable,
   UPLOADS_BUCKET,
   workerStorage,

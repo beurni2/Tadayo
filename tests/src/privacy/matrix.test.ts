@@ -539,13 +539,21 @@ function secretsOf(spec: Spec): string[] {
  * file's events of the topic too.
  */
 async function prepared(id: string): Promise<Prepping> {
-  const [event] = await db<{ id: string; topic: string; payload: unknown; attempts: number }[]>`
-    SELECT id, topic, payload, attempts FROM app.outbox_events
+  const [event] = await db<
+    { id: string; topic: string; payload: unknown; attempts: number; created_at: Temporal.Instant }[]
+  >`
+    SELECT id, topic, payload, attempts, created_at FROM app.outbox_events
      WHERE dedupe_key = ${`upload.prepare:${id}`} AND state = 'pending'`;
   if (event === undefined) throw new Error("the matrix: the upload completed has no event waiting");
   return prepareUpload(
     { sql: db, clock, storage: workerStorage, safety: noSafetyProvider, say: () => undefined },
-    { ...event, attempts: event.attempts + 1 },
+    {
+      id: event.id,
+      topic: event.topic,
+      payload: event.payload,
+      attempts: event.attempts + 1,
+      createdAt: event.created_at,
+    },
   );
 }
 
