@@ -2,7 +2,7 @@
 
 The plan's section 3 registers each breakage and the test or refusal that must catch it, with its words, before it is run (`docs/plans/api-b2-test-gaps.md` on the branch). Each breakage is planted alone in the worktree, run against the suite named, restored from its own copy and compared after. "Caught" means the run failed and a failing test's name, or the setup's refusal on stderr, holds the registered words.
 
-- `breakages.py`, `breakages.json`, `breakages.out`: the first commit's ten (R1 to R4, S1 to S4, D1, D2), at 04:38 UTC on 2026-11-27, on `bb95dc9`'s base; all caught.
+- `breakages.py`, `breakages.out`: the first commit's ten (R1 to R4, S1 to S4, D1, D2), at 04:38 UTC on 2026-11-27, on `bb95dc9`'s base; all caught. Their JSON was overwritten by the next run, so `breakages.out` is their record.
 - `breakages-onmain-tests.json`: R1 and R3 under `main`'s two database test files; each missed, as expected (the gap the new tests close).
 - `breakages2.py`, `breakages2.json`, `breakages2.out`: the second commit's eighteen (the ten again, L1, S5, S6, D3 to D7), at 06:07:47 to 06:08:16 UTC, on `main` at `bbd2291` with the second commit's files; all caught. The first run of the eighteen, at 06:01:51 to 06:02:20 UTC, reported D3, D6 and D7 missed because Vitest printed only its own TypeError for the setup's refusal (`vitest-setup-refusal-before-stderr.log`, D7 run by hand at 06:05); its output was overwritten by the run here. The setup then wrote each refusal to stderr first (`refuse` in `tests/src/privacy/global-setup.ts`; `docs/LIMITATIONS.md`, 2026-11-27).
 - `breakages2-setup.out`: D3, D6 and D7 alone after that change, at 06:06 UTC; caught.
