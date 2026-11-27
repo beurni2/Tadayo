@@ -24,7 +24,10 @@ import TadayoDesign
 /// their link, kept before the share sheet opens (`InviteNameModel`); while it goes, the name is
 /// read-only and the button busy. Once the share sheet closes, shared or not, the screen returns
 /// to the list, where the person's row now is (`finished`): a cancelled share leaves their link
-/// Not shared, and Share link there shares the same link (`createInvitation.retention`).
+/// Not shared, and Share link there shares the same link (`createInvitation.retention`). From
+/// Club details' Invite someone (7c), the same screen proposes into the active club, and the
+/// person's invitation page takes its place once the sheet closes (handoff 8's
+/// `activeInvitationManagement`).
 struct InviteNameScreen: View {
     let model: InviteNameModel
     let finished: @MainActor () -> Void

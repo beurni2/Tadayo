@@ -63,6 +63,9 @@ import Observation
     let gone: @MainActor () async -> Void
     let signedOut: @MainActor () async -> Void
     private var detailReads = 0
+    /// The person's invitation page opened last, kept while it goes on (`invitation(for:)`).
+    private var keptInvitation: InvitationListModel?
+    private var keptNaming: InviteNameModel?
     private var memberReads = 0
 
     public init(
@@ -83,13 +86,25 @@ import Observation
 
     /// Club details, when it shows and on its Retry.
     public func loadDetails() async {
+        await readDetails(quiet: false)
+    }
+
+    /// Club details read again as it shows again after Invite someone, whose proposal may have
+    /// taken the club's last place: the details on screen stay while the read is out, and stay if
+    /// it fails. Details not loaded yet load as on Retry.
+    public func refreshDetails() async {
+        guard case .loaded = details else { return await readDetails(quiet: false) }
+        await readDetails(quiet: true)
+    }
+
+    private func readDetails(quiet: Bool) async {
         guard club.state != .suspended else {
             details = .unavailable
             return
         }
         detailReads += 1
         let asked = detailReads
-        details = .loading
+        if !quiet { details = .loading }
         let answer = await Self.result { [service, club] () async throws(APIFailure) in
             try await service.club(club.id)
         }
@@ -98,7 +113,7 @@ import Observation
         case .success(let detail):
             details = .loaded(detail)
         case .failure(let failure):
-            if let failed = await settle(failure) { details = .failed(failed) }
+            if let failed = await settle(failure), !quiet { details = .failed(failed) }
         }
     }
 
@@ -156,6 +171,73 @@ import Observation
         RosterApprovalModel(
             revision: revision, service: service, makeKey: makeKey, current: current,
             gone: { [weak self] in await self?.loadMembers() }, signedOut: signedOut)
+    }
+
+    /// Club details' Invite someone (handoff 8's `activeInvitationManagement`, frame 16): an
+    /// active club whose details say the server takes a proposal (`can_propose`: a place is free
+    /// and the caller may propose; A01, T6), on a phone that keeps the account's links. A club
+    /// that hasn't started keeps its setup list instead (`G01-invite-people`).
+    public var canInvite: Bool {
+        guard links != nil, case .loaded(let detail) = details else { return false }
+        return detail.club.state == .active && detail.canPropose
+    }
+
+    /// The name step for Invite someone, from the details' roster version. Club details doesn't
+    /// read the open revision's candidates, so the name step reads them before its first
+    /// proposal (`known` nil). One left by Back while unfinished (`InviteNameModel.isUnfinished`:
+    /// its action on its way, or a proposal or link that may have gone through without its
+    /// answer) is the one opened again, its line cleared: its retry sends the same keys, so the
+    /// person isn't proposed twice (T19). Nil when Invite someone isn't offered.
+    public func makeInvite(
+        makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() }
+    ) -> InviteNameModel? {
+        guard canInvite, let links, case .loaded(let detail) = details, current() else {
+            return nil
+        }
+        if let kept = keptNaming, kept.isUnfinished {
+            kept.reopened()
+            return kept
+        }
+        let model = InviteNameModel(
+            club: club.ref, accountID: links.accountID, rosterVersion: detail.rosterVersion,
+            known: nil, service: service, book: links.book, makeKey: makeKey, current: current,
+            signedOut: signedOut)
+        keptNaming = model
+        return model
+    }
+
+    /// Whether the person's invitation page opens here: for an active club, on a phone that
+    /// keeps the account's links (handoff 8's `activeInvitationManagement`). A club in setup keeps
+    /// its setup list (`G01-invite-people`, "remains a setup destination"), and a paused club's
+    /// waits for B2's paused states. The club's state is the details' once read.
+    public var opensInvitations: Bool {
+        guard links != nil else { return false }
+        if case .loaded(let detail) = details { return detail.club.state == .active }
+        return club.state == .active
+    }
+
+    /// The person's invitation page (`G05-members-invite`) for a candidate, asked in the same
+    /// session and for the same club as this model's reads: the setup list's model made for that
+    /// one candidate, which shows them only while the caller proposed them (handoff 8: "Only
+    /// candidate.proposed_by gets link-management controls"). Its not found reads the members
+    /// again, as the approval's does. Opened again for the same person while it goes on, it's the
+    /// same model, its line cleared, so a link action's key survives Back (T19). Nil where the
+    /// page doesn't open (`opensInvitations`) and once the session has ended.
+    public func invitation(
+        for candidateID: String,
+        makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() }
+    ) -> InvitationListModel? {
+        guard opensInvitations, let links, current() else { return nil }
+        if let kept = keptInvitation, kept.candidateID == candidateID, !kept.ended, !kept.closed {
+            kept.reopened()
+            return kept
+        }
+        let model = InvitationListModel(
+            club: club.ref, accountID: links.accountID, service: service, book: links.book,
+            candidate: candidateID, makeKey: makeKey, current: current,
+            gone: { [weak self] in await self?.loadMembers() }, signedOut: signedOut)
+        keptInvitation = model
+        return model
     }
 
     /// What a failed read leads to: the model closed and the list read again for a club no

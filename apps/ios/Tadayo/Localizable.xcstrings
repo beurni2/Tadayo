@@ -1273,6 +1273,30 @@
         }
       }
     },
+    "details.invite" : {
+      "comment" : "handoff 5 paused.details.invite, and handoff 8 screen-copy G05-club-details-active (frame 16): Club details' row for an active club the server lets take a proposal",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite someone"
+          }
+        }
+      }
+    },
+    "details.invite.hint" : {
+      "comment" : "handoff 5 paused.details.invite.hint: Invite someone's hint; %@ is the club's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Propose a new member for %@."
+          }
+        }
+      }
+    },
     "details.leave" : {
       "comment" : "handoff 6 details.leave",
       "extractionState" : "manual",
@@ -2889,6 +2913,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again."
+          }
+        }
+      }
+    },
+    "memberInvite.body" : {
+      "comment" : "handoff 8 screen-copy G05-members-invite (frame 14): the page's words under the link's card; %@ is the person's name (FQ20)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New members need everyone’s approval. %@ will see only drops shared after joining."
+          }
+        }
+      }
+    },
+    "memberInvite.more" : {
+      "comment" : "handoff 8 screen-copy G05-members-invite (frame 14): the secondary button whose menu holds Revoke link or Create new link; spoken as invite.more.label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More options"
+          }
+        }
+      }
+    },
+    "memberInvite.title" : {
+      "comment" : "handoff 8 screen-copy G05-members-invite (frame 14): the person's invitation page's title; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@’s invitation"
           }
         }
       }
