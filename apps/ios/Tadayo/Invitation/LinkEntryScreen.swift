@@ -34,9 +34,17 @@ import TadayoDesign
 /// (`handoff9.linkEntry.keyboard`), and a line under the field keeps it there; an answer that
 /// takes the person on gives it up as the invitation is pushed over the field, so Back returns
 /// to the field with no keyboard over Continue, as on arrival (`check()`).
+///
+/// Signed out (`G02-link-entry`, handoff 2's frame 11; `docs/plans/ios-b1-welcome.md` section 4),
+/// pushed over Welcome on the sign-in stack, the same screen with handoff 2's line, "Sign in
+/// before you can see the club or its people.", in place of "We’ll check the link before showing
+/// the club or its people.", and Continue read by its visible word: it checks nothing, so
+/// "Check the invitation link." would say what doesn't happen, and handoff 2 gives it no label.
+/// Continue holds the link, and A02-email is pushed over the field, which gives up its focus.
+/// No check, so no busy form and no `cannotCheck`.
 struct LinkEntryScreen: View {
     let model: InvitationLinkEntryModel
-    /// Continue: checks the link and shows what it found.
+    /// Continue: checks the link and shows what it found, or, signed out, holds it.
     let proceed: @MainActor () async -> Void
     /// Whether the field shows focused, for a snapshot: nil in the app.
     var focus: Bool?
@@ -87,7 +95,7 @@ struct LinkEntryScreen: View {
             .disabled(model.isChecking)
             .accessibilityLabel(Text("linkEntry.paste.vo"))
             .padding(.top, Spacing.l)
-            Text("invitation.checkFirst")
+            Text(model.checks ? "invitation.checkFirst" : "linkEntry.signInFirst")
                 .textRole(.metadata)
                 .foregroundStyle(Palette.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -103,7 +111,8 @@ struct LinkEntryScreen: View {
                 }
                 .buttonStyle(.tadayoPrimary(isBusy: model.isChecking))
                 .disabled(!model.canContinue)
-                .accessibilityLabel(Text("linkEntry.continue.vo"))
+                .accessibilityLabel(
+                    Text(model.checks ? "linkEntry.continue.vo" : "linkEntry.continue"))
             }
         }
         .navigationTitle(Text("invitation.nav"))
@@ -113,13 +122,13 @@ struct LinkEntryScreen: View {
     }
 
     /// Continue, or Return: the link checked, and, once the answer has pushed the invitation over
-    /// the field or opened the club, the field's focus given up while the field is still on
-    /// screen. Given up only as the field left the screen (`onDisappear`), Continue was out of
-    /// reach after Back on both iOS versions (`InvitationUITests`), read as the keyboard back
-    /// over it.
+    /// the field or opened the club, or, signed out, once the link is held and A02-email pushed
+    /// over the field, the field's focus given up while the field is still on screen. Given up
+    /// only as the field left the screen (`onDisappear`), Continue was out of reach after Back on
+    /// both iOS versions (`InvitationUITests`), read as the keyboard back over it.
     private func check() async {
         await proceed()
-        if model.invitation != nil || model.opened != nil { focused = false }
+        if model.invitation != nil || model.opened != nil || model.isHeld { focused = false }
     }
 
     /// The line under the field.

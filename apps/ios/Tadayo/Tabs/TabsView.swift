@@ -35,7 +35,9 @@ import TadayoDesign
 /// replaces it or the tabs go with the session.
 ///
 /// Create a club, on a tab with no club or in the switcher (which closes first), pushes
-/// G01-create onto that tab, with the model `createClub` makes. Once the club is made its setup
+/// G01-create onto that tab, with the model `createClub` makes; after Welcome's Create a club, the
+/// tabs open on Home with G01-create pushed as they first show, with the model `arrival` gives
+/// (`docs/plans/ios-b1-welcome.md` section 2). Once the club is made its setup
 /// list takes G01-create's place, with the model `invitations` makes, so Back returns to the tab,
 /// where Home now shows the new club; Create an invitation pushes the name step over the list,
 /// which returns to it once its share sheet closes; Done for now puts the waiting screen in the
@@ -112,6 +114,9 @@ struct TabsView: View {
     let logOut: @MainActor () async -> Void
     let details: @MainActor () -> ClubDetailsModel?
     let createClub: @MainActor () -> CreateClubModel?
+    /// `G01-create` to open on Home as the tabs first show, after Welcome's Create a club, or nil
+    /// (`RootModel.arrivalCreate()`).
+    let arrival: @MainActor () -> CreateClubModel?
     let invitations: @MainActor (ClubRef) -> InvitationListModel?
     let proposedRoster: @MainActor (ClubRef) -> ProposedRosterModel?
     let linkEntry: @MainActor () -> InvitationLinkEntryModel?
@@ -164,6 +169,7 @@ struct TabsView: View {
         select: @escaping @MainActor (String) async -> Void = { _ in },
         details: @escaping @MainActor () -> ClubDetailsModel? = { nil },
         createClub: @escaping @MainActor () -> CreateClubModel? = { nil },
+        arrival: @escaping @MainActor () -> CreateClubModel? = { nil },
         invitations: @escaping @MainActor (ClubRef) -> InvitationListModel? = { _ in nil },
         proposedRoster: @escaping @MainActor (ClubRef) -> ProposedRosterModel? = { _ in nil },
         linkEntry: @escaping @MainActor () -> InvitationLinkEntryModel? = { nil },
@@ -181,6 +187,7 @@ struct TabsView: View {
         self.select = select
         self.details = details
         self.createClub = createClub
+        self.arrival = arrival
         self.invitations = invitations
         self.proposedRoster = proposedRoster
         self.linkEntry = linkEntry
@@ -193,6 +200,12 @@ struct TabsView: View {
 
     var body: some View {
         tabs
+            // Welcome's Create a club: G01-create on Home, once, as the tabs first show.
+            .onAppear {
+                guard let model = arrival() else { return }
+                selection = .home
+                startCreating(with: model, on: .home)
+            }
             .onChange(of: approving?.changes ?? 0) { _, _ in
                 // A decision that answered after Back: Members, showing again, reads again.
                 if !paths.values.contains(where: { $0.contains(.approval) }) {
@@ -374,14 +387,26 @@ struct TabsView: View {
     }
 
     /// The root's invitation came or went. One a row asked for is pushed onto the row's tab, or,
-    /// with no link held for a changed roster, gives way to the paste step (FQ136). Gone, it's
-    /// taken off every tab; a row chosen meanwhile still waits for its own.
+    /// with no link held for a changed roster, gives way to the paste step (FQ136). One no row
+    /// asked for, a link held through sign-in that the root presents once the list has answered
+    /// (`RootModel.show`; Welcome's I have an invite), is pushed onto the selected tab as an
+    /// accepted invitation's is, in place of any shown, unless it shows already
+    /// (`docs/plans/ios-b1-welcome.md` section 2). Gone, it's taken off every tab; a row chosen
+    /// meanwhile still waits for its own.
     private func rootInvitationChanged() {
         guard let model = invitation else {
             removeAccepted()
             return
         }
-        guard let tab = acceptedOn else { return }
+        guard let tab = acceptedOn else {
+            guard shownAccepted !== model else { return }
+            let tab = selection.tab ?? .home
+            removeAccepted()
+            selection = Selection(tab)
+            shownAccepted = model
+            paths[tab] = [.accepted]
+            return
+        }
         acceptedOn = nil
         if case .reopenLink = model.state {
             closeInvitation()
@@ -435,6 +460,10 @@ struct TabsView: View {
     /// Create a club: G01-create on `tab`, in place of any club being made on another tab.
     private func startCreating(on tab: ClubTab) {
         guard let model = createClub() else { return }
+        startCreating(with: model, on: tab)
+    }
+
+    private func startCreating(with model: CreateClubModel, on tab: ClubTab) {
         closeCreateScreens()
         (creating, inviting, naming) = (model, nil, nil)
         paths[tab] = [.create]

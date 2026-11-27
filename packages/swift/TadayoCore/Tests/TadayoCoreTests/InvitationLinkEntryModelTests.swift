@@ -234,4 +234,83 @@ import Testing
         #expect(!entry.isChecking)
         #expect(entry.text == link)
     }
+
+    // MARK: Signed out (`G02-link-entry`, handoff 2's frame 11)
+
+    /// A signed-out paste step whose Continue holds into `held` and whose Back lets go into
+    /// `letGo`.
+    func signedOut(
+        held: @escaping @MainActor (InvitationToken) -> Void = { _ in },
+        letGo: @escaping @MainActor (InvitationToken) -> Void = { _ in }
+    ) -> InvitationLinkEntryModel {
+        InvitationLinkEntryModel(hold: held, letGo: letGo)
+    }
+
+    @Test func signedOutContinueHoldsAPlausibleLinkAndChecksNothing() async {
+        var held: [InvitationToken] = []
+        let entry = signedOut(held: { held.append($0) })
+        #expect(!entry.checks)
+        entry.text = link
+        await entry.proceed()
+        #expect(held == [Kitchen.token(1)])
+        #expect(entry.isHeld)
+        #expect(!entry.isChecking)
+        #expect(entry.invitation == nil)
+        #expect(entry.problem == nil)
+        // A02-email is over it: nothing more until Back.
+        #expect(!entry.canContinue)
+        await entry.proceed()
+        #expect(held.count == 1)
+    }
+
+    @Test func signedOutTextThatIsntALinkHoldsNothing() async {
+        var held: [InvitationToken] = []
+        let entry = signedOut(held: { held.append($0) })
+        entry.text = "https://example.com/i#" + Kitchen.token(1).secret
+        await entry.proceed()
+        #expect(held.isEmpty)
+        #expect(!entry.isHeld)
+        #expect(entry.problem == .invalid)
+        #expect(!entry.canContinue)
+    }
+
+    @Test func signedOutBackToTheFieldLetsTheLinkGoAndKeepsTheText() async {
+        var letGo: [InvitationToken] = []
+        let entry = signedOut(letGo: { letGo.append($0) })
+        entry.text = link
+        await entry.proceed()
+        entry.returned()
+        #expect(letGo == [Kitchen.token(1)])
+        #expect(!entry.isHeld)
+        #expect(entry.text == link)
+        #expect(entry.canContinue)
+        // Nothing held, nothing more to let go.
+        entry.returned()
+        #expect(letGo.count == 1)
+    }
+
+    @Test func signedOutLeftLetsTheLinkGoAndHoldsNoMore() async {
+        var held = 0
+        var letGo: [InvitationToken] = []
+        let entry = signedOut(held: { _ in held += 1 }, letGo: { letGo.append($0) })
+        entry.text = link
+        await entry.proceed()
+        entry.left()
+        #expect(letGo == [Kitchen.token(1)])
+        #expect(!entry.isHeld)
+        #expect(!entry.canContinue)
+        await entry.proceed()
+        #expect(held == 1)
+    }
+
+    @Test func signedOutNothingItPrintsHoldsTheLink() async {
+        let entry = signedOut()
+        entry.text = link
+        await entry.proceed()
+        var dumped = ""
+        dump(entry, to: &dumped)
+        for text in [String(describing: entry), String(reflecting: entry), dumped, "\(entry)"] {
+            #expect(!text.contains(Kitchen.token(1).secret))
+        }
+    }
 }
