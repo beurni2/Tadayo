@@ -5,18 +5,26 @@
 //
 // 1. The payload's upload id, else failed for good (`payload`).
 // 2. The upload, with no lock (`uploadToPrepare`): `preparing` and live, else nothing to do. So a repeat of the event,
-//    or an event whose upload another run already prepared, changes nothing (T54).
+//    or an event whose upload another run already prepared, changes nothing (T54). One still `preparing` but lapsed
+//    was never prepared and never will be: its event fails for good, `upload.lapsed`, so it is a dead letter with its
+//    line, never a quiet done (the outside audit's B1, reviewed: Storage away until the upload lapses ends here).
 // 3. Its purpose: a drop's photo (`drop_photo`, `replacement`) gets `full` and `display`. The avatar's and a photo
 //    message's renditions aren't built, and their uploads can't be made yet, so their events fail for good.
-// 4. The original from `uploads`, to at most 20 MiB and a byte (./storage.ts). Not there: rejected `unreadable`, as
-//    `completeUpload` saw it there and it won't come back. Storage away: a failure, tried again.
+// 4. The original from `uploads`, to at most 20 MiB and a byte (./storage.ts). Storage's own not-found of it, which
+//    `completeUpload` saw there: on the event's first and second counted attempts a failure, `storage.missing`,
+//    tried again after 30 and 60 seconds; from the third, rejected `unreadable`. The count is the event's counted
+//    attempts, not its not-founds: after two counted failures of another kind the first not-found rejects at once,
+//    which Storage's own not-found of an object `completeUpload` saw allows. Storage away: an `Unavailable`,
+//    waited out uncounted (./outbox.ts, item 4) until Storage answers or the upload lapses and step 2 finds nothing
+//    to do (the outside audit's B1; docs/plans/api-b2-worker-storage-retry.md section 1.3).
 // 5. The checks and the renditions (./image.ts), in a process of the photo's own that the worker watches and ends
 //    (./image-process.ts), but an original past 20 MiB, which its size alone refuses as `too_large`; then the safety
 //    provider on a photo that passed (./safety.ts, FQ8), then each rendition
 //    stored in `renditions`, at its upload's key and its kind, before anything is recorded.
 // 6. One transaction (`recordPreparation`): the upload's row `FOR NO KEY UPDATE`, still `preparing`, then its
 //    renditions' rows and its state, scoped hash and version, or its rejection; and the event done, in the same
-//    transaction.
+//    transaction. An upload that lapsed during the work is recorded as nothing and fails for good, as in step 2;
+//    its renditions stay stored at its key, for B3's purge.
 //
 // Each step is bounded: Storage's calls by their time limit, the photo's process by its deadline and its memory
 // (./image-process.ts), each statement by generation's limits. A line says what it came to and how long each step
@@ -49,6 +57,21 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** The purposes whose renditions are a drop's photo's (TECH-DESIGN section 1, "Images"). */
 const DROP_PHOTO = new Set(["drop_photo", "replacement"]);
+
+/** The counted attempt from which an original Storage says it doesn't have is rejected, not tried again (step 4). */
+export const MISSING_REJECTED_AT = 3;
+
+/** The code of an event whose upload lapsed while still `preparing` (steps 2 and 6). */
+export const UPLOAD_LAPSED = "upload.lapsed";
+
+/** Storage said it has no such original, on an attempt before MISSING_REJECTED_AT: a counted failure, tried again. */
+export class OriginalMissing extends Error {
+  readonly code = "storage.missing";
+  constructor() {
+    super("prepare: Storage has no such original yet");
+    this.name = "OriginalMissing";
+  }
+}
 
 export interface PrepareDeps {
   readonly sql: WorkerSql;
@@ -119,11 +142,13 @@ export async function prepareUpload(deps: PrepareDeps, event: OutboxEvent): Prom
   });
   const ms = { read: 0, image: 0, store: 0, record: 0 };
   if (upload === null) return { upload: id, outcome: "skipped", ms: { ...ms, total: total() } };
+  if (upload === "lapsed") throw new FailedForGood(UPLOAD_LAPSED);
   if (!DROP_PHOTO.has(upload.purpose)) throw new FailedForGood(`purpose.${upload.purpose}`);
 
   let step = stopwatch();
   const original = await deps.storage.readOriginal(upload.objectKey);
   ms.read = step();
+  if (original === null && event.attempts < MISSING_REJECTED_AT) throw new OriginalMissing();
 
   step = stopwatch();
   let prepared: Prepared = { ok: false, rejection: "unreadable" };
@@ -167,10 +192,12 @@ export async function prepareUpload(deps: PrepareDeps, event: OutboxEvent): Prom
   step = stopwatch();
   const recorded = await sql.begin(async (tx) => {
     await limits(tx);
-    const { at, recorded: wrote } = await recordPreparation(tx, clock, id, outcome);
+    const { at, recorded: wrote, lapsed } = await recordPreparation(tx, clock, id, outcome);
+    if (lapsed) return "lapsed";
     await finishEvent(tx, event.id, at);
     return wrote;
   });
+  if (recorded === "lapsed") throw new FailedForGood(UPLOAD_LAPSED);
   ms.record = step();
   return {
     upload: id,

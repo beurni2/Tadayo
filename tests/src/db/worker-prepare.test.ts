@@ -4,9 +4,13 @@
 // photo handed to preparation comes out with its two renditions stored and recorded, its owner's hash, a random
 // version and its event done, in one transaction; what the checks refuse comes out rejected with its code and
 // nothing stored; an event with nothing to prepare changes nothing and calls Storage for nothing; an event that
-// can't ever be prepared dies at once; Storage away is tried again, and the retry writes over the same keys; an
-// upload that lapses during the work is recorded as nothing; the record's clock is read after its lock (T1); and a
-// second run of the same event records nothing, whether it comes after the first or at the same time.
+// can't ever be prepared dies at once; Storage away is waited out for as long as the upload lives, counting no
+// attempt, and the retry writes over the same keys; an original Storage says it doesn't have is rejected only on the
+// third attempt, and one there again on a retry is prepared; a put Storage refuses itself is counted as any failure;
+// an upload that lapses still `preparing`, before the work or during it, is recorded as nothing and its event is a
+// dead letter, `upload.lapsed` (the outside audit's B1; docs/plans/api-b2-worker-storage-retry.md); the record's clock
+// is read after its lock (T1); and a second run of the same event records nothing, whether it comes after the first
+// or at the same time.
 //
 // The world is world.ts's: Ana's Saturday 7 November 2026 in a London club, revealed at 07:00Z; Ben and Cleo are its
 // other members. Storage is the worker's in-memory fake (@tadayo/worker/testing), and every image is made by
@@ -15,7 +19,10 @@
 // pass here would claim, so a pass first sets every pending event aside, in the same rolled-back transaction.
 //
 // These tests were written beside the handler, from the plan's section 9, so none was seen to fail before its rule
-// existed. The deliberate breakages, run at the PR's last head, show they can fail.
+// existed. The four of B1 (the retry's waits, the lapse, the third attempt and the original there again) were written
+// or rewritten before theirs and failed on `main`'s handler; the lapsed upload's dead letter and the refused put were
+// written after the review (the B1 plan's section 5). The deliberate breakages, run at the PR's last head, show they
+// can fail.
 
 import { randomUUID } from "node:crypto";
 import { reservationBody, uploadBody } from "@tadayo/api";
@@ -35,7 +42,9 @@ import {
   prepareHandler,
   prepareUpload,
   signatureOf,
+  StorageRefused,
   StorageUnavailable,
+  UPLOAD_LAPSED,
   type OutboxEvent,
   type PrepareDeps,
   type SafetyProvider,
@@ -143,10 +152,10 @@ async function handed(
 
 /** The upload `id`'s event, as a claim would hand it to its first attempt. */
 async function eventOf(tx: WorldTx, id: string): Promise<OutboxEvent> {
-  const [row] = await tx<{ id: string; topic: string; payload: unknown }[]>`
-    SELECT id, topic, payload FROM app.outbox_events WHERE dedupe_key = ${`upload.prepare:${id}`}`;
+  const [row] = await tx<{ id: string; topic: string; payload: unknown; created_at: Temporal.Instant }[]>`
+    SELECT id, topic, payload, created_at FROM app.outbox_events WHERE dedupe_key = ${`upload.prepare:${id}`}`;
   if (row === undefined) throw new Error("eventOf: the upload has no event");
-  return { ...row, attempts: 1 };
+  return { id: row.id, topic: row.topic, payload: row.payload, attempts: 1, createdAt: row.created_at };
 }
 
 /** An event of the worker's topic written by the test, naming `payload`, due at EVENING. */
@@ -447,7 +456,7 @@ describe("upload.prepare rejects what the checks refuse (D09, spec 33)", () => {
       rejection: "too_many_pixels",
     },
     { what: "a JPEG cut short", declared: "image/jpeg", bytes: truncated, rejection: "unreadable" },
-    { what: "no original in Storage", declared: "image/jpeg", bytes: () => null, rejection: "unreadable", photo: "0" },
+    // An original Storage says it doesn't have is rejected only on the third attempt: its own test, below.
   ];
 
   for (const c of cases) {
@@ -478,7 +487,7 @@ describe("upload.prepare rejects what the checks refuse (D09, spec 33)", () => {
 });
 
 describe("upload.prepare with nothing to prepare, or nothing it can (T54)", () => {
-  it("finishes an event whose upload isn't preparing, has lapsed or doesn't exist, calling Storage for nothing", async () => {
+  it("finishes an event whose upload isn't preparing or doesn't exist, and kills one whose upload lapsed still preparing as upload.lapsed, calling Storage for nothing", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       await aside(tx);
@@ -519,24 +528,36 @@ describe("upload.prepare with nothing to prepare, or nothing it can (T54)", () =
       ];
       const reads = r.storage.reads.length;
       const lines = r.lines.length;
-      // The handed upload lapses at its expires_at, 24 hours after it was made: nobody's from then on.
+      // The handed upload lapses at its expires_at, 24 hours after it was made: nobody's from then on, and never
+      // prepared, so its event is a dead letter with its line, not a quiet done. Its event came due last.
       clock.set(EVENING.add({ hours: 24 }));
-      expect(await pass(tx, r.deps(tx))).toEqual({ handled: 4, err: [] });
+      const lapsedEvent = (await eventOf(tx, lapsed.id)).id;
+      expect(await pass(tx, r.deps(tx))).toEqual({
+        handled: 3,
+        err: [`worker: an event is dead: upload.prepare ${lapsedEvent} after 1 attempts: ${UPLOAD_LAPSED}`],
+      });
+      expect(UPLOAD_LAPSED).toBe("upload.lapsed");
       expect(r.storage.reads).toHaveLength(reads);
       expect(r.lines).toHaveLength(lines);
-      for (const id of [...events, (await eventOf(tx, lapsed.id)).id]) {
+      for (const id of events) {
         expect(await eventRow(tx, id)).toMatchObject({
           state: "done",
           processed_at: EVENING.add({ hours: 24 }).toString(),
         });
       }
+      expect(await eventRow(tx, lapsedEvent)).toMatchObject({
+        state: "dead",
+        attempts: 1,
+        last_error: "upload.lapsed",
+        processed_at: EVENING.add({ hours: 24 }).toString(),
+      });
       expect((await uploadRow(tx, lapsed.id)).state).toBe("preparing");
       expect((await uploadRow(tx, pending)).state).toBe("pending");
       expect(await renditionRows(tx, lapsed.id)).toEqual([]);
     });
   });
 
-  it("records nothing for an upload that lapses during the work, and finishes the event: its renditions stay stored at its key", async () => {
+  it("records nothing for an upload that lapses during the work, and kills the event as upload.lapsed: its renditions stay stored at its key", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       await aside(tx);
@@ -554,7 +575,10 @@ describe("upload.prepare with nothing to prepare, or nothing it can (T54)", () =
           return r.storage.putRendition(key, bytes);
         },
       };
-      expect(await prepareUpload(r.deps(tx, { storage }), event)).toMatchObject({ upload: one.id, outcome: "skipped" });
+      expect(await pass(tx, r.deps(tx, { storage }))).toEqual({
+        handled: 0,
+        err: [`worker: an event is dead: upload.prepare ${event.id} after 1 attempts: upload.lapsed`],
+      });
       expect(r.storage.puts).toEqual([`${one.objectKey}/full`, `${one.objectKey}/display`]);
       expect(await renditionRows(tx, one.id)).toEqual([]);
       expect(await uploadRow(tx, one.id)).toMatchObject({
@@ -562,7 +586,13 @@ describe("upload.prepare with nothing to prepare, or nothing it can (T54)", () =
         content_hash: null,
         content_version: null,
       });
-      expect(await eventRow(tx, event.id)).toMatchObject({ state: "done", processed_at: lapses.toString() });
+      expect(await eventRow(tx, event.id)).toMatchObject({
+        state: "dead",
+        attempts: 1,
+        last_error: "upload.lapsed",
+        processed_at: lapses.toString(),
+      });
+      expect(r.lines).toEqual([]);
     });
   });
 
@@ -631,7 +661,7 @@ describe("upload.prepare as the photo user it is given (ADR-038)", () => {
 });
 
 describe("upload.prepare when Storage is away, or another run gets there first (T54)", () => {
-  it("tries again after its backoff, and the retry writes over the same keys, leaving one row of each rendition", async () => {
+  it("tries again after its wait, counting no attempt, and the retry writes over the same keys, leaving one row of each rendition", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       await aside(tx);
@@ -657,31 +687,31 @@ describe("upload.prepare when Storage is away, or another run gets there first (
       r.storage.failing(true);
       expect(await pass(tx, r.deps(tx, { storage }))).toEqual({
         handled: 0,
-        err: [`worker: an event failed: upload.prepare ${event.id}, attempt 1: storage.unavailable`],
+        err: [`worker: an event is waiting: upload.prepare ${event.id}: storage.unavailable, again in 30 s`],
       });
       expect(await eventRow(tx, event.id)).toMatchObject({
         state: "pending",
-        attempts: 1,
+        attempts: 0,
         last_error: "storage.unavailable",
         available_at: HANDED.add({ seconds: 30 }).toString(),
       });
       r.storage.failing(false);
 
-      // Not before its backoff has passed.
+      // Not before its wait has passed.
       clock.set(HANDED.add({ seconds: 29 }));
       expect(await pass(tx, r.deps(tx, { storage }))).toEqual({ handled: 0, err: [] });
       clock.set(HANDED.add({ seconds: 30 }));
       expect(await pass(tx, r.deps(tx, { storage }))).toEqual({
         handled: 0,
-        err: [`worker: an event failed: upload.prepare ${event.id}, attempt 2: storage.unavailable`],
+        err: [`worker: an event is waiting: upload.prepare ${event.id}: storage.unavailable, again in 30 s`],
       });
       expect(r.storage.puts).toEqual([`${one.objectKey}/full`]);
       expect(await renditionRows(tx, one.id)).toEqual([]);
       expect((await uploadRow(tx, one.id)).state).toBe("preparing");
-      expect((await eventRow(tx, event.id)).available_at).toBe(HANDED.add({ seconds: 90 }).toString());
+      expect((await eventRow(tx, event.id)).available_at).toBe(HANDED.add({ seconds: 60 }).toString());
 
       flaky = false;
-      clock.set(HANDED.add({ seconds: 90 }));
+      clock.set(HANDED.add({ seconds: 60 }));
       expect(await pass(tx, r.deps(tx, { storage }))).toEqual({ handled: 1, err: [] });
       expect(r.storage.puts).toEqual([`${one.objectKey}/full`, `${one.objectKey}/full`, `${one.objectKey}/display`]);
       expect(await renditionRows(tx, one.id)).toMatchObject([
@@ -691,10 +721,191 @@ describe("upload.prepare when Storage is away, or another run gets there first (
       expect((await uploadRow(tx, one.id)).state).toBe("ready");
       expect(await eventRow(tx, event.id)).toMatchObject({
         state: "done",
-        attempts: 3,
+        attempts: 1,
         last_error: "storage.unavailable",
+        processed_at: HANDED.add({ seconds: 60 }).toString(),
+      });
+    });
+  });
+
+  it("waits out Storage for as long as the upload lives, counting no attempt, then kills the event once it lapses, as upload.lapsed, rejecting nothing", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const one = await handed(tx, w, w.ben);
+      r.storage.originals.set(one.objectKey, await testImage(640, 480));
+      const event = await eventOf(tx, one.id);
+      // The upload was made at EVENING and lives 24 hours: Storage is away for all of them.
+      const lapses = EVENING.add({ hours: 24 });
+      r.storage.failing(true);
+      const err: string[] = [];
+      let passes = 0;
+      for (;;) {
+        const ran = await pass(tx, r.deps(tx));
+        passes += 1;
+        err.push(...ran.err);
+        const row = await eventRow(tx, event.id);
+        if (row.state !== "pending") break;
+        expect(row.attempts).toBe(0);
+        expect(passes).toBeLessThan(200);
+        clock.set(Temporal.Instant.from(row.available_at));
+      }
+      // Every try found Storage away, each a waiting line; the last, past the lapse, found the upload lapsed still
+      // preparing, never prepared, and killed its event with its line.
+      expect(err).toHaveLength(passes);
+      const waiting = err.slice(0, -1);
+      for (const line of waiting) {
+        expect(line).toMatch(
+          new RegExp(
+            `^worker: an event is waiting: upload\\.prepare ${event.id}: storage\\.unavailable, again in \\d+ s$`,
+          ),
+        );
+      }
+      expect(err.at(-1)).toBe(`worker: an event is dead: upload.prepare ${event.id} after 1 attempts: upload.lapsed`);
+      expect(r.storage.reads).toHaveLength(passes - 1);
+      expect(waiting.at(-1)).toMatch(/again in 900 s$/);
+      // About every 15 minutes for the day, after the first seven tries.
+      expect(passes).toBeGreaterThan(90);
+      expect(passes).toBeLessThan(110);
+      expect(
+        Temporal.Instant.compare(Temporal.Instant.from((await eventRow(tx, event.id)).processed_at ?? ""), lapses),
+      ).toBe(1);
+      expect(await eventRow(tx, event.id)).toMatchObject({
+        state: "dead",
+        attempts: 1,
+        last_error: "upload.lapsed",
+      });
+      expect(await uploadRow(tx, one.id)).toEqual({
+        state: "preparing",
+        rejection: null,
+        content_hash: null,
+        content_version: null,
+      });
+      expect(r.lines).toEqual([]);
+      expect(r.storage.puts).toEqual([]);
+    });
+  });
+
+  it("counts a put Storage refuses itself as any failure, and kills the event after five attempts, leaving the upload preparing", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const one = await handed(tx, w, w.ben);
+      r.storage.originals.set(one.objectKey, await testImage(640, 480));
+      const event = await eventOf(tx, one.id);
+      // Storage answers, and refuses the rendition itself (too large for the bucket): no wait would change that.
+      const storage: WorkerStorage = {
+        readOriginal: (key) => r.storage.readOriginal(key),
+        putRendition: () => Promise.reject(new StorageRefused("answered 400 EntityTooLarge")),
+      };
+      let now = HANDED;
+      for (const [attempt, wait] of [
+        [1, 30],
+        [2, 60],
+        [3, 120],
+        [4, 240],
+      ] as const) {
+        clock.set(now);
+        expect(await pass(tx, r.deps(tx, { storage }))).toEqual({
+          handled: 0,
+          err: [`worker: an event failed: upload.prepare ${event.id}, attempt ${String(attempt)}: storage.refused`],
+        });
+        expect(await eventRow(tx, event.id)).toMatchObject({
+          state: "pending",
+          attempts: attempt,
+          last_error: "storage.refused",
+          available_at: now.add({ seconds: wait }).toString(),
+        });
+        now = now.add({ seconds: wait });
+      }
+      clock.set(now);
+      expect(await pass(tx, r.deps(tx, { storage }))).toEqual({
+        handled: 0,
+        err: [`worker: an event is dead: upload.prepare ${event.id} after 5 attempts: storage.refused`],
+      });
+      expect(await eventRow(tx, event.id)).toMatchObject({
+        state: "dead",
+        attempts: 5,
+        last_error: "storage.refused",
+        processed_at: now.toString(),
+      });
+      expect(await uploadRow(tx, one.id)).toEqual({
+        state: "preparing",
+        rejection: null,
+        content_hash: null,
+        content_version: null,
+      });
+      expect(await renditionRows(tx, one.id)).toEqual([]);
+      expect(r.storage.reads).toHaveLength(5);
+      expect(r.lines).toEqual([]);
+    });
+  });
+
+  it("rejects an original Storage says it doesn't have only on its third attempt, after 30 and 60 seconds, as unreadable", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const one = await handed(tx, w, w.ana);
+      const event = await eventOf(tx, one.id);
+      for (const [attempt, wait] of [
+        [1, 30],
+        [2, 60],
+      ] as const) {
+        expect(await pass(tx, r.deps(tx))).toEqual({
+          handled: 0,
+          err: [`worker: an event failed: upload.prepare ${event.id}, attempt ${String(attempt)}: storage.missing`],
+        });
+        const row = await eventRow(tx, event.id);
+        expect(row).toMatchObject({ state: "pending", attempts: attempt, last_error: "storage.missing" });
+        expect((await uploadRow(tx, one.id)).state).toBe("preparing");
+        clock.set(Temporal.Instant.from(row.available_at));
+        expect(
+          Temporal.Instant.from(row.available_at)
+            .since(attempt === 1 ? HANDED : HANDED.add({ seconds: 30 }))
+            .total("seconds"),
+        ).toBe(wait);
+      }
+      expect(await pass(tx, r.deps(tx))).toEqual({ handled: 1, err: [] });
+      expect(await uploadRow(tx, one.id)).toEqual({
+        state: "rejected",
+        rejection: "unreadable",
+        content_hash: null,
+        content_version: null,
+      });
+      expect(await eventRow(tx, event.id)).toMatchObject({
+        state: "done",
+        attempts: 3,
+        last_error: "storage.missing",
         processed_at: HANDED.add({ seconds: 90 }).toString(),
       });
+      expect(r.storage.reads).toEqual([one.objectKey, one.objectKey, one.objectKey]);
+      expect(r.storage.puts).toEqual([]);
+      expect(await renditionRows(tx, one.id)).toEqual([]);
+      expect(r.lines).toHaveLength(1);
+      expect(r.lines[0]).toMatch(LINE(one.id, "rejected unreadable", "0"));
+    });
+  });
+
+  it("prepares an original that is there again on a retry", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      await aside(tx);
+      const r = rig();
+      const one = await handed(tx, w, w.cleo);
+      const event = await eventOf(tx, one.id);
+      expect(await pass(tx, r.deps(tx))).toEqual({
+        handled: 0,
+        err: [`worker: an event failed: upload.prepare ${event.id}, attempt 1: storage.missing`],
+      });
+      r.storage.originals.set(one.objectKey, await testImage(640, 480));
+      clock.set(HANDED.add({ seconds: 30 }));
+      expect(await pass(tx, r.deps(tx))).toEqual({ handled: 1, err: [] });
+      expect((await uploadRow(tx, one.id)).state).toBe("ready");
+      expect(await renditionRows(tx, one.id)).toHaveLength(2);
+      expect(await eventRow(tx, event.id)).toMatchObject({ state: "done", attempts: 2, last_error: "storage.missing" });
     });
   });
 

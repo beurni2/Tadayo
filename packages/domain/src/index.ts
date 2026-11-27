@@ -67,7 +67,13 @@ export {
 } from "./drops/reserve.ts";
 export { releaseReservation, type ReleasedAnswer, type ReleaseReservationInput } from "./drops/release.ts";
 export { newObjectKey, OBJECT_KEY, UPLOAD_HOURS, uploadExpiry } from "./media/object.ts";
-export { storageProject, storageServiceKey, storageStatus } from "./media/storage-http.ts";
+export {
+  storageNoSuchKey,
+  storageProject,
+  storageRefusal,
+  storageServiceKey,
+  storageStatus,
+} from "./media/storage-http.ts";
 export {
   recordPreparation,
   uploadToPrepare,
