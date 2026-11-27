@@ -22,6 +22,9 @@ import TadayoDesign
 ///   your existing account." (`handoff9.welcome`). Each is read by its visible words. At the
 ///   accessibility sizes the column ends 24 under the last, as frame 20's does.
 ///
+/// Where the column is longer than the screen, at the accessibility sizes, it scrolls under the
+/// status bar's band, on `canvas` as frame 20 draws it, as the tabs' columns do (`TabScroll`).
+///
 /// VoiceOver reads the example as the frames lay it out: the label, the target, "Caption now",
 /// the card as one element ("Maya. Your future living room."), then "Photo on the day"; the
 /// photograph itself is hidden, so nothing reads it as a real drop (spec 04: a labelled example).
@@ -32,9 +35,6 @@ import TadayoDesign
 struct WelcomeScreen: View {
     /// One of the three routes.
     let choose: @MainActor (SignInModel.Way) -> Void
-    /// Starts the column at its end, the three routes, as frame 20 is drawn: a snapshot's, never
-    /// the app's, whose first arrival starts at the top (`handoff9.welcome.xl`).
-    var startsAtEnd = false
     @Environment(\.dynamicTypeSize) private var typeSize
     /// The phone's region, which writes the example's date (FQ44).
     @Environment(\.locale) private var locale
@@ -60,9 +60,18 @@ struct WelcomeScreen: View {
                 .padding(.bottom, bottomGap)
             }
             .scrollBounceBehavior(.basedOnSize)
-            .defaultScrollAnchor(startsAtEnd ? .bottom : nil)
         }
         .background { Palette.canvas.ignoresSafeArea() }
+        .overlay(alignment: .top) {
+            // The status bar's band, as `TabScroll`'s: the column scrolls under it on `canvas`,
+            // never through the clock, as frame 20 draws it. No height of its own: all of it is
+            // the safe area it reaches into.
+            Palette.canvas
+                .ignoresSafeArea(edges: .top)
+                .frame(height: 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
         .toolbar(.hidden, for: .navigationBar)
     }
 

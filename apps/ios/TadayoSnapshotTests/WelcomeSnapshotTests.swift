@@ -15,23 +15,11 @@ final class WelcomeSnapshotTests: XCTestCase {
 
     // MARK: A01-welcome
 
-    /// Frames 18 and 19, and frame 20: the largest text's one column scrolled to its end, the
-    /// three routes, as frame 20 is drawn (handoff 9: "Frame20 intentionally scrolled to
-    /// actions").
+    /// Frames 18 and 19, and frame 20: at the largest text, the whole of the one column, whose
+    /// end, the three routes, is what frame 20 draws scrolled to (handoff 9: "Frame20
+    /// intentionally scrolled to actions"; the `.xl` window holds the column, top to foot).
     func testA01Welcome() {
-        ScreenSnapshot.assert(
-            SignInFlow(model: welcome()), named: "A01-welcome", variants: [.light, .dark])
-        ScreenSnapshot.assert(
-            SignInFlow(model: welcome(), welcomeAtEnd: true), named: "A01-welcome",
-            variants: [.xl])
-    }
-
-    /// The largest text as the app opens it, at the top ("First arrival starts at top"): the
-    /// wordmark, the brand line, the explanation and the stacked example. Not an inventory state:
-    /// the top of what frame 20 scrolls past.
-    func testA01WelcomeTop() {
-        ScreenSnapshot.assert(
-            SignInFlow(model: welcome()), named: "A01-welcome-top", variants: [.xl])
+        ScreenSnapshot.assert(SignInFlow(model: welcome()), named: "A01-welcome")
     }
 
     // MARK: G02-link-entry, signed out

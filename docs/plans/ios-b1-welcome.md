@@ -31,6 +31,7 @@ The stack's root, with no bar. One scrolling column, 20 in from each edge, on `c
 - the brand line, `dayTitle`, a heading, 32 under the wordmark; the explanation, `body` `secondaryText`, 20 under it;
 - the example: its label in `metadata` `secondaryText` 24 under the explanation, the target in `metadata` `primaryText` 12 under it, the stage labels in `metadata` `secondaryText` 12 under that, and the two stages 8 under them: Maya's card (the cover of Maya's slot, 172 high, radius 16, the fold 18, the caption in `row` 16 in, Maya's avatar at 28 and the name in `metadata`, 8 apart, at the foot) and the photograph (172 high, radius 14), the two in columns 13 apart, the photograph as high as the card if the card grows. At the accessibility sizes, one column, as frame 20 draws it: "Caption now", the card growing with its text, 32 under it "Photo on the day", and the photograph, the column's width and 300 high, each label 12 over its stage. Frame 20 draws the stacked card with no fold and a 36-point avatar; the app keeps the fold and the 28-point avatar, which keeps its size at every text size (handoff 4's `dynamicTypePolicy.avatarMarks`): a known difference;
 - Create a club (`tadayoPrimary`), I have an invite (`tadayoSecondary`) 16 under it, and Already here? Sign in (`tadayoTextUnderPrimary`, centred, as frame 18 draws it) 8 under that, with its hint: at the foot of a screen the column doesn't fill, as frame 18 draws them ending at the safe area's foot, at least 24 under the example (frame 18 has 27 to spare), and 32 at the accessibility sizes, where the column ends 24 under the last, as frame 20's does (`PinnedFooterLayout`, made public for it). The labels are the visible words (`handoff9`'s `voiceOver` entries); Create a club and I have an invite have no hint.
+- Where the column is longer than the screen, at the accessibility sizes, it scrolls under the status bar's band, on `canvas`, as frame 20 draws it (no bar there, so nothing else would keep the column's words out of the clock), as the tabs' columns do (`TabScroll`'s band).
 - VoiceOver reads the example in its order: the label, the target, "Caption now", the card as one element ("Maya. Your future living room."), then "Photo on the day"; the photograph itself is hidden, so nothing reads it as a real drop (spec 04: a labelled example). Each column is a container, read label then stage.
 - The photographs: `#if LAB`, the chair (`fixture-chair`) and Maya's portrait (`fixture-maya`); otherwise Maya's initial and an empty photograph slot until the founder's photograph comes (FQ23). No build that points at `prod` is made before then.
 
@@ -54,7 +55,7 @@ The same screen as `G02-link-entry-signed-in` (handoff 4, `ios/b1-invitation-scr
 Snapshots (`WelcomeSnapshotTests`), each light, dark and largest text unless said:
 
 - `A01-welcome`, `A01-welcome-dark`: frames 18 and 19.
-- `A01-welcome-xl`: frame 20, the column scrolled to its end, the three routes, as frame 20 is (a snapshot seam, `startsAtEnd`); the app opens at the top, which `A01-welcome-top-xl` shows (not an inventory state).
+- `A01-welcome-xl`: frame 20. The `.xl` window, 2,200 points high, holds the whole column, so the one image shows the top the app opens at and the end, the three routes, that frame 20 draws scrolled to. (A first build started the column at its end with a snapshot seam and took the top as a second image; the two images came out the same, so both went.)
 - `G02-link-entry`: handoff 2's frame 11, signed out, empty, in light, dark and largest text.
 - `G02-link-entry-invalid`: built from spec, signed out, handoff 4's `linkEntry.invalid` under the field.
 - `A02-email-from-welcome`: built from spec, A02-email pushed over Welcome, with the system back. The A02 states keep their snapshots as A02-email first, as a held link or an ended sign-in shows it.
@@ -67,3 +68,17 @@ A UI test (`WelcomeUITests`): Welcome's three routes and Back from each; Create 
 - The Create a club intent is the root's, in memory, for the first account that shows, as a link opened before sign-in is (FQ135).
 - Release's example (FQ23): the photograph slot empty and Maya's initial until the founder's photograph comes; recorded as a gap for Gate D.
 - No new FQ: every word on these screens is a delivery's.
+
+## 8. Read against the frames
+
+The 13 images of `0cc199d` (`origin/evidence:ios/b1-welcome/0cc199d/ios/snapshots/`), read beside frames 18 to 20 and handoff 2's frame 11 at the same scale. The three weakest things, and what was done:
+
+1. **The snapshot seam.** `A01-welcome-xl` started the column at its end through a flag on `WelcomeScreen` and `SignInFlow` that only the snapshot set, and `A01-welcome-top-xl` took the top. The two images were byte for byte the same: the 2,200-point window holds the whole column, so neither end needs a seam. The flag and the second test went; `A01-welcome-xl` is the plain flow.
+2. **The status bar.** Frame 20 draws the column's top cut off under an opaque status bar on `canvas`. Welcome has no bar, so on a phone at the accessibility sizes the scrolled column's words would run through the clock. `WelcomeScreen` now carries `TabScroll`'s band. No snapshot can show it (the window doesn't scroll); it draws `canvas` over `canvas` in every image.
+3. **What stays against the frames,** each now written in the A01 rows of `design/reference/INVENTORY.md`:
+    - the card's fold is the book's folded corner, as every card draws it, where frames 18 and 19 turn it inside out;
+    - the brand line's two lines sit 37 apart, where the frame sets 34 (`TypeRole`, Known differences' wrapped titles);
+    - at the accessibility sizes, the routes' words are at the `button` and `textAction` roles' largest sizes, as every screen's actions are (`G06-no-club-xl`), smaller than frame 20 draws them, so I have an invite stays on one line where the frame wraps it;
+    - Already here? Sign in stays 8 under I have an invite at every size (frame 18), where frame 20 leaves about 16.
+
+Everything else matched the frames within a point or two: the wordmark 12 under the safe area (frame 13), the gaps down the column, the example's two stages 172 high and 13 apart, the stacked stages at the accessibility sizes, and the routes at the safe area's foot. G02-link-entry sits against handoff 2's frame 11 as `G02-link-entry-signed-in` does: the title and the field about 15 lower, where handoff 9's frames 3 to 5 draw them (`SetupGap.linkField`), the system's own back button, and no Paste, which a snapshot can't draw (Known differences' native controls); the sign-in line under the field is the frame's.

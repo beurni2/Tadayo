@@ -20,8 +20,6 @@ struct SignInFlow: View {
     /// Draws the field focused, or not, whatever has focus: snapshots show focus with no
     /// keyboard. Nil in the app, where each screen focuses its field when it appears.
     var focus: Bool?
-    /// Starts Welcome's column at its end, for frame 20's snapshot (`WelcomeScreen.startsAtEnd`).
-    var welcomeAtEnd = false
     /// The paste step last pushed, drawn while it slides away after Back to Welcome.
     @State private var shownEntry: InvitationLinkEntryModel?
 
@@ -55,7 +53,7 @@ struct SignInFlow: View {
 
     @ViewBuilder private var root: some View {
         if model.showsWelcome {
-            WelcomeScreen(choose: { model.choose($0) }, startsAtEnd: welcomeAtEnd)
+            WelcomeScreen(choose: { model.choose($0) })
         } else {
             EmailScreen(model: model, focus: focus)
         }
