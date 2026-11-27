@@ -3,16 +3,16 @@
 The `ios` workflow's evidence for `fe2548b894238bc683268d67db0ad0ecd25f6d82` (https://github.com/beurni2/Tadayo/actions/runs/45914457689).
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
-- iOS `27.2` on `iPhone 17`: tests `failed`, with the snapshot tests
+- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
 - iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `failed`
+- Tests: `passed`
 - Odd draws: 1 in `logs/test-27.2.log`, below
 - Carries the states this branch touches; 469 snapshot(s) not carried
 
 Odd draws: each a screen whose drawing took a third draw or more (`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, 2026-11-14). One odd draw passes; a second, or no two draws alike, fails the test.
 
-- `warning: ScreenSnapshot H01-awaiting-activation: settled after 3 draws, SHA-256 c4ac0d12 e74f0d32 e74f0d32; against the last draw, draw 1: 9038 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
+- `warning: ScreenSnapshot F01-error-no-club: settled after 3 draws, SHA-256 8cec8ef7 9c836df3 9c836df3; against the last draw, draw 1: 9455 pixels in x 118 to 668, y 1535 to 1662, by at most 17/255`
 
 | State | Status | File | Render | Sheet | Snapshot |
 |---|---|---|---|---|---|
