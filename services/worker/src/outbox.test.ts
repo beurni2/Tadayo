@@ -3,6 +3,7 @@
 // B1), and the code a failure is recorded under, never its message. The claim, the lease, the retries and the dead
 // letters run against Postgres in tests/src/db/worker-outbox.test.ts.
 
+import { UPLOAD_HOURS } from "@tadayo/domain";
 import { describe, expect, it } from "vitest";
 import { ImageProcessFailed, ImageTimeout } from "./image-process.ts";
 import {
@@ -17,7 +18,7 @@ import {
   outageWaitSeconds,
   Unavailable,
 } from "./outbox.ts";
-import { StorageUnavailable } from "./storage.ts";
+import { StorageRefused, StorageUnavailable } from "./storage.ts";
 
 describe("the retries (T54)", () => {
   it("waits 30 seconds after the first failure, and twice as long after each later one", () => {
@@ -55,16 +56,23 @@ describe("a service the work needs, waited out (the outside audit's B1)", () => 
     expect(outageWaitSeconds(100.4)).toBe(100);
   });
 
-  it("is waited out for the event's first day, and counted after it", () => {
+  it("lasts a day, no shorter than an upload lives, so a photo's preparation waits out Storage until its upload lapses", () => {
     expect(OUTAGE_SECONDS).toBe(24 * 60 * 60);
+    expect(OUTAGE_SECONDS).toBeGreaterThanOrEqual(UPLOAD_HOURS * 60 * 60);
   });
 
   it("is what Storage away is, under its own code", () => {
     const away = new StorageUnavailable("reading an original answered 503");
     expect(away).toBeInstanceOf(Unavailable);
     expect(failureCode(away)).toBe("storage.unavailable");
+    expect(failureCode(new StorageUnavailable("reading an original answered 403", "storage.refused"))).toBe(
+      "storage.refused",
+    );
     expect(new ImageTimeout()).not.toBeInstanceOf(Unavailable);
     expect(new FailedForGood("payload")).not.toBeInstanceOf(Unavailable);
+    // A put Storage refuses is counted as any failure (storage.ts).
+    expect(new StorageRefused("putting a rendition answered 413")).not.toBeInstanceOf(Unavailable);
+    expect(failureCode(new StorageRefused("putting a rendition answered 413"))).toBe("storage.refused");
   });
 });
 

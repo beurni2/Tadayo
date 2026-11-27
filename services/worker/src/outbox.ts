@@ -19,14 +19,23 @@
 //    handler that changes rows marks it done itself, in the same transaction (`finishEvent`), so the change and the
 //    event's end commit together. A throw is tried again after BACKOFF_SECONDS times two to the attempts before it,
 //    and dies once MAX_ATTEMPTS are spent; a `FailedForGood` dies at once. A failure is written only over the claim
-//    it came from: if its lease passed and another claim took the event, that claim's is the event's.
+//    it came from, known by its lease's end, `available_at` as the claim set it, which no later claim or write can
+//    set again: a later claim's sample is past this lease, and every write after it sets a time later still. If its
+//    lease passed and another claim took the event, that claim's is the event's, even once it has given its attempt
+//    back (item 4), when the attempts' number is this claim's again.
 // 4. An `Unavailable`, a service the work needs that didn't answer (Storage away), says nothing of the event, so in
 //    the event's first day (OUTAGE_SECONDS from its `created_at`, by the clock's sample) it is waited out: the attempt
 //    the claim counted is given back, so the attempts stay for the failures that are the event's own, and it is tried
 //    again after a wait of the event's age, at least BACKOFF_SECONDS and at most OUTAGE_WAIT_SECONDS. From its second
 //    day it counts as any failure, so the retries stay bounded whatever a handler does (T54): at most a day of waits,
-//    then MAX_ATTEMPTS. A handler whose work ends sooner, as `upload.prepare`'s does when its upload lapses, finds
-//    nothing to do on its next attempt (the outside audit's B1; docs/plans/api-b2-worker-storage-retry.md).
+//    then MAX_ATTEMPTS. A handler whose work ends sooner, as `upload.prepare`'s does when its upload lapses, ends the
+//    event on its next attempt (the outside audit's B1; docs/plans/api-b2-worker-storage-retry.md). The day assumes
+//    the clock moves forward, as the server's does (T1): a sample behind the row's `created_at` waits the least. It
+//    starts at `created_at`, which for `upload.prepare` is when the event first comes due; a topic written ahead of its
+//    time (a day's reveal or close, 0009) would start its day before its first attempt, and needs its first due time
+//    kept as its own start, which that topic's slice adds. Each wait holds this one-at-a-time poller for at most the
+//    call that failed (Storage's 30 seconds); while every topic needs Storage, nothing that could run waits behind
+//    it, and the first topic that doesn't will need a topic's waiting events kept from holding it up.
 //
 // The dead-letter table is `app.outbox_events` with `state = 'dead'`, and its alert is a line on standard error,
 // which Fly's logs keep; nothing pages anyone before monitoring exists (docs/LIMITATIONS.md). Every line and every
@@ -144,8 +153,14 @@ export async function finishEvent(tx: WorkerTx, id: string, at: ServerNow): Prom
 /** The code of an event whose last attempt never reported back. */
 const LEASE_LAPSED = "lease_lapsed";
 
-/** What a claim found: an event to work on, one whose attempts were spent (now dead), or nothing due. */
-export type Claim = { readonly kind: "work" | "dead"; readonly event: OutboxEvent } | null;
+/**
+ * What a claim found: an event to work on, with its lease's end, which marks the claim (item 3); one whose attempts
+ * were spent (now dead); or nothing due.
+ */
+export type Claim =
+  | { readonly kind: "work"; readonly event: OutboxEvent; readonly leaseUntil: Temporal.Instant }
+  | { readonly kind: "dead"; readonly event: OutboxEvent }
+  | null;
 
 /** Claims the oldest due event of `topics`, in its own transaction (item 1 above). */
 export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly string[]): Promise<Claim> {
@@ -170,10 +185,9 @@ export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly s
          WHERE id = ${row.id}`;
       return { kind: "dead", event: { ...event, attempts: row.attempts } } as const;
     }
-    await tx`
-      UPDATE app.outbox_events SET attempts = attempts + 1, available_at = ${at.add({ seconds: LEASE_SECONDS })}
-       WHERE id = ${row.id}`;
-    return { kind: "work", event: { ...event, attempts: row.attempts + 1 } } as const;
+    const leaseUntil = at.add({ seconds: LEASE_SECONDS });
+    await tx`UPDATE app.outbox_events SET attempts = attempts + 1, available_at = ${leaseUntil} WHERE id = ${row.id}`;
+    return { kind: "work", event: { ...event, attempts: row.attempts + 1 }, leaseUntil } as const;
   });
 }
 
@@ -181,14 +195,15 @@ export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly s
 type Ending = { readonly kind: "retry" | "dead" } | { readonly kind: "waiting"; readonly seconds: number };
 
 /**
- * Records a failed attempt of `event`: tried again after its backoff, waited out, or dead. Returns how it ended, and
- * whether anything was written: nothing is when the event has ended, or when another claim has taken it since (its
- * lease passed while this attempt worked), whose attempt then decides.
+ * Records a failed attempt of `event`, claimed with a lease to `leaseUntil`: tried again after its backoff, waited
+ * out, or dead. Returns how it ended, and whether anything was written: nothing is when the event has ended, or when
+ * another claim has taken it since (its lease passed while this attempt worked), whose attempt then decides (item 3).
  */
 async function recordFailure(
   sql: WorkerSql,
   clock: Clock,
   event: OutboxEvent,
+  leaseUntil: Temporal.Instant,
   code: string,
   error: unknown,
 ): Promise<{ readonly ending: Ending; readonly changed: boolean }> {
@@ -200,18 +215,21 @@ async function recordFailure(
       const waited = await tx`
         UPDATE app.outbox_events
            SET attempts = attempts - 1, last_error = ${code}, available_at = ${at.add({ seconds })}
-         WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}`;
+         WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}
+           AND available_at = ${leaseUntil}`;
       return { ending: { kind: "waiting", seconds }, changed: waited.count > 0 } as const;
     }
     const dies = error instanceof FailedForGood || event.attempts >= MAX_ATTEMPTS;
     const changed = dies
       ? await tx`
           UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${code}
-           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}`
+           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}
+             AND available_at = ${leaseUntil}`
       : await tx`
           UPDATE app.outbox_events
              SET last_error = ${code}, available_at = ${at.add({ seconds: backoffSeconds(event.attempts) })}
-           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}`;
+           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}
+             AND available_at = ${leaseUntil}`;
     return { ending: { kind: dies ? "dead" : "retry" }, changed: changed.count > 0 } as const;
   });
 }
@@ -259,7 +277,7 @@ export async function outboxPass(
       handled += 1;
     } catch (error) {
       const code = failureCode(error);
-      const { ending, changed } = await recordFailure(sql, clock, event, code, error);
+      const { ending, changed } = await recordFailure(sql, clock, event, claim.leaseUntil, code, error);
       if (!changed) continue;
       warn(
         ending.kind === "waiting"

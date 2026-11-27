@@ -4,7 +4,8 @@
 // away (the outside audit's B1); a rendition put with upsert on; and nothing it holds in any error it throws.
 
 import { describe, expect, it } from "vitest";
-import { renditionKey, StorageUnavailable, workerStorage, type WorkerStorage } from "./storage.ts";
+import { failureCode, Unavailable } from "./outbox.ts";
+import { renditionKey, StorageRefused, StorageUnavailable, workerStorage, type WorkerStorage } from "./storage.ts";
 
 const PROJECT = "https://tadayotestprojectref.supabase.co";
 const KEY = "sb_secret_testkeynotreal0000000000";
@@ -44,14 +45,28 @@ function storage(answer: (seen: Seen) => Response | Promise<Response>): { s: Wor
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
-/** Every text an error carries, so a test can say none of it holds what the client was given. */
-async function failure(running: Promise<unknown>): Promise<string> {
+/**
+ * Every text an error carries, so a test can say none of it holds what the client was given. The error must be
+ * Storage away under `code`, which the outbox waits out, or with `refused`, a put's refusal, which it counts.
+ */
+async function failure(
+  running: Promise<unknown>,
+  code: "storage.unavailable" | "storage.refused" = "storage.unavailable",
+  refused = false,
+): Promise<string> {
   try {
     await running;
   } catch (error) {
-    expect(error).toBeInstanceOf(StorageUnavailable);
+    if (refused) {
+      expect(error).toBeInstanceOf(StorageRefused);
+      expect(error).not.toBeInstanceOf(Unavailable);
+    } else {
+      expect(error).toBeInstanceOf(StorageUnavailable);
+      expect(error).toBeInstanceOf(Unavailable);
+    }
+    expect(failureCode(error)).toBe(code);
     const e = error as Error & { cause?: unknown; code?: unknown };
-    expect(e.code).toBe("storage.unavailable");
+    expect(e.code).toBe(code);
     const cause =
       e.cause instanceof Error ? [e.cause.message, e.cause.stack ?? ""].join("\n") : JSON.stringify(e.cause ?? null);
     return [e.message, e.stack ?? "", cause].join("\n");
@@ -82,17 +97,28 @@ describe("reading an original", () => {
     expect(await storage(() => json(404, own)).s.readOriginal(OBJECT)).toBeNull();
   });
 
-  it("fails as Storage unavailable for any other 404: a plain one, one with no Storage body, a missing bucket, a lost object", async () => {
+  it("fails as Storage unavailable for any other 404: a plain one, one with no Storage body, a lost object, a real 404 with no status in the body", async () => {
     for (const answer of [
       () => new Response("Not Found", { status: 404 }),
       () => json(404, { message: "Object not found" }),
       () => json(400, { statusCode: "404", error: "not_found" }),
-      () =>
-        json(400, { statusCode: "404", code: "NoSuchBucket", error: "Bucket not found", message: "Bucket not found" }),
       () => json(400, { statusCode: "404", code: "S3Error", error: "NotFound", message: "NotFound" }),
-      () => json(400, { statusCode: "403", code: "NoSuchKey" }),
+      () => json(404, { code: "NoSuchKey", message: "Object not found" }),
     ]) {
       const said = await failure(storage(answer).s.readOriginal(OBJECT));
+      for (const held of [KEY, OBJECT, PROJECT, "tadayotestprojectref"]) expect(said).not.toContain(held);
+    }
+  });
+
+  it("fails a read Storage refuses as waited out all the same, under the refusal's own code: a missing bucket, a refused key, NoSuchKey under another status", async () => {
+    for (const answer of [
+      () =>
+        json(400, { statusCode: "404", code: "NoSuchBucket", error: "Bucket not found", message: "Bucket not found" }),
+      () => json(400, { statusCode: "403", code: "AccessDenied", error: "Unauthorized" }),
+      () => json(400, { statusCode: "400", code: "InvalidJWT", error: "invalid_jwt" }),
+      () => json(400, { statusCode: "403", code: "NoSuchKey" }),
+    ]) {
+      const said = await failure(storage(answer).s.readOriginal(OBJECT), "storage.refused");
       for (const held of [KEY, OBJECT, PROJECT, "tadayotestprojectref"]) expect(said).not.toContain(held);
     }
   });
@@ -171,14 +197,38 @@ describe("putting a rendition", () => {
     expect(() => renditionKey("short", "full")).toThrow(TypeError);
   });
 
-  it("fails, saying nothing it holds, for any answer but Storage's 200", async () => {
+  it("fails as Storage away, saying nothing it holds, for any answer but Storage's 200 that isn't Storage refusing", async () => {
     for (const answer of [
       () => json(400, { statusCode: "409", error: "Duplicate" }),
       () => json(400, { statusCode: "413", error: "Payload too large" }),
       () => json(200, { statusCode: "500" }),
+      () => json(429, { statusCode: "429", code: "SlowDown", error: "slow_down" }),
+      () => json(400, { statusCode: "408", code: "RequestTimeout" }),
+      () => json(500, { statusCode: "500", code: "InternalError" }),
+      () => json(544, { statusCode: "544", code: "DatabaseTimeout" }),
+      () => json(400, { statusCode: "403", code: "S3Error", error: "AccessDenied" }),
+      () => new Response("Not Found", { status: 404 }),
       () => Promise.reject(new Error(KEY)),
     ]) {
       const said = await failure(storage(answer).s.putRendition(renditionKey(OBJECT, "display"), new Uint8Array(4)));
+      for (const held of [KEY, OBJECT, PROJECT]) expect(said).not.toContain(held);
+    }
+  });
+
+  it("fails a put Storage refuses itself as a refusal the outbox counts, not as Storage away: too large, the wrong type, a bad key, a policy, a missing bucket", async () => {
+    for (const answer of [
+      () => json(400, { statusCode: "413", code: "EntityTooLarge", error: "Payload too large" }),
+      () => json(400, { statusCode: "415", code: "InvalidMimeType", error: "invalid_mime_type" }),
+      () => json(400, { statusCode: "400", code: "InvalidKey", error: "Invalid key" }),
+      () => json(400, { statusCode: "403", code: "AccessDenied", error: "Unauthorized" }),
+      () => json(400, { statusCode: "404", code: "NoSuchBucket", error: "Bucket not found" }),
+      () => json(400, { statusCode: 401, code: "InvalidJWT" }),
+    ]) {
+      const said = await failure(
+        storage(answer).s.putRendition(renditionKey(OBJECT, "display"), new Uint8Array(4)),
+        "storage.refused",
+        true,
+      );
       for (const held of [KEY, OBJECT, PROJECT]) expect(said).not.toContain(held);
     }
   });

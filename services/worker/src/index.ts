@@ -61,6 +61,7 @@ export {
   prepareHandler,
   preparedLine,
   prepareUpload,
+  UPLOAD_LAPSED,
   type PrepareDeps,
   type Prepping,
 } from "./prepare.ts";
@@ -69,6 +70,7 @@ export { startWorker, type Started } from "./start.ts";
 export {
   RENDITIONS_BUCKET,
   renditionKey,
+  StorageRefused,
   StorageUnavailable,
   UPLOADS_BUCKET,
   workerStorage,

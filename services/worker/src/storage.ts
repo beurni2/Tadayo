@@ -7,23 +7,36 @@
 // - `GET /storage/v1/object/authenticated/<bucket>/<key>` with the service key answers the object's bytes ("the
 //   service key reads the object back"), or, for an object it doesn't have, Storage's own not-found: HTTP 400 and a
 //   body of `statusCode` "404" and `code` "NoSuchKey" ("the service key reads no original never put in uploads").
-//   Only that is an original gone. A plain 404, as a proxy's, one with no Storage body, a missing bucket
-//   (`NoSuchBucket`) and an object Storage's table has and its backend lost (`S3Error`) are Storage away, waited out
-//   (the outside audit's B1; docs/plans/api-b2-worker-storage-retry.md section 1.1).
+//   Only that is an original gone (`storageNoSuchKey`). Anything else is waited out (the outside audit's B1;
+//   docs/plans/api-b2-worker-storage-retry.md section 1.1): a plain 404, as a proxy's, one with no Storage body and an
+//   object Storage's table has and its backend lost (`S3Error`) as Storage away, `storage.unavailable`; Storage's own
+//   refusal of the read (`storageRefusal`: a refused key, a missing bucket) under its own code, `storage.refused`, so
+//   a line or a row tells the project's settings from an outage. A read is cheap, and comes before any photo work.
 // - `POST /storage/v1/object/<bucket>/<key>` with the service key and `x-upsert: true` puts the bytes at that key,
 //   over any that are there ("the service key puts a rendition, and puts over it"). Upsert is on for renditions
 //   alone: only the service key can write them, and a preparation tried again writes over its own objects, so no try
-//   leaves an object that no row names (the plan's section 4.5).
-// - Storage answers every error with HTTP 400 and the real status in the body's `statusCode`, read by `storageStatus`
-//   (packages/domain/src/media/storage-http.ts), which the API's client reads with too.
+//   leaves an object that no row names (the plan's section 4.5). Storage's own refusal of a put (`storageRefusal`: too
+//   large, the wrong type, a bad key, a policy) is a `StorageRefused`, which the outbox counts as any failure: the read
+//   before it worked, so the refusal is this rendition's or the bucket's settings', and every try would run the whole
+//   preparation again. Anything else that isn't a 200 is Storage away, waited out.
+// - Storage answers most errors with HTTP 400 and the real status in the body's `statusCode` (a 429, a 500 and its
+//   database's 544 keep their own), read by `storageStatus` (packages/domain/src/media/storage-http.ts), which the
+//   API's client reads with too.
 //
 // An original is read to at most 20 MiB and a byte (D09), then the read stops: a larger object is refused as
 // too_large by the checks (./image.ts) and never held whole. Every call refuses redirects and has a time limit.
 // Nothing it is given or answers is logged or put in an error: not the key, a URL or an object's key (T52, T56). A
 // failure is a `StorageUnavailable`, an `Unavailable` whose code the outbox records, and the preparation is waited out
-// and tried again (./outbox.ts, item 4).
+// and tried again (./outbox.ts, item 4); or a put's `StorageRefused`, counted.
 
-import { storageProject, storageServiceKey, storageStatus, UPLOAD_MAX_BYTES } from "@tadayo/domain";
+import {
+  storageNoSuchKey,
+  storageProject,
+  storageRefusal,
+  storageServiceKey,
+  storageStatus,
+  UPLOAD_MAX_BYTES,
+} from "@tadayo/domain";
 import type { RenditionKind } from "./image-process.ts";
 import { Unavailable } from "./outbox.ts";
 
@@ -47,22 +60,25 @@ export interface WorkerStorage {
   putRendition(key: string, bytes: Uint8Array): Promise<void>;
 }
 
-/** Storage couldn't be asked, or answered something this client doesn't believe. Its message names no value. */
+/**
+ * Storage couldn't be asked, answered something this client doesn't believe, or refused a read: waited out (the
+ * outbox's item 4). `code` is `storage.unavailable`, or `storage.refused` for Storage's own refusal of a read. Its
+ * message names no value.
+ */
 export class StorageUnavailable extends Unavailable {
-  constructor(what: string) {
-    super("storage.unavailable", `storage: ${what}`);
+  constructor(what: string, code: "storage.unavailable" | "storage.refused" = "storage.unavailable") {
+    super(code, `storage: ${what}`);
     this.name = "StorageUnavailable";
   }
 }
 
-/**
- * Whether an answer is Storage's own not-found of an object (`ERRORS.NoSuchKey` in Storage's sources): its status 404
- * in the body and its code NoSuchKey. Nothing else is, whatever its HTTP status.
- */
-function noSuchKey(json: unknown): boolean {
-  if (typeof json !== "object" || json === null) return false;
-  const body = json as Record<string, unknown>;
-  return storageStatus(0, json) === 404 && body["code"] === "NoSuchKey";
+/** Storage refused a rendition's put itself: counted as any failure, so it dies after its attempts. No value. */
+export class StorageRefused extends Error {
+  readonly code = "storage.refused";
+  constructor(what: string) {
+    super(`storage: ${what}`);
+    this.name = "StorageRefused";
+  }
 }
 
 /**
@@ -137,8 +153,11 @@ export function workerStorage(options: WorkerStorageOptions): WorkerStorage {
       );
       if (response.status !== 200) {
         const json = await jsonOf(response);
-        if (noSuchKey(json)) return null;
-        throw new StorageUnavailable(`reading an original answered ${String(storageStatus(response.status, json))}`);
+        if (storageNoSuchKey(json)) return null;
+        throw new StorageUnavailable(
+          `reading an original answered ${String(storageStatus(response.status, json))}`,
+          storageRefusal(json) ? "storage.refused" : "storage.unavailable",
+        );
       }
       try {
         return await readUpTo(response.body, UPLOAD_MAX_BYTES + 1);
@@ -159,9 +178,11 @@ export function workerStorage(options: WorkerStorageOptions): WorkerStorage {
         },
         "putting a rendition",
       );
-      const logical = storageStatus(response.status, await jsonOf(response));
+      const json = await jsonOf(response);
+      const logical = storageStatus(response.status, json);
       if (response.status !== 200 || logical !== 200) {
-        throw new StorageUnavailable(`putting a rendition answered ${String(logical)}`);
+        const what = `putting a rendition answered ${String(logical)}`;
+        throw storageRefusal(json) ? new StorageRefused(what) : new StorageUnavailable(what);
       }
     },
   };

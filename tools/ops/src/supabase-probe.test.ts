@@ -878,6 +878,19 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
         () => new Response(JSON.stringify({ statusCode: "404", error: "not_found" }), { status: 400 }),
       ],
       ["the bytes of an object", () => new Response(new Uint8Array([1, 2, 3]), { status: 200 })],
+      // Shapes the worker wouldn't take for gone, though each has NoSuchKey: the check reads as it does.
+      [
+        "NoSuchKey with a real HTTP 404 and no status in the body",
+        () => new Response(JSON.stringify({ code: "NoSuchKey", message: "Object not found" }), { status: 404 }),
+      ],
+      [
+        "NoSuchKey with another status in the body",
+        () => new Response(JSON.stringify({ statusCode: "403", code: "NoSuchKey" }), { status: 400 }),
+      ],
+      [
+        "Storage's own NoSuchKey body at HTTP 200",
+        () => new Response(JSON.stringify({ statusCode: "404", code: "NoSuchKey" }), { status: 200 }),
+      ],
     ] as const) {
       const fake = project();
       const checks = await probe(

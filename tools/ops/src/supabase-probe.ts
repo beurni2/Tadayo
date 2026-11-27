@@ -50,6 +50,7 @@
 // response body: statuses, codes and counts only.
 
 import { randomUUID } from "node:crypto";
+import { storageNoSuchKey } from "@tadayo/domain";
 import type postgres from "postgres";
 import { closedProblems } from "./migrate.ts";
 import { OpsError } from "./ops-error.ts";
@@ -528,13 +529,14 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
     // The worker's own read of an original Storage doesn't have (services/worker/src/storage.ts, `readOriginal`): the
     // service key reads one never put in `uploads` and gets Storage's own not-found, `code` NoSuchKey with its status
     // 404 in the body, which the worker alone takes for the original gone; any other answer it waits out as Storage
-    // away (the outside audit's B1). No refusal needs it, so a failure is recorded and the run goes on.
+    // away (the outside audit's B1). Read by the worker's own reading, `storageNoSuchKey`, so the check fails for any
+    // answer the worker wouldn't take for gone. No refusal needs it, so a failure is recorded and the run goes on.
     const neverRead = await ask(`/storage/v1/object/authenticated/uploads/${urlPath(`${folder}/never-${OBJECT}`)}`, {
       caller: service,
     });
     record(
       "worker: the service key reads no original never put in uploads, answered as Storage's own NoSuchKey",
-      settle(neverRead, (reply) => reply.status !== 200 && storageStatus(reply) === 404 && reply.code === "NoSuchKey"),
+      settle(neverRead, (reply) => reply.status !== 200 && storageNoSuchKey(reply.json)),
     );
 
     // The worker's own write (services/worker/src/storage.ts, `putRendition`): the service key puts a rendition in

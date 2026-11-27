@@ -4,17 +4,20 @@
 // topics, counts its attempt and leases it, in its own committed transaction, and two claimers never take the same
 // one; a handled event is done; a failed one comes back after its backoff, and dies after five attempts or at once
 // when it can never work, with its alert line, written as it happens; an event whose last attempt never reported
-// back dies when claimed again; a failure is written only over its own claim; a service the work needs that didn't
-// answer is waited out in the event's first day, counting no attempt (the outside audit's B1;
-// docs/plans/api-b2-worker-storage-retry.md section 1.2); and a line or a row says a failure's code, never its message.
+// back dies when claimed again; a failure is written only over its own claim, known by its lease's end, even once a
+// later claim has given its attempt back; a service the work needs that didn't answer is waited out in the event's
+// first day, counting no attempt (the outside audit's B1; docs/plans/api-b2-worker-storage-retry.md section 1.2); and a
+// line or a row says a failure's code, never its message.
 //
 // Each test writes its events under a topic of its own (`topic()`), which no other file's worker has a handler for,
 // and commits them, so the claims here are the real ones, each in its own transaction, as the worker makes them. The
 // events are removed at the end.
 //
 // These tests were written beside the poller, from the plan's section 9, so none was seen to fail before its rule
-// existed; the three of an outage were written before theirs and failed on `main`'s poller. The deliberate breakages,
-// run at the PR's last head, show they can fail.
+// existed. Of the three of an outage, written before theirs, the two that wait one out failed on `main`'s poller, and
+// the second day's passed there, as it should where every failure counts; the stale claim after a given-back attempt
+// and the sample behind the row were written after the review (the B1 plan's section 5). The deliberate breakages, run
+// at the PR's last head, show they can fail.
 
 import { randomBytes } from "node:crypto";
 import { isPlainLoopback, type Clock, type ServerNow } from "@tadayo/domain";
@@ -67,6 +70,8 @@ function topic(): string {
 interface Written {
   readonly attempts?: number;
   readonly lastError?: string;
+  /** When the row was written, if not when it comes due. */
+  readonly createdAt?: Temporal.Instant;
 }
 
 /** A committed event of `name`, due at `due`, with `payload`. */
@@ -75,7 +80,7 @@ async function event(name: string, due: Temporal.Instant, written: Written = {},
   await db`
     INSERT INTO app.outbox_events (id, topic, dedupe_key, payload, available_at, attempts, last_error, created_at)
     VALUES (${id}, ${name}, ${`${name}:${id}`}, ${JSON.stringify(payload)}::pg_catalog.text::pg_catalog.jsonb, ${due},
-            ${written.attempts ?? 0}, ${written.lastError ?? null}, ${due})`;
+            ${written.attempts ?? 0}, ${written.lastError ?? null}, ${written.createdAt ?? due})`;
   return id;
 }
 
@@ -140,15 +145,21 @@ describe("a claim (spec 34, T54)", () => {
     const others = await event(other, T.subtract({ minutes: 3 }));
     const clock = fakeClock(T);
 
-    // With when the event was written, the start of its first day (outbox.ts, item 4).
+    // With when the event was written, the start of its first day (outbox.ts, item 4), and the lease's end, which
+    // marks the claim (item 3).
     const claimed = await claimNext(worker, clock, [mine]);
     expect(
-      claimed === null
-        ? null
-        : { ...claimed, event: { ...claimed.event, createdAt: claimed.event.createdAt.toString() } },
+      claimed?.kind === "work"
+        ? {
+            ...claimed,
+            event: { ...claimed.event, createdAt: claimed.event.createdAt.toString() },
+            leaseUntil: claimed.leaseUntil.toString(),
+          }
+        : claimed,
     ).toEqual({
       kind: "work",
       event: { id: first, topic: mine, payload: {}, attempts: 1, createdAt: T.subtract({ minutes: 2 }).toString() },
+      leaseUntil: T.add({ seconds: LEASE_SECONDS }).toString(),
     });
     // Committed: another connection sees the attempt and the lease.
     expect(await row(first)).toEqual({
@@ -356,6 +367,27 @@ describe("a pass (spec 34, T52, T54)", () => {
     expect(seen.map((e) => e.attempts)).toEqual([1, 2, 3, 4, 5]);
   });
 
+  it("waits the least, counting nothing, when the clock's sample is behind the event's row, as the server's never is (T1)", async () => {
+    const mine = topic();
+    // Due an hour before its row says it was written, and claimed half an hour before that.
+    const id = await event(mine, T.subtract({ hours: 1 }), { createdAt: T });
+    const now = T.subtract({ minutes: 30 });
+    const clock = fakeClock(now);
+    const { seen, handler } = recording(() => Promise.reject(new StorageUnavailable("got no answer")));
+    expect(await pass(clock, { [mine]: handler })).toEqual({
+      handled: 0,
+      err: [`worker: an event is waiting: ${mine} ${id}: storage.unavailable, again in 30 s`],
+    });
+    expect(await row(id)).toEqual({
+      state: "pending",
+      attempts: 0,
+      last_error: "storage.unavailable",
+      available_at: now.add({ seconds: 30 }).toString(),
+      processed_at: null,
+    });
+    expect(seen.map((e) => e.attempts)).toEqual([1]);
+  });
+
   it("still counts the failures that are the event's own between outages, and kills it at the fifth", async () => {
     const mine = topic();
     const id = await event(mine, T);
@@ -540,6 +572,40 @@ describe("a pass (spec 34, T52, T54)", () => {
     });
     expect(await pass(clock, { [mine]: late.handler })).toEqual({ handled: 0, err: [] });
     expect(await row(other)).toMatchObject({ state: "pending", attempts: 2, last_error: null });
+  });
+
+  it("writes nothing over a later claim that gave its attempt back: the lease's end, not the attempts' number, marks the claim", async () => {
+    for (const [failure, code] of [
+      [() => new FailedForGood("payload"), "payload"],
+      [() => new ImageTimeout(), "image.timeout"],
+      [() => new StorageUnavailable("got no answer"), "storage.unavailable"],
+    ] as const) {
+      const mine = topic();
+      const id = await event(mine, T);
+      const clock = fakeClock(T);
+      const later = T.add({ seconds: LEASE_SECONDS });
+      const inner: string[] = [];
+      // The first attempt outlives its lease; another worker claims the event, finds Storage away and gives its
+      // attempt back, so the attempts' number is the first claim's again; then the first attempt fails.
+      const { seen, handler } = recording(async () => {
+        clock.set(later);
+        const away = recording(() => Promise.reject(new StorageUnavailable("got no answer")));
+        inner.push(...(await pass(clock, { [mine]: away.handler })).err);
+        expect(away.seen.map((e) => e.attempts)).toEqual([2]);
+        throw failure();
+      });
+      expect(await pass(clock, { [mine]: handler }), code).toEqual({ handled: 0, err: [] });
+      expect(seen.map((e) => e.attempts)).toEqual([1]);
+      // The later claim's wait stands: the event's age, 300 seconds, from its own failure.
+      expect(inner).toEqual([`worker: an event is waiting: ${mine} ${id}: storage.unavailable, again in 300 s`]);
+      expect(await row(id), code).toEqual({
+        state: "pending",
+        attempts: 1,
+        last_error: "storage.unavailable",
+        available_at: later.add({ seconds: 300 }).toString(),
+        processed_at: null,
+      });
+    }
   });
 
   it("writes nothing over an event its handler already ended, when the handler then fails", async () => {
