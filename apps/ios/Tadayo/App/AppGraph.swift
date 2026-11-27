@@ -51,6 +51,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.propose) {
                 return .live(UITestLaunch.fakeGraph(proposing: true))
             }
+            if process.arguments.contains(UITestLaunch.inviteLater) {
+                return .live(UITestLaunch.fakeGraph(invitingLater: true))
+            }
         #endif
         if isHostingTests(process) { return .inert }
         return configured(

@@ -23,12 +23,19 @@ enum ClubRoute: Hashable {
     /// G05-members-proposed, from Review members on Home or G01-pending
     /// (`RootModel.proposedRoster`).
     case proposedRoster
+    /// Club details' Invite someone: the name step for an active club
+    /// (`ClubDetailsModel.makeInvite`).
+    case inviteSomeone
+    /// G05-members-invite: one person's invitation page, after Invite someone or from the
+    /// proposer's own proposed row in Members (`ClubDetailsModel.invitation(for:)`).
+    case memberInvitation
 
     /// A screen of the club being made, which isn't the selected club's: it stays while another
     /// club is selected or the list is read again.
     var isCreateFlow: Bool {
         switch self {
-        case .details, .members, .approval, .proposedRoster, .linkEntry, .invitation, .accepted:
+        case .details, .members, .approval, .proposedRoster, .linkEntry, .invitation, .accepted,
+            .inviteSomeone, .memberInvitation:
             false
         case .create, .invitations, .inviteName, .pending: true
         }
@@ -53,15 +60,19 @@ enum ClubRoute: Hashable {
 ///   `getClub`'s, active members only, book p24);
 /// - 28 under that (the frames' glyphs sit 29 lower), the rows (`DetailsRow`): Members, Schedule,
 ///   Notifications and Widget, each a title over its line with a chevron and a full-width
-///   separator under it;
+///   separator under it, and, for an active club the server lets take a proposal, Invite someone
+///   between Members and Schedule, its title alone (frame 16; handoff 8's
+///   `activeInvitationManagement`);
 /// - 16 under the last, Private drafts, the same row as Home's (handoff 4: "Club details should
 ///   not have a different Drafts component"; book p46);
 /// - 20 under that, Leave club, a text action in `destructive` at the leading edge (handoff 8's
 ///   check, section 4, keeps it there where frame 16 centres it).
 ///
-/// Members opens the members list. Schedule (B2), Notifications (B8), Widget (M1, FQ9), Private
-/// drafts (B3 and B4) and Leave club (B6) show and do nothing until their stages (FQ85,
-/// ADR-029). Invite someone, which frame 16 draws for a club with a place free, is plan PR 7's.
+/// Members opens the members list, and Invite someone the name step (`canInvite`: an active club
+/// whose details say `can_propose`, so absent at six, A01, T6). Schedule (B2), Notifications
+/// (B8), Widget (M1, FQ9), Private drafts (B3 and B4) and Leave club (B6) show and do nothing
+/// until their stages (FQ85, ADR-029). A paused club's Invite someone (handoff 5's
+/// `G05-club-details-paused`) comes with B2's paused states.
 ///
 /// While the details load, the loading form (`ClubLoading`); after they fail, frame 11's form
 /// (`ClubLoadFailure`); for a suspended club, the same "Club unavailable" as Home, with nothing
@@ -70,6 +81,9 @@ struct ClubDetailsScreen: View {
     let details: ClubDetailsModel.Details
     let retry: @MainActor () async -> Void
     let openMembers: () -> Void
+    /// Invite someone shows (`ClubDetailsModel.canInvite`).
+    var canInvite = false
+    var invite: () -> Void = {}
 
     var body: some View {
         content
@@ -109,6 +123,13 @@ struct ClubDetailsScreen: View {
                 DetailsRow(
                     title: "details.members", line: Text("details.members.subtitle"),
                     club: club.name, action: openMembers)
+                if canInvite {
+                    // Handoff 5's `paused.details.invite.hint` names what it does, where the
+                    // rows' "Open {section} for {club}." wouldn't read.
+                    DetailsRow(
+                        title: "details.invite", line: nil, club: club.name,
+                        hint: ClubWords.inviteHint(club.name), action: invite)
+                }
                 DetailsRow(
                     title: "details.schedule", line: Text(verbatim: ClubWords.scheduleLine),
                     club: club.name, action: {})
@@ -141,6 +162,8 @@ struct ClubDetailsScreen: View {
 /// 13/18 `secondaryText`, 4 apart, 12 above and below, and `chevron.right` in `secondaryText` in
 /// the Friends row's box, 4 in from the trailing edge; a full-width `separator` under it. The
 /// whole row is one button, at least 44 high. No delivery draws it pressed: it looks the same.
+/// Invite someone has its title alone, at least 50 high, as frame 16 draws it (its separators 50
+/// apart), its title and chevron centred.
 /// The rows are about 64.5 apart where 2.1's frame draws 66: the two lines take their fonts' own
 /// line heights, which the contract's 22 and 18 only stand for (`dynamicTypePolicy.lineHeight`).
 ///
@@ -154,9 +177,14 @@ struct ClubDetailsScreen: View {
 /// (`details.row.hint`: "Open Members for Sunday people.").
 struct DetailsRow: View {
     let title: LocalizedStringResource
-    let line: Text
+    let line: Text?
     let club: String
+    /// The hint, when the row's own words say better than `details.row.hint`.
+    var hint: String?
     let action: () -> Void
+
+    /// Frame 16's Invite someone: 50 high with its title alone.
+    static let titleAloneMinHeight: CGFloat = 50
 
     var body: some View {
         Button(action: action) {
@@ -165,9 +193,11 @@ struct DetailsRow: View {
                     Text(title)
                         .textRole(.row)
                         .foregroundStyle(Palette.primaryText)
-                    line
-                        .textRole(.metadata)
-                        .foregroundStyle(Palette.secondaryText)
+                    if let line {
+                        line
+                            .textRole(.metadata)
+                            .foregroundStyle(Palette.secondaryText)
+                    }
                 }
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -176,14 +206,19 @@ struct DetailsRow: View {
                     .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             }
             .padding(.vertical, Spacing.m)
-            .frame(maxWidth: .infinity, minHeight: Size.touchTarget)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: line == nil ? Self.titleAloneMinHeight : Size.touchTarget
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.unchangedWhenPressed)
         .accessibilityHint(
             Text(
-                verbatim: String(
-                    format: String(localized: "details.row.hint"), String(localized: title), club)
+                verbatim: hint
+                    ?? String(
+                        format: String(localized: "details.row.hint"), String(localized: title),
+                        club)
             )
         )
         .overlay(alignment: .bottom) {
@@ -341,6 +376,11 @@ enum ClubWords {
         return String(
             format: String(localized: "details.footer"),
             String(localized: "details.memberCount \(count)"), zone)
+    }
+
+    /// "Propose a new member for Sunday people.", Invite someone's hint.
+    static func inviteHint(_ club: String) -> String {
+        String(format: String(localized: "details.invite.hint"), club)
     }
 
     /// "7 AM to 1 AM the next morning", Club details' Schedule line.

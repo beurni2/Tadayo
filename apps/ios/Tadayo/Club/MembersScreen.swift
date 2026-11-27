@@ -31,14 +31,20 @@ import TadayoDesign
 /// disclosure chevron and the hint "Review the proposed roster for {clubName}." (handoff 10's
 /// frame 5, `handoff10.members.proposed.hint`); for one who has decided it opens nothing and shows
 /// no chevron, keeping its room so the words wrap the same, and nothing tells one decision from
-/// another (FQ143, frame 6); for the candidate's proposer it opens nothing yet (their invitation
-/// page is plan PR 7c). VoiceOver reads "Leila. Proposed by Ben. Proposed." either way. Nothing
-/// counts approvals or activity (T15, T33, T55). While the list loads, the loading form; after it
+/// another (FQ143, frame 6). For the candidate's proposer, once decided by proposing (FQ60), it
+/// opens the person's invitation page in an active club (`openInvitation`, nil elsewhere;
+/// `G05-members-invite`; handoff 8's `returnPath`: "Club details → Members → own proposed
+/// candidate → G05-members-invite"), a button with the same chevron and no hint, since no
+/// delivery words one (FQ149's default); elsewhere it opens nothing, as a decided row does.
+/// VoiceOver reads "Leila. Proposed by Ben. Proposed." on every proposed row. Nothing counts
+/// approvals or activity (T15, T33, T55). While the list loads, the loading form; after it
 /// fails, frame 11's form with the members' words (`handoff8.loadStates.members`).
 struct MembersScreen: View {
     let members: ClubDetailsModel.Members
     let retry: @MainActor () async -> Void
     var openApproval: (RosterRevision) -> Void = { _ in }
+    /// The person's invitation page, for the proposer's own row: nil where it doesn't open.
+    var openInvitation: ((String) -> Void)?
 
     var body: some View {
         content
@@ -97,16 +103,18 @@ struct MembersScreen: View {
     }
 
     /// A candidate's proposed row: a button with the chevron and its hint that opens G03-approve
-    /// when the viewer's decision is pending, and otherwise the row alone, the chevron's room kept.
+    /// when the viewer's decision is pending, a button with the chevron that opens the person's
+    /// invitation page for their proposer, and otherwise the row alone, the chevron's room kept.
     @ViewBuilder private func proposedRow(_ proposed: Roster.Proposed, in roster: Roster)
         -> some View
     {
-        let opens = proposed.opens == .approval && roster.openRevision != nil
+        let approves = proposed.opens == .approval && roster.openRevision != nil
+        let invites = proposed.opens == .invitation && openInvitation != nil
         let row = RosterRow(
             name: proposed.candidate.name, isViewer: false, days: nil,
             proposal: .by(proposed.candidate.proposedBy.displayName),
-            disclosure: opens ? .shown : .reserved)
-        if opens, let revision = roster.openRevision {
+            disclosure: approves || invites ? .shown : .reserved)
+        if approves, let revision = roster.openRevision {
             Button {
                 openApproval(revision)
             } label: {
@@ -115,6 +123,13 @@ struct MembersScreen: View {
             .buttonStyle(.plain)
             .accessibilityHint(
                 Text(verbatim: ApproveWords.words("members.proposed.hint", roster.club.name)))
+        } else if invites {
+            Button {
+                openInvitation?(proposed.candidate.id)
+            } label: {
+                row.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         } else {
             row
         }
