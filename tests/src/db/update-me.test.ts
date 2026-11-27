@@ -326,6 +326,26 @@ describe("the idempotency key (T19)", () => {
     });
   });
 
+  it("replays each account's own answer under a key both used, and never the other's (the outside audit's B8)", async () => {
+    await rolledBack(db, async (tx) => {
+      const [ben, cleo] = [await account(tx, { name: "Ben" }), await account(tx, { name: "Cleo" })];
+      const key = randomUUID();
+      const bens = { expected_version: 0, display_name: "Ben K" } satisfies ProfileEdit;
+      const cleos = { expected_version: 0, display_name: "Cleo K" } satisfies ProfileEdit;
+      const forBen = await request(tx, ben, bens, key);
+      const forCleo = await request(tx, cleo, cleos, key);
+      // Each account's retry of its own request is its own first answer, whichever receipt the table
+      // holds first: a lookup that forgot whose key it is would find the other account's for one of them.
+      expect(await request(tx, ben, bens, key)).toEqual(forBen);
+      expect(await request(tx, cleo, cleos, key)).toEqual(forCleo);
+      // And the other's request under the key is another request of its own, never the other's answer.
+      expect(await refusal(request(tx, ben, cleos, key))).toEqual({ code: "IDEMPOTENCY_CONFLICT", facts: {} });
+      expect(await refusal(request(tx, cleo, bens, key))).toEqual({ code: "IDEMPOTENCY_CONFLICT", facts: {} });
+      expect(await rowOf(tx, ben)).toMatchObject({ version: 1, display_name: "Ben K" });
+      expect(await rowOf(tx, cleo)).toMatchObject({ version: 1, display_name: "Cleo K" });
+    });
+  });
+
   it("leaves no receipt behind when the request is refused, so the same key can be sent again", async () => {
     await rolledBack(db, async (tx) => {
       const ben = await account(tx);

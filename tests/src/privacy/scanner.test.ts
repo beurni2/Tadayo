@@ -299,6 +299,8 @@ function context(id: string, viewer: string, overrides: Partial<ScanContext> = {
 }
 
 const person = (interval: string, name: string) => ({ membership_id: interval, display_name: name });
+/** Cleo as members see her while her interval is active: her name, and her account's avatar (FQ74). */
+const cleosPerson = () => ({ ...person(cleo, "Cleo"), avatar_version: "v_avatar_cleo" });
 const club = (viewer = cleo) => ({
   id: "clb_sat",
   name: "Saturday People",
@@ -328,7 +330,7 @@ const bensCard = () => ({
 const cleosCard = () => ({
   view: "caption",
   id: "drp_cleo",
-  author: person(cleo, "Cleo"),
+  author: cleosPerson(),
   media_class: "external_video",
   caption: "See https://example.org/x",
 });
@@ -391,7 +393,7 @@ function ownContribution(id: string, caption: string, viewer = cleo) {
     drop_id: id,
     club: club(viewer),
     occurrence: saturday,
-    media_class: "photo",
+    media_class: world.drops.get(id)?.media ?? "photo",
     caption,
     state: "added",
     version: 1,
@@ -422,7 +424,7 @@ const allowance = (
 const cleosOwnCard = () => ({
   view: "own",
   id: "drp_cleo",
-  author: person(cleo, "Cleo"),
+  author: cleosPerson(),
   media_class: "external_video",
   caption: "See https://example.org/x",
   highlight: false,
@@ -490,8 +492,7 @@ describe("the leak scanner passes what may be shown", () => {
   });
 
   it("passes a caption card whose author carries their avatar version (FQ74, ADR-031)", () => {
-    const card = { ...bensCard(), author: { ...person(ben, "Ben"), avatar_version: "v_avatar_ben" } };
-    expect(scan(answer(upcomingDay([card])), context("getOccurrence", cleo))).toEqual([]);
+    expect(scan(answer(upcomingDay([cleosCard()], ben)), context("getOccurrence", ben))).toEqual([]);
   });
 
   it("passes an opened day whose next day and add target haven't opened, with the photo's own content version", () => {
@@ -536,7 +537,7 @@ describe("the leak scanner passes what may be shown", () => {
       [{ drop_id: "drp_ben", author: person(ben, "Ben"), star_pick: true }],
     );
     expect(scan(answer(toCleo), context("getOccurrence", cleo, { now: OPEN }))).toEqual([]);
-    const withPeople = { ...heart, people: [person(cleo, "Cleo")] };
+    const withPeople = { ...heart, people: [cleosPerson()] };
     const toBen = revealedDay([bensRevealedCard([withPeople])], [], ben);
     expect(scan(answer(toBen), context("getOccurrence", ben, { now: OPEN }))).toEqual([]);
   });
@@ -711,7 +712,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(at(scan(answer(rail), context("getOccurrence", eve, { now: OPEN })), "world")).toEqual([
       "$.highlights[0].drop_id",
     ]);
-    const wrongAuthor = revealedDay([], [{ drop_id: "drp_ben", author: person(cleo, "Cleo"), star_pick: true }]);
+    const wrongAuthor = revealedDay([], [{ drop_id: "drp_ben", author: cleosPerson(), star_pick: true }]);
     expect(at(scan(answer(wrongAuthor), context("getOccurrence", cleo, { now: OPEN })), "world")).toEqual([
       "$.highlights[0].author",
     ]);
@@ -756,7 +757,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     for (const card of [
       { ...bensCard(), caption: "See https://example.org/x" },
       { ...bensCard(), author: person(ben, "Cleo") },
-      { ...bensCard(), author: person(cleo, "Cleo") },
+      { ...bensCard(), author: cleosPerson() },
     ]) {
       expect(checks(scan(answer(upcomingDay([card])), context("getOccurrence", cleo))), JSON.stringify(card)).toEqual([
         "world",
@@ -766,7 +767,13 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     // after the reveal, on the viewer's own card, and in the viewer's own drop in Your drops.
     const revealed = revealedDay([{ ...bensRevealedCard(), caption: "Only for Ben" }], []);
     const own = upcomingDay([
-      { ...bensOwnCard(), id: "drp_cleo", author: person(cleo, "Cleo"), caption: "Only for Ben" },
+      {
+        ...bensOwnCard(),
+        id: "drp_cleo",
+        author: cleosPerson(),
+        media_class: "external_video",
+        caption: "Only for Ben",
+      },
     ]);
     const mine = { items: [ownContribution("drp_cleo", "Only for Ben")] };
     for (const [name, found] of [
@@ -780,6 +787,49 @@ describe("the leak scanner catches each planted leak with its own check", () => 
         name,
       ).toBe(true);
     }
+  });
+
+  it("catches an avatar version that isn't the person's own account's, or none where the account has one (FQ74; the outside audit's B8)", () => {
+    const shown = (who: object, avatar_version: string) => ({ ...who, avatar_version });
+    for (const [card, viewer] of [
+      // Cleo's avatar beside Ben, whose account has none; Cleo's left out; and a version her account doesn't hold.
+      [{ ...bensCard(), author: shown(person(ben, "Ben"), "v_avatar_cleo") }, cleo],
+      [{ ...cleosCard(), author: person(cleo, "Cleo") }, ben],
+      [{ ...cleosCard(), author: shown(person(cleo, "Cleo"), "v_avatar_before") }, ben],
+    ] as const) {
+      const found = scan(answer(upcomingDay([card], viewer)), context("getOccurrence", viewer));
+      expect(checks(found), JSON.stringify(card)).toEqual(["world"]);
+      expect(at(found, "world"), JSON.stringify(card)).toEqual(["$.drops[0].author.avatar_version"]);
+    }
+    // Every person is held to it: among who reacted, too.
+    const heart = { reaction: "heart", people: [person(cleo, "Cleo")] };
+    const toBen = revealedDay([bensRevealedCard([heart])], [], ben);
+    expect(at(scan(answer(toBen), context("getOccurrence", ben, { now: OPEN })), "world")).toEqual([
+      "$.drops[0].reactions[0].people[0].avatar_version",
+    ]);
+  });
+
+  it("catches a media class that isn't its drop's or its reservation's own: on a card, in Your drops and on a reservation (the outside audit's B8)", () => {
+    // Ben's photo called a link, on his caption card to Cleo and on his own card to him.
+    const caption = upcomingDay([{ ...bensCard(), media_class: "external_video" }]);
+    expect(at(scan(answer(caption), context("getOccurrence", cleo)), "world")).toEqual(["$.drops[0].media_class"]);
+    const own = upcomingDay([{ ...bensOwnCard(), media_class: "external_video" }], ben);
+    expect(at(scan(answer(own), context("getOccurrence", ben)), "world")).toEqual(["$.drops[0].media_class"]);
+    // Cleo's link called a photo in her own Your drops.
+    const mine = { items: [{ ...ownContribution("drp_cleo", "See https://example.org/x"), media_class: "photo" }] };
+    expect(at(scan(answer(mine), context("listMyDrops", cleo)), "world")).toEqual(["$.items[0].media_class"]);
+    // Cleo's photo slot called a link's, and as it is.
+    const slot = (media_class: string) => ({
+      id: "rsv_cleo",
+      occurrence_id: "occ_sat",
+      media_class,
+      expires_at: "2026-11-07T07:00:00Z",
+      allowance: allowance(0, 0, 0, 0),
+    });
+    expect(at(scan(answer(slot("external_video"), 201), context("createReservation", cleo)), "world")).toEqual([
+      "$.media_class",
+    ]);
+    expect(at(scan(answer(slot("photo"), 201), context("createReservation", cleo)), "world")).toEqual([]);
   });
 
   it("catches someone else's drop where the schema says the viewer's own: Your drops, DUPLICATE_DROP, a receipt", () => {
@@ -1724,7 +1774,7 @@ describe("the proposer's invitation link (T7, T14, T52, FQ77; handoff 1)", () =>
     club: club(viewer),
     state: "open",
     proposed_by: person(ben, "Ben"),
-    members: [person(ana, "Ana"), person(ben, "Ben"), person(cleo, "Cleo")],
+    members: [person(ana, "Ana"), person(ben, "Ben"), cleosPerson()],
     candidates: [{ id: "cand_new", name: "Mo", proposed_by: person(ben, "Ben"), invitation }],
     my_decision: "approved",
   });
