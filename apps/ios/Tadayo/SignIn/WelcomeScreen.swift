@@ -123,7 +123,8 @@ struct WelcomeScreen: View {
         let date = Self.exampleDate
         let labels = DateLabels(locale: locale)
         return String(
-            format: String(localized: "welcome.example.target"), "Debby", labels.weekday(date),
+            format: String(localized: "welcome.example.target"),
+            String(localized: "welcome.example.star"), labels.weekday(date),
             labels.dayMonth(date, includingYear: true))
     }
 
@@ -166,7 +167,8 @@ struct WelcomeScreen: View {
     /// Maya's caption, before the day.
     private var card: some View {
         ExampleCard(
-            caption: String(localized: "welcome.example.caption"), sender: "Maya",
+            caption: String(localized: "welcome.example.caption"),
+            sender: String(localized: "welcome.example.sender"),
             photo: mayasPhoto, cover: Palette.cover(slot: 1))
     }
 

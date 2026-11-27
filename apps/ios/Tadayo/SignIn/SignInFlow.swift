@@ -20,7 +20,8 @@ struct SignInFlow: View {
     /// Draws the field focused, or not, whatever has focus: snapshots show focus with no
     /// keyboard. Nil in the app, where each screen focuses its field when it appears.
     var focus: Bool?
-    /// The paste step last pushed, drawn while it slides away after Back to Welcome.
+    /// The paste step last pushed, drawn while it slides away after Back to Welcome, and let go
+    /// once it has.
     @State private var shownEntry: InvitationLinkEntryModel?
 
     private enum Page: Hashable {
@@ -35,7 +36,12 @@ struct SignInFlow: View {
                     case .linkEntry:
                         if let entry = model.linkEntry ?? shownEntry {
                             LinkEntryScreen(
-                                model: entry, proceed: { await entry.proceed() }, focus: focus)
+                                model: entry, proceed: { await entry.proceed() }, focus: focus
+                            )
+                            // Slid away after Back to Welcome: nothing of it stays in memory.
+                            .onDisappear {
+                                if model.linkEntry == nil, shownEntry === entry { shownEntry = nil }
+                            }
                         }
                     case .email:
                         EmailScreen(model: model, focus: focus)

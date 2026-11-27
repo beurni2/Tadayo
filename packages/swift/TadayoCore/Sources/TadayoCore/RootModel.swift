@@ -100,6 +100,16 @@ import Observation
     /// G01-create"). Held in memory, for the first account that shows, as a link opened before
     /// sign-in is; a newer link replaces it (`docs/plans/ios-b1-welcome.md` section 2).
     public private(set) var createsClubOnArrival = false
+    /// Create a club, from the sign-in that took it until the tabs first show, in memory only:
+    /// through Retry after a session the phone couldn't keep, whose new sign-in starts at
+    /// A02-email with no route taken, and through a session the server ends during the age or the
+    /// profile, for that account alone, as a held link is (FQ135's default). Leave sign-in and
+    /// Welcome shown again forget it.
+    private struct HeldCreate {
+        /// The account it's for; nil until one shows.
+        let accountID: String?
+    }
+    private var createHeld: HeldCreate?
 
     /// Moves each time the app leaves an account. An answer to a call made before is dropped, so
     /// nothing that lands after Leave sign-in can route back into the account left (spec 23).
@@ -273,6 +283,7 @@ import Observation
             if let shown { pendingInvitation = shown }
         } else {
             pendingInvitation = nil
+            createHeld = nil
         }
         forgetClubs()
         selection.forget()
@@ -731,13 +742,16 @@ import Observation
             endedByServer = true
             address = typed
         }
+        let welcomes = welcome && !endedByServer && pendingInvitation == nil
+        // Welcome's routes are chosen again there.
+        if welcomes { createHeld = nil }
         let model = SignInModel(
             auth: auth,
             verified: { [weak self] verified in
                 guard let self, self.epoch == asked else { return }
                 await self.signedIn(verified)
             }, signInEnded: endedByServer,
-            welcome: welcome && !endedByServer && pendingInvitation == nil,
+            welcome: welcomes,
             hold: { [weak self] token in
                 guard let self, self.epoch == asked, self.route == .signIn else { return }
                 self.pendingInvitation = HeldInvitation(token: token, accountID: nil)
@@ -759,6 +773,7 @@ import Observation
     }
 
     private func signedIn(_ verified: AuthSession) async {
+        if signIn?.way == .createClub { createHeld = HeldCreate(accountID: nil) }
         do {
             try await session.begin(verified)
         } catch {
@@ -802,6 +817,12 @@ import Observation
                 pendingInvitation = HeldInvitation(token: held.token, accountID: account.id)
             }
         }
+        // Create a club the same way.
+        if let owner = createHeld?.accountID, owner != account.id {
+            createHeld = nil
+        } else if createHeld != nil {
+            createHeld = HeldCreate(accountID: account.id)
+        }
         guard Self.isComplete(account) else {
             self.account = nil
             // Nothing of a club while the account is incomplete: a shown invitation is held again,
@@ -827,7 +848,8 @@ import Observation
         }
         // Create a club opens G01-create as the tabs first show, unless a link is held, which a
         // newer intent replaced it with.
-        createsClubOnArrival = signIn?.way == .createClub && pendingInvitation == nil
+        createsClubOnArrival = createHeld != nil && pendingInvitation == nil
+        createHeld = nil
         signIn = nil
         profile = nil
         self.account = account

@@ -46,11 +46,12 @@ final class WelcomeSnapshotTests: XCTestCase {
     // MARK: A02-email over Welcome
 
     /// Built from spec: Already here? Sign in pushed A02-email over Welcome, with the system's
-    /// back.
+    /// back, its field focused as it arrives (`EmailScreen`'s `onAppear`), as `A02-email-empty`
+    /// draws it (`WelcomeUITests.testCreateAClubSignsInThenOpensCreate` checks the focus).
     func testA02EmailFromWelcome() {
         let model = welcome()
         model.choose(.signIn)
-        snap(model, named: "A02-email-from-welcome")
+        snap(model, named: "A02-email-from-welcome", focus: true)
     }
 
     // MARK: What VoiceOver finds
@@ -130,10 +131,10 @@ final class WelcomeSnapshotTests: XCTestCase {
     }
 
     private func snap(
-        _ model: SignInModel, named state: String, testName: String = #function,
-        line: UInt = #line
+        _ model: SignInModel, named state: String, focus: Bool = false,
+        testName: String = #function, line: UInt = #line
     ) {
         ScreenSnapshot.assert(
-            SignInFlow(model: model, focus: false), named: state, testName: testName, line: line)
+            SignInFlow(model: model, focus: focus), named: state, testName: testName, line: line)
     }
 }

@@ -49,6 +49,12 @@ final class WelcomeUITests: XCTestCase {
         let create = app.buttons["Create a club"]
         XCTAssertTrue(create.waitForExistence(timeout: 10))
         create.tap()
+        // A02-email takes the focus as it's pushed over Welcome (`A02-email-from-welcome`).
+        let email = app.textFields["Email address"]
+        XCTAssertTrue(email.waitForExistence(timeout: 10))
+        XCTAssertTrue(
+            eventually { (email.value(forKey: "hasKeyboardFocus") as? Bool) ?? false },
+            "the email field focused on arrival")
         signIn(app)
         XCTAssertTrue(app.staticTexts["Your people, together."].waitForExistence(timeout: 10))
         XCTAssertTrue(app.textFields["Club name"].exists)

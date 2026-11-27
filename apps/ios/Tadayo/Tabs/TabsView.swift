@@ -239,7 +239,8 @@ struct TabsView: View {
             // `decisionBusy.Back`: "refresh parent when its authoritative outcome arrives").
             .onChange(of: proposing?.changes ?? 0) { _, _ in proposedRosterAnsweredAfterBack() }
             .onChange(of: proposing?.asksDecision) { _, _ in proposedRosterAnsweredAfterBack() }
-            .onChange(of: invitation.map(ObjectIdentifier.init)) { _, _ in
+            // `initial`: a held link the root presented before the tabs first drew is pushed too.
+            .onChange(of: invitation.map(ObjectIdentifier.init), initial: true) { _, _ in
                 rootInvitationChanged()
             }
             .sheet(isPresented: $switching, onDismiss: openChosen) {

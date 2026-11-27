@@ -25,12 +25,14 @@ import Testing
 
     func root(
         _ accounts: FakeAccounts, clubs: ScriptedClubs = ScriptedClubs(),
-        auth: FakeAuth = FakeAuth(), signedIn: Bool = false
+        auth: FakeAuth = FakeAuth(), signedIn: Bool = false, store: (any SessionStore)? = nil
     ) -> RootModel {
         let clock = ManualContinuousClock()
         return RootModel(
             session: SessionManager(
-                auth: auth, store: signedIn ? InMemorySessionStore(stored) : InMemorySessionStore(),
+                auth: auth,
+                store: store
+                    ?? (signedIn ? InMemorySessionStore(stored) : InMemorySessionStore()),
                 now: { [start] in start }),
             auth: auth, accounts: accounts, clubs: clubs, selection: InMemoryClubSelection(),
             now: { clock.now }, sleep: { clock.sleep(until: $0) })
@@ -180,6 +182,90 @@ import Testing
         #expect(second.showsWelcome)
         #expect(second.way == nil)
         second.choose(.signIn)
+        await signIn(second)
+        #expect(root.route == .tabs)
+        #expect(!root.createsClubOnArrival)
+    }
+
+    @Test func createAClubOutlastsASessionThePhoneCouldntKeep() async throws {
+        // Retry asks for the code again on a new sign-in, with no Welcome under it: the route
+        // taken there is still Create a club (handoff 8's route ends at G01-create).
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(me: [.success(leila)], clubs: [.success(list())])
+        let root = root(accounts, auth: auth, store: KeepsTheSecondSession())
+        await root.start()
+        let first = try #require(root.signIn)
+        first.choose(.createClub)
+        await signIn(first)
+        #expect(root.route == .signInNotKept)
+        await root.retry()
+        let second = try #require(root.signIn)
+        #expect(second !== first)
+        #expect(!second.showsWelcome)
+        #expect(second.way == nil)
+        await signIn(second)
+        #expect(root.route == .tabs)
+        #expect(root.createsClubOnArrival)
+    }
+
+    @Test func createAClubOutlastsASessionTheServerEndsDuringTheAge() async throws {
+        // As a held link does (FQ135): in memory, for the same account.
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(account()), .success(leila)], update: [.failure(.signedOut)],
+            clubs: [.success(list())])
+        let root = root(accounts, auth: auth)
+        await root.start()
+        let first = try #require(root.signIn)
+        first.choose(.createClub)
+        await signIn(first)
+        #expect(root.route == .confirmAge)
+        await root.profile?.confirmAge()
+        let second = try #require(root.signIn)
+        #expect(second !== first)
+        #expect(second.signInEnded)
+        #expect(!second.showsWelcome)
+        await signIn(second)
+        #expect(root.route == .tabs)
+        #expect(root.createsClubOnArrival)
+    }
+
+    @Test func createAClubIsNeverAnotherAccountsAfterTheServerEndsTheSession() async throws {
+        let maya = Account(
+            id: "acct_maya", displayName: "Maya", avatarVersion: nil, ageConfirmed: true,
+            version: 1)
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(account()), .success(maya)], update: [.failure(.signedOut)],
+            clubs: [.success(list())])
+        let root = root(accounts, auth: auth)
+        await root.start()
+        let first = try #require(root.signIn)
+        first.choose(.createClub)
+        await signIn(first)
+        #expect(root.route == .confirmAge)
+        await root.profile?.confirmAge()
+        let second = try #require(root.signIn)
+        await signIn(second)
+        #expect(root.account?.id == "acct_maya")
+        #expect(root.route == .tabs)
+        #expect(!root.createsClubOnArrival)
+    }
+
+    @Test func createAClubIsTakenOnceAndNotForTheNextSignIn() async throws {
+        let auth = FakeAuth(verify: [.success(stored), .success(stored)])
+        let accounts = FakeAccounts(
+            me: [.success(leila), .success(leila)],
+            clubs: [.success(list()), .failure(.signedOut), .success(list())])
+        let root = root(accounts, auth: auth)
+        await root.start()
+        let first = try #require(root.signIn)
+        first.choose(.createClub)
+        await signIn(first)
+        #expect(root.arrivalCreate() != nil)
+        // The server ends the session after the tabs showed; the next sign-in creates nothing.
+        await root.loadClubs()
+        let second = try #require(root.signIn)
         await signIn(second)
         #expect(root.route == .tabs)
         #expect(!root.createsClubOnArrival)
@@ -353,4 +439,22 @@ import Testing
         #expect(signIn.way == nil)
         #expect(signIn.email == "leila@example.com")
     }
+}
+
+/// A keychain that refuses the first session it's given, as a full or locked one can, and keeps
+/// the next.
+private final class KeepsTheSecondSession: SessionStore, @unchecked Sendable {
+    private let lock = NSLock()
+    private var saves = 0
+    private var session: AuthSession?
+
+    func load() throws -> AuthSession? { lock.withLock { session } }
+    func save(_ session: AuthSession) throws {
+        try lock.withLock {
+            saves += 1
+            guard saves > 1 else { throw UnwritableStore.Refused() }
+            self.session = session
+        }
+    }
+    func delete() throws { lock.withLock { session = nil } }
 }
