@@ -5,7 +5,8 @@
 // error the code makes is one of these three instead, with a code that names its site: its file's name and its place
 // among that file's sites when it was written (`home_3`), `api_` or `worker_` in front for a file of those services.
 // The code is a literal at its site, so one search from a log's code finds the line, and it stays the same when the
-// file moves or gains a site. `fault.test.ts` holds every site of the three folders to it.
+// file moves or gains a site. A function that makes one fault for many checks (a parser's `shape()`) has one code,
+// which names the parser, not the check. `fault.test.ts` holds every site of the three folders to it.
 
 /**
  * A site code: lower-case letters, digits and `_`, from a letter, ending in `_` and a number, at most 32 characters.

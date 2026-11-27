@@ -339,6 +339,26 @@ describe("the redaction list (T52)", () => {
     expect(lines.join("")).not.toContain("ana@");
   });
 
+  it("keeps an error's class and code only when each is a plain word, which could otherwise carry anything (PR #148's review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const odd = (name: string, code: string) => Object.assign(new Error("x"), { name, code });
+    app.log.error({ err: odd("Error", "postgres://tadayo_app:SECRET-PASSWORD@db.example.invalid/tadayo") }, "failed");
+    app.log.error({ err: odd("Error", "c".repeat(1024)) }, "failed");
+    app.log.error({ err: odd("Error", "has space") }, "failed");
+    app.log.error({ err: odd(`Error ${TEST_EMAIL}`, "23505") }, "failed");
+    app.log.error({ err: odd("E".repeat(65), "23505") }, "failed");
+    app.log.error({ err: odd("PostgresError", "c".repeat(64)) }, "failed");
+    expect(parse(lines).map((entry) => (entry as { err: unknown }).err)).toEqual([
+      { type: "Error" },
+      { type: "Error" },
+      { type: "Error" },
+      { type: "unknown", code: "23505" },
+      { type: "unknown", code: "23505" },
+      { type: "PostgresError", code: "c".repeat(64) },
+    ]);
+    expect(lines.join("")).not.toMatch(/SECRET-PASSWORD|example\.invalid|ccc{1000}|has space/);
+  });
+
   it("gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review)", async () => {
     const { app, lines } = await logged(() => Promise.resolve(READY));
     const error = () =>

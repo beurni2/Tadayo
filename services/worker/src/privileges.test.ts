@@ -1183,6 +1183,18 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
     });
   });
 
+  it("the worker's start reads TADAYO_SAFETY_PROVIDER before it sweeps, and stops there without it (the outside audit's B7)", () => {
+    // A process of the photo user's left running is still there after the start stopped: the sweep never ran.
+    expect(fact("start-no-provider")).toEqual({
+      case: "start-no-provider",
+      wasRunning: true,
+      failedAt: "the safety provider",
+      stillRunning: true,
+      endedAfter: true,
+      euid: 64998,
+    });
+  });
+
   it("a sweep that can't finish as the worker starts stops it there, before it connects to the database", () => {
     // Every process of the photo user had ended: what it left couldn't all be removed, and the error says so.
     expect(fact("start-sweep-fails")).toEqual({ case: "start-sweep-fails", failedAt: "the sweep, left", euid: 64998 });

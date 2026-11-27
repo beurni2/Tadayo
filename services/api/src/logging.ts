@@ -21,7 +21,8 @@
 //    that isn't a plain one or an array (the outside audit's A14: pino's own redaction went one level down,
 //    and read only the spellings it was given). pino's own redaction of the list, at the top and one level
 //    down, stays beneath it, for a child that brings a log formatter of its own (the round-2 review). An
-//    `err` is reduced to its class name and its code. A line's message is the fixed string our code or
+//    `err` is reduced to its class name and its code, each kept only when it is a plain word (PR #148's
+//    review). A line's message is the fixed string our code or
 //    Fastify passes: given an error and no message, pino would copy the error's message into it, so such
 //    a line gets a fixed one (`ownMessage`; the round-2 review).
 // The request id is random, 96 bits, never Fastify's counter and never a header the caller sent.
@@ -285,12 +286,23 @@ function ownMessage(this: unknown, args: unknown[], method: (...args: unknown[])
   else method.apply(this, args);
 }
 
+/** A class's name as a line may show it: a plain identifier, as every class's is. */
+const ERROR_TYPE = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
+/**
+ * A code as a line may show it: letters, digits and `_`, as SQLSTATE's, Node's, Fastify's and the code's own site codes
+ * are (@tadayo/domain/fault), so one a library filled with something else (a URL, a value) is left out, as the
+ * worker's `describeFailure` leaves it out (PR #148's review).
+ */
+const ERROR_CODE = /^[A-Za-z0-9_]{1,64}$/;
+
 /** An error as a log line may show it: its class and its code, never its message, which can quote rows. */
 function safeError(error: unknown): { type: string; code?: string } {
   if (typeof error !== "object" || error === null) return { type: "unknown" };
   const { name, code } = error as { name?: unknown; code?: unknown };
-  const described: { type: string; code?: string } = { type: typeof name === "string" ? name : "unknown" };
-  if (typeof code === "string") described.code = code;
+  const described: { type: string; code?: string } = {
+    type: typeof name === "string" && ERROR_TYPE.test(name) ? name : "unknown",
+  };
+  if (typeof code === "string" && ERROR_CODE.test(code)) described.code = code;
   return described;
 }
 

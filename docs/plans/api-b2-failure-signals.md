@@ -37,12 +37,16 @@ coordinator's relay of 10:02 UTC on 2026-11-24: B1, B7, B8, B6).
 - A site code is lower-case letters, digits and `_`, ending in `_` and a number, at most 32 characters
   (`/^[a-z][a-z0-9_]*_[0-9]+$/`): `propose_roster_7`, `worker_start_2`. The constructor refuses any other. That shape
   fits each place that reads a code already: `describeFailure`'s pattern (`^[A-Za-z0-9_]{1,32}$`), `failureCode`'s
-  own codes, and 0009's `last_error` check. It can't spell a number or an id of the database's, a URL or a message,
-  and its trailing number keeps it apart from the worker's reason codes (`storage.unavailable`, `payload`).
+  own codes, and 0009's `last_error` check. Its shape can't hold a URL, a message or an id of the database's (an id
+  from `newId` ends in a letter), and its trailing number keeps it apart from the worker's reason codes
+  (`storage.unavailable`, `payload`). The shape alone could still spell a word or a number (`debby_2`): what keeps a
+  value out is that every code is a literal written at its site, which the scan holds (below).
 - Each site's code is its file's name and its place among the file's sites when this slice wrote it: `home_3` is the
   third in `packages/domain/src/clubs/home.ts`; a file in `services/api` or `services/worker` adds `api_` or
   `worker_` in front. The code is a literal at its site, so a log's code finds its line with one search, and it never
-  changes when the file moves or another site is added. The message stays as it was, for the tests and the start's
+  changes when the file moves or another site is added. A function that makes one fault for many checks (a parser's
+  `shape()`: `home_2` for 25 checks of Home's rows) has one code, which names the parser, not the check (PR #148's
+  review, G4). The message stays as it was, for the tests and the start's
   own failures, which print it (`main.ts`): a message can name a value (`time: ${zone} isn't an IANA time zone`), so
   it is never logged.
 - `packages/domain/package.json` exports the module as `@tadayo/domain/fault`, which the services import: it imports
@@ -51,16 +55,21 @@ coordinator's relay of 10:02 UTC on 2026-11-24: B1, B7, B8, B6).
   before the turn (`turn.ts`; `privileges.test.ts` holds it to that, its import list and the graph Node resolves). It
   keeps its own `PrivilegeFault`, of the same shape: `PRIVILEGE_SITE_CODE`, which `privileges.test.ts` holds to
   `SITE_CODE`, and a code that isn't one refused under `worker_privileges_0`.
-- With a code on every such error, nothing else changes to log it: `safeError` already keeps a string `code`, so the
-  500's line reads `{ "err": { "type": "Fault", "code": "propose_roster_7" }, "msg": "request failed" }`;
+- With a code on every such error, nothing else changes to log it: `safeError` already keeps a string `code` (since
+  the review, only a plain word: section 5's P2), so the 500's line reads
+  `{ "err": { "type": "Fault", "code": "propose_roster_7" }, "msg": "request failed" }`;
   `describeFailure` gives `Fault propose_roster_7`; and `failureCode` records the event's failure as
   `propose_roster_7` where it said `unknown`.
 - **The rule that keeps it so** (`packages/domain/src/fault.test.ts`): a scan of the three folders' TypeScript (not
-  their tests, `testing.ts` or the root harness) through the compiler, so a string that holds code (the sweep's script
-  in `privileges.ts`) isn't read as code. It fails on any `new Error`, `TypeError`, `RangeError` or another built-in
-  error, or a call of one without `new`, outside `fault.ts`; on a `Fault`, `InputFault` or `RangeFault` whose code
-  isn't a string literal of the site code's shape; and on a code used twice. It reads `PrivilegeFault` as a fault too.
-  A part of it plants each of these in made-up files and checks the scan finds them. A class of the code's own that
+  their tests, nor the four files that never run in a server, named by exact path: the three packages' `testing.ts`
+  and the root harness) through the compiler, so a string that holds code (the sweep's script in `privileges.ts`)
+  isn't read as code. It fails on any `new Error`, `TypeError`, `RangeError` or another built-in error, or a call of
+  one without `new`, outside `fault.ts`; on a `Fault`, `InputFault` or `RangeFault` whose code isn't a string literal
+  of the site code's shape; and on a code used twice. It reads a class through parentheses, `as`, `!` and a property
+  (`f.Fault`, `globalThis["Error"]`), and fails on each way round it can see: one of these classes under another name
+  (an alias, a renamed import, export or binding), passed as a value (`Reflect.construct(Error, …)`), a fault
+  extended, or the fault module imported whole (PR #148's review, P1). It reads `PrivilegeFault` as a fault too. A
+  part of it plants each of these in made-up files and checks the scan finds them. A class of the code's own that
   extends `Error` (`StorageUnavailable`, `ImageTimeout`) stays: its name already says where it came from.
 
 ### 1.2. The photo safety provider is a setting every environment names (`services/worker/src/start.ts`)
@@ -119,6 +128,16 @@ Each planted in place and restored from its own copy, each to be caught by the t
 10. `TADAYO_SAFETY_PROVIDER` set in the Dockerfile (`deploy-files.test.ts`);
 11. `privileges.ts`'s site code pattern drifting from `SITE_CODE` (`privileges.test.ts`).
 
+The review's fixes (section 5) add six:
+
+12. the safety setting read after the sweep (`privileges.test.ts`'s root harness, `start-no-provider`);
+13. the scan leaving files out by their name again, with a server module named `upload-harness.ts` added
+    (`fault.test.ts`);
+14. the scan reading a class without unwrapping parentheses and casts (`fault.test.ts`'s planted files);
+15. the scan not looking for a class under another name (`fault.test.ts`'s planted files);
+16. `safeError` keeping any string code (`logging.test.ts`);
+17. `safeError` keeping any string name (`logging.test.ts`).
+
 ## 4. What it leaves to others
 
 - **The alert itself** (FQ150): the next slice, `api/b2-failure-alerts`, once the founder answers. Whatever the
@@ -126,7 +145,38 @@ Each planted in place and restored from its own copy, each to be caught by the t
 - A library's error with no code (a plain `Error` from a package) still logs as its class alone: its message is the
   package's to choose and can hold anything, and its site isn't ours to name.
 - `tools/ops` keeps its own `OpsError`, which prints its message to the workflow's log by design.
+- `packages/contracts/src`, which the API loads, still makes eight built-in errors (`document.ts`, `registry.ts`). Each
+  fires while the contract is built or loaded, at the API's start or in a test, never in a request, so none reaches
+  a 500's line (PR #148's review, G6). The scan, and every claim of this slice, is of the three folders.
 
 ## 5. The review
 
-To come.
+Round 1: two fresh subagents read the first commit, `a3dddb0`, one general (G1 to G6) and one for privacy and
+security only (P1 to P3). Neither found a blocker. What was done with each, in the second commit:
+
+- **G1, fixed:** the scan left out any `*-harness.ts` or `testing.ts` by its name, so a server module so named would
+  have been skipped. It now leaves out four files by exact path (`NOT_SERVER`), and a test holds what it leaves out,
+  beside the tests, to exactly those four and `fault.ts`. (The reviewer named three; `services/api/src/testing.ts` is
+  the fourth.)
+- **G2, answered:** the privacy and security review it asked for is P1 to P3, run beside it on the same commit.
+- **G3 and P3, fixed:** nothing held that the setting is read before the sweep, as the comments and records say. The
+  root harness's new case, `start-no-provider`, leaves a process of the photo user's running and starts the worker with
+  a photo user and no `TADAYO_SAFETY_PROVIDER`: it stops as `worker_safety_1` and the process is still there
+  (`privileges.test.ts`, "the worker's start reads TADAYO_SAFETY_PROVIDER before it sweeps, and stops there without
+  it"). Breakage 12.
+- **G4, answered in the code and here:** a function that makes one fault for many checks (a parser's `shape()`:
+  `home_2` for 25 checks) has one code, which names the parser, not the check. The literal at the `new` is what keeps
+  every code a literal, so the scheme stays; `fault.ts`'s header and section 1.1 say so.
+- **G5, fixed:** `deploy-files.test.ts`'s comment on `[env]` names the worker among its readers.
+- **G6, fixed:** "every error the server's own code makes" now says "in the three folders" where the records claimed
+  more; `packages/contracts`' eight are in section 4.
+- **P1, fixed:** the shape alone doesn't keep a value out (`debby_2` has it); the literal does, and the scan had blind
+  spots. It now reads a class through parentheses, `as`, `satisfies`, `!`, `<T>`, a property and a written element
+  (`new (Error)()`, `new f.Fault(…)`, `globalThis["Error"]`), and fails on a class under another name (an alias, a
+  renamed import, export or binding), passed as a value (`Reflect.construct(Error, …)`), a fault extended, or the
+  fault module imported whole, each planted in its self-test. Section 1.1 and `fault.test.ts`'s header say the
+  literal is the rule. Breakages 13 to 15.
+- **P2, fixed:** the API's `safeError` logged any string `code` and `name`. It keeps a code only of letters, digits and
+  `_`, 64 at most, and a name only when it is a plain identifier, else `unknown`, as the worker's `describeFailure`
+  does (`logging.test.ts`, "keeps an error's class and code only when each is a plain word, which could otherwise carry
+  anything"). Breakages 16 and 17.

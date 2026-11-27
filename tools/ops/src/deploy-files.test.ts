@@ -320,7 +320,7 @@ describe(".dockerignore", () => {
 
 // ---- fly.toml.
 
-/** The names `[env]` may have: public values only, as the probe and the API read them. */
+/** The names `[env]` may have: public values only, as the probe, the API and the worker read them. */
 const ENV_NAMES = [
   "TADAYO_ENVIRONMENT",
   "SUPABASE_URL",
