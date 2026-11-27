@@ -373,6 +373,9 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
       "packages/domain/src/schedule/settle-change.ts: LatestAssignment.confirmedAt",
       "packages/domain/src/time/civil.ts: DayInstants.revealAt",
       "packages/domain/src/time/civil.ts: DayInstants.closeAt",
+      // When an outbox event was written, whose age at the sample says how long Storage away is waited out (B1).
+      "services/worker/src/outbox.ts: OutboxEvent.createdAt",
+      "services/worker/src/outbox.ts: claimNext.rows.created_at",
     ],
   },
   {

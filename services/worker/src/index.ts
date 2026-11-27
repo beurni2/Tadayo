@@ -42,7 +42,11 @@ export {
   finishEvent,
   LEASE_SECONDS,
   MAX_ATTEMPTS,
+  OUTAGE_SECONDS,
+  OUTAGE_WAIT_SECONDS,
+  outageWaitSeconds,
   outboxPass,
+  Unavailable,
   type Claim,
   type Handler,
   type OutboxEvent,
@@ -51,6 +55,8 @@ export {
 } from "./outbox.ts";
 export {
   contentHash,
+  MISSING_REJECTED_AT,
+  OriginalMissing,
   PREPARE_TOPIC,
   prepareHandler,
   preparedLine,

@@ -4,15 +4,17 @@
 // topics, counts its attempt and leases it, in its own committed transaction, and two claimers never take the same
 // one; a handled event is done; a failed one comes back after its backoff, and dies after five attempts or at once
 // when it can never work, with its alert line, written as it happens; an event whose last attempt never reported
-// back dies when claimed again; a failure is written only over its own claim; and a line or a row says a failure's
-// code, never its message.
+// back dies when claimed again; a failure is written only over its own claim; a service the work needs that didn't
+// answer is waited out in the event's first day, counting no attempt (the outside audit's B1;
+// docs/plans/api-b2-worker-storage-retry.md section 1.2); and a line or a row says a failure's code, never its message.
 //
 // Each test writes its events under a topic of its own (`topic()`), which no other file's worker has a handler for,
 // and commits them, so the claims here are the real ones, each in its own transaction, as the worker makes them. The
 // events are removed at the end.
 //
 // These tests were written beside the poller, from the plan's section 9, so none was seen to fail before its rule
-// existed. The deliberate breakages, run at the PR's last head, show they can fail.
+// existed; the three of an outage were written before theirs and failed on `main`'s poller. The deliberate breakages,
+// run at the PR's last head, show they can fail.
 
 import { randomBytes } from "node:crypto";
 import { isPlainLoopback, type Clock, type ServerNow } from "@tadayo/domain";
@@ -22,6 +24,7 @@ import {
   claimNext,
   FailedForGood,
   finishEvent,
+  ImageTimeout,
   LEASE_SECONDS,
   MAX_ATTEMPTS,
   outboxPass,
@@ -137,9 +140,15 @@ describe("a claim (spec 34, T54)", () => {
     const others = await event(other, T.subtract({ minutes: 3 }));
     const clock = fakeClock(T);
 
-    expect(await claimNext(worker, clock, [mine])).toEqual({
+    // With when the event was written, the start of its first day (outbox.ts, item 4).
+    const claimed = await claimNext(worker, clock, [mine]);
+    expect(
+      claimed === null
+        ? null
+        : { ...claimed, event: { ...claimed.event, createdAt: claimed.event.createdAt.toString() } },
+    ).toEqual({
       kind: "work",
-      event: { id: first, topic: mine, payload: {}, attempts: 1 },
+      event: { id: first, topic: mine, payload: {}, attempts: 1, createdAt: T.subtract({ minutes: 2 }).toString() },
     });
     // Committed: another connection sees the attempt and the lease.
     expect(await row(first)).toEqual({
@@ -214,7 +223,9 @@ describe("a pass (spec 34, T52, T54)", () => {
     const clock = fakeClock(T.add({ seconds: 5 }));
     const { seen, handler } = recording();
     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 1, err: [] });
-    expect(seen).toEqual([{ id, topic: mine, payload: { upload_id: "upl_one" }, attempts: 1 }]);
+    expect(seen.map((e) => ({ ...e, createdAt: e.createdAt.toString() }))).toEqual([
+      { id, topic: mine, payload: { upload_id: "upl_one" }, attempts: 1, createdAt: T.toString() },
+    ]);
     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, processed_at: T.add({ seconds: 5 }).toString() });
     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
   });
@@ -223,18 +234,19 @@ describe("a pass (spec 34, T52, T54)", () => {
     const mine = topic();
     const id = await event(mine, T);
     const clock = fakeClock(T);
-    const { seen, handler } = recording(() => Promise.reject(new StorageUnavailable("got no answer")));
+    // A failure that is the event's own: a photo whose process ran out of time (Storage away is waited out, below).
+    const { seen, handler } = recording(() => Promise.reject(new ImageTimeout()));
     let now = T;
     for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt += 1) {
       expect(await pass(clock, { [mine]: handler })).toEqual({
         handled: 0,
-        err: [`worker: an event failed: ${mine} ${id}, attempt ${String(attempt)}: storage.unavailable`],
+        err: [`worker: an event failed: ${mine} ${id}, attempt ${String(attempt)}: image.timeout`],
       });
       const wait = BACKOFF_SECONDS * 2 ** (attempt - 1);
       expect(await row(id)).toEqual({
         state: "pending",
         attempts: attempt,
-        last_error: "storage.unavailable",
+        last_error: "image.timeout",
         available_at: now.add({ seconds: wait }).toString(),
         processed_at: null,
       });
@@ -247,17 +259,128 @@ describe("a pass (spec 34, T52, T54)", () => {
     expect([30, 60, 120, 240].reduce((sum, s) => sum + s, 0)).toBe(T.until(now).total("seconds"));
     expect(await pass(clock, { [mine]: handler })).toEqual({
       handled: 0,
-      err: [`worker: an event is dead: ${mine} ${id} after 5 attempts: storage.unavailable`],
+      err: [`worker: an event is dead: ${mine} ${id} after 5 attempts: image.timeout`],
     });
     expect(await row(id)).toMatchObject({
       state: "dead",
       attempts: 5,
-      last_error: "storage.unavailable",
+      last_error: "image.timeout",
       processed_at: now.toString(),
     });
     expect(seen.map((e) => e.attempts)).toEqual([1, 2, 3, 4, 5]);
     clock.set(now.add({ hours: 24 }));
     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
+  });
+
+  it("waits out a service the work needs: Storage away isn't counted, is tried again at waits that grow with the event's age to 15 minutes, and never kills the event in its first day", async () => {
+    const mine = topic();
+    const id = await event(mine, T);
+    const clock = fakeClock(T);
+    let away = true;
+    const { seen, handler } = recording(() =>
+      away ? Promise.reject(new StorageUnavailable("got no answer")) : Promise.resolve(),
+    );
+    let now = T;
+    // The waits double from 30 seconds, as the backoff's do, up to 15 minutes, well past five attempts.
+    const waits = [30, 30, 60, 120, 240, 480, 900, 900, 900, 900];
+    for (const wait of waits) {
+      expect(await pass(clock, { [mine]: handler })).toEqual({
+        handled: 0,
+        err: [`worker: an event is waiting: ${mine} ${id}: storage.unavailable, again in ${String(wait)} s`],
+      });
+      expect(await row(id)).toEqual({
+        state: "pending",
+        attempts: 0,
+        last_error: "storage.unavailable",
+        available_at: now.add({ seconds: wait }).toString(),
+        processed_at: null,
+      });
+      // Not a microsecond before.
+      clock.set(now.add({ seconds: wait }).subtract({ microseconds: 1 }));
+      expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
+      now = now.add({ seconds: wait });
+      clock.set(now);
+    }
+    // Late in its first day it is still waited out, every 15 minutes.
+    now = T.add({ hours: 24 }).subtract({ microseconds: 1 });
+    clock.set(now);
+    expect(await pass(clock, { [mine]: handler })).toEqual({
+      handled: 0,
+      err: [`worker: an event is waiting: ${mine} ${id}: storage.unavailable, again in 900 s`],
+    });
+    expect(await row(id)).toMatchObject({
+      state: "pending",
+      attempts: 0,
+      available_at: now.add({ seconds: 900 }).toString(),
+    });
+    // Once the service answers, the event is done, on its first counted attempt.
+    away = false;
+    now = now.add({ seconds: 900 });
+    clock.set(now);
+    expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 1, err: [] });
+    expect(await row(id)).toMatchObject({
+      state: "done",
+      attempts: 1,
+      last_error: "storage.unavailable",
+      processed_at: now.toString(),
+    });
+    expect(seen.map((e) => e.attempts)).toEqual(Array.from({ length: waits.length + 2 }, () => 1));
+  });
+
+  it("counts Storage away from the event's second day, so its retries stay bounded: it dies after five attempts", async () => {
+    const mine = topic();
+    const id = await event(mine, T);
+    const day = T.add({ hours: 24 });
+    const clock = fakeClock(day);
+    const { seen, handler } = recording(() => Promise.reject(new StorageUnavailable("got no answer")));
+    let now = day;
+    for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt += 1) {
+      expect(await pass(clock, { [mine]: handler })).toEqual({
+        handled: 0,
+        err: [`worker: an event failed: ${mine} ${id}, attempt ${String(attempt)}: storage.unavailable`],
+      });
+      const wait = BACKOFF_SECONDS * 2 ** (attempt - 1);
+      expect(await row(id)).toMatchObject({
+        state: "pending",
+        attempts: attempt,
+        available_at: now.add({ seconds: wait }).toString(),
+      });
+      now = now.add({ seconds: wait });
+      clock.set(now);
+    }
+    expect(await pass(clock, { [mine]: handler })).toEqual({
+      handled: 0,
+      err: [`worker: an event is dead: ${mine} ${id} after 5 attempts: storage.unavailable`],
+    });
+    expect(await row(id)).toMatchObject({ state: "dead", attempts: 5, last_error: "storage.unavailable" });
+    expect(seen.map((e) => e.attempts)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("still counts the failures that are the event's own between outages, and kills it at the fifth", async () => {
+    const mine = topic();
+    const id = await event(mine, T);
+    const clock = fakeClock(T);
+    // Storage away, then a photo out of time, by turns.
+    let calls = 0;
+    const { seen, handler } = recording(() => {
+      calls += 1;
+      return Promise.reject(calls % 2 === 1 ? new StorageUnavailable("got no answer") : new ImageTimeout());
+    });
+    const err: string[] = [];
+    for (let n = 0; n < 2 * MAX_ATTEMPTS; n += 1) {
+      const ran = await pass(clock, { [mine]: handler });
+      err.push(...ran.err);
+      const { available_at, state } = await row(id);
+      if (state !== "pending") break;
+      clock.set(Temporal.Instant.from(available_at));
+    }
+    expect(seen.map((e) => e.attempts)).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+    expect(err.filter((line) => line.includes("waiting"))).toHaveLength(5);
+    expect(err.filter((line) => line.includes(": image.timeout"))).toEqual([
+      ...[1, 2, 3, 4].map((n) => `worker: an event failed: ${mine} ${id}, attempt ${String(n)}: image.timeout`),
+      `worker: an event is dead: ${mine} ${id} after 5 attempts: image.timeout`,
+    ]);
+    expect(await row(id)).toMatchObject({ state: "dead", attempts: 5, last_error: "image.timeout" });
   });
 
   it("kills at once an event whose failure no retry would end, keeping its code", async () => {

@@ -68,8 +68,8 @@ describe("apiChecks on a closed project", () => {
     expect(count("control: ")).toBe(2 + 8 * 2);
     // And the one question about every bucket the project has, which is no control.
     expect(count("storage: ")).toBe(1);
-    // The worker's own write, a rendition put and put over, each read back.
-    expect(count("worker: ")).toBe(2);
+    // The worker's own read of an original never put, then its write, a rendition put and put over, each read back.
+    expect(count("worker: ")).toBe(3);
     // Per caller: 3 tables and the root of REST, GraphQL, the buckets' list and create, and 8 for each bucket.
     expect(count("anon: ")).toBe(4 + 1 + 2 + 8 * 2);
     expect(count("user: ")).toBe(4 + 1 + 2 + 8 * 2);
@@ -832,6 +832,7 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
     const checks = await probe(fake, spy);
     expect(failed(checks)).toEqual([]);
     expect(checks.filter((check) => check.name.startsWith("worker: ")).map((check) => check.name)).toEqual([
+      "worker: the service key reads no original never put in uploads, answered as Storage's own NoSuchKey",
       "worker: the service key puts a rendition in renditions, upsert on, and reads it back",
       "worker: the service key puts other bytes at the rendition's key, upsert on, and reads those back",
     ]);
@@ -846,6 +847,68 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
     ]);
     expect(fake.calls.some((call) => call.method === "DELETE" && call.path === key)).toBe(true);
     expect(fake.objects.size).toBe(0);
+  });
+
+  it("fails the worker's read of an original never put unless Storage answers its own NoSuchKey, and the run goes on and cleans up", async () => {
+    const never = "worker: the service key reads no original never put in uploads, answered as Storage's own NoSuchKey";
+    // The read the worker would take for the photo gone (services/worker/src/storage.ts, `readOriginal`).
+    const read = (request: Request) =>
+      request.method === "GET" &&
+      request.url.includes("/object/authenticated/uploads/") &&
+      request.url.includes("never-") &&
+      asService(request);
+    for (const [what, answer] of [
+      ["a plain 404, as from a proxy", () => new Response("Not Found", { status: 404 })],
+      ["a 404 with no Storage body", () => new Response(JSON.stringify({ message: "not found" }), { status: 404 })],
+      [
+        "a missing bucket",
+        () =>
+          new Response(
+            JSON.stringify({
+              statusCode: "404",
+              code: "NoSuchBucket",
+              error: "Bucket not found",
+              message: "Bucket not found",
+            }),
+            { status: 400 },
+          ),
+      ],
+      [
+        "Storage's not-found without its code",
+        () => new Response(JSON.stringify({ statusCode: "404", error: "not_found" }), { status: 400 }),
+      ],
+      ["the bytes of an object", () => new Response(new Uint8Array([1, 2, 3]), { status: 200 })],
+    ] as const) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        answering(fake, (request) => (read(request) ? answer() : undefined)),
+      );
+      expect(failed(checks), what).toEqual([never]);
+      expect(
+        checks.some((check) => check.name.startsWith("anon: ")),
+        what,
+      ).toBe(true);
+      expect(fake.objects.size, what).toBe(0);
+    }
+    // Storage's own answer, as its sources render it, passes.
+    const fake = project();
+    const checks = await probe(fake);
+    expect(failed(checks)).toEqual([]);
+    expect(
+      fake.calls.filter(
+        (call) => call.path.startsWith("/storage/v1/object/authenticated/uploads/") && call.path.includes("never-"),
+      ),
+    ).toEqual([
+      {
+        method: "GET",
+        path: expect.stringMatching(
+          /^\/storage\/v1\/object\/authenticated\/uploads\/probe\/[^/]+\/never-seen\.png$/,
+        ) as unknown,
+        who: "service",
+        status: 400,
+      },
+    ]);
   });
 
   it("fails the worker's write when Storage refuses the put over, or answers it and keeps the first bytes, and the run goes on and cleans up", async () => {
@@ -891,7 +954,10 @@ describe("apiChecks's controls: each must hold, in its own words, before a refus
         ),
       );
       expect(failed(checks)).toEqual([first]);
-      expect(checks.filter((check) => check.name.startsWith("worker: ")).map((check) => check.name)).toEqual([first]);
+      expect(checks.filter((check) => check.name.startsWith("worker: ")).map((check) => check.name)).toEqual([
+        "worker: the service key reads no original never put in uploads, answered as Storage's own NoSuchKey",
+        first,
+      ]);
       // No read back of a put that failed, and no second put.
       expect(
         fake.calls.filter((call) => call.path.includes("/rendition-seen.png") && call.method !== "DELETE"),
@@ -1127,9 +1193,9 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
   it("stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up", async () => {
     const fake = project();
     const budget = new AbortController();
-    // The 30th call is the first refusal's; the 34th is anon's GraphQL.
+    // The 31st call is the first refusal's; the 35th is anon's GraphQL.
     const fetcher = counting(fake, (n) => {
-      if (n === 34) budget.abort();
+      if (n === 35) budget.abort();
     });
     const checks = await probe(fake, fetcher, { budget: budget.signal });
     const cut = checks.findIndex((check) => check.name === "anon: GraphQL");
@@ -1138,8 +1204,8 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     // Every check of anon and user that wasn't asked, and the service key's root, which comes last.
     expect(later).toHaveLength(count(checks, "anon: ") + count(checks, "user: ") + count(checks, "service: ") - 5);
     expect(later.every((check) => !check.ok && check.note === OUT_OF_TIME)).toBe(true);
-    // 34 calls, then only the clean-up's: the two probe objects, the probe's rendition and the user.
-    expect(fake.calls.map((call) => call.method).slice(34)).toEqual(["DELETE", "DELETE", "DELETE", "DELETE"]);
+    // 35 calls, then only the clean-up's: the two probe objects, the probe's rendition and the user.
+    expect(fake.calls.map((call) => call.method).slice(35)).toEqual(["DELETE", "DELETE", "DELETE", "DELETE"]);
     expect(checks.filter((check) => check.name.startsWith("cleanup: ")).every((check) => check.ok)).toBe(true);
     expect(fake.objects.size).toBe(0);
     expect(fake.users.size).toBe(0);

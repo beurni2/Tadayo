@@ -5,7 +5,11 @@
 //
 // What it knows of Storage, from the Supabase probe's runs on `dev` after every deploy (tools/ops/src/supabase-probe.ts):
 // - `GET /storage/v1/object/authenticated/<bucket>/<key>` with the service key answers the object's bytes ("the
-//   service key reads the object back"), or Storage's not-found.
+//   service key reads the object back"), or, for an object it doesn't have, Storage's own not-found: HTTP 400 and a
+//   body of `statusCode` "404" and `code` "NoSuchKey" ("the service key reads no original never put in uploads").
+//   Only that is an original gone. A plain 404, as a proxy's, one with no Storage body, a missing bucket
+//   (`NoSuchBucket`) and an object Storage's table has and its backend lost (`S3Error`) are Storage away, waited out
+//   (the outside audit's B1; docs/plans/api-b2-worker-storage-retry.md section 1.1).
 // - `POST /storage/v1/object/<bucket>/<key>` with the service key and `x-upsert: true` puts the bytes at that key,
 //   over any that are there ("the service key puts a rendition, and puts over it"). Upsert is on for renditions
 //   alone: only the service key can write them, and a preparation tried again writes over its own objects, so no try
@@ -16,10 +20,12 @@
 // An original is read to at most 20 MiB and a byte (D09), then the read stops: a larger object is refused as
 // too_large by the checks (./image.ts) and never held whole. Every call refuses redirects and has a time limit.
 // Nothing it is given or answers is logged or put in an error: not the key, a URL or an object's key (T52, T56). A
-// failure is a `StorageUnavailable`, whose code the outbox records, and the preparation is tried again.
+// failure is a `StorageUnavailable`, an `Unavailable` whose code the outbox records, and the preparation is waited out
+// and tried again (./outbox.ts, item 4).
 
 import { storageProject, storageServiceKey, storageStatus, UPLOAD_MAX_BYTES } from "@tadayo/domain";
 import type { RenditionKind } from "./image-process.ts";
+import { Unavailable } from "./outbox.ts";
 
 /** The bucket of originals, private (tools/ops/src/storage-setup.ts). */
 export const UPLOADS_BUCKET = "uploads";
@@ -35,19 +41,28 @@ const RENDITION_KEY = /^[A-Za-z0-9_-]{32}\/(?:full|display)$/;
 
 /** What the preparation asks of Storage. */
 export interface WorkerStorage {
-  /** The original's bytes, cut off past 20 MiB and a byte; or null when Storage has no such object. */
+  /** The original's bytes, cut off past 20 MiB and a byte; or null when Storage says it has no such object. */
   readOriginal(objectKey: string): Promise<Uint8Array | null>;
   /** Puts a rendition's JPEG at `key` (`renditionKey`), over any bytes there. */
   putRendition(key: string, bytes: Uint8Array): Promise<void>;
 }
 
 /** Storage couldn't be asked, or answered something this client doesn't believe. Its message names no value. */
-export class StorageUnavailable extends Error {
-  readonly code = "storage.unavailable";
+export class StorageUnavailable extends Unavailable {
   constructor(what: string) {
-    super(`storage: ${what}`);
+    super("storage.unavailable", `storage: ${what}`);
     this.name = "StorageUnavailable";
   }
+}
+
+/**
+ * Whether an answer is Storage's own not-found of an object (`ERRORS.NoSuchKey` in Storage's sources): its status 404
+ * in the body and its code NoSuchKey. Nothing else is, whatever its HTTP status.
+ */
+function noSuchKey(json: unknown): boolean {
+  if (typeof json !== "object" || json === null) return false;
+  const body = json as Record<string, unknown>;
+  return storageStatus(0, json) === 404 && body["code"] === "NoSuchKey";
 }
 
 /**
@@ -121,9 +136,9 @@ export function workerStorage(options: WorkerStorageOptions): WorkerStorage {
         "reading an original",
       );
       if (response.status !== 200) {
-        const logical = storageStatus(response.status, await jsonOf(response));
-        if (logical === 404) return null;
-        throw new StorageUnavailable(`reading an original answered ${String(logical)}`);
+        const json = await jsonOf(response);
+        if (noSuchKey(json)) return null;
+        throw new StorageUnavailable(`reading an original answered ${String(storageStatus(response.status, json))}`);
       }
       try {
         return await readUpTo(response.body, UPLOAD_MAX_BYTES + 1);

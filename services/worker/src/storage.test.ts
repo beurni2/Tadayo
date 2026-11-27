@@ -1,7 +1,7 @@
 // The worker's Storage client against a fake fetch (docs/plans/api-b2-spike-prepare.md section 5; T12, T52, T56):
 // each call's path, method and headers, with the service key; the original read from the private bucket and cut
-// off past 20 MiB; Storage's not-found read as no object, from its own status; a rendition put with upsert on; and
-// nothing it holds in any error it throws.
+// off past 20 MiB; Storage's own not-found of the object (NoSuchKey) read as no object, and any other 404 as Storage
+// away (the outside audit's B1); a rendition put with upsert on; and nothing it holds in any error it throws.
 
 import { describe, expect, it } from "vitest";
 import { renditionKey, StorageUnavailable, workerStorage, type WorkerStorage } from "./storage.ts";
@@ -75,9 +75,26 @@ describe("reading an original", () => {
     expect(one?.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("gives no object for Storage's not-found, in the body as Storage sends it or in the status", async () => {
-    expect(await storage(() => json(400, { statusCode: "404", error: "not_found" })).s.readOriginal(OBJECT)).toBeNull();
-    expect(await storage(() => json(404, { message: "Object not found" })).s.readOriginal(OBJECT)).toBeNull();
+  it("gives no object only for Storage's own not-found of the object, NoSuchKey, as Storage sends it", async () => {
+    // Storage's sources: ERRORS.NoSuchKey, rendered with HTTP 400 and the status in the body (supabase/storage).
+    const own = { statusCode: "404", code: "NoSuchKey", error: "not_found", message: "Object not found" };
+    expect(await storage(() => json(400, own)).s.readOriginal(OBJECT)).toBeNull();
+    expect(await storage(() => json(404, own)).s.readOriginal(OBJECT)).toBeNull();
+  });
+
+  it("fails as Storage unavailable for any other 404: a plain one, one with no Storage body, a missing bucket, a lost object", async () => {
+    for (const answer of [
+      () => new Response("Not Found", { status: 404 }),
+      () => json(404, { message: "Object not found" }),
+      () => json(400, { statusCode: "404", error: "not_found" }),
+      () =>
+        json(400, { statusCode: "404", code: "NoSuchBucket", error: "Bucket not found", message: "Bucket not found" }),
+      () => json(400, { statusCode: "404", code: "S3Error", error: "NotFound", message: "NotFound" }),
+      () => json(400, { statusCode: "403", code: "NoSuchKey" }),
+    ]) {
+      const said = await failure(storage(answer).s.readOriginal(OBJECT));
+      for (const held of [KEY, OBJECT, PROJECT, "tadayotestprojectref"]) expect(said).not.toContain(held);
+    }
   });
 
   it("reads no further than 20 MiB and a byte, so a larger object is refused as too large, not held whole", async () => {
