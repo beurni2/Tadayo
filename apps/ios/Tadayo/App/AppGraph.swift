@@ -231,6 +231,10 @@ struct Accounts: AccountService, ClubService {
         try await client.revokeInvitation(invitationID)
     }
 
+    func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+        try await client.removeCandidate(candidateID)
+    }
+
     func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
         try await client.rosterRevision(revisionID)
     }

@@ -13,6 +13,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     private var memberAnswers: [Result<MemberList, APIFailure>]
     private var scheduleAnswers: [Result<ClubWeek, APIFailure>]
     private var createAnswers: [Result<ClubDetail, APIFailure>]
+    private var removeAnswers: [Result<Void, APIFailure>]
     private(set) var calls: [String] = []
     private var clubReads = 0
     private var memberReads = 0
@@ -25,20 +26,28 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     var duringSchedule: @Sendable () async -> Void = {}
     /// Run inside each club made, before it answers.
     var duringCreate: @Sendable () async -> Void = {}
+    /// Run inside each candidate's removal, before it answers.
+    var duringRemove: @Sendable () async -> Void = {}
+    /// Run inside each proposal and each revoke, before it answers.
+    var duringPropose: @Sendable () async -> Void = {}
+    var duringRevoke: @Sendable () async -> Void = {}
 
-    /// `create` answers each club made, in order; with none left, a club made is refused.
+    /// `create` answers each club made, in order; with none left, a club made is refused. So is
+    /// a removal with no `remove` answer left.
     init(
         club: [Result<ClubDetail, APIFailure>] = [],
         revision: [Result<RosterRevision, APIFailure>] = [],
         members: [Result<MemberList, APIFailure>] = [],
         schedule: [Result<ClubWeek, APIFailure>] = [],
-        create: [Result<ClubDetail, APIFailure>] = []
+        create: [Result<ClubDetail, APIFailure>] = [],
+        remove: [Result<Void, APIFailure>] = []
     ) {
         clubAnswers = club
         revisionAnswers = revision
         memberAnswers = members
         scheduleAnswers = schedule
         createAnswers = create
+        removeAnswers = remove
     }
 
     private func next<T>(_ answers: inout [Result<T, APIFailure>]) -> Result<T, APIFailure> {
@@ -102,6 +111,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     func propose(
         _ names: [String], in clubID: String, expectedRosterVersion: Int, key: IdempotencyKey
     ) async throws(APIFailure) -> RosterRevision {
+        await duringPropose()
         record("propose")
         throw .refused
     }
@@ -114,8 +124,17 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     }
 
     func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+        await duringRevoke()
         record("revokeInvitation")
         throw .refused
+    }
+
+    func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+        await duringRemove()
+        try lock.withLock {
+            calls.append("removeCandidate \(candidateID)")
+            return removeAnswers.isEmpty ? .failure(.refused) : removeAnswers.removeFirst()
+        }.get()
     }
 
     func approve(_ revisionID: String, expectedVersion: Int, key: IdempotencyKey)

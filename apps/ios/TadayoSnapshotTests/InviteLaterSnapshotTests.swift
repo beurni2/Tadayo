@@ -366,7 +366,7 @@ private enum Later {
         }
         return InvitationRow(
             Candidate(id: "cand_nina", name: "Nina", proposedBy: people[0], invitation: invitation),
-            kept: held)
+            kept: held, removable: false)
     }
 
     /// Members with Ben's Nina, decided by proposing (FQ60), and Maya's Leila, both proposed in

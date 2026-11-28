@@ -8,9 +8,12 @@ import XCTest
 /// `docs/plans/ios-b1-approve.md` sections 2 and 4) in each of its states: handoff 4's
 /// `G03-approve` and handoff 8's `G03-approve-failed`, and the states built from spec: two
 /// candidates (FQ144), the neutral end, Review members' read and its failure. Then an active
-/// club's Members with Leila's proposed row (`G05-members-with-proposed`, built from spec). Each
-/// is pushed onto a stack, as the tab pushes it, so the system's Back shows as the frames draw
-/// it. The two alerts are the system's: their words are read here, not drawn.
+/// club's Members with Leila's proposed row (`G05-members-with-proposed`, built from spec), and
+/// the same Members as Ben, Leila's proposer, sees it, with Leila's own More (handoff 11's frame
+/// 5, `G05-members-with-proposed-remove`), the removal on its way and its failure (built from
+/// spec). Each is pushed onto a stack, as the tab pushes it, so the system's Back shows as the
+/// frames draw it. The alerts and the menus are the system's: their words are read here, not
+/// drawn.
 @MainActor
 final class ApproveSnapshotTests: XCTestCase {
     func testG03Approve() {
@@ -62,6 +65,22 @@ final class ApproveSnapshotTests: XCTestCase {
                 ClubFixtures.kitchenRoster(
                     open: ClubFixtures.kitchenRevision(decision: .approved))),
             named: "G05-members-with-proposed-decided")
+    }
+
+    func testG05MembersWithProposedRemove() {
+        // Frame 5 as drawn, with the menu closed: the row opens nothing here, so More stands
+        // alone (`G05-members-with-proposed-own` draws it after #146's chevron).
+        snap(members(Self.asBen), named: "G05-members-with-proposed-remove")
+    }
+
+    func testG05MembersRemoving() {
+        snap(members(Self.asBen, removing: "cand_leila"), named: "G05-members-removing", busy: true)
+    }
+
+    func testG05MembersRemoveFailed() {
+        snap(
+            members(Self.asBen, failure: Self.leilaFailed(uncertain: true)),
+            named: "G05-members-remove-failed")
     }
 
     // MARK: What VoiceOver finds
@@ -367,7 +386,141 @@ final class ApproveSnapshotTests: XCTestCase {
         }
     }
 
+    // MARK: Removing an invitation from Members
+
+    func testTheProposersOwnCandidateHasItsOwnMoreBesideTheRow() {
+        let elements = AccessibilityElements.of(members(Self.asBen))
+        let leila = elements.firstIndex { $0.label == "Leila. Proposed by Ben. Proposed." }
+        let more = elements.firstIndex { $0.label == "More options for Leila’s invitation" }
+        XCTAssertNotNil(leila, "\(elements)")
+        XCTAssertNotNil(more, "\(elements)")
+        XCTAssertLessThan(leila ?? .max, more ?? .min, "\(elements)")
+        XCTAssertTrue(more.map { elements[$0].traits.contains(.button) } ?? false, "\(elements)")
+        // The row itself opens nothing for Ben here: the More is separate from it.
+        XCTAssertFalse(leila.map { elements[$0].traits.contains(.button) } ?? true, "\(elements)")
+    }
+
+    func testAnotherMembersCandidateAndTheMembersRowsHaveNoMore() {
+        // Maya's view of Ben's Leila, decided or not: no More anywhere (handoff 11's section 5).
+        for decision in [RosterDecision.pending, .approved] {
+            let elements = AccessibilityElements.of(
+                members(
+                    ClubFixtures.kitchenRoster(
+                        open: ClubFixtures.kitchenRevision(decision: decision))))
+            XCTAssertTrue(
+                elements.contains { $0.label == "Leila. Proposed by Ben. Proposed." },
+                "\(decision) \(elements)")
+            XCTAssertFalse(
+                elements.contains { $0.label.hasPrefix("More options") }, "\(decision) \(elements)")
+        }
+    }
+
+    func testThePendingRouteStaysBesideTheMore() {
+        // FQ147: Ben's own decision pending keeps the row's route to G03-approve; More follows it.
+        let roster = ClubFixtures.kitchenRoster(
+            open: ClubFixtures.kitchenRevision(decision: .pending), viewer: "Ben")
+        let elements = AccessibilityElements.of(
+            pushed(MembersScreen(members: .loaded(roster), retry: {}, openApproval: { _ in })))
+        let leila = elements.first { $0.label == "Leila. Proposed by Ben. Proposed." }
+        XCTAssertTrue(leila?.traits.contains(.button) ?? false, "\(elements)")
+        XCTAssertTrue(
+            elements.first { $0.label == "More options for Leila’s invitation" }?.traits.contains(
+                .button) ?? false, "\(elements)")
+    }
+
+    func testWhileTheRemovalGoesTheRowIsInProgressAndMoreWaits() {
+        let elements = AccessibilityElements.of(members(Self.asBen, removing: "cand_leila"))
+        let leila = elements.first { $0.label == "Leila. Proposed by Ben. Proposed." }
+        XCTAssertEqual(leila?.value, "In progress", "\(elements)")
+        XCTAssertTrue(
+            elements.first { $0.label == "More options for Leila’s invitation" }?.traits.contains(
+                .notEnabled) ?? false, "\(elements)")
+        // "Removing…" is the row's look; VoiceOver reads the value instead.
+        XCTAssertFalse(elements.contains { $0.label == "Removing…" }, "\(elements)")
+    }
+
+    func testWhileARemovalGoesNoOtherRouteOrMoreOpens() {
+        // Handoff 11's `busy.concurrency`, one roster or link change in flight per club: during
+        // Leila's removal, Nina's route to G03-approve waits, so Ben can't approve a revision
+        // the removal is about to replace.
+        let roster = ClubFixtures.kitchenRoster(
+            open: ClubFixtures.kitchenRevision(nina: true, decision: .pending), viewer: "Ben")
+        let removing = AccessibilityElements.of(
+            pushed(
+                MembersScreen(
+                    members: .loaded(roster), retry: {}, openApproval: { _ in },
+                    removing: "cand_leila")))
+        let nina = removing.first { $0.label == "Nina. Proposed by Alex. Proposed." }
+        XCTAssertTrue(nina?.traits.contains(.button) ?? false, "\(removing)")
+        XCTAssertTrue(nina?.traits.contains(.notEnabled) ?? false, "\(removing)")
+        // Leila's page or the name step with an action out: the More waits, the routes don't.
+        let held = AccessibilityElements.of(
+            pushed(
+                MembersScreen(
+                    members: .loaded(roster), retry: {}, openApproval: { _ in },
+                    removalCanStart: false)))
+        XCTAssertTrue(
+            held.first { $0.label == "More options for Leila’s invitation" }?.traits.contains(
+                .notEnabled) ?? false, "\(held)")
+        XCTAssertFalse(
+            held.first { $0.label == "Nina. Proposed by Alex. Proposed." }?.traits.contains(
+                .notEnabled) ?? true, "\(held)")
+    }
+
+    func testAFailuresLineIsReadUnderTheRowAndBeforeTheFooter() {
+        for uncertain in [true, false] {
+            let elements = AccessibilityElements.of(
+                members(Self.asBen, failure: Self.leilaFailed(uncertain: uncertain)))
+            let words =
+                uncertain
+                ? "Couldn’t confirm that Leila’s invitation to Kitchen table was removed. Check "
+                    + "your connection and try again."
+                : "Couldn’t remove Leila’s invitation to Kitchen table. Try again."
+            let leila = elements.firstIndex { $0.label == "Leila. Proposed by Ben. Proposed." }
+            let line = elements.firstIndex { $0.label == words }
+            let footer = elements.firstIndex { $0.label == "5 members\u{00A0}· New York" }
+            XCTAssertNotNil(line, "\(uncertain) \(elements)")
+            XCTAssertLessThan(leila ?? .max, line ?? .min, "\(elements)")
+            XCTAssertLessThan(line ?? .max, footer ?? .min, "\(elements)")
+        }
+    }
+
+    func testTheConfirmationsBodyFollowsWhetherAnyoneElseIsProposed() {
+        XCTAssertEqual(
+            InvitationsScreen.removalBody("Leila", club: "Kitchen table", others: false),
+            "Any links for Leila will stop working. Leila won’t be able to join Kitchen table "
+                + "from this invitation.\n\nYou can invite Leila again later with a new invitation."
+        )
+        XCTAssertEqual(
+            InvitationsScreen.removalBody("Leila", club: "Kitchen table", others: true),
+            "Any links for Leila will stop working. Leila won’t be able to join Kitchen table "
+                + "from this invitation.\n\nYou can invite Leila again later with a new invitation."
+                + "\n\nAnyone else still invited will review and accept the updated roster again.")
+    }
+
+    func testANotFoundWhileTheRowStaysSaysTheInvitationIsNoLongerAvailable() {
+        // The server's last word on Leila while Members still lists Leila: never "Try again"
+        // (`handoff11.remove.unavailable`).
+        let failure = ClubDetailsModel.RemovalFailure(
+            candidateID: "cand_leila", name: "Leila", club: "Kitchen table", uncertain: false,
+            unavailable: true)
+        let elements = AccessibilityElements.of(members(Self.asBen, failure: failure))
+        XCTAssertTrue(
+            elements.contains { $0.label == "This invitation is no longer available." },
+            "\(elements)")
+        XCTAssertFalse(elements.contains { $0.label.contains("Try again") }, "\(elements)")
+    }
+
     // MARK: Helpers
+
+    /// Kitchen table as Ben, Leila's proposer, sees it once Ben has decided (handoff 11's frame 5).
+    private static let asBen = ClubFixtures.kitchenRoster(
+        open: ClubFixtures.kitchenRevision(decision: .approved), viewer: "Ben")
+
+    private static func leilaFailed(uncertain: Bool) -> ClubDetailsModel.RemovalFailure {
+        ClubDetailsModel.RemovalFailure(
+            candidateID: "cand_leila", name: "Leila", club: "Kitchen table", uncertain: uncertain)
+    }
 
     /// `screen` pushed onto a stack, as the tab pushes it.
     private func pushed(_ screen: some View) -> some View {
@@ -387,8 +540,14 @@ final class ApproveSnapshotTests: XCTestCase {
                 club: ClubFixtures.kitchenRevision().club, actions: actions))
     }
 
-    private func members(_ roster: Roster) -> some View {
-        pushed(MembersScreen(members: .loaded(roster), retry: {}))
+    private func members(
+        _ roster: Roster, removing: String? = nil,
+        failure: ClubDetailsModel.RemovalFailure? = nil
+    ) -> some View {
+        pushed(
+            MembersScreen(
+                members: .loaded(roster), retry: {}, removing: removing,
+                removalFailure: failure))
     }
 
     private func snap(

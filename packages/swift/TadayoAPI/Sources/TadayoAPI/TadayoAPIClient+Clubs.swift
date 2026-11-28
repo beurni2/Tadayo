@@ -148,6 +148,25 @@ extension TadayoAPIClient: ClubService {
         }
     }
 
+    public func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+        try await call { client in
+            switch try await client.removeCandidate(path: .init(candidateId: candidateID)) {
+            case .ok(let answer):
+                // An answer for another candidate doesn't say what the server did with this one.
+                guard try answer.body.json.candidateId == candidateID else {
+                    throw APIFailure.unreadable
+                }
+            case .unauthorized: throw APIFailure.signedOut
+            case .forbidden(let answer):
+                throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
+            case .notFound: throw APIFailure.notFound
+            case .tooManyRequests: throw APIFailure.unavailable
+            case .badRequest: throw APIFailure.refused
+            case .undocumented(let status, _): throw Self.failure(status: status)
+            }
+        }
+    }
+
     public func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
         try await call { client in
             switch try await client.getRosterRevision(path: .init(revisionId: revisionID)) {
