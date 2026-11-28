@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { firstBadField, meBody } from "./me.ts";
-import { noStorage } from "../testing.ts";
+import { noStorage, uncounted } from "../testing.ts";
 
 const account = (over: Partial<Account> = {}): Account => ({
   id: "acct_ana",
@@ -39,6 +39,7 @@ async function appFor(
     clock: {} as Clock,
     authenticate: () => Promise.resolve(caller),
     storage: noStorage,
+    failures: uncounted,
     log: { level: "silent" },
   };
   const app = buildApp(deps);

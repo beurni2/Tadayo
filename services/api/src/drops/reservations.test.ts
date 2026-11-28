@@ -24,7 +24,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { releasedBody, reservationBody } from "./reservations.ts";
-import { noStorage } from "../testing.ts";
+import { noStorage, uncounted } from "../testing.ts";
 
 type Body = Record<string, unknown>;
 
@@ -187,6 +187,7 @@ async function appFor(begin: (...args: unknown[]) => Promise<unknown>, clock: Cl
     clock,
     authenticate: () => Promise.resolve(account),
     storage: noStorage,
+    failures: uncounted,
     log: { level: "silent" },
   };
   const app = buildApp(deps);

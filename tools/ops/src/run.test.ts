@@ -24,6 +24,7 @@ const ENV = {
   DATABASE_ADMIN_URL: adminUrl(),
   DATABASE_APP_PASSWORD: APP_PASSWORD,
   SUPABASE_DEV_PROJECT_REF: REF,
+  GITHUB_TOKEN: "a-github-token",
 };
 
 interface Harness {
@@ -81,7 +82,7 @@ function harness(
   return { ctx, said, connected, ended, spawned };
 }
 
-const DATABASE_SCRIPTS = ["bootstrap", "dev-clock", "migrate", "seed"];
+const DATABASE_SCRIPTS = ["bootstrap", "dev-clock", "failure-alert", "migrate", "seed"];
 
 describe("runScript", () => {
   it("runs nothing for a name it doesn't have, and lists the ones it has", async () => {
@@ -137,6 +138,17 @@ describe("runScript", () => {
     }
     const { ctx } = harness({ env: { ...ENV, DATABASE_URL: "" } });
     await expect(runScript("migrate", ctx)).rejects.toThrow(/set DATABASE_URL/);
+  });
+
+  it("runs failure-alert with the run's GitHub token, and names that token when it isn't set, before it connects", async () => {
+    const { ctx, said, connected } = harness({ rows: [] });
+    await runScript("failure-alert", ctx);
+    // Nothing unreported: GitHub isn't asked (the context's fetch would fail), and the connection is closed.
+    expect(said).toEqual(["failure-alert: nothing new"]);
+    expect(connected).toHaveLength(1);
+    const without = harness({ env: { ...ENV, GITHUB_TOKEN: undefined } });
+    await expect(runScript("failure-alert", without.ctx)).rejects.toThrow(/set GITHUB_TOKEN/);
+    expect(without.connected).toEqual([]);
   });
 
   it("takes no option it doesn't know and no loose word, before it connects", async () => {

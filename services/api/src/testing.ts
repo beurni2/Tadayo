@@ -18,6 +18,7 @@ import {
   type JWK,
   type JWTHeaderParameters,
 } from "jose";
+import type { FailureCounter } from "./failure-count.ts";
 import type { KeySet } from "./identity/token.ts";
 import { StorageUnavailable, type UploadStorage } from "./media/storage.ts";
 
@@ -105,6 +106,13 @@ export const noStorage: UploadStorage = {
   signUpload: () => Promise.reject(new Error("testing: this test's app signs no upload URL")),
   objectThere: () => Promise.reject(new Error("testing: this test's app asks Storage nothing")),
 };
+
+/**
+ * A failure counter that counts nothing, for a route test whose fake database counts the route's own
+ * transactions: the app's real counter writes each 5xx in a transaction of its own (failure-count.ts),
+ * which such a fake would take for the route's. failure-count.test.ts and app.test.ts test the counting.
+ */
+export const uncounted: FailureCounter = { count: () => undefined, stop: () => undefined };
 
 /** The fake Storage's signed lifetime: Storage's two hours (media/storage.ts). */
 export const FAKE_SIGNED_SECONDS = 7200;

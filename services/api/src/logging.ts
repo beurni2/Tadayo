@@ -296,7 +296,7 @@ const ERROR_TYPE = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
 const ERROR_CODE = /^[A-Za-z0-9_]{1,64}$/;
 
 /** An error as a log line may show it: its class and its code, never its message, which can quote rows. */
-function safeError(error: unknown): { type: string; code?: string } {
+export function safeError(error: unknown): { type: string; code?: string } {
   if (typeof error !== "object" || error === null) return { type: "unknown" };
   const { name, code } = error as { name?: unknown; code?: unknown };
   const described: { type: string; code?: string } = {
