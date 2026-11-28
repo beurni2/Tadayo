@@ -75,14 +75,15 @@ enum ClubFixtures {
             members: people, candidates: candidates, myDecision: decision, supersededBy: nil)
     }
 
-    /// Kitchen table's five, one day each, Maya the viewer, with `open` as its open revision.
-    static func kitchenRoster(open: RosterRevision?) -> Roster {
+    /// Kitchen table's five, one day each, Maya the viewer unless `viewer` says otherwise (Ben,
+    /// Leila's proposer, in handoff 11's frame 5), with `open` as its open revision.
+    static func kitchenRoster(open: RosterRevision?, viewer: String = "Maya") -> Roster {
         roster(
             "club_kitchen", "Kitchen table",
             [
                 ("Ben", [.monday]), ("Maya", [.tuesday]), ("Alex", [.wednesday]),
                 ("Sam", [.thursday]), ("Debby", [.friday]),
-            ], viewer: "Maya", open: open)
+            ], viewer: viewer, open: open)
     }
 
     private static let kitchenAsMaya = ClubRef(

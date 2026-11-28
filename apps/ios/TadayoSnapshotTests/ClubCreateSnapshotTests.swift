@@ -8,9 +8,11 @@ import XCTest
 /// `G01-create`, handoff 8's `G01-create-failed`, handoff 2's `G01-invite-name`, handoff 1's
 /// `G01-invite-people` with handoff 4's statuses and More, handoff 2's `-add` and `-xl`, handoff
 /// 4's `-revoked` and `G01-pending`, handoff 8's `-accept-again` and `G01-pending-approve`,
-/// handoff 9's `-live-not-held`, `-expired` and `-action-failed` (frames 15 to 17), and the states
+/// handoff 9's `-live-not-held`, `-expired` and `-action-failed` (frames 15 to 17), handoff 11's
+/// `-removed` and `-remove-failed` (frames 3 and 4, every row with its More), and the states
 /// built from spec: the list before anyone is invited, a used link the app doesn't hold, the list
-/// loading and failing, the name step's failure, and each name over 40 characters. Each is
+/// loading and failing, a removal on its way, the name step's failure, and each name over 40
+/// characters. Each is
 /// pushed onto a stack, as the tab pushes it, so
 /// the system's Back shows as the frames draw it. The people are the frames' own: Ben's Sunday
 /// people, with Maya, Alex, Sam, Debby and Nina (`Invites`).
@@ -116,6 +118,24 @@ final class ClubCreateSnapshotTests: XCTestCase {
             named: "G01-invite-people-action-failed")
     }
 
+    func testG01InvitePeopleRemoved() {
+        snap(list(Invites.removed), named: "G01-invite-people-removed")
+    }
+
+    func testG01InvitePeopleRemoveFailed() {
+        snap(
+            list(
+                Invites.five,
+                failure: .remove(name: "Nina", club: "Sunday people", uncertain: true)),
+            named: "G01-invite-people-remove-failed")
+    }
+
+    func testG01InvitePeopleRemoving() {
+        snap(
+            list(Invites.five, busy: ["cand_nina"], removing: "cand_nina"),
+            named: "G01-invite-people-removing", busy: true)
+    }
+
     // MARK: Waiting to start
 
     func testG01Pending() {
@@ -155,27 +175,31 @@ final class ClubCreateSnapshotTests: XCTestCase {
         XCTAssertFalse(elements.contains { $0.label == "Link revoked" }, "\(elements)")
     }
 
-    func testAnAcceptedRowOffersNothing() {
+    /// Handoff 11's section 1: an accepted row offers no link action, only More, which holds
+    /// Remove invitation.
+    func testAnAcceptedRowOffersOnlyItsMore() {
         let elements = AccessibilityElements.of(list(Invites.five))
         XCTAssertTrue(elements.contains { $0.label == "Debby. Accepted." }, "\(elements)")
         XCTAssertTrue(elements.contains { $0.label == "Nina. Not shared." }, "\(elements)")
-        XCTAssertFalse(
-            elements.contains { $0.label.contains("for Debby") || $0.label.contains("Debby’s") },
-            "\(elements)")
+        XCTAssertEqual(
+            elements.filter { $0.label.contains("for Debby") || $0.label.contains("Debby’s") }
+                .map(\.label), ["More options for Debby’s invitation"], "\(elements)")
     }
 
-    func testAUsedLinkKeptOffersShareAgainAndNoMenu() {
+    func testAUsedLinkKeptOffersShareAgainAndItsMore() {
         let elements = AccessibilityElements.of(list(Invites.acceptAgain))
         XCTAssertTrue(
             elements.contains { $0.label == "Sam. Needs to accept again." }, "\(elements)")
         XCTAssertTrue(
             elements.first { $0.label == "Share again for Sam" }?.traits.contains(.button) ?? false,
             "\(elements)")
-        XCTAssertFalse(elements.contains { $0.label.contains("Sam’s invitation") }, "\(elements)")
+        XCTAssertTrue(
+            elements.first { $0.label == "More options for Sam’s invitation" }?.traits.contains(
+                .button) ?? false, "\(elements)")
         XCTAssertFalse(elements.contains { $0.label == "Create new link for Sam" }, "\(elements)")
     }
 
-    func testAUsedLinkTheAppDoesntHoldSaysSoAndOffersNothing() {
+    func testAUsedLinkTheAppDoesntHoldSaysSoAndOffersOnlyItsMore() {
         let elements = AccessibilityElements.of(list(Invites.usedMissing))
         XCTAssertTrue(
             elements.contains { $0.label == "Sam. Needs to accept again." }, "\(elements)")
@@ -185,9 +209,9 @@ final class ClubCreateSnapshotTests: XCTestCase {
         XCTAssertTrue(
             elements.contains { $0.label == "Sam can reopen the invitation already received." },
             "\(elements)")
-        XCTAssertFalse(
-            elements.contains { $0.label.contains("for Sam") || $0.label.contains("Sam’s") },
-            "\(elements)")
+        XCTAssertEqual(
+            elements.filter { $0.label.contains("for Sam") || $0.label.contains("Sam’s") }
+                .map(\.label), ["More options for Sam’s invitation"], "\(elements)")
         // Maya's controls are there, so the tree was read.
         XCTAssertTrue(elements.contains { $0.label == "Share again for Maya" }, "\(elements)")
     }
@@ -220,16 +244,56 @@ final class ClubCreateSnapshotTests: XCTestCase {
         XCTAssertFalse(elements.contains { $0.label == "Link not on this phone" }, "\(elements)")
     }
 
-    func testAnExpiredLinkOffersCreateNewLinkAndNoMore() {
+    func testAnExpiredLinkOffersCreateNewLinkAndItsMore() {
         let elements = AccessibilityElements.of(list(Invites.expired))
         XCTAssertTrue(elements.contains { $0.label == "Alex. Link expired." }, "\(elements)")
-        XCTAssertTrue(
-            elements.first { $0.label == "Create new link for Alex" }?.traits.contains(.button)
-                ?? false, "\(elements)")
-        XCTAssertFalse(elements.contains { $0.label.contains("Alex’s invitation") }, "\(elements)")
-        // Maya's More is there, so the tree was read.
-        XCTAssertTrue(
-            elements.contains { $0.label == "More options for Maya’s invitation" }, "\(elements)")
+        for control in ["Create new link for Alex", "More options for Alex’s invitation"] {
+            XCTAssertTrue(
+                elements.first { $0.label == control }?.traits.contains(.button) ?? false,
+                "\(control): \(elements)")
+        }
+    }
+
+    /// Handoff 11's section 8: while Nina's removal is out, Nina's row says so with "In progress"
+    /// its value, and every row's controls and Create an invitation wait; Done for now doesn't.
+    func testWhileARemovalGoesTheRowSaysSoAndEveryControlWaits() {
+        let elements = AccessibilityElements.of(
+            list(Invites.removing, busy: ["cand_nina"], removing: "cand_nina"))
+        let nina = elements.first { $0.label == "Nina. Removing…" }
+        XCTAssertEqual(nina?.value, "In progress", "\(elements)")
+        for control in [
+            "Share again for Maya", "More options for Maya’s invitation", "Share link for Nina",
+            "More options for Nina’s invitation", "Create an invitation",
+        ] {
+            XCTAssertTrue(
+                elements.first { $0.label == control }?.traits.contains(.notEnabled) ?? false,
+                "\(control): \(elements)")
+        }
+        XCTAssertFalse(
+            elements.first { $0.label == "Finish managing invitations for now." }?.traits.contains(
+                .notEnabled) ?? true, "\(elements)")
+    }
+
+    func testARemovalsFailureIsReadAboveDoneForNow() {
+        let elements = AccessibilityElements.of(
+            list(
+                Invites.five, failure: .remove(name: "Nina", club: "Sunday people", uncertain: true)
+            ))
+        let words =
+            "Couldn’t confirm that Nina’s invitation to Sunday people was removed. Check your connection and try again."
+        let line = elements.firstIndex { $0.label == words }
+        let done = elements.firstIndex { $0.label == "Finish managing invitations for now." }
+        XCTAssertNotNil(line, "\(elements)")
+        if let line, let done { XCTAssertLessThan(line, done, "\(elements)") }
+    }
+
+    func testANotFoundWhileTheRowStaysSaysTheInvitationIsNoLongerAvailable() {
+        let elements = AccessibilityElements.of(list(Invites.five, failure: .removeUnavailable))
+        let line = elements.firstIndex { $0.label == "This invitation is no longer available." }
+        let done = elements.firstIndex { $0.label == "Finish managing invitations for now." }
+        XCTAssertNotNil(line, "\(elements)")
+        if let line, let done { XCTAssertLessThan(line, done, "\(elements)") }
+        XCTAssertFalse(elements.contains { $0.label.contains("Try again") }, "\(elements)")
     }
 
     func testWhileARevokeGoesTheRowSaysSoAndItsControlsWait() {
@@ -381,6 +445,14 @@ final class ClubCreateSnapshotTests: XCTestCase {
                 .revoke(name: "Sam", uncertain: true),
                 "Couldn’t confirm that Sam’s invitation link was revoked. Check your connection and try again."
             ),
+            (
+                .remove(name: "Nina", club: "Sunday people", uncertain: false),
+                "Couldn’t remove Nina’s invitation to Sunday people. Try again."
+            ),
+            (
+                .remove(name: "Nina", club: "Sunday people", uncertain: true),
+                "Couldn’t confirm that Nina’s invitation to Sunday people was removed. Check your connection and try again."
+            ),
         ]
         for (failure, words) in actions {
             XCTAssertEqual(failure.words, words)
@@ -414,11 +486,13 @@ final class ClubCreateSnapshotTests: XCTestCase {
 
     private func list(
         _ state: InvitationListModel.State, busy: Set<String> = [], revoking: Set<String> = [],
-        failure: InvitationListModel.ActionFailure? = nil, actions: InvitationActions = .init()
+        failure: InvitationListModel.ActionFailure? = nil, removing: String? = nil,
+        actions: InvitationActions = .init()
     ) -> some View {
         pushed(
             InvitationsScreen(
-                state: state, busy: busy, revoking: revoking, failure: failure, actions: actions))
+                state: state, busy: busy, revoking: revoking, failure: failure, removing: removing,
+                actions: actions))
     }
 
     /// `G01-create` with the frames' name, on a service that makes no club: Continue fails as if
@@ -499,6 +573,15 @@ private enum Invites {
         maya, alex, row("Sam", .used, shared: true), row("Debby", .accepted), row("Nina", .live),
     ])
 
+    /// Handoff 11's frame 3: Nina's invitation removed, Debby asked to accept the roster without
+    /// Nina, and a place free again.
+    static let removed = list(
+        [maya, alex, row("Sam", .live), row("Debby", .used, shared: true)], canInvite: true)
+
+    /// Two people and a place free, for what waits while Nina's removal goes: Maya shared, Nina's
+    /// link made.
+    static let removing = list([maya, row("Nina", .live)], canInvite: true)
+
     /// Frame 12's list where the app no longer holds Sam's used link.
     static let usedMissing = list([
         maya, alex, row("Sam", .used, kept: false), row("Debby", .accepted), row("Nina", .live),
@@ -527,7 +610,8 @@ private enum Invites {
                 : nil
         }
         return InvitationRow(
-            Candidate(id: id, name: name, proposedBy: ben, invitation: invitation), kept: held)
+            Candidate(id: id, name: name, proposedBy: ben, invitation: invitation), kept: held,
+            removable: true)
     }
 
     private static let ben = Person(membershipID: "mem_Ben", displayName: "Ben", avatarVersion: nil)

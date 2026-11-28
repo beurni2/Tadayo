@@ -13,10 +13,13 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var proposeAnswers: [Result<RosterRevision, APIFailure>] = []
     var linkAnswers: [Result<InvitationLink, APIFailure>] = []
     var revokeAnswers: [Result<Void, APIFailure>] = []
+    var removeAnswers: [Result<Void, APIFailure>] = []
     var previewAnswers: [Result<InvitationPreview, APIFailure>] = []
     var acceptAnswers: [Result<InvitationAcceptance, APIFailure>] = []
     var approveAnswers: [Result<RosterRevision, APIFailure>] = []
     var declineAnswers: [Result<RosterRevision, APIFailure>] = []
+    /// The club's week, for a test that reads Members through this script; nil refuses the read.
+    var week: ClubWeek?
     private(set) var calls: [String] = []
     /// Run inside each preview and each accept, before it answers.
     var duringPreview: @Sendable () async -> Void = {}
@@ -30,6 +33,8 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var duringLink: @Sendable () async -> Void = {}
     /// Run inside each revoke, before it answers.
     var duringRevoke: @Sendable () async -> Void = {}
+    /// Run inside each candidate's removal, before it answers.
+    var duringRemove: @Sendable () async -> Void = {}
     private var memberReads = 0
 
     private func answer<T>(_ call: String, _ answers: inout [Result<T, APIFailure>]) -> Result<
@@ -84,9 +89,15 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
         try lock.withLock { answer("revokeInvitation \(invitationID)", &revokeAnswers) }.get()
     }
 
+    func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+        await duringRemove()
+        try lock.withLock { answer("removeCandidate \(candidateID)", &removeAnswers) }.get()
+    }
+
     func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
         lock.withLock { calls.append("schedule \(clubID)") }
-        throw .refused
+        guard let week else { throw .refused }
+        return week
     }
 
     func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {

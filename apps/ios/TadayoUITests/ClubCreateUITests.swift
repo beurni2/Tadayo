@@ -10,7 +10,9 @@ import XCTest
 /// the list's place, with the club's name in the bar; and Back returns to Home, which now shows
 /// the club made. And the waiting screen's Review members, when the club's revision waits on Ben
 /// (`UITestLaunch.createAwaitingBen`), opens the proposed roster, whose Approve roster starts the
-/// club and closes onto Home.
+/// club and closes onto Home. And Remove invitation from a row's More asks first in the system's
+/// alert, with the words for someone else still invited; Keep invitation keeps the row, and
+/// Remove invitation takes it away, the others staying (handoff 11's frames 1 to 3).
 final class ClubCreateUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -143,7 +145,79 @@ final class ClubCreateUITests: XCTestCase {
         XCTAssertFalse(app.navigationBars["Sunday people"].exists, "the waiting screen closed")
     }
 
+    /// Removing an invitation from the setup list (handoff 11), on the club made with Sam and
+    /// Nina invited: Nina's More holds Remove invitation, destructive, which asks first with
+    /// `withOthers`, since Sam is still invited; Keep invitation changes nothing; Remove invitation
+    /// takes Nina's row away and leaves Sam's.
+    @MainActor func testRemovingAnInvitationAsksFirstAndTheRowGoes() {
+        let app = signedIn()
+        app.buttons["Create a club."].tap()
+        let name = app.textFields["Club name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Sunday people")
+        let continueButton = app.buttons["Continue to invitations"]
+        XCTAssertTrue(eventually { continueButton.isEnabled }, "Continue takes the name")
+        continueButton.tap()
+        XCTAssertTrue(app.staticTexts["Invite your people"].waitForExistence(timeout: 10))
+        for invited in ["Sam", "Nina"] {
+            app.buttons["Create an invitation"].tap()
+            let person = app.textFields["Person’s name"]
+            XCTAssertTrue(person.waitForExistence(timeout: 5))
+            XCTAssertTrue(
+                eventually { (person.value(forKey: "hasKeyboardFocus") as? Bool) ?? false },
+                "the name field focused on arrival")
+            person.typeText(invited)
+            app.buttons["Create link and share"].tap()
+            closeShareSheet(app)
+            XCTAssertTrue(element("\(invited). Not shared.", in: app).waitForExistence(timeout: 10))
+        }
+        let sam = element("Sam. Not shared.", in: app)
+        let nina = element("Nina. Not shared.", in: app)
+        let more = app.buttons["More options for Nina’s invitation"]
+
+        // Remove invitation asks first; Keep invitation keeps the row.
+        removeInvitation(from: more, in: app)
+        let alert = app.alerts["Remove Nina’s invitation?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            text(
+                "Any links for Nina will stop working. Nina won’t be able to join Sunday people "
+                    + "from this invitation.\n\nYou can invite Nina again later with a new "
+                    + "invitation.\n\nAnyone else still invited will review and accept the "
+                    + "updated roster again.", in: alert
+            ).exists)
+        alert.buttons["Keep invitation"].tap()
+        XCTAssertTrue(eventually { !app.alerts.firstMatch.exists }, "the confirmation closed")
+        XCTAssertTrue(nina.exists)
+
+        // Remove invitation: Nina's row goes, Sam's stays.
+        removeInvitation(from: more, in: app)
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Remove invitation"))
+            .firstMatch.tap()
+        XCTAssertTrue(eventually(10) { !nina.exists }, "Nina's row gone")
+        XCTAssertFalse(more.exists)
+        XCTAssertTrue(sam.exists)
+        // A place was free before too: this checks the list is still drawn with it, not that
+        // the removal brought it back (`InvitationRemovalTests` does, on Linux).
+        let create = app.buttons["Create an invitation"]
+        XCTAssertTrue(create.exists, "the list still offers Create an invitation")
+    }
+
     // MARK: Helpers
+
+    /// More, then the system's menu item Remove invitation, read by its words or by the label
+    /// naming the person.
+    @MainActor private func removeInvitation(from more: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        more.tap()
+        let remove = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Remove invitation")
+        ).firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        remove.tap()
+    }
 
     /// Signed in on the stand-in services' named account with no club, at Home's Start your
     /// club, with `launch` choosing the stand-in club's behaviour.
@@ -233,6 +307,12 @@ final class ClubCreateUITests: XCTestCase {
     }
 
     /// Any element VoiceOver reads as `label`, whatever its kind.
+    /// A static text read by its whole label: XCTest refuses an identifier query over 128
+    /// characters, which a confirmation's body passes.
+    @MainActor private func text(_ label: String, in element: XCUIElement) -> XCUIElement {
+        element.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
     @MainActor private func element(_ label: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label))
             .firstMatch

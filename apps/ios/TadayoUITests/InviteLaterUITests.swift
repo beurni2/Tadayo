@@ -8,7 +8,10 @@ import XCTest
 /// offered again by Share link (`createInvitation.retention`); More options' Revoke link asks
 /// first, and Keep link keeps the link. Back is Club details, read again, where Invite someone
 /// has gone, since Nina took the last place; its Members lists Nina's proposed row, which opens
-/// the same page.
+/// the same page. Back on Members, the row's own More holds Remove invitation, which asks first
+/// with the words for the last person proposed; Keep invitation keeps the row, and Remove
+/// invitation takes it away, the five members staying (handoff 11's frame 5). Back on Club
+/// details, Invite someone is back: the removal freed Nina's place (FQ148).
 final class InviteLaterUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -52,9 +55,11 @@ final class InviteLaterUITests: XCTestCase {
         let alert = app.alerts["Revoke Nina’s invitation link?"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         XCTAssertTrue(
-            alert.staticTexts[
-                "Nina won’t be able to use this link. You can create a new link for Nina later."
-            ].exists)
+            text(
+                "Nina won’t be able to use this link. Nina stays in the proposed roster for Sunday "
+                    + "people, so this won’t free a place. You can create a new link for Nina later.",
+                in: alert
+            ).exists)
         alert.buttons["Keep link"].tap()
         XCTAssertTrue(
             eventually { !app.alerts.firstMatch.exists }, "the confirmation closed")
@@ -80,9 +85,55 @@ final class InviteLaterUITests: XCTestCase {
             element("Not shared. Each person gets a separate link.", in: app)
                 .waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Share link for Nina"].exists)
+
+        // Back on Members: Nina's own More, Remove invitation, which asks first.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(nina.waitForExistence(timeout: 5))
+        let more = app.buttons["More options for Nina’s invitation"]
+        XCTAssertTrue(more.exists)
+        removeInvitation(from: more, in: app)
+        let alert2 = app.alerts["Remove Nina’s invitation?"]
+        XCTAssertTrue(alert2.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            text(
+                "Any links for Nina will stop working. Nina won’t be able to join Sunday people "
+                    + "from this invitation.\n\nYou can invite Nina again later with a new "
+                    + "invitation.", in: alert2
+            ).exists)
+        alert2.buttons["Keep invitation"].tap()
+        XCTAssertTrue(
+            eventually { !app.alerts.firstMatch.exists }, "the confirmation closed")
+        XCTAssertTrue(nina.exists)
+
+        // Remove invitation: Nina's row goes, the five members stay.
+        removeInvitation(from: more, in: app)
+        XCTAssertTrue(alert2.waitForExistence(timeout: 5))
+        alert2.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Remove invitation"))
+            .firstMatch.tap()
+        XCTAssertTrue(eventually(10) { !nina.exists }, "Nina's row gone")
+        XCTAssertFalse(more.exists)
+        XCTAssertTrue(element("Debby. Friday.", in: app).exists)
+
+        // Back: Club details, read again after the answer, offers Invite someone again.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(members.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            eventually(10) { app.buttons["Invite someone"].exists },
+            "Invite someone back, Nina's place free")
     }
 
     // MARK: Helpers
+
+    /// More, then the system's menu item Remove invitation, read by its words or by the label
+    /// naming the person.
+    @MainActor private func removeInvitation(from more: XCUIElement, in app: XCUIApplication) {
+        more.tap()
+        let remove = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Remove invitation")
+        ).firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        remove.tap()
+    }
 
     /// Signed in on the stand-in services' named account, at the tabs with Sunday people
     /// selected.
@@ -153,6 +204,12 @@ final class InviteLaterUITests: XCTestCase {
     }
 
     /// Any element VoiceOver reads as `label`, whatever its kind.
+    /// A static text read by its whole label: XCTest refuses an identifier query over 128
+    /// characters, which a confirmation's body passes.
+    @MainActor private func text(_ label: String, in element: XCUIElement) -> XCUIElement {
+        element.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
     @MainActor private func element(_ label: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label))
             .firstMatch

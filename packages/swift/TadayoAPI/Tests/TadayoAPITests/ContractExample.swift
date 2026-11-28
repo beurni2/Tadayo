@@ -40,6 +40,8 @@ enum ContractExample {
             ##"{"invitation_id":"inv_kt_leila","candidate_id":"cnd_kt_leila","expires_at":"2026-11-13T14:41:00Z"}"##,
         "revokeInvitation.revoked":
             ##"{"invitation_id":"inv_kt_leila","state":"revoked"}"##,
+        "removeCandidate.removed":
+            ##"{"candidate_id":"cnd_kt_leila","state":"removed"}"##,
         "getRosterRevision.approve":
             ##"{"id":"rev_kt_leila","version":1,"club":{"id":"club_kitchen_table","name":"Kitchen table","timezone":"America/New_York","my_membership_id":"mem_kt_maya"},"state":"open","proposed_by":{"membership_id":"mem_kt_ben","display_name":"Ben","avatar_version":"av_ben_1"},"members":[{"membership_id":"mem_kt_ben","display_name":"Ben","avatar_version":"av_ben_1"},{"membership_id":"mem_kt_alex","display_name":"Alex"},{"membership_id":"mem_kt_sam","display_name":"Sam"},{"membership_id":"mem_kt_nina","display_name":"Nina"},{"membership_id":"mem_kt_maya","display_name":"Maya","avatar_version":"av_maya_1"}],"candidates":[{"id":"cnd_kt_leila","name":"Leila","proposed_by":{"membership_id":"mem_kt_ben","display_name":"Ben","avatar_version":"av_ben_1"}}],"my_decision":"pending"}"##,
         "getRosterRevision.link_revoked":

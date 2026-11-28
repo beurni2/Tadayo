@@ -3337,14 +3337,206 @@
         }
       }
     },
-    "revoke.body" : {
-      "comment" : "handoff 8 revokeLink.confirmationBody: both are the person's name",
+    "remove.action" : {
+      "comment" : "handoff 11 copy-contracts handoff11.remove.action: the More menu's destructive item and the confirmation's destructive action",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ won’t be able to use this link. You can create a new link for %2$@ later."
+            "value" : "Remove invitation"
+          }
+        }
+      }
+    },
+    "remove.action.label" : {
+      "comment" : "handoff 11 handoff11.remove.action.vo: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove invitation for %@"
+          }
+        }
+      }
+    },
+    "remove.busy" : {
+      "comment" : "handoff 11 handoff11.remove.busy: the row's status (setup list) or the line under the Proposed tag (Members) while the removal is on its way",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removing…"
+          }
+        }
+      }
+    },
+    "remove.busy.announcement" : {
+      "comment" : "handoff 11 handoff11.remove.busy.announcement: said once, politely, as the removal starts; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removing %@’s invitation."
+          }
+        }
+      }
+    },
+    "remove.busy.value" : {
+      "comment" : "handoff 11 handoff11.remove.busy.value: the row's accessibility value while its removal is on its way",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In progress"
+          }
+        }
+      }
+    },
+    "remove.confirm.body.last" : {
+      "comment" : "handoff 11 handoff11.remove.confirm.body.last, when nobody else in the open revision would still be invited: %1$@ is the person's name, %2$@ the club's",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Any links for %1$@ will stop working. %1$@ won’t be able to join %2$@ from this invitation.\n\nYou can invite %1$@ again later with a new invitation."
+          }
+        }
+      }
+    },
+    "remove.confirm.body.withOthers" : {
+      "comment" : "handoff 11 handoff11.remove.confirm.body.withOthers, when the open revision lists anyone else, whoever proposed them: %1$@ is the person's name, %2$@ the club's",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Any links for %1$@ will stop working. %1$@ won’t be able to join %2$@ from this invitation.\n\nYou can invite %1$@ again later with a new invitation.\n\nAnyone else still invited will review and accept the updated roster again."
+          }
+        }
+      }
+    },
+    "remove.confirm.cancel" : {
+      "comment" : "handoff 11 handoff11.remove.confirm.cancel and .cancel.vo",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep invitation"
+          }
+        }
+      }
+    },
+    "remove.confirm.title" : {
+      "comment" : "handoff 11 handoff11.remove.confirm.title: %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %@’s invitation?"
+          }
+        }
+      }
+    },
+    "remove.failed.network" : {
+      "comment" : "handoff 11 handoff11.remove.failed.network: no answer, or one the app can't read; %1$@ is the person's name, %2$@ the club's",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t confirm that %1$@’s invitation to %2$@ was removed. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "remove.failed.refused" : {
+      "comment" : "handoff 11 handoff11.remove.failed.refused: %1$@ is the person's name, %2$@ the club's",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t remove %1$@’s invitation to %2$@. Try again."
+          }
+        }
+      }
+    },
+    "remove.listUpdated" : {
+      "comment" : "handoff 11 handoff11.remove.listUpdated.announcement: said once when the setup list read again after a removal that got no answer, or wasn't found, no longer shows the person",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitation list updated."
+          }
+        }
+      }
+    },
+    "remove.membersUpdated" : {
+      "comment" : "handoff 11 handoff11.remove.membersUpdated.announcement: Members' remove.listUpdated",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Members updated."
+          }
+        }
+      }
+    },
+    "remove.menu.heading" : {
+      "comment" : "handoff 11 handoff11.remove.menu.heading: the More menu's heading; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@’s invitation"
+          }
+        }
+      }
+    },
+    "remove.success" : {
+      "comment" : "handoff 11 handoff11.remove.success.announcement: said once on the server's answer, never from a read; %@ is the person's name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@’s invitation was removed."
+          }
+        }
+      }
+    },
+    "remove.unavailable" : {
+      "comment" : "handoff 11 handoff11.remove.unavailable: a removal the server didn't find while the list still shows the person, so it never asks to try again",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation is no longer available."
+          }
+        }
+      }
+    },
+    "revoke.body" : {
+      "comment" : "handoff 11 handoff11.revoke.confirm.body, replacing handoff 8's revokeLink.confirmationBody: %1$@ is the person's name, %2$@ the club's",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ won’t be able to use this link. %1$@ stays in the proposed roster for %2$@, so this won’t free a place. You can create a new link for %1$@ later."
           }
         }
       }

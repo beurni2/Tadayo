@@ -27,6 +27,8 @@
             private var candidates: [Candidate] = []
             /// The links made, which tells each one's id apart.
             private var made = 0
+            /// The people proposed and removed, each a change of the roster.
+            private var changes = 0
 
             private var clock: ServerClock { ServerClock(serverNow: Date(), receivedAt: .now) }
 
@@ -35,9 +37,9 @@
                     membershipID: "mem_\(name.lowercased())", displayName: name, avatarVersion: nil)
             }
 
-            /// The roster's version: the five's, then one more for each proposal. Read under the
-            /// lock.
-            private var version: Int { 5 + candidates.count }
+            /// The roster's version: the five's, then one more for each person proposed or
+            /// removed. Read under the lock.
+            private var version: Int { 5 + changes }
 
             /// The open revision, once someone is proposed. Read under the lock.
             private var revision: RosterRevision? {
@@ -91,9 +93,10 @@
                         return .failure(.versionConflict)
                     }
                     for name in names {
+                        changes += 1
                         candidates.append(
                             Candidate(
-                                id: "cand_\(candidates.count + 1)", name: name,
+                                id: "cand_\(changes)", name: name,
                                 proposedBy: Self.person("Ben"), invitation: nil))
                     }
                     return revision.map { .success($0) } ?? .failure(.refused)
@@ -141,6 +144,18 @@
                     return true
                 }
                 guard revoked else { throw .notFound }
+            }
+
+            /// Ben's own candidate, before anyone joins: gone, and their place free (FQ148).
+            func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+                let removed: Bool = lock.withLock {
+                    guard let index = candidates.firstIndex(where: { $0.id == candidateID })
+                    else { return false }
+                    candidates.remove(at: index)
+                    changes += 1
+                    return true
+                }
+                guard removed else { throw .notFound }
             }
 
             func createClub(name: String, timezone: TimeZone, key: IdempotencyKey)
