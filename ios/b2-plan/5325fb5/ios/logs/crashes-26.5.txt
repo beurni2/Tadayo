@@ -1,0 +1,77 @@
+--- 20:15:59 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-28-201559.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-28 20:15:59.00 +0000
+pid: 16382
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.D9E57780-8C03-4CB6-91A7-C22DE5789172
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 16382, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 20:15:59 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-28-201559.000.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-28 20:15:59.00 +0000
+pid: 16808
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.D9E57780-8C03-4CB6-91A7-C22DE5789172
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 16808, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 20:17:26 UTC, /Library/Logs/DiagnosticReports/JetsamEvent-2026-11-28-201715.ips
+bug_type: 298
+timestamp: 2026-11-28 20:17:15.00 +0000
+largestProcess: ReportCrashService
+killed: softwareupdated, pid 117 (idle-exit)
+killed: com.apple.StreamingUnzipService., pid 794 (idle-exit)
+killed: com.apple.accessibility.mediaacc, pid 4328 (idle-exit)
+killed: com.apple.accessibility.mediaacc, pid 4337 (idle-exit)
+killed: trustd, pid 917 (idle-exit)
+killed: fairplaydeviceidentityd, pid 1168 (idle-exit)
+killed: com.apple.hiservices-xpcservice, pid 4645 (idle-exit)
+killed: tzd, pid 4820 (idle-exit)
+killed: replicatord, pid 377 (idle-exit)
+killed: XProtectUpdateService, pid 4821 (idle-exit)
+killed: iconservicesd, pid 124 (idle-exit)
+killed: textunderstandingd, pid 4977 (idle-exit)
+killed: feedbackd, pid 5070 (idle-exit)
+killed: lockdownmoded, pid 834 (idle-exit)
+killed: homeeventsd, pid 1076 (idle-exit)
+killed: CommCenter, pid 398 (idle-exit)
+killed: sociallayerd, pid 473 (idle-exit)
+killed: transparencyd, pid 378 (idle-exit)
+killed: applekeystored, pid 305 (idle-exit)
+killed: systemstatusd, pid 206 (idle-exit)
+killed: iCloudNotificationAgent, pid 5098 (idle-exit)
+killed: cfprefsd, pid 4329 (idle-exit)
+killed: voicebankingd, pid 753 (idle-exit)
+killed: wifianalyticsd, pid 4816 (idle-exit)
+killed: bluetoothuserd, pid 822 (idle-exit)
+killed: devicecheckd, pid 1536 (idle-exit)
+killed: jetpackassetd, pid 1078 (idle-exit)
+killed: ReportCrashService, pid 16410 (per-process-limit)
+killed: ReportCrashService, pid 16811 (per-process-limit)
+--- 20:26:15 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-28-202001_iad20-gt1017-4986cc8c-a624-4e55-9d17-dc9683d787a1-BEF148E95C9F.diag
+Date/Time:        2026-11-28 19:13:38.422 +0000
+End time:         2026-11-28 20:15:40.183 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 409B7A7B-9F84-43DF-8087-E2472B060D22
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x187e10000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18e55c000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(795)
+On Behalf Of:     159 samples UNKNOWN [505, 16410, 16811, 34646, 38934, 43032] (159 samples originated by UNKNOWN [202, 16410, 16811, 34646, 38934, 43032])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              640
