@@ -190,7 +190,7 @@ function oneOf<T extends string>(value: unknown, values: readonly T[], what: str
 }
 
 /** A day's columns as `dayFactsOf` reads them, on the day `o`, its star's interval `s` and account `su`. */
-function dayColumns<R>(sql: (template: TemplateStringsArray, ...values: readonly never[]) => R): R {
+export function dayColumns<R>(sql: (template: TemplateStringsArray, ...values: readonly never[]) => R): R {
   return bound(sql)`o.id, o.club_id, o.status, o.local_date::pg_catalog.text AS local_date, o.reveal_at, o.close_at,
          s.interval_id AS star_interval, s.state AS star_interval_state, s.left_at AS star_left_at,
          s.ended_display_name AS star_ended_name, su.state AS star_account, su.display_name AS star_name,
@@ -199,7 +199,7 @@ function dayColumns<R>(sql: (template: TemplateStringsArray, ...values: readonly
            WHERE up.id = su.avatar_upload_id AND up.state = 'ready') AS star_avatar_version`;
 }
 
-function dayFactsOf(row: Readonly<Record<string, unknown>>): DayFacts {
+export function dayFactsOf(row: Readonly<Record<string, unknown>>): DayFacts {
   const localDate = text(row["local_date"], "the day's date");
   if (!DATE.test(localDate)) throw shape("the day's date");
   const revealAt = instant(row["reveal_at"], "the day's reveal_at");

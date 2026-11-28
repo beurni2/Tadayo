@@ -39,6 +39,10 @@ kill_timeout = 30
   # trial (FQ8), named here because no image or code names it, so an environment that leaves it out has no worker
   # (the outside audit's B7).
   TADAYO_SAFETY_PROVIDER = "none"
+  # Whether the worker sends the reveal push (services/worker/src/push.ts): `none` sends nothing and reads no APNs key.
+  # `apns` waits for the founder's yes to spike S4's run on dev (docs/plans/api-b2-spike-push.md, section 3), in a PR of
+  # its own; the image names neither, so an environment that leaves it out has no worker.
+  TADAYO_PUSH = "none"
 
 # Each command starts as root and drops with `setpriv` (the Dockerfile's header; ADR-038). The API, at once, becomes
 # `node` for good: real, effective and saved ids, no capability, no way to gain one. The worker becomes `node` in

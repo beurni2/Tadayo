@@ -341,6 +341,11 @@ const KEPT: readonly { file: string; line: string; why: string }[] = [
     line: "const settledAt = Date.now();",
     why: HARNESS,
   },
+  {
+    file: join("services", "worker", "src", "apns.ts"),
+    line: "const REAL_TIME = (): number => Date.now();",
+    why: "the APNs provider token's `iat`, which Apple checks against its own clock, refusing one from the future or older than an hour: real time, never the server's clock, which leads real time on dev; it decides nothing about a day, a drop or a push (services/worker/src/apns.ts)",
+  },
 ];
 
 /**
@@ -376,6 +381,21 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
       // When an outbox event was written, whose age at the sample says how long Storage away is waited out (B1).
       "services/worker/src/outbox.ts: OutboxEvent.createdAt",
       "services/worker/src/outbox.ts: claimNext.rows.created_at",
+      // The day a reveal push is for, as its row holds it: a delivery is planned between its reveal and its close, a
+      // retry is kept only before the close, and the close is the push's expiry at APNs (push.ts).
+      "services/worker/src/push.ts: Decided.closeAt",
+      "services/worker/src/push.ts: planDay.[day].close_at",
+      "services/worker/src/push.ts: planDay.[day].reveal_at",
+    ],
+  },
+  {
+    why: "the reveal push's own times: the reveal a delivery is first due at, the end of a device's quiet hours, and the bounds of the budget's local day, each made from a row's time or the clock's sample and a zone, which a delivery's row holds or a count compares with rows' times, never the time a decision is made at, which `quietUntil`, `budgetDay` and `decideReveal` take as a ServerNow",
+    at: [
+      "packages/domain/src/push/reveal.ts: BudgetDay.from",
+      "packages/domain/src/push/reveal.ts: BudgetDay.until",
+      "packages/domain/src/push/reveal.ts: RevealDecision.until",
+      "packages/domain/src/push/reveal.ts: outsideQuiet(at)",
+      "packages/domain/src/push/reveal.ts: plannedDueAt(revealAt)",
     ],
   },
   {
@@ -394,6 +414,15 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
   {
     why: "a claim's lease's end: computed from the claim's own sample and written to the event's row, then matched with that row's `available_at` to know the claim a failure came from (outbox.ts, item 3; the outside audit's B1, reviewed), never compared with a later sample",
     at: ["services/worker/src/outbox.ts: Claim.leaseUntil", "services/worker/src/outbox.ts: recordFailure(leaseUntil)"],
+  },
+  {
+    why: "a reveal push delivery's lease's end: computed from the claim's or the decision's own sample and written to the delivery's row, then matched with that row's `lease_until` to know that a later step is that claim's or that decision's (push.ts), never compared with a later sample in the code (the claim's query compares the row's with its own sample in SQL)",
+    at: [
+      "services/worker/src/push.ts: Claimed.leaseUntil",
+      "services/worker/src/push.ts: Decided.leaseUntil",
+      "services/worker/src/push.ts: DeliveryRow.lease_until",
+      "services/worker/src/push.ts: fail(leaseUntil)",
+    ],
   },
   {
     why: "an answer's field: an expiry a command or a read reports to its caller, computed from the clock's sample or read from its row, which no decision reads back (the time an action happened at, which an answer reports too, is a ServerNow: `CreatedClub.at`, `LeftClub.leftAt`, `DeviceRegistration.registeredAt`)",

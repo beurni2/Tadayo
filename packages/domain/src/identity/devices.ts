@@ -253,3 +253,26 @@ export async function removeDevice(
   await endSignIn(tx, signIn, now);
   return removed.length > 0 ? "removed" : "none";
 }
+
+/**
+ * Deletes the registration of the sign-in `signIn` (its hash, as hex) of the account `userId` if it still holds `token`,
+ * which APNs said is dead (the reveal push's answer; docs/plans/api-b2-spike-push.md, section 2.3): whether it did. The
+ * sign-in isn't ended, so the app's next registration, with the new token iOS gives it, is taken. The locks are 0017's
+ * order: the sign-in's, then the account's row, then the registration, whose deliveries the foreign key then sets null.
+ */
+export async function forgetDeadToken(tx: QuerySql, userId: string, signIn: string, token: string): Promise<boolean> {
+  if (typeof userId !== "string" || !ID.test(userId)) {
+    throw new InputFault("devices_7", "devices: the account id is an app.id");
+  }
+  if (typeof signIn !== "string" || !/^[0-9a-f]{64}$/.test(signIn)) {
+    throw new InputFault("devices_8", "devices: a sign-in is a SHA-256 hash, as hex");
+  }
+  const dead = apnsTokenOf(token);
+  await lock(tx, signInLock(signIn));
+  await bound(tx)`SELECT 1 FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;
+  const deleted = await bound(tx)`
+    DELETE FROM app.device_registrations
+     WHERE sign_in = pg_catalog.decode(${signIn}, 'hex') AND user_id = ${userId} AND apns_token = ${dead}
+    RETURNING 1 AS deleted`;
+  return deleted.length > 0;
+}

@@ -60,6 +60,8 @@ function start(
       TADAYO_ENVIRONMENT: environment,
       // The worker's photo safety provider, as fly.toml names it for dev (FQ8; the outside audit's B7).
       TADAYO_SAFETY_PROVIDER: "none",
+      // Whether the worker sends the reveal push, as fly.toml says for dev until the spike's run (./push.ts).
+      TADAYO_PUSH: "none",
       PORT: "0",
       HOST: "127.0.0.1",
       ...(signalAtReady === undefined ? {} : { TADAYO_TEST_SIGNAL_AT_READY: signalAtReady }),
@@ -229,7 +231,7 @@ describe("the worker's entry against the test database", () => {
     expect(
       await waitFor(
         worker,
-        /worker: started, making days every minute and preparing uploads, each photo in the worker's own user, screened by no safety provider \(FQ8\)\n/,
+        /worker: started, making days every minute and preparing uploads, each photo in the worker's own user, screened by no safety provider \(FQ8\), with no reveal push \(TADAYO_PUSH is none\)\n/,
       ),
       worker.output.stderr,
     ).not.toBeNull();
@@ -261,7 +263,7 @@ describe("the worker's entry against the test database", () => {
       // may come between the two, and nothing else may.
       expect(worker.output.stdout).toMatch(
         new RegExp(
-          `^worker: started, making days every minute and preparing uploads, each photo in the worker's own user, screened by no safety provider \\(FQ8\\)\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
+          `^worker: started, making days every minute and preparing uploads, each photo in the worker's own user, screened by no safety provider \\(FQ8\\), with no reveal push \\(TADAYO_PUSH is none\\)\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
         ),
       );
       expect(worker.output.stderr).toBe("");

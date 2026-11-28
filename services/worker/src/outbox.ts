@@ -157,8 +157,8 @@ async function countDeath(tx: WorkerTx, topic: string, code: string): Promise<vo
   await countFailures(tx, "worker", new Map([[deadCode(topic, code), 1]]));
 }
 
-/** `fn` in a transaction with generation's limits on lock waits and statements. */
-async function limited<T>(sql: WorkerSql, fn: (tx: WorkerTx) => Promise<T>): Promise<T> {
+/** `fn` in a transaction with generation's limits on lock waits and statements (the push's too, push.ts). */
+export async function limited<T>(sql: WorkerSql, fn: (tx: WorkerTx) => Promise<T>): Promise<T> {
   return (await sql.begin(async (tx) => {
     await tx`
       SELECT pg_catalog.set_config('lock_timeout', ${`${String(LOCK_WAIT_MS)}ms`}, true),
