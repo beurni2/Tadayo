@@ -7,12 +7,17 @@ import TadayoCore
 /// `TadayoCore`'s type or an `APIFailure`; an error answer it doesn't is refused, and a success it
 /// doesn't is unreadable, since the server may have carried a choice or a confirmation out (audit
 /// A8): an undocumented 2xx, or content that breaks it (a value this build doesn't know, a date
-/// that isn't one, a proposal without its six weekdays, an answer for another proposal).
+/// that isn't one, a proposal without its six weekdays, a name on a day the contract gives none,
+/// the caller's days other than the days the slots say they hold), or that doesn't answer what was
+/// asked (another club, another proposal, other days than those sent).
 extension TadayoAPIClient: CalendarService {
     public func home(of clubID: String) async throws(APIFailure) -> ClubHome {
         try await call { client in
             switch try await client.getHome(path: .init(clubId: clubID)) {
-            case .ok(let answer): return try ClubHome(answer.body.json, receivedAt: now())
+            case .ok(let answer):
+                let home = try ClubHome(answer.body.json, receivedAt: now())
+                guard home.club.id == clubID else { throw APIFailure.unreadable }
+                return home
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
                 throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
@@ -44,7 +49,8 @@ extension TadayoAPIClient: CalendarService {
                     .init(expectedVersion: expectedVersion, weekdays: weekdays.map(\.contract))))
             {
             case .ok(let answer):
-                return try ScheduleProposal(answer.body.json, answering: proposalID)
+                return try ScheduleProposal(
+                    answer.body.json, answering: proposalID, holding: weekdays, as: .choosing)
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
                 throw Self.failure(
@@ -71,7 +77,8 @@ extension TadayoAPIClient: CalendarService {
                     .init(expectedVersion: expectedVersion, weekdays: weekdays.map(\.contract))))
             {
             case .ok(let answer):
-                return try ScheduleProposal(answer.body.json, answering: proposalID)
+                return try ScheduleProposal(
+                    answer.body.json, answering: proposalID, holding: weekdays, as: .confirmed)
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
                 throw Self.failure(
@@ -91,6 +98,7 @@ extension TadayoAPIClient: CalendarService {
 // MARK: The generated types, as TadayoCore's
 
 extension ClubHome {
+    /// The club is checked by `home(of:)`, which knows which club was asked for.
     init(_ home: Components.Schemas.Home, receivedAt: ContinuousClock.Instant) throws(APIFailure) {
         let serverNow: Date
         let club: Components.Schemas.ClubRef
@@ -108,7 +116,7 @@ extension ClubHome {
         case .day(let home):
             (serverNow, club, clubToday) = (home.serverNow, home.club, home.clubToday)
             mode = .day(
-                try OpenDay(home.day),
+                try ClubHome.OpenDay(home.day),
                 next: try home.next.map { day throws(APIFailure) in try Occurrence(day) },
                 recentDays: try Self.days(home.recentDays))
         case .waiting(let home):
@@ -139,7 +147,7 @@ extension ClubHome {
     }
 }
 
-extension OpenDay {
+extension ClubHome.OpenDay {
     /// The day's frame alone: its drops and highlights are read only for whether the page holds
     /// any card, and nothing of them is kept (B5 builds the feed).
     init(_ day: Components.Schemas.RevealedDay) throws(APIFailure) {
@@ -152,15 +160,18 @@ extension OpenDay {
 }
 
 extension ScheduleProposal {
-    /// Unreadable unless it holds Monday to Saturday once each, with one or two days each and no
-    /// more held than that; its slots and the caller's days come Monday first. With `proposalID`,
-    /// unreadable unless it is that proposal: a choice or a confirmation answers with the
-    /// proposal it was sent to (`MEMBERSHIP_CHANGED` names a newer one).
-    init(_ proposal: Components.Schemas.ScheduleProposal, answering proposalID: String? = nil)
-        throws(APIFailure)
-    {
-        guard proposalID == nil || proposal.id == proposalID,
-            let reason = Reason(rawValue: proposal.reason.rawValue),
+    /// Unreadable unless it holds Monday to Saturday once each, with one or two days each, and the
+    /// caller's days are exactly the slots they hold (`yours` or `clash`, `ScheduleSlotState`), no
+    /// more of them than that; its slots and the caller's days come Monday first. A choice or a
+    /// confirmation answers with the proposal it was sent to (`MEMBERSHIP_CHANGED` names a newer
+    /// one), holding exactly the days sent, the caller choosing after a choice and confirmed after
+    /// a confirmation; anything else is unreadable.
+    init(
+        _ proposal: Components.Schemas.ScheduleProposal,
+        answering proposalID: String? = nil, holding sent: [Weekday]? = nil,
+        as expected: MyState? = nil
+    ) throws(APIFailure) {
+        guard let reason = Reason(rawValue: proposal.reason.rawValue),
             let myState = MyState(rawValue: proposal.myState.rawValue),
             let state = State(rawValue: proposal.state.rawValue),
             (1...2).contains(proposal.daysPerMember)
@@ -174,9 +185,15 @@ extension ScheduleProposal {
             guard let weekday = Weekday(rawValue: day.rawValue) else { throw .unreadable }
             myDays.append(weekday)
         }
-        guard myDays.count <= proposal.daysPerMember, Set(myDays).count == myDays.count else {
+        let held = slots.filter { $0.state == .yours || $0.state == .clash }.map(\.weekday)
+        // The slots' weekdays are distinct, so this also refuses a day held twice.
+        guard myDays.count <= proposal.daysPerMember, myDays.sorted() == held else {
             throw .unreadable
         }
+        guard proposalID == nil || proposal.id == proposalID,
+            sent == nil || Set(sent ?? []) == Set(myDays),
+            expected == nil || expected == myState
+        else { throw .unreadable }
         self.init(
             id: proposal.id, version: proposal.version, reason: reason,
             daysPerMember: proposal.daysPerMember, slots: slots, myDays: myDays.sorted(),
@@ -188,6 +205,12 @@ extension ScheduleSlot {
     init(_ slot: Components.Schemas.ScheduleSlot) throws(APIFailure) {
         guard let weekday = Weekday(rawValue: slot.weekday.rawValue),
             let state = State(rawValue: slot.state.rawValue)
+        else { throw .unreadable }
+        // A name only where the contract gives one (FQ46, FQ48): the owner of a taken day, the
+        // holders of a clash, the one other holder of an available day.
+        guard slot.owner == nil || state == .taken,
+            slot.holders == nil || state == .clash,
+            slot.heldBy == nil || state == .available
         else { throw .unreadable }
         var firstDate: LocalDate?
         if let date = slot.firstDate {

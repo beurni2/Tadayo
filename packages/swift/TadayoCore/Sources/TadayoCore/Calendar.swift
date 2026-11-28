@@ -41,33 +41,33 @@ public struct ClubHome: Sendable, Equatable {
         self.clubToday = clubToday
         self.mode = mode
     }
-}
 
-/// The open day on Home (`HomeDay.day`, a `RevealedDay`), as far as B2 reads it: which day, the
-/// caller's place in it, where an add from it goes, and whether its page holds any card. No field
-/// of a drop is read into it: the feed is B5's (T10's other side).
-public struct OpenDay: Sendable, Equatable {
-    public let occurrence: Occurrence
-    /// `viewer.is_star`: the caller's own day ("Your Monday").
-    public let isStar: Bool
-    /// `viewer.joined_later`: the caller's membership began after the day started collecting, so
-    /// the day may be partly visible to them (spec 07), said without any number.
-    public let joinedLater: Bool
-    /// `add_target`: the occurrence an add from this page goes to, if any (T4).
-    public let addTarget: Occurrence?
-    /// Whether the page holds any card: a drop on its first page, or a page after it. An empty
-    /// page is the quiet day (H01-quiet).
-    public let holdsCards: Bool
+    /// The open day on Home (`HomeDay.day`, a `RevealedDay`), as far as B2 reads it: which day, the
+    /// caller's place in it, where an add from it goes, and whether its page holds any card. No field
+    /// of a drop is read into it: the feed is B5's (T10's other side).
+    public struct OpenDay: Sendable, Equatable {
+        public let occurrence: Occurrence
+        /// `viewer.is_star`: the caller's own day ("Your Monday").
+        public let isStar: Bool
+        /// `viewer.joined_later`: the caller's membership began after the day started collecting, so
+        /// the day may be partly visible to them (spec 07), said without any number.
+        public let joinedLater: Bool
+        /// `add_target`: the occurrence an add from this page goes to, if any (T4).
+        public let addTarget: Occurrence?
+        /// Whether the page holds any card: a drop on its first page, or a page after it. An empty
+        /// page is the quiet day (H01-quiet).
+        public let holdsCards: Bool
 
-    public init(
-        occurrence: Occurrence, isStar: Bool, joinedLater: Bool, addTarget: Occurrence?,
-        holdsCards: Bool
-    ) {
-        self.occurrence = occurrence
-        self.isStar = isStar
-        self.joinedLater = joinedLater
-        self.addTarget = addTarget
-        self.holdsCards = holdsCards
+        public init(
+            occurrence: Occurrence, isStar: Bool, joinedLater: Bool, addTarget: Occurrence?,
+            holdsCards: Bool
+        ) {
+            self.occurrence = occurrence
+            self.isStar = isStar
+            self.joinedLater = joinedLater
+            self.addTarget = addTarget
+            self.holdsCards = holdsCards
+        }
     }
 }
 
@@ -116,7 +116,8 @@ public struct ScheduleProposal: Sendable, Equatable, Identifiable {
     public let daysPerMember: Int
     /// Monday to Saturday, one each, in that order; never Sunday (T6).
     public let slots: [ScheduleSlot]
-    /// The weekdays the caller holds now, Monday first.
+    /// The weekdays the caller holds now, Monday first: exactly the slots that are `yours` or
+    /// `clash`.
     public let myDays: [Weekday]
     public let myState: MyState
     public let state: State
@@ -151,12 +152,13 @@ public struct ScheduleSlot: Sendable, Equatable, Identifiable {
 
     public let weekday: Weekday
     public let state: State
-    /// The member who confirmed a taken day (book p11; FQ78).
+    /// The member who confirmed a taken day (book p11; FQ78); on a taken day only.
     public let owner: Person?
     /// On a clash only, everyone who holds the day, the caller included, in roster order (FQ46);
     /// empty otherwise.
     public let holders: [Person]
-    /// On an available day, to a caller still choosing, the one other member who holds it (FQ48).
+    /// On an available day only, the one other member who holds it, which the server sends only
+    /// to a caller still choosing (FQ48).
     public let heldBy: Person?
     /// A confirmed day's first date, only where the server sends one (FQ79, FQ130); the app never
     /// works one out (T49).

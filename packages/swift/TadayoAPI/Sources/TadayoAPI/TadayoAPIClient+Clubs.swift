@@ -75,7 +75,11 @@ extension TadayoAPIClient: ClubService {
     {
         try await call { client in
             switch try await client.getSchedule(path: .init(clubId: clubID)) {
-            case .ok(let answer): return (try answer.body.json, now())
+            case .ok(let answer):
+                let schedule = try answer.body.json
+                // The week of the club asked for, and no other.
+                guard schedule.club.id == clubID else { throw APIFailure.unreadable }
+                return (schedule, now())
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
                 throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])

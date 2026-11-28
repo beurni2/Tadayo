@@ -28,8 +28,15 @@ import Testing
         LocalDate(year: year, month: month, day: day)!
     }
 
+    /// The club an example is for, which Home and the week are asked for.
+    func club(of name: String) -> String {
+        let answer = Data(ContractExample.json(name).utf8)
+        let object = (try? JSONSerialization.jsonObject(with: answer)) as? [String: Any]
+        return (object?["club"] as? [String: Any])?["id"] as? String ?? ""
+    }
+
     func home(_ name: String) async throws -> ClubHome {
-        try await api(CannedTransport([example(name)])).home(of: "club_sunday_people")
+        try await api(CannedTransport([example(name)])).home(of: club(of: name))
     }
 
     func schedule(_ name: String) async throws -> ClubSchedule {
@@ -82,7 +89,7 @@ import Testing
     @Test func theOpenDayKeepsItsFrameAlone() {
         // T10's other side and T55's: before B5 builds the feed, no field of a drop, its
         // highlights or its covers is read into the day, only whether the page holds a card.
-        let day = OpenDay(
+        let day = ClubHome.OpenDay(
             occurrence: Occurrence(
                 id: "occ", clubID: "club",
                 star: Person(membershipID: "mem", displayName: "Debby", avatarVersion: nil),
@@ -182,6 +189,7 @@ import Testing
             return
         }
         #expect(paused.club.name == "Kitchen table")
+        #expect(try await home("getHome.unavailable").club.name == "Kitchen table")
         #expect(recent.map(\.id) == ["occ_kt_ben_2026_11_02"])
     }
 
@@ -265,6 +273,16 @@ import Testing
             ])
     }
 
+    @Test func aWeekWithNoProposalHasNone() async throws {
+        let schedule = try await schedule("getSchedule.sunday_people")
+        #expect(schedule.proposal == nil)
+        #expect(schedule.week.assignments.map(\.weekday) == Weekday.allCases)
+        #expect(
+            schedule.week.assignments.map(\.person.displayName) == [
+                "Ben", "Maya", "Alex", "Sam", "Debby", "Nina",
+            ])
+    }
+
     @Test func theWeekAloneIsStillReadAsBefore() async throws {
         // Members (G05-members) reads `current` alone, as in B1, from the same call.
         let week = try await api(CannedTransport([example("getSchedule.first_days")]))
@@ -279,6 +297,8 @@ import Testing
     @Test func choosingSendsTheDaysHeldFromNowOnAndTheVersionSeen() async throws {
         let transport = CannedTransport([example("chooseScheduleDays.chosen")])
         let key = IdempotencyKey.make(at: start)
+        // Another tap, another key (T19).
+        let anotherKey = IdempotencyKey.make(at: start.addingTimeInterval(1))
         let proposal = try await api(transport).choose(
             [.monday], in: "spr_sp_1", expectedVersion: 1, key: key)
         let sent = try #require(transport.sent.first)
@@ -293,20 +313,30 @@ import Testing
         #expect(lines(proposal)[4] == "friday no_reveal")
 
         let contest = try await api(CannedTransport([example("chooseScheduleDays.joined_contest")]))
-            .choose([.friday], in: "spr_sp_1", expectedVersion: 1, key: key)
+            .choose([.friday], in: "spr_sp_1", expectedVersion: 1, key: anotherKey)
         #expect(lines(contest)[4] == "friday clash holders Ben/Alex/Sam/Debby")
     }
 
     @Test func choosingNoDaySendsNone() async throws {
-        let transport = CannedTransport([example("chooseScheduleDays.chosen")])
-        _ = try await api(transport).choose(
+        // The caller sets their one day aside: Monday stays suggested, and they hold nothing.
+        let answer = ContractExample.json("chooseScheduleDays.chosen")
+            .replacingOccurrences(
+                of: #"{"weekday":"monday","state":"yours","suggested":true}"#,
+                with: #"{"weekday":"monday","state":"available","suggested":true}"#
+            )
+            .replacingOccurrences(of: #""my_days":["monday"]"#, with: #""my_days":[]"#)
+        let transport = CannedTransport([.json(200, answer)])
+        let proposal = try await api(transport).choose(
             [], in: "spr_sp_1", expectedVersion: 1, key: IdempotencyKey.make(at: start))
         #expect(transport.sent.first?.json["weekdays"] as? [String] == [])
+        #expect(proposal.myDays.isEmpty)
+        #expect(lines(proposal)[0] == "monday available suggested")
     }
 
     @Test func confirmingNamesTheDaysConfirmed() async throws {
         let transport = CannedTransport([example("confirmScheduleDays.confirmed")])
         let key = IdempotencyKey.make(at: start)
+        let anotherKey = IdempotencyKey.make(at: start.addingTimeInterval(1))
         let proposal = try await api(transport).confirm(
             [.friday], in: "spr_kt_2", expectedVersion: 1, key: key)
         let sent = try #require(transport.sent.first)
@@ -324,25 +354,29 @@ import Testing
         let first = try await api(
             CannedTransport([example("confirmScheduleDays.first_day_confirmed")])
         )
-        .confirm([.monday], in: "spr_sp_1", expectedVersion: 1, key: key)
+        .confirm([.monday], in: "spr_sp_1", expectedVersion: 1, key: anotherKey)
         #expect(first.state == .open)
         #expect(lines(first)[0] == "monday yours from 2026-11-09 suggested")
     }
 
     @Test func twoDaysGoMondayFirst() async throws {
-        let transport = CannedTransport([example("chooseScheduleDays.chosen")])
-        _ = try await api(transport).choose(
-            [.saturday, .tuesday], in: "spr_sp_1", expectedVersion: 1,
-            key: IdempotencyKey.make(at: start))
-        // Sent as the person chose them; the server reads them as a set.
-        #expect(transport.sent.first?.json["weekdays"] as? [String] == ["saturday", "tuesday"])
+        // Two days each: the caller holds Monday and Saturday, chosen Saturday first.
         let answer = ContractExample.json("chooseScheduleDays.chosen")
             .replacingOccurrences(of: #""days_per_member":1"#, with: #""days_per_member":2"#)
             .replacingOccurrences(
-                of: #""my_days":["monday"]"#, with: #""my_days":["saturday","monday"]"#)
-        let proposal = try await api(CannedTransport([.json(200, answer)])).choose(
-            [.monday, .saturday], in: "spr_sp_1", expectedVersion: 1,
+                of: #""my_days":["monday"]"#, with: #""my_days":["saturday","monday"]"#
+            )
+            .replacingOccurrences(
+                of:
+                    #"{"weekday":"saturday","state":"available","held_by":{"membership_id":"mem_sp_nina","display_name":"Nina"},"suggested":false}"#,
+                with: #"{"weekday":"saturday","state":"yours","suggested":false}"#)
+        #expect(answer.contains(#""weekday":"saturday","state":"yours""#))
+        let transport = CannedTransport([.json(200, answer)])
+        let proposal = try await api(transport).choose(
+            [.saturday, .monday], in: "spr_sp_1", expectedVersion: 1,
             key: IdempotencyKey.make(at: start))
+        // Sent as the person chose them, which the server reads as a set; held Monday first.
+        #expect(transport.sent.first?.json["weekdays"] as? [String] == ["saturday", "monday"])
         #expect(proposal.myDays == [.monday, .saturday])
         #expect(proposal.daysPerMember == 2)
     }
@@ -387,35 +421,155 @@ import Testing
         }
 
         let chosen = ContractExample.json("chooseScheduleDays.chosen")
-        let proposals = [
-            // Five weekdays, or Saturday twice.
-            chosen.replacingOccurrences(
-                of: #"{"weekday":"saturday","state":"available","#,
-                with: #"{"weekday":"friday","state":"available","#),
-            // More days held than a member holds, or the same day twice.
-            chosen.replacingOccurrences(
-                of: #""my_days":["monday"]"#, with: #""my_days":["monday","tuesday"]"#),
-            chosen.replacingOccurrences(
-                of: #""days_per_member":1"#, with: #""days_per_member":3"#),
-            chosen.replacingOccurrences(of: #""state":"open""#, with: #""state":"withdrawn""#),
-            chosen.replacingOccurrences(of: #""state":"no_reveal""#, with: #""state":"hidden""#),
+        let alex = #"{"membership_id":"mem_sp_alex","display_name":"Alex"}"#
+        let maya =
+            #"{"membership_id":"mem_sp_maya","display_name":"Maya","avatar_version":"av_maya_1"}"#
+        let monday = #"{"weekday":"monday","state":"yours","suggested":true}"#
+        let tuesday =
+            #"{"weekday":"tuesday","state":"available","held_by":"# + maya
+            + #","suggested":false}"#
+        let wednesday = #"{"weekday":"wednesday","state":"available","suggested":false}"#
+        let friday = #"{"weekday":"friday","state":"no_reveal","suggested":false}"#
+        // Each answer, with the days the choice sent, so that it breaks one rule alone.
+        let proposals: [(String, [Weekday])] = [
+            // Friday twice and no Saturday.
+            (
+                chosen.replacingOccurrences(
+                    of: #"{"weekday":"saturday","state":"available","#,
+                    with: #"{"weekday":"friday","state":"available","#), [.monday]
+            ),
+            // Two days held where each member holds one.
+            (
+                chosen.replacingOccurrences(
+                    of: #""my_days":["monday"]"#, with: #""my_days":["monday","tuesday"]"#
+                )
+                .replacingOccurrences(
+                    of: tuesday, with: #"{"weekday":"tuesday","state":"yours","suggested":false}"#),
+                [.monday, .tuesday]
+            ),
+            // Three days each, which no club size gives.
+            (
+                chosen.replacingOccurrences(
+                    of: #""days_per_member":1"#, with: #""days_per_member":3"#), [.monday]
+            ),
+            // The caller's days aren't the days the slots say they hold.
+            (
+                chosen.replacingOccurrences(
+                    of: #""my_days":["monday"]"#, with: #""my_days":["tuesday"]"#), [.tuesday]
+            ),
+            // The same day twice.
+            (
+                chosen.replacingOccurrences(
+                    of: #""days_per_member":1"#, with: #""days_per_member":2"#
+                )
+                .replacingOccurrences(
+                    of: #""my_days":["monday"]"#, with: #""my_days":["monday","monday"]"#),
+                [.monday]
+            ),
+            // A state this build doesn't know, for the proposal and for a slot.
+            (
+                chosen.replacingOccurrences(of: #""state":"open""#, with: #""state":"withdrawn""#),
+                [.monday]
+            ),
+            (
+                chosen.replacingOccurrences(
+                    of: #""state":"no_reveal""#, with: #""state":"hidden""#),
+                [.monday]
+            ),
+            // A name on a day the contract gives none (FQ46, FQ48): holders on a contest the
+            // caller isn't in, another holder on the caller's own day, an owner on a free day.
+            (
+                chosen.replacingOccurrences(
+                    of: friday,
+                    with: #"{"weekday":"friday","state":"no_reveal","holders":["# + alex + ","
+                        + maya + #"],"suggested":false}"#), [.monday]
+            ),
+            (
+                chosen.replacingOccurrences(
+                    of: monday,
+                    with: #"{"weekday":"monday","state":"yours","held_by":"# + alex
+                        + #","suggested":true}"#), [.monday]
+            ),
+            (
+                chosen.replacingOccurrences(
+                    of: wednesday,
+                    with: #"{"weekday":"wednesday","state":"available","owner":"# + alex
+                        + #","suggested":false}"#), [.monday]
+            ),
         ]
-        for answer in proposals {
+        for (answer, sent) in proposals {
             #expect(answer != chosen)
             await #expect(throws: APIFailure.unreadable, "\(answer)") {
                 try await api(CannedTransport([.json(200, answer)])).choose(
-                    [.monday], in: "spr_sp_1", expectedVersion: 1,
-                    key: IdempotencyKey.make(at: start))
+                    sent, in: "spr_sp_1", expectedVersion: 1, key: IdempotencyKey.make(at: start))
             }
         }
-        // An answer for another proposal than the one the choice was sent to.
-        await #expect(throws: APIFailure.unreadable) {
-            try await api(CannedTransport([example("chooseScheduleDays.chosen")])).choose(
-                [.monday], in: "spr_sp_2", expectedVersion: 1, key: IdempotencyKey.make(at: start))
+        // An answer that doesn't answer what was asked: another proposal, other days than those
+        // sent, a confirmed caller after a choice, a caller still choosing after a confirmation.
+        let key = IdempotencyKey.make(at: start)
+        let unasked: [(String, CannedTransport.Answer, (TadayoAPIClient) async throws -> Void)] = [
+            (
+                "another proposal", example("chooseScheduleDays.chosen"),
+                { _ = try await $0.choose([.monday], in: "spr_sp_2", expectedVersion: 1, key: key) }
+            ),
+            (
+                "another proposal confirmed", example("confirmScheduleDays.confirmed"),
+                {
+                    _ = try await $0.confirm(
+                        [.friday], in: "spr_sp_1", expectedVersion: 1, key: key)
+                }
+            ),
+            (
+                "other days", example("chooseScheduleDays.chosen"),
+                {
+                    _ = try await $0.choose(
+                        [.tuesday], in: "spr_sp_1", expectedVersion: 1, key: key)
+                }
+            ),
+            (
+                "confirmed after a choice", example("confirmScheduleDays.first_day_confirmed"),
+                { _ = try await $0.choose([.monday], in: "spr_sp_1", expectedVersion: 1, key: key) }
+            ),
+            (
+                "choosing after a confirmation", example("chooseScheduleDays.chosen"),
+                {
+                    _ = try await $0.confirm(
+                        [.monday], in: "spr_sp_1", expectedVersion: 1, key: key)
+                }
+            ),
+            (
+                "another club's Home", example("getHome.waiting"),
+                { _ = try await $0.home(of: "club_kitchen_table") }
+            ),
+            (
+                "another club's week", example("getSchedule.conflict_three"),
+                { _ = try await $0.clubSchedule(of: "club_kitchen_table") }
+            ),
+            (
+                "another club's week, read for Members", example("getSchedule.sunday_people"),
+                { _ = try await $0.schedule(of: "club_kitchen_table") }
+            ),
+        ]
+        for (name, answer, call) in unasked {
+            await #expect(throws: APIFailure.unreadable, "\(name)") {
+                try await call(api(CannedTransport([answer])))
+            }
         }
-        await #expect(throws: APIFailure.unreadable) {
-            try await api(CannedTransport([example("confirmScheduleDays.confirmed")])).confirm(
-                [.friday], in: "spr_sp_1", expectedVersion: 1, key: IdempotencyKey.make(at: start))
+        // A success the contract doesn't list, a body that isn't JSON, an answer without its
+        // `Cache-Control`.
+        for operation in CalendarOperation.allCases {
+            let undocumented: [CannedTransport.Answer] = [
+                .response(status: 201, body: "", headers: [:]),
+                .json(200, "not json"),
+                .response(
+                    status: 200, body: ContractExample.json(operation.example),
+                    headers: ["Content-Type": "application/json"]),
+            ]
+            for answer in undocumented {
+                await #expect(throws: APIFailure.unreadable, "\(operation) \(answer)") {
+                    try await operation.call(on: api(CannedTransport([answer])), self)
+                }
+            }
         }
         // A first date that isn't a date, in the week's read.
         let firstDays = ContractExample.json("getSchedule.first_days")
@@ -432,10 +586,15 @@ import Testing
 
     @Test func aNotFoundIsTheSameWhateverItWasFor() async {
         // T14: one answer for a club or proposal the caller can't see, whatever the reason.
-        let notFound = CannedTransport.Answer.json(404, #"{"code":"NOT_FOUND"}"#)
+        // Its body isn't read for a reason: one naming another code is the same not-found.
+        let answers: [CannedTransport.Answer] = [
+            .json(404, #"{"code":"NOT_FOUND"}"#), .json(404, #"{"code":"NOT_ALLOWED"}"#),
+        ]
         for operation in CalendarOperation.allCases {
-            await #expect(throws: APIFailure.notFound, "\(operation)") {
-                try await operation.call(on: api(CannedTransport([notFound])), self)
+            for notFound in answers {
+                await #expect(throws: APIFailure.notFound, "\(operation) \(notFound)") {
+                    try await operation.call(on: api(CannedTransport([notFound])), self)
+                }
             }
         }
     }
@@ -535,9 +694,9 @@ import Testing
         }
     }
 
-    @Test func aReadRejectedAgainAfterTheRefreshSignsOutAndCarriesNoKey() async throws {
+    @Test func aCallRejectedAgainAfterTheRefreshSignsOutAndAReadCarriesNoKey() async throws {
         let unauthenticated = CannedTransport.Answer.json(401, #"{"code":"UNAUTHENTICATED"}"#)
-        for operation in CalendarOperation.allCases where !operation.isCommand {
+        for operation in CalendarOperation.allCases {
             let auth = RefreshingAuth([
                 .success(
                     AuthSession(
@@ -550,6 +709,7 @@ import Testing
             }
             #expect(auth.refreshes == 1, "\(operation)")
 
+            guard !operation.isCommand else { continue }
             let read = CannedTransport([example(operation.example)])
             try await operation.call(on: api(read), self)
             #expect(
