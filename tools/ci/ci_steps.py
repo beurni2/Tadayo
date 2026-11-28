@@ -28,6 +28,9 @@ targets:
 
   setup-pnpm    installs the pnpm that package.json's `packageManager` names
   install       pnpm install --frozen-lockfile
+  audit         pnpm audit --prod: fails on a high or critical advisory in a production
+                dependency; the whole tree's advisories, dev tools' included, are printed, not
+                failed on (the outside audit's B6; docs/plans/api-b2-supply-chain.md)
   lint, typecheck, format, copy-lint   the root scripts of the same names (format: format:check)
   db-check      the Postgres service answers, at toolchain.POSTGRES_MAJOR
   tools-tests   every tools/ci/*_test.py, each through `python3 -I -m unittest discover` with
@@ -141,6 +144,13 @@ PACKAGES_ENTRY = re.compile(r"""^  - (?:'([A-Za-z0-9_.*][A-Za-z0-9_./*-]*)'|"([A
 DENIED_BUILD = re.compile(r"""^  (?:'([^'\\\s${}]+)'|"([^"\\\s${}]+)"|([@A-Za-z0-9][@A-Za-z0-9._/|^~<>= -]*?))"""
                           r": +false(?: +#[ -~]*| *)$")
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
+# pnpm audit's severities, in its words and order. An advisory at FAILING_SEVERITIES in a
+# production dependency fails the audit step; any other is printed.
+SEVERITIES = ("info", "low", "moderate", "high", "critical")
+FAILING_SEVERITIES = ("high", "critical")
+# Each `pnpm audit` asks the registry once; pnpm's own retries of a registry that doesn't answer
+# take several minutes, so the step gives up first, inside the node job's limit (ci.yml).
+AUDIT_SECONDS = 240
 
 
 def targets_of(step):
@@ -171,6 +181,17 @@ class Shell:
         result = subprocess.run(cmd, cwd=self.root, env=self._env(env), capture_output=True,
                                 text=True)
         return result.returncode, result.stdout + result.stderr
+
+    def report(self, cmd, timeout):
+        """(exit code, standard output) of cmd, whose standard error goes to the job's log, so a
+        warning there never breaks what it prints; (None, "") once it outlasts timeout seconds."""
+        print("+ " + " ".join(cmd), flush=True)
+        try:
+            result = subprocess.run(cmd, cwd=self.root, stdout=subprocess.PIPE, text=True,
+                                    timeout=timeout)
+        except subprocess.TimeoutExpired:
+            return None, ""
+        return result.returncode, result.stdout
 
     @staticmethod
     def _env(extra):
@@ -397,6 +418,84 @@ class Steps:
     def install(self):
         return self.pnpm("install", ["install", "--frozen-lockfile"])
 
+    def audit_report(self, args):
+        """(pnpm audit's counts by severity, its advisories' lines) for `pnpm audit <args> --json`,
+        or (None, why) when it gives no report this reads: it took too long, it isn't JSON, or a
+        count or an advisory isn't where pnpm 12 puts it. The counts are pnpm's metadata, which
+        an ignore setting leaves whole, as it leaves out only the advisory's entry (2026-11-28)."""
+        cmd = ["pnpm", "audit", *args, "--json"]
+        code, out = self.shell.report(cmd, AUDIT_SECONDS)
+        if code is None:
+            return None, f"`{' '.join(cmd)}` gave no answer in {AUDIT_SECONDS} seconds"
+        try:
+            report = json.loads(out)
+        except ValueError:
+            report = None
+        error = report.get("error") if isinstance(report, dict) else None
+        if isinstance(error, dict):
+            return None, (f"`{' '.join(cmd)}` failed (exit {code}): pnpm's error "
+                          f"{str(error.get('code'))!r}")
+        if not isinstance(report, dict):
+            report = {}
+        metadata = report.get("metadata")
+        counts = metadata.get("vulnerabilities") if isinstance(metadata, dict) else None
+        advisories = report.get("advisories")
+        if (not isinstance(counts, dict) or not isinstance(advisories, dict)
+                or any(type(counts.get(severity)) is not int or counts[severity] < 0
+                       for severity in SEVERITIES)):
+            return None, (f"`{' '.join(cmd)}` (exit {code}) gave no report this step reads: "
+                          "it needs metadata.vulnerabilities, a count for each severity, and "
+                          "advisories")
+        listed = {severity: 0 for severity in SEVERITIES}
+        lines = []
+        for advisory in advisories.values():
+            severity = advisory.get("severity") if isinstance(advisory, dict) else None
+            if severity not in SEVERITIES:
+                return None, (f"`{' '.join(cmd)}` lists an advisory whose severity "
+                              f"{str(severity)!r} isn't one of {', '.join(SEVERITIES)}")
+            listed[severity] += 1
+            words = (f"{severity} {advisory.get('github_advisory_id') or advisory.get('id')} "
+                     f"{advisory.get('module_name')}: {advisory.get('title')}")
+            lines.append((SEVERITIES.index(severity), "  " + " ".join(words.split())))
+        # A count is pnpm's or the list's, whichever is higher, so neither can hide an advisory.
+        return ({severity: max(counts[severity], listed[severity]) for severity in SEVERITIES},
+                [line for _, line in sorted(lines, key=lambda pair: -pair[0])])
+
+    @staticmethod
+    def counted(counts):
+        return ", ".join(f"{counts[severity]} {severity}" for severity in reversed(SEVERITIES))
+
+    def audit(self):
+        problem = self.pnpm_settings_problem()
+        if problem:
+            print(f"ci: audit: {problem}")
+            return 1
+        production, said = self.audit_report(["--prod"])
+        if production is None:
+            print(f"ci: audit: {said}, so the production dependencies are unchecked")
+            return 1
+        # The whole tree, for the log only: dev tools' advisories never reach the image
+        # (Dockerfile: `pnpm install --frozen-lockfile --prod`), so they are printed, not failed on.
+        everything, whole = self.audit_report([])
+        if everything is None:
+            print(f"ci: audit: the whole tree: {whole}; printed only, so the step goes on")
+        else:
+            print(f"ci: audit: the whole tree, dev tools' included, printed and not failed on: "
+                  f"{self.counted(everything)}")
+            for line in whole:
+                print(line)
+        print(f"ci: audit: the production dependencies: {self.counted(production)}")
+        for line in said:
+            print(line)
+        failing = sum(production[severity] for severity in FAILING_SEVERITIES)
+        if failing:
+            print(f"ci: audit: failed: {failing} high or critical advisory(ies) in the production "
+                  "dependencies, which the image installs: update them (pnpm-lock.yaml); one with "
+                  "no fixed version yet is the founder's call (docs/LIMITATIONS.md)")
+            return 1
+        print("ci: audit: passed: no high or critical advisory in a production dependency")
+        return 0
+
     def lint(self):
         return self.root_script("lint")
 
@@ -549,8 +648,9 @@ class Steps:
 
 
 STEPS = {
-    "setup-pnpm": Steps.setup_pnpm, "install": Steps.install, "lint": Steps.lint,
-    "typecheck": Steps.typecheck, "format": Steps.format, "copy-lint": Steps.copy_lint,
+    "setup-pnpm": Steps.setup_pnpm, "install": Steps.install, "audit": Steps.audit,
+    "lint": Steps.lint, "typecheck": Steps.typecheck, "format": Steps.format,
+    "copy-lint": Steps.copy_lint,
     "openapi": Steps.openapi, "unit": Steps.unit, "web": Steps.web, "db-check": Steps.db_check,
     "db-bootstrap": Steps.db_bootstrap, "db-tests": Steps.db_tests, "privacy": Steps.privacy,
     "tools-tests": Steps.tools_tests, "swift": Steps.swift, "guards": Steps.guards,

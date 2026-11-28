@@ -36,6 +36,25 @@ packages:
 WORKSPACE_READING = {"packages": ["apps/web", "packages/*", "services/api", "tests"]}
 
 
+def audit_json(counts=None, advisories=()):
+    """A report shaped as pnpm 12.16.1's `pnpm audit --json` printed it on 2026-11-28: each
+    advisory (severity, GitHub's id, package) keyed by the registry's number, and the counts by
+    severity in metadata."""
+    vulnerabilities = {"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, **(counts or {})}
+    return json.dumps({
+        "advisories": {str(1115806 + n): {
+            "id": 1115806 + n, "github_advisory_id": ghsa, "module_name": module, "severity": severity,
+            "title": f"{module} vulnerable to something", "url": f"https://github.com/advisories/{ghsa}",
+            "vulnerable_versions": "<1.0.0", "patched_versions": ">=1.0.0", "findings": [], "cwe": []}
+            for n, (severity, ghsa, module) in enumerate(advisories)},
+        "metadata": {"vulnerabilities": vulnerabilities, "dependencies": 56, "devDependencies": 0,
+                     "optionalDependencies": 42, "totalDependencies": 98},
+    }, indent=2) + "\n"
+
+
+CLEAN_AUDIT = audit_json()
+
+
 class FakeShell:
     def __init__(self, codes=None, outputs=None, pnpm_reading=None):
         self.commands = []
@@ -59,6 +78,12 @@ class FakeShell:
             return 0, json.dumps(self.pnpm_reading.get(cmd[3]), indent=2) + "\n"
         self.commands.append(cmd)
         return self.outputs.get(cmd[0], (0, ""))
+
+    def report(self, cmd, timeout):
+        # The audit step's reports, by the command's words after `pnpm`: a clean one when not given.
+        self.commands.append(cmd)
+        self.timeouts = getattr(self, "timeouts", []) + [timeout]
+        return self.outputs.get(" ".join(cmd[1:]), (0, CLEAN_AUDIT))
 
 
 class Repo:
@@ -168,8 +193,8 @@ class WorkspaceTest(StepsTest):
 class PnpmSettingsTest(StepsTest):
     # The privacy and security review's case: one pnpm setting, or a pnpmfile, could make every
     # pnpm script report success without running, outside guard 1's paths.
-    PNPM_STEPS = ["install", "lint", "typecheck", "format", "copy-lint", "openapi", "unit", "web",
-                  "db-tests", "privacy"]
+    PNPM_STEPS = ["install", "audit", "lint", "typecheck", "format", "copy-lint", "openapi", "unit",
+                  "web", "db-tests", "privacy"]
 
     def setUp(self):
         super().setUp()
@@ -196,7 +221,8 @@ class PnpmSettingsTest(StepsTest):
                 shell = FakeShell(pnpm_reading=pnpm_reading)
                 code, out = self.step(step, shell=shell)
                 self.assertEqual(code, 0, out)
-                self.assertEqual(len(shell.commands), 1)
+                # audit asks pnpm twice: the production dependencies, then the whole tree.
+                self.assertEqual(len(shell.commands), 2 if step == "audit" else 1)
                 # Each step asked pnpm for its own reading of both settings first.
                 self.assertEqual(shell.queries, self.QUERIES)
 
@@ -495,6 +521,155 @@ class RootStepsTest(StepsTest):
                 shell = FakeShell()
                 self.assertEqual(self.step("setup-pnpm", shell=shell)[0], 1)
                 self.assertEqual(shell.commands, [])
+
+
+class AuditStepTest(StepsTest):
+    """pnpm audit (the outside audit's B6): a high or critical advisory in a production dependency
+    fails the step; the whole tree's are printed; a report the step can't read fails it."""
+
+    PRODUCTION = "audit --prod --json"
+    EVERYTHING = "audit --json"
+
+    def audit(self, production=None, everything=None):
+        outputs = {}
+        if production is not None:
+            outputs[self.PRODUCTION] = production
+        if everything is not None:
+            outputs[self.EVERYTHING] = everything
+        shell = FakeShell(outputs=outputs)
+        code, out = self.step("audit", shell=shell)
+        return code, out, shell
+
+    def test_a_clean_report_passes_after_both_audits(self):
+        code, out, shell = self.audit()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(shell.commands, [["pnpm", "audit", "--prod", "--json"], ["pnpm", "audit", "--json"]])
+        self.assertEqual(shell.timeouts, [ci_steps.AUDIT_SECONDS] * 2)
+        self.assertEqual(out.splitlines(), [
+            "ci: audit: the whole tree, dev tools' included, printed and not failed on: "
+            "0 critical, 0 high, 0 moderate, 0 low, 0 info",
+            "ci: audit: the production dependencies: 0 critical, 0 high, 0 moderate, 0 low, 0 info",
+            "ci: audit: passed: no high or critical advisory in a production dependency",
+        ])
+
+    def test_a_high_or_critical_advisory_in_production_fails(self):
+        for severity in ci_steps.FAILING_SEVERITIES:
+            with self.subTest(severity=severity):
+                report = audit_json({severity: 1}, [(severity, "GHSA-aaaa-bbbb-cccc", "left-pad")])
+                code, out, shell = self.audit(production=(1, report))
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"  {severity} GHSA-aaaa-bbbb-cccc left-pad: left-pad vulnerable to something\n", out)
+                self.assertIn("ci: audit: failed: 1 high or critical advisory(ies) in the production dependencies", out)
+                # The whole tree was still printed first.
+                self.assertEqual(len(shell.commands), 2)
+
+    def test_lower_advisories_in_production_are_printed_and_pass(self):
+        report = audit_json({"moderate": 1, "low": 1, "info": 1},
+                            [("low", "GHSA-low0-0000-0000", "a"), ("moderate", "GHSA-mod0-0000-0000", "b"),
+                             ("info", "GHSA-info-0000-0000", "c")])
+        code, out, _ = self.audit(production=(1, report))
+        self.assertEqual(code, 0, out)
+        lines = out.splitlines()
+        start = lines.index("ci: audit: the production dependencies: 0 critical, 0 high, 1 moderate, 1 low, 1 info")
+        # The most severe first.
+        self.assertEqual(lines[start + 1:start + 4], [
+            "  moderate GHSA-mod0-0000-0000 b: b vulnerable to something",
+            "  low GHSA-low0-0000-0000 a: a vulnerable to something",
+            "  info GHSA-info-0000-0000 c: c vulnerable to something"])
+        self.assertTrue(lines[-1].startswith("ci: audit: passed"))
+
+    def test_dev_tools_advisories_are_printed_not_failed_on(self):
+        # As on 2026-11-28: the whole tree had 2 high (lodash and @faker-js/faker, dev tools only).
+        everything = audit_json({"high": 2, "moderate": 3, "low": 1},
+                                [("high", "GHSA-r5fr-rjxr-66jc", "lodash"), ("high", "GHSA-qxc2-j82w-r537", "@faker-js/faker")])
+        code, out, _ = self.audit(everything=(1, everything))
+        self.assertEqual(code, 0, out)
+        self.assertIn("printed and not failed on: 0 critical, 2 high, 3 moderate, 1 low, 0 info\n", out)
+        self.assertIn("  high GHSA-r5fr-rjxr-66jc lodash: lodash vulnerable to something\n", out)
+
+    def test_a_count_the_list_leaves_out_still_fails(self):
+        # An ignore setting takes the advisory's entry out of pnpm's list, but not its count.
+        code, out, _ = self.audit(production=(1, audit_json({"critical": 1})))
+        self.assertEqual(code, 1, out)
+        self.assertIn("ci: audit: the production dependencies: 1 critical, 0 high", out)
+        self.assertIn("failed: 1 high or critical", out)
+
+    def test_a_listed_advisory_the_counts_leave_out_still_fails(self):
+        code, out, _ = self.audit(production=(1, audit_json({}, [("high", "GHSA-aaaa-bbbb-cccc", "x")])))
+        self.assertEqual(code, 1, out)
+        self.assertIn("failed: 1 high or critical", out)
+
+    def test_a_production_report_it_can_t_read_fails_and_nothing_more_runs(self):
+        good = json.loads(CLEAN_AUDIT)
+
+        def changed(change):
+            report = json.loads(CLEAN_AUDIT)
+            change(report)
+            return json.dumps(report)
+        cases = {
+            "not json": (1, "ERR_PNPM_AUDIT_BAD_RESPONSE The audit endpoint responded with 500"),
+            "empty": (0, ""),
+            "a list": (0, "[]"),
+            "a warning before it": (0, "WARN something\n" + CLEAN_AUDIT),
+            "no metadata": (0, json.dumps({"advisories": {}})),
+            "no counts": (0, json.dumps({"advisories": {}, "metadata": {}})),
+            "no advisories": (0, json.dumps({"metadata": good["metadata"]})),
+            "advisories as a list": (0, changed(lambda r: r.update(advisories=[]))),
+            "a count missing": (0, changed(lambda r: r["metadata"]["vulnerabilities"].pop("critical"))),
+            "a count as text": (0, changed(lambda r: r["metadata"]["vulnerabilities"].update(high="0"))),
+            "a count as true": (0, changed(lambda r: r["metadata"]["vulnerabilities"].update(high=True))),
+            "a count below zero": (0, changed(lambda r: r["metadata"]["vulnerabilities"].update(high=-1))),
+            "a count as a float": (0, changed(lambda r: r["metadata"]["vulnerabilities"].update(high=0.0))),
+        }
+        for name, answer in cases.items():
+            with self.subTest(case=name):
+                code, out, shell = self.audit(production=answer)
+                self.assertEqual(code, 1, out)
+                self.assertIn("ci: audit: `pnpm audit --prod --json` (exit", out)
+                self.assertIn("gave no report this step reads", out)
+                self.assertIn("so the production dependencies are unchecked", out)
+                self.assertEqual(shell.commands, [["pnpm", "audit", "--prod", "--json"]])
+
+    def test_pnpm_s_error_and_an_unknown_severity_and_no_answer_fail(self):
+        code, out, _ = self.audit(production=(1, json.dumps({"error": {"code": "ERR_PNPM_FETCH_500",
+                                                                       "message": "x"}})))
+        self.assertEqual(code, 1, out)
+        self.assertIn("`pnpm audit --prod --json` failed (exit 1): pnpm's error 'ERR_PNPM_FETCH_500'", out)
+        report = json.loads(audit_json({}, [("high", "GHSA-aaaa-bbbb-cccc", "x")]))
+        next(iter(report["advisories"].values()))["severity"] = "severe"
+        code, out, _ = self.audit(production=(1, json.dumps(report)))
+        self.assertEqual(code, 1, out)
+        self.assertIn("lists an advisory whose severity 'severe' isn't one of info, low, moderate, high, critical", out)
+        code, out, shell = self.audit(production=(None, ""))
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"`pnpm audit --prod --json` gave no answer in {ci_steps.AUDIT_SECONDS} seconds, "
+                      "so the production dependencies are unchecked", out)
+        self.assertEqual(len(shell.commands), 1)
+
+    def test_a_whole_tree_report_it_can_t_read_is_said_and_the_step_goes_on(self):
+        for answer in [(None, ""), (1, "not json")]:
+            with self.subTest(answer=answer):
+                code, out, _ = self.audit(everything=answer)
+                self.assertEqual(code, 0, out)
+                self.assertIn("ci: audit: the whole tree: `pnpm audit --json`", out)
+                self.assertIn("printed only, so the step goes on", out)
+                self.assertTrue(out.splitlines()[-1].startswith("ci: audit: passed"))
+        # and a failing production report still fails beside it
+        code, _, _ = self.audit(production=(1, audit_json({"high": 1})), everything=(None, ""))
+        self.assertEqual(code, 1)
+
+    def test_the_real_shell_keeps_standard_error_out_and_gives_up_in_time(self):
+        temp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, temp)
+        shell = ci_steps.Shell(temp)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code, said = shell.report([sys.executable, "-c", "import sys; print('{}'); "
+                                       "print('ci_steps_test: a line on standard error, kept out', file=sys.stderr); "
+                                       "sys.exit(1)"], 30)
+        self.assertEqual((code, said), (1, "{}\n"))
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(shell.report([sys.executable, "-c", "import time; time.sleep(30)"], 0.5), (None, ""))
 
 
 class DatabaseStepsTest(StepsTest):
@@ -973,6 +1148,14 @@ class WorkflowTest(unittest.TestCase):
                  "      - name: note", "        if: always()", "        run: |",
                  "          if: always()"]
         self.assertEqual(read_ci_job(lines), (["node", "ci"], ["node"], False))
+
+    def test_the_node_job_audits_once_its_packages_are_installed(self):
+        # The audit reads pnpm-lock.yaml and asks the registry; it runs once, in the node job.
+        text = self.ci_yml()
+        self.assertEqual(text.count("ci_steps.py audit"), 1)
+        self.assertIn("      - run: python3 tools/ci/ci_steps.py install\n"
+                      "      - run: python3 tools/ci/ci_steps.py audit\n"
+                      "      - run: python3 tools/ci/ci_steps.py lint\n", text)
 
     def test_the_postgres_service_is_made_like_supabase_s(self):
         # ADR-026: the service's first role is supabase_admin, ADMIN_URL's user.

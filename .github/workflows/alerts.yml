@@ -1,0 +1,55 @@
+# alerts: tells the founder of dev's failures as a GitHub issue, every 15 minutes or by hand
+# (FQ150; the outside audit's B7; docs/plans/api-b2-failure-alerts.md section 1.5).
+# Thin on purpose: every step calls tools/ci/ops_steps.py or ci_steps.py, where the logic and its
+# tests live (ops_steps_test.py reads this file). Its one job runs tools/ops's failure-alert and
+# holds only that script's secrets.
+# GitHub runs a schedule only from the default branch, and may start a run late or drop it; the
+# counts wait in the database for the next run (docs/LIMITATIONS.md, 2026-11-28).
+# CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
+name: alerts
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch: {}
+
+permissions: {}
+
+# A run never overlaps another, and one that has begun is never cancelled. The job holds no Fly
+# token and changes nothing ops changes, so it keeps out of ops-dev.
+concurrency:
+  group: alerts-dev
+  cancel-in-progress: false
+
+env:
+  OPS_SCRIPT: failure-alert
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  failure-alert:
+    name: failure-alert
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read  # to check the repository out
+      issues: write  # to open, comment on and lock the alert's issue (tools/ops/src/failure-alert.ts)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - name: failure-alert
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: python3 tools/ci/ops_steps.py run

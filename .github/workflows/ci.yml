@@ -37,6 +37,7 @@ jobs:
           package-manager-cache: false
       - run: python3 tools/ci/ci_steps.py setup-pnpm
       - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ci_steps.py audit
       - run: python3 tools/ci/ci_steps.py lint
       - run: python3 tools/ci/ci_steps.py typecheck
       - run: python3 tools/ci/ci_steps.py format
