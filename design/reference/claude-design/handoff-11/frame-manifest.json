@@ -1,0 +1,7321 @@
+{
+  "handoff": 11,
+  "stage": "B1",
+  "brandRevision": "1.1",
+  "coordinateSpace": "content geometry plus viewportTarget and native-modal rectangles",
+  "frames": [
+    {
+      "order": 1,
+      "name": "G01-invite-people-remove",
+      "title": "G01-invite-people-remove",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G01-invite-people-remove.svg",
+      "png": "frames/G01-invite-people-remove.png",
+      "theme": "light",
+      "textSize": "large",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Create a club",
+        "Invite your people",
+        "Sunday people",
+        "Each person gets a separate link.",
+        "Maya",
+        "Shared",
+        "Share again",
+        "Alex",
+        "Not shared",
+        "Share link",
+        "Sam",
+        "Not shared",
+        "Share link",
+        "Debby",
+        "Accepted",
+        "Nina",
+        "Not shared",
+        "Share link",
+        "Only you can see this list.",
+        "Done for now",
+        "Revoke link",
+        "Remove invitation"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back",
+          "target": [
+            8,
+            56,
+            44,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Previous setup screen",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            8,
+            56,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share again",
+          "voiceOver": "Share again for Maya",
+          "target": [
+            237,
+            262.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            262.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Maya’s invitation",
+          "target": [
+            333,
+            262.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Maya",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            262.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Alex",
+          "target": [
+            237,
+            336.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            336.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Alex’s invitation",
+          "target": [
+            333,
+            336.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Alex",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            336.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Sam",
+          "target": [
+            237,
+            410.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            410.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Sam’s invitation",
+          "target": [
+            333,
+            410.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Sam",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            410.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Debby’s invitation",
+          "target": [
+            333,
+            484.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Debby",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            484.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Nina",
+          "target": [
+            237,
+            558.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            558.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Nina’s invitation",
+          "target": [
+            333,
+            558.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Nina",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            558.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Done for now",
+          "voiceOver": "Done for now",
+          "hint": null,
+          "target": [
+            20,
+            724,
+            353,
+            50
+          ],
+          "kind": "primary",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            20,
+            724,
+            353,
+            50
+          ]
+        },
+        {
+          "label": "Revoke link",
+          "voiceOver": "Revoke link for Nina",
+          "target": [
+            103,
+            610.0,
+            270,
+            48
+          ],
+          "kind": "native-menu-action",
+          "role": "default",
+          "candidate": "Nina",
+          "route": "Native revoke confirmation",
+          "viewportTarget": [
+            103,
+            610.0,
+            270,
+            48
+          ]
+        },
+        {
+          "label": "Remove invitation",
+          "voiceOver": "Remove invitation for Nina",
+          "target": [
+            103,
+            658.0,
+            270,
+            48
+          ],
+          "kind": "native-menu-action",
+          "role": "destructive",
+          "candidate": "Nina",
+          "route": "Native removal confirmation",
+          "viewportTarget": [
+            103,
+            658.0,
+            270,
+            48
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Create a club",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Create a club"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Invite your people",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            35
+          ],
+          "size": 32,
+          "lineHeight": 35,
+          "lines": [
+            "Invite your people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Sunday people",
+          "role": "row",
+          "rect": [
+            20,
+            173,
+            353,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sunday people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person gets a separate link.",
+          "role": "body",
+          "rect": [
+            20,
+            201,
+            353,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Each person gets a separate link."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            274.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            262.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            288.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share again",
+          "role": "rowAction",
+          "rect": [
+            237,
+            274.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share again"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            348.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            336.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            362.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            348.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            422.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            410.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            436.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            422.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            496.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            484.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Accepted",
+          "role": "metadata",
+          "rect": [
+            86,
+            510.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Accepted"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "N",
+          "role": "avatar36",
+          "rect": [
+            20,
+            570.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "N"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Nina",
+          "role": "row",
+          "rect": [
+            69,
+            558.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Nina"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            584.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            570.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Only you can see this list.",
+          "role": "metadata",
+          "rect": [
+            20,
+            641,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Only you can see this list."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Done for now",
+          "role": "button",
+          "rect": [
+            32,
+            738.0,
+            329,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Done for now"
+          ],
+          "ink": "onAction"
+        },
+        {
+          "text": "Revoke link",
+          "role": "body",
+          "rect": [
+            119,
+            622.5,
+            206,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Revoke link"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Remove invitation",
+          "role": "body",
+          "rect": [
+            119,
+            670.5,
+            206,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Remove invitation"
+          ],
+          "ink": "destructive"
+        }
+      ],
+      "contentHeight": 683,
+      "notes": [
+        "Ben’s full setup list. Nina’s native More menu contrasts stopping the live link with removing the invitation. New More controls on accepted/used/expired rows are proposer-only and contain Remove invitation; link-state restrictions remain separate."
+      ],
+      "viewportOffset": 0,
+      "semantics": [
+        {
+          "label": "Maya. Shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            247,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Alex. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            321,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Sam. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            395,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Debby. Accepted.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            469,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Nina. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            543,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          592
+        ],
+        "footer": {
+          "y": 724,
+          "h": 50,
+          "bodyEnd": 692,
+          "errorY": null
+        },
+        "rows": {
+          "Maya": {
+            "y": 247,
+            "h": 74,
+            "status": "Shared",
+            "state": "live",
+            "action": "Share again",
+            "glyph": "share",
+            "anchor": [
+              333,
+              262.0,
+              44,
+              44
+            ]
+          },
+          "Alex": {
+            "y": 321,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              336.0,
+              44,
+              44
+            ]
+          },
+          "Sam": {
+            "y": 395,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              410.0,
+              44,
+              44
+            ]
+          },
+          "Debby": {
+            "y": 469,
+            "h": 74,
+            "status": "Accepted",
+            "state": "accepted",
+            "action": null,
+            "glyph": "check",
+            "anchor": [
+              333,
+              484.0,
+              44,
+              44
+            ]
+          },
+          "Nina": {
+            "y": 543,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              558.0,
+              44,
+              44
+            ]
+          }
+        }
+      },
+      "modal": {
+        "kind": "native-menu",
+        "label": "Nina’s invitation",
+        "items": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "rect": [
+          103,
+          610.0,
+          270,
+          96
+        ],
+        "anchor": [
+          333,
+          558.0,
+          44,
+          44
+        ],
+        "escape": "Dismiss menu and restore focus to More",
+        "nativePlacement": "Reference only; OS owns actual placement/material."
+      }
+    },
+    {
+      "order": 2,
+      "name": "G01-invite-people-remove-confirm",
+      "title": "G01-invite-people-remove-confirm",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G01-invite-people-remove-confirm.svg",
+      "png": "frames/G01-invite-people-remove-confirm.png",
+      "theme": "light",
+      "textSize": "large",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Create a club",
+        "Invite your people",
+        "Sunday people",
+        "Each person gets a separate link.",
+        "Maya",
+        "Shared",
+        "Share again",
+        "Alex",
+        "Not shared",
+        "Share link",
+        "Sam",
+        "Not shared",
+        "Share link",
+        "Debby",
+        "Accepted",
+        "Nina",
+        "Not shared",
+        "Share link",
+        "Only you can see this list.",
+        "Done for now",
+        "Remove Nina’s invitation?",
+        "Any links for Nina will stop working. Nina won’t be able to join Sunday people from this invitation.\n\nYou can invite Nina again later with a new invitation.\n\nAnyone else still invited will review and accept the updated roster again.",
+        "Remove invitation",
+        "Keep invitation"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back",
+          "target": [
+            8,
+            56,
+            44,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Previous setup screen",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            8,
+            56,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share again",
+          "voiceOver": "Share again for Maya",
+          "target": [
+            237,
+            262.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            262.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Maya’s invitation",
+          "target": [
+            333,
+            262.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Maya",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            262.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Alex",
+          "target": [
+            237,
+            336.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            336.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Alex’s invitation",
+          "target": [
+            333,
+            336.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Alex",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            336.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Sam",
+          "target": [
+            237,
+            410.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            410.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Sam’s invitation",
+          "target": [
+            333,
+            410.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Sam",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            410.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Debby’s invitation",
+          "target": [
+            333,
+            484.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Debby",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            484.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Nina",
+          "target": [
+            237,
+            558.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            558.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Nina’s invitation",
+          "target": [
+            333,
+            558.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Nina",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            558.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Done for now",
+          "voiceOver": "Done for now",
+          "hint": null,
+          "target": [
+            20,
+            724,
+            353,
+            50
+          ],
+          "kind": "primary",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            20,
+            724,
+            353,
+            50
+          ]
+        },
+        {
+          "label": "Remove invitation",
+          "voiceOver": "Remove invitation for Nina",
+          "target": [
+            61.5,
+            500.0,
+            270,
+            44
+          ],
+          "kind": "native-alert-action",
+          "role": "destructive",
+          "candidate": "Nina",
+          "viewportTarget": [
+            61.5,
+            500.0,
+            270,
+            44
+          ]
+        },
+        {
+          "label": "Keep invitation",
+          "voiceOver": "Keep invitation",
+          "target": [
+            61.5,
+            544.0,
+            270,
+            44
+          ],
+          "kind": "native-alert-action",
+          "role": "cancel",
+          "candidate": "Nina",
+          "viewportTarget": [
+            61.5,
+            544.0,
+            270,
+            44
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Create a club",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Create a club"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Invite your people",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            35
+          ],
+          "size": 32,
+          "lineHeight": 35,
+          "lines": [
+            "Invite your people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Sunday people",
+          "role": "row",
+          "rect": [
+            20,
+            173,
+            353,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sunday people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person gets a separate link.",
+          "role": "body",
+          "rect": [
+            20,
+            201,
+            353,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Each person gets a separate link."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            274.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            262.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            288.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share again",
+          "role": "rowAction",
+          "rect": [
+            237,
+            274.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share again"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            348.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            336.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            362.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            348.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            422.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            410.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            436.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            422.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            496.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            484.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Accepted",
+          "role": "metadata",
+          "rect": [
+            86,
+            510.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Accepted"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "N",
+          "role": "avatar36",
+          "rect": [
+            20,
+            570.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "N"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Nina",
+          "role": "row",
+          "rect": [
+            69,
+            558.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Nina"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            584.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            570.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Only you can see this list.",
+          "role": "metadata",
+          "rect": [
+            20,
+            641,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Only you can see this list."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Done for now",
+          "role": "button",
+          "rect": [
+            32,
+            738.0,
+            329,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Done for now"
+          ],
+          "ink": "onAction"
+        },
+        {
+          "text": "Remove Nina’s invitation?",
+          "role": "row",
+          "rect": [
+            77.5,
+            284.0,
+            238,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Remove Nina’s invitation?"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Any links for Nina will stop working. Nina won’t be able to join Sunday people from this invitation.\n\nYou can invite Nina again later with a new invitation.\n\nAnyone else still invited will review and accept the updated roster again.",
+          "role": "metadata",
+          "rect": [
+            77.5,
+            318.0,
+            238,
+            162
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Any links for Nina will stop working. Nina",
+            "won’t be able to join Sunday people from",
+            "this invitation.",
+            "",
+            "You can invite Nina again later with a",
+            "new invitation.",
+            "",
+            "Anyone else still invited will review and",
+            "accept the updated roster again."
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Remove invitation",
+          "role": "textAction",
+          "rect": [
+            77.5,
+            511.0,
+            238,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Remove invitation"
+          ],
+          "ink": "destructive"
+        },
+        {
+          "text": "Keep invitation",
+          "role": "button",
+          "rect": [
+            77.5,
+            555.0,
+            238,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Keep invitation"
+          ],
+          "ink": "action"
+        }
+      ],
+      "contentHeight": 683,
+      "notes": [
+        "Native destructive confirmation, not a custom sheet. Names Nina and Sunday people, explains link invalidation and a future new invitation, plus re-review for other invitees. No acceptance, response or approval status for Nina is mentioned."
+      ],
+      "viewportOffset": 0,
+      "semantics": [
+        {
+          "label": "Maya. Shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            247,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Alex. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            321,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Sam. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            395,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Debby. Accepted.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            469,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Nina. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            543,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          592
+        ],
+        "footer": {
+          "y": 724,
+          "h": 50,
+          "bodyEnd": 692,
+          "errorY": null
+        },
+        "rows": {
+          "Maya": {
+            "y": 247,
+            "h": 74,
+            "status": "Shared",
+            "state": "live",
+            "action": "Share again",
+            "glyph": "share",
+            "anchor": [
+              333,
+              262.0,
+              44,
+              44
+            ]
+          },
+          "Alex": {
+            "y": 321,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              336.0,
+              44,
+              44
+            ]
+          },
+          "Sam": {
+            "y": 395,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              410.0,
+              44,
+              44
+            ]
+          },
+          "Debby": {
+            "y": 469,
+            "h": 74,
+            "status": "Accepted",
+            "state": "accepted",
+            "action": null,
+            "glyph": "check",
+            "anchor": [
+              333,
+              484.0,
+              44,
+              44
+            ]
+          },
+          "Nina": {
+            "y": 543,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              558.0,
+              44,
+              44
+            ]
+          }
+        }
+      },
+      "modal": {
+        "kind": "native-alert",
+        "title": "Remove Nina’s invitation?",
+        "body": "Any links for Nina will stop working. Nina won’t be able to join Sunday people from this invitation.\n\nYou can invite Nina again later with a new invitation.\n\nAnyone else still invited will review and accept the updated roster again.",
+        "rect": [
+          61.5,
+          264.0,
+          270,
+          324
+        ],
+        "actions": [
+          "Remove invitation",
+          "Keep invitation"
+        ],
+        "defaultFocus": "Native title/cancel conventions; destructive action never preselected."
+      }
+    },
+    {
+      "order": 3,
+      "name": "G01-invite-people-removed",
+      "title": "G01-invite-people-removed",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G01-invite-people-removed.svg",
+      "png": "frames/G01-invite-people-removed.png",
+      "theme": "light",
+      "textSize": "large",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Create a club",
+        "Invite your people",
+        "Sunday people",
+        "Each person gets a separate link.",
+        "Maya",
+        "Shared",
+        "Share again",
+        "Alex",
+        "Not shared",
+        "Share link",
+        "Sam",
+        "Not shared",
+        "Share link",
+        "Debby",
+        "Needs to accept again",
+        "Share again",
+        "Create an invitation",
+        "Only you can see this list.",
+        "Done for now"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back",
+          "target": [
+            8,
+            56,
+            44,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Previous setup screen",
+          "viewportTarget": [
+            8,
+            56,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share again",
+          "voiceOver": "Share again for Maya",
+          "target": [
+            237,
+            262.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            262.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Maya’s invitation",
+          "target": [
+            333,
+            262.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Maya",
+          "viewportTarget": [
+            333,
+            262.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Alex",
+          "target": [
+            237,
+            336.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            336.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Alex’s invitation",
+          "target": [
+            333,
+            336.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Alex",
+          "viewportTarget": [
+            333,
+            336.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Sam",
+          "target": [
+            237,
+            410.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            410.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Sam’s invitation",
+          "target": [
+            333,
+            410.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Sam",
+          "viewportTarget": [
+            333,
+            410.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share again",
+          "voiceOver": "Share again for Debby",
+          "target": [
+            237,
+            484.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            484.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Debby’s invitation",
+          "target": [
+            333,
+            484.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Debby",
+          "viewportTarget": [
+            333,
+            484.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Create an invitation",
+          "voiceOver": "Create an invitation",
+          "hint": null,
+          "target": [
+            20,
+            575,
+            353,
+            50
+          ],
+          "kind": "secondary",
+          "route": "G01-invite-name",
+          "viewportTarget": [
+            20,
+            575,
+            353,
+            50
+          ]
+        },
+        {
+          "label": "Done for now",
+          "voiceOver": "Done for now",
+          "hint": null,
+          "target": [
+            20,
+            724,
+            353,
+            50
+          ],
+          "kind": "primary",
+          "viewportTarget": [
+            20,
+            724,
+            353,
+            50
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Create a club",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Create a club"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Invite your people",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            35
+          ],
+          "size": 32,
+          "lineHeight": 35,
+          "lines": [
+            "Invite your people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Sunday people",
+          "role": "row",
+          "rect": [
+            20,
+            173,
+            353,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sunday people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person gets a separate link.",
+          "role": "body",
+          "rect": [
+            20,
+            201,
+            353,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Each person gets a separate link."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            274.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            262.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            288.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share again",
+          "role": "rowAction",
+          "rect": [
+            237,
+            274.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share again"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            348.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            336.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            362.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            348.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            422.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            410.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            436.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            422.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            496.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            484.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Needs to accept again",
+          "role": "metadata",
+          "rect": [
+            86,
+            510.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Needs to accept again"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share again",
+          "role": "rowAction",
+          "rect": [
+            237,
+            496.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share again"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Create an invitation",
+          "role": "button",
+          "rect": [
+            32,
+            589.0,
+            329,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Create an invitation"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Only you can see this list.",
+          "role": "metadata",
+          "rect": [
+            20,
+            649,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Only you can see this list."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Done for now",
+          "role": "button",
+          "rect": [
+            32,
+            738.0,
+            329,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Done for now"
+          ],
+          "ink": "onAction"
+        }
+      ],
+      "contentHeight": 691,
+      "notes": [
+        "Confirmed removal only: Nina’s row disappears immediately, without a Removed tombstone. Debby becomes Needs to accept again, because the roster changed; the original held link remains usable for the updated review. Create an invitation returns only after authoritative capacity is available. Local announcement: Nina’s invitation was removed."
+      ],
+      "viewportOffset": 0,
+      "semantics": [
+        {
+          "label": "Maya. Shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            247,
+            198,
+            74
+          ]
+        },
+        {
+          "label": "Alex. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            321,
+            198,
+            74
+          ]
+        },
+        {
+          "label": "Sam. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            395,
+            198,
+            74
+          ]
+        },
+        {
+          "label": "Debby. Needs to accept again.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            469,
+            198,
+            74
+          ]
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          592
+        ],
+        "footer": {
+          "y": 724,
+          "h": 50,
+          "bodyEnd": 692,
+          "errorY": null
+        },
+        "rows": {
+          "Maya": {
+            "y": 247,
+            "h": 74,
+            "status": "Shared",
+            "state": "live",
+            "action": "Share again",
+            "glyph": "share",
+            "anchor": [
+              333,
+              262.0,
+              44,
+              44
+            ]
+          },
+          "Alex": {
+            "y": 321,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              336.0,
+              44,
+              44
+            ]
+          },
+          "Sam": {
+            "y": 395,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              410.0,
+              44,
+              44
+            ]
+          },
+          "Debby": {
+            "y": 469,
+            "h": 74,
+            "status": "Needs to accept again",
+            "state": "used",
+            "action": "Share again",
+            "glyph": "clockwise",
+            "anchor": [
+              333,
+              484.0,
+              44,
+              44
+            ]
+          }
+        }
+      }
+    },
+    {
+      "order": 4,
+      "name": "G01-invite-people-remove-failed",
+      "title": "G01-invite-people-remove-failed",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G01-invite-people-remove-failed.svg",
+      "png": "frames/G01-invite-people-remove-failed.png",
+      "theme": "light",
+      "textSize": "large",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Create a club",
+        "Invite your people",
+        "Sunday people",
+        "Each person gets a separate link.",
+        "Maya",
+        "Shared",
+        "Share again",
+        "Alex",
+        "Not shared",
+        "Share link",
+        "Sam",
+        "Not shared",
+        "Share link",
+        "Debby",
+        "Accepted",
+        "Nina",
+        "Not shared",
+        "Share link",
+        "Only you can see this list.",
+        "Couldn’t confirm that Nina’s invitation to Sunday people was removed. Check your connection and try again.",
+        "Done for now"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back",
+          "target": [
+            8,
+            56,
+            44,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Previous setup screen",
+          "viewportTarget": [
+            8,
+            56,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share again",
+          "voiceOver": "Share again for Maya",
+          "target": [
+            237,
+            262.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            262.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Maya’s invitation",
+          "target": [
+            333,
+            262.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Maya",
+          "viewportTarget": [
+            333,
+            262.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Alex",
+          "target": [
+            237,
+            336.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            336.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Alex’s invitation",
+          "target": [
+            333,
+            336.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Alex",
+          "viewportTarget": [
+            333,
+            336.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Sam",
+          "target": [
+            237,
+            410.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            410.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Sam’s invitation",
+          "target": [
+            333,
+            410.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Sam",
+          "viewportTarget": [
+            333,
+            410.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Debby’s invitation",
+          "target": [
+            333,
+            484.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Debby",
+          "viewportTarget": [
+            333,
+            484.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Nina",
+          "target": [
+            237,
+            558.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "viewportTarget": [
+            237,
+            558.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Nina’s invitation",
+          "target": [
+            333,
+            558.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Nina",
+          "viewportTarget": [
+            333,
+            558.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Done for now",
+          "voiceOver": "Done for now",
+          "hint": null,
+          "target": [
+            20,
+            724,
+            353,
+            50
+          ],
+          "kind": "primary",
+          "viewportTarget": [
+            20,
+            724,
+            353,
+            50
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Create a club",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Create a club"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Invite your people",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            35
+          ],
+          "size": 32,
+          "lineHeight": 35,
+          "lines": [
+            "Invite your people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Sunday people",
+          "role": "row",
+          "rect": [
+            20,
+            173,
+            353,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sunday people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person gets a separate link.",
+          "role": "body",
+          "rect": [
+            20,
+            201,
+            353,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Each person gets a separate link."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            274.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            262.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            288.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share again",
+          "role": "rowAction",
+          "rect": [
+            237,
+            274.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share again"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            348.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            336.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            362.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            348.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            422.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            410.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            436.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            422.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            496.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            484.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Accepted",
+          "role": "metadata",
+          "rect": [
+            86,
+            510.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Accepted"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "N",
+          "role": "avatar36",
+          "rect": [
+            20,
+            570.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "N"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Nina",
+          "role": "row",
+          "rect": [
+            69,
+            558.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Nina"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            584.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            570.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Only you can see this list.",
+          "role": "metadata",
+          "rect": [
+            20,
+            641,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Only you can see this list."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Couldn’t confirm that Nina’s invitation to Sunday people was removed. Check your connection and try again.",
+          "role": "metadata",
+          "rect": [
+            44,
+            664,
+            329,
+            36
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Couldn’t confirm that Nina’s invitation to Sunday people",
+            "was removed. Check your connection and try again."
+          ],
+          "ink": "destructive"
+        },
+        {
+          "text": "Done for now",
+          "role": "button",
+          "rect": [
+            32,
+            738.0,
+            329,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Done for now"
+          ],
+          "ink": "onAction"
+        }
+      ],
+      "contentHeight": 683,
+      "notes": [
+        "No usable removal answer. Keep the last verified rows and controls, including Nina; do not claim removal or roll back a confirmed commit. Inline circle-error message ends24 above Done for now. Refusal variant uses Couldn’t remove Nina’s invitation to Sunday people. Try again."
+      ],
+      "viewportOffset": 0,
+      "semantics": [
+        {
+          "label": "Maya. Shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            247,
+            198,
+            74
+          ]
+        },
+        {
+          "label": "Alex. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            321,
+            198,
+            74
+          ]
+        },
+        {
+          "label": "Sam. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            395,
+            198,
+            74
+          ]
+        },
+        {
+          "label": "Debby. Accepted.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            469,
+            198,
+            74
+          ]
+        },
+        {
+          "label": "Nina. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            543,
+            198,
+            74
+          ]
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          540
+        ],
+        "footer": {
+          "y": 724,
+          "h": 50,
+          "bodyEnd": 640,
+          "errorY": 664
+        },
+        "rows": {
+          "Maya": {
+            "y": 247,
+            "h": 74,
+            "status": "Shared",
+            "state": "live",
+            "action": "Share again",
+            "glyph": "share",
+            "anchor": [
+              333,
+              262.0,
+              44,
+              44
+            ]
+          },
+          "Alex": {
+            "y": 321,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              336.0,
+              44,
+              44
+            ]
+          },
+          "Sam": {
+            "y": 395,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              410.0,
+              44,
+              44
+            ]
+          },
+          "Debby": {
+            "y": 469,
+            "h": 74,
+            "status": "Accepted",
+            "state": "accepted",
+            "action": null,
+            "glyph": "check",
+            "anchor": [
+              333,
+              484.0,
+              44,
+              44
+            ]
+          },
+          "Nina": {
+            "y": 543,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              558.0,
+              44,
+              44
+            ]
+          }
+        }
+      }
+    },
+    {
+      "order": 5,
+      "name": "G05-members-with-proposed-remove",
+      "title": "G05-members-with-proposed-remove",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G05-members-with-proposed-remove.svg",
+      "png": "frames/G05-members-with-proposed-remove.png",
+      "theme": "light",
+      "textSize": "large",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Members",
+        "Club details",
+        "Kitchen table",
+        "Each person has a day.",
+        "Ben · You",
+        "Monday",
+        "Maya",
+        "Tuesday",
+        "Alex",
+        "Wednesday",
+        "Sam",
+        "Thursday",
+        "Debby",
+        "Friday",
+        "Leila",
+        "Proposed by Ben",
+        "Proposed",
+        "5 members · New York",
+        "7 AM to 1 AM the next morning.",
+        "Remove invitation"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back to Club details",
+          "target": [
+            8,
+            56,
+            119.6015625,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Club details",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            8,
+            56,
+            119.6015625,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Leila’s invitation",
+          "target": [
+            333,
+            617,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Leila",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            617,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Remove invitation",
+          "voiceOver": "Remove invitation for Leila",
+          "target": [
+            103,
+            561,
+            270,
+            48
+          ],
+          "kind": "native-menu-action",
+          "role": "destructive",
+          "candidate": "Leila",
+          "route": "Native removal confirmation",
+          "viewportTarget": [
+            103,
+            561,
+            270,
+            48
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Members",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Members"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Club details",
+          "role": "textAction",
+          "rect": [
+            35,
+            69,
+            103,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Club details"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Kitchen table",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            35
+          ],
+          "size": 32,
+          "lineHeight": 35,
+          "lines": [
+            "Kitchen table"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person has a day.",
+          "role": "body",
+          "rect": [
+            20,
+            174,
+            353,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Each person has a day."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "B",
+          "role": "avatar36",
+          "rect": [
+            20,
+            245.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "B"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Ben · You",
+          "role": "row",
+          "rect": [
+            69,
+            231,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Ben · You"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Monday",
+          "role": "metadata",
+          "rect": [
+            69,
+            257,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Monday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            321.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            307,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Tuesday",
+          "role": "metadata",
+          "rect": [
+            69,
+            333,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Tuesday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            397.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            383,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Wednesday",
+          "role": "metadata",
+          "rect": [
+            69,
+            409,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Wednesday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            473.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            459,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Thursday",
+          "role": "metadata",
+          "rect": [
+            69,
+            485,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Thursday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            549.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            535,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Friday",
+          "role": "metadata",
+          "rect": [
+            69,
+            561,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Friday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "L",
+          "role": "avatar36",
+          "rect": [
+            20,
+            625.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "L"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Leila",
+          "role": "row",
+          "rect": [
+            69,
+            611,
+            252,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Leila"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Proposed by Ben",
+          "role": "metadata",
+          "rect": [
+            69,
+            637,
+            252,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Proposed by Ben"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Proposed",
+          "role": "proposedTag",
+          "rect": [
+            77,
+            668,
+            59.95703125,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Proposed"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "5 members · New York",
+          "role": "metadata",
+          "rect": [
+            20,
+            739,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "5 members · New York"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "7 AM to 1 AM the next morning.",
+          "role": "metadata",
+          "rect": [
+            20,
+            761,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "7 AM to 1 AM the next morning."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Remove invitation",
+          "role": "body",
+          "rect": [
+            119,
+            573.5,
+            206,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Remove invitation"
+          ],
+          "ink": "destructive"
+        }
+      ],
+      "contentHeight": 811,
+      "notes": [
+        "Ben is the viewer and Leila’s proposer. Leila’s row stays a static identity/tag group; its separate native More control exposes Remove invitation. No active-member row gets a menu or removal. The active-member footer remains five. The native menu is open; no link status for Leila is invented."
+      ],
+      "viewportOffset": 0,
+      "semantics": [
+        {
+          "label": "Ben. You. Monday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            221,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Maya. Tuesday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            297,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Alex. Wednesday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            373,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Sam. Thursday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            449,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Debby. Friday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            525,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Leila. Proposed by Ben. Proposed.",
+          "kind": "static-proposed-member",
+          "target": [
+            20,
+            601,
+            301,
+            106
+          ],
+          "route": null,
+          "hiddenByModal": true
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          718
+        ],
+        "rows": {
+          "Leila": {
+            "y": 601,
+            "h": 106,
+            "anchor": [
+              333,
+              617,
+              44,
+              44
+            ]
+          }
+        },
+        "viewer": "Ben",
+        "proposer": "Ben",
+        "removeOnActiveMembers": false
+      },
+      "modal": {
+        "kind": "native-menu",
+        "label": "Leila’s invitation",
+        "items": [
+          "Remove invitation"
+        ],
+        "rect": [
+          103,
+          561,
+          270,
+          48
+        ],
+        "anchor": [
+          333,
+          617,
+          44,
+          44
+        ],
+        "escape": "Dismiss menu and restore focus to More",
+        "nativePlacement": "Reference only; OS owns actual placement/material."
+      }
+    },
+    {
+      "order": 6,
+      "name": "G01-invite-people-remove-dark",
+      "title": "G01-invite-people-remove-dark",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G01-invite-people-remove-dark.svg",
+      "png": "frames/G01-invite-people-remove-dark.png",
+      "theme": "dark",
+      "textSize": "large",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Create a club",
+        "Invite your people",
+        "Sunday people",
+        "Each person gets a separate link.",
+        "Maya",
+        "Shared",
+        "Share again",
+        "Alex",
+        "Not shared",
+        "Share link",
+        "Sam",
+        "Not shared",
+        "Share link",
+        "Debby",
+        "Accepted",
+        "Nina",
+        "Not shared",
+        "Share link",
+        "Only you can see this list.",
+        "Done for now",
+        "Revoke link",
+        "Remove invitation"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back",
+          "target": [
+            8,
+            56,
+            44,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Previous setup screen",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            8,
+            56,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share again",
+          "voiceOver": "Share again for Maya",
+          "target": [
+            237,
+            262.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            262.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Maya’s invitation",
+          "target": [
+            333,
+            262.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Maya",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            262.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Alex",
+          "target": [
+            237,
+            336.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            336.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Alex’s invitation",
+          "target": [
+            333,
+            336.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Alex",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            336.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Sam",
+          "target": [
+            237,
+            410.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            410.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Sam’s invitation",
+          "target": [
+            333,
+            410.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Sam",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            410.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Debby’s invitation",
+          "target": [
+            333,
+            484.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Debby",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            484.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Nina",
+          "target": [
+            237,
+            558.0,
+            96,
+            44
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            237,
+            558.0,
+            96,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Nina’s invitation",
+          "target": [
+            333,
+            558.0,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Nina",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            558.0,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Done for now",
+          "voiceOver": "Done for now",
+          "hint": null,
+          "target": [
+            20,
+            724,
+            353,
+            50
+          ],
+          "kind": "primary",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            20,
+            724,
+            353,
+            50
+          ]
+        },
+        {
+          "label": "Revoke link",
+          "voiceOver": "Revoke link for Nina",
+          "target": [
+            103,
+            610.0,
+            270,
+            48
+          ],
+          "kind": "native-menu-action",
+          "role": "default",
+          "candidate": "Nina",
+          "route": "Native revoke confirmation",
+          "viewportTarget": [
+            103,
+            610.0,
+            270,
+            48
+          ]
+        },
+        {
+          "label": "Remove invitation",
+          "voiceOver": "Remove invitation for Nina",
+          "target": [
+            103,
+            658.0,
+            270,
+            48
+          ],
+          "kind": "native-menu-action",
+          "role": "destructive",
+          "candidate": "Nina",
+          "route": "Native removal confirmation",
+          "viewportTarget": [
+            103,
+            658.0,
+            270,
+            48
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Create a club",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Create a club"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Invite your people",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            35
+          ],
+          "size": 32,
+          "lineHeight": 35,
+          "lines": [
+            "Invite your people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Sunday people",
+          "role": "row",
+          "rect": [
+            20,
+            173,
+            353,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sunday people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person gets a separate link.",
+          "role": "body",
+          "rect": [
+            20,
+            201,
+            353,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Each person gets a separate link."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            274.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            262.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            288.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share again",
+          "role": "rowAction",
+          "rect": [
+            237,
+            274.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share again"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            348.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            336.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            362.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            348.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            422.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            410.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            436.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            422.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            496.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            484.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Accepted",
+          "role": "metadata",
+          "rect": [
+            86,
+            510.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Accepted"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "N",
+          "role": "avatar36",
+          "rect": [
+            20,
+            570.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "N"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Nina",
+          "role": "row",
+          "rect": [
+            69,
+            558.0,
+            140,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Nina"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            86,
+            584.0,
+            132,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            237,
+            570.0,
+            96,
+            20
+          ],
+          "size": 15,
+          "lineHeight": 20,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Only you can see this list.",
+          "role": "metadata",
+          "rect": [
+            20,
+            641,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Only you can see this list."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Done for now",
+          "role": "button",
+          "rect": [
+            32,
+            738.0,
+            329,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Done for now"
+          ],
+          "ink": "onAction"
+        },
+        {
+          "text": "Revoke link",
+          "role": "body",
+          "rect": [
+            119,
+            622.5,
+            206,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Revoke link"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Remove invitation",
+          "role": "body",
+          "rect": [
+            119,
+            670.5,
+            206,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Remove invitation"
+          ],
+          "ink": "destructive"
+        }
+      ],
+      "contentHeight": 683,
+      "notes": [
+        "Same proposer-only More menu in revision1.1 dark tokens; no brand value changes."
+      ],
+      "viewportOffset": 0,
+      "semantics": [
+        {
+          "label": "Maya. Shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            247,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Alex. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            321,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Sam. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            395,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Debby. Accepted.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            469,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Nina. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            543,
+            198,
+            74
+          ],
+          "hiddenByModal": true
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          592
+        ],
+        "footer": {
+          "y": 724,
+          "h": 50,
+          "bodyEnd": 692,
+          "errorY": null
+        },
+        "rows": {
+          "Maya": {
+            "y": 247,
+            "h": 74,
+            "status": "Shared",
+            "state": "live",
+            "action": "Share again",
+            "glyph": "share",
+            "anchor": [
+              333,
+              262.0,
+              44,
+              44
+            ]
+          },
+          "Alex": {
+            "y": 321,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              336.0,
+              44,
+              44
+            ]
+          },
+          "Sam": {
+            "y": 395,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              410.0,
+              44,
+              44
+            ]
+          },
+          "Debby": {
+            "y": 469,
+            "h": 74,
+            "status": "Accepted",
+            "state": "accepted",
+            "action": null,
+            "glyph": "check",
+            "anchor": [
+              333,
+              484.0,
+              44,
+              44
+            ]
+          },
+          "Nina": {
+            "y": 543,
+            "h": 74,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              558.0,
+              44,
+              44
+            ]
+          }
+        }
+      },
+      "modal": {
+        "kind": "native-menu",
+        "label": "Nina’s invitation",
+        "items": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "rect": [
+          103,
+          610.0,
+          270,
+          96
+        ],
+        "anchor": [
+          333,
+          558.0,
+          44,
+          44
+        ],
+        "escape": "Dismiss menu and restore focus to More",
+        "nativePlacement": "Reference only; OS owns actual placement/material."
+      }
+    },
+    {
+      "order": 7,
+      "name": "G01-invite-people-remove-xl",
+      "title": "G01-invite-people-remove-xl",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G01-invite-people-remove-xl.svg",
+      "png": "frames/G01-invite-people-remove-xl.png",
+      "theme": "light",
+      "textSize": "accessibility5",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Create a club",
+        "Invite your people",
+        "Sunday people",
+        "Each person gets a separate link.",
+        "Maya",
+        "Shared",
+        "Share again",
+        "Alex",
+        "Not shared",
+        "Share link",
+        "Sam",
+        "Not shared",
+        "Share link",
+        "Debby",
+        "Accepted",
+        "Nina",
+        "Not shared",
+        "Share link",
+        "Only you can see this list.",
+        "Done for now",
+        "Revoke link",
+        "Remove invitation"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back",
+          "target": [
+            8,
+            56,
+            44,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Previous setup screen",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            8,
+            56,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share again",
+          "voiceOver": "Share again for Maya",
+          "target": [
+            69,
+            815,
+            304,
+            84
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            69,
+            -535,
+            304,
+            84
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Maya’s invitation",
+          "target": [
+            333,
+            672,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Maya",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            -678,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Alex",
+          "target": [
+            69,
+            1074,
+            304,
+            84
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            69,
+            -276,
+            304,
+            84
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Alex’s invitation",
+          "target": [
+            333,
+            931,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Alex",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            -419,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Sam",
+          "target": [
+            69,
+            1333,
+            304,
+            84
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            69,
+            -17,
+            304,
+            84
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Sam’s invitation",
+          "target": [
+            333,
+            1190,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Sam",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            -160,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Debby’s invitation",
+          "target": [
+            333,
+            1449,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Debby",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            99,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Share link",
+          "voiceOver": "Share link for Nina",
+          "target": [
+            69,
+            1751,
+            304,
+            84
+          ],
+          "kind": "native-text-action",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            69,
+            401,
+            304,
+            84
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Nina’s invitation",
+          "target": [
+            333,
+            1608,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Revoke link",
+            "Remove invitation"
+          ],
+          "candidate": "Nina",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            258,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Done for now",
+          "voiceOver": "Done for now",
+          "hint": null,
+          "target": [
+            20,
+            689,
+            353,
+            85
+          ],
+          "kind": "primary",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            20,
+            689,
+            353,
+            85
+          ]
+        },
+        {
+          "label": "Revoke link",
+          "voiceOver": "Revoke link for Nina",
+          "target": [
+            20,
+            310,
+            353,
+            89
+          ],
+          "kind": "native-menu-action",
+          "role": "default",
+          "candidate": "Nina",
+          "route": "Native revoke confirmation",
+          "viewportTarget": [
+            20,
+            310,
+            353,
+            89
+          ]
+        },
+        {
+          "label": "Remove invitation",
+          "voiceOver": "Remove invitation for Nina",
+          "target": [
+            20,
+            399,
+            353,
+            154
+          ],
+          "kind": "native-menu-action",
+          "role": "destructive",
+          "candidate": "Nina",
+          "route": "Native removal confirmation",
+          "viewportTarget": [
+            20,
+            399,
+            353,
+            154
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Create a club",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Create a club"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Invite your people",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            152
+          ],
+          "size": 68,
+          "lineHeight": 76,
+          "lines": [
+            "Invite your",
+            "people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Sunday people",
+          "role": "row",
+          "rect": [
+            20,
+            291,
+            353,
+            130
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Sunday",
+            "people"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person gets a separate link.",
+          "role": "body",
+          "rect": [
+            20,
+            429,
+            353,
+            195
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Each person",
+            "gets a",
+            "separate link."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            680.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            672,
+            248,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Shared",
+          "role": "metadata",
+          "rect": [
+            113,
+            745,
+            260,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share again",
+          "role": "rowAction",
+          "rect": [
+            69,
+            827,
+            280,
+            60
+          ],
+          "size": 45,
+          "lineHeight": 60,
+          "lines": [
+            "Share again"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            939.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            931,
+            248,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            113,
+            1004,
+            260,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            69,
+            1086,
+            280,
+            60
+          ],
+          "size": 45,
+          "lineHeight": 60,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            1198.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            1190,
+            248,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            113,
+            1263,
+            260,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            69,
+            1345,
+            280,
+            60
+          ],
+          "size": 45,
+          "lineHeight": 60,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            1457.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            1449,
+            248,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Accepted",
+          "role": "metadata",
+          "rect": [
+            113,
+            1522,
+            260,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Accepted"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "N",
+          "role": "avatar36",
+          "rect": [
+            20,
+            1616.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "N"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Nina",
+          "role": "row",
+          "rect": [
+            69,
+            1608,
+            248,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Nina"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Not shared",
+          "role": "metadata",
+          "rect": [
+            113,
+            1681,
+            260,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Not shared"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Share link",
+          "role": "rowAction",
+          "rect": [
+            69,
+            1763,
+            280,
+            60
+          ],
+          "size": 45,
+          "lineHeight": 60,
+          "lines": [
+            "Share link"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Only you can see this list.",
+          "role": "metadata",
+          "rect": [
+            20,
+            1875,
+            353,
+            108
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Only you can see",
+            "this list."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Done for now",
+          "role": "button",
+          "rect": [
+            32,
+            701.0,
+            329,
+            61
+          ],
+          "size": 50,
+          "lineHeight": 61,
+          "lines": [
+            "Done for now"
+          ],
+          "ink": "onAction"
+        },
+        {
+          "text": "Revoke link",
+          "role": "body",
+          "rect": [
+            36,
+            322.0,
+            277,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Revoke link"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Remove invitation",
+          "role": "body",
+          "rect": [
+            36,
+            411.0,
+            277,
+            130
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Remove",
+            "invitation"
+          ],
+          "ink": "destructive"
+        }
+      ],
+      "contentHeight": 2007,
+      "notes": [
+        "Accessibility5. One intrinsic setup-list scroll above the growing Done footer, positioned at a legal end offset. Native menu labels wrap fully, without shrinking. Nina’s identity remains by its source control; the menu may cover lower row details, as a native menu does."
+      ],
+      "viewportOffset": 1350,
+      "semantics": [
+        {
+          "label": "Maya. Shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            656,
+            198,
+            259
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Alex. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            915,
+            198,
+            259
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Sam. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            1174,
+            198,
+            259
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Debby. Accepted.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            1433,
+            198,
+            159
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Nina. Not shared.",
+          "kind": "private-invitation-status",
+          "target": [
+            20,
+            1592,
+            198,
+            259
+          ],
+          "hiddenByModal": true
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          557
+        ],
+        "footer": {
+          "y": 689,
+          "h": 85,
+          "bodyEnd": 657,
+          "errorY": null
+        },
+        "rows": {
+          "Maya": {
+            "y": 656,
+            "h": 259,
+            "status": "Shared",
+            "state": "live",
+            "action": "Share again",
+            "glyph": "share",
+            "anchor": [
+              333,
+              672,
+              44,
+              44
+            ]
+          },
+          "Alex": {
+            "y": 915,
+            "h": 259,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              931,
+              44,
+              44
+            ]
+          },
+          "Sam": {
+            "y": 1174,
+            "h": 259,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              1190,
+              44,
+              44
+            ]
+          },
+          "Debby": {
+            "y": 1433,
+            "h": 159,
+            "status": "Accepted",
+            "state": "accepted",
+            "action": null,
+            "glyph": "check",
+            "anchor": [
+              333,
+              1449,
+              44,
+              44
+            ]
+          },
+          "Nina": {
+            "y": 1592,
+            "h": 259,
+            "status": "Not shared",
+            "state": "live",
+            "action": "Share link",
+            "glyph": "link",
+            "anchor": [
+              333,
+              1608,
+              44,
+              44
+            ]
+          }
+        }
+      },
+      "modal": {
+        "kind": "native-menu",
+        "label": "Nina’s invitation",
+        "items": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "rect": [
+          20,
+          310,
+          353,
+          243
+        ],
+        "anchor": [
+          333,
+          258,
+          44,
+          44
+        ],
+        "escape": "Dismiss menu and restore focus to More",
+        "nativePlacement": "Reference only; OS owns actual placement/material."
+      }
+    },
+    {
+      "order": 8,
+      "name": "G05-members-with-proposed-remove-dark",
+      "title": "G05-members-with-proposed-remove-dark",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G05-members-with-proposed-remove-dark.svg",
+      "png": "frames/G05-members-with-proposed-remove-dark.png",
+      "theme": "dark",
+      "textSize": "large",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Members",
+        "Club details",
+        "Kitchen table",
+        "Each person has a day.",
+        "Ben · You",
+        "Monday",
+        "Maya",
+        "Tuesday",
+        "Alex",
+        "Wednesday",
+        "Sam",
+        "Thursday",
+        "Debby",
+        "Friday",
+        "Leila",
+        "Proposed by Ben",
+        "Proposed",
+        "5 members · New York",
+        "7 AM to 1 AM the next morning.",
+        "Remove invitation"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back to Club details",
+          "target": [
+            8,
+            56,
+            119.6015625,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Club details",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            8,
+            56,
+            119.6015625,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Leila’s invitation",
+          "target": [
+            333,
+            617,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Leila",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            617,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Remove invitation",
+          "voiceOver": "Remove invitation for Leila",
+          "target": [
+            103,
+            561,
+            270,
+            48
+          ],
+          "kind": "native-menu-action",
+          "role": "destructive",
+          "candidate": "Leila",
+          "route": "Native removal confirmation",
+          "viewportTarget": [
+            103,
+            561,
+            270,
+            48
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Members",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Members"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Club details",
+          "role": "textAction",
+          "rect": [
+            35,
+            69,
+            103,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Club details"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Kitchen table",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            35
+          ],
+          "size": 32,
+          "lineHeight": 35,
+          "lines": [
+            "Kitchen table"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person has a day.",
+          "role": "body",
+          "rect": [
+            20,
+            174,
+            353,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Each person has a day."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "B",
+          "role": "avatar36",
+          "rect": [
+            20,
+            245.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "B"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Ben · You",
+          "role": "row",
+          "rect": [
+            69,
+            231,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Ben · You"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Monday",
+          "role": "metadata",
+          "rect": [
+            69,
+            257,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Monday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            321.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            307,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Tuesday",
+          "role": "metadata",
+          "rect": [
+            69,
+            333,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Tuesday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            397.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            383,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Wednesday",
+          "role": "metadata",
+          "rect": [
+            69,
+            409,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Wednesday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            473.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            459,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Thursday",
+          "role": "metadata",
+          "rect": [
+            69,
+            485,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Thursday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            549.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            535,
+            304,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Friday",
+          "role": "metadata",
+          "rect": [
+            69,
+            561,
+            304,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Friday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "L",
+          "role": "avatar36",
+          "rect": [
+            20,
+            625.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "L"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Leila",
+          "role": "row",
+          "rect": [
+            69,
+            611,
+            252,
+            22
+          ],
+          "size": 17,
+          "lineHeight": 22,
+          "lines": [
+            "Leila"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Proposed by Ben",
+          "role": "metadata",
+          "rect": [
+            69,
+            637,
+            252,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Proposed by Ben"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Proposed",
+          "role": "proposedTag",
+          "rect": [
+            77,
+            668,
+            59.95703125,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "Proposed"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "5 members · New York",
+          "role": "metadata",
+          "rect": [
+            20,
+            739,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "5 members · New York"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "7 AM to 1 AM the next morning.",
+          "role": "metadata",
+          "rect": [
+            20,
+            761,
+            353,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "7 AM to 1 AM the next morning."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Remove invitation",
+          "role": "body",
+          "rect": [
+            119,
+            573.5,
+            206,
+            23
+          ],
+          "size": 17,
+          "lineHeight": 23,
+          "lines": [
+            "Remove invitation"
+          ],
+          "ink": "destructive"
+        }
+      ],
+      "contentHeight": 811,
+      "notes": [
+        "Ben is the viewer and Leila’s proposer. Leila’s row stays a static identity/tag group; its separate native More control exposes Remove invitation. No active-member row gets a menu or removal. The active-member footer remains five. The native menu is open; no link status for Leila is invented."
+      ],
+      "viewportOffset": 0,
+      "semantics": [
+        {
+          "label": "Ben. You. Monday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            221,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Maya. Tuesday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            297,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Alex. Wednesday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            373,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Sam. Thursday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            449,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Debby. Friday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            525,
+            353,
+            76
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Leila. Proposed by Ben. Proposed.",
+          "kind": "static-proposed-member",
+          "target": [
+            20,
+            601,
+            301,
+            106
+          ],
+          "route": null,
+          "hiddenByModal": true
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          718
+        ],
+        "rows": {
+          "Leila": {
+            "y": 601,
+            "h": 106,
+            "anchor": [
+              333,
+              617,
+              44,
+              44
+            ]
+          }
+        },
+        "viewer": "Ben",
+        "proposer": "Ben",
+        "removeOnActiveMembers": false
+      },
+      "modal": {
+        "kind": "native-menu",
+        "label": "Leila’s invitation",
+        "items": [
+          "Remove invitation"
+        ],
+        "rect": [
+          103,
+          561,
+          270,
+          48
+        ],
+        "anchor": [
+          333,
+          617,
+          44,
+          44
+        ],
+        "escape": "Dismiss menu and restore focus to More",
+        "nativePlacement": "Reference only; OS owns actual placement/material."
+      }
+    },
+    {
+      "order": 9,
+      "name": "G05-members-with-proposed-remove-xl",
+      "title": "G05-members-with-proposed-remove-xl",
+      "sizePoints": [
+        393,
+        852
+      ],
+      "pngPixels": [
+        786,
+        1704
+      ],
+      "svg": "frames/G05-members-with-proposed-remove-xl.svg",
+      "png": "frames/G05-members-with-proposed-remove-xl.png",
+      "theme": "light",
+      "textSize": "accessibility5",
+      "kind": "native-reference",
+      "visibleCopy": [
+        "Members",
+        "Club details",
+        "Kitchen table",
+        "Each person has a day.",
+        "Ben · You",
+        "Monday",
+        "Maya",
+        "Tuesday",
+        "Alex",
+        "Wednesday",
+        "Sam",
+        "Thursday",
+        "Debby",
+        "Friday",
+        "Leila",
+        "Proposed by Ben",
+        "Proposed",
+        "5 members · New York",
+        "7 AM to 1 AM the next morning.",
+        "Remove invitation"
+      ],
+      "controls": [
+        {
+          "label": "Back",
+          "voiceOver": "Back to Club details",
+          "target": [
+            8,
+            56,
+            119.6015625,
+            44
+          ],
+          "kind": "native-navigation",
+          "route": "Club details",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            8,
+            56,
+            119.6015625,
+            44
+          ]
+        },
+        {
+          "label": "More",
+          "voiceOver": "More options for Leila’s invitation",
+          "target": [
+            333,
+            1256,
+            44,
+            44
+          ],
+          "kind": "native-menu",
+          "menu": [
+            "Remove invitation"
+          ],
+          "candidate": "Leila",
+          "hiddenByModal": true,
+          "viewportTarget": [
+            333,
+            275,
+            44,
+            44
+          ]
+        },
+        {
+          "label": "Remove invitation",
+          "voiceOver": "Remove invitation for Leila",
+          "target": [
+            20,
+            113,
+            353,
+            154
+          ],
+          "kind": "native-menu-action",
+          "role": "destructive",
+          "candidate": "Leila",
+          "route": "Native removal confirmation",
+          "viewportTarget": [
+            20,
+            113,
+            353,
+            154
+          ]
+        }
+      ],
+      "textLayout": [
+        {
+          "text": "9:41",
+          "role": "metadata",
+          "rect": [
+            25,
+            24,
+            50,
+            18
+          ],
+          "size": 13,
+          "lineHeight": 18,
+          "lines": [
+            "9:41"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Members",
+          "role": "clubHeader",
+          "rect": [
+            56,
+            69,
+            281,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "Members"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Club details",
+          "role": "textAction",
+          "rect": [
+            35,
+            69,
+            103,
+            22
+          ],
+          "size": 16,
+          "lineHeight": 22,
+          "lines": [
+            "Club details"
+          ],
+          "ink": "action"
+        },
+        {
+          "text": "Kitchen table",
+          "role": "utilityTitle",
+          "rect": [
+            20,
+            123,
+            353,
+            152
+          ],
+          "size": 68,
+          "lineHeight": 76,
+          "lines": [
+            "Kitchen",
+            "table"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Each person has a day.",
+          "role": "body",
+          "rect": [
+            20,
+            291,
+            353,
+            130
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Each person",
+            "has a day."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "B",
+          "role": "avatar36",
+          "rect": [
+            20,
+            469.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "B"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Ben · You",
+          "role": "row",
+          "rect": [
+            69,
+            455,
+            304,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Ben · You"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Monday",
+          "role": "metadata",
+          "rect": [
+            69,
+            528,
+            304,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Monday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "M",
+          "role": "avatar36",
+          "rect": [
+            20,
+            628.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "M"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Maya",
+          "role": "row",
+          "rect": [
+            69,
+            614,
+            304,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Maya"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Tuesday",
+          "role": "metadata",
+          "rect": [
+            69,
+            687,
+            304,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Tuesday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "A",
+          "role": "avatar36",
+          "rect": [
+            20,
+            787.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "A"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Alex",
+          "role": "row",
+          "rect": [
+            69,
+            773,
+            304,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Alex"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Wednesday",
+          "role": "metadata",
+          "rect": [
+            69,
+            846,
+            304,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Wednesday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "S",
+          "role": "avatar36",
+          "rect": [
+            20,
+            946.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "S"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Sam",
+          "role": "row",
+          "rect": [
+            69,
+            932,
+            304,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Sam"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Thursday",
+          "role": "metadata",
+          "rect": [
+            69,
+            1005,
+            304,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Thursday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "D",
+          "role": "avatar36",
+          "rect": [
+            20,
+            1105.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "D"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Debby",
+          "role": "row",
+          "rect": [
+            69,
+            1091,
+            304,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Debby"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Friday",
+          "role": "metadata",
+          "rect": [
+            69,
+            1164,
+            304,
+            54
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Friday"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "L",
+          "role": "avatar36",
+          "rect": [
+            20,
+            1264.0,
+            36,
+            20
+          ],
+          "size": 16,
+          "lineHeight": 20,
+          "lines": [
+            "L"
+          ],
+          "ink": "onAvatarCanvas"
+        },
+        {
+          "text": "Leila",
+          "role": "row",
+          "rect": [
+            69,
+            1250,
+            252,
+            65
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Leila"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "Proposed by Ben",
+          "role": "metadata",
+          "rect": [
+            69,
+            1319,
+            252,
+            108
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "Proposed by",
+            "Ben"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Proposed",
+          "role": "proposedTag",
+          "rect": [
+            77,
+            1440,
+            179.859375,
+            54
+          ],
+          "size": 39,
+          "lineHeight": 54,
+          "lines": [
+            "Proposed"
+          ],
+          "ink": "primaryText"
+        },
+        {
+          "text": "5 members · New York",
+          "role": "metadata",
+          "rect": [
+            20,
+            1547,
+            353,
+            108
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "5 members · New",
+            "York"
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "7 AM to 1 AM the next morning.",
+          "role": "metadata",
+          "rect": [
+            20,
+            1659,
+            353,
+            108
+          ],
+          "size": 44,
+          "lineHeight": 54,
+          "lines": [
+            "7 AM to 1 AM the",
+            "next morning."
+          ],
+          "ink": "secondaryText"
+        },
+        {
+          "text": "Remove invitation",
+          "role": "body",
+          "rect": [
+            36,
+            125.0,
+            277,
+            130
+          ],
+          "size": 53,
+          "lineHeight": 65,
+          "lines": [
+            "Remove",
+            "invitation"
+          ],
+          "ink": "destructive"
+        }
+      ],
+      "contentHeight": 1799,
+      "notes": [
+        "Ben is the viewer and Leila’s proposer. Leila’s row stays a static identity/tag group; its separate native More control exposes Remove invitation. No active-member row gets a menu or removal. The active-member footer remains five. AX5 proof is at the legal end of the same scroll; the menu sits above its source control, with Leila visible below."
+      ],
+      "viewportOffset": 981,
+      "semantics": [
+        {
+          "label": "Ben. You. Monday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            445,
+            353,
+            159
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Maya. Tuesday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            604,
+            353,
+            159
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Alex. Wednesday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            763,
+            353,
+            159
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Sam. Thursday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            922,
+            353,
+            159
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Debby. Friday.",
+          "kind": "static-member",
+          "target": [
+            20,
+            1081,
+            353,
+            159
+          ],
+          "hiddenByModal": true
+        },
+        {
+          "label": "Leila. Proposed by Ben. Proposed.",
+          "kind": "static-proposed-member",
+          "target": [
+            20,
+            1240,
+            301,
+            275
+          ],
+          "route": null,
+          "hiddenByModal": true
+        }
+      ],
+      "geometry": {
+        "bodyViewport": [
+          0,
+          100,
+          393,
+          718
+        ],
+        "rows": {
+          "Leila": {
+            "y": 1240,
+            "h": 275,
+            "anchor": [
+              333,
+              1256,
+              44,
+              44
+            ]
+          }
+        },
+        "viewer": "Ben",
+        "proposer": "Ben",
+        "removeOnActiveMembers": false
+      },
+      "modal": {
+        "kind": "native-menu",
+        "label": "Leila’s invitation",
+        "items": [
+          "Remove invitation"
+        ],
+        "rect": [
+          20,
+          113,
+          353,
+          154
+        ],
+        "anchor": [
+          333,
+          275,
+          44,
+          44
+        ],
+        "escape": "Dismiss menu and restore focus to More",
+        "nativePlacement": "Reference only; OS owns actual placement/material."
+      }
+    }
+  ]
+}

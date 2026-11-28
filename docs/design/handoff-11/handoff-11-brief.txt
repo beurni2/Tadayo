@@ -1,0 +1,41 @@
+Design handoff 11: stage B1, removing someone invited who hasn't joined
+
+Sources: the linked Tadayo repository: docs/tadayo-design-book-2.1.md, docs/tadayo-build-spec-v3.md, docs/tadayo-new-direction-addendum-r1.md (the founder's new direction, revision 1), and design/reference/, with the 2.1 renders, handoffs 1 to 10 in design/reference/claude-design/, the named frames in design/reference/screens/, and the brand in design/reference/brand/ (brand-tokens.md, brand-components.png, the wordmark and the icon; its README.md says which revision and which handoff each comes from). design/reference/INVENTORY.md lists every state. If the repository isn't linked: the attached Tadayo_UI_UX_Design_Book.pdf (design revision 2.1), Tadayo_v3_Build_and_Design.pdf, the new direction addendum (PDF), brand-tokens.md, brand-components.png, and the exports of handoffs 1 to 10. Use the brand's tokens, cover colours and components as they are (revision 1.1, with handoff 7's component sheet); if you have Tadayo's design system, it holds the same brand.
+
+What to design: one frame per state, 393×852 points, each titled with the state's exact name, in the order listed below (if an export loses the titles, the order identifies the frames).
+
+Why: today a person who is invited keeps their place until they join or a member declines the whole roster. Revoke link stops only the link (handoff 9's revokeLink: "You can create a new link for Alex later."), and a club has six places, members and invited people together. So someone who never answers holds a place for good: a creator who invited five people, one of whom never answers, can never invite anyone else, and a creator still alone can only abandon the club. The founder chose (FQ148): whoever invited a person can remove them while they haven't joined. The server then ends that person's invitation. If anyone else is still invited, the roster without the removed person goes to every other member to approve again and to each person still invited to accept again, as when a member leaves (FQ121); if nobody else is, the proposal ends and the place is free.
+
+A. Removing someone from the setup list (handoff 1's G01-invite-people, handoff 2's G01-invite-people-add, handoff 4's More menu and G01-invite-people-revoked, handoff 9's G01-invite-people-action-failed)
+
+1. G01-invite-people-remove: Ben's invitation list for Sunday people during setup, with handoff 4's fixture (Maya shared, Alex, Sam and Nina not shared, Debby accepted), and the system's More menu open on Nina's row: Revoke link as today, and the new action that removes Nina from the invitation. Draw the menu and name the action. Say whether it is offered on every row of someone who hasn't joined (shared, not shared, revoked, expired, accepted, needs to accept again) or only on some, and why.
+2. G01-invite-people-remove-confirm: the system's alert before the removal, in the form handoff 9 gives Revoke link (a title naming Nina, a body, a destructive action and a cancel). The body says what happens: Nina's links stop working and Nina can't join from this invitation; Ben can invite Nina again later as a new invitation; and, when anyone else is still invited, they review the updated roster again. It never says anything about Nina's answers.
+3. G01-invite-people-removed: the list after the removal: say whether Nina's row goes at once or shows a short state first, and what VoiceOver announces once ("Nina was removed from the invitation." or your words). Create an invitation appears again when a place is free.
+4. G01-invite-people-remove-failed: the removal got no answer, or was refused, in handoff 9's G01-invite-people-action-failed form: the rows as they were, the line above Done for now. Give both lines: no connection, and refused.
+
+B. Removing a later addition (handoff 10's G05-members-with-proposed)
+
+5. G05-members-with-proposed-remove: Kitchen table's Members (handoff 10's frame 5): Ben, Maya, Alex, Sam and Debby with one day each, and Leila's proposed row after them, but seen by Ben, who proposed Leila. Proposing counts as Ben's approval (FQ60), so for Ben the row opens nothing today (FQ143's default). Draw where Ben removes Leila: for example a menu on the row, a swipe action, or a screen the row opens; other members never get the action, and it never shows on a member's row. The confirmation and failures are frames 2 and 4's, with Leila's name and the club's.
+
+C. Dark and largest text
+
+6. G01-invite-people-remove-dark: frame 1 in the adopted dark tokens.
+7. G01-invite-people-remove-xl: frame 1 at accessibility 5.
+8. G05-members-with-proposed-remove-dark: frame 5 in the adopted dark tokens.
+9. G05-members-with-proposed-remove-xl: frame 5 at accessibility 5.
+
+Answer in words, with a frame only if your answer changes a screen:
+- What the others see, which the app builds from existing states unless you say otherwise: the removed person's link answers as a revoked link (G02-revoked: neutral, never "removed", no name, FQ59); if the removed person had accepted, their invitation shows G03-declined (it didn't go ahead, never who or why); each person still invited sees G02-changed; each other member sees handoff 8's "Review the updated roster". Say whether any of them needs different words.
+- Whether Revoke link's alert body (handoff 9: "Alex won’t be able to use this link. You can create a new link for Alex later.") needs to change now that removing exists beside it, so nobody revokes when they mean to remove, or the reverse.
+- Whether the removal needs a busy form while it's out ("Removing…"), as Revoke link has "Revoking link…".
+
+Content: the book's fixture clubs. Sunday people during setup: Ben (the creator and viewer in frames 1 to 4, 6 and 7), Maya shared, Alex, Sam and Nina not shared, Debby accepted. Kitchen table: Ben (the viewer in frames 5, 8 and 9), Maya, Alex, Sam, Debby, one day each; Leila proposed by Ben. Nothing invented.
+
+Rules that apply: book p24 (club details), p30 (member approval: never who declined, no reason asked), p33 (a proposed roster never passes for an active member list), p34 (components), p35 (tokens), p41 (routes and labels); spec 04 (an invitee understands the roster before accepting; changing the people a creator selected never bypasses acceptance) and spec 32; T7, T14, T15, T33, T41 to T43. Only the person who invited someone sees or uses the removal; nobody is told who removed whom, and nothing is counted, seen or spoken. Names, not inferred pronouns. Native iOS controls. The type is the iOS system font at the book's sizes; in the frames, Arimo stands in for it, included in the export.
+
+Questions I need answered in the design:
+- Where the removal lives on the setup list, on which rows, and its words (frames 1 to 4).
+- Where the person who proposed a later addition removes them in an active club (frame 5).
+- The three written questions above.
+
+Dark and large-text frames: frames 6 to 9, titled <state>-dark and <state>-xl. 9 frames in all.
