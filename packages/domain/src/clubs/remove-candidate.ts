@@ -35,6 +35,7 @@
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
+import { Fault, InputFault } from "../fault.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
@@ -57,7 +58,7 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 function text(value: unknown): string {
-  if (typeof value !== "string") throw new Error("clubs: a removal read a row it can't use");
+  if (typeof value !== "string") throw new Fault("remove_candidate_1", "clubs: a removal read a row it can't use");
   return value;
 }
 
@@ -68,7 +69,8 @@ export async function removeCandidate(
   input: RemoveCandidateInput,
 ): Promise<{ readonly candidateId: string }> {
   const { userId, candidateId } = input;
-  if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("clubs: the caller is an account id");
+  if (typeof userId !== "string" || !ID.test(userId))
+    throw new InputFault("remove_candidate_2", "clubs: the caller is an account id");
   // An id that can't be one names no candidate, as one nobody has.
   if (typeof candidateId !== "string" || !ID.test(candidateId)) throw new Refused("NOT_FOUND");
 
@@ -90,7 +92,7 @@ export async function removeCandidate(
   const state = text(candidate["state"]);
   if (state === "joined") throw new Refused("NOT_FOUND");
   if (state === "ended") return { candidateId };
-  if (state !== "open") throw new Error("clubs: a removal read a row it can't use");
+  if (state !== "open") throw new Fault("remove_candidate_3", "clubs: a removal read a row it can't use");
 
   // 3. The clock, after the locks.
   const at = await clock.sample(tx);
@@ -107,7 +109,8 @@ export async function removeCandidate(
   if (open !== undefined) {
     const revisionId = text(open["id"]);
     const origin: unknown = open["origin"];
-    if (origin !== "proposal" && origin !== "rename") throw new Error("clubs: a removal read a row it can't use");
+    if (origin !== "proposal" && origin !== "rename")
+      throw new Fault("remove_candidate_4", "clubs: a removal read a row it can't use");
     const carried = await bound(tx)`
       SELECT rc.candidate_id, rc.label
         FROM app.roster_revision_candidates rc
