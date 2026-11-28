@@ -13,6 +13,7 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var proposeAnswers: [Result<RosterRevision, APIFailure>] = []
     var linkAnswers: [Result<InvitationLink, APIFailure>] = []
     var revokeAnswers: [Result<Void, APIFailure>] = []
+    var removeAnswers: [Result<Void, APIFailure>] = []
     var previewAnswers: [Result<InvitationPreview, APIFailure>] = []
     var acceptAnswers: [Result<InvitationAcceptance, APIFailure>] = []
     var approveAnswers: [Result<RosterRevision, APIFailure>] = []
@@ -30,6 +31,8 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var duringLink: @Sendable () async -> Void = {}
     /// Run inside each revoke, before it answers.
     var duringRevoke: @Sendable () async -> Void = {}
+    /// Run inside each candidate's removal, before it answers.
+    var duringRemove: @Sendable () async -> Void = {}
     private var memberReads = 0
 
     private func answer<T>(_ call: String, _ answers: inout [Result<T, APIFailure>]) -> Result<
@@ -82,6 +85,11 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
         await duringRevoke()
         try lock.withLock { answer("revokeInvitation \(invitationID)", &revokeAnswers) }.get()
+    }
+
+    func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+        await duringRemove()
+        try lock.withLock { answer("removeCandidate \(candidateID)", &removeAnswers) }.get()
     }
 
     func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {

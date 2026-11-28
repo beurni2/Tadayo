@@ -219,6 +219,8 @@
             private let none = NoClubs()
             private let awaitingBen: Bool
             private var started = false
+            /// The people proposed and removed, each a change of the roster: its version.
+            private var changes = 0
 
             init(awaitingBen: Bool = false) {
                 self.awaitingBen = awaitingBen
@@ -247,7 +249,7 @@
 
             private func detail(_ club: ClubRef) -> ClubDetail {
                 ClubDetail(
-                    serverClock: clock, club: summary(club), rosterVersion: candidates.count,
+                    serverClock: clock, club: summary(club), rosterVersion: changes,
                     canPropose: !started && candidates.count < 5,
                     openRevisionID: started || candidates.isEmpty ? nil : revisionID)
             }
@@ -257,7 +259,7 @@
 
             private func revision(_ club: ClubRef) -> RosterRevision {
                 RosterRevision(
-                    id: revisionID, version: candidates.count, club: club,
+                    id: revisionID, version: changes, club: club,
                     state: started ? .applied : .open, proposedBy: Self.ben, members: [Self.ben],
                     candidates: candidates,
                     myDecision: benDecides && !started ? .pending : .approved, supersededBy: nil)
@@ -311,14 +313,15 @@
             ) async throws(APIFailure) -> RosterRevision {
                 let answer: Result<RosterRevision, APIFailure> = lock.withLock {
                     guard let club = held(clubID) else { return .failure(.notFound) }
-                    guard expectedRosterVersion == candidates.count else {
+                    guard expectedRosterVersion == changes else {
                         return .failure(.versionConflict)
                     }
                     for name in names {
+                        changes += 1
                         candidates.append(
                             Candidate(
-                                id: "cand_\(candidates.count + 1)", name: name,
-                                proposedBy: Self.ben, invitation: nil))
+                                id: "cand_\(changes)", name: name, proposedBy: Self.ben,
+                                invitation: nil))
                     }
                     return .success(revision(club))
                 }
@@ -373,6 +376,19 @@
                 guard revoked else { throw .notFound }
             }
 
+            /// Ben's own candidate, before the club starts: gone, and their place free (FQ148).
+            func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+                let removed: Bool = lock.withLock {
+                    guard !started,
+                        let index = candidates.firstIndex(where: { $0.id == candidateID })
+                    else { return false }
+                    candidates.remove(at: index)
+                    changes += 1
+                    return true
+                }
+                guard removed else { throw .notFound }
+            }
+
             func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
                 let answer: RosterRevision? = lock.withLock {
                     guard let club, revisionID == self.revisionID else { return nil }
@@ -390,7 +406,7 @@
                     guard let club, benDecides, !started, revisionID == self.revisionID else {
                         return .failure(.notFound)
                     }
-                    guard expectedVersion == candidates.count else {
+                    guard expectedVersion == changes else {
                         return .failure(.versionConflict)
                     }
                     started = true
@@ -510,6 +526,11 @@
 
             func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
                 try await none.revokeInvitation(invitationID)
+            }
+
+            /// Nobody here is the caller's own candidate: anyone else's is not found (T14).
+            func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+                throw .notFound
             }
 
             func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
@@ -671,6 +692,11 @@
                 try await none.revokeInvitation(invitationID)
             }
 
+            /// Nobody here is the caller's own candidate: anyone else's is not found (T14).
+            func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+                throw .notFound
+            }
+
             func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
                 try await none.rosterRevision(revisionID)
             }
@@ -813,6 +839,11 @@
 
             func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
                 try await none.revokeInvitation(invitationID)
+            }
+
+            /// Nobody here is the caller's own candidate: anyone else's is not found (T14).
+            func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+                throw .notFound
             }
 
             func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
@@ -962,6 +993,11 @@
                 try await none.revokeInvitation(invitationID)
             }
 
+            /// Nobody here is the caller's own candidate: anyone else's is not found (T14).
+            func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+                throw .notFound
+            }
+
             func preview(_ token: InvitationToken) async throws(APIFailure) -> InvitationPreview {
                 try await none.preview(token)
             }
@@ -1003,6 +1039,11 @@
 
             func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
                 throw .network
+            }
+
+            /// Nobody here is the caller's own candidate: anyone else's is not found (T14).
+            func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+                throw .notFound
             }
 
             func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {

@@ -368,6 +368,17 @@ import Testing
         #expect(sent.body == nil)
     }
 
+    @Test func removingACandidateDeletesThemByTheirIDWithNoKeyAndNoBody() async throws {
+        let transport = CannedTransport([example("removeCandidate.removed")])
+        try await api(transport).removeCandidate("cnd_kt_leila")
+        let sent = try #require(transport.sent.first)
+        #expect(sent.request.method == .delete)
+        #expect(sent.request.path == "/v1/candidates/cnd_kt_leila")
+        #expect(sent.body == nil)
+        // Repeating it answers the same and changes nothing, so it takes no key.
+        #expect(sent.request.headerFields[HTTPField.Name("Idempotency-Key")!] == nil)
+    }
+
     // MARK: A roster revision
 
     @Test func aRevisionShowsTheProposersLinkToTheProposerAlone() async throws {
@@ -573,6 +584,16 @@ import Testing
             (.createInvitation, .json(403, #"{"code":"NOT_ALLOWED"}"#), .notAllowed),
             (.createInvitation, .json(403, #"{"code":"PROFILE_INCOMPLETE"}"#), .profileIncomplete),
             (.revokeInvitation, .json(403, #"{"code":"NOT_ALLOWED"}"#), .notAllowed),
+            (.removeCandidate, .json(403, #"{"code":"PROFILE_INCOMPLETE"}"#), .profileIncomplete),
+            // NOT_ALLOWED isn't one of its codes: anyone but the proposer gets NOT_FOUND (T14).
+            (.removeCandidate, .json(403, #"{"code":"NOT_ALLOWED"}"#), .refused),
+            (.removeCandidate, .json(400, #"{"code":"INVALID_REQUEST"}"#), .refused),
+            (
+                .removeCandidate, .json(429, #"{"code":"RATE_LIMITED"}"#, ["Retry-After": "30"]),
+                .unavailable
+            ),
+            (.removeCandidate, .failure, .network),
+            (.removeCandidate, .json(409, #"{"code":"VERSION_CONFLICT","current_version":2}"#), .refused),
             (.approve, error("ROSTER_CHANGED"), .rosterChanged),
             (.approve, error("CLUB_FULL"), .clubFull),
             (
@@ -643,6 +664,10 @@ import Testing
             (.propose, .json(201, #"{"id":"rev_kt_leila"}"#)),
             (.accept, .json(200, "not json")),
             (.revokeInvitation, .json(200, #"{"invitation_id":"inv_kt_other","state":"revoked"}"#)),
+            // An answer naming another candidate says nothing of this one.
+            (.removeCandidate, .json(200, #"{"candidate_id":"cnd_kt_other","state":"removed"}"#)),
+            (.removeCandidate, .json(200, #"{"candidate_id":"cnd_kt_leila","state":"ended"}"#)),
+            (.removeCandidate, .json(200, "not json")),
             (.club, .json(200, #"{"server_now":"2026-11-06T14:41:00Z"}"#)),
             (.preview, .json(200, #"{"state":"open"}"#)),
             (
@@ -730,7 +755,7 @@ import Testing
     /// Each club call once, with the arguments the tests use, so a failure table can name them.
     enum ClubOperation: CaseIterable, CustomStringConvertible {
         case createClub, club, members, schedule, propose, createInvitation, revokeInvitation
-        case rosterRevision, approve, decline, preview, accept
+        case removeCandidate, rosterRevision, approve, decline, preview, accept
 
         var description: String { example }
 
@@ -744,6 +769,7 @@ import Testing
             case .propose: "proposeRoster.leila"
             case .createInvitation: "createInvitation.link"
             case .revokeInvitation: "revokeInvitation.revoked"
+            case .removeCandidate: "removeCandidate.removed"
             case .rosterRevision: "getRosterRevision.approve"
             case .approve: "approveRoster.approved"
             case .decline: "declineRoster.declined"
@@ -782,6 +808,7 @@ import Testing
                 _ = try await api.createInvitation(
                     for: "cnd_kt_leila", in: "club_kitchen_table", key: key)
             case .revokeInvitation: try await api.revokeInvitation("inv_kt_leila")
+            case .removeCandidate: try await api.removeCandidate("cnd_kt_leila")
             case .rosterRevision: _ = try await api.rosterRevision("rev_kt_leila")
             case .approve: _ = try await api.approve("rev_kt_leila", expectedVersion: 1, key: key)
             case .decline: _ = try await api.decline("rev_kt_leila", expectedVersion: 1, key: key)

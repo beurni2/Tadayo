@@ -240,7 +240,7 @@ struct MemberInvitationScreen: View {
                 Text("revoke.cancel")
             }
         } message: {
-            Text(verbatim: Self.words("revoke.body", row.name, row.name))
+            Text(verbatim: Self.words("revoke.body", row.name, list.club.name))
         }
     }
 

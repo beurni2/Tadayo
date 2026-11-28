@@ -10,6 +10,8 @@ struct InvitationActions {
     var createNewLink: @MainActor (InvitationRow) -> Void = { _ in }
     /// Revoke link, once its confirmation says so.
     var revoke: @MainActor (InvitationRow) -> Void = { _ in }
+    /// Remove invitation, once its confirmation says so.
+    var remove: @MainActor (InvitationRow) -> Void = { _ in }
     /// Create an invitation: the name step.
     var invite: @MainActor () -> Void = {}
     /// Done for now: the waiting screen.
@@ -37,7 +39,19 @@ struct InvitationActions {
 ///
 /// Nothing counts who has accepted (T33). While the list loads, the loading form; after it fails,
 /// frame 11's form with the list's words (`handoff8.loadStates.invitations`). Revoke link asks
-/// the system's alert first (handoff 2: "Revoke link leads to the native confirmation").
+/// the system's alert first (handoff 2: "Revoke link leads to the native confirmation"), its body
+/// saying the person keeps their place (handoff 11's section 7).
+///
+/// Remove invitation (FQ148; handoff 11's sections 1 to 4 and 8) asks the system's alert first,
+/// "Remove {name}’s invitation?", whose body adds that anyone else still invited reviews the
+/// roster again when the open revision lists anyone else (`InvitationList.othersInvited`), with
+/// Remove invitation (destructive, never the default) and Keep invitation. While it's on its way
+/// the row says "Removing…" with the system's indicator and every row's controls and Create an
+/// invitation wait; Done for now and Back don't. Its failure is the line above Done for now. On
+/// the server's answer the row goes, "{name}’s invitation was removed." is said once and
+/// VoiceOver's focus goes to Create an invitation if it shows, else the row now in the removed
+/// one's place, else the one before, else Done for now (`InvitationList.focusAfterRemoval`). A
+/// confirmation whose row has gone closes with it.
 struct InvitationsScreen: View {
     let state: InvitationListModel.State
     /// The people whose action is on its way: their controls wait.
@@ -45,8 +59,26 @@ struct InvitationsScreen: View {
     /// The people whose link is being revoked: their row says "Revoking link…".
     var revoking: Set<String> = []
     var failure: InvitationListModel.ActionFailure?
+    /// The person whose removal is on its way: their row says "Removing…", and every row's
+    /// controls and Create an invitation wait.
+    var removing: String?
+    /// The last thing a removal has VoiceOver say, and where its focus goes then.
+    var notice: RemovalNotice?
     var actions = InvitationActions()
-    @State private var confirming: InvitationRow?
+    @State private var confirming: Confirming?
+    @AccessibilityFocusState private var focus: InvitationList.RemovalFocus?
+
+    /// The confirmation on screen: Revoke link's or Remove invitation's.
+    enum Confirming: Equatable {
+        case revoke(InvitationRow)
+        case remove(InvitationRow)
+
+        var row: InvitationRow {
+            switch self {
+            case .revoke(let row), .remove(let row): row
+            }
+        }
+    }
 
     var body: some View {
         content
@@ -75,9 +107,10 @@ struct InvitationsScreen: View {
                 VStack(spacing: 0) {
                     ForEach(list.rows) { row in
                         InvitationRowView(
-                            row: row, busy: busy.contains(row.candidateID),
-                            revoking: revoking.contains(row.candidateID), actions: actions,
-                            confirmRevoke: { confirming = $0 })
+                            row: row, busy: busy.contains(row.candidateID) || removing != nil,
+                            revoking: revoking.contains(row.candidateID),
+                            removing: removing == row.candidateID, actions: actions,
+                            confirm: { confirming = $0 }, focus: $focus)
                     }
                 }
                 .padding(.top, Spacing.xl)
@@ -87,6 +120,8 @@ struct InvitationsScreen: View {
                     Text("invite.createInvitation")
                 }
                 .buttonStyle(.tadayoSecondary)
+                .disabled(removing != nil)
+                .accessibilityFocused($focus, equals: .createInvitation)
                 .padding(.top, Spacing.xxxl)
             }
             Text("invite.private")
@@ -111,28 +146,84 @@ struct InvitationsScreen: View {
                 // shows (WCAG 2.5.3, as Home's Review members does).
                 .accessibilityLabel(Text("invite.done.label"))
                 .accessibilityInputLabels([Text("invite.done")])
+                .accessibilityFocused($focus, equals: .doneForNow)
             }
         }
         // One polite announcement as the line shows (handoff 9's `mutationFailure.a11y`); the line
         // stays as the list scrolls and changes, and isn't said again until a new failure.
         .announcing(failure?.words, politely: true)
+        .onChange(of: notice) { _, notice in
+            guard let notice else { return }
+            said(notice, in: list)
+        }
+        .onChange(of: list.rows.map(\.candidateID)) { _, ids in
+            // The person's row went while their confirmation was open: it goes with it.
+            if let confirming, !ids.contains(confirming.row.candidateID) { self.confirming = nil }
+        }
         .alert(
-            confirming.map { Self.words("revoke.title", $0.name) } ?? "",
+            confirming.map { title($0) } ?? "",
             isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
             presenting: confirming
-        ) { row in
-            Button(role: .destructive) {
-                actions.revoke(row)
-            } label: {
-                Text("revoke.confirm")
+        ) { confirming in
+            switch confirming {
+            case .revoke(let row):
+                Button(role: .destructive) {
+                    actions.revoke(row)
+                } label: {
+                    Text("revoke.confirm")
+                }
+                Button(role: .cancel) {
+                } label: {
+                    Text("revoke.cancel")
+                }
+            case .remove(let row):
+                Button(role: .destructive) {
+                    actions.remove(row)
+                } label: {
+                    Text("remove.action")
+                }
+                .accessibilityLabel(Text(verbatim: Self.words("remove.action.label", row.name)))
+                Button(role: .cancel) {
+                } label: {
+                    Text("remove.confirm.cancel")
+                }
             }
-            Button(role: .cancel) {
-            } label: {
-                Text("revoke.cancel")
+        } message: { confirming in
+            switch confirming {
+            case .revoke(let row):
+                Text(verbatim: Self.words("revoke.body", row.name, list.club.name))
+            case .remove(let row):
+                Text(
+                    verbatim: Self.removalBody(
+                        row.name, club: list.club.name,
+                        others: list.othersInvited(besides: row.candidateID)))
             }
-        } message: { row in
-            Text(verbatim: Self.words("revoke.body", row.name, row.name))
         }
+    }
+
+    private func title(_ confirming: Confirming) -> String {
+        switch confirming {
+        case .revoke(let row): Self.words("revoke.title", row.name)
+        case .remove(let row): Self.words("remove.confirm.title", row.name)
+        }
+    }
+
+    /// What a removal has VoiceOver say, once: on the server's answer, the person's name, with
+    /// focus moved off the row that went; after a read, the list's neutral update.
+    private func said(_ notice: RemovalNotice, in list: InvitationList) {
+        switch notice.kind {
+        case .removed(let name, let position):
+            focus = list.focusAfterRemoval(at: position)
+            Announcement.post(Self.words("remove.success", name), politely: true)
+        case .updated:
+            Announcement.post(String(localized: "remove.listUpdated"), politely: true)
+        }
+    }
+
+    /// Remove invitation's confirmation body (handoff 11's section 2): `withOthers` while anyone
+    /// else is still invited, `last` otherwise.
+    nonisolated static func removalBody(_ name: String, club: String, others: Bool) -> String {
+        words(others ? "remove.confirm.body.withOthers" : "remove.confirm.body.last", name, club)
     }
 
     /// A catalog entry's words with the names in it.
@@ -178,9 +269,12 @@ struct ClubSetupHeading: View {
 /// - the action, if the row has one, in `rowAction` 15/20 `action` (`RowActionStyle`), a target at
 ///   least 44 square, its words ending at 328 and its target at 333, and More where the row has a
 ///   menu: `ellipsis` in `secondaryText`, as every frame draws it, in a 44-point target from 333
-///   to 377 (handoff 4's `invitationRowActions`), the system's menu (T45), with Revoke link
-///   (destructive) or Create new link; while the row's action is on its way both are disabled,
-///   the action's words turn `secondaryText` and the status says so;
+///   to 377 (handoff 4's `invitationRowActions`), the system's menu (T45) headed "{name}’s
+///   invitation", with Revoke link (`link`) or Create new link, then Remove invitation
+///   (destructive, `trash`) on every row (handoff 11's section 1); while the row's action is on
+///   its way both are disabled, the action's words turn `secondaryText` and the status says so;
+///   while its removal is, the status reads "Removing…" after the system's indicator, its value
+///   "In progress" (handoff 11's section 8);
 /// - a used link the app doesn't hold adds handoff 8's two lines under the status, and offers
 ///   nothing (`links.used.missing`);
 /// - a live link the app doesn't hold reads Link not on this phone, offers Create new link, with
@@ -188,10 +282,8 @@ struct ClubSetupHeading: View {
 ///   and the action, from 49 to the trailing margin, in `metadata` `secondaryText` (handoff 9's
 ///   `setupLinks.missingLive`, frame 15); its avatar, action and More are centred on the line
 ///   between the name and the status, as frame 15 centres its avatar, however the status wraps;
-/// - an expired link offers Create new link and no More, its action where the others' are, More's
-///   column left empty (`setupLinks.expiredUnused`; frame 16 draws Create new link's target from
-///   209 to 333), where a used row's Share again, which has no More either, reaches the trailing
-///   margin, as handoff 8's frame 12 draws it;
+/// - an expired link offers Create new link, its action where the others' are, and More with
+///   Remove invitation alone (`setupLinks.expiredUnused`, frame 16, with handoff 11's More);
 /// - at least 74 high, centred, growing with the text; a used row at least 84, its content where a
 ///   74 row puts it (`usedInvitationRow.defaultSamHeight`); a link not on this phone at least 112
 ///   (`missingLive.minimumHeight`), its content from the top; the separator from 49 to the
@@ -211,8 +303,11 @@ struct InvitationRowView: View {
     let row: InvitationRow
     let busy: Bool
     let revoking: Bool
+    var removing = false
     let actions: InvitationActions
-    let confirmRevoke: (InvitationRow) -> Void
+    /// Revoke link's or Remove invitation's confirmation, for this row.
+    let confirm: (InvitationsScreen.Confirming) -> Void
+    var focus: AccessibilityFocusState<InvitationList.RemovalFocus?>.Binding?
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
@@ -332,19 +427,28 @@ struct InvitationRowView: View {
     /// [237, 261, 96, 44]); where it starts is the words' own.
     static let actionToMore: CGFloat = 5
 
-    /// The name, which VoiceOver reads with the status as one element.
-    private var name: some View {
-        Text(verbatim: row.name)
+    /// The name, which VoiceOver reads with the status as one element, "In progress" its value
+    /// while the row's removal is on its way.
+    @ViewBuilder private var name: some View {
+        let name = Text(verbatim: row.name)
             .textRole(.row)
             .foregroundStyle(Palette.primaryText)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityLabel(Text(verbatim: spoken))
+            .accessibilityValue(removing ? Text("remove.busy.value") : Text(verbatim: ""))
             .alignmentGuide(.nameEnd) { $0[.bottom] }
+        if let focus {
+            name.accessibilityFocused(focus, equals: .row(row.candidateID))
+        } else {
+            name
+        }
     }
 
     private var status: some View {
-        StatusLine(glyph: revoking ? nil : glyph, words: statusWords)
-            .accessibilityHidden(true)
+        StatusLine(
+            glyph: revoking || removing ? nil : glyph, spinning: removing, words: statusWords
+        )
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder private var missing: some View {
@@ -396,32 +500,17 @@ struct InvitationRowView: View {
         }
     }
 
+    /// More: the system's menu, headed "{name}’s invitation" (handoff 11's
+    /// `remove.menu.heading`), Revoke link an ordinary item with `link` and Remove invitation the
+    /// destructive one with `trash` (frame 1).
     private var more: some View {
         Menu {
-            ForEach(row.menu, id: \.self) { item in
-                switch item {
-                case .revokeLink:
-                    Button(role: .destructive) {
-                        confirmRevoke(row)
-                    } label: {
-                        Label {
-                            Text("revoke.confirm")
-                        } icon: {
-                            Image(systemName: "trash")
-                        }
-                    }
-                    .accessibilityLabel(
-                        Text(verbatim: InvitationsScreen.words("invite.revoke.label", row.name)))
-                case .createNewLink:
-                    Button {
-                        actions.createNewLink(row)
-                    } label: {
-                        Text("invite.createNew")
-                    }
-                    .accessibilityLabel(
-                        Text(verbatim: InvitationsScreen.words("invite.createNew.label", row.name))
-                    )
+            Section {
+                ForEach(row.menu, id: \.self) { item in
+                    menuItem(item)
                 }
+            } header: {
+                Text(verbatim: InvitationsScreen.words("remove.menu.heading", row.name))
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -435,10 +524,48 @@ struct InvitationRowView: View {
         .padding(.trailing, -Self.moreOverhang)
     }
 
+    @ViewBuilder private func menuItem(_ item: InvitationRow.MenuItem) -> some View {
+        switch item {
+        case .revokeLink:
+            Button {
+                confirm(.revoke(row))
+            } label: {
+                Label {
+                    Text("revoke.confirm")
+                } icon: {
+                    Image(systemName: "link")
+                }
+            }
+            .accessibilityLabel(
+                Text(verbatim: InvitationsScreen.words("invite.revoke.label", row.name)))
+        case .createNewLink:
+            Button {
+                actions.createNewLink(row)
+            } label: {
+                Text("invite.createNew")
+            }
+            .accessibilityLabel(
+                Text(verbatim: InvitationsScreen.words("invite.createNew.label", row.name)))
+        case .removeInvitation:
+            Button(role: .destructive) {
+                confirm(.remove(row))
+            } label: {
+                Label {
+                    Text("remove.action")
+                } icon: {
+                    Image(systemName: "trash")
+                }
+            }
+            .accessibilityLabel(
+                Text(verbatim: InvitationsScreen.words("remove.action.label", row.name)))
+        }
+    }
+
     private var glyph: String { row.statusGlyph }
 
     private var statusWords: String {
-        revoking ? String(localized: "revoke.pending") : row.statusWords
+        if removing { return String(localized: "remove.busy") }
+        return revoking ? String(localized: "revoke.pending") : row.statusWords
     }
 
     /// "Maya. Shared." (handoff 4's `invite.row.{name}.vo`, handoff 8's `links.used.row.vo`).
@@ -502,15 +629,22 @@ extension InvitationRow {
 }
 
 /// A status's glyph, 12 points at the default size and growing with the words, 4 before them, in
-/// `metadata` 13/18 `secondaryText`; the words alone while a revoke is on its way.
+/// `metadata` 13/18 `secondaryText`; the words alone while a revoke is on its way; the system's
+/// indeterminate indicator, its smallest, in the glyph's place while a removal is (handoff 11's
+/// section 8: "a native indeterminate spinner and “Removing…” in the row's status line").
 private struct StatusLine: View {
     let glyph: String?
+    var spinning = false
     let words: String
     @ScaledMetric(relativeTo: TypeRole.metadata.textStyle) private var size: CGFloat = 12
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
-            if let glyph {
+            if spinning {
+                ProgressView()
+                    .controlSize(.mini)
+                    .tint(Palette.secondaryText)
+            } else if let glyph {
                 Image(systemName: glyph)
                     .font(.system(size: size))
             }
@@ -576,6 +710,9 @@ extension InvitationListModel.ActionFailure {
                 name)
         case .revoke(let name, let uncertain):
             InvitationsScreen.words(uncertain ? "revoke.uncertain" : "revoke.failed", name)
+        case .remove(let name, let club, let uncertain):
+            InvitationsScreen.words(
+                uncertain ? "remove.failed.network" : "remove.failed.refused", name, club)
         }
     }
 }

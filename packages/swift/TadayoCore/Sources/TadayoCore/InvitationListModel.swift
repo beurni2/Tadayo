@@ -40,6 +40,9 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
     public enum MenuItem: Sendable, Equatable {
         case revokeLink
         case createNewLink
+        /// Remove invitation: the person is no longer invited and their place is free (FQ148;
+        /// handoff 11's section 1), on the setup list only.
+        case removeInvitation
     }
 
     public let candidateID: String
@@ -59,14 +62,29 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
     public var id: String { candidateID }
 
     /// The row for a candidate the caller proposed, with the link kept for them, if any.
-    public init(_ candidate: Candidate, kept: KeptInvitationLink?) {
+    /// `removable` adds Remove invitation to the end of More, on every row, as handoff 11's
+    /// section 1 table offers it: the setup list's rows; the person's invitation page keeps to
+    /// the link (`docs/design/handoff-7/ios-lane-needs.md` item 82). Each row's own action and
+    /// link items stay as they are.
+    public init(_ candidate: Candidate, kept: KeptInvitationLink?, removable: Bool) {
         candidateID = candidate.id
         name = candidate.name
         proposedBy = candidate.proposedBy.displayName
+        let link = Self.linkParts(candidate, kept: kept)
+        (status, action, linkNotSaved) = (link.status, link.action, link.linkNotSaved)
+        menu = link.menu + (removable ? [.removeInvitation] : [])
+    }
+
+    private static func linkParts(_ candidate: Candidate, kept: KeptInvitationLink?) -> (
+        status: Status, action: Action?, menu: [MenuItem], linkNotSaved: Bool
+    ) {
+        let status: Status
+        let action: Action?
+        let menu: [MenuItem]
+        let linkNotSaved: Bool
         guard let invitation = candidate.invitation else {
             // No link yet: the app offers to make one (the contract's `Candidate`).
-            (status, action, menu, linkNotSaved) = (.notShared, .shareLink, [], false)
-            return
+            return (.notShared, .shareLink, [], false)
         }
         let held = kept?.invitationID == invitation.id ? kept : nil
         switch invitation.state {
@@ -91,9 +109,11 @@ public struct InvitationRow: Sendable, Equatable, Identifiable {
                 .revoked, .createNewLink, [.createNewLink], false
             )
         case .expired:
-            // Its action is the only one: no More (handoff 9's `expiredUnused`).
+            // Its action is the only link action: no link item in More (handoff 9's
+            // `expiredUnused`).
             (status, action, menu, linkNotSaved) = (.expired, .createNewLink, [], false)
         }
+        return (status, action, menu, linkNotSaved)
     }
 }
 
@@ -111,11 +131,14 @@ public struct InvitationList: Sendable, Equatable {
     /// The caller's own decision on the open revision is pending, so Done for now leads to
     /// `G01-pending-approve`, not `G01-pending` (handoff 8's `creatorReviewRequired`, FQ84).
     public let awaitingMyApproval: Bool
+    /// Every candidate the open revision lists, whoever proposed them: whether anyone else is
+    /// still invited picks Remove invitation's confirmation (handoff 11's section 2).
+    public let invited: Set<String>
 
     /// The model makes it from the server's answers; a snapshot makes its own.
     public init(
         club: ClubRef, state: ClubState, memberCount: Int, rows: [InvitationRow], canInvite: Bool,
-        awaitingMyApproval: Bool
+        awaitingMyApproval: Bool, invited: Set<String>? = nil
     ) {
         self.club = club
         self.state = state
@@ -123,6 +146,29 @@ public struct InvitationList: Sendable, Equatable {
         self.rows = rows
         self.canInvite = canInvite
         self.awaitingMyApproval = awaitingMyApproval
+        self.invited = invited ?? Set(rows.map(\.candidateID))
+    }
+
+    /// Anyone but `candidateID` is still invited, so removing them leaves a roster the others
+    /// review and accept again (`handoff11.remove.confirm.body.withOthers`), never from that
+    /// person's own answer.
+    public func othersInvited(besides candidateID: String) -> Bool {
+        !invited.subtracting([candidateID]).isEmpty
+    }
+
+    /// Where VoiceOver's focus goes once a removal's row has gone (handoff 11's section 3).
+    public enum RemovalFocus: Sendable, Hashable {
+        case createInvitation
+        case row(String)
+        case doneForNow
+    }
+
+    /// The list as it reads after a removal whose row stood at `position`: Create an invitation
+    /// if it shows, else the row now in that place, else the one before it, else Done for now.
+    public func focusAfterRemoval(at position: Int) -> RemovalFocus {
+        if canInvite { return .createInvitation }
+        if rows.indices.contains(position) { return .row(rows[position].candidateID) }
+        return rows.last.map { .row($0.candidateID) } ?? .doneForNow
     }
 }
 
@@ -179,6 +225,11 @@ public struct InvitationList: Sendable, Equatable {
         /// confirm that {name}’s invitation link was revoked. Check your connection and try
         /// again." (handoff 4's `revokeLink`).
         case revoke(name: String, uncertain: Bool)
+        /// "Couldn’t remove {name}’s invitation to {clubName}. Try again.", or, with no answer or
+        /// one this build can't read, "Couldn’t confirm that {name}’s invitation to {clubName}
+        /// was removed. Check your connection and try again." (handoff 11's
+        /// `handoff11.remove.failed`).
+        case remove(name: String, club: String, uncertain: Bool)
     }
 
     public let club: ClubRef
@@ -194,12 +245,19 @@ public struct InvitationList: Sendable, Equatable {
     /// The candidates whose action is on its way: their row's controls wait.
     public private(set) var busy: Set<String> = []
     public private(set) var actionFailure: ActionFailure?
+    /// The person whose removal is on its way: their row says "Removing…", and every other link
+    /// action and Create an invitation wait for it, one change of the roster at a time (handoff
+    /// 11's section 8). Done for now and Back don't.
+    public private(set) var removing: String?
+    /// The last thing a removal has VoiceOver say.
+    public private(set) var notice: RemovalNotice?
 
     /// What failed, for whom: what a read checks the failure line against.
     private enum FailedAction {
         case firstLink
         case newLink
         case revoke
+        case remove
     }
     private var failedFor: (candidateID: String, action: FailedAction)?
 
@@ -209,6 +267,11 @@ public struct InvitationList: Sendable, Equatable {
     /// a link made (live) or revoked, by candidate id, with the read count then, so the row says
     /// so even when the read again fails, until an answer to a read requested after it comes.
     private var learned: [String: (invitation: CandidateInvitation, at: Int)] = [:]
+    /// The people this list removed since its reads were requested, by candidate id, with the
+    /// read count then: their rows stay gone until an answer to a read requested after the
+    /// removal comes, which decides.
+    private var removed: [String: Int] = [:]
+    private var notices = 0
     /// Each candidate's link being made, by candidate id: the invitation it replaces (nil for the
     /// first) and the key its action started with, sent again on every retry of that action.
     private var linkKeys: [String: (replacing: String?, key: IdempotencyKey)] = [:]
@@ -254,7 +317,7 @@ public struct InvitationList: Sendable, Equatable {
     /// gets one first, kept before it's returned. Nil when nothing can be shared, with
     /// `actionFailure` saying why when a link couldn't be made.
     public func linkToShare(for candidateID: String) async -> URL? {
-        guard let candidate = mine(candidateID), !busy.contains(candidateID),
+        guard removing == nil, let candidate = mine(candidateID), !busy.contains(candidateID),
             let row = row(for: candidate)
         else { return nil }
         // The row on screen offered a link the book no longer holds (another read purged it
@@ -296,7 +359,7 @@ public struct InvitationList: Sendable, Equatable {
     /// Create new link, from the row or its More menu: a link in place of the old one, then the
     /// list read again, where the row reads Not shared with Share link.
     public func createNewLink(for candidateID: String) async {
-        guard let candidate = mine(candidateID), !busy.contains(candidateID),
+        guard removing == nil, let candidate = mine(candidateID), !busy.contains(candidateID),
             let row = row(for: candidate),
             row.action == .createNewLink || row.menu.contains(.createNewLink)
         else { return }
@@ -314,7 +377,7 @@ public struct InvitationList: Sendable, Equatable {
     /// revoked, even if the read again fails. A failure keeps the row as it was; with no answer
     /// the revoke may have reached the server, so the read again says.
     public func revoke(_ candidateID: String) async {
-        guard let candidate = mine(candidateID), !busy.contains(candidateID),
+        guard removing == nil, let candidate = mine(candidateID), !busy.contains(candidateID),
             let invitation = candidate.invitation, invitation.state == .live
         else { return }
         busy.insert(candidateID)
@@ -340,9 +403,73 @@ public struct InvitationList: Sendable, Equatable {
         await refresh()
     }
 
+    /// Remove invitation, after its confirmation (FQ148; handoff 11's sections 3, 4 and 8): only
+    /// for a row whose More offers it, and only while nothing else of the list is on its way. On
+    /// the server's answer the row goes at once, every link kept for the person goes, the list is
+    /// read again (whether a place is free, and how the others' rows read now), and then
+    /// "{name}’s invitation was removed." is said. A failure keeps the row as it was, with its
+    /// line, and reads the list again; a not found (the person joined, or isn't the caller's to
+    /// remove) reads it again with no line, and says the list was updated once the row has gone.
+    /// The removal takes no key: a repeat returns the same answer (`removeCandidate`).
+    public func remove(_ candidateID: String) async {
+        guard removing == nil, busy.isEmpty, let candidate = mine(candidateID),
+            let row = row(for: candidate), row.menu.contains(.removeInvitation)
+        else { return }
+        let clubName = answer?.members.club.name ?? club.name
+        let position: Int =
+            if case .loaded(let list) = state {
+                list.rows.firstIndex { $0.candidateID == candidateID } ?? 0
+            } else { 0 }
+        removing = candidateID
+        busy.insert(candidateID)
+        fail(nil)
+        let outcome = await Self.result { [service] () async throws(APIFailure) in
+            try await service.removeCandidate(candidateID)
+        }
+        removing = nil
+        busy.remove(candidateID)
+        guard current() else { return }
+        switch outcome {
+        case .success:
+            book.dropCandidate(candidateID, club: club.id, account: accountID)
+            removed[candidateID] = reads
+            relist()
+            await refresh()
+            guard current(), !closed else { return }
+            say(.removed(name: candidate.name, position: position))
+        case .failure(.signedOut):
+            await signedOut()
+        case .failure(.notFound):
+            await refresh()
+            guard current(), !closed else { return }
+            if mine(candidateID) == nil {
+                say(.updated)
+            } else {
+                fail(
+                    .remove(name: candidate.name, club: clubName, uncertain: false), candidateID,
+                    .remove)
+            }
+        case .failure(let failure):
+            fail(
+                .remove(
+                    name: candidate.name, club: clubName,
+                    uncertain: failure.leavesRemovalUncertain), candidateID, .remove)
+            await refresh()
+            guard current(), !closed else { return }
+            // The read again settled the line: the person's row no longer offers the removal.
+            if actionFailure == nil, mine(candidateID) == nil { say(.updated) }
+        }
+    }
+
+    private func say(_ kind: RemovalNotice.Kind) {
+        notices += 1
+        notice = RemovalNotice(kind: kind, sequence: notices)
+    }
+
     /// The name step for one more person (`G01-invite-name`), while a place is free.
     public func makeInvite() -> InviteNameModel? {
-        guard candidateID == nil, let answer, answer.detail.canPropose, current() else {
+        guard candidateID == nil, removing == nil, let answer, answer.detail.canPropose, current()
+        else {
             return nil
         }
         // The name step makes a link: another link action (handoff 9's `lifetime`).
@@ -386,6 +513,7 @@ public struct InvitationList: Sendable, Equatable {
         case (.success(let detail), .success(let list)):
             answer = (detail, list)
             learned = learned.filter { $0.value.at >= asked }
+            removed = removed.filter { $0.value >= asked }
             relist()
             settleFailure()
             if let candidateID { ended = !myCandidates.contains { $0.id == candidateID } }
@@ -419,16 +547,17 @@ public struct InvitationList: Sendable, Equatable {
     /// The list from the last answers and the links kept now.
     private func relist() {
         guard let answer else { return }
-        let rows = myCandidates.map { candidate in
-            InvitationRow(
-                candidate, kept: book.link(for: candidate.id, club: club.id, account: accountID))
-        }
+        let rows = myCandidates.compactMap(row(for:))
         state = .loaded(
             InvitationList(
                 club: answer.members.club, state: answer.detail.club.state,
                 memberCount: answer.detail.club.memberCount, rows: rows,
                 canInvite: answer.detail.canPropose,
-                awaitingMyApproval: answer.members.openRevision?.myDecision == .pending))
+                awaitingMyApproval: answer.members.openRevision?.myDecision == .pending,
+                invited: Set(
+                    (answer.members.openRevision?.candidates ?? []).map(\.id).filter {
+                        removed[$0] == nil
+                    })))
     }
 
     /// The open revision's candidates the caller proposed, in the server's order, each with what
@@ -439,6 +568,7 @@ public struct InvitationList: Sendable, Equatable {
         let me = answer.members.club.myMembershipID
         return revision.candidates.filter {
             $0.proposedBy.membershipID == me && (candidateID == nil || $0.id == candidateID)
+                && removed[$0.id] == nil
         }.map { candidate in
             guard let invitation = learned[candidate.id]?.invitation else { return candidate }
             return Candidate(
@@ -457,9 +587,13 @@ public struct InvitationList: Sendable, Equatable {
         myCandidates.first { $0.id == candidateID }
     }
 
+    /// A candidate's row: on the setup list with Remove invitation in More, on the person's
+    /// invitation page without it (it stays link-only: `docs/design/handoff-7/ios-lane-needs.md`
+    /// item 82).
     private func row(for candidate: Candidate) -> InvitationRow? {
         InvitationRow(
-            candidate, kept: book.link(for: candidate.id, club: club.id, account: accountID))
+            candidate, kept: book.link(for: candidate.id, club: club.id, account: accountID),
+            removable: candidateID == nil)
     }
 
     // MARK: Making a link
@@ -542,8 +676,8 @@ public struct InvitationList: Sendable, Equatable {
     /// A read answered: the line goes once that person's row no longer offers the action that
     /// failed, since its Try again has nothing left to try and the row shows where things stand
     /// (handoff 9's `lifetime`, "authoritative reconciliation resolves it"). Their row gone;
-    /// Revoke link no longer in More; Create new link neither the action nor in More; a first
-    /// link, once they have one.
+    /// Remove invitation no longer in More; Revoke link no longer in More; Create new link
+    /// neither the action nor in More; a first link, once they have one.
     private func settleFailure() {
         guard let failedFor else { return }
         let candidate = mine(failedFor.candidateID)
@@ -551,6 +685,7 @@ public struct InvitationList: Sendable, Equatable {
             switch (failedFor.action, candidate.flatMap(row(for:))) {
             case (_, nil): false
             case (.revoke, let row?): row.menu.contains(.revokeLink)
+            case (.remove, let row?): row.menu.contains(.removeInvitation)
             case (.newLink, let row?):
                 row.action == .createNewLink || row.menu.contains(.createNewLink)
             case (.firstLink, _): candidate?.invitation == nil

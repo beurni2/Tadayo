@@ -33,7 +33,9 @@ struct ClubDetailsDestination: View {
 /// cancelled), so it slides in loading each time. A cancelled read is made again, as Club
 /// details' is. A proposed row whose candidate the viewer has yet to decide on opens G03-approve
 /// for the revision the list showed (`openApproval`); the proposer's own decided row opens the
-/// person's invitation page (`openInvitation`).
+/// person's invitation page (`openInvitation`). Remove invitation on the viewer's own candidate's
+/// row says "Removing {name}’s invitation." as it starts; the screen says what the answer did
+/// (handoff 11's section 5).
 struct MembersDestination: View {
     let model: ClubDetailsModel
     var openApproval: (RosterRevision) -> Void = { _ in }
@@ -44,7 +46,9 @@ struct MembersDestination: View {
         MembersScreen(
             members: asked ? model.members : .loading, retry: { await model.loadMembers() },
             openApproval: openApproval,
-            openInvitation: model.opensInvitations ? openInvitation : nil
+            openInvitation: model.opensInvitations ? openInvitation : nil,
+            removing: model.removing, removalFailure: model.removalFailure, notice: model.notice,
+            remove: { proposed in Task { await remove(proposed) } }
         )
         .task {
             guard !asked else { return }
@@ -52,6 +56,13 @@ struct MembersDestination: View {
             await model.loadMembers()
             if Task.isCancelled { asked = false }
         }
+    }
+
+    private func remove(_ proposed: Roster.Proposed) async {
+        guard model.removing == nil else { return }
+        Announcement.post(
+            InvitationsScreen.words("remove.busy.announcement", proposed.candidate.name))
+        await model.remove(proposed.id)
     }
 }
 
@@ -78,8 +89,9 @@ struct CreateClubDestination: View {
 /// then show the share sheet, one at a time, and tell the model whether a share completed.
 /// Revoke link says "Revoking link…" as it starts, and "{name}’s invitation link was revoked."
 /// once the server has said so; Create new link says "New invitation link created for {name}."
-/// (handoff 4's `revokeLink` and `invite.createNew`). Done for now takes the waiting screen's
-/// form from the list's last answer.
+/// (handoff 4's `revokeLink` and `invite.createNew`). Remove invitation says "Removing {name}’s
+/// invitation." as it starts; the screen says what the answer did (handoff 11's sections 3 and
+/// 4). Done for now takes the waiting screen's form from the list's last answer.
 struct InvitationsDestination: View {
     let model: InvitationListModel
     let invite: () -> Void
@@ -92,7 +104,8 @@ struct InvitationsDestination: View {
     var body: some View {
         InvitationsScreen(
             state: model.state, busy: model.busy, revoking: revoking,
-            failure: model.actionFailure, actions: actions
+            failure: model.actionFailure, removing: model.removing, notice: model.notice,
+            actions: actions
         )
         .task {
             guard !asked else { return await model.refresh() }
@@ -107,6 +120,7 @@ struct InvitationsDestination: View {
             share: share,
             createNewLink: { row in Task { await createNewLink(row) } },
             revoke: { row in Task { await revoke(row) } },
+            remove: { row in Task { await remove(row) } },
             invite: { invite() },
             done: {
                 guard case .loaded(let list) = model.state else { return }
@@ -134,6 +148,12 @@ struct InvitationsDestination: View {
         if model.actionFailure == nil, self.row(row.candidateID)?.status == .revoked {
             Announcement.post(InvitationsScreen.words("revoke.success", row.name))
         }
+    }
+
+    private func remove(_ row: InvitationRow) async {
+        guard model.removing == nil else { return }
+        Announcement.post(InvitationsScreen.words("remove.busy.announcement", row.name))
+        await model.remove(row.candidateID)
     }
 
     private func createNewLink(_ row: InvitationRow) async {

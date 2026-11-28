@@ -55,6 +55,31 @@ import Observation
     /// A read answered not found: the club is no longer the caller's to read, so nothing of it
     /// stays on screen (T9). The screens close on it, whenever the list's own read answers.
     public private(set) var closed = false
+    /// The person whose removal from Members is on its way (handoff 11's sections 5 and 8): their
+    /// row says "Removing…", and its More and its route wait. One at a time.
+    public private(set) var removing: String?
+    /// Why the last removal from Members failed, under that person's row, until another removal
+    /// starts, a read no longer offers the removal for them, or Members shows again.
+    public private(set) var removalFailure: RemovalFailure?
+    /// The last thing a removal from Members has VoiceOver say.
+    public private(set) var notice: RemovalNotice?
+
+    /// "Couldn’t remove {name}’s invitation to {clubName}. Try again.", or, `uncertain`,
+    /// "Couldn’t confirm that {name}’s invitation to {clubName} was removed. Check your
+    /// connection and try again." (handoff 11's section 5), under the person's row.
+    public struct RemovalFailure: Sendable, Equatable {
+        public let candidateID: String
+        public let name: String
+        public let club: String
+        public let uncertain: Bool
+
+        public init(candidateID: String, name: String, club: String, uncertain: Bool) {
+            self.candidateID = candidateID
+            self.name = name
+            self.club = club
+            self.uncertain = uncertain
+        }
+    }
 
     let service: any ClubService
     /// The account's kept invitation links, which each members answer settles (ADR-037).
@@ -67,6 +92,7 @@ import Observation
     private var keptInvitation: InvitationListModel?
     private var keptNaming: InviteNameModel?
     private var memberReads = 0
+    private var notices = 0
 
     public init(
         club: ClubSummary, service: any ClubService,
@@ -118,12 +144,24 @@ import Observation
     }
 
     /// The members list, when it shows and on its Retry: the roster and the club's week, read
-    /// together, since the list needs both.
+    /// together, since the list needs both. Members shown again takes a removal's line.
     public func loadMembers() async {
+        removalFailure = nil
+        await readMembers(quiet: false)
+    }
+
+    /// The members read again after a removal: what's shown stays while the reads are out, and
+    /// stays if they fail (a not found still closes the club's screens, and a session ended still
+    /// ends it).
+    public func refreshMembers() async {
+        await readMembers(quiet: true)
+    }
+
+    private func readMembers(quiet: Bool) async {
         guard club.state != .suspended else { return }
         memberReads += 1
         let asked = memberReads
-        members = .loading
+        if !quiet { members = .loading }
         let stamp = links?.book.beginRead()
         let id = club.id
         async let list = Self.result { [service] () async throws(APIFailure) in
@@ -150,13 +188,83 @@ import Observation
         switch answers {
         case (.success(let list), .success(let week)):
             members = .loaded(Roster(list, week: week))
+            // The line goes once that person's row no longer offers the removal.
+            if let failed = removalFailure, !removable(failed.candidateID) {
+                removalFailure = nil
+            }
         case (.failure(let failure), _), (_, .failure(let failure)):
             // Either failing fails the list. A session ended, then a not found, from either,
             // decides over any other failure, in whichever order the two answered: each says the
             // same of the club or the session.
             let worst = Self.decisive(answers.0.failure, answers.1.failure) ?? failure
-            if let failed = await settle(worst) { members = .failed(failed) }
+            if let failed = await settle(worst), !quiet { members = .failed(failed) }
         }
+    }
+
+    /// Remove invitation from Members, after its confirmation (FQ148; handoff 11's sections 5 and
+    /// 8): only for a proposed row whose candidate the viewer proposed (`Roster.Proposed.removable`),
+    /// whatever the viewer's decision on the revision, one at a time. On the server's answer the
+    /// row goes at once, every link kept for the person goes, Members is read again quietly, and
+    /// then "{name}’s invitation was removed." is said. A failure keeps the row with its line
+    /// and reads Members again; a not found reads them again with no line, and says Members was
+    /// updated once the row has gone. The removal takes no key (`removeCandidate`).
+    public func remove(_ candidateID: String) async {
+        guard removing == nil, current(), case .loaded(let roster) = members,
+            let position = roster.proposed.firstIndex(where: { $0.id == candidateID }),
+            roster.proposed[position].removable
+        else { return }
+        let name = roster.proposed[position].candidate.name
+        let clubName = roster.club.name
+        removing = candidateID
+        removalFailure = nil
+        let outcome = await Self.result { [service] () async throws(APIFailure) in
+            try await service.removeCandidate(candidateID)
+        }
+        removing = nil
+        guard current() else { return }
+        switch outcome {
+        case .success:
+            if let links {
+                links.book.dropCandidate(candidateID, club: club.id, account: links.accountID)
+            }
+            // A read asked before the answer is dropped as the read again starts, which
+            // decides; until it answers, and if it fails, the row stays gone.
+            if case .loaded(let shown) = members {
+                members = .loaded(shown.without(candidateID))
+            }
+            await refreshMembers()
+            guard current(), !closed else { return }
+            say(.removed(name: name, position: position))
+        case .failure(.signedOut):
+            await signedOut()
+        case .failure(.notFound):
+            await refreshMembers()
+            guard current(), !closed else { return }
+            if removable(candidateID) {
+                removalFailure = RemovalFailure(
+                    candidateID: candidateID, name: name, club: clubName, uncertain: false)
+            } else {
+                say(.updated)
+            }
+        case .failure(let failure):
+            removalFailure = RemovalFailure(
+                candidateID: candidateID, name: name, club: clubName,
+                uncertain: failure.leavesRemovalUncertain)
+            await refreshMembers()
+            guard current(), !closed else { return }
+            if removalFailure == nil { say(.updated) }
+        }
+    }
+
+    /// Whether Members as shown offers the removal for this person.
+    private func removable(_ candidateID: String) -> Bool {
+        guard case .loaded(let roster) = members else { return false }
+        return roster.proposed.contains { $0.id == candidateID && $0.removable }
+    }
+
+    private func say(_ kind: RemovalNotice.Kind) {
+        notices += 1
+        notice = RemovalNotice(kind: kind, sequence: notices)
     }
 
     /// G03-approve for the open revision Members lists (`Roster.openRevision`), asked in the same
@@ -332,6 +440,10 @@ public struct Roster: Sendable, Equatable {
 
         public let candidate: Candidate
         public let opens: Opens
+        /// The viewer proposed them, so the row has a More of its own holding Remove invitation,
+        /// whatever the viewer's decision on the revision (FQ148; handoff 11's section 5). Other
+        /// people's candidates get none.
+        public let removable: Bool
 
         public var id: String { candidate.id }
     }
@@ -363,8 +475,40 @@ public struct Roster: Sendable, Equatable {
                 } else {
                     .nothing
                 }
-            return Proposed(candidate: candidate, opens: opens)
+            return Proposed(
+                candidate: candidate, opens: opens,
+                removable: candidate.proposedBy.membershipID == list.club.myMembershipID)
         }
+    }
+
+    private init(club: ClubRef, rows: [Row], proposed: [Proposed], openRevision: RosterRevision?) {
+        self.club = club
+        self.rows = rows
+        self.proposed = proposed
+        self.openRevision = openRevision
+    }
+
+    /// Where VoiceOver's focus goes once a removal's proposed row has gone from Members.
+    public enum RemovalFocus: Sendable, Hashable {
+        case proposed(String)
+        case member(String)
+    }
+
+    /// Members as it reads after a removal whose proposed row stood at `position`: the proposed
+    /// row now in that place, else the one before it, else the last member's row, as the setup
+    /// list's focus goes to the row in its place or the one before (handoff 11's section 3).
+    /// Members has no Create an invitation or Done for now to take it. Nil with no row at all.
+    public func focusAfterRemoval(at position: Int) -> RemovalFocus? {
+        if proposed.indices.contains(position) { return .proposed(proposed[position].id) }
+        if let last = proposed.last { return .proposed(last.id) }
+        return rows.last.map { .member($0.id) }
+    }
+
+    /// The roster with this person's proposed row gone, on their removal's answer.
+    func without(_ candidateID: String) -> Roster {
+        Roster(
+            club: club, rows: rows, proposed: proposed.filter { $0.id != candidateID },
+            openRevision: openRevision)
     }
 
     /// `.one` when every member has one weekday, `.two` when every member has two, and nil
