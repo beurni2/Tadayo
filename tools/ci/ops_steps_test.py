@@ -7,7 +7,9 @@ given a fake download that writes an archive made here, so the checksum, the arc
 the job's PATH file are tested without the network; the real release's SHA-256 was read once, when
 the version was chosen (docs/LIMITATIONS.md, flyctl's row). WorkflowFileTest reads
 .github/workflows/ops.yml whole, with a strict reader of the YAML it uses, and holds every key and
-value to the ones built from SCRIPTS and SECRETS: each script's job names exactly its secrets.
+value to the ones built from SCRIPTS and SECRETS: each of its scripts' jobs names exactly its
+secrets. AlertsWorkflowFileTest does the same for .github/workflows/alerts.yml, whose one job runs
+failure-alert.
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
@@ -62,8 +64,8 @@ def call(step, environ, shell=None, fetch=None):
 
 class ScriptsTest(unittest.TestCase):
     """SCRIPTS is docs/plans/api-b0-deploy.md, section 4's table, spike-time
-    (docs/plans/api-b0-spike-time.md, section 7) and spike-links (docs/plans/api-b0-spike-links.md,
-    section 4)."""
+    (docs/plans/api-b0-spike-time.md, section 7), spike-links (docs/plans/api-b0-spike-links.md,
+    section 4) and failure-alert (docs/plans/api-b2-failure-alerts.md, section 1.5)."""
 
     def test_the_scripts_and_what_each_reads(self):
         self.assertEqual({name: script.variables for name, script in ops_steps.SCRIPTS.items()}, {
@@ -80,6 +82,9 @@ class ScriptsTest(unittest.TestCase):
             "spike-time": ("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"),
             # It runs on the runner: flyctl reads dev's logs, and its requests go to dev's API.
             "spike-links": ("FLY_API_TOKEN",),
+            # The counts are in dev's database, and the job's token writes the issue
+            # (tools/ops/src/run.ts, failureAlertScript).
+            "failure-alert": ("DATABASE_URL", "GITHUB_TOKEN", "SUPABASE_DEV_PROJECT_REF"),
         })
 
     def test_the_options_each_takes(self):
@@ -96,7 +101,7 @@ class ScriptsTest(unittest.TestCase):
             "deploy-branch": {"OPS_BRANCH": ("--branch", True)},
             # Their --here and --ref are the Machine's half, which the runner's half starts.
             "storage-setup": {}, "supabase-probe": {}, "spike-time": {},
-            "spike-links": {},
+            "spike-links": {}, "failure-alert": {},
         })
         for script in ops_steps.SCRIPTS.values():
             for variable, option in script.options.items():
@@ -109,6 +114,11 @@ class ScriptsTest(unittest.TestCase):
         # A script that reads the Fly token calls flyctl, and the other way round.
         for name, script in ops_steps.SCRIPTS.items():
             self.assertEqual(script.flyctl, "FLY_API_TOKEN" in script.variables, name)
+
+    def test_the_workflow_that_runs_each(self):
+        # failure-alert runs on alerts.yml's schedule; every other script by hand, from ops.yml.
+        self.assertEqual({name: script.workflow for name, script in ops_steps.SCRIPTS.items()},
+                         {**{name: "ops" for name in ops_steps.SCRIPTS}, "failure-alert": "alerts"})
 
 
 class CheckTest(unittest.TestCase):
@@ -200,6 +210,7 @@ class RunTest(unittest.TestCase):
             ("supabase-probe", {}, []),
             ("spike-time", {}, []),
             ("spike-links", {}, []),
+            ("failure-alert", {}, []),
         ]
         # Every script has a case, so a script added without one fails here.
         self.assertEqual({name for name, _, _ in cases}, set(ops_steps.SCRIPTS))
@@ -232,6 +243,12 @@ class RunTest(unittest.TestCase):
         code, out, shell = call("run", environ)
         self.assertEqual(code, 1)
         self.assertEqual(out, "ops: deploy-branch has no GITHUB_TOKEN: its step in ops.yml gives it the job's token\n")
+        self.assertEqual(shell.commands, [])
+        environ = self.environ("failure-alert")
+        environ["GITHUB_TOKEN"] = ""
+        code, out, shell = call("run", environ)
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "ops: failure-alert has no GITHUB_TOKEN: its step in alerts.yml gives it the job's token\n")
         self.assertEqual(shell.commands, [])
 
     def test_every_variable_has_its_repository_secret(self):
@@ -418,9 +435,28 @@ class ProcessTest(unittest.TestCase):
         self.assertFalse(os.path.exists(marker))
 
 
-def workflow():
-    with open(os.path.join(ROOT, ".github", "workflows", "ops.yml"), encoding="utf-8") as f:
+def workflow(name="ops"):
+    with open(os.path.join(ROOT, ".github", "workflows", f"{name}.yml"), encoding="utf-8") as f:
         return f.read()
+
+
+def scripts_of(name):
+    """The scripts that workflow runs, in SCRIPTS' order."""
+    return [script for script, given in ops_steps.SCRIPTS.items() if given.workflow == name]
+
+
+def secret_of(variable):
+    """The expression a step's env gives a script's variable from."""
+    return "${{ github.token }}" if variable == ops_steps.JOB_TOKEN else "${{ secrets.%s }}" % ops_steps.SECRETS[variable]
+
+
+def setup_steps(pinned):
+    """The steps every job of ops.yml and alerts.yml takes after its check: Node, pnpm and the
+    workspace's packages."""
+    return [{"uses": pinned["actions/setup-node"],
+             "with": {"node-version-file": ".nvmrc", "package-manager-cache": "false"}},
+            {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
+            {"run": "python3 tools/ci/ci_steps.py install"}]
 
 
 KEY = re.compile(r"[A-Za-z0-9_-]+")
@@ -566,7 +602,7 @@ def parse_yaml(text):
 
 
 def pins():
-    """The actions ci.yml uses, by name: ops.yml must use the same commits."""
+    """The actions ci.yml uses, by name: ops.yml and alerts.yml must use the same commits."""
     with open(os.path.join(ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8") as f:
         found = dict(re.findall(r"uses: ([a-z-]+/[a-z-]+)@([0-9a-f]{40})", f.read()))
     return {name: f"{name}@{sha}" for name, sha in found.items()}
@@ -577,19 +613,16 @@ def expected_jobs():
     pinned = pins()
     checkout = {"uses": pinned["actions/checkout"], "with": {"persist-credentials": "false"}}
     jobs = {}
-    for name, script in ops_steps.SCRIPTS.items():
+    for name in scripts_of("ops"):
+        script = ops_steps.SCRIPTS[name]
         steps = [checkout, {"run": "python3 tools/ci/ops_steps.py check"}]
         if name == "deploy-branch":
             steps.append({"uses": pinned["actions/checkout"],
                           "with": {"ref": "refs/heads/${{ inputs.branch }}", "persist-credentials": "false"}})
-        steps += [{"uses": pinned["actions/setup-node"],
-                   "with": {"node-version-file": ".nvmrc", "package-manager-cache": "false"}},
-                  {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
-                  {"run": "python3 tools/ci/ci_steps.py install"}]
+        steps += setup_steps(pinned)
         if script.flyctl:
             steps.append({"run": "python3 tools/ci/ops_steps.py setup-flyctl"})
-        env = {v: "${{ github.token }}" if v == ops_steps.JOB_TOKEN else "${{ secrets.%s }}" % ops_steps.SECRETS[v]
-               for v in script.variables}
+        env = {v: secret_of(v) for v in script.variables}
         steps.append({"name": name, "env": env, "run": "python3 tools/ci/ops_steps.py run"})
         permissions = {"contents": "read"}
         if name == "deploy-branch":
@@ -620,7 +653,7 @@ class YamlReaderTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     parse_yaml(text)
 
-    def test_it_reads_ops_yml_as_a_yaml_library_would(self):
+    def test_it_reads_ops_yml_and_alerts_yml_as_a_yaml_library_would(self):
         # ci's runner has one: the ubuntu-24.04 image's python3-yaml, which `python3 -I` imports
         # (ci run 43138850682 ran this test). It isn't pinned, so on ci its absence fails the test
         # rather than skipping it; elsewhere, without one, the test is skipped.
@@ -631,8 +664,6 @@ class YamlReaderTest(unittest.TestCase):
                 self.fail("no yaml library on ci's runner: the image's python3-yaml has gone, so "
                           "install one before this step or say in docs/LIMITATIONS.md why not")
             self.skipTest("no yaml library here")
-        theirs = yaml.safe_load(workflow())
-        theirs["on"] = theirs.pop(True)  # YAML 1.1 reads the key `on` as true
 
         def text(value):
             if isinstance(value, dict):
@@ -640,7 +671,11 @@ class YamlReaderTest(unittest.TestCase):
             if isinstance(value, list):
                 return [text(v) for v in value]
             return str(value).lower() if isinstance(value, bool) else str(value)
-        self.assertEqual(text(theirs), parse_yaml(workflow()))
+        for name in ("ops", "alerts"):
+            with self.subTest(workflow=name):
+                theirs = yaml.safe_load(workflow(name))
+                theirs["on"] = theirs.pop(True)  # YAML 1.1 reads the key `on` as true
+                self.assertEqual(text(theirs), parse_yaml(workflow(name)))
 
 
 class WorkflowFileTest(unittest.TestCase):
@@ -664,7 +699,7 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertEqual(list(self.document["on"]["workflow_dispatch"]), ["inputs"])
         descriptions = {name: given.pop("description") for name, given in inputs.items()}
         self.assertEqual(inputs, {
-            "script": {"type": "choice", "required": "true", "options": list(ops_steps.SCRIPTS)},
+            "script": {"type": "choice", "required": "true", "options": scripts_of("ops")},
             "org": {"type": "string", "required": "false", "default": ""},
             "to": {"type": "string", "required": "false", "default": ""},
             "branch": {"type": "string", "required": "false", "default": ""},
@@ -697,9 +732,8 @@ class WorkflowFileTest(unittest.TestCase):
         found = sorted(re.findall(r"\$\{\{.*?\}\}", self.text))
         self.assertEqual(self.text.count("${{"), len(found))
         wanted = ["${{ inputs.%s }}" % name for name in ("script", "org", "to", "branch", "branch")]
-        for script in ops_steps.SCRIPTS.values():
-            wanted += ["${{ github.token }}" if v == ops_steps.JOB_TOKEN else "${{ secrets.%s }}" % ops_steps.SECRETS[v]
-                       for v in script.variables]
+        for name in scripts_of("ops"):
+            wanted += [secret_of(v) for v in ops_steps.SCRIPTS[name].variables]
         self.assertEqual(found, sorted(wanted))
         self.assertEqual(set(ops_steps.SECRETS) | {ops_steps.JOB_TOKEN},
                          {v for s in ops_steps.SCRIPTS.values() for v in s.variables})
@@ -708,8 +742,57 @@ class WorkflowFileTest(unittest.TestCase):
         pinned = pins()
         self.assertEqual(sorted(pinned), ["actions/checkout", "actions/setup-node"])
         uses = re.findall(r"uses: (\S+)", self.text)
-        self.assertEqual(len(uses), 2 * len(ops_steps.SCRIPTS) + 1)
+        self.assertEqual(len(uses), 2 * len(scripts_of("ops")) + 1)
         self.assertTrue(set(uses) <= set(pinned.values()))
+
+
+class AlertsWorkflowFileTest(unittest.TestCase):
+    """alerts.yml, read whole: every key and value is the one this test builds from SCRIPTS and
+    SECRETS, so the schedule's one job runs failure-alert from main with exactly its secrets and the
+    job's token, and may write only issues (docs/plans/api-b2-failure-alerts.md, section 1.5)."""
+
+    def setUp(self):
+        self.text = workflow("alerts")
+        self.document = parse_yaml(self.text)
+
+    def test_the_whole_file(self):
+        pinned = pins()
+        self.assertEqual(scripts_of("alerts"), ["failure-alert"])
+        script = ops_steps.SCRIPTS["failure-alert"]
+        self.assertEqual(self.document, {
+            "name": "alerts",
+            # Every 15 minutes, away from the hour's busy start (docs/LIMITATIONS.md, 2026-11-28),
+            # or by hand; no other event, so no branch's push or pull request starts it.
+            "on": {"schedule": [{"cron": "7,22,37,52 * * * *"}], "workflow_dispatch": {}},
+            "permissions": {},
+            "concurrency": {"group": "alerts-dev", "cancel-in-progress": "false"},
+            # The script is fixed here, not an input: ops_steps.py check refuses any other ref
+            # than main's, as for ops.
+            "env": {"OPS_SCRIPT": "failure-alert"},
+            "defaults": {"run": {"shell": "bash"}},
+            "jobs": {"failure-alert": {
+                "name": "failure-alert", "runs-on": "ubuntu-24.04", "timeout-minutes": "15",
+                "permissions": {"contents": "read", "issues": "write"},
+                "steps": [{"uses": pinned["actions/checkout"], "with": {"persist-credentials": "false"}},
+                          {"run": "python3 tools/ci/ops_steps.py check"},
+                          *setup_steps(pinned),
+                          {"name": "failure-alert", "env": {v: secret_of(v) for v in script.variables},
+                           "run": "python3 tools/ci/ops_steps.py run"}],
+            }},
+        })
+        self.assertEqual(list(self.document), ["name", "on", "permissions", "concurrency", "env", "defaults", "jobs"])
+
+    def test_every_expression_in_the_file_is_one_this_test_knows(self):
+        # As for ops.yml, on the file's own text, comments included: the three variables' and
+        # nothing else, so no input and no other secret reaches the job.
+        found = sorted(re.findall(r"\$\{\{.*?\}\}", self.text))
+        self.assertEqual(self.text.count("${{"), len(found))
+        self.assertEqual(found, sorted(["${{ secrets.DEV_DATABASE_URL }}", "${{ github.token }}",
+                                        "${{ secrets.SUPABASE_DEV_PROJECT_REF }}"]))
+
+    def test_the_pins_are_ci_yml_s(self):
+        uses = re.findall(r"uses: (\S+)", self.text)
+        self.assertEqual(sorted(uses), sorted(pins().values()))
 
 
 class UsageTest(unittest.TestCase):

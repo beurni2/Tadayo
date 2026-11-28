@@ -44,6 +44,7 @@ jobs:
       - run: python3 tools/ci/ci_steps.py openapi
       - run: python3 tools/ci/ci_steps.py unit
       - run: python3 tools/ci/ci_steps.py web
+      - run: python3 tools/ci/ci_steps.py audit
 
   postgres:
     name: postgres

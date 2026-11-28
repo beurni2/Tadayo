@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""The ops workflow's steps (docs/plans/B0.md, slice 10b; .github/workflows/ops.yml).
+"""The ops workflow's steps (docs/plans/B0.md, slice 10b; .github/workflows/ops.yml), and the alerts
+workflow's (docs/plans/api-b2-failure-alerts.md, section 1.5; .github/workflows/alerts.yml).
 
   python3 tools/ci/ops_steps.py <step>
 
@@ -14,11 +15,14 @@ OPS_BRANCH, and never writes them into a command line, so an input is only ever 
 always as `--option=value`, so that a value starting with a dash is never read as an option.
 SCRIPTS is the interface of docs/plans/api-b0-deploy.md, section 4's table, with spike S5's
 spike-time from docs/plans/api-b0-spike-time.md, section 7, and spike S6's spike-links from
-docs/plans/api-b0-spike-links.md, section 4: what each script reads on the runner
-and the one option it takes, if any. ops.yml has one job per script, run only for
-that script and naming only its secrets (a job's `if:` is decided before a runner gets the job, so
-a skipped job's secrets reach no runner; a step's `if:` would not do), and ops_steps_test.py reads
-ops.yml to hold it to that. SECRETS is the repository secret behind each variable: the repository's
+docs/plans/api-b0-spike-links.md, section 4, and the outside audit's B7's failure-alert from
+docs/plans/api-b2-failure-alerts.md, section 1.5: what each script reads on the runner, the one
+option it takes, if any, and the workflow that runs it. ops.yml has one job per script it runs, by
+hand, run only for that script and naming only its secrets (a job's `if:` is decided before a
+runner gets the job, so a skipped job's secrets reach no runner; a step's `if:` would not do).
+failure-alert runs from alerts.yml alone, every 15 minutes or by hand, in that file's one job, which
+names only its secrets and sets OPS_SCRIPT itself. ops_steps_test.py reads both files to hold them
+to that. SECRETS is the repository secret behind each variable: the repository's
 names keep a `DEV_` prefix that the scripts' don't have (DEV_DATABASE_URL is DATABASE_URL).
 
 The scripts themselves check what they are given (tools/ops: the guard keeps them on tadayo-dev,
@@ -78,6 +82,9 @@ class Script:
     variables: tuple
     options: dict = field(default_factory=dict)
     flyctl: bool = False
+    # The workflow file, .github/workflows/<workflow>.yml, that runs it by hand or on its schedule,
+    # whose whole-file test in ops_steps_test.py covers it (deploy-dev.yml runs some ops scripts too).
+    workflow: str = "ops"
 
 
 SCRIPTS = {
@@ -96,6 +103,8 @@ SCRIPTS = {
                               "SUPABASE_ACCESS_TOKEN"), flyctl=True),
     "spike-time": Script(("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"), flyctl=True),
     "spike-links": Script(("FLY_API_TOKEN",), flyctl=True),
+    "failure-alert": Script(("DATABASE_URL", "GITHUB_TOKEN", "SUPABASE_DEV_PROJECT_REF"),
+                            workflow="alerts"),
 }
 # The repository secret each variable is given from (docs/plans/B0.md's secrets row). GITHUB_TOKEN
 # is the job's own token, not a secret.
@@ -248,10 +257,11 @@ class Steps:
             return 1
         missing = [v for v in SCRIPTS[name].variables if not self.value(v)]
         for variable in missing:
-            # ops_steps_test.py holds ops.yml to giving every variable, so an empty one is most
-            # likely a repository secret that isn't set: say which, before node starts.
+            # ops_steps_test.py holds ops.yml and alerts.yml to giving every variable, so an empty
+            # one is most likely a repository secret that isn't set: say which, before node starts.
             if variable == JOB_TOKEN:
-                print(f"ops: {name} has no {variable}: its step in ops.yml gives it the job's token")
+                print(f"ops: {name} has no {variable}: its step in {SCRIPTS[name].workflow}.yml gives it "
+                      "the job's token")
             else:
                 print(f"ops: {name} has no {variable}: the repository secret {SECRETS[variable]} is "
                       "empty in this run (is it set? Settings, Secrets and variables, Actions)")
