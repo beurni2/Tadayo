@@ -1,0 +1,75 @@
+--- 10:43:31 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-28-104331.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-28 10:43:31.00 +0000
+pid: 94149
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.E1225BDA-E24F-4E2D-AD82-298477908A00
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 94149, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 10:49:13 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-28-104723_sjc22-bt152-102e95cd-e86f-421c-83b1-1a7f0e934028-32FFAB76C905.diag
+Date/Time:        2026-11-28 10:40:49.262 +0000
+End time:         2026-11-28 10:42:20.647 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 5D0176DF-68A2-46B7-A6E4-1521CE1E2006
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x193d6c000
+
+Command:          STExtractionService
+Path:             /Volumes/VOLUME/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.E1225BDA-E24F-4E2D-AD82-298477908A00"(2793)
+On Behalf Of:     77 samples UNKNOWN [92324] (77 samples originated by UNKNOWN [92270, 92407])
+Architecture:     arm64
+Parent:           UNKNOWN [92264]
+PID:              93183
+
+--- 10:53:44 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-28-104914_sjc22-bt152-102e95cd-e86f-421c-83b1-1a7f0e934028-32FFAB76C905.diag
+Date/Time:        2026-11-28 09:54:55.196 +0000
+End time:         2026-11-28 10:43:04.689 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: A90100D8-EA7A-4157-A92E-19093A20278D
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x193d6c000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1971a8000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(802)
+On Behalf Of:     148 samples UNKNOWN [3140, 30768, 30830, 39732, 40741, 94186] (148 samples originated by UNKNOWN [206, 30768, 30830, 39732, 40741, 94186])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              664
+
+--- 11:04:29 UTC, /Library/Logs/DiagnosticReports/mds_stores_2026-11-28-110125_sjc22-bt152-102e95cd-e86f-421c-83b1-1a7f0e934028-32FFAB76C905.diag
+Date/Time:        2026-11-28 09:54:36.087 +0000
+End time:         2026-11-28 11:00:56.695 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 6E3FDD00-4108-4CA2-BA23-E475157214EF
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x193d6c000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x1971a8000
+
+Command:          mds_stores
+Path:             /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+Resource Coalition: "com.apple.Spotlight"(567)
+On Behalf Of:     214 samples mds [123] (187 samples originated by UNKNOWN [1578, 1602, 1609, 1925, 1943, 3674, 5894, 7789, 9498, 11500, 19652, 20633, 25082, 25720, 29416], 27 samples originated by mds [123])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              458
+
+Event:            disk writes
