@@ -222,6 +222,7 @@ final class ClubCreateUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [launch]
         app.launch()
+        app.leaveWelcome()
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
         app.buttons["Send a code"].tap()

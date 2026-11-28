@@ -5,7 +5,8 @@
     /// How the UI tests launch the app (`TadayoUITests`), in Debug builds only, which run in the
     /// simulator and on CI and whose Supabase URL never resolves (`project.yml`).
     enum UITestLaunch {
-        /// The real services with no session kept: the app opens on A02-email.
+        /// The real services with no session kept: the app opens on Welcome (`A01-welcome`), as
+        /// every launch here does, none keeping a session.
         static let noSession = "-TadayoUITestNoSession"
         /// Stand-in services that answer at once, so a test can walk sign-in to its end with no
         /// network at all: any address takes a code, 123456 is the right one, and the account

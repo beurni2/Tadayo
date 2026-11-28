@@ -5,10 +5,27 @@ import Observation
 /// handoff 7's `authForm`): an address, a six-digit code sent to it, and a new code no sooner than
 /// a minute after the last one the server accepted. Each request goes once at a time; a failure
 /// keeps what was typed.
+///
+/// Before them, Welcome (A01; handoffs 8 and 9) and the route the person takes from it (`Way`),
+/// when the flow starts there (`showsWelcome`): I have an invite's paste step comes between, signed
+/// out (`linkEntry`). The root says where the flow starts and holds what the route leaves for
+/// after sign-in (`docs/plans/ios-b1-welcome.md` section 2).
 @MainActor @Observable public final class SignInModel {
     public enum Step: Sendable, Equatable {
         case email
         case code
+    }
+
+    /// Welcome's three routes (handoff 8's `welcome.routes`; handoff 9's `welcome`).
+    public enum Way: Sendable, Equatable {
+        /// Create a club: A02-email, the age and the profile if the account needs them, then
+        /// `G01-create`, which the root opens once the tabs show.
+        case createClub
+        /// I have an invite: the paste step, `G02-link-entry`, signed out, whose Continue holds a
+        /// link; then A02-email, and the invitation once the tabs show.
+        case invitation
+        /// Already here? Sign in: A02-email, then wherever the account goes.
+        case signIn
     }
 
     /// What went wrong with the address or the code, one line at a time; the app gives each its
@@ -74,6 +91,15 @@ import Observation
     public private(set) var signInEnded: Bool
     /// When the resend row next changes, while A02-code waits; the view waits on it.
     public private(set) var resendDue: ContinuousClock.Instant?
+    /// The flow starts at Welcome, under the screens Welcome's routes push. False for one that
+    /// starts at A02-email: a link is held (book p9: "A received invite skips the generic
+    /// introduction"), the server ended the sign-in, or Retry after one the phone couldn't keep.
+    public private(set) var showsWelcome: Bool
+    /// The route taken from Welcome; nil while Welcome shows, or for a flow that starts at
+    /// A02-email.
+    public private(set) var way: Way?
+    /// I have an invite's paste step, signed out, while that route is taken.
+    public private(set) var linkEntry: InvitationLinkEntryModel?
 
     private var typedAddress = ""
     private var digits = ""
@@ -82,14 +108,22 @@ import Observation
     let verified: @MainActor (AuthSession) async -> Void
     let now: @Sendable () -> ContinuousClock.Instant
     let sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
+    let hold: @MainActor (InvitationToken) -> Void
+    let letGo: @MainActor (InvitationToken?) -> Void
 
     /// `verified` takes the session a code gave; `signInEnded` says the server ended the sign-in
     /// before; `now` and `sleep` time the resend wait on the continuous clock, which keeps counting
-    /// while the phone sleeps.
+    /// while the phone sleeps. `welcome` starts the flow at Welcome; then the paste step's Continue
+    /// gives its link to `hold`, for after sign-in, and `letGo` is told when one is let go: the
+    /// paste step's own link when Back leaves A02-email for it, and any link held (nil) when
+    /// Welcome shows again.
     public init(
         auth: any AuthService,
         verified: @escaping @MainActor (AuthSession) async -> Void,
         signInEnded: Bool = false,
+        welcome: Bool = false,
+        hold: @escaping @MainActor (InvitationToken) -> Void = { _ in },
+        letGo: @escaping @MainActor (InvitationToken?) -> Void = { _ in },
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
         sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
             try await Task.sleep(until: $0, clock: .continuous)
@@ -98,8 +132,57 @@ import Observation
         self.auth = auth
         self.verified = verified
         self.signInEnded = signInEnded
+        self.showsWelcome = welcome
+        self.hold = hold
+        self.letGo = letGo
         self.now = now
         self.sleep = sleep
+    }
+
+    /// One of Welcome's routes, while Welcome shows with none taken.
+    public func choose(_ way: Way) {
+        guard showsWelcome, self.way == nil else { return }
+        self.way = way
+        if way == .invitation {
+            linkEntry = InvitationLinkEntryModel(
+                hold: { [weak self] token in self?.hold(token) },
+                letGo: { [weak self] token in self?.letGo(token) })
+        }
+    }
+
+    /// Back to Welcome, from any screen its route pushed, while no request is on its way (the
+    /// back button hides then): the route is forgotten, the paste step is left, and any link held
+    /// is let go, so Welcome shown again holds nothing for after sign-in (handoff 9's
+    /// `linkEntry.cancellation`: "discard the account-scoped intent on explicit exit"). The address
+    /// typed stays; A02-code's lines and A02-email's go.
+    public func returnToWelcome() {
+        guard showsWelcome, way != nil, !isSending, canChangeEmail else { return }
+        if step == .code { changeEmail() }
+        failure = nil
+        linkEntry?.left()
+        linkEntry = nil
+        way = nil
+        letGo(nil)
+    }
+
+    /// Back from A02-email to the paste step under it, while no request is on its way: the link it
+    /// held is let go, and the field keeps its text, so Continue holds it again.
+    public func returnToLinkEntry() {
+        guard way == .invitation, !isSending, canChangeEmail else { return }
+        if step == .code { changeEmail() }
+        failure = nil
+        linkEntry?.returned()
+    }
+
+    /// A link was opened while signed out, and the root holds it. Where Welcome shows, the flow
+    /// starts at A02-email instead (book p9); after Create a club, the link replaces it, A02-email
+    /// staying where it is; anywhere else nothing moves.
+    func received() {
+        switch way {
+        case nil: showsWelcome = false
+        case .createClub: way = .signIn
+        case .invitation, .signIn: break
+        }
     }
 
     /// The code as typed or pasted: ASCII digits only, at most six. Editing it clears a failed

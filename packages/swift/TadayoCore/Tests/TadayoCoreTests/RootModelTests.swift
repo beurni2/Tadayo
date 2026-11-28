@@ -76,6 +76,8 @@ import Testing
         #expect(root.signIn != nil)
         // No sign-in ended: A02-email says nothing of one (handoff 7's `auth.email.signedOut`).
         #expect(root.signIn?.signInEnded == false)
+        // A phone with no sign-in starts at Welcome (A01; `docs/plans/ios-b1-welcome.md`).
+        #expect(root.signIn?.showsWelcome == true)
         #expect(accounts.calls.isEmpty)
         #expect(purges == 0)
     }
@@ -158,8 +160,10 @@ import Testing
         #expect(root.route == .signIn)
         #expect(root.signIn?.step == .email)
         #expect(root.signIn?.email == "ben@example.com")
-        // The device couldn't keep the session, but nothing ended it: no notice.
+        // The device couldn't keep the session, but nothing ended it: no notice. Only the code is
+        // asked for again, so A02-email is the first screen, with no Welcome under it.
         #expect(root.signIn?.signInEnded == false)
+        #expect(root.signIn?.showsWelcome == false)
         // Nothing is kept, so there was no account to read, and no wait to show, not for a turn
         // either (FQ96): the routes taken are the canvas alone, then sign-in, and nothing else. The
         // exact list is what shows the history was recorded at all: a recorder that saw nothing
@@ -306,8 +310,10 @@ import Testing
         #expect(root.route == .signIn)
         #expect(root.profile == nil)
         #expect(root.signIn?.email == "")
-        // The person asked: A02-email doesn't say the sign-in ended.
+        // The person asked: A02-email doesn't say the sign-in ended, and Welcome shows again
+        // (handoff 1: "Leave sign-in exits the restricted setup session and returns to Welcome").
         #expect(root.signIn?.signInEnded == false)
+        #expect(root.signIn?.showsWelcome == true)
     }
 
     @Test func leavingPurgesOnceTheServerHasHeardAndBeforeSignInShows() async throws {
@@ -374,6 +380,8 @@ import Testing
         #expect(root.signIn?.signInEnded == true)
         #expect(root.signIn?.email == "ben@example.com")
         #expect(root.signIn?.step == .email)
+        // Its words are for someone already here: A02-email first, with no Welcome under it.
+        #expect(root.signIn?.showsWelcome == false)
     }
 
     @Test func leavingSignInFromTheAgeLeavesTheFieldEmptyThoughTheAddressIsInMemory() async throws {
@@ -412,6 +420,7 @@ import Testing
         #expect(root.route == .signIn)
         #expect(root.signIn?.signInEnded == true)
         #expect(root.signIn?.email == "")
+        #expect(root.signIn?.showsWelcome == false)
     }
 
     @Test func aSignInMadeInThisLaunchLeavesNoAddressOnceTheTabsShow() async throws {

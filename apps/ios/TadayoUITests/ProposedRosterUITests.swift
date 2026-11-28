@@ -103,6 +103,7 @@ final class ProposedRosterUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-TadayoUITestPropose"]
         app.launch()
+        app.leaveWelcome()
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
         app.buttons["Send a code"].tap()
