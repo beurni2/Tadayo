@@ -57,6 +57,9 @@ from dataclasses import dataclass, field
 FLYCTL_VERSION = "0.5.8"
 FLYCTL_URL = (f"https://github.com/superfly/flyctl/releases/download/v{FLYCTL_VERSION}/"
               f"flyctl_{FLYCTL_VERSION}_Linux_x86_64.tar.gz")
+# The release's own checksums file, flyctl_0.5.8_checksums.txt (its name; checksums.txt answers 404),
+# gives this hash for that tarball, and the tarball downloaded on 2026-11-28 hashes to it: compared
+# then, not taken from one download alone (the outside audit's B6).
 FLYCTL_SHA256 = "0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ac"
 DOWNLOAD_SECONDS = 120
 
