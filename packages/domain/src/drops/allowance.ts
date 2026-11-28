@@ -11,6 +11,8 @@
 // week (ND04). Drafts and photos in conversations count for nothing.
 
 /** A drop's kind (the contract's MediaClass). */
+import { Fault, InputFault } from "../fault.ts";
+
 export type MediaClass = "photo" | "external_video";
 
 export const MEDIA_CLASSES: readonly MediaClass[] = ["photo", "external_video"];
@@ -57,7 +59,7 @@ export type LimitCode = "QUOTA_FULL" | "EXTERNAL_LIMIT" | "PHOTO_LIMIT";
 
 function count(value: unknown, what: string): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
-    throw new Error(`allowance: ${what} isn't a count`);
+    throw new Fault("allowance_1", `allowance: ${what} isn't a count`);
   }
   return value;
 }
@@ -75,7 +77,7 @@ export function allowanceOf(row: CounterRow, isStar: boolean): Allowance {
     row.externalLimit !== limits.links ||
     typeof isStar !== "boolean"
   ) {
-    throw new Error("allowance: the counter's limits aren't the caller's role's");
+    throw new Fault("allowance_2", "allowance: the counter's limits aren't the caller's role's");
   }
   const committedTotal = count(row.committedTotal, "committed_total");
   const committedExternal = count(row.committedExternal, "committed_external");
@@ -88,7 +90,7 @@ export function allowanceOf(row: CounterRow, isStar: boolean): Allowance {
     committedTotal - committedExternal + (reservedTotal - reservedExternal) > limits.photos ||
     committedExternal + reservedExternal > limits.links
   ) {
-    throw new Error("allowance: the counter holds more than the caller's role allows");
+    throw new Fault("allowance_3", "allowance: the counter holds more than the caller's role allows");
   }
   return {
     added: committedTotal,
@@ -110,7 +112,7 @@ export function allowanceOf(row: CounterRow, isStar: boolean): Allowance {
  * role's photos are, which only a friend meets, since the star's photos are the star's whole allowance.
  */
 export function limitRefusal(allowance: Allowance, media: MediaClass): LimitCode | null {
-  if (!MEDIA_CLASSES.includes(media)) throw new TypeError("allowance: not a media class");
+  if (!MEDIA_CLASSES.includes(media)) throw new InputFault("allowance_4", "allowance: not a media class");
   if (allowance.added + allowance.reserved >= allowance.limit) return "QUOTA_FULL";
   if (media === "external_video" && allowance.externalAdded + allowance.externalReserved >= allowance.externalLimit) {
     return "EXTERNAL_LIMIT";

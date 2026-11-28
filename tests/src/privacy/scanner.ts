@@ -53,17 +53,20 @@
 //   own copies, so a contract change alone can't widen them: the outside audit's A14);
 // - world: each of these an answer names is the world's and the viewer's to see:
 //   - a card's drop, in an audience holding an active interval of the viewer, or the viewer's own
-//     for an own card, with the drop's own author and caption;
+//     for an own card, with the drop's own author, caption and media class;
 //   - each other drop reference (REFERENCES), in the form its schema gives it: the viewer's own,
 //     from any interval of theirs (Your drops covers a club they've left); the viewer's own or in an
 //     audience holding an active interval of theirs (a removal's receipt); in such an audience (a
 //     hidden drop); or that and opened (reactions, favourites, comments, highlights, a day's cover),
-//     and of its object's day;
+//     and of its object's day, with the drop's own media class where it gives one; a reservation
+//     with its own (the outside audit's B8);
 //   - a day or a club (an Occurrence, a ClubRef, and the bare ids of BARE) only from a club the
 //     viewer has an interval in, active or not; a ClubSummary only from one they are an active
 //     member of, with their active interval;
-//   - a person only from such a club, under the name members see, with no avatar version once the
-//     person's interval or the viewer's in the club has ended, and never one who joined after the
+//   - a person only from such a club, under the name members see, with the avatar version of their
+//     account while both their interval and the viewer's are active and their account is (the
+//     contract's Person; the outside audit's B8), and none once either interval has ended
+//     (FQ75) or while the account is being deleted (spec 23), and never one who joined after the
 //     viewer's last interval there ended (FQ75);
 //   - an allowance that counts no more than the viewer's own drops in its day, photos and video links
 //     alike, but those withdrawn before its reveal, and the viewer's reservations in it still live at
@@ -1555,6 +1558,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
         const author = isObject(node.author) ? node.author : {};
         if (author.membership_id !== drop.author) find("world", `${at}.author`, "not the drop's author");
         if ((node.caption ?? null) !== drop.caption) find("world", `${at}.caption`, "not the drop's own caption");
+        if (node.media_class !== drop.media) find("world", `${at}.media_class`, "not the drop's own media class");
         whoReacted(node, at, drop);
       }
     }
@@ -1563,6 +1567,8 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       const where = `${at}.${reference.field}`;
       judged.add(where);
       const drop = reader.drop(node[reference.field]);
+      if (drop && node.media_class !== undefined && node.media_class !== drop.media)
+        find("world", `${at}.media_class`, "not the drop's own media class");
       if (!drop) find("world", where, "a drop this world doesn't have");
       else if (reference.form === "own") {
         if (!reader.own(drop)) find("world", where, `someone else's drop in the viewer's own ${String(kind)}`);
@@ -1617,15 +1623,33 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       else {
         if (node.display_name !== member.name) find("world", `${at}.display_name`, "not the name members see (FQ75)");
         const active = reader.activeClubs.has(member.club);
-        if ((member.leftAt !== null || !active) && node.avatar_version !== undefined)
+        const account = world.accounts.get(member.account);
+        if (member.leftAt !== null || !active) {
+          if (node.avatar_version !== undefined)
+            find(
+              "world",
+              `${at}.avatar_version`,
+              "an avatar version once the person's or the viewer's interval has ended (FQ75)",
+            );
+        } else if (account?.state !== "active") {
+          if (node.avatar_version !== undefined)
+            find("world", `${at}.avatar_version`, "an avatar version of an account that isn't active (spec 23)");
+        } else if ((node.avatar_version ?? null) !== account.avatar) {
           find(
             "world",
             `${at}.avatar_version`,
-            "an avatar version once the person's or the viewer's interval has ended (FQ75)",
+            "not the avatar version of the person's own account (the contract's Person)",
           );
+        }
         if (!reader.knows(membership))
           find("world", at, "a person who joined after the viewer's last interval in the club ended (T14)");
       }
+    }
+    if (kind === "Reservation") {
+      const slot = typeof node.id === "string" ? world.reservations.get(node.id) : undefined;
+      if (slot === undefined) find("world", at, "a reservation this world doesn't have");
+      else if (node.media_class !== slot.media)
+        find("world", `${at}.media_class`, "not the reservation's own media class");
     }
     if (kind === "Me") {
       // The only place an account id appears (spec 23): the viewer's own, with the viewer's own row's fields.

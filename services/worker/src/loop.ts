@@ -10,6 +10,8 @@
 // A pass that throws (the database is away) is reported and tried again at the next tick: the worker
 // stays up, since a worker that exited cleanly would leave its Machine stopped (fly.toml).
 
+import { RangeFault } from "@tadayo/domain/fault";
+
 export interface Loop {
   /** One pass. A throw is reported, and the loop goes on. */
   readonly pass: () => Promise<void>;
@@ -23,7 +25,8 @@ export interface Loop {
 
 /** Runs passes until `stopped` settles; resolves once the last pass has finished. */
 export async function runLoop(loop: Loop): Promise<void> {
-  if (!Number.isFinite(loop.everyMs) || loop.everyMs <= 0) throw new RangeError("worker: the loop's wait is positive");
+  if (!Number.isFinite(loop.everyMs) || loop.everyMs <= 0)
+    throw new RangeFault("worker_loop_1", "worker: the loop's wait is positive");
   let told = false;
   const stopNow = () => {
     told = true;

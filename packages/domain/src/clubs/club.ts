@@ -20,6 +20,7 @@ import { activeMemberships } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
 import type { ServerNow } from "../time/clock.ts";
 import { clubRow, type ClubRow } from "./club-list.ts";
+import { Fault } from "../fault.ts";
 
 /** A club holds at most six people, its candidates still open counted (A01, T6). */
 export const CLUB_SIZE = 6;
@@ -43,7 +44,7 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 function shape(): Error {
-  return new Error("clubs: the club came back in a shape the schema doesn't allow");
+  return new Fault("club_1", "clubs: the club came back in a shape the schema doesn't allow");
 }
 
 function count(value: unknown): number {

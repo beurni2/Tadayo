@@ -40,6 +40,7 @@ import { readableDrops, type FragmentSql, type QuerySql } from "../authorization
 import { person, personOf, type SchedulePerson } from "../schedule/week.ts";
 import { clubTimeZone } from "../time/civil.ts";
 import type { ServerNow } from "../time/clock.ts";
+import { Fault } from "../fault.ts";
 
 /** The contract's six modes. */
 export type HomeMode = "unavailable" | "awaiting_activation" | "day" | "waiting" | "paused" | "no_days";
@@ -65,7 +66,7 @@ export interface HomeModeFacts {
  */
 export function homeMode(facts: HomeModeFacts): HomeMode {
   if (!Number.isInteger(facts.activeMembers) || facts.activeMembers < 1)
-    throw new Error("home: a viewer's club has at least one active member, the viewer");
+    throw new Fault("home_1", "home: a viewer's club has at least one active member, the viewer");
   if (facts.suspended) return "unavailable";
   if (!facts.activated) return "awaiting_activation";
   if (facts.open) return "day";
@@ -151,7 +152,7 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 function shape(): Error {
-  return new Error("home: Home came back in a shape the schema doesn't allow");
+  return new Fault("home_2", "home: Home came back in a shape the schema doesn't allow");
 }
 
 function text(value: unknown): string {
@@ -313,7 +314,7 @@ export function openPage(
     };
   });
   if (cards.length > PAGE_DROPS)
-    throw new Error(`home: the open day holds more than ${String(PAGE_DROPS)} drops, whose cursor B5 builds`);
+    throw new Fault("home_3", `home: the open day holds more than ${String(PAGE_DROPS)} drops, whose cursor B5 builds`);
   if (new Set(cards.map((card) => card.id)).size !== cards.length) throw shape();
   const firstFriend = cards.findIndex((card) => card.section === "friends");
   if (firstFriend >= 0 && cards.slice(firstFriend).some((card) => card.section === "star")) throw shape();
@@ -395,7 +396,8 @@ export async function readHome(
       if (open === null) throw shape();
       // Reactions, favourites and reply previews are B6's (the header): a page that left out one would be false.
       if (flag(row["open_page_later"]))
-        throw new Error(
+        throw new Fault(
+          "home_4",
           "home: the open day's drops have reactions or comments, or the viewer's favourite, which B6's page shows",
         );
       const page = openPage(row["open_drops"], row["open_rail"], open.star.membershipId);

@@ -37,6 +37,7 @@ import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import type { Weekday } from "./propose.ts";
 import { includedMember } from "./view.ts";
 import { answerOf, loadWeek, type LoadedProposal, type LoadedWeek, type ProposalAnswer } from "./week.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export interface ScheduleCommandInput {
   /** The account the gate loaded. */
@@ -73,16 +74,16 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: ScheduleCommandInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("schedule: the caller is an account id");
+    throw new InputFault("command_1", "schedule: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("schedule: the idempotency key is a UUID");
+    throw new InputFault("command_2", "schedule: the idempotency key is a UUID");
   }
   if (!Number.isInteger(input.expectedVersion) || input.expectedVersion < 0) {
-    throw new TypeError("schedule: expected_version is a whole number from 0");
+    throw new InputFault("command_3", "schedule: expected_version is a whole number from 0");
   }
   if (!Array.isArray(input.weekdays) || input.weekdays.some((weekday) => typeof weekday !== "string")) {
-    throw new TypeError("schedule: the weekdays are a list of weekdays");
+    throw new InputFault("command_4", "schedule: the weekdays are a list of weekdays");
   }
 }
 
@@ -161,6 +162,6 @@ export async function scheduleCommand(
 
   // 8. The answer.
   const after = (await loadWeek(tx, userId, clubId, { id: proposalId }))?.proposal ?? null;
-  if (after === null) throw new Error("schedule: the proposal vanished under its club's lock");
+  if (after === null) throw new Fault("command_5", "schedule: the proposal vanished under its club's lock");
   return completeReceipt(tx, receipt, render(answerOf(after, callerId)));
 }

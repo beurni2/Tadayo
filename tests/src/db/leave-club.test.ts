@@ -283,15 +283,19 @@ describe("what a leave does to the club's open proposal (FQ121)", () => {
         facts: { current_id: next?.id },
       });
       // Sam's link shows only that it didn't go ahead, with the inviter by the name Ben had on leaving (FQ75),
-      // and accepting with it is told nothing of the roster that went on without Sam: not its id, not a version.
+      // and accepting with it is told nothing of the roster that went on without Sam, not its id: the revision
+      // Sam accepted answers as one that didn't go ahead would, a version conflict at the version it ended at and
+      // then nothing, so Sam can't tell a leave or a removal from a member's decline (FQ148; review G4, P2).
       expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
       // A name Ben takes after leaving reaches nobody he left: the link names him as the club last knew him, as
       // the list of invitations does.
       await tx`UPDATE app.users SET display_name = 'Benjamin' WHERE id = ${user(s.w, 0)}`;
       expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
       expect((await listClubs(tx, sam, NOW)).invitations.map((one) => one.inviterName)).toEqual(["Ben"]);
-      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 1))).toEqual(NONE);
-      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 7))).toEqual(NONE);
+      const asEnded = { code: "VERSION_CONFLICT", facts: { current_version: 2 } };
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 1))).toEqual(asEnded);
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 7))).toEqual(asEnded);
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 2))).toEqual(NONE);
       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, next?.id ?? "", 1))).toEqual(NONE);
     });
   });
@@ -444,6 +448,28 @@ describe("the receipt of a leave (T19)", () => {
         contributions: "withdraw",
       });
       expect(await membership(tx, member(w, 1))).toMatchObject({ state: "left", contributions: "keep" });
+    });
+  });
+
+  it("answers a former member's retry from their own receipt, though another account left with the same key and joined again (the outside audit's B8)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 4);
+      const key = randomUUID();
+      const first = await leaving(tx, user(w, 1), w.club, "keep", key);
+      // Another member leaves under the same key, then joins again: their receipt is older than their new
+      // interval, which is what keeps their own key from answering them (FQ112), and only theirs.
+      await leaving(tx, user(w, 2), w.club, "withdraw", key);
+      clock.set(FIRST.add({ hours: 1 }));
+      const open = await propose(tx, clock, user(w, 0), w.club, ["Alex"]);
+      const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(open, 0));
+      await acceptWith(tx, clock, user(w, 2), made.token, open.id, 1);
+      await approve(tx, clock, user(w, 3), open.id, 1);
+      const back = await plain(tx)<{ interval_id: string }[]>`
+        SELECT interval_id FROM app.memberships WHERE club_id = ${w.club} AND user_id = ${user(w, 2)} AND state = 'active'`;
+      expect(back).toHaveLength(1);
+      clock.set(FIRST.add({ hours: 2 }));
+      const again = await leaving(tx, user(w, 1), w.club, "keep", key);
+      expect(JSON.stringify(again)).toBe(JSON.stringify(first));
     });
   });
 });

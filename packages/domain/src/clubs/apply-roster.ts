@@ -44,6 +44,7 @@ import { settleChange } from "../schedule/settle-change.ts";
 import { settleFirstDays } from "../schedule/settle.ts";
 import type { ClockSql, ServerNow } from "../time/clock.ts";
 import { CLUB_SIZE } from "./club.ts";
+import { Fault } from "../fault.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
 
@@ -52,7 +53,7 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 }
 
 function shape(): Error {
-  return new Error("clubs: the roster came back in a shape the schema doesn't allow");
+  return new Fault("apply_roster_1", "clubs: the roster came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {

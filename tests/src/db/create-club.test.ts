@@ -298,6 +298,28 @@ describe("one club per key (T19)", () => {
     });
   });
 
+  it("replays each account's own answer under a key both used, and never the other's (the outside audit's B8)", async () => {
+    await rolledBack(db, async (tx) => {
+      const ben = await newUser(plain(tx), "Ben");
+      const ana = await newUser(plain(tx), "Ana");
+      const key = randomUUID();
+      const bens = await request(tx, ben, { key });
+      const anas = await request(tx, ana, { key, name: "Kitchen table" });
+      // Each account's retry of its own request is its own first answer, whichever receipt the table
+      // holds first: a lookup that forgot whose key it is would find the other account's for one of them.
+      expect((await request(tx, ben, { key })).answer).toEqual(bens.answer);
+      expect((await request(tx, ana, { key, name: "Kitchen table" })).answer).toEqual(anas.answer);
+      // And the other's request under the key is another request of its own, never the other's answer.
+      expect(await refusal(request(tx, ben, { key, name: "Kitchen table" }))).toEqual({
+        code: "IDEMPOTENCY_CONFLICT",
+        facts: {},
+      });
+      expect(await refusal(request(tx, ana, { key }))).toEqual({ code: "IDEMPOTENCY_CONFLICT", facts: {} });
+      expect(await clubsOf(tx, ben)).toHaveLength(1);
+      expect(await clubsOf(tx, ana)).toHaveLength(1);
+    });
+  });
+
   it("makes one club when the same request arrives eight times at once, and answers each alike", async () => {
     clock.set(FIRST);
     const ben = await db.begin((tx) => newUser(plain(tx), `Ben ${newId("n")}`));

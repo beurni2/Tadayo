@@ -33,6 +33,7 @@ import type { ServerNow } from "../time/clock.ts";
 import { nextMonday, nextWeekStart, pickAfter, type PickChange, type PickMember, type WeekDay } from "./change.ts";
 import type { ProposedDays } from "./roster-change.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
 
@@ -45,7 +46,7 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 function shape(): Error {
-  return new Error("schedule: the club's week came back in a shape the schema doesn't allow");
+  return new Fault("settle_change_1", "schedule: the club's week came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -110,7 +111,8 @@ async function writeHolds(
  * READ COMMITTED transaction that holds the club's row, and says what it did.
  */
 export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string): Promise<PickChange> {
-  if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeError("schedule: the club is a club id");
+  if (typeof clubId !== "string" || !ID.test(clubId))
+    throw new InputFault("settle_change_2", "schedule: the club is a club id");
   const [row] = await bound(tx)`
     SELECT c.timezone,
            (SELECT coalesce(pg_catalog.jsonb_agg(m.interval_id ORDER BY m.joined_at, m.interval_id COLLATE "C"),
@@ -144,7 +146,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
              WHERE p.club_id = c.id AND p.state = 'open' AND p.reason = 'membership_change') AS open
       FROM app.clubs c
      WHERE c.id = ${clubId}`;
-  if (row === undefined) throw new Error("schedule: no such club to settle the week of");
+  if (row === undefined) throw new Fault("settle_change_3", "schedule: no such club to settle the week of");
   const found = row["open"] === null ? null : record(row["open"]);
   const latest = row["latest"] === null ? null : record(row["latest"]);
   const days =
@@ -185,7 +187,8 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
   const today = at.toZonedDateTimeISO(clubTimeZone(text(row["timezone"]))).toPlainDate();
 
   if (change.freed.length > 0) {
-    if (latest === null) throw new Error("schedule: the rule freed days of a week the club doesn't have");
+    if (latest === null)
+      throw new Fault("settle_change_4", "schedule: the rule freed days of a week the club doesn't have");
     const start = nextWeekStart(today, date(latest["effective_from"])).toString();
     const versionId = newId("sched");
     await bound(tx)`
@@ -215,7 +218,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
   const openId = found === null ? null : text(found["id"]);
   if (proposal.kind === "nothing") return change;
   if (proposal.kind === "drop" || proposal.kind === "apply") {
-    if (openId === null) throw new Error("schedule: the rule ended a pick that isn't open");
+    if (openId === null) throw new Fault("settle_change_5", "schedule: the rule ended a pick that isn't open");
     const ended = proposal.kind === "drop" ? "superseded" : "applied";
     await bound(tx)`
       UPDATE app.schedule_proposals
@@ -224,13 +227,14 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
     return change;
   }
   if (proposal.kind === "add") {
-    if (openId === null) throw new Error("schedule: the rule added members to a pick that isn't open");
+    if (openId === null)
+      throw new Fault("settle_change_6", "schedule: the rule added members to a pick that isn't open");
     await writeHolds(tx, openId, clubId, proposal.members);
     return change;
   }
   const proposalId = newId("spr");
   if (proposal.replaces) {
-    if (openId === null) throw new Error("schedule: the rule replaced a pick that isn't open");
+    if (openId === null) throw new Fault("settle_change_7", "schedule: the rule replaced a pick that isn't open");
     // The open pick first: a club has one open proposal. `replaced_by` is checked at commit.
     await bound(tx)`
       UPDATE app.schedule_proposals

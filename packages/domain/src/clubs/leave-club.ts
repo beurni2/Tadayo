@@ -64,6 +64,7 @@ import { freeSlot, settleLapsed, type CounterKey } from "../drops/counter.ts";
 import { settleChange } from "../schedule/settle-change.ts";
 import { settleFirstDays } from "../schedule/settle.ts";
 import { writeRevision } from "./apply-roster.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export type Contributions = "keep" | "withdraw";
 
@@ -97,19 +98,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: LeaveClubInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("clubs: the caller is an account id");
+    throw new InputFault("leave_club_1", "clubs: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("clubs: the idempotency key is a UUID");
+    throw new InputFault("leave_club_2", "clubs: the idempotency key is a UUID");
   }
   const choice: unknown = input.contributions;
   if (choice !== "keep" && choice !== "withdraw") {
-    throw new TypeError("clubs: contributions is keep or withdraw");
+    throw new InputFault("leave_club_3", "clubs: contributions is keep or withdraw");
   }
 }
 
 const text = (value: unknown): string => {
-  if (typeof value !== "string") throw new Error("clubs: a leave read a row it can't use");
+  if (typeof value !== "string") throw new Fault("leave_club_4", "clubs: a leave read a row it can't use");
   return value;
 };
 
@@ -271,7 +272,8 @@ export async function leaveClub(
       FROM app.users u
      WHERE m.interval_id = ${asking} AND m.state = 'active' AND u.id = m.user_id
     RETURNING m.interval_id`;
-  if (ended === undefined) throw new Error("clubs: the membership its member is leaving can't be ended");
+  if (ended === undefined)
+    throw new Fault("leave_club_5", "clubs: the membership its member is leaving can't be ended");
 
   // 5a. The leaver's contributions.
   await settleContributions(tx, clubId, asking, at, contributions);
@@ -295,7 +297,8 @@ export async function leaveClub(
        WHERE rc.revision_id = ${revisionId} AND k.state = 'open'
        ORDER BY rc.position`;
     const origin: unknown = open["origin"];
-    if (origin !== "proposal" && origin !== "rename") throw new Error("clubs: a leave read a row it can't use");
+    if (origin !== "proposal" && origin !== "rename")
+      throw new Fault("leave_club_6", "clubs: a leave read a row it can't use");
     if (carried.length > 0 && open["proposer_active"] === true) {
       const next = newId("rev");
       await bound(tx)`

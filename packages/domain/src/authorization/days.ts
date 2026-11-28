@@ -48,6 +48,7 @@ import type { ServerNow } from "../time/clock.ts";
 import { wholeMicroseconds } from "../time/instant.ts";
 import { checkNow, notBeforeReveal, type AccountState, type DayStatus, type MembershipState } from "./read.ts";
 import { checkViewer, readableDrops, starKeepsDay, type FragmentSql } from "./read-sql.ts";
+import { Fault } from "../fault.ts";
 
 /** Where a chosen day is at `now`: the open day is open, the next one is collecting (OccurrencePhase). */
 export type ChosenPhase = "open" | "collecting";
@@ -172,7 +173,7 @@ export function placedStar(day: DayFacts): PlacedDay["star"] | null {
  */
 export function placed(day: DayFacts, phase: PlacedPhase): PlacedDay {
   const star = placedStar(day);
-  if (star === null) throw new Error("authorization: a day with no star to name was chosen");
+  if (star === null) throw new Fault("days_1", "authorization: a day with no star to name was chosen");
   return {
     id: day.id,
     clubId: day.clubId,
@@ -377,7 +378,7 @@ export function recentDays<F>(sql: FragmentSql<F>, viewer: string, now: ServerNo
 }
 
 function shape(): Error {
-  return new Error("authorization: a day came back in a shape the schema doesn't allow");
+  return new Fault("days_2", "authorization: a day came back in a shape the schema doesn't allow");
 }
 
 function text(value: unknown): string {

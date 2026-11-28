@@ -18,6 +18,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import type { ServerNow } from "../time/clock.ts";
 import { clubState, type ClubState } from "./club-state.ts";
 import { invitationState, type InvitationState } from "./invitation-state.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /**
  * The contract's bound on each list. Nothing caps how many clubs an account makes or joins yet (FQ118), so an
@@ -83,7 +84,7 @@ function list(value: unknown): unknown[] {
 }
 
 function shape(): Error {
-  return new Error("clubs: the list came back in a shape the schema doesn't allow");
+  return new Fault("club_list_1", "clubs: the list came back in a shape the schema doesn't allow");
 }
 
 /** A club's day, which must be the club's own. */
@@ -134,7 +135,8 @@ function invitation(value: unknown): InvitationRow {
  * INSTANT_TYPE, since `now` is bound as a timestamptz.
  */
 export async function listClubs(sql: QuerySql, userId: string, now: ServerNow): Promise<ClubListing> {
-  if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("clubs: the caller is an account id");
+  if (typeof userId !== "string" || !ID.test(userId))
+    throw new InputFault("club_list_2", "clubs: the caller is an account id");
   const days = daysByClub(sql, userId, now);
   const rows = await bound(sql)`
     SELECT

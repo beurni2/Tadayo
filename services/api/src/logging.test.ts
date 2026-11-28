@@ -9,6 +9,7 @@ import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import type { Account, Clock } from "@tadayo/domain";
 import { Refused } from "@tadayo/domain";
+import { Fault, InputFault, RangeFault } from "@tadayo/domain/fault";
 import Fastify, { type FastifyInstance, type InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "./app.ts";
@@ -338,6 +339,26 @@ describe("the redaction list (T52)", () => {
     expect(lines.join("")).not.toContain("ana@");
   });
 
+  it("keeps an error's class and code only when each is a plain word, which could otherwise carry anything (PR #148's review)", async () => {
+    const { app, lines } = await logged(() => Promise.resolve(READY));
+    const odd = (name: string, code: string) => Object.assign(new Error("x"), { name, code });
+    app.log.error({ err: odd("Error", "postgres://tadayo_app:SECRET-PASSWORD@db.example.invalid/tadayo") }, "failed");
+    app.log.error({ err: odd("Error", "c".repeat(1024)) }, "failed");
+    app.log.error({ err: odd("Error", "has space") }, "failed");
+    app.log.error({ err: odd(`Error ${TEST_EMAIL}`, "23505") }, "failed");
+    app.log.error({ err: odd("E".repeat(65), "23505") }, "failed");
+    app.log.error({ err: odd("PostgresError", "c".repeat(64)) }, "failed");
+    expect(parse(lines).map((entry) => (entry as { err: unknown }).err)).toEqual([
+      { type: "Error" },
+      { type: "Error" },
+      { type: "Error" },
+      { type: "unknown", code: "23505" },
+      { type: "unknown", code: "23505" },
+      { type: "PostgresError", code: "c".repeat(64) },
+    ]);
+    expect(lines.join("")).not.toMatch(/SECRET-PASSWORD|example\.invalid|ccc{1000}|has space/);
+  });
+
   it("gives a line with an error and no message of its own a fixed one, never the error's, which pino would copy (the round-2 review)", async () => {
     const { app, lines } = await logged(() => Promise.resolve(READY));
     const error = () =>
@@ -572,5 +593,26 @@ describe("the log test: what reaches the log across the answers a request can ge
     expect(entries.find((entry) => entry["msg"] === "request failed")).toMatchObject({
       err: { type: "Error", code: "XX000" },
     });
+  });
+
+  it("logs a failure of the code's own by its class and site code, and never its message (the outside audit's B7)", async () => {
+    // Before B7 such an error was a plain Error with no code, so its line said "Error" and nothing else.
+    const faults = [
+      new Fault("propose_roster_6", `clubs: the club vanished under its own lock (${SUBJECT}, ${TEST_EMAIL})`),
+      new InputFault("upload_1", `media: the caller is an account id, not ${TOKEN}`),
+      new RangeFault("civil_1", `time: ${CAPTION} isn't an IANA time zone (T2, FQ19)`),
+    ];
+    for (const fault of faults) {
+      const { inject, lines } = await logged(() => Promise.reject(fault));
+      expect((await inject({ method: "GET", url: "/v1/me", headers: carrying })).statusCode).toBe(500);
+      const failed = parse(lines).filter((entry) => entry["msg"] === "request failed");
+      expect(
+        failed.map((entry) => entry["err"]),
+        fault.code,
+      ).toEqual([{ type: fault.name, code: fault.code }]);
+      const text = lines.join("");
+      for (const marker of MARKERS) expect(text, marker).not.toContain(marker);
+      expect(text, fault.code).not.toContain(fault.message.slice(0, 12));
+    }
   });
 });

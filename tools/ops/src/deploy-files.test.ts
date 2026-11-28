@@ -320,8 +320,14 @@ describe(".dockerignore", () => {
 
 // ---- fly.toml.
 
-/** The names `[env]` may have: public values only, as the probe and the API read them. */
-const ENV_NAMES = ["TADAYO_ENVIRONMENT", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "LOG_LEVEL"];
+/** The names `[env]` may have: public values only, as the probe, the API and the worker read them. */
+const ENV_NAMES = [
+  "TADAYO_ENVIRONMENT",
+  "SUPABASE_URL",
+  "SUPABASE_PUBLISHABLE_KEY",
+  "LOG_LEVEL",
+  "TADAYO_SAFETY_PROVIDER",
+];
 
 describe("fly.toml", () => {
   it("is the dev app, in Virginia, built from the Dockerfile, with one rolling strategy and no release command", () => {
@@ -432,6 +438,11 @@ describe("fly.toml", () => {
     expect(Object.keys(env).sort()).toEqual([...ENV_NAMES].sort());
     expect(env["TADAYO_ENVIRONMENT"]).toBe("dev");
     expect(env["LOG_LEVEL"]).toBe("info");
+    // The photo safety provider, FQ8's `none` for the closed trial, which the worker refuses to start without
+    // (services/worker/src/safety.ts; the outside audit's B7).
+    expect(env["TADAYO_SAFETY_PROVIDER"]).toBe("none");
+    // Named by each environment's configuration alone: the image names none, so `prod`'s must name its own.
+    expect(read("Dockerfile")).not.toContain("TADAYO_SAFETY_PROVIDER");
     // The same project the app signs in to (apps/ios/project.yml, Dev), by the verifier's own rule for its URL.
     const dev = /^ {4}Dev:\n(?: {6}.*\n)+/m.exec(read("apps/ios/project.yml"))?.[0] ?? "";
     expect(projectUrl(String(env["SUPABASE_URL"]))).toBe(String(env["SUPABASE_URL"]));

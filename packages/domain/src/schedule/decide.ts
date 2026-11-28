@@ -12,11 +12,12 @@
 
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 import { confirmerOf, holdersOf, includedMember, type ProposalMember, type WeekFacts } from "./view.ts";
+import { Fault, RangeFault } from "../fault.ts";
 
 function callerOf(callerId: string, facts: WeekFacts): ProposalMember {
   const caller = includedMember(facts, callerId);
   if (caller === undefined) {
-    throw new Error("schedule: the proposal doesn't include the caller as an active member (FQ100, T14)");
+    throw new Fault("decide_1", "schedule: the proposal doesn't include the caller as an active member (FQ100, T14)");
   }
   return caller;
 }
@@ -24,11 +25,16 @@ function callerOf(callerId: string, facts: WeekFacts): ProposalMember {
 /** The request's weekdays from Monday. Throws on what the contract's schema refuses before any rule. */
 function fromMonday(weekdays: readonly Weekday[], least: 0 | 1): Weekday[] {
   if (weekdays.length < least || weekdays.length > 2) {
-    throw new RangeError(least === 1 ? "schedule: one or two weekdays" : "schedule: none, one or two weekdays");
+    throw new RangeFault(
+      "decide_2",
+      least === 1 ? "schedule: one or two weekdays" : "schedule: none, one or two weekdays",
+    );
   }
-  if (new Set(weekdays).size !== weekdays.length) throw new RangeError("schedule: each weekday only once (T6)");
+  if (new Set(weekdays).size !== weekdays.length)
+    throw new RangeFault("decide_3", "schedule: each weekday only once (T6)");
   for (const weekday of weekdays) {
-    if (!WEEKDAYS.includes(weekday)) throw new RangeError("schedule: not a weekday that can be someone's day (T6)");
+    if (!WEEKDAYS.includes(weekday))
+      throw new RangeFault("decide_4", "schedule: not a weekday that can be someone's day (T6)");
   }
   return WEEKDAYS.filter((weekday) => weekdays.includes(weekday));
 }

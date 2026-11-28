@@ -9,6 +9,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import { Refused } from "../refused.ts";
 import type { ServerNow } from "../time/clock.ts";
 import { replayOutcome, requestHash, type IdempotentRequest, type Json } from "./request.ts";
+import { Fault } from "../fault.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
 
@@ -49,7 +50,7 @@ export async function reserveReceipt(
   // A receipt commits only completed (0009), so one that conflicted is whole, unless a purge took it
   // between the two statements, which the caller answers with an error and its retry reserves anew.
   if (receipt === undefined || receipt["state"] !== "completed" || typeof receipt["request_hash"] !== "string") {
-    throw new Error("idempotency: the receipt of a replayed key is gone");
+    throw new Fault("receipt_1", "idempotency: the receipt of a replayed key is gone");
   }
   if (replayOutcome(receipt["request_hash"], request) !== "replay") throw new Refused("IDEMPOTENCY_CONFLICT");
   return { replay: receipt["response_body"] as Json };
@@ -119,6 +120,6 @@ export async function completeReceipt(
      WHERE actor_user_id = ${userId} AND operation = ${request.operation}
        AND idempotency_key = ${key}::pg_catalog.uuid
     RETURNING response_body`;
-  if (completed === undefined) throw new Error("idempotency: the receipt this request reserved is gone");
+  if (completed === undefined) throw new Fault("receipt_2", "idempotency: the receipt this request reserved is gone");
   return completed["response_body"] as Json;
 }

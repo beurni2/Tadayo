@@ -21,6 +21,7 @@ import { scheduleCommand, type ScheduleCommandInput } from "./command.ts";
 import { judgeChoice } from "./decide.ts";
 import { WEEKDAYS } from "./propose.ts";
 import type { ProposalAnswer } from "./week.ts";
+import { Fault } from "../fault.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | boolean)[]) => R;
 
@@ -43,7 +44,8 @@ export function chooseScheduleDays(
     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
     const caller = proposal.facts.members.find((member) => member.id === callerId);
     const week = String(proposal.weekRevision);
-    if (caller === undefined) throw new Error("schedule: the caller left the proposal under its club's lock");
+    if (caller === undefined)
+      throw new Fault("choose_days_1", "schedule: the caller left the proposal under its club's lock");
     for (const weekday of WEEKDAYS) {
       const holds = caller.held.includes(weekday);
       const wanted = judged.held.includes(weekday);

@@ -26,6 +26,8 @@
 // path would otherwise win and move the clock.
 
 /** One query in the caller's transaction, as postgres.js runs a tagged template. */
+import { Fault } from "../fault.ts";
+
 export type ClockSql = (
   template: TemplateStringsArray,
   ...values: readonly never[]
@@ -48,7 +50,8 @@ export interface Clock {
 /** Throws unless `isolation`, as Postgres's `transaction_isolation` names it, is READ COMMITTED. */
 export function requireReadCommitted(isolation: unknown): void {
   if (isolation !== "read committed") {
-    throw new Error(
+    throw new Fault(
+      "clock_1",
       `time: the clock is sampled under READ COMMITTED, so dev's offset is read after the locks, not ${String(isolation)}`,
     );
   }
@@ -58,7 +61,7 @@ function sampled(rows: readonly Record<string, unknown>[]): ServerNow {
   requireReadCommitted(rows[0]?.["isolation"]);
   const answer = rows[0]?.["now_us"];
   if (typeof answer !== "string" || !/^-?[0-9]{1,19}$/.test(answer)) {
-    throw new Error(`time: the clock answered ${String(answer)}, not a whole number of microseconds`);
+    throw new Fault("clock_2", `time: the clock answered ${String(answer)}, not a whole number of microseconds`);
   }
   return Temporal.Instant.fromEpochNanoseconds(BigInt(answer) * 1000n) as ServerNow;
 }
@@ -98,20 +101,24 @@ const DEV_CLOCK: Clock = {
  */
 export async function prepareClock(environment: string, sql: ClockSql): Promise<Clock> {
   if (environment !== "dev" && environment !== "prod") {
-    throw new Error(`time: the environment is ${JSON.stringify(environment)}, not dev or prod (ADR-013)`);
+    throw new Fault("clock_3", `time: the environment is ${JSON.stringify(environment)}, not dev or prod (ADR-013)`);
   }
   // From the catalog, so neither the search path nor a privilege can hide the table.
   const rows = await sql`SELECT EXISTS (SELECT FROM pg_catalog.pg_class c
                                           JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
                                          WHERE n.nspname = 'app' AND c.relname = 'dev_clock') AS present`;
   const present = rows[0]?.["present"];
-  if (typeof present !== "boolean") throw new Error("time: the dev clock's check got no answer");
+  if (typeof present !== "boolean") throw new Fault("clock_4", "time: the dev clock's check got no answer");
   if (environment === "prod") {
-    if (present) throw new Error("time: prod refuses a dev clock, and this database has app.dev_clock (ADR-013)");
+    if (present)
+      throw new Fault("clock_5", "time: prod refuses a dev clock, and this database has app.dev_clock (ADR-013)");
     return PROD_CLOCK;
   }
   if (!present)
-    throw new Error("time: dev's clock reads app.dev_clock, which tools/ops/sql/dev_clock.sql makes (ADR-013)");
+    throw new Fault(
+      "clock_6",
+      "time: dev's clock reads app.dev_clock, which tools/ops/sql/dev_clock.sql makes (ADR-013)",
+    );
   // As the file makes it: a table, not a view, owned by this role, so row-level security doesn't
   // hide its row; row-level security on (T53), and not forced on the owner, which would hide it
   // too; and the three triggers that keep it moving forward enabled. Then read once, so a privilege
@@ -126,7 +133,8 @@ export async function prepareClock(environment: string, sql: ClockSql): Promise<
       FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
      WHERE n.nspname = 'app' AND c.relname = 'dev_clock'`;
   if (shape[0]?.["sound"] !== true) {
-    throw new Error(
+    throw new Fault(
+      "clock_7",
       "time: dev's clock needs app.dev_clock as tools/ops/sql/dev_clock.sql makes it: a table this role owns, " +
         "row-level security on and not forced, its three triggers enabled (ADR-013, T53)",
     );
@@ -134,7 +142,7 @@ export async function prepareClock(environment: string, sql: ClockSql): Promise<
   try {
     await sql`SELECT offset_microseconds FROM app.dev_clock`;
   } catch (error) {
-    throw new Error("time: dev's clock can't read app.dev_clock, which tadayo_app owns (ADR-013, T53)", {
+    throw new Fault("clock_8", "time: dev's clock can't read app.dev_clock, which tadayo_app owns (ADR-013, T53)", {
       cause: error,
     });
   }

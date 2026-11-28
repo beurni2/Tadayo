@@ -27,6 +27,7 @@ import {
   type JWTPayload,
   type JWTVerifyGetKey,
 } from "jose";
+import { Fault } from "@tadayo/domain/fault";
 
 /** The keys a verifier reads: jose's resolver, and a view of what it holds, to tell an empty set from an unknown key. */
 export type KeySet = JWTVerifyGetKey & { jwks(): JSONWebKeySet | undefined };
@@ -204,7 +205,7 @@ export function supabaseProject(value: string): SupabaseProject {
   try {
     url = new URL(value);
   } catch {
-    throw new Error("api: SUPABASE_URL isn't a URL");
+    throw new Fault("api_token_1", "api: SUPABASE_URL isn't a URL");
   }
   if (
     url.protocol !== "https:" ||
@@ -216,7 +217,7 @@ export function supabaseProject(value: string): SupabaseProject {
     url.search !== "" ||
     url.hash !== ""
   ) {
-    throw new Error("api: SUPABASE_URL isn't a project's URL, https://<its 20 letters>.supabase.co");
+    throw new Fault("api_token_2", "api: SUPABASE_URL isn't a project's URL, https://<its 20 letters>.supabase.co");
   }
   return {
     origin: url.origin,

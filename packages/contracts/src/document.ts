@@ -29,6 +29,7 @@ Rules every endpoint keeps:
 - Errors carry a code and facts, never copy: the app owns its words (T41 to T43).
 - Lists are cursor-paged and filtered for the caller (T14). A cursor is opaque and carries no time.
 - Every answer with a body says Cache-Control: private, no-store, and every image its ETag; a link's JSON has none.
+- Any operation may also answer 500 when the server fails, or 503 when something it depends on is out of reach for now (sign-in's keys, Storage, or the database out of time on a lock or a statement) or the server is stopping. Each comes with no body and with Cache-Control: private, no-store, except the stopping server's 503, which has a short JSON body in Fastify's own words and no Cache-Control. No operation lists them except getHealth, which lists its own 503. An app reads any 5xx, listed or not, as the service out of reach for now, and reads no 5xx's body.
 - Requests refuse unknown fields; answers may gain fields, so an app ignores the ones it doesn't know.`;
 
 function strip(node: Json): Json {

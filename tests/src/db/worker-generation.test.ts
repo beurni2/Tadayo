@@ -57,13 +57,14 @@ describe("a generation pass (spec 05, 34)", () => {
     });
   });
 
-  it("goes on to the next club when one fails, and reports the failure by the error's class alone", async () => {
+  it("goes on to the next club when one fails, and reports the failure by the error's class and site code alone", async () => {
     const before = await db.begin((tx) => confirmedWeek(tx, 6, TIMES));
     const after = await db.begin((tx) => confirmedWeek(tx, 6, TIMES));
     // The middle one can't be a club's id, which the command refuses.
     const result = await generationPass(worker, fakeClock(NOW), only(before.club, "not an id", after.club));
-    // What isn't an id isn't repeated either.
-    expect(result).toEqual({ clubs: 3, made: 50, failures: ["a club with no id: TypeError"] });
+    // What isn't an id isn't repeated either. The refusal is makeDays's own, so its site code names it (the outside
+    // audit's B7), where before B7 the line said "TypeError" and nothing else.
+    expect(result).toEqual({ clubs: 3, made: 50, failures: ["a club with no id: InputFault make_days_2"] });
     expect(await count(before.club)).toBe(25);
     expect(await count(after.club)).toBe(25);
   });
@@ -209,6 +210,7 @@ describe("the worker's process (T1)", () => {
           // nothingToPrepare checked above.
           SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co",
           SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
+          TADAYO_SAFETY_PROVIDER: "none",
         },
       });
       let stdout = "";
@@ -221,7 +223,7 @@ describe("the worker's process (T1)", () => {
           await new Promise((resolve) => setTimeout(resolve, 50));
         }
         expect(stdout, stderr).toMatch(
-          /^worker: started, making days every minute and preparing uploads, each photo in the worker's own user\nworker: made \d+ days?\n$/,
+          /^worker: started, making days every minute and preparing uploads, each photo in the worker's own user, screened by no safety provider \(FQ8\)\nworker: made \d+ days?\n$/,
         );
       } finally {
         child.kill("SIGTERM");

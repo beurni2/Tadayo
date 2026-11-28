@@ -16,6 +16,7 @@ import { connect, type ApiSql } from "./connection.ts";
 import { supabaseVerifier } from "./identity/token.ts";
 import { supabaseStorage } from "./media/storage.ts";
 import { sessions } from "./session.ts";
+import { Fault } from "@tadayo/domain/fault";
 
 export interface Started {
   app: FastifyInstance;
@@ -31,7 +32,7 @@ export interface Started {
  */
 function portOf(value: string | undefined): number {
   if (value === undefined) return 8080;
-  if (!/^[0-9]{1,5}$/.test(value) || Number(value) > 65_535) throw new Error("api: PORT isn't a port");
+  if (!/^[0-9]{1,5}$/.test(value) || Number(value) > 65_535) throw new Fault("api_start_1", "api: PORT isn't a port");
   return Number(value);
 }
 
@@ -40,7 +41,7 @@ const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"
 /** The level in LOG_LEVEL: `info` when it isn't set, else one of pino's, so a typo never silences the logs. */
 function logLevelOf(value: string | undefined): string {
   if (value === undefined) return "info";
-  if (!LOG_LEVELS.includes(value)) throw new Error("api: LOG_LEVEL isn't a log level");
+  if (!LOG_LEVELS.includes(value)) throw new Fault("api_start_2", "api: LOG_LEVEL isn't a log level");
   return value;
 }
 
@@ -68,7 +69,8 @@ export function refuseRoot(
   marked: () => boolean = () => existsSync(IMAGE_MARKER),
 ): void {
   if ((env.NODE_ENV === "production" || marked()) && (ids.uid === 0 || ids.euid === 0)) {
-    throw new Error(
+    throw new Fault(
+      "api_start_3",
       "api: in production it runs only as fly.toml's command starts it, turned to its own user, never as root",
     );
   }
@@ -81,12 +83,13 @@ export function refuseRoot(
 export async function startApi(env: Readonly<Record<string, string | undefined>>): Promise<Started> {
   refuseRoot(env, ownIds());
   const url = env.DATABASE_URL;
-  if (url === undefined || url === "") throw new Error("api: DATABASE_URL isn't set");
+  if (url === undefined || url === "") throw new Fault("api_start_4", "api: DATABASE_URL isn't set");
   const supabase = env.SUPABASE_URL;
-  if (supabase === undefined || supabase === "") throw new Error("api: SUPABASE_URL isn't set");
+  if (supabase === undefined || supabase === "") throw new Fault("api_start_5", "api: SUPABASE_URL isn't set");
   const verifier = supabaseVerifier(supabase);
   const serviceKey = env.SUPABASE_SERVICE_KEY;
-  if (serviceKey === undefined || serviceKey === "") throw new Error("api: SUPABASE_SERVICE_KEY isn't set");
+  if (serviceKey === undefined || serviceKey === "")
+    throw new Fault("api_start_6", "api: SUPABASE_SERVICE_KEY isn't set");
   const storage = supabaseStorage({ projectUrl: supabase, serviceKey });
   const port = portOf(env.PORT);
   const log = { level: logLevelOf(env.LOG_LEVEL) };

@@ -1,6 +1,7 @@
 // What the routes share: the dependencies `buildApp` is given, and a route's handler.
 
 import type { Account, Clock } from "@tadayo/domain";
+import { Fault } from "@tadayo/domain/fault";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { ApiSql } from "./connection.ts";
 import type { LogConfig } from "./logging.ts";
@@ -26,6 +27,6 @@ export type Handler = (request: FastifyRequest, reply: FastifyReply) => FastifyR
 
 /** The account the gate loaded: every route that isn't public has one by the time its handler runs. */
 export function signedIn(request: FastifyRequest): Account {
-  if (request.account === null) throw new Error("api: a handler ran without the gate's account");
+  if (request.account === null) throw new Fault("api_deps_1", "api: a handler ran without the gate's account");
   return request.account;
 }

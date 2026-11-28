@@ -2,7 +2,9 @@
 // Postgres in tests/src/db/worker-generation.test.ts.
 
 import { describe, expect, it } from "vitest";
+import { Fault, InputFault, RangeFault } from "@tadayo/domain/fault";
 import { describeFailure, passLines } from "./generation.ts";
+import { PrivilegeFault } from "./privileges.ts";
 
 describe("a failure as the worker reports it (T52, T56)", () => {
   it("is the error's class and its code, never what it says", () => {
@@ -10,6 +12,20 @@ describe("a failure as the worker reports it (T52, T56)", () => {
     expect(describeFailure(refused)).toBe("Error 23000");
     expect(describeFailure(new TypeError("postgres://tadayo_app:hunter2@db/tadayo"))).toBe("TypeError");
     expect(describeFailure(refused)).not.toMatch(/mem_secret|2026/);
+  });
+
+  it("is a fault's class and site code, never its message (the outside audit's B7)", () => {
+    // Before B7 the code's own errors were plain ones with no code, which said "Error" and nothing else.
+    expect(describeFailure(new Fault("settle_change_3", "schedule: mem_secret's week came back wrong"))).toBe(
+      "Fault settle_change_3",
+    );
+    expect(describeFailure(new InputFault("make_days_2", "schedule: 2026-11-10 isn't a date"))).toBe(
+      "InputFault make_days_2",
+    );
+    expect(describeFailure(new RangeFault("order_2", "schedule: mem_secret"))).toBe("RangeFault order_2");
+    expect(describeFailure(new PrivilegeFault("worker_privileges_9", "worker: /proc/7/status said mem_secret"))).toBe(
+      "PrivilegeFault worker_privileges_9",
+    );
   });
 
   it("drops a code that isn't a plain word, which could carry anything", () => {

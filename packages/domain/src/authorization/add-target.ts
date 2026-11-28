@@ -34,6 +34,7 @@ import type { ServerNow } from "../time/clock.ts";
 import { chooseNextDayOf, placeable, placed, type ChosenDay, type DayFacts, type PlacedDay } from "./days.ts";
 import { checkNow, notBeforeReveal, type AccountState, type DayStatus, type MembershipState } from "./read.ts";
 import { checkViewer, type QuerySql } from "./read-sql.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /** What the rule reads about one caller and one day. */
 export interface AddTargetFacts {
@@ -166,7 +167,7 @@ const MEMBERSHIP: readonly MembershipState[] = ["active", "left", "left_by_block
 const STATUS: readonly DayStatus[] = ["scheduled", "suspended", "cancelled"];
 
 function shape(what: string): Error {
-  return new Error(`authorization: ${what} came back in a shape the rule doesn't know`);
+  return new Fault("add_target_1", `authorization: ${what} came back in a shape the rule doesn't know`);
 }
 
 function text(value: unknown, what: string): string {
@@ -235,7 +236,7 @@ export async function loadAddTarget(
   occurrenceId: string,
 ): Promise<AddTargetFacts | null> {
   checkViewer(userId);
-  if (typeof occurrenceId !== "string") throw new TypeError("authorization: the day is an id");
+  if (typeof occurrenceId !== "string") throw new InputFault("add_target_2", "authorization: the day is an id");
   const id = ID.test(occurrenceId) ? occurrenceId : null;
   const rows = await bound(sql)`
     SELECT ${dayColumns(sql)},

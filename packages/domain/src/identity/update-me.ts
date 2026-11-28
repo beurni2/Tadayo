@@ -28,6 +28,7 @@ import { replayOutcome, requestHash, type IdempotentRequest, type Json } from ".
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
 import { accountById, type Account } from "./account.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /** The request's fields, as the contract's `UpdateMeRequest` names them. Only the fields sent change. */
 export interface ProfileEdit {
@@ -64,13 +65,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: UpdateMeInput): void {
   const { userId, key, edit } = input;
-  if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("identity: the caller is an account id");
-  if (typeof key !== "string" || !UUID.test(key)) throw new TypeError("identity: the idempotency key is a UUID");
+  if (typeof userId !== "string" || !ID.test(userId))
+    throw new InputFault("update_me_1", "identity: the caller is an account id");
+  if (typeof key !== "string" || !UUID.test(key))
+    throw new InputFault("update_me_2", "identity: the idempotency key is a UUID");
   if (!Number.isInteger(edit.expected_version) || edit.expected_version < 0) {
-    throw new TypeError("identity: expected_version is a whole number from 0");
+    throw new InputFault("update_me_3", "identity: expected_version is a whole number from 0");
   }
   if (edit.avatar_upload_id !== undefined && !ID.test(edit.avatar_upload_id)) {
-    throw new TypeError("identity: the avatar upload is an upload id");
+    throw new InputFault("update_me_4", "identity: the avatar upload is an upload id");
   }
 }
 
@@ -107,7 +110,7 @@ export async function updateMe(
     // A receipt commits only completed (0009), so one that conflicted is whole, unless a purge took it
     // between the two statements, which the caller answers with an error and its retry reserves anew.
     if (receipt === undefined || receipt["state"] !== "completed" || typeof receipt["request_hash"] !== "string") {
-      throw new Error("identity: the receipt of a replayed key is gone");
+      throw new Fault("update_me_5", "identity: the receipt of a replayed key is gone");
     }
     if (replayOutcome(receipt["request_hash"], request) !== "replay") throw new Refused("IDEMPOTENCY_CONFLICT");
     return receipt["response_body"] as Json;
@@ -121,7 +124,7 @@ export async function updateMe(
 
   // 4. The version.
   const version = row["version"];
-  if (typeof version !== "number") throw new Error("identity: an account came back without its version");
+  if (typeof version !== "number") throw new Fault("update_me_6", "identity: an account came back without its version");
   if (version !== edit.expected_version) throw new Refused("VERSION_CONFLICT", { current_version: version });
 
   // 5. The changes.
@@ -157,7 +160,7 @@ export async function updateMe(
        WHERE id = ${userId}`;
   }
   const now = await accountById(tx, userId);
-  if (now === null) throw new Error("identity: the account vanished under its own lock");
+  if (now === null) throw new Fault("update_me_7", "identity: the account vanished under its own lock");
   // The answer is what the receipt keeps, read back from it (jsonb orders a body's keys its own way), so a
   // replay is the first answer byte for byte, not only the same fields.
   const [completed] = await bound(tx)`
@@ -166,6 +169,6 @@ export async function updateMe(
            response_body = ${JSON.stringify(render(now))}::pg_catalog.text::pg_catalog.jsonb
      WHERE actor_user_id = ${userId} AND operation = 'updateMe' AND idempotency_key = ${key}::pg_catalog.uuid
     RETURNING response_body`;
-  if (completed === undefined) throw new Error("identity: the receipt this request reserved is gone");
+  if (completed === undefined) throw new Fault("update_me_8", "identity: the receipt this request reserved is gone");
   return completed["response_body"] as Json;
 }

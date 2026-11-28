@@ -47,6 +47,7 @@ import type { Json } from "../idempotency/request.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /** How long a link lasts from when it's made: the one server setting (FQ71's default). */
 export const INVITATION_DAYS = 7;
@@ -94,7 +95,8 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function checkCaller(userId: unknown): void {
-  if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("clubs: the caller is an account id");
+  if (typeof userId !== "string" || !ID.test(userId))
+    throw new InputFault("invitation_1", "clubs: the caller is an account id");
 }
 
 /** The start of `instant`'s second. */
@@ -116,7 +118,7 @@ export async function createInvitation(
 ): Promise<MadeInvitation> {
   checkCaller(input.userId);
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("clubs: the idempotency key is a UUID");
+    throw new InputFault("invitation_2", "clubs: the idempotency key is a UUID");
   }
   const { userId, clubId, candidateId } = input;
   // An id that can't be one names nothing, as one nobody has.
@@ -170,7 +172,7 @@ export async function createInvitation(
   const hash = createHash("sha256").update(token).digest("hex");
   if (latest !== undefined) {
     const earlier = latest["id"];
-    if (typeof earlier !== "string") throw new Error("clubs: a link came back without its id");
+    if (typeof earlier !== "string") throw new Fault("invitation_3", "clubs: a link came back without its id");
     // Before the new one is written: one link per candidate is the latest (the reference is checked at commit).
     await bound(tx)`UPDATE app.invitations SET replaced_by_id = ${invitationId} WHERE id = ${earlier}`;
   }

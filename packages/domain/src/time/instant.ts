@@ -10,9 +10,14 @@
 // (packages/contracts/src/common.ts), and is only for responses.
 
 /** Throws unless `instant` is a whole number of microseconds, the most Postgres keeps. */
+import { InputFault, RangeFault } from "../fault.ts";
+
 export function wholeMicroseconds(instant: Temporal.Instant, what: string): Temporal.Instant {
   if (instant.epochNanoseconds % 1000n !== 0n) {
-    throw new RangeError(`time: ${what} ${instant.toString()} is finer than a microsecond, which Postgres would round`);
+    throw new RangeFault(
+      "instant_1",
+      `time: ${what} ${instant.toString()} is finer than a microsecond, which Postgres would round`,
+    );
   }
   return instant;
 }
@@ -47,7 +52,8 @@ export const INSTANT_TYPE: {
   from: [1184],
   serialize: (value: unknown) => {
     if (!(value instanceof Temporal.Instant)) {
-      throw new TypeError(
+      throw new InputFault(
+        "instant_2",
         `time: a timestamptz takes a Temporal.Instant, not ${typeof value}, which postgres.js would cut to milliseconds`,
       );
     }
@@ -58,7 +64,8 @@ export const INSTANT_TYPE: {
     try {
       return Temporal.Instant.from(text);
     } catch (error) {
-      throw new RangeError(
+      throw new RangeFault(
+        "instant_3",
         `time: Postgres sent ${JSON.stringify(text)} for a timestamptz, not an ISO instant: the connection needs ` +
           "DateStyle ISO, and the time module takes no infinite instant",
         { cause: error },

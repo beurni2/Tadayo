@@ -400,6 +400,14 @@ export const REVOKE_INVITATION = Object.freeze({
     `member once an account accepted with the link; the neutral NOT_FOUND to everyone else (${GATE})`,
 });
 
+/** removeCandidate (the outside audit's A10, FQ148): roster.ts's candidateRemovalOutcome. */
+export const REMOVE_CANDIDATE = Object.freeze({
+  answer:
+    "200 with the RemovedCandidate to the member who proposed the candidate while the candidate hasn't joined, each " +
+    "time, ended already or not; the neutral NOT_FOUND to everyone else, for a candidate who has joined and for an " +
+    `id nobody has (${GATE})`,
+});
+
 /** approveRoster and declineRoster (B1's third slice): roster.ts's decisionOutcome. */
 export const ROSTER_DECISION = Object.freeze({
   answer:
@@ -621,6 +629,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   proposeRoster: PROPOSE_ROSTER,
   registerDevice: REGISTER_DEVICE,
   releaseReservation: RELEASE_RESERVATION,
+  removeCandidate: REMOVE_CANDIDATE,
   removeDevice: REMOVE_DEVICE,
   removeDrop: NONE,
   removeFavourite: NONE,

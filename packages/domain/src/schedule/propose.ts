@@ -6,12 +6,17 @@
 // pair gets Monday and Thursday, Tuesday and Friday. Sunday is never anyone's day. It is only a
 // proposal: each member chooses and confirms (FQ48, FQ55), and nothing here moves anyone.
 
+import { Fault, RangeFault } from "../fault.ts";
+
 export const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
 export type Weekday = (typeof WEEKDAYS)[number];
 
 function checkCount(memberCount: number): void {
   if (!Number.isInteger(memberCount) || memberCount < 2 || memberCount > 6) {
-    throw new RangeError(`schedule: a week is proposed for two to six members, not ${String(memberCount)} (A01)`);
+    throw new RangeFault(
+      "propose_1",
+      `schedule: a week is proposed for two to six members, not ${String(memberCount)} (A01)`,
+    );
   }
 }
 
@@ -29,7 +34,8 @@ export function proposedWeek(memberCount: number): readonly (readonly Weekday[])
     const own: Weekday[] = [];
     for (let nth = 0; nth < days; nth += 1) {
       const day = WEEKDAYS[member + nth * 3];
-      if (day === undefined) throw new Error("schedule: spec 05's table gave a member a day past Saturday");
+      if (day === undefined)
+        throw new Fault("propose_2", "schedule: spec 05's table gave a member a day past Saturday");
       own.push(day);
     }
     week.push(own);

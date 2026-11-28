@@ -1,9 +1,10 @@
 /// <reference lib="esnext.temporal" />
 // A club's roster revisions and its candidates' links over HTTP (the contract's `proposeRoster`,
-// `getRosterRevision`, `approveRoster`, `declineRoster`, `createInvitation` and `revokeInvitation`; spec 04, 32; G01-invite-people,
+// `getRosterRevision`, `approveRoster`, `declineRoster`, `createInvitation`, `revokeInvitation` and `removeCandidate`;
+// spec 04, 32; FQ148; G01-invite-people,
 // G03-approve, book p30; T1, T7, T9, T14, T15, T19, T33, T52, T55). The rules, the order of the refusals,
 // the locks and who may read or act are the domain's (packages/domain/src/clubs/roster-revision.ts,
-// propose-roster.ts, decide-roster.ts and invitation.ts): a handler here parses the request by the contract's own schema,
+// propose-roster.ts, decide-roster.ts, invitation.ts and remove-candidate.ts): a handler here parses the request by the contract's own schema,
 // runs the read or the command in one transaction, and serializes what comes back, each serializer an
 // explicit field list (T55).
 //
@@ -20,6 +21,7 @@ import {
   proposeRoster,
   readRevision,
   Refused,
+  removeCandidate,
   revokeInvitation,
   type CreateInvitationInput,
   type MadeLink,
@@ -33,6 +35,7 @@ import { created, IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 import { personBody } from "../schedule/routes.ts";
+import { Fault } from "@tadayo/domain/fault";
 
 /** The contract's `RosterRevision` as its caller sees it: a link only where the domain's read put one. */
 export function rosterRevisionBody(revision: RevisionSight): { readonly [key: string]: Json } {
@@ -204,7 +207,7 @@ export function createInvitationHandler(deps: Deps): Handler {
     }
     const { answer, token } = made;
     if (typeof answer !== "object" || answer === null || Array.isArray(answer)) {
-      throw new Error("clubs: a link's stored answer isn't an object");
+      throw new Fault("api_roster_1", "clubs: a link's stored answer isn't an object");
     }
     const stored = answer as Readonly<Record<string, Json>>;
     // The first answer alone carries the link; a replay is the stored answer, which never held it (FQ77).
@@ -224,5 +227,20 @@ export function revokeInvitationHandler(deps: Deps): Handler {
       throw error;
     }
     return ok(reply, { invitation_id: revoked.invitationId, state: "revoked" });
+  };
+}
+
+export function removeCandidateHandler(deps: Deps): Handler {
+  return async (request, reply) => {
+    const account = signedIn(request);
+    const input = { userId: account.id, candidateId: parameter(request.params, "candidate_id") };
+    let removed: { readonly candidateId: string };
+    try {
+      removed = await deps.sql.begin((tx) => removeCandidate(tx, deps.clock, input));
+    } catch (error) {
+      if (error instanceof Refused) return refusal(reply, error);
+      throw error;
+    }
+    return ok(reply, { candidate_id: removed.candidateId, state: "removed" });
   };
 }

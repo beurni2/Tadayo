@@ -1,7 +1,7 @@
 /// <reference lib="esnext.temporal" />
 // The roster's judges, judged (./roster.ts): each branch of what a cell must get from getRosterRevision,
-// proposeRoster, createInvitation, revokeInvitation, approveRoster and declineRoster is shown to refuse an answer that breaks it, on a
-// world written out here by hand, with no database.
+// proposeRoster, createInvitation, revokeInvitation, approveRoster, declineRoster and removeCandidate is shown to refuse
+// an answer that breaks it, on a world written out here by hand, with no database.
 
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
@@ -11,6 +11,8 @@ import {
   IDEMPOTENCY_CONFLICT,
   NO_SUCH_VERSION,
   ROSTER_JUDGED,
+  candidateRemovalExpected,
+  candidateRemovalOutcome,
   decisionOutcome,
   genericDecisionExpected,
   genericProposal,
@@ -27,6 +29,7 @@ import {
   revokeExpected,
   revokeOutcome,
   revokedBody,
+  removedCandidateBody,
   sameAnswer,
   type CandidateRows,
   type LinkRows,
@@ -184,13 +187,14 @@ const stateOf = (found: Record<string, unknown> | undefined, index = 0) =>
   )?.["state"];
 
 describe("a revision's RosterRevision from the world's rows (getRosterRevision)", () => {
-  it("judges the six routes of the roster", () => {
+  it("judges the seven routes of the roster", () => {
     expect([...ROSTER_JUDGED].sort()).toEqual([
       "approveRoster",
       "createInvitation",
       "declineRoster",
       "getRosterRevision",
       "proposeRoster",
+      "removeCandidate",
       "revokeInvitation",
     ]);
   });
@@ -510,6 +514,67 @@ describe("who makes and who revokes a link (createInvitation, revokeInvitation)"
     expect(other(NOT_FOUND)).toEqual([]);
     expect(other(ok(revokedBody("inv_mo")))).not.toEqual([]);
     expect(other(sent(pinned(403, "Forbidden", '{"code":"NOT_ALLOWED"}')))).not.toEqual([]);
+  });
+});
+
+describe("who removes someone invited who hasn't joined (removeCandidate, FQ148)", () => {
+  /** The roster with `candidate` in `state`. */
+  const withState = (candidate: string, state: string): RosterWorld => {
+    const rosterRows = roster();
+    const rowsOf = rosterRows.candidates.get(candidate);
+    if (rowsOf === undefined) throw new Error(candidate);
+    rosterRows.candidates.set(candidate, { ...rowsOf, state });
+    return rosterRows;
+  };
+
+  it("lets only the member who proposed them remove them, ended already or not, and nobody a candidate who joined", () => {
+    const outcome = (account: string | null, id = "cand_mo", rosterRows = roster(), schedule = world()) =>
+      candidateRemovalOutcome(schedule, rosterRows, id, account);
+    expect(outcome("usr_ben")).toBe("removed");
+    expect(outcome("usr_ana", "cand_lu")).toBe("removed");
+    // A repeat, or a candidate a decline or a leave ended, is answered as removed again.
+    expect(outcome("usr_ben", "cand_mo", withState("cand_mo", "ended"))).toBe("removed");
+    for (const account of ["usr_ana", "usr_cleo", "usr_dee", "usr_eve", "usr_zed", null]) {
+      expect(outcome(account)).toBe(NEUTRAL);
+      expect(outcome(account, "cand_mo", withState("cand_mo", "ended"))).toBe(NEUTRAL);
+    }
+    // A candidate who joined is a member, no candidate to remove, for their proposer too.
+    expect(outcome("usr_ben", "cand_mo", withState("cand_mo", "joined"))).toBe(NEUTRAL);
+    expect(outcome("usr_ben", "cand_none")).toBe(NEUTRAL);
+    expect(outcome("usr_ben", "cand_lu")).toBe(NEUTRAL);
+    // Nothing of a suspended club, and nothing to an account that isn't active (FQ80).
+    const suspended = world();
+    suspended.clubs.set(CLUB, { name: "The Saturdays", timezone: "America/New_York", suspended: true });
+    expect(outcome("usr_ben", "cand_mo", roster(), suspended)).toBe(NEUTRAL);
+    const inactive = world();
+    inactive.activeAccounts.delete("usr_ben");
+    expect(outcome("usr_ben", "cand_mo", roster(), inactive)).toBe(NEUTRAL);
+    // Ben left and came back: the candidate is the earlier membership's, not this one's (T14).
+    const rejoined = world();
+    rejoined.members.set("itv_ben", member("usr_ben", "Ben", "2026-10-02T00:00:00Z", { active: false }));
+    rejoined.members.set("itv_ben_2", member("usr_ben", "Ben", "2026-11-02T00:00:00Z"));
+    expect(outcome("usr_ben", "cand_mo", roster(), rejoined)).toBe(NEUTRAL);
+  });
+
+  it("judges a removal's answer in a cell: the removed candidate, or the neutral not-found, byte for byte", () => {
+    const judge = judging(candidateRemovalExpected(seen("usr_ben"), "cand_mo"));
+    expect(removedCandidateBody("cand_mo")).toEqual({ candidate_id: "cand_mo", state: "removed" });
+    expect(judge(ok(removedCandidateBody("cand_mo")))).toEqual([]);
+    expect(judge(ok(removedCandidateBody("cand_lu")))).toHaveLength(1);
+    expect(judge(ok({ ...removedCandidateBody("cand_mo"), revision_id: "rev_1" }))).toHaveLength(1);
+    expect(judge(ok({ candidate_id: "cand_mo", state: "revoked" }))).toHaveLength(1);
+    expect(judge(ok(removedCandidateBody("cand_mo"), { "cache-control": "no-cache" }))).not.toEqual([]);
+    expect(judge(made(removedCandidateBody("cand_mo")))).not.toEqual([]);
+    expect(judge(NOT_FOUND)).not.toEqual([]);
+    const other = judging(candidateRemovalExpected(seen("usr_ben"), "cand_mo", "usr_cleo"));
+    expect(other(NOT_FOUND)).toEqual([]);
+    expect(other(ok(removedCandidateBody("cand_mo")))).not.toEqual([]);
+    expect(other(sent(pinned(403, "Forbidden", '{"code":"NOT_ALLOWED"}')))).not.toEqual([]);
+    const joined = judging(
+      candidateRemovalExpected(seen("usr_ben", world(), withState("cand_mo", "joined")), "cand_mo"),
+    );
+    expect(joined(NOT_FOUND)).toEqual([]);
+    expect(joined(ok(removedCandidateBody("cand_mo")))).not.toEqual([]);
   });
 });
 

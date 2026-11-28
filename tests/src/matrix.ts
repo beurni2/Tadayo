@@ -4,7 +4,7 @@
 // matrix over the API's routes (privacy/matrix.test.ts), so the two can't drift apart. The rows
 // are built as the commands will write them (db/world.ts).
 
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import type { Tx, WorldTx } from "./db/harness.ts";
 import {
   AT,
@@ -127,24 +127,28 @@ export async function withdrawUnrevealed(tx: WorldTx, member: Member, reason: "b
   }
 }
 
+/** Each Mo's link token, by Mo's account, as `invite` made it: for a test that previews Mo's link as Mo. */
+export const INVITE_TOKENS = new Map<string, string>();
+
 /**
- * Mo is invited to the club and has accepted with Mo's own link, but the members haven't approved
+ * Mo is invited to the club by Ana and has accepted with Mo's own link, but the members haven't approved
  * the roster, so it isn't applied and Mo isn't a member (T7). An invitation nobody has accepted ties
- * no account to the club at all, so this is the nearest an invited person comes.
+ * no account to the club at all, so this is the nearest an invited person comes. The revision lists the
+ * club's active members as they are at `at`, and Mo's link token is kept in INVITE_TOKENS.
  */
 export async function invite(tx: WorldTx, w: World, at: Date): Promise<string> {
   const mo = await newUser(plain(tx), named(w, "Mo"));
+  const token = randomBytes(32).toString("base64url");
+  INVITE_TOKENS.set(mo, token);
   const [revision, candidate, invitation] = [newId("rev"), newId("cand"), newId("inv")];
   await tx`
     INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by_interval_id, created_at)
     VALUES (${revision}, ${w.club}, 'proposal', ${w.ana.interval}, ${at})
   `;
-  for (const member of [w.ana, w.ben, w.cleo]) {
-    await tx`
-      INSERT INTO app.roster_revision_members (revision_id, club_id, interval_id)
-      VALUES (${revision}, ${w.club}, ${member.interval})
-    `;
-  }
+  await tx`
+    INSERT INTO app.roster_revision_members (revision_id, club_id, interval_id)
+    SELECT ${revision}, club_id, interval_id FROM app.memberships WHERE club_id = ${w.club} AND state = 'active'
+  `;
   await tx`
     INSERT INTO app.candidates (id, club_id, proposed_by_interval_id, created_at)
     VALUES (${candidate}, ${w.club}, ${w.ana.interval}, ${at})
@@ -156,7 +160,8 @@ export async function invite(tx: WorldTx, w: World, at: Date): Promise<string> {
   await tx`UPDATE app.roster_revisions SET roster_sealed_at = ${at} WHERE id = ${revision}`;
   await tx`
     INSERT INTO app.invitations (id, candidate_id, token_sha256, created_at, expires_at, bound_user_id, bound_at)
-    VALUES (${invitation}, ${candidate}, ${randomBytes(32)}, ${at}, ${new Date(at.getTime() + 7 * 864e5)}, ${mo}, ${at})
+    VALUES (${invitation}, ${candidate}, ${createHash("sha256").update(token).digest()}, ${at},
+            ${new Date(at.getTime() + 7 * 864e5)}, ${mo}, ${at})
   `;
   await tx`
     UPDATE app.roster_revision_candidates SET accepted_at = ${at}, accepted_invitation_id = ${invitation}

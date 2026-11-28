@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
+import { SITE_CODE } from "@tadayo/domain/fault";
 import { GRACE_MS, PEAK_BYTES } from "./image-process.ts";
 import {
   asRoot,
@@ -19,6 +20,8 @@ import {
   NO_INSPECTOR,
   pauseFor,
   photoUserFor,
+  PRIVILEGE_SITE_CODE,
+  PrivilegeFault,
   processTurnCalls,
   startFactsSaid,
   type StartFacts,
@@ -105,6 +108,41 @@ const OUTSIDE = startedWith({
   Groups: " ",
   CapBnd: "000001fffeffffff",
   NoNewPrivs: "0",
+});
+
+describe("this module's own failures (the outside audit's B7)", () => {
+  it("carry a site code of the shape packages/domain's faults take, kept here as this module imports only Node's own", () => {
+    expect([PRIVILEGE_SITE_CODE.source, PRIVILEGE_SITE_CODE.flags]).toEqual([SITE_CODE.source, SITE_CODE.flags]);
+    const cause = new Error("under it");
+    const fault = new PrivilegeFault("worker_privileges_9", "worker: it found no thread's status", { cause });
+    expect(fault).toBeInstanceOf(Error);
+    expect([fault.name, fault.code, fault.message, fault.cause]).toEqual([
+      "PrivilegeFault",
+      "worker_privileges_9",
+      "worker: it found no thread's status",
+      cause,
+    ]);
+  });
+
+  it("refuses a code that isn't a site code, under a code that is", () => {
+    for (const code of [
+      "",
+      "privileges",
+      "worker.privileges_1",
+      "Worker_1",
+      "worker_privileges_1 ",
+      `${"a".repeat(30)}_99`,
+    ]) {
+      let refusal: unknown;
+      try {
+        new PrivilegeFault(code, "x");
+      } catch (error) {
+        refusal = error;
+      }
+      expect(refusal, code).toBeInstanceOf(PrivilegeFault);
+      expect((refusal as PrivilegeFault).code, code).toBe("worker_privileges_0");
+    }
+  });
 });
 
 describe("the photo user (photoUserFor)", () => {
@@ -1141,6 +1179,18 @@ describe("as fly.toml starts the worker: root, turned to its own user (./privile
       wasRunning: true,
       endedBy: "start",
       failedAt: "the database",
+      euid: 64998,
+    });
+  });
+
+  it("the worker's start reads TADAYO_SAFETY_PROVIDER before it sweeps, and stops there without it (the outside audit's B7)", () => {
+    // A process of the photo user's left running is still there after the start stopped: the sweep never ran.
+    expect(fact("start-no-provider")).toEqual({
+      case: "start-no-provider",
+      wasRunning: true,
+      failedAt: "the safety provider",
+      stillRunning: true,
+      endedAfter: true,
       euid: 64998,
     });
   });
