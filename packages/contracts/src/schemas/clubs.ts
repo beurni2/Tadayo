@@ -430,6 +430,16 @@ export const RevokedInvitation = named(
   z.object({ invitation_id: Id, state: tag("revoked") }),
 );
 
+export const RemovedCandidate = named(
+  "RemovedCandidate",
+  "The candidate's invitation ended, and their place with it (FQ148, the outside audit's A10). Every link of " +
+    "theirs stops working: an unused one answers as an unknown link does (FQ59), and an account that accepted " +
+    "sees only that the invitation didn't go ahead (G03-declined), never who or why. Anyone else still invited " +
+    "is carried into a revision the server makes, which every other member approves and each of them accepts " +
+    "again, their links still good, as after a leave (FQ121); with nobody else invited, the revision ends.",
+  z.object({ candidate_id: Id, state: tag("removed") }),
+);
+
 export const ScheduleAssignment = named(
   "ScheduleAssignment",
   "One weekday and whose day it is.",

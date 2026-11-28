@@ -34,6 +34,7 @@ import {
   declineRosterHandler,
   getRosterRevisionHandler,
   proposeRosterHandler,
+  removeCandidateHandler,
   revokeInvitationHandler,
 } from "./clubs/roster.ts";
 import { leaveClubHandler } from "./clubs/leave.ts";
@@ -197,6 +198,7 @@ const HANDLERS: Readonly<Record<string, (deps: Deps) => Handler>> = {
   getRosterRevision: getRosterRevisionHandler,
   createInvitation: createInvitationHandler,
   revokeInvitation: revokeInvitationHandler,
+  removeCandidate: removeCandidateHandler,
   approveRoster: approveRosterHandler,
   declineRoster: declineRosterHandler,
   previewInvitationWeb: previewInvitationWebHandler,

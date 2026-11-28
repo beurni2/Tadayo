@@ -417,6 +417,12 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
     revokeInvitation: {
       revoked: { summary: "The link no longer works", value: { invitation_id: "inv_kt_leila", state: "revoked" } },
     },
+    removeCandidate: {
+      removed: {
+        summary: "Leila's invitation ended, and the place with it (FQ148)",
+        value: { candidate_id: "cnd_kt_leila", state: "removed" },
+      },
+    },
     previewInvitationWeb: {
       open: { summary: "The signed-out page: the inviter's name only (G02-web)", value: { inviter_name: "Ben" } },
     },

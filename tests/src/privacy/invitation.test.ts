@@ -413,7 +413,8 @@ describe("what accepting must get (acceptInvitation)", () => {
   });
 
   it("tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all", () => {
-    // A leave ended Mo and carried Lu on: the chain's newest revision lists Lu alone.
+    // A leave or a removal ended Mo and carried Lu on: the chain's newest revision lists Lu alone. The revision Mo
+    // accepted answers as one that didn't go ahead would (FQ148): a version conflict, then nothing at its version.
     const carried = roster(
       [bound()],
       [
@@ -422,8 +423,13 @@ describe("what accepting must get (acceptInvitation)", () => {
       ],
       [["cand_mo", { state: "ended" }]],
     );
-    expect(accept("usr_mo", "Mo", carried)).toBe(NEUTRAL);
-    expect(accept("usr_mo", "Mo", carried, { expected: 9 })).toBe(NEUTRAL);
+    expect(codeOf(accept("usr_mo", "Mo", carried))).toEqual({ code: "VERSION_CONFLICT", current_version: 2 });
+    expect(codeOf(accept("usr_mo", "Mo", carried, { expected: 9 }))).toEqual({
+      code: "VERSION_CONFLICT",
+      current_version: 2,
+    });
+    expect(accept("usr_mo", "Mo", carried, { expected: 2 })).toBe(NEUTRAL);
+    expect(accept("usr_mo", "Mo", carried, { revision: "rev_2" })).toBe(NEUTRAL);
     // Mo joined by the link and has left since: no interval of Mo's is active.
     const joined = roster(
       [bound()],
