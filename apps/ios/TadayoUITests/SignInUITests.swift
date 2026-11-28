@@ -9,10 +9,16 @@ final class SignInUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// With no session, the app opens on A02-email (handoff 1) with its field focused, and Send a
-    /// code waits for a plausible address.
-    @MainActor func testWithNoSessionItOpensOnTheEmailScreen() {
+    /// With no session, the app opens on Welcome (`A01-welcome`, handoff 9's frame 18) with its
+    /// three routes; Already here? Sign in pushes A02-email (handoff 1) with its field focused,
+    /// and Send a code waits for a plausible address. A02-email's system back returns to Welcome.
+    @MainActor func testWithNoSessionItOpensOnWelcome() {
         let app = launch("-TadayoUITestNoSession")
+        XCTAssertTrue(app.buttons["Already here? Sign in"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Create a club"].exists)
+        XCTAssertTrue(app.buttons["I have an invite"].exists)
+        XCTAssertTrue(app.staticTexts["Your day. Your story. A thought from your friends."].exists)
+        app.leaveWelcome()
         XCTAssertTrue(app.navigationBars["Sign in"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
         XCTAssertTrue(app.staticTexts["We’ll send a six-digit code to sign in."].exists)
@@ -31,8 +37,9 @@ final class SignInUITests: XCTestCase {
         XCTAssertFalse(send.isEnabled)
         app.typeText(".com")
         XCTAssertTrue(send.isEnabled)
-        // No back on the first screen in B0: Welcome (A01) comes in B1.
-        XCTAssertFalse(app.navigationBars["Sign in"].buttons.firstMatch.exists)
+        // The system's back returns to Welcome.
+        app.navigationBars["Sign in"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Already here? Sign in"].waitForExistence(timeout: 5))
     }
 
     /// While a code is on its way A02-email keeps its focus and its keyboard with the address
@@ -42,6 +49,7 @@ final class SignInUITests: XCTestCase {
     /// dimmed, as the screen disables it. The request never answers (`-TadayoUITestHangingSend`).
     @MainActor func testTheAddressIsReadOnlyWhileACodeIsOnItsWay() {
         let app = launch("-TadayoUITestHangingSend")
+        app.leaveWelcome()
         let field = app.textFields["Email address"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
@@ -73,6 +81,7 @@ final class SignInUITests: XCTestCase {
     /// way, which starts no send. `typeText` fails the test if no element has the focus.
     @MainActor func testSendingFromTheReturnKeyKeepsTheFocus() {
         let app = launch("-TadayoUITestHangingSend")
+        app.leaveWelcome()
         let field = app.textFields["Email address"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         app.typeText("ben@example.com\n")
@@ -96,6 +105,7 @@ final class SignInUITests: XCTestCase {
     /// the right one goes on, the age then the name, then the tabs, on Home with no club.
     @MainActor func testSignInGoesToTheEndOnStandInServices() {
         let app = launch("-TadayoUITestFakes")
+        app.leaveWelcome()
         let email = app.textFields["Email address"]
         XCTAssertTrue(email.waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
@@ -217,8 +227,9 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Home"].isSelected)
     }
 
-    /// In builds with the Lab (Debug here), its tab's Log out ends the session and opens
-    /// A02-email again, empty (spec 23), with no notice that the sign-in ended.
+    /// In builds with the Lab (Debug here), its tab's Log out ends the session and opens Welcome
+    /// again (handoff 1), whose Already here? Sign in gives A02-email empty (spec 23), with no
+    /// notice that the sign-in ended.
     @MainActor func testTheLabsLogOutReturnsToSignIn() {
         let app = launch("-TadayoUITestFakes")
         signInToTheTabs(app)
@@ -226,6 +237,7 @@ final class SignInUITests: XCTestCase {
         let logOut = app.navigationBars["Lab"].buttons["Log out"]
         XCTAssertTrue(logOut.waitForExistence(timeout: 5))
         logOut.tap()
+        app.leaveWelcome()
         let email = app.textFields["Email address"]
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
@@ -235,14 +247,15 @@ final class SignInUITests: XCTestCase {
     }
 
     /// Leave sign-in on A02-age, the bar's leading text action (handoff 7's `ageExit`), ends the
-    /// session and opens A02-email again, empty (FQ93's default), with no notice that the sign-in
-    /// ended, since the person ended it; going back can't skip the age.
+    /// session and returns to Welcome (handoff 1), then A02-email, empty (FQ93's default), with no
+    /// notice that the sign-in ended, since the person ended it; going back can't skip the age.
     @MainActor func testLeavingSignInFromTheAgeScreenStartsAgain() {
         let app = launch("-TadayoUITestFakes")
         signInToTheAge(app)
         // The bar holds Leave sign-in and nothing else: no back button skips the age.
         XCTAssertEqual(app.navigationBars["Sign in"].buttons.count, 1)
         app.navigationBars["Sign in"].buttons["Leave sign-in"].tap()
+        app.leaveWelcome()
         let email = app.textFields["Email address"]
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
@@ -252,9 +265,9 @@ final class SignInUITests: XCTestCase {
     }
 
     /// Leave sign-in on A03-profile too, the bar's leading text action (handoff 7's `ageExit`:
-    /// "Same on A03."), ends the session and opens A02-email again, empty (FQ93's default), with
-    /// no notice that the sign-in ended; the bar holds nothing else, so going back can't undo the
-    /// age, which stays recorded on the server.
+    /// "Same on A03."), ends the session and returns to Welcome, then A02-email, empty (FQ93's
+    /// default), with no notice that the sign-in ended; the bar holds nothing else, so going back
+    /// can't undo the age, which stays recorded on the server.
     @MainActor func testLeavingSignInFromTheProfileStartsAgain() {
         let app = launch("-TadayoUITestFakes")
         signInToTheAge(app)
@@ -263,6 +276,7 @@ final class SignInUITests: XCTestCase {
         let bar = app.navigationBars["Your profile"]
         XCTAssertEqual(bar.buttons.count, 1)
         bar.buttons["Leave sign-in"].tap()
+        app.leaveWelcome()
         let email = app.textFields["Email address"]
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
@@ -342,6 +356,7 @@ final class SignInUITests: XCTestCase {
         let app = launch(
             "-TadayoUITestFakes", "-UIPreferredContentSizeCategoryName",
             "UICTContentSizeCategoryAccessibilityXXXL")
+        app.leaveWelcome()
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com\n")
         let code = app.textFields["Six-digit code"]
@@ -642,6 +657,7 @@ final class SignInUITests: XCTestCase {
     }
 
     @MainActor private func signInToTheAge(_ app: XCUIApplication) {
+        app.leaveWelcome()
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
         app.buttons["Send a code"].tap()

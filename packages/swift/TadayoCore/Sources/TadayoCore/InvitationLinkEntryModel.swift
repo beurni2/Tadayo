@@ -10,6 +10,12 @@ import Observation
 /// (handoff 4), except a club the account is already in, which opens. Back to this screen finds
 /// the text as it was. What's typed may hold a token, so
 /// nothing the model prints, reflects or dumps holds it (T7, T52).
+///
+/// Signed out, from Welcome (`G02-link-entry`, handoff 2's frame 11; `init(hold:letGo:)`), it
+/// checks nothing: Continue holds the link for the sign-in that follows ("A valid format stores an
+/// opaque invitation intent. If signed out, continue through authentication before fetching or
+/// displaying the club and roster"), and Back to the field, or away from the step, lets it go
+/// (handoff 9's `linkEntry.cancellation`; `docs/plans/ios-b1-welcome.md` section 2).
 @MainActor @Observable
 public final class InvitationLinkEntryModel: CustomStringConvertible,
     CustomReflectable
@@ -34,19 +40,49 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     /// The club the link opened, the account already being a member: the root has kept it as the
     /// selected club and read the list again, and the paste step is done (`handoff8.joinedLink`).
     public private(set) var opened: ClubRef?
+    /// Signed out, Continue held the link: A02-email follows, over this step.
+    public private(set) var isHeld = false
 
-    let make: @MainActor (InvitationToken) -> InvitationModel?
-    let released: @MainActor (InvitationModel) -> Void
+    /// What Continue does with a link.
+    private enum Mode {
+        /// Signed in: checks it, with the invitation's model `make` gives, and tells `released`
+        /// when that model is done with.
+        case check(
+            make: @MainActor (InvitationToken) -> InvitationModel?,
+            released: @MainActor (InvitationModel) -> Void)
+        /// Signed out: holds it with `hold`, and lets it go with `letGo`.
+        case hold(
+            hold: @MainActor (InvitationToken) -> Void,
+            letGo: @MainActor (InvitationToken) -> Void)
+    }
 
-    /// `make` gives the invitation's model for a token, or nil once the session it was made in has
-    /// ended; `released` is told when a model is done with: left (Back), replaced by the next
-    /// Continue's, or its club opened while the link was checked.
+    private let mode: Mode
+    /// Signed out, the link Continue held, until Back lets it go.
+    private var held: InvitationToken?
+
+    /// Signed in: `make` gives the invitation's model for a token, or nil once the session it was
+    /// made in has ended; `released` is told when a model is done with: left (Back), replaced by
+    /// the next Continue's, or its club opened while the link was checked.
     public init(
         make: @escaping @MainActor (InvitationToken) -> InvitationModel?,
         released: @escaping @MainActor (InvitationModel) -> Void
     ) {
-        self.make = make
-        self.released = released
+        mode = .check(make: make, released: released)
+    }
+
+    /// Signed out: `hold` takes the link Continue read, for the sign-in that follows, and `letGo`
+    /// is told when it's let go: Back to the field, or away from the step.
+    public init(
+        hold: @escaping @MainActor (InvitationToken) -> Void,
+        letGo: @escaping @MainActor (InvitationToken) -> Void
+    ) {
+        mode = .hold(hold: hold, letGo: letGo)
+    }
+
+    /// Continue checks the link here (signed in), or holds it for after sign-in (signed out).
+    public var checks: Bool {
+        if case .check = mode { return true }
+        return false
     }
 
     /// What's in the field. A write while the link is checked is ignored; any other clears the
@@ -76,7 +112,7 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     /// Continue unavailable until the input is locally plausible").
     public var canContinue: Bool {
         !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isChecking && !isLeft
-            && !awaitsPlausibleLink
+            && !awaitsPlausibleLink && !isHeld
     }
 
     /// The system's paste control's text, or nil when it had none to give.
@@ -104,13 +140,25 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         problem = nil
     }
 
-    /// Continue: reads the field as an invitation link and checks it.
+    /// Continue: reads the field as an invitation link and checks it, or, signed out, holds it.
     public func proceed() async {
         guard canContinue, !isLeft else { return }
         guard let token = InvitationToken(link: typed) else {
             problem = .invalid
             awaitsPlausibleLink = true
             return
+        }
+        let make: @MainActor (InvitationToken) -> InvitationModel?
+        let released: @MainActor (InvitationModel) -> Void
+        switch mode {
+        case .hold(let hold, _):
+            problem = nil
+            held = token
+            isHeld = true
+            hold(token)
+            return
+        case .check(let making, let releasing):
+            (make, released) = (making, releasing)
         }
         guard let model = make(token) else { return }
         // A new check: an invitation still handed over is done with.
@@ -142,10 +190,20 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
         }
     }
 
-    /// The invitation shown has been left (Back): the field is as it was.
+    /// The invitation shown has been left (Back), or, signed out, A02-email over the step: the
+    /// field is as it was, and the link held is let go (Continue holds it again).
     public func returned() {
-        if let invitation { released(invitation) }
-        invitation = nil
+        switch mode {
+        case .check(_, let released):
+            if let invitation { released(invitation) }
+            invitation = nil
+        case .hold(_, let letGo):
+            isHeld = false
+            if let held {
+                self.held = nil
+                letGo(held)
+            }
+        }
     }
 
     /// The paste step itself has been left (Back, or its screens closed), with or without a check
@@ -155,7 +213,7 @@ public final class InvitationLinkEntryModel: CustomStringConvertible,
     /// person walked away from is kept, shown, joined or held for the next sign-in.
     public func left() {
         isLeft = true
-        if let checked {
+        if let checked, case .check(_, let released) = mode {
             self.checked = nil
             released(checked)
         }
