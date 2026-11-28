@@ -10,9 +10,11 @@ import { lintString } from "../copy/rules.ts";
 import type { ServerNow } from "../time/clock.ts";
 import {
   budgetDay,
+  dayClosed,
   decideReveal,
   plannedDueAt,
   PUSH_BUDGET,
+  quietFrom,
   quietUntil,
   revealBody,
   revealPayload,
@@ -79,9 +81,27 @@ describe("quiet hours, 23:00 to 08:00 in the device's zone (T37)", () => {
     expect(quietUntil(now("2026-03-08T05:00:00Z"), "America/New_York")).toEqual(at("2026-03-08T12:00:00Z"));
   });
 
+  it("starts the next quiet hours at 23:00 that evening, or the next evening's from 23:00 on", () => {
+    expect(quietFrom(now("2026-11-07T12:00:00Z"), "Europe/London")).toEqual(at("2026-11-07T23:00:00Z"));
+    expect(quietFrom(now("2026-11-07T22:59:59.999999Z"), "Europe/London")).toEqual(at("2026-11-07T23:00:00Z"));
+    expect(quietFrom(now("2026-11-07T23:00:00Z"), "Europe/London")).toEqual(at("2026-11-08T23:00:00Z"));
+    // 12:00Z is 21:00 in Tokyo: 23:00 there is 14:00Z.
+    expect(quietFrom(now("2026-11-07T12:00:00Z"), "Asia/Tokyo")).toEqual(at("2026-11-07T14:00:00Z"));
+    // On the day London's clocks go back, 23:00 is 23:00Z, after a 25-hour day.
+    expect(quietFrom(now("2026-10-25T12:00:00Z"), "Europe/London")).toEqual(at("2026-10-25T23:00:00Z"));
+  });
+
+  it("closes a day at its close and not a microsecond before", () => {
+    expect(dayClosed(CLOSE, serverNow(CLOSE))).toBe(true);
+    expect(dayClosed(CLOSE, serverNow(CLOSE.subtract({ microseconds: 1 })))).toBe(false);
+  });
+
   it("refuses a zone the server doesn't resolve, and a time that isn't a clock's", () => {
     expect(() => plannedDueAt(REVEAL, "Mars/Olympus")).toThrow();
     expect(() => quietUntil(REVEAL.add({ nanoseconds: 1 }) as ServerNow, "Europe/London")).toThrow();
+    expect(() => quietFrom(REVEAL as ServerNow, "Mars/Olympus")).toThrow();
+    expect(() => quietFrom(REVEAL.add({ nanoseconds: 1 }) as ServerNow, "Europe/London")).toThrow();
+    expect(() => dayClosed(CLOSE, REVEAL.add({ nanoseconds: 1 }) as ServerNow)).toThrow();
   });
 });
 
@@ -138,9 +158,35 @@ describe("the payload (the plan's section 2.4)", () => {
 describe("the decision at dispatch (the plan's section 2.3)", () => {
   const LONDON_NOON = now("2026-11-07T12:00:00Z");
 
+  // London's 23:00, when Apple stops trying to deliver a push sent at its noon.
+  const LONDON_NIGHT = at("2026-11-07T23:00:00Z");
+
   it("sends the others' words to a reader, and the star's to the star", () => {
-    expect(decideReveal(FACTS, LONDON_NOON)).toEqual({ kind: "send", body: "Debby’s day is ready" });
-    expect(decideReveal({ ...FACTS, isStar: true }, LONDON_NOON)).toEqual({ kind: "send", body: STAR_BODY });
+    expect(decideReveal(FACTS, LONDON_NOON)).toEqual({
+      kind: "send",
+      body: "Debby’s day is ready",
+      expiresAt: LONDON_NIGHT,
+    });
+    expect(decideReveal({ ...FACTS, isStar: true }, LONDON_NOON)).toEqual({
+      kind: "send",
+      body: STAR_BODY,
+      expiresAt: LONDON_NIGHT,
+    });
+  });
+
+  it("lets Apple deliver it until the device's next 23:00 or the day's close, whichever comes first (T37)", () => {
+    // A send's expiry as text: vitest's toMatchObject compares no Temporal value, so it would check nothing.
+    const expiryOf = (decision: ReturnType<typeof decideReveal>): string => {
+      if (decision.kind !== "send") throw new Error(`not a send: ${decision.kind}`);
+      return decision.expiresAt.toString();
+    };
+    // 12:00Z is 21:00 in Tokyo: a phone that is off then isn't woken at 23:00 there, 14:00Z, or after.
+    expect(expiryOf(decideReveal({ ...FACTS, deviceZone: "Asia/Tokyo" }, LONDON_NOON))).toBe("2026-11-07T14:00:00Z");
+    // At 22:00Z London is an hour from its 23:00; at 05:00Z, 21:00 in Los Angeles, its 23:00 comes after the close.
+    expect(expiryOf(decideReveal(FACTS, now("2026-11-07T22:00:00Z")))).toBe(LONDON_NIGHT.toString());
+    expect(expiryOf(decideReveal({ ...FACTS, deviceZone: "America/Los_Angeles" }, now("2026-11-08T05:00:00Z")))).toBe(
+      CLOSE.toString(),
+    );
   });
 
   it("names a star who left after the reveal by the name they left with (FQ75)", () => {
@@ -153,6 +199,7 @@ describe("the decision at dispatch (the plan's section 2.3)", () => {
     expect(decideReveal({ ...FACTS, day: left }, now("2026-11-07T13:00:00Z"))).toEqual({
       kind: "send",
       body: "Debs’s day is ready",
+      expiresAt: LONDON_NIGHT,
     });
   });
 
@@ -185,6 +232,7 @@ describe("the decision at dispatch (the plan's section 2.3)", () => {
     ).toEqual({
       kind: "send",
       body: "Debby’s day is ready",
+      expiresAt: CLOSE,
     });
   });
 

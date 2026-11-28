@@ -12,17 +12,27 @@
 -- moment it sends (T37). A delivery names a sign-in only while that sign-in is registered: `sign_in` references the
 -- registration `ON DELETE SET NULL`, so the transaction that deletes it (a removal, a move, a dead token, an
 -- account's deletion) clears it from every delivery, and no kept row joins an ended sign-in, whose row holds no
--- account, to an account (TECH-DESIGN section 6 (b); PR #120's privacy review, P6). The pass deletes a day's rows
--- 48 hours after it closes.
+-- account, to an account (TECH-DESIGN section 6 (b); PR #120's privacy review, P6). The worker's minute deletes a
+-- day's rows 48 hours after it closes, whatever TADAYO_PUSH says.
 --
--- The locks, in the order 0017's header gives for every writer of the registrations:
--- - The plan writes `push_days` first, then reads the registrations `FOR KEY SHARE` (so a removal deleting one is
---   waited out and that registration left out), then writes the deliveries.
+-- The locks, in the order 0017's header gives for every writer of the registrations (transaction-scoped advisory
+-- locks, then `app.users` rows, then the registrations, then the deliveries through the foreign key):
+-- - The plan writes `push_days` first, then takes its readers' sign-in locks in their hashes' order, their
+--   `app.users` rows `FOR KEY SHARE` in their ids' order and their registrations `FOR KEY SHARE`
+--   (`lockDevicesOf`, packages/domain/src/identity/devices.ts), then writes the deliveries. A registration deleted
+--   while it waited is left out. (PR #159's first review, D3 and D4: the first draft took the registrations alone,
+--   reader by reader, and deadlocked a move that held one sign-in's lock while it waited for another's row.)
 -- - The decision locks the recipient's `app.users` row `FOR NO KEY UPDATE`, then the delivery's row.
--- - A dead token's answer takes the sign-in's advisory lock, then the account's row, then deletes the registration
---   (whose deliveries the foreign key then sets null), then writes the delivery.
+-- - The send locks the delivery's row alone, reads its registration's token under it, and holds the row across
+--   Apple's answer, for at most the sender's 10 seconds: a removal or a move of that registration, whose foreign key
+--   updates the row, waits for it after its own locks, and the send waits on nothing they hold.
+-- - A dead token's deletion, in a transaction of its own once the send's has ended, takes the sign-in's advisory
+--   lock, then the account's row, then deletes the registration (whose deliveries the foreign key then sets null).
+-- - The purge deletes closed days' `push_days` rows, and their deliveries through the cascade.
 -- A removal or a move from another account takes no `app.users` row of the recipient's and waits for a delivery's
--- row only through the foreign key's update, after its own locks, so none of these deadlocks another.
+-- row only through the foreign key's update, after its own locks, so none of these deadlocks another but one: the
+-- purge's cascade and a removal's foreign key take a closed day's delivery rows each in its own order, and Postgres
+-- then cancels one, which runs again (docs/LIMITATIONS.md; the review's D12).
 
 CREATE TABLE app.push_days (
   occurrence_id app.id PRIMARY KEY REFERENCES app.occurrences ON DELETE CASCADE,
@@ -46,7 +56,9 @@ CREATE TABLE app.push_deliveries (
   lease_until timestamptz,
   -- The sends tried, counted as each is decided.
   attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
-  -- When the decision to send was made: what the member's budget counts (T37, FQ30).
+  -- When a decision to send it was first made in its budget day: what the member's budget counts (T37, FQ30).
+  -- Kept while Apple may have taken the push (no answer in time, a lost stream), cleared when Apple's answer says it
+  -- took nothing (services/worker/src/push.ts).
   sent_at timestamptz,
   -- Why it was skipped or failed: one of the dispatch's codes, or APNs' reason (T52: a code, never a message).
   outcome text CHECK (pg_catalog.char_length(outcome) <= 64 AND outcome ~ '^[A-Za-z][A-Za-z0-9_.]*$'),
@@ -68,7 +80,9 @@ CREATE TRIGGER push_deliveries_keep BEFORE UPDATE ON app.push_deliveries
   FOR EACH ROW EXECUTE FUNCTION app.keep_columns('id', 'occurrence_id', 'user_id', 'planned_at');
 
 -- A delivery's sign-in only ever goes, never comes or changes: a row can't be pointed at another device. A delivery
--- is planned only for a registration of its own account, so a push never goes to another account's device.
+-- is planned only for a registration of its own account, and the send reads the token from that registration under
+-- the delivery's lock; a token that moves to another account's sign-in deletes this registration first, which waits
+-- for the send and then sets this row's sign-in null. So a push never goes to another account's device.
 CREATE FUNCTION app.push_deliveries_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN

@@ -173,12 +173,14 @@ export {
   apnsTokenOf,
   ENDED_KEEP,
   forgetDeadToken,
+  lockDevicesOf,
   PURGE_BATCH,
   registerDevice,
   removeDevice,
   signInOf,
   type ApnsEnvironment,
   type DeviceRegistration,
+  type PlannedDevice,
   type RegisterDeviceInput,
 } from "./identity/devices.ts";
 export { newId } from "./ids.ts";
@@ -236,6 +238,7 @@ export { contractInstant, INSTANT_TYPE } from "./time/instant.ts";
 export { stopwatch } from "./time/stopwatch.ts";
 export {
   budgetDay,
+  dayClosed,
   dayReaders,
   decideReveal,
   loadReveal,
@@ -243,6 +246,7 @@ export {
   PUSH_BUDGET,
   QUIET_END,
   QUIET_START,
+  quietFrom,
   quietUntil,
   revealBody,
   revealPayload,

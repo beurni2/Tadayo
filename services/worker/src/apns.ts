@@ -1,26 +1,36 @@
 // The APNs sender (docs/plans/api-b2-spike-push.md, section 2.5; spec 21; T37, T52; TECH-DESIGN section 1, "Push":
 // APNs directly, token-based, so no third-party push SDK sees names or events). HTTP/2 to Apple with Node's own
-// `http2`, one connection per host kept open, as Apple asks, and a provider token signed with the founder's `.p8` key
-// through `node:crypto`: no dependency.
+// `http2`, one connection per host kept open while pushes go, as Apple asks, and a provider token signed with the
+// founder's `.p8` key through `node:crypto`: no dependency.
+//
+// - The connection checks Apple's certificate whatever NODE_TLS_REJECT_UNAUTHORIZED says (`rejectUnauthorized`), so
+//   no setting can hand a token and the provider token to another host. One idle for SESSION_IDLE_MS is closed, so a
+//   burst of pushes hours after the last never starts on a connection gone dark; one that gave no answer in time is
+//   ended at once, for the same reason.
 //
 // - The host is the registration's environment's: `api.push.apple.com` for `production`, which every TestFlight
 //   build registers, or `api.sandbox.push.apple.com`. The tests give the origins of a fake APNs of their own.
 // - The provider token is an ES256 JWT: `kid` the key's id, `iss` the team's, `iat` its making. It is made again every
-//   50 minutes, inside Apple's window of 20 to 60, and at once after Apple answers `ExpiredProviderToken`. Its `iat` is
-//   real time, never the server's clock: dev's clock leads real time, and Apple refuses a token from the future or
-//   older than an hour (packages/domain/src/time/one-clock.test.ts keeps the line, with its reason).
+//   50 minutes, inside Apple's window of 20 to 60, at once after Apple answers `ExpiredProviderToken`, and when the
+//   real time goes back more than STEP_BACK_SECONDS (a smaller step would only spend one of Apple's refreshes, which it
+//   refuses more often than every 20 minutes). Its `iat` is real time, never the server's clock: dev's clock leads real
+//   time, and Apple refuses a token from the future or older than an hour (packages/domain/src/time/one-clock.test.ts
+//   keeps the line, with its reason).
 // - What Apple answers is sorted as its documentation says ("Handling notification responses from APNs", read
 //   2026-11-28): 200 is sent; a token Apple says is dead (`410`, or `400` `BadDeviceToken` or
-//   `DeviceTokenNotForTopic`) is `dead`, never retried; a `429`, a `5xx`, a lost stream, a lost connection or no answer
-//   in 10 seconds is `retry`; anything else is `refused`, never retried. `retry` after a `5xx` says to wait 15
-//   minutes at least, as Apple asks.
+//   `DeviceTokenNotForTopic`) is `dead`, never retried; a `429`, a `5xx`, a `400` `IdleTimeout`, a lost stream, a lost
+//   connection or no whole answer within 10 seconds of the request, however it trickles, is `retry`; anything else is
+//   `refused`, never retried. `retry` after a `5xx` says to wait 15 minutes at least, as Apple asks. A `200` is `sent`
+//   as soon as its status comes; of any other answer at most ANSWER_LIMIT is read, and the stream is then cancelled.
+// - A `retry` whose request never left (no connection was ever made) says `network.connection`; one that may have
+//   reached Apple says `network.stream` or `network.timeout` (the worker counts that push in the budget, push.ts).
 //
 // Nothing here logs. An outcome holds a status and a code, Apple's reason or one of the sender's own, never a token, a
 // payload or a message (T52). The key is read once, at the worker's start (`apnsKeyFrom`), and an error about it
 // never quotes it.
 
 import { createPrivateKey, sign, type KeyObject } from "node:crypto";
-import { connect, constants, sensitiveHeaders, type ClientHttp2Session } from "node:http2";
+import { connect, constants, sensitiveHeaders, type ClientHttp2Session, type ClientHttp2Stream } from "node:http2";
 import { Fault } from "@tadayo/domain/fault";
 
 /** Apple's two hosts, by a registration's environment. */
@@ -34,8 +44,13 @@ export type ApnsEnvironment = keyof typeof APNS_ORIGINS;
 export const APNS_TOPIC = "app.tadayo";
 /** How old a provider token gets before the next is made, in seconds: inside Apple's 20 to 60 minutes. */
 export const TOKEN_REFRESH_SECONDS = 50 * 60;
-/** How long a request waits for Apple's answer, in milliseconds. */
+/** How long a request waits for Apple's whole answer, in milliseconds, from the request: under the database role's 15
+ * seconds idle in a transaction, since the worker holds the delivery's row across it (push.ts). */
 export const REQUEST_TIMEOUT_MS = 10_000;
+/** How long a connection with no traffic stays open, in milliseconds. */
+export const SESSION_IDLE_MS = 10 * 60_000;
+/** How far the real time may go back, in seconds, before the provider token is made again. */
+export const STEP_BACK_SECONDS = 5 * 60;
 /** The most of an answer's body that is read, in bytes: Apple's are a short JSON object. */
 export const ANSWER_LIMIT = 4096;
 /** The largest payload Apple takes, in bytes. */
@@ -45,6 +60,8 @@ export const SERVER_ERROR_WAIT_SECONDS = 15 * 60;
 
 /** The answers that say a token is dead, whatever else: `410`, or these with a `400`. */
 const DEAD_400 = new Set(["BadDeviceToken", "DeviceTokenNotForTopic"]);
+/** The `400` that says the connection sat idle too long: the push itself is fine. */
+const IDLE_400 = "IdleTimeout";
 /** Apple's reasons are words; anything else is recorded as `unknown`. */
 const REASON = /^[A-Za-z][A-Za-z0-9]{0,63}$/;
 /** A token as 0017 keeps it. */
@@ -118,6 +135,7 @@ export interface ApnsOptions {
   /** The real time in milliseconds, for a token's `iat`: a test's own. */
   readonly realTime?: () => number;
   readonly timeoutMs?: number;
+  readonly idleMs?: number;
 }
 
 function base64url(value: string | Buffer): string {
@@ -150,9 +168,16 @@ function outcomeOf(status: number, reason: string, refresh: () => void): ApnsOut
     refresh();
     return { kind: "retry", status, reason, waitSeconds: 0 };
   }
-  if (status === 429) return { kind: "retry", status, reason, waitSeconds: 0 };
+  if (status === 429 || (status === 400 && reason === IDLE_400))
+    return { kind: "retry", status, reason, waitSeconds: 0 };
   if (status >= 500 && status <= 599) return { kind: "retry", status, reason, waitSeconds: SERVER_ERROR_WAIT_SECONDS };
   return { kind: "refused", status, reason };
+}
+
+/** An open connection, and whether it ever connected: a push on one that never did never left. */
+interface Open {
+  readonly session: ClientHttp2Session;
+  connected: boolean;
 }
 
 /** A sender that sends with `key` (above). */
@@ -160,12 +185,17 @@ export function apnsSender(key: ApnsKey, options: ApnsOptions = {}): ApnsSender 
   const origins = options.origins ?? APNS_ORIGINS;
   const realTime = options.realTime ?? REAL_TIME;
   const timeoutMs = options.timeoutMs ?? REQUEST_TIMEOUT_MS;
-  const sessions = new Map<ApnsEnvironment, ClientHttp2Session>();
+  const idleMs = options.idleMs ?? SESSION_IDLE_MS;
+  const sessions = new Map<ApnsEnvironment, Open>();
   let token: { value: string; madeAt: number } | null = null;
 
   const currentToken = (): string => {
     const seconds = Math.floor(realTime() / 1000);
-    if (token === null || seconds - token.madeAt >= TOKEN_REFRESH_SECONDS || seconds < token.madeAt) {
+    if (
+      token === null ||
+      seconds - token.madeAt >= TOKEN_REFRESH_SECONDS ||
+      seconds < token.madeAt - STEP_BACK_SECONDS
+    ) {
       token = { value: providerToken(key, seconds), madeAt: seconds };
     }
     return token.value;
@@ -174,20 +204,33 @@ export function apnsSender(key: ApnsKey, options: ApnsOptions = {}): ApnsSender 
     token = null;
   };
 
-  const sessionFor = (environment: ApnsEnvironment): ClientHttp2Session => {
-    const open = sessions.get(environment);
-    if (open !== undefined && !open.closed && !open.destroyed) return open;
-    const session = connect(origins[environment]);
+  const forget = (environment: ApnsEnvironment, open: Open) => {
+    if (sessions.get(environment) === open) sessions.delete(environment);
+  };
+  const sessionFor = (environment: ApnsEnvironment): Open => {
+    const known = sessions.get(environment);
+    if (known !== undefined && !known.session.closed && !known.session.destroyed) return known;
+    // Apple's certificate is checked whatever the environment says (above).
+    const session = connect(origins[environment], { rejectUnauthorized: true });
+    const open: Open = { session, connected: false };
+    session.once("connect", () => {
+      open.connected = true;
+    });
     // A connection's failure reaches its streams, which report it; the session's own event must not end the process.
     session.on("error", () => undefined);
     // Apple's GOAWAY, or the connection ending: the next push opens a new one.
-    const forget = () => {
-      if (sessions.get(environment) === session) sessions.delete(environment);
-    };
-    session.on("goaway", forget);
-    session.on("close", forget);
-    sessions.set(environment, session);
-    return session;
+    session.on("goaway", () => {
+      forget(environment, open);
+    });
+    session.on("close", () => {
+      forget(environment, open);
+    });
+    session.setTimeout(idleMs, () => {
+      forget(environment, open);
+      session.close();
+    });
+    sessions.set(environment, open);
+    return open;
   };
 
   return {
@@ -197,15 +240,20 @@ export function apnsSender(key: ApnsKey, options: ApnsOptions = {}): ApnsSender 
         return Promise.resolve({ kind: "refused", status: null, reason: "payload.too_large" });
       return new Promise<ApnsOutcome>((resolve) => {
         let settled = false;
+        // The request's deadline, set once the request is made; a request that never left has none to clear.
+        const deadline: { timer?: NodeJS.Timeout } = {};
         const settle = (outcome: ApnsOutcome) => {
           if (settled) return;
           settled = true;
+          clearTimeout(deadline.timer);
           resolve(outcome);
         };
         const lost = (reason: string): ApnsOutcome => ({ kind: "retry", status: null, reason, waitSeconds: 0 });
-        let request;
+        let open: Open;
+        let request: ClientHttp2Stream;
         try {
-          request = sessionFor(push.environment).request({
+          open = sessionFor(push.environment);
+          request = open.session.request({
             ":method": "POST",
             ":path": `/3/device/${push.token}`,
             authorization: `bearer ${currentToken()}`,
@@ -224,33 +272,41 @@ export function apnsSender(key: ApnsKey, options: ApnsOptions = {}): ApnsSender 
         }
         let status: number | null = null;
         let body = "";
-        request.setEncoding("utf8");
-        request.setTimeout(timeoutMs, () => {
-          settle(lost("network.timeout"));
+        // Apple's answer as it stands: its status and what of its body came, or a lost stream when no status came.
+        const answer = () => {
+          if (status === null || !Number.isInteger(status))
+            settle(lost(open.connected ? "network.stream" : "network.connection"));
+          else settle(outcomeOf(status, reasonOf(body), refresh));
+        };
+        // One deadline from the request, which no trickle of bytes moves. The connection is ended with it: one that
+        // gave no answer in time may have gone dark, and the next push opens another.
+        deadline.timer = setTimeout(() => {
+          settle(lost(open.connected ? "network.timeout" : "network.connection"));
           request.close(constants.NGHTTP2_CANCEL);
-        });
+          forget(push.environment, open);
+          open.session.destroy();
+        }, timeoutMs);
+        request.setEncoding("utf8");
         request.on("response", (headers) => {
           const value = headers[":status"];
           status = typeof value === "number" ? value : Number(value);
+          if (status === 200) settle({ kind: "sent" });
         });
         request.on("data", (chunk: string) => {
-          if (body.length < ANSWER_LIMIT) body += chunk.slice(0, ANSWER_LIMIT - body.length);
+          body += chunk.slice(0, ANSWER_LIMIT - body.length);
+          if (body.length >= ANSWER_LIMIT) {
+            answer();
+            request.close(constants.NGHTTP2_CANCEL);
+          }
         });
-        request.on("end", () => {
-          if (status === null || !Number.isInteger(status)) settle(lost("network.stream"));
-          else settle(outcomeOf(status, status === 200 ? "" : reasonOf(body), refresh));
-        });
-        request.on("error", () => {
-          settle(lost("network.stream"));
-        });
-        request.on("close", () => {
-          settle(lost("network.stream"));
-        });
+        request.on("end", answer);
+        request.on("error", answer);
+        request.on("close", answer);
         request.end(push.payload);
       });
     },
     close() {
-      for (const session of sessions.values()) session.close();
+      for (const open of sessions.values()) open.session.close();
       sessions.clear();
     },
   };

@@ -17,10 +17,12 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
   ENDED_KEEP,
+  lockDevicesOf,
   PURGE_BATCH,
   Refused,
   registerDevice,
   removeDevice,
+  type PlannedDevice,
   type RegisterDeviceInput,
 } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
@@ -700,6 +702,67 @@ describe("commands at once, committed: no deadlock, and no registration for an e
       expect(await endedAt(db as unknown as WorldTx, secret)).not.toBeNull();
       expect(await orphans()).toBe(0);
     }
+  });
+
+  it("lets the reveal push's plan hold its readers' sign-ins in 0017's order, so a move of their token waits on the sign-in's lock", async () => {
+    const [ana, ben] = await Promise.all([committed(), committed()]);
+    const [anas, bens, t1, t2] = [newSecret(), newSecret(), newToken(), newToken()];
+    await asRoute(input(ana, anas, t1));
+    await asRoute(input(ben, bens, t2));
+    // The plan holds what it locked until the test lets it go.
+    let finish: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    let locked: (devices: PlannedDevice[]) => void = () => undefined;
+    const read = new Promise<PlannedDevice[]>((resolve) => {
+      locked = resolve;
+    });
+    const planning = db.begin(async (tx) => {
+      locked(await lockDevicesOf(tx, [ben, ana]));
+      await held;
+    });
+    const devices = await read;
+    expect(devices.map((one) => [one.userId, Buffer.from(one.signIn).toString("hex"), one.timezone])).toEqual(
+      [
+        [ana, hashOf(anas), "America/New_York"],
+        [ben, hashOf(bens), "America/New_York"],
+      ].sort((a, b) => ((a[1] ?? "") < (b[1] ?? "") ? -1 : 1)),
+    );
+    // Ben's sign-in takes Ana's token: it waits on the sign-ins' locks the plan holds, before any row.
+    const moving = asRoute(input(ben, bens, t1));
+    await untilWaiting([signInLock(anas), signInLock(bens)], 1);
+    finish();
+    await planning;
+    await moving;
+    expect(await registrations(db as unknown as WorldTx, { user: ana })).toEqual([]);
+    expect(await orphans()).toBe(0);
+  });
+
+  it("lets the reveal push's plan leave out a registration deleted while it waited for its sign-in", async () => {
+    const ben = await committed();
+    const [secret, token] = [newSecret(), newToken()];
+    await asRoute(input(ben, secret, token));
+    // A removal of Ben's phone holds its sign-in's lock and has deleted the row, uncommitted.
+    let finish: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    let begun: () => void = () => undefined;
+    const started = new Promise<void>((resolve) => {
+      begun = resolve;
+    });
+    const removing = db.begin(async (tx) => {
+      await removeDevice(tx, clock, secret);
+      begun();
+      await held;
+    });
+    await started;
+    const planning = db.begin((tx) => lockDevicesOf(tx, [ben]));
+    await untilWaiting([signInLock(secret)], 1);
+    finish();
+    await removing;
+    expect(await planning).toEqual([]);
   });
 
   it("lets twenty registrations of one sign-in with different tokens at once leave one registration, with one of them", async () => {

@@ -10,6 +10,8 @@ export default defineConfig({
   test: {
     include: ["src/privacy/**/*.test.ts"],
     globalSetup: ["src/privacy/global-setup.ts"],
+    // Temporal values compared by every matcher (./src/temporal-equality.ts).
+    setupFiles: ["src/temporal-equality.ts"],
     fileParallelism: false,
     testTimeout: 600_000,
   },

@@ -788,6 +788,13 @@ The coordinator reserved FQ141 at 03:15 UTC on 2026-11-24. It is withdrawn, unas
     - The other reading: sent late, when the device's quiet hours end, with the same words, opening the day in Memories.
     - Needed by: spike S4's push (`api/b2-spike-push`), before Gate A, for the default; the trial's clubs are all in the founder's zone, so the case needs a member travelling far. The answer changes one rule of the push's dispatch, nothing else.
 
+The api lane took FQ151, the next free number, on 2026-11-28, from PR #159's first review (P1 and D1, the privacy and database reviewers).
+
+- **FQ151. Whether a reveal push Apple has already taken may still reach a phone after its reader lost access.** The worker decides each push at dispatch, rechecking access (T37), then hands it to Apple while it holds the delivery's row, so a removal of that phone's registration, at logout or by a later sign-in, waits until Apple has answered, and no push goes to Apple once one has landed (`docs/plans/api-b2-spike-push.md` section 2.3). Two cases are left. A removal of the drop or of the member, or a block, landing in the few seconds between the decision and Apple's answer isn't waited for. And Apple keeps a push for a phone that is off or out of signal and delivers it when it comes back, until the push's expiry, which is the day's close or 23:00 in the phone's zone, whichever comes first; nothing can take it back once Apple has it. In both, the phone shows "Debby’s day is ready" though its owner can no longer read the day. The push holds no caption, media or name but the star's, and the app rechecks access when it opens the day (T38), so a tap shows nothing of the day; it does tell the phone's holder that the day opened. Spec 21 and T37 say the dispatch rechecks access, and say nothing of a push already with Apple.
+    - Default (Claude Code's): accept both for the trial, as built, and recorded in `docs/LIMITATIONS.md`.
+    - The other readings: a shorter expiry, such as an hour, so a stored push lapses sooner, at the cost of a phone that is off for longer missing the day's push altogether; or the app clearing its delivered Tadayo notifications at logout and at each sign-in (`removeAllDeliveredNotifications`), which the ios lane would build, and which covers a phone that changed hands but not one that is off when the access ends.
+    - Needed by: spike S4's run on `dev`, which turns the push on (`docs/plans/api-b2-spike-push.md` section 3). The answer changes the push's expiry or the app, nothing in the contract.
+
 ## Raised by the outside audit's A3: leaving with "Withdraw my contributions" (`api/b2-leave-withdraw`)
 
 The coordinator reserved FQ142 at 11:54 UTC on 2026-11-24.

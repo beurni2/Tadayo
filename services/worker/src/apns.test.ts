@@ -1,26 +1,38 @@
 // The APNs sender against a fake APNs (./apns.ts; docs/plans/api-b2-spike-push.md, sections 2.5 and 2.6): an HTTP/2
 // server of the test's own, in clear text, that reads each request as Apple would (its path, headers and provider
 // token, checked with the test key's public half) and answers as each test tells it: every answer Apple's
-// documentation lists that the sender sorts, a dropped stream, no answer, and no server at all. The key is made here,
-// so no secret is in the repository.
+// documentation lists that the sender sorts, a dropped stream, no answer, an answer that trickles or floods, a 200
+// that never ends, and no server at all; and one over TLS with a certificate nobody vouches for. The keys and the
+// certificate are made here, so no secret is in the repository.
 
+import { execFileSync } from "node:child_process";
 import { generateKeyPairSync, verify, type KeyObject } from "node:crypto";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import {
   constants,
+  createSecureServer,
   createServer,
+  sensitiveHeaders,
+  type Http2SecureServer,
   type Http2Server,
   type IncomingHttpHeaders,
   type ServerHttp2Stream,
 } from "node:http2";
 import type { AddressInfo } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   APNS_TOPIC,
   apnsKeyFrom,
   apnsSender,
+  ANSWER_LIMIT,
   PAYLOAD_LIMIT,
   providerToken,
+  REQUEST_TIMEOUT_MS,
   SERVER_ERROR_WAIT_SECONDS,
+  SESSION_IDLE_MS,
+  STEP_BACK_SECONDS,
   TOKEN_REFRESH_SECONDS,
   type ApnsKey,
   type ApnsPush,
@@ -31,8 +43,11 @@ const pair = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
 const P8 = pair.privateKey.export({ type: "pkcs8", format: "pem" });
 const KEY: ApnsKey = apnsKeyFrom({ APNS_KEY_ID: "KEY1234567", APPLE_TEAM_ID: "TEAM123456", APNS_KEY_P8: P8 });
 
-/** What the fake answers a request with. */
-type Answer = { status: number; reason?: string; body?: string } | "drop" | "hang";
+/**
+ * What the fake answers a request with: a status and body, a dropped stream, nothing, a `500` whose body comes a byte
+ * at a time and never ends, a `200` that never ends, or a `400` whose body never stops coming.
+ */
+type Answer = { status: number; reason?: string; body?: string } | "drop" | "hang" | "trickle" | "stall200" | "flood";
 
 interface Seen {
   headers: IncomingHttpHeaders;
@@ -44,9 +59,11 @@ interface Seen {
 class FakeApns {
   readonly seen: Seen[] = [];
   answers: Answer[] = [];
-  readonly server: Http2Server;
-  constructor() {
-    this.server = createServer();
+  /** Each answered stream's reset code once it closed: the sender's cancel is NGHTTP2_CANCEL. */
+  readonly resets: number[] = [];
+  readonly server: Http2Server | Http2SecureServer;
+  constructor(secure?: { key: Buffer; cert: Buffer }) {
+    this.server = secure === undefined ? createServer() : createSecureServer({ ...secure, allowHTTP1: false });
     this.server.on("stream", (stream: ServerHttp2Stream, headers: IncomingHttpHeaders) => {
       let body = "";
       // A stream the fake drops reports it on its own side too.
@@ -56,9 +73,21 @@ class FakeApns {
       stream.on("end", () => {
         this.seen.push({ headers, body, session: stream.session });
         const answer = this.answers.shift() ?? { status: 200 };
+        stream.on("close", () => this.resets.push(stream.rstCode));
         if (answer === "drop") stream.close(constants.NGHTTP2_INTERNAL_ERROR);
         else if (answer === "hang") return;
-        else {
+        else if (answer === "stall200") stream.respond({ ":status": 200 });
+        else if (answer === "trickle" || answer === "flood") {
+          stream.respond({ ":status": answer === "trickle" ? 500 : 400 });
+          const chunk = answer === "trickle" ? "{" : "x".repeat(16_384);
+          const timer = setInterval(
+            () => {
+              if (stream.destroyed || stream.closed) clearInterval(timer);
+              else stream.write(chunk);
+            },
+            answer === "trickle" ? 20 : 1,
+          );
+        } else {
           stream.respond({ ":status": answer.status, "apns-id": "eabeae54-14a8-11e5-b60b-1697f925ec7b" });
           stream.end(
             answer.body ?? (answer.reason === undefined ? undefined : JSON.stringify({ reason: answer.reason })),
@@ -69,7 +98,8 @@ class FakeApns {
   }
   async listen(): Promise<string> {
     await new Promise<void>((resolve) => this.server.listen(0, "127.0.0.1", resolve));
-    return `http://127.0.0.1:${String((this.server.address() as AddressInfo).port)}`;
+    const scheme = this.server instanceof Object && "setSecureContext" in this.server ? "https" : "http";
+    return `${scheme}://127.0.0.1:${String((this.server.address() as AddressInfo).port)}`;
   }
   close(): Promise<void> {
     return new Promise((resolve) => {
@@ -93,6 +123,7 @@ afterEach(() => {
   for (const sender of senders.splice(0)) sender.close();
   production.seen.length = 0;
   production.answers = [];
+  production.resets.length = 0;
   sandbox.seen.length = 0;
   sandbox.answers = [];
   realMs = Date.parse("2026-11-28T09:00:00Z");
@@ -102,11 +133,18 @@ afterAll(async () => {
   await Promise.race([Promise.all([production.close(), sandbox.close()]), new Promise((r) => setTimeout(r, 500))]);
 });
 
-function sender(timeoutMs?: number): ApnsSender {
-  const made = apnsSender(KEY, { origins, realTime: () => realMs, ...(timeoutMs === undefined ? {} : { timeoutMs }) });
+function sender(timeoutMs?: number, idleMs?: number): ApnsSender {
+  const made = apnsSender(KEY, {
+    origins,
+    realTime: () => realMs,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
+    ...(idleMs === undefined ? {} : { idleMs }),
+  });
   senders.push(made);
   return made;
 }
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const TOKEN = "a1".repeat(32);
 const PAYLOAD = JSON.stringify({
@@ -161,6 +199,9 @@ describe("a push as Apple asks for it", () => {
     expect(token.head).toEqual({ alg: "ES256", kid: "KEY1234567" });
     expect(token.claims).toEqual({ iss: "TEAM123456", iat: Math.floor(realMs / 1000) });
     expect(sandbox.seen).toEqual([]);
+    // The path, which holds the device's token, and the provider token are kept out of HPACK's table.
+    const sent = request?.headers as Record<string | symbol, unknown> | undefined;
+    expect(sent?.[sensitiveHeaders]).toEqual(expect.arrayContaining([":path", "authorization"]));
   });
 
   it("sends a sandbox registration to the sandbox host", async () => {
@@ -227,13 +268,18 @@ describe("the provider token (Apple: made again no more often than every 20 minu
     expect(second?.whole).not.toBe(first?.whole);
   });
 
-  it("makes a new one when the real time goes back", async () => {
+  it("makes a new one when the real time goes back more than five minutes, and keeps it for a smaller step", async () => {
     const s = sender();
     await s.send(push());
     realMs -= 60_000;
     await s.send(push());
-    const [first, second] = production.seen.map((request) => readToken(request.headers.authorization));
-    expect(second?.whole).not.toBe(first?.whole);
+    realMs -= STEP_BACK_SECONDS * 1000;
+    await s.send(push());
+    const [first, second, third] = production.seen.map((request) => readToken(request.headers.authorization));
+    expect(second?.whole).toBe(first?.whole);
+    expect(third?.whole).not.toBe(second?.whole);
+    expect(third?.claims).toEqual({ iss: "TEAM123456", iat: Math.floor(realMs / 1000) });
+    expect(STEP_BACK_SECONDS).toBe(300);
   });
 
   it("signs exactly what it says, so a token for another key doesn't verify", () => {
@@ -294,6 +340,10 @@ describe("Apple's answers, sorted as its documentation says", () => {
       { kind: "retry", status: 429, reason: "TooManyRequests", waitSeconds: 0 },
     ],
     [
+      { status: 400, reason: "IdleTimeout" },
+      { kind: "retry", status: 400, reason: "IdleTimeout", waitSeconds: 0 },
+    ],
+    [
       { status: 500, reason: "InternalServerError" },
       { kind: "retry", status: 500, reason: "InternalServerError", waitSeconds: SERVER_ERROR_WAIT_SECONDS },
     ],
@@ -336,16 +386,102 @@ describe("Apple's answers, sorted as its documentation says", () => {
       reason: "network.timeout",
       waitSeconds: 0,
     });
+    expect(REQUEST_TIMEOUT_MS).toBe(10_000);
   });
 
-  it("asks again when there is no server, and opens a new connection when one is back", async () => {
+  it("gives up at its deadline however the answer trickles, and opens a new connection for the next push", async () => {
+    const s = sender(300);
+    production.answers = ["trickle"];
+    const started = Date.now();
+    expect(await s.send(push())).toEqual({ kind: "retry", status: null, reason: "network.timeout", waitSeconds: 0 });
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(await s.send(push())).toEqual({ kind: "sent" });
+    expect(production.seen[1]?.session === production.seen[0]?.session).toBe(false);
+  });
+
+  it("takes a 200 as sent as soon as its status comes, though its stream never ends", async () => {
+    production.answers = ["stall200"];
+    expect(await sender(300).send(push())).toEqual({ kind: "sent" });
+  });
+
+  it("reads at most 4 KB of an answer, then cancels its stream", async () => {
+    production.answers = ["flood"];
+    expect(await sender(5000).send(push())).toEqual({ kind: "refused", status: 400, reason: "unknown" });
+    for (let tries = 0; tries < 100 && production.resets.length === 0; tries += 1) await pause(10);
+    expect(production.resets).toEqual([constants.NGHTTP2_CANCEL]);
+    expect(ANSWER_LIMIT).toBe(4096);
+  });
+
+  it("closes a connection idle for its time, and opens a new one for the next push", async () => {
+    const s = sender(undefined, 100);
+    await s.send(push());
+    await pause(400);
+    expect(await s.send(push())).toEqual({ kind: "sent" });
+    expect(production.seen[1]?.session === production.seen[0]?.session).toBe(false);
+    expect(SESSION_IDLE_MS).toBe(600_000);
+  });
+
+  it("asks again when there is no server, saying the push never left, and opens a new connection when one is back", async () => {
     const gone = new FakeApns();
     const origin = await gone.listen();
     await gone.close();
     const s = apnsSender(KEY, { origins: { production: origin, sandbox: origin }, realTime: () => realMs });
     senders.push(s);
-    expect(await s.send(push())).toMatchObject({ kind: "retry", status: null });
-    expect(await s.send(push())).toMatchObject({ kind: "retry", status: null });
+    const never = { kind: "retry", status: null, reason: "network.connection", waitSeconds: 0 };
+    expect(await s.send(push())).toEqual(never);
+    expect(await s.send(push())).toEqual(never);
+  });
+
+  it("refuses a host whose certificate nobody vouches for, whatever NODE_TLS_REJECT_UNAUTHORIZED says", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "apns-tls-"));
+    const before = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    try {
+      execFileSync(
+        "openssl",
+        [
+          "req",
+          "-x509",
+          "-newkey",
+          "ec",
+          "-pkeyopt",
+          "ec_paramgen_curve:prime256v1",
+          "-nodes",
+          "-days",
+          "1",
+          "-subj",
+          "/CN=127.0.0.1",
+          "-addext",
+          "subjectAltName=IP:127.0.0.1",
+          "-keyout",
+          join(dir, "key.pem"),
+          "-out",
+          join(dir, "cert.pem"),
+        ],
+        { stdio: "ignore" },
+      );
+      const secure = new FakeApns({
+        key: readFileSync(join(dir, "key.pem")),
+        cert: readFileSync(join(dir, "cert.pem")),
+      });
+      const origin = await secure.listen();
+      expect(origin.startsWith("https://")).toBe(true);
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+      const s = apnsSender(KEY, { origins: { production: origin, sandbox: origin }, realTime: () => realMs });
+      senders.push(s);
+      expect(await s.send(push())).toEqual({
+        kind: "retry",
+        status: null,
+        reason: "network.connection",
+        waitSeconds: 0,
+      });
+      expect(secure.seen).toEqual([]);
+      secure.server.unref();
+      await Promise.race([secure.close(), pause(500)]);
+    } finally {
+      if (before === undefined) delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      else process.env.NODE_TLS_REJECT_UNAUTHORIZED = before;
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("opens a new connection after Apple's GOAWAY", async () => {

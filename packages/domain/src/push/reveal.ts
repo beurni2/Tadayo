@@ -11,8 +11,12 @@
 //   holds), the next 08:00 there (T37). The day opens in the app at 07:00 all the same.
 // - Whether, at dispatch: the rechecks of the plan's section 2.3 in their order, then quiet hours in the zone the
 //   registration holds now, then the budget: two ordinary pushes a day per member across clubs, the day counted in
-//   the zone of the member's most recently registered device (FQ30's default). A day already counted, by this
-//   delivery's own earlier decision or by a send to another of the member's devices, is the same push and counts once.
+//   the zone of the member's most recently registered device (FQ30's default). A push counts from the decision to
+//   send it, by its delivery's `sent_at`, unless Apple's answer says it took nothing (services/worker/src/push.ts): a
+//   send whose fate is unknown counts. A day already counted in the budget day, by this delivery's earlier decision or
+//   by one to another of the member's devices, is the same push and counts once.
+// - Until when Apple may deliver it: the day's close, or the next 23:00 in the device's zone if that comes first, so a
+//   phone that is off when it is sent isn't woken by it in its quiet hours (T37; `apns-expiration`).
 // - In what words: spec 21's, with the app's typographic apostrophe, the star's name as members see it (FQ75,
 //   `starNameOf`), never a pronoun (T42); and a payload of names and timing alone: no caption, media, URL, provider id
 //   or source (T37, T52), no badge (T33).
@@ -59,6 +63,23 @@ function outsideQuiet(at: Temporal.Instant, zone: string): Temporal.Instant {
 /** When a day's push to a device in `zone` is first due: its reveal, or the end of the device's quiet hours. */
 export function plannedDueAt(revealAt: Temporal.Instant, zone: string): Temporal.Instant {
   return outsideQuiet(revealAt, zone);
+}
+
+/** The next start of quiet hours after `now` in `zone`: 23:00 that evening, or the next evening's from 23:00 on. */
+export function quietFrom(now: ServerNow, zone: string): Temporal.Instant {
+  checkNow(now);
+  const local = now.toZonedDateTimeISO(clubTimeZone(zone));
+  const date =
+    Temporal.PlainTime.compare(local.toPlainTime(), QUIET_START) >= 0
+      ? local.toPlainDate().add({ days: 1 })
+      : local.toPlainDate();
+  return resolveCivilTime(date, QUIET_START, zone);
+}
+
+/** Whether a day closing at `closeAt` has closed at `now`: nothing more is sent for it. */
+export function dayClosed(closeAt: Temporal.Instant, now: ServerNow): boolean {
+  checkNow(now);
+  return Temporal.Instant.compare(now, closeAt) >= 0;
 }
 
 /** The end of the quiet hours `now` is in, in `zone`, or null when it is in none. */
@@ -128,15 +149,16 @@ export interface RevealFacts {
   readonly readsADrop: boolean;
   /** The zone the delivery's registration holds now, or null when the sign-in is no longer this account's. */
   readonly deviceZone: string | null;
-  /** Whether this day's push already counts in the member's budget (above). */
+  /** Whether a push of this day already counts in the member's budget day: one of its deliveries to the member decided
+   * to send in it, and not answered as taken by nobody (above). */
   readonly counted: boolean;
-  /** The other days counted in the member's budget day. */
+  /** The other days counted in the member's budget day, the same way. */
   readonly spent: number;
 }
 
-/** What becomes of a delivery: sent with its body, held to an instant, or skipped with its code. */
+/** What becomes of a delivery: sent with its body until an instant, held to an instant, or skipped with its code. */
 export type RevealDecision =
-  | { readonly kind: "send"; readonly body: string }
+  | { readonly kind: "send"; readonly body: string; readonly expiresAt: Temporal.Instant }
   | { readonly kind: "hold"; readonly until: Temporal.Instant }
   | { readonly kind: "skip"; readonly code: SkipCode };
 
@@ -146,7 +168,7 @@ const skip = (code: SkipCode): RevealDecision => ({ kind: "skip", code });
 export function decideReveal(facts: RevealFacts, now: ServerNow): RevealDecision {
   checkNow(now);
   const { day } = facts;
-  if (Temporal.Instant.compare(now, day.closeAt) >= 0) return skip("closed");
+  if (dayClosed(day.closeAt, now)) return skip("closed");
   if (Temporal.Instant.compare(now, day.revealAt) < 0)
     throw new Fault("reveal_push_3", "push: a day is told of only once it has opened");
   const starName = starNameOf(day);
@@ -157,7 +179,12 @@ export function decideReveal(facts: RevealFacts, now: ServerNow): RevealDecision
   const until = quietUntil(now, facts.deviceZone);
   if (until !== null) return Temporal.Instant.compare(until, day.closeAt) < 0 ? { kind: "hold", until } : skip("quiet");
   if (!facts.counted && facts.spent >= PUSH_BUDGET) return skip("budget");
-  return { kind: "send", body: revealBody(facts.isStar, starName) };
+  const quiet = quietFrom(now, facts.deviceZone);
+  return {
+    kind: "send",
+    body: revealBody(facts.isStar, starName),
+    expiresAt: Temporal.Instant.compare(quiet, day.closeAt) < 0 ? quiet : day.closeAt,
+  };
 }
 
 type Bound<R> = (
@@ -216,16 +243,12 @@ export async function dayReaders(sql: QuerySql, dayId: string, now: ServerNow): 
   return readers;
 }
 
-/** The delivery the decision reads facts for: its day, its recipient, its sign-in (null once gone), its own decision. */
+/** The delivery the decision reads facts for: its day, its recipient and its sign-in (null once gone). */
 export interface RevealTarget {
   readonly dayId: string;
   readonly userId: string;
   /** The sign-in's hash, or null once its registration is gone. */
   readonly signIn: Uint8Array | null;
-  /** The delivery's own id, left out of the budget's count. */
-  readonly deliveryId: string;
-  /** Whether this delivery was decided before (a send that never reported back): already counted. */
-  readonly decidedBefore: boolean;
 }
 
 /** The facts `decideReveal` reads, with the registration the push would go to, or null when the day is gone. */
@@ -233,11 +256,15 @@ export interface LoadedReveal {
   readonly facts: RevealFacts;
   /** The registration's token and environment, or null when the sign-in is no longer this account's. */
   readonly device: { readonly token: string; readonly environment: "sandbox" | "production" } | null;
+  /** The member's budget day at the sample, or null when the member has no device. */
+  readonly budget: BudgetDay | null;
 }
 
 /**
  * Reads what `decideReveal` needs about `target` at `now`, in two statements: the day, the account, the read, the
- * registration and the zone of the member's latest one; then the budget's count in that zone's day (`budgetDay`).
+ * registration and the zone of the member's latest one; then, in that zone's day (`budgetDay`), whether this day is
+ * counted and how many others are: each by any of the member's deliveries whose `sent_at` falls in it, whatever its
+ * state, since `sent_at` is cleared only when Apple took nothing (the worker's answer).
  * It takes no lock: the worker holds the recipient's account row and the delivery's row already. The connection
  * needs INSTANT_TYPE.
  */
@@ -256,10 +283,7 @@ export async function loadReveal(sql: QuerySql, target: RevealTarget, now: Serve
            r.timezone AS device_zone, r.apns_token, r.apns_environment,
            (SELECT l.timezone FROM app.device_registrations l
              WHERE l.user_id = ${target.userId}::pg_catalog.text
-             ORDER BY l.registered_at DESC, l.sign_in DESC LIMIT 1) AS budget_zone,
-           EXISTS (SELECT FROM app.push_deliveries p
-                    WHERE p.occurrence_id = o.id AND p.user_id = ${target.userId}::pg_catalog.text
-                      AND p.id <> ${target.deliveryId}::pg_catalog.text AND p.state IN ('sending', 'sent')) AS sent_elsewhere
+             ORDER BY l.registered_at DESC, l.sign_in DESC LIMIT 1) AS budget_zone
       FROM app.occurrences o
       JOIN app.memberships s ON s.interval_id = o.star_interval_id
       JOIN app.users su ON su.id = s.user_id
@@ -270,7 +294,7 @@ export async function loadReveal(sql: QuerySql, target: RevealTarget, now: Serve
   if (row === undefined) return null;
   const account = row["account"];
   if (typeof account !== "string" || !(ACCOUNT as readonly string[]).includes(account)) throw shape("the account");
-  for (const key of ["is_star", "reads", "sent_elsewhere"]) {
+  for (const key of ["is_star", "reads"]) {
     if (typeof row[key] !== "boolean") throw shape(key);
   }
   const zone = row["device_zone"];
@@ -284,18 +308,22 @@ export async function loadReveal(sql: QuerySql, target: RevealTarget, now: Serve
   const budgetZone = row["budget_zone"];
   if (budgetZone !== null && typeof budgetZone !== "string") throw shape("the budget's zone");
   let spent = 0;
+  let counted = false;
+  let budget: BudgetDay | null = null;
   if (typeof budgetZone === "string") {
-    const { from, until } = budgetDay(now, budgetZone);
+    budget = budgetDay(now, budgetZone);
     const [count] = await bound(sql)`
-      SELECT pg_catalog.count(DISTINCT p.occurrence_id)::pg_catalog.int4 AS spent
+      SELECT pg_catalog.count(DISTINCT p.occurrence_id)
+               FILTER (WHERE p.occurrence_id <> ${day}::pg_catalog.text)::pg_catalog.int4 AS spent,
+             coalesce(pg_catalog.bool_or(p.occurrence_id = ${day}::pg_catalog.text), false) AS counted
         FROM app.push_deliveries p
        WHERE p.user_id = ${target.userId}::pg_catalog.text
-         AND p.occurrence_id <> ${day}::pg_catalog.text
-         AND p.state IN ('sending', 'sent')
-         AND p.sent_at >= ${from}::pg_catalog.timestamptz AND p.sent_at < ${until}::pg_catalog.timestamptz`;
+         AND p.sent_at >= ${budget.from}::pg_catalog.timestamptz AND p.sent_at < ${budget.until}::pg_catalog.timestamptz`;
     const n = count?.["spent"];
     if (typeof n !== "number" || !Number.isInteger(n) || n < 0) throw shape("the budget's count");
+    if (typeof count?.["counted"] !== "boolean") throw shape("the budget's day");
     spent = n;
+    counted = count["counted"];
   }
   return {
     facts: {
@@ -304,9 +332,10 @@ export async function loadReveal(sql: QuerySql, target: RevealTarget, now: Serve
       isStar: row["is_star"] as boolean,
       readsADrop: row["reads"] as boolean,
       deviceZone: device === null ? null : (zone as string),
-      counted: target.decidedBefore || (row["sent_elsewhere"] as boolean),
+      counted,
       spent,
     },
     device,
+    budget,
   };
 }

@@ -382,20 +382,26 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
       "services/worker/src/outbox.ts: OutboxEvent.createdAt",
       "services/worker/src/outbox.ts: claimNext.rows.created_at",
       // The day a reveal push is for, as its row holds it: a delivery is planned between its reveal and its close, a
-      // retry is kept only before the close, and the close is the push's expiry at APNs (push.ts).
-      "services/worker/src/push.ts: Decided.closeAt",
+      // decision at or after the close ends it (`dayClosed`, which takes the sample as a ServerNow), a retry is kept
+      // only before the close, and the push's expiry at APNs is the close or sooner (push.ts).
+      "packages/domain/src/push/reveal.ts: dayClosed(closeAt)",
+      "services/worker/src/push.ts: DecidedPush.closeAt",
+      "services/worker/src/push.ts: DeliveryRow.close_at",
       "services/worker/src/push.ts: planDay.[day].close_at",
       "services/worker/src/push.ts: planDay.[day].reveal_at",
     ],
   },
   {
-    why: "the reveal push's own times: the reveal a delivery is first due at, the end of a device's quiet hours, and the bounds of the budget's local day, each made from a row's time or the clock's sample and a zone, which a delivery's row holds or a count compares with rows' times, never the time a decision is made at, which `quietUntil`, `budgetDay` and `decideReveal` take as a ServerNow",
+    why: "the reveal push's own times: the reveal a delivery is first due at, the end of a device's quiet hours, the bounds of the budget's local day, and the push's expiry at APNs, each made from a row's time or the clock's sample and a zone, which a delivery's row holds, a count compares with rows' times or APNs is told; and a delivery's `sent_at` as its row holds it, which the decision compares with the budget day's bounds; never the time a decision is made at, which `quietUntil`, `quietFrom`, `budgetDay` and `decideReveal` take as a ServerNow",
     at: [
       "packages/domain/src/push/reveal.ts: BudgetDay.from",
       "packages/domain/src/push/reveal.ts: BudgetDay.until",
+      "packages/domain/src/push/reveal.ts: RevealDecision.expiresAt",
       "packages/domain/src/push/reveal.ts: RevealDecision.until",
       "packages/domain/src/push/reveal.ts: outsideQuiet(at)",
       "packages/domain/src/push/reveal.ts: plannedDueAt(revealAt)",
+      "services/worker/src/push.ts: DecidedPush.expiresAt",
+      "services/worker/src/push.ts: DeliveryRow.sent_at",
     ],
   },
   {
@@ -419,9 +425,9 @@ const PLAIN_INSTANTS: readonly { readonly why: string; readonly at: readonly str
     why: "a reveal push delivery's lease's end: computed from the claim's or the decision's own sample and written to the delivery's row, then matched with that row's `lease_until` to know that a later step is that claim's or that decision's (push.ts), never compared with a later sample in the code (the claim's query compares the row's with its own sample in SQL)",
     at: [
       "services/worker/src/push.ts: Claimed.leaseUntil",
-      "services/worker/src/push.ts: Decided.leaseUntil",
+      "services/worker/src/push.ts: DecidedPush.leaseUntil",
       "services/worker/src/push.ts: DeliveryRow.lease_until",
-      "services/worker/src/push.ts: fail(leaseUntil)",
+      "services/worker/src/push.ts: sendDelivery.result.[row].lease_until",
     ],
   },
   {

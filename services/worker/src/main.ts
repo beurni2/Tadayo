@@ -18,10 +18,11 @@
 // that process runs under a user of its own, TADAYO_PHOTO_USER, and every process of that user is ended as the photo's
 // end settles; a sweep that fails stops the worker (./privileges.ts). Its start line says which way photos go, and
 // which safety provider screens them, as TADAYO_SAFETY_PROVIDER names it (./safety.ts), and whether it sends the reveal
-// push, as TADAYO_PUSH says (./push.ts). With `apns`, each minute's pass plans and sends the reveal push after it makes
-// the days (./push.ts), in a try of its own, so a push pass that fails stops no day from being made; on a signal the
-// push pass finishes the delivery in hand and takes no other, and the sender's connections are closed before the
-// worker ends its database's.
+// push, as TADAYO_PUSH says (./push.ts). After each minute's days are made comes the push's part (`pushMinute`), which
+// never throws: the purge of closed days' push rows whatever the setting, and with `apns` the pass that plans and sends
+// the reveal push, each in a try of its own, so neither stops the other or the days; on a signal the push pass
+// finishes the delivery in hand and takes no other, and the sender's connections are closed before the worker ends
+// its database's.
 //
 // First of all, before any other module of the worker's runs, ./turn.ts takes `node`'s effective group and user when
 // it was started as fly.toml starts it, as root: its import stays first.
@@ -31,7 +32,7 @@ import { describeFailure, generationPass, passLines } from "./generation.ts";
 import { runLoop } from "./loop.ts";
 import { outboxPass } from "./outbox.ts";
 import { PREPARE_TOPIC, prepareHandler } from "./prepare.ts";
-import { pushLines, pushPass } from "./push.ts";
+import { pushMinute } from "./push.ts";
 import { startWorker } from "./start.ts";
 
 /** A pass a minute: a newly confirmed day gets its dates within about a minute (spec 05). */
@@ -69,14 +70,10 @@ try {
         const lines = passLines(await generationPass(sql, clock, undefined, () => stopping));
         for (const line of lines.out) process.stdout.write(`${line}\n`);
         for (const line of lines.err) process.stderr.write(`${line}\n`);
-        if (push === undefined || stopping) return;
-        try {
-          const pushed = pushLines(await pushPass(sql, clock, push, () => stopping));
-          for (const line of pushed.out) process.stdout.write(`${line}\n`);
-          for (const line of pushed.err) process.stderr.write(`${line}\n`);
-        } catch (error) {
-          process.stderr.write(`worker: a push pass failed: ${describeFailure(error)}\n`);
-        }
+        if (stopping) return;
+        const pushed = await pushMinute(sql, clock, push, () => stopping);
+        for (const line of pushed.out) process.stdout.write(`${line}\n`);
+        for (const line of pushed.err) process.stderr.write(`${line}\n`);
       },
       everyMs: PASS_EVERY_MS,
       stopped,
