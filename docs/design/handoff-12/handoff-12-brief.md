@@ -11,7 +11,8 @@
     - frames 11 to 18, Friends, Memories and Add before the club starts, in the first days and while paused (`F01-friends-unconfirmed`, `F01-not-started`, `F01-paused`, `M01-not-started`, `M01-first-days`, `M01-paused`, `C01-drafts-only`, `C01-picker-first-days`);
     - the dark and largest-text forms of frames 5, 8 and 18.
 - **It also asks for written answers:** whether the five states FQ125 to FQ127 made unreachable retire (`G04-change-member`, `G04-transition-week`, `G04-change-confirmed-review`, `G05-schedule-review`, `G05-schedule-review-confirmed`); what members see once a fourth member's join frees their second day; which past days a waiting Home shows; and the points handoff 6's check left for "the next stage B2 brief" (its section 7, moved there by handoff 7's brief: the circle on proposed days, the words, the states and the files), less those the founder's later answers made moot (the kept dates of the old `G04-change`). With them, the ios lane's needs list's items 81 to 84 (`docs/design/handoff-7/ios-lane-needs.md` sections 17 and 18), and item 85, which #158 adds to that list.
-- **Not in it:** the feed, the reveal and past days (B5), the composer, drafts and the upcoming day's captions (B4), and the states each of those stages' briefs will ask for.
+- **Not in it:** the feed, the reveal and past days (B5), the composer, drafts and the upcoming day's captions (B4), and the states each of those stages' briefs will ask for. `F01-access-lost`, B2's one other state with no frame, isn't asked: handoff 6 gives its form in words (`design/reference/claude-design/handoff-6/IMPLEMENTATION.md`: the access-lost explanation in the neutral denial every tab shares, as `M01-access-lost` draws it).
+- **Beyond B2:** `docs/DESIGN-HANDOFF.md` keeps a brief to one stage. This one also carries the needs list's items 81 to 85 (B1's removal and Welcome), which that list sends to "the next brief", and `H01-quiet-your-day` (B5), because B2's Home already reaches it.
 
 ## 1. How to send it
 
@@ -26,10 +27,10 @@ Each is marked "built from spec" in `design/reference/INVENTORY.md` until its fr
 - **`G04-confirmed` and `G04-own-confirmed`:** `G04-confirmed-many`'s layout with "Your day is confirmed." (handoff 3), each confirmed day with its first date as the server sends it; reopened, the same week read-only, the viewer's day with a check and "Confirmed" (handoff 6's specimen).
 - **`G04-day-taken`:** handoff 3's line in `G04-confirm-refused`'s place (under the explanation, said once to VoiceOver), and the day's row as the schedule read again shows it.
 - **`G04-confirm-failed`:** the choice kept, "Couldn’t confirm your days. Check your connection and try again." in the same place (handoff 4's failure pattern), and the retry under the same key (T19). The words are the lane's placeholder until the frame's.
-- **`G04-change`:** the first days' picker (`G04-one-day` or `G04-two-days` by `days_per_member`) for a `membership_change` proposal, the others' days taken with their owners, the free days to choose, and each confirmed day's first date as the server sends it (FQ130).
+- **`G04-change`:** the first days' picker (`G04-one-day` or `G04-two-days` by `days_per_member`) for a `membership_change` proposal, the others' days taken with their owners, the free days to choose, no date before the new member confirms, and the first date the server sends once they have (FQ130, T49).
 - **`H01-no-days`:** `H01-confirm-days` with no Choose your day.
-- **`H01-paused-own-day` and `H01-quiet-your-day`:** the waiting card, and 2.1's `H01-your-day` header over `H01-quiet`'s body.
-- **Friends, Memories and Add:** name-only rows; Memories' "Your first memories are ahead." without its "Next:" line; handoff 3's words where they exist; + Add with Private draft and Open my drafts only while no member has a day; a member with no day by name and photograph, not choosable.
+- **`H01-paused-own-day` and `H01-quiet-your-day`:** the waiting card, and the star's day header as built (handoff 6's "Your Monday") over `H01-quiet`'s body.
+- **Friends, Memories and Add:** name-only rows; Memories' "Your first memories are ahead." without its "Next:" line; handoff 3's words where they exist; + Add with Private draft and Open my drafts only while no member has a day to add to; a member with no day by name and photograph, not choosable.
 - **The five unreachable states:** not built.
 
 ## 3. What came back
