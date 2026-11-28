@@ -18,6 +18,8 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
     var acceptAnswers: [Result<InvitationAcceptance, APIFailure>] = []
     var approveAnswers: [Result<RosterRevision, APIFailure>] = []
     var declineAnswers: [Result<RosterRevision, APIFailure>] = []
+    /// The club's week, for a test that reads Members through this script; nil refuses the read.
+    var week: ClubWeek?
     private(set) var calls: [String] = []
     /// Run inside each preview and each accept, before it answers.
     var duringPreview: @Sendable () async -> Void = {}
@@ -94,7 +96,8 @@ final class ScriptedClubs: ClubService, @unchecked Sendable {
 
     func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
         lock.withLock { calls.append("schedule \(clubID)") }
-        throw .refused
+        guard let week else { throw .refused }
+        return week
     }
 
     func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {

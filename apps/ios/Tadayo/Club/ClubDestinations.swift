@@ -49,6 +49,7 @@ struct MembersDestination: View {
             openInvitation: model.opensInvitations ? openInvitation : nil,
             removing: model.removing, removalCanStart: model.removalCanStart,
             removalFailure: model.removalFailure, notice: model.notice,
+            removedRow: model.removedRow,
             remove: { proposed in Task { await remove(proposed) } }
         )
         .task {
@@ -109,6 +110,7 @@ struct InvitationsDestination: View {
         InvitationsScreen(
             state: model.state, busy: model.busy, revoking: revoking,
             failure: model.actionFailure, removing: model.removing, notice: model.notice,
+            removedRow: model.removedRow, removalCanStart: model.removalCanStart,
             actions: actions
         )
         .task {

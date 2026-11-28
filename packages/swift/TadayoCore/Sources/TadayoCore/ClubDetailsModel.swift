@@ -63,6 +63,9 @@ import Observation
     public private(set) var removalFailure: RemovalFailure?
     /// The last thing a removal from Members has VoiceOver say.
     public private(set) var notice: RemovalNotice?
+    /// The last row a removal from Members took away on the server's answer, where VoiceOver's
+    /// focus leaves from at once.
+    public private(set) var removedRow: RemovedRow?
 
     /// "Couldn’t remove {name}’s invitation to {clubName}. Try again.", or, `uncertain`,
     /// "Couldn’t confirm that {name}’s invitation to {clubName} was removed. Check your
@@ -99,8 +102,12 @@ import Observation
     /// The person's invitation page opened last, kept while it goes on (`invitation(for:)`).
     private var keptInvitation: InvitationListModel?
     private var keptNaming: InviteNameModel?
+    /// The approval made last (`approval(of:)`), whose decision may still be on its way after
+    /// Back.
+    private var keptApproval: RosterApprovalModel?
     private var memberReads = 0
     private var notices = 0
+    private var removedRows = 0
 
     public init(
         club: ClubSummary, service: any ClubService,
@@ -160,8 +167,11 @@ import Observation
 
     /// The members read again after a removal: what's shown stays while the reads are out, and
     /// stays if they fail (a not found still closes the club's screens, and a session ended still
-    /// ends it).
+    /// ends it). Members not loaded (shown again while the removal was out, say, its own read
+    /// dropped by this one) load as on Retry, so the loading form never stays with no read
+    /// behind it.
     public func refreshMembers() async {
+        guard case .loaded = members else { return await readMembers(quiet: false) }
         await readMembers(quiet: true)
     }
 
@@ -213,8 +223,9 @@ import Observation
     /// 8): only for a proposed row whose candidate the viewer proposed (`Roster.Proposed.removable`),
     /// whatever the viewer's decision on the revision, and only while nothing else changing the
     /// club is on its way (`removalCanStart`). On the server's answer every link kept for the
-    /// person goes, the row goes at once, Members is read again quietly, and then "{name}’s
-    /// invitation was removed." is said. A failure keeps the row with its line and reads Members
+    /// person goes, with the name step and the invitation page kept for them, the row goes at
+    /// once and VoiceOver's focus with it (`removedRow`), Members is read again quietly, and then
+    /// "{name}’s invitation was removed." is said. A failure keeps the row with its line and reads Members
     /// again; a not found reads them again, and says Members was updated once the row has gone,
     /// or, while they're still listed, that the invitation is no longer available. The details
     /// are read again after every answer. The removal takes no key (`removeCandidate`).
@@ -232,13 +243,19 @@ import Observation
         removing = nil
         // The person's links stop working on the server's answer, whatever this screen does
         // next: the book is the account's, so after a sign-out or a switch this drops nothing.
-        if case .success = outcome, let links {
-            links.book.dropCandidate(candidateID, club: club.id, account: links.accountID)
+        if case .success = outcome {
+            if let links {
+                links.book.dropCandidate(candidateID, club: club.id, account: links.accountID)
+            }
+            forgetSteps(of: candidateID)
         }
         guard current() else { return }
         if case .failure(.signedOut) = outcome { return await signedOut() }
         await settleRemoval(
             outcome, of: candidateID, named: name, in: clubName, at: position)
+        // A read asked after the answer that no longer lists them: they're gone, whatever the
+        // answer said.
+        if listing(candidateID) == false { forgetSteps(of: candidateID) }
         // The details read again too, whose Invite someone shows again when the removal freed
         // the club's last place (FQ148): after any answer, since one that never came may have
         // removed them.
@@ -258,6 +275,8 @@ import Observation
             // decides; until it answers, and if it fails, the row stays gone.
             if case .loaded(let shown) = members {
                 members = .loaded(shown.without(candidateID))
+                removedRows += 1
+                removedRow = RemovedRow(position: position, sequence: removedRows)
             }
             await refreshMembers()
             guard current(), !closed else { return }
@@ -286,13 +305,22 @@ import Observation
     }
 
     /// Whether nothing else that changes the club's roster or its links is on its way: a
-    /// removal, or the person's invitation page's or the name step's action, which may have
-    /// been left by Back while it goes on (handoff 11's `busy.concurrency`: one change in flight
-    /// per club). Every More on Members waits while it's false, and so does every proposed
-    /// row's route while a removal is out.
+    /// removal, or the person's invitation page's, the name step's or G03-approve's action,
+    /// which may have been left by Back while it goes on (handoff 11's `busy.concurrency`: one
+    /// change in flight per club). Every More on Members waits while it's false, and so does
+    /// every proposed row's route while a removal is out, when Club details' Invite someone
+    /// isn't offered either (`canInvite`).
     public var removalCanStart: Bool {
         removing == nil && (keptInvitation.map { $0.busy.isEmpty && $0.removing == nil } ?? true)
-            && keptNaming?.isCreating != true
+            && keptNaming?.isCreating != true && keptApproval?.busy == nil
+    }
+
+    /// A person gone: the name step and the invitation page kept for them aren't opened again,
+    /// so Invite someone starts a new name step rather than reopening one whose link the server
+    /// can no longer make.
+    private func forgetSteps(of candidateID: String) {
+        if keptNaming?.candidate?.id == candidateID { keptNaming = nil }
+        if keptInvitation?.candidateID == candidateID { keptInvitation = nil }
     }
 
     /// Whether Remove invitation can start for this person now: nothing else on its way, and
@@ -328,17 +356,24 @@ import Observation
         of revision: RosterRevision,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() }
     ) -> RosterApprovalModel {
-        RosterApprovalModel(
+        let model = RosterApprovalModel(
             revision: revision, service: service, makeKey: makeKey, current: current,
             gone: { [weak self] in await self?.loadMembers() }, signedOut: signedOut)
+        keptApproval = model
+        return model
     }
 
     /// Club details' Invite someone (handoff 8's `activeInvitationManagement`, frame 16): an
     /// active club whose details say the server takes a proposal (`can_propose`: a place is free
     /// and the caller may propose; A01, T6), on a phone that keeps the account's links. A club
-    /// that hasn't started keeps its setup list instead (`G01-invite-people`).
+    /// that hasn't started keeps its setup list instead (`G01-invite-people`). It's held back
+    /// while a removal from Members is out (handoff 11's `busy.concurrency`: one roster change in
+    /// flight per club), and comes back once the details read after the answer says a place is
+    /// free.
     public var canInvite: Bool {
-        guard links != nil, case .loaded(let detail) = details else { return false }
+        guard links != nil, removing == nil, case .loaded(let detail) = details else {
+            return false
+        }
         return detail.club.state == .active && detail.canPropose
     }
 
@@ -347,7 +382,7 @@ import Observation
     /// proposal (`known` nil). One left by Back while unfinished (`InviteNameModel.isUnfinished`:
     /// its action on its way, or a proposal or link that may have gone through without its
     /// answer) is the one opened again, its line cleared: its retry sends the same keys, so the
-    /// person isn't proposed twice (T19). Nil when Invite someone isn't offered.
+    /// person isn't proposed twice (T19). Nil when Invite someone isn't offered (`canInvite`).
     public func makeInvite(
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() }
     ) -> InviteNameModel? {

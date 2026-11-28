@@ -255,6 +255,9 @@ public struct InvitationList: Sendable, Equatable {
     public private(set) var removing: String?
     /// The last thing a removal has VoiceOver say.
     public private(set) var notice: RemovalNotice?
+    /// The last row a removal took away on the server's answer, where VoiceOver's focus leaves
+    /// from at once.
+    public private(set) var removedRow: RemovedRow?
 
     /// What failed, for whom: what a read checks the failure line against.
     private enum FailedAction {
@@ -276,6 +279,10 @@ public struct InvitationList: Sendable, Equatable {
     /// removal comes, which decides.
     private var removed: [String: Int] = [:]
     private var notices = 0
+    private var removedRows = 0
+    /// The name step made last (`makeInvite`), whose proposal or link may still be on its way
+    /// after Back.
+    private var naming: InviteNameModel?
     /// Each candidate's link being made, by candidate id: the invitation it replaces (nil for the
     /// first) and the key its action started with, sent again on every retry of that action.
     private var linkKeys: [String: (replacing: String?, key: IdempotencyKey)] = [:]
@@ -312,8 +319,11 @@ public struct InvitationList: Sendable, Equatable {
     }
 
     /// The list read again after an action, or when it shows again: what's on screen stays
-    /// while the reads are out, and stays if they fail.
+    /// while the reads are out, and stays if they fail. A list not loaded (loading again from
+    /// another screen while the action was out, say, its own read dropped by this one) loads as
+    /// on Retry, so the loading form never stays with no read behind it.
     public func refresh() async {
+        guard case .loaded = state else { return await read(quiet: false) }
         await read(quiet: true)
     }
 
@@ -409,7 +419,8 @@ public struct InvitationList: Sendable, Equatable {
 
     /// Remove invitation, after its confirmation (FQ148; handoff 11's sections 3, 4 and 8): only
     /// for a row whose More offers it, and only while nothing else of the list is on its way. On
-    /// the server's answer the row goes at once, every link kept for the person goes, the list is
+    /// the server's answer the row goes at once and VoiceOver's focus with it (`removedRow`),
+    /// every link kept for the person goes, the list is
     /// read again (whether a place is free, and how the others' rows read now), and then
     /// "{name}’s invitation was removed." is said. A failure keeps the row as it was, with its
     /// line, and reads the list again; a not found (the person joined, or isn't the caller's to
@@ -440,6 +451,8 @@ public struct InvitationList: Sendable, Equatable {
         case .success:
             removed[candidateID] = reads
             relist()
+            removedRows += 1
+            removedRow = RemovedRow(position: position, sequence: removedRows)
             await refresh()
             guard current(), !closed else { return }
             say(.removed(name: candidate.name, position: position))
@@ -466,8 +479,9 @@ public struct InvitationList: Sendable, Equatable {
     }
 
     /// Whether Remove invitation can start for this person now: nothing else of the list on its
-    /// way (a removal, or any row's link action: handoff 11's `busy.concurrency`), and their
-    /// row's More offering it. Every row's Remove invitation waits while it's false.
+    /// way (a removal, any row's link action, or the name step's: handoff 11's
+    /// `busy.concurrency`), and their row's More offering it. Every row's Remove invitation
+    /// waits while it's false.
     public func canRemove(_ candidateID: String) -> Bool {
         guard removalCanStart, let candidate = mine(candidateID), let row = row(for: candidate)
         else { return false }
@@ -475,8 +489,9 @@ public struct InvitationList: Sendable, Equatable {
     }
 
     /// Whether nothing of the list is on its way, so a removal could start: `busy` holds every
-    /// row whose action is out, a removal's included.
-    public var removalCanStart: Bool { busy.isEmpty }
+    /// row whose action is out, a removal's included, and the name step may still be proposing
+    /// someone or making their link after Back.
+    public var removalCanStart: Bool { busy.isEmpty && naming?.isCreating != true }
 
     private func say(_ kind: RemovalNotice.Kind) {
         notices += 1
@@ -491,12 +506,14 @@ public struct InvitationList: Sendable, Equatable {
         }
         // The name step makes a link: another link action (handoff 9's `lifetime`).
         fail(nil)
-        return InviteNameModel(
+        let model = InviteNameModel(
             club: club, accountID: accountID, rosterVersion: answer.detail.rosterVersion,
             known: Set(answer.members.openRevision?.candidates.map(\.id) ?? []),
             service: service, book: book, makeKey: makeKey, current: current,
             signedOut: signedOut,
             changed: { [weak self] in await self?.refresh() })
+        naming = model
+        return model
     }
 
     // MARK: Reading

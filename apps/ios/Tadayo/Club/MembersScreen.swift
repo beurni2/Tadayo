@@ -53,10 +53,11 @@ import TadayoDesign
 /// While the removal is out (`removing`), the row says "Removing…" 8 under the tag with the
 /// system's indicator, its value "In progress", and every More and every proposed row's route
 /// wait (handoff 11's `busy.concurrency`: one roster or link change in flight per club); every
-/// More also waits while the person's invitation page or the name step has an action out. On the
-/// answer the row goes, "{name}’s invitation was removed." is said once and VoiceOver's focus
-/// goes to the proposed row now in its place, else the one before, else the last member's row
-/// (`Roster.focusAfterRemoval`). A failure's line (`removalFailure`), handoff 11's words, sits
+/// More also waits while the person's invitation page, the name step or G03-approve has an action
+/// out. On the answer the row goes and VoiceOver's focus leaves it at once, for the proposed row
+/// now in its place, else the one before, else the last member's row
+/// (`Roster.focusAfterRemoval`); once the read after it answers, "{name}’s invitation was
+/// removed." is said once. A failure's line (`removalFailure`), handoff 11's words, sits
 /// 24 under that row, the footer 32 under it, said once politely; "Members updated." is said
 /// when a read after a failure no longer lists the person.
 struct MembersScreen: View {
@@ -67,13 +68,15 @@ struct MembersScreen: View {
     var openInvitation: ((String) -> Void)?
     /// The person whose removal is on its way.
     var removing: String?
-    /// Whether a removal can start now: none is out, and neither the person's invitation page
-    /// nor the name step has an action out (`ClubDetailsModel.removalCanStart`; one roster or link
-    /// change in flight per club, handoff 11's `busy.concurrency`).
+    /// Whether a removal can start now: none is out, and neither the person's invitation page,
+    /// the name step nor G03-approve has an action out (`ClubDetailsModel.removalCanStart`; one
+    /// roster or link change in flight per club, handoff 11's `busy.concurrency`).
     var removalCanStart = true
     var removalFailure: ClubDetailsModel.RemovalFailure?
-    /// The last thing a removal has VoiceOver say, and where its focus goes then.
+    /// The last thing a removal has VoiceOver say.
     var notice: RemovalNotice?
+    /// The last row a removal took away, where VoiceOver's focus leaves from at once.
+    var removedRow: RemovedRow?
     /// Remove invitation, once its confirmation says so.
     var remove: (Roster.Proposed) -> Void = { _ in }
     @State private var confirming: Roster.Proposed?
@@ -146,7 +149,12 @@ struct MembersScreen: View {
         .announcing(removalFailure?.words, politely: true)
         .onChange(of: notice) { _, notice in
             guard let notice else { return }
-            said(notice, in: roster)
+            said(notice)
+        }
+        .onChange(of: removedRow) { _, removed in
+            // Never left on a More that has gone (handoff 11's section 4).
+            guard let removed else { return }
+            focus = roster.focusAfterRemoval(at: removed.position)
         }
         .onChange(of: roster.proposed.map(\.id)) { _, ids in
             // The person's row went while their confirmation was open: it goes with it.
@@ -179,12 +187,11 @@ struct MembersScreen: View {
         }
     }
 
-    /// What a removal has VoiceOver say, once: on the server's answer, the person's name, with
-    /// focus moved off the row that went; after a read, Members' neutral update.
-    private func said(_ notice: RemovalNotice, in roster: Roster) {
+    /// What a removal has VoiceOver say, once, after the read that follows its answer: the
+    /// person's name, or Members' neutral update.
+    private func said(_ notice: RemovalNotice) {
         switch notice.kind {
-        case .removed(let name, let position):
-            focus = roster.focusAfterRemoval(at: position)
+        case .removed(let name, _):
             Announcement.post(InvitationsScreen.words("remove.success", name), politely: true)
         case .updated:
             Announcement.post(String(localized: "remove.membersUpdated"), politely: true)

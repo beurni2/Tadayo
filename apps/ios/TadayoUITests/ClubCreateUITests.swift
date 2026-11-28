@@ -181,12 +181,12 @@ final class ClubCreateUITests: XCTestCase {
         let alert = app.alerts["Remove Nina’s invitation?"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         XCTAssertTrue(
-            alert.staticTexts[
+            text(
                 "Any links for Nina will stop working. Nina won’t be able to join Sunday people "
                     + "from this invitation.\n\nYou can invite Nina again later with a new "
                     + "invitation.\n\nAnyone else still invited will review and accept the "
-                    + "updated roster again."
-            ].exists)
+                    + "updated roster again.", in: alert
+            ).exists)
         alert.buttons["Keep invitation"].tap()
         XCTAssertTrue(eventually { !app.alerts.firstMatch.exists }, "the confirmation closed")
         XCTAssertTrue(nina.exists)
@@ -199,7 +199,10 @@ final class ClubCreateUITests: XCTestCase {
         XCTAssertTrue(eventually(10) { !nina.exists }, "Nina's row gone")
         XCTAssertFalse(more.exists)
         XCTAssertTrue(sam.exists)
-        XCTAssertTrue(app.buttons["Create an invitation"].exists)
+        // A place was free before too: this checks the list is still drawn with it, not that
+        // the removal brought it back (`InvitationRemovalTests` does, on Linux).
+        let create = app.buttons["Create an invitation"]
+        XCTAssertTrue(create.exists, "the list still offers Create an invitation")
     }
 
     // MARK: Helpers
@@ -304,6 +307,12 @@ final class ClubCreateUITests: XCTestCase {
     }
 
     /// Any element VoiceOver reads as `label`, whatever its kind.
+    /// A static text read by its whole label: XCTest refuses an identifier query over 128
+    /// characters, which a confirmation's body passes.
+    @MainActor private func text(_ label: String, in element: XCUIElement) -> XCUIElement {
+        element.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
     @MainActor private func element(_ label: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label))
             .firstMatch

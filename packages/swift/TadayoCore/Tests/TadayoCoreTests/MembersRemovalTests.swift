@@ -15,19 +15,36 @@ import Testing
     let account = "acct_ben"
 
     func members(
-        without: Set<String> = [], decision: RosterDecision = .approved
+        without: Set<String> = [], adding: [Candidate] = [], decision: RosterDecision = .approved
     ) -> MemberList {
-        let candidates = [
-            Sunday.candidate("cand_leila", "Leila", .live, by: Approval.ben),
-            Candidate(id: "cand_nina", name: "Nina", proposedBy: Approval.alex, invitation: nil),
-        ].filter { !without.contains($0.id) }
-        let open = RosterRevision(
-            id: "rev_2", version: 2, club: Self.ref, state: .open, proposedBy: Approval.ben,
-            members: [Approval.ben, Approval.maya, Approval.alex, Approval.sam, Approval.debby],
-            candidates: candidates, myDecision: decision, supersededBy: nil)
+        let candidates =
+            ([
+                Sunday.candidate("cand_leila", "Leila", .live, by: Approval.ben),
+                Candidate(
+                    id: "cand_nina", name: "Nina", proposedBy: Approval.alex, invitation: nil),
+            ] + adding).filter { !without.contains($0.id) }
         return MemberList(
             serverClock: Sunday.clock, club: Self.ref,
-            members: Approval.members(open: nil).members, openRevision: open)
+            members: Approval.members(open: nil).members,
+            openRevision: revision(candidates, decision: decision))
+    }
+
+    func revision(
+        _ candidates: [Candidate], version: Int = 2, decision: RosterDecision = .approved
+    ) -> RosterRevision {
+        RosterRevision(
+            id: "rev_\(version)", version: version, club: Self.ref, state: .open,
+            proposedBy: Approval.ben,
+            members: [Approval.ben, Approval.maya, Approval.alex, Approval.sam, Approval.debby],
+            candidates: candidates, myDecision: decision, supersededBy: nil)
+    }
+
+    /// Members read through a script, for the name step's and G03-approve's calls.
+    func model(_ clubs: ScriptedClubs) -> ClubDetailsModel {
+        clubs.week = week
+        return ClubDetailsModel(
+            club: Self.summary, service: clubs,
+            links: (InvitationLinkBook(vault: InMemoryInvitationLinkVault()), account))
     }
 
     var week: ClubWeek { ClubWeek(serverClock: Sunday.clock, club: Self.ref, assignments: []) }
@@ -409,5 +426,221 @@ import Testing
             #expect(model.members == shown, "\(failure)")
             #expect(!model.closed)
         }
+    }
+    /// Ben's name step proposed Omar but lost his link (it may be made yet: T19); Omar is then
+    /// removed from Members, or a removal's not found and the read after it say he's gone:
+    /// Invite someone starts a new name step, never Omar's again, whose every link the server
+    /// would refuse, and Omar's invitation page isn't the one opened again.
+    @Test func aRemovedPersonsNameStepAndPageArentOpenedAgain() async throws {
+        let omar = Candidate(
+            id: "cand_omar", name: "Omar", proposedBy: Approval.ben, invitation: nil)
+        for answer: Result<Void, APIFailure> in [.success(()), .failure(.notFound)] {
+            let clubs = ScriptedClubs()
+            clubs.clubAnswers = Array(repeating: .success(detail(canPropose: true)), count: 4)
+            clubs.memberAnswers = [
+                .success(members()),  // the name step's first read
+                .success(members(adding: [omar])),  // Members
+                .success(members()),  // the read after the answer
+            ]
+            clubs.proposeAnswers = [
+                .success(revision(members(adding: [omar]).openRevision!.candidates, version: 3))
+            ]
+            clubs.linkAnswers = [.failure(.network)]
+            clubs.removeAnswers = [answer]
+            let model = model(clubs)
+            await model.loadDetails()
+            let naming = try #require(model.makeInvite())
+            naming.name = "Omar"
+            #expect(await naming.createLinkAndShare() == nil)
+            #expect(naming.candidate?.id == "cand_omar" && naming.isUnfinished)
+            #expect(model.makeInvite() === naming)
+            await model.loadMembers()
+            let page = try #require(model.invitation(for: "cand_omar"))
+            #expect(model.invitation(for: "cand_omar") === page)
+            #expect(model.canRemove("cand_omar"))
+            await model.remove("cand_omar")
+            #expect(clubs.calls.contains("removeCandidate cand_omar"), "\(answer)")
+            let again = try #require(model.makeInvite(), "\(answer)")
+            #expect(again !== naming, "\(answer)")
+            #expect(again.candidate == nil && again.name.isEmpty, "\(answer)")
+            #expect(model.invitation(for: "cand_omar") !== page, "\(answer)")
+        }
+    }
+
+    /// A removal whose person is still listed after it keeps their name step and page: a failure
+    /// changes nothing the server said.
+    @Test func aPersonStillListedKeepsTheirNameStepAndPage() async throws {
+        let omar = Candidate(
+            id: "cand_omar", name: "Omar", proposedBy: Approval.ben, invitation: nil)
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(detail(canPropose: true)), count: 4)
+        clubs.memberAnswers = [
+            .success(members()), .success(members(adding: [omar])),
+            .success(members(adding: [omar])),
+        ]
+        clubs.proposeAnswers = [
+            .success(revision(members(adding: [omar]).openRevision!.candidates, version: 3))
+        ]
+        clubs.linkAnswers = [.failure(.network)]
+        clubs.removeAnswers = [.failure(.refused)]
+        let model = model(clubs)
+        await model.loadDetails()
+        let naming = try #require(model.makeInvite())
+        naming.name = "Omar"
+        _ = await naming.createLinkAndShare()
+        await model.loadMembers()
+        let page = try #require(model.invitation(for: "cand_omar"))
+        await model.remove("cand_omar")
+        #expect(model.removalFailure?.candidateID == "cand_omar")
+        #expect(model.makeInvite() === naming)
+        #expect(model.invitation(for: "cand_omar") === page)
+    }
+
+    /// The server's removed answer alone takes the person's name step: with Members loading again
+    /// while the removal was out and the read after the answer failing, nothing lists Omar either
+    /// way, and Invite someone still starts a new name step.
+    @Test func aRemovedAnswerAloneTakesThePersonsNameStep() async throws {
+        let omar = Candidate(
+            id: "cand_omar", name: "Omar", proposedBy: Approval.ben, invitation: nil)
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(detail(canPropose: true)), count: 4)
+        // The name step's first read, then Members; every read after fails as the network does.
+        clubs.memberAnswers = [.success(members()), .success(members(adding: [omar]))]
+        clubs.proposeAnswers = [
+            .success(revision(members(adding: [omar]).openRevision!.candidates, version: 3))
+        ]
+        clubs.linkAnswers = [.failure(.network)]
+        clubs.removeAnswers = [.success(())]
+        let model = model(clubs)
+        await model.loadDetails()
+        let naming = try #require(model.makeInvite())
+        naming.name = "Omar"
+        _ = await naming.createLinkAndShare()
+        await model.loadMembers()
+        let removeGate = Gate()
+        clubs.duringRemove = { await removeGate.wait() }
+        let removing = Task { await model.remove("cand_omar") }
+        await removeGate.reached()
+        let readGate = Gate()
+        clubs.duringMembers = { read in if read == 3 { await readGate.wait() } }
+        let shownAgain = Task { await model.loadMembers() }
+        await readGate.reached()
+        removeGate.open()
+        await removing.value
+        readGate.open()
+        await shownAgain.value
+        #expect(model.members == .failed(.network))
+        let again = try #require(model.makeInvite())
+        #expect(again !== naming)
+    }
+
+    /// One roster change in flight per club (handoff 11's `busy.concurrency`): Club details'
+    /// Invite someone isn't offered while a removal from Members is out, and comes back after.
+    @Test func inviteSomeoneIsHeldWhileARemovalIsOut() async {
+        let clubs = FakeClubs(
+            club: Array(repeating: .success(detail(canPropose: true)), count: 2),
+            members: Array(repeating: .success(members()), count: 2),
+            schedule: Array(repeating: .success(week), count: 2), remove: [.failure(.refused)])
+        let model = model(clubs)
+        await model.loadDetails()
+        await model.loadMembers()
+        #expect(model.canInvite)
+        let gate = Gate()
+        clubs.duringRemove = { await gate.wait() }
+        let removing = Task { await model.remove("cand_leila") }
+        await gate.reached()
+        #expect(!model.canInvite)
+        #expect(model.makeInvite() == nil)
+        gate.open()
+        await removing.value
+        #expect(model.canInvite)
+        #expect(model.makeInvite() != nil)
+    }
+
+    /// A decision on G03-approve left by Back while it goes on holds every removal.
+    @Test func aRemovalWaitsForADecisionLeftByBack() async throws {
+        let clubs = ScriptedClubs()
+        clubs.memberAnswers = [.success(members(decision: .pending))]
+        clubs.approveAnswers = [.failure(.refused)]
+        let model = model(clubs)
+        await model.loadMembers()
+        let open = try #require(roster(model)?.openRevision)
+        #expect(model.canRemove("cand_leila"))
+        let approval = model.approval(of: open)
+        let gate = Gate()
+        clubs.duringDecision = { await gate.wait() }
+        let deciding = Task { await approval.approve() }
+        await gate.reached()
+        #expect(!model.removalCanStart && !model.canRemove("cand_leila"))
+        await model.remove("cand_leila")
+        #expect(!clubs.calls.contains { $0.hasPrefix("removeCandidate") })
+        gate.open()
+        await deciding.value
+        #expect(model.removalCanStart && model.canRemove("cand_leila"))
+    }
+
+    /// Members shown again while a removal is out (its loading form, its read dropped by the read
+    /// after the answer): the read after the answer loads it, as on Retry, and its failure shows
+    /// the failure form with Retry, never the loading form with no read behind it.
+    @Test func membersShownAgainDuringARemovalLoadOnceItAnswers() async {
+        for readAfter: Result<MemberList, APIFailure> in [
+            .success(members(without: ["cand_leila"])), .failure(.network),
+        ] {
+            let clubs = FakeClubs(
+                members: [.success(members()), readAfter],
+                schedule: Array(repeating: .success(week), count: 3), remove: [.success(())])
+            let model = model(clubs)
+            await model.loadMembers()
+            let removeGate = Gate()
+            clubs.duringRemove = { await removeGate.wait() }
+            let removing = Task { await model.remove("cand_leila") }
+            await removeGate.reached()
+            let readGate = Gate()
+            clubs.duringMembers = { read in if read == 2 { await readGate.wait() } }
+            let shownAgain = Task { await model.loadMembers() }
+            await readGate.reached()
+            #expect(model.members == .loading)
+            removeGate.open()
+            await removing.value
+            readGate.open()
+            await shownAgain.value
+            switch readAfter {
+            case .success: #expect(proposed(model) == ["Nina"])
+            case .failure: #expect(model.members == .failed(.network))
+            }
+            #expect(model.notice?.kind == .removed(name: "Leila", position: 0))
+        }
+    }
+
+    /// VoiceOver's focus leaves the removed row on the answer, before the read after it (handoff
+    /// 11's section 4: never on a More that has gone); a failure takes no row away and moves
+    /// nothing.
+    @Test func focusLeavesTheRemovedRowOnTheAnswerBeforeTheReadAfterIt() async {
+        let clubs = FakeClubs(
+            members: [.success(members()), .success(members(without: ["cand_leila"]))],
+            schedule: [.success(week), .success(week)], remove: [.success(())])
+        let model = model(clubs)
+        await model.loadMembers()
+        let gate = Gate()
+        clubs.duringMembers = { read in if read == 2 { await gate.wait() } }
+        let removing = Task { await model.remove("cand_leila") }
+        await gate.reached()
+        #expect(model.removedRow?.position == 0)
+        #expect(model.notice == nil)
+        #expect(roster(model)?.focusAfterRemoval(at: 0) == .proposed("cand_nina"))
+        gate.open()
+        await removing.value
+        #expect(model.notice?.kind == .removed(name: "Leila", position: 0))
+        let moved = model.removedRow
+        for failure in [APIFailure.network, .refused, .notFound] {
+            let clubs = FakeClubs(
+                members: [.success(members()), .success(members())],
+                schedule: [.success(week), .success(week)], remove: [.failure(failure)])
+            let failing = self.model(clubs)
+            await failing.loadMembers()
+            await failing.remove("cand_leila")
+            #expect(failing.removedRow == nil, "\(failure)")
+        }
+        #expect(moved?.position == 0)
     }
 }

@@ -432,4 +432,102 @@ import Testing
         #expect(list(["a", "b"], canInvite: false).focusAfterRemoval(at: 2) == .row("b"))
         #expect(list([], canInvite: false).focusAfterRemoval(at: 0) == .doneForNow)
     }
+    /// The name step left by Back while it proposes someone or makes their link holds every
+    /// removal (handoff 11's `busy.concurrency`), so nobody is removed while a link that would
+    /// outlive them is on its way.
+    @Test func aRemovalWaitsForTheNameStepLeftByBack() async throws {
+        let lena = Sunday.candidate("cand_lena", "Lena", nil)
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 3)
+        clubs.memberAnswers = Array(repeating: .success(roster()), count: 3)
+        clubs.proposeAnswers = [
+            .success(Sunday.revision(roster().openRevision!.candidates + [lena]))
+        ]
+        clubs.linkAnswers = [.failure(.refused)]
+        clubs.removeAnswers = [.success(())]
+        let list = model(clubs)
+        await list.load()
+        #expect(list.canRemove("cand_nina"))
+        let naming = try #require(list.makeInvite())
+        naming.name = "Lena"
+        let gate = Gate()
+        clubs.duringLink = { await gate.wait() }
+        let creating = Task { await naming.createLinkAndShare() }
+        await gate.reached()
+        #expect(naming.isCreating)
+        #expect(!list.removalCanStart && !list.canRemove("cand_nina"))
+        await list.remove("cand_nina")
+        #expect(removals(clubs).isEmpty)
+        gate.open()
+        _ = await creating.value
+        #expect(list.removalCanStart && list.canRemove("cand_nina"))
+    }
+
+    /// The list loading again while a removal is out (the waiting screens' Manage invitations
+    /// reuses its model), its read dropped by the read after the answer: that read loads it, as on
+    /// Retry, and its failure shows the failure form, never the loading form with no read behind
+    /// it.
+    @Test func aListLoadingAgainDuringARemovalLoadsOnceItAnswers() async {
+        for readAfter: Result<MemberList, APIFailure> in [.success(roster()), .failure(.network)] {
+            let clubs = ScriptedClubs()
+            clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 3)
+            clubs.memberAnswers = [.success(roster()), readAfter]
+            clubs.removeAnswers = [.failure(.refused)]
+            let list = model(clubs)
+            await list.load()
+            let removeGate = Gate()
+            clubs.duringRemove = { await removeGate.wait() }
+            let removing = Task { await list.remove("cand_nina") }
+            await removeGate.reached()
+            let readGate = Gate()
+            clubs.duringMembers = { read in if read == 2 { await readGate.wait() } }
+            let shownAgain = Task { await list.load() }
+            await readGate.reached()
+            #expect(list.state == .loading)
+            removeGate.open()
+            await removing.value
+            readGate.open()
+            await shownAgain.value
+            switch readAfter {
+            case .success: #expect(names(list) == ["Maya", "Nina", "Debby"])
+            case .failure: #expect(list.state == .failed(.network))
+            }
+        }
+    }
+
+    /// VoiceOver's focus leaves the removed row on the answer, before the read after it, for the
+    /// row now in its place (handoff 11's section 4: never on a More that has gone); the read
+    /// freeing a place brings Create an invitation, where focus goes on to. A failure takes no
+    /// row away and moves nothing.
+    @Test func focusLeavesTheRemovedRowOnTheAnswerBeforeTheReadAfterIt() async {
+        let clubs = ScriptedClubs()
+        clubs.clubAnswers = [
+            .success(Sunday.detail(canPropose: false)), .success(Sunday.detail(canPropose: true)),
+        ]
+        clubs.memberAnswers = [.success(roster()), .success(roster(without: ["cand_nina"]))]
+        clubs.removeAnswers = [.success(())]
+        let list = model(clubs)
+        await list.load()
+        let gate = Gate()
+        clubs.duringMembers = { read in if read == 2 { await gate.wait() } }
+        let removing = Task { await list.remove("cand_nina") }
+        await gate.reached()
+        #expect(list.removedRow?.position == 1)
+        #expect(list.notice == nil)
+        #expect(loaded(list)?.focusAfterRemoval(at: 1) == .row("cand_debby"))
+        gate.open()
+        await removing.value
+        #expect(list.notice?.kind == .removed(name: "Nina", position: 1))
+        #expect(loaded(list)?.focusAfterRemoval(at: 1) == .createInvitation)
+        for failure in [APIFailure.network, .refused, .notFound] {
+            let clubs = ScriptedClubs()
+            clubs.clubAnswers = Array(repeating: .success(Sunday.detail()), count: 2)
+            clubs.memberAnswers = Array(repeating: .success(roster()), count: 2)
+            clubs.removeAnswers = [.failure(failure)]
+            let failing = model(clubs)
+            await failing.load()
+            await failing.remove("cand_nina")
+            #expect(failing.removedRow == nil, "\(failure)")
+        }
+    }
 }

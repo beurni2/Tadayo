@@ -48,10 +48,11 @@ struct InvitationActions {
 /// Remove invitation (destructive, never the default) and Keep invitation. While it's on its way
 /// the row says "Removing…" with the system's indicator and every row's controls and Create an
 /// invitation wait; Done for now and Back don't. Its failure is the line above Done for now. On
-/// the server's answer the row goes, "{name}’s invitation was removed." is said once and
-/// VoiceOver's focus goes to Create an invitation if it shows, else the row now in the removed
-/// one's place, else the one before, else Done for now (`InvitationList.focusAfterRemoval`). A
-/// confirmation whose row has gone closes with it.
+/// the server's answer the row goes and VoiceOver's focus leaves it at once, for Create an
+/// invitation if it shows, else the row now in the removed one's place, else the one before,
+/// else Done for now (`InvitationList.focusAfterRemoval`); once the read after it answers,
+/// "{name}’s invitation was removed." is said once, and focus goes on to Create an invitation if
+/// the read brought it back. A confirmation whose row has gone closes with it.
 struct InvitationsScreen: View {
     let state: InvitationListModel.State
     /// The people whose action is on its way: their controls wait.
@@ -62,8 +63,13 @@ struct InvitationsScreen: View {
     /// The person whose removal is on its way: their row says "Removing…", and every row's
     /// controls and Create an invitation wait.
     var removing: String?
-    /// The last thing a removal has VoiceOver say, and where its focus goes then.
+    /// The last thing a removal has VoiceOver say.
     var notice: RemovalNotice?
+    /// The last row a removal took away, where VoiceOver's focus leaves from at once.
+    var removedRow: RemovedRow?
+    /// Whether a removal could start (`InvitationListModel.removalCanStart`): the name step may
+    /// still be proposing someone or making their link after Back.
+    var removalCanStart = true
     var actions = InvitationActions()
     @State private var confirming: Confirming?
     @AccessibilityFocusState private var focus: InvitationList.RemovalFocus?
@@ -110,7 +116,8 @@ struct InvitationsScreen: View {
                             row: row, busy: busy.contains(row.candidateID) || removing != nil,
                             revoking: revoking.contains(row.candidateID),
                             removing: removing == row.candidateID,
-                            removalWaits: !busy.isEmpty || removing != nil, actions: actions,
+                            removalWaits: !busy.isEmpty || removing != nil || !removalCanStart,
+                            actions: actions,
                             confirm: { confirming = $0 }, focus: $focus)
                     }
                 }
@@ -156,6 +163,11 @@ struct InvitationsScreen: View {
         .onChange(of: notice) { _, notice in
             guard let notice else { return }
             said(notice, in: list)
+        }
+        .onChange(of: removedRow) { _, removed in
+            // Never left on a More that has gone (handoff 11's section 4).
+            guard let removed else { return }
+            focus = list.focusAfterRemoval(at: removed.position)
         }
         .onChange(of: list.rows.map(\.candidateID)) { _, ids in
             // The person's row went while their confirmation was open: it goes with it.
@@ -209,12 +221,16 @@ struct InvitationsScreen: View {
         }
     }
 
-    /// What a removal has VoiceOver say, once: on the server's answer, the person's name, with
-    /// focus moved off the row that went; after a read, the list's neutral update.
+    /// What a removal has VoiceOver say, once, after the read that follows its answer: the
+    /// person's name, with focus going on to Create an invitation if the read brought it back;
+    /// or the list's neutral update.
     private func said(_ notice: RemovalNotice, in list: InvitationList) {
         switch notice.kind {
         case .removed(let name, let position):
-            focus = list.focusAfterRemoval(at: position)
+            if list.focusAfterRemoval(at: position) == .createInvitation, focus != .createInvitation
+            {
+                focus = .createInvitation
+            }
             Announcement.post(Self.words("remove.success", name), politely: true)
         case .updated:
             Announcement.post(String(localized: "remove.listUpdated"), politely: true)
@@ -638,7 +654,8 @@ extension InvitationRow {
 /// A status's glyph, 12 points at the default size and growing with the words, 4 before them, in
 /// `metadata` 13/18 `secondaryText`; the words alone while a revoke is on its way; the system's
 /// indeterminate indicator, its smallest, in the glyph's place while a removal is (handoff 11's
-/// section 8: "a native indeterminate spinner and “Removing…” in the row's status line").
+/// section 8: "a native indeterminate spinner and “Removing…” in the row's status line), centred
+/// on the one word, since an indicator has no baseline to share with it.
 private struct StatusLine: View {
     let glyph: String?
     var spinning = false
@@ -646,7 +663,7 @@ private struct StatusLine: View {
     @ScaledMetric(relativeTo: TypeRole.metadata.textStyle) private var size: CGFloat = 12
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+        HStack(alignment: spinning ? .center : .firstTextBaseline, spacing: Spacing.xs) {
             if spinning {
                 ProgressView()
                     .controlSize(.mini)
