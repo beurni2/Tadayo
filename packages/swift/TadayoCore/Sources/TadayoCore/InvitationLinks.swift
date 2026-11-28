@@ -269,6 +269,15 @@ public final class InMemoryInvitationLinkVault: InvitationLinkVault, @unchecked 
         purgeLinks(accountID, stamp: Stamp(value: .max)) { $0.invitationID == invitationID }
     }
 
+    /// The server answered a removal of the candidate (FQ148): every link of theirs stops
+    /// working, so each kept for them in that club goes at once, whatever a read says later.
+    public func dropCandidate(_ candidateID: String, club clubID: String, account accountID: String)
+    {
+        purgeLinks(accountID, stamp: Stamp(value: .max)) {
+            $0.clubID == clubID && $0.candidateID == candidateID
+        }
+    }
+
     /// Keeps the token of an invitation this account has accepted, once the server has shown the
     /// token is the account's: a preview's `waiting` or `changed`, or an acceptance's (the
     /// contract's `MyInvitationState`). It replaces a token kept for the same invitation, and the

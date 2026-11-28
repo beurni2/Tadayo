@@ -576,6 +576,10 @@ public protocol ClubService: Sendable {
         async throws(APIFailure) -> InvitationLink
     /// `DELETE /v1/invitations/{invitation_id}`.
     func revokeInvitation(_ invitationID: String) async throws(APIFailure)
+    /// `DELETE /v1/candidates/{candidate_id}`: someone the caller proposed, who hasn't joined, is
+    /// no longer invited, and their place is free (FQ148). It takes no key: a repeat returns the
+    /// same answer and changes nothing.
+    func removeCandidate(_ candidateID: String) async throws(APIFailure)
     /// `GET /v1/rosters/{revision_id}`.
     func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision
     /// `POST /v1/rosters/{revision_id}/approvals`.

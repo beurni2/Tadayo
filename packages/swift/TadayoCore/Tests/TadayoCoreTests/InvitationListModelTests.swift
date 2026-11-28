@@ -11,37 +11,55 @@ import Testing
             url: Sunday.url(1), shared: shared)
     }
 
-    func row(_ state: CandidateLinkState?, kept: KeptInvitationLink? = nil) -> InvitationRow {
-        InvitationRow(Sunday.candidate("cand_sam", "Sam", state, invitation: "inv_sam"), kept: kept)
+    func row(_ state: CandidateLinkState?, kept: KeptInvitationLink? = nil, removable: Bool = true)
+        -> InvitationRow
+    {
+        InvitationRow(
+            Sunday.candidate("cand_sam", "Sam", state, invitation: "inv_sam"), kept: kept,
+            removable: removable)
     }
 
     @Test func eachStateAndKeptLinkGivesItsStatusActionAndMenu() {
         typealias Expected = (
             InvitationRow.Status, InvitationRow.Action?, [InvitationRow.MenuItem], Bool
         )
+        // Every row of the caller's own candidates ends its More with Remove invitation, after
+        // the link's items (handoff 11's section 1 table).
         let cases: [(InvitationRow, Expected)] = [
-            (row(nil), (.notShared, .shareLink, [], false)),
-            (row(.live, kept: kept("inv_sam")), (.notShared, .shareLink, [.revokeLink], false)),
+            (row(nil), (.notShared, .shareLink, [.removeInvitation], false)),
+            (
+                row(.live, kept: kept("inv_sam")),
+                (.notShared, .shareLink, [.revokeLink, .removeInvitation], false)
+            ),
             (
                 row(.live, kept: kept("inv_sam", shared: true)),
-                (.shared, .shareAgain, [.revokeLink], false)
+                (.shared, .shareAgain, [.revokeLink, .removeInvitation], false)
             ),
             // A live link the app doesn't hold: "Link not on this phone" (handoff 9's
             // `setupLinks.missingLive`, frame 15).
-            (row(.live), (.notOnThisPhone, .createNewLink, [.revokeLink], false)),
+            (
+                row(.live),
+                (.notOnThisPhone, .createNewLink, [.revokeLink, .removeInvitation], false)
+            ),
             // A kept link that isn't this invitation's isn't held.
             (
                 row(.live, kept: kept("inv_old")),
-                (.notOnThisPhone, .createNewLink, [.revokeLink], false)
+                (.notOnThisPhone, .createNewLink, [.revokeLink, .removeInvitation], false)
             ),
-            (row(.accepted, kept: kept("inv_sam")), (.accepted, nil, [], false)),
-            (row(.accepted), (.accepted, nil, [], false)),
-            (row(.used, kept: kept("inv_sam")), (.needsToAcceptAgain, .shareAgain, [], false)),
-            (row(.used), (.needsToAcceptAgain, nil, [], true)),
-            (row(.revoked), (.revoked, .createNewLink, [.createNewLink], false)),
-            // An expired link has no More: its action is the only one (handoff 9's
+            (row(.accepted, kept: kept("inv_sam")), (.accepted, nil, [.removeInvitation], false)),
+            (row(.accepted), (.accepted, nil, [.removeInvitation], false)),
+            (
+                row(.used, kept: kept("inv_sam")),
+                (.needsToAcceptAgain, .shareAgain, [.removeInvitation], false)
+            ),
+            (row(.used), (.needsToAcceptAgain, nil, [.removeInvitation], true)),
+            (
+                row(.revoked),
+                (.revoked, .createNewLink, [.createNewLink, .removeInvitation], false)
+            ),
+            // An expired link has no link item in More: its action is the only one (handoff 9's
             // `setupLinks.expiredUnused`, frame 16).
-            (row(.expired), (.expired, .createNewLink, [], false)),
+            (row(.expired), (.expired, .createNewLink, [.removeInvitation], false)),
         ]
         for (index, (row, expected)) in cases.enumerated() {
             #expect(row.status == expected.0, "case \(index)")
@@ -49,6 +67,22 @@ import Testing
             #expect(row.menu == expected.2, "case \(index)")
             #expect(row.linkNotSaved == expected.3, "case \(index)")
             #expect(row.name == "Sam")
+        }
+    }
+
+    /// The person's invitation page keeps to the link: no row there offers Remove invitation
+    /// (`docs/design/handoff-7/ios-lane-needs.md` item 82), and its menus are the link's alone.
+    @Test func aPagesRowNeverOffersRemoval() {
+        let states: [(CandidateLinkState?, KeptInvitationLink?)] = [
+            (nil, nil), (.live, kept("inv_sam")), (.live, nil), (.accepted, nil), (.used, nil),
+            (.revoked, nil), (.expired, nil),
+        ]
+        for (state, kept) in states {
+            let page = row(state, kept: kept, removable: false)
+            let list = row(state, kept: kept)
+            #expect(!page.menu.contains(.removeInvitation))
+            #expect(page.menu + [.removeInvitation] == list.menu)
+            #expect(page.action == list.action && page.status == list.status)
         }
     }
 }
@@ -412,7 +446,7 @@ import Testing
             account: account)
         let list = model(clubs, book: book)
         await list.load()
-        #expect(row(list, "cand_alex")?.menu == [.revokeLink])
+        #expect(row(list, "cand_alex")?.menu == [.revokeLink, .removeInvitation])
         await list.revoke("cand_alex")
         #expect(clubs.calls.contains("revokeInvitation inv_alex"))
         #expect(row(list, "cand_alex")?.status == .revoked)
@@ -433,7 +467,7 @@ import Testing
         #expect(row(list, "cand_alex")?.status == .notOnThisPhone)
         await list.revoke("cand_alex")
         #expect(list.actionFailure == .revoke(name: "Alex", uncertain: false))
-        #expect(row(list, "cand_alex")?.menu == [.revokeLink])
+        #expect(row(list, "cand_alex")?.menu == [.revokeLink, .removeInvitation])
         #expect(clubs.calls.filter { $0 == "members club_sunday" }.count == 3)
     }
 
@@ -513,7 +547,7 @@ import Testing
             #expect(await list.linkToShare(for: "cand_sam") == nil)
             #expect(book.link(for: "cand_sam", club: club, account: account) == nil)
             #expect(list.actionFailure == nil)
-            #expect(row(list, "cand_sam")?.menu == [])
+            #expect(row(list, "cand_sam")?.menu == [.removeInvitation])
             #expect(clubs.calls.filter { $0.hasPrefix("createInvitation") }.count == ending)
             #expect(clubs.calls.filter { $0.hasPrefix("members") }.count == 1)
             #expect(list.busy.isEmpty)
@@ -543,7 +577,7 @@ import Testing
             await list.revoke("cand_alex")
             #expect(clubs.calls.contains("revokeInvitation inv_alex"))
             #expect(row(list, "cand_alex")?.status == .notShared)
-            #expect(row(list, "cand_alex")?.menu == [.revokeLink])
+            #expect(row(list, "cand_alex")?.menu == [.revokeLink, .removeInvitation])
             #expect(book.link(for: "cand_alex", club: club, account: account) != nil)
             #expect(list.actionFailure == nil)
             #expect(ended == 0)
@@ -563,12 +597,12 @@ import Testing
         let list = model(clubs)
         await list.load()
         #expect(await list.linkToShare(for: "cand_sam") == Sunday.url(1))
-        #expect(row(list, "cand_sam")?.menu == [.revokeLink])
+        #expect(row(list, "cand_sam")?.menu == [.revokeLink, .removeInvitation])
         // Sam accepted before this read was asked: its answer is the server's word now.
         await list.refresh()
         #expect(row(list, "cand_sam")?.status == .accepted)
         #expect(row(list, "cand_sam")?.action == nil)
-        #expect(row(list, "cand_sam")?.menu == [])
+        #expect(row(list, "cand_sam")?.menu == [.removeInvitation])
     }
 
     @Test func createNewLinkOffersItsLinkWhileTheListIsReadAgainAndASecondTapMakesNone() async {
@@ -597,7 +631,7 @@ import Testing
         await reading.reached()
         #expect(list.busy.isEmpty)
         #expect(row(list, "cand_alex")?.action == .shareLink)
-        #expect(row(list, "cand_alex")?.menu == [.revokeLink])
+        #expect(row(list, "cand_alex")?.menu == [.revokeLink, .removeInvitation])
         await list.createNewLink(for: "cand_alex")
         #expect(await list.linkToShare(for: "cand_alex") == Sunday.url(2))
         reading.open()
@@ -605,7 +639,7 @@ import Testing
         // The read again failed, and the row still shows the new link, held: nothing to make.
         #expect(row(list, "cand_alex")?.status == .notShared)
         #expect(row(list, "cand_alex")?.action == .shareLink)
-        #expect(row(list, "cand_alex")?.menu == [.revokeLink])
+        #expect(row(list, "cand_alex")?.menu == [.revokeLink, .removeInvitation])
         await list.createNewLink(for: "cand_alex")
         #expect(clubs.calls.filter { $0.hasPrefix("createInvitation") }.count == 1)
         #expect(await list.linkToShare(for: "cand_alex") == Sunday.url(2))
@@ -662,7 +696,7 @@ import Testing
         await list.load()
         #expect(await list.linkToShare(for: "cand_sam") == Sunday.url(1))
         #expect(row(list, "cand_sam")?.status == .notShared)
-        #expect(row(list, "cand_sam")?.menu == [.revokeLink])
+        #expect(row(list, "cand_sam")?.menu == [.revokeLink, .removeInvitation])
         list.shareFinished(for: "cand_sam", completed: true)
         #expect(row(list, "cand_sam")?.status == .shared)
         #expect(row(list, "cand_sam")?.action == .shareAgain)
@@ -688,7 +722,7 @@ import Testing
         gate.open()
         await reading.value
         #expect(row(list, "cand_sam")?.status == .shared)
-        #expect(row(list, "cand_sam")?.menu == [.revokeLink])
+        #expect(row(list, "cand_sam")?.menu == [.revokeLink, .removeInvitation])
     }
 
     @Test func createNewLinkAfterAFailedShareLinkIsANewAction() async {
@@ -947,7 +981,7 @@ import Testing
         await list.load()
         await list.revoke("cand_maya")
         #expect(list.actionFailure == .revoke(name: "Maya", uncertain: true))
-        #expect(row(list, "cand_maya")?.menu == [.revokeLink])
+        #expect(row(list, "cand_maya")?.menu == [.revokeLink, .removeInvitation])
     }
 }
 

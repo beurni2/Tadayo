@@ -442,6 +442,10 @@ private struct PreviewOnly: ClubService {
         try await none.revokeInvitation(invitationID)
     }
 
+    func removeCandidate(_ candidateID: String) async throws(APIFailure) {
+        try await none.removeCandidate(candidateID)
+    }
+
     func rosterRevision(_ revisionID: String) async throws(APIFailure) -> RosterRevision {
         try await none.rosterRevision(revisionID)
     }

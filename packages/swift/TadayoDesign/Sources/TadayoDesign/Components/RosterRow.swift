@@ -45,6 +45,12 @@ import SwiftUI
 ///
 /// The person's invitation page (`G05-members-invite`, handoff 8's frame 14) draws the same
 /// proposed row as its candidate's block, alone and with no separator (`separated` false).
+///
+/// While something about a proposed person is on its way (handoff 11's `busy.members`: their
+/// invitation being removed), a line 8 under the tag says so in `metadata` `secondaryText`
+/// ("Removing…"), after the system's small indeterminate indicator, and the row grows to hold
+/// it (`progress`). VoiceOver doesn't read the line: the screen gives the row its value ("In
+/// progress").
 public struct RosterRow: View {
     /// How a person who isn't a member yet is shown.
     public enum Proposal: Sendable, Equatable {
@@ -69,6 +75,7 @@ public struct RosterRow: View {
     let proposal: Proposal?
     let disclosure: Disclosure?
     let separated: Bool
+    let progress: String?
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var nameSize = TypeRole.row.size
     @ScaledMetric(relativeTo: TypeRole.row.textStyle)
@@ -79,10 +86,13 @@ public struct RosterRow: View {
     ///   - days: the member's weekdays as the screen words them, or nil while they have none.
     ///   - proposal: how a person who isn't a member yet is shown; nil for a member.
     ///   - disclosure: the trailing chevron, or its room; nil for a row with neither.
-    ///   - separated: the separator under the row; false for a row drawn alone.
+    ///   - separated: the separator under the row; false for a row drawn alone, or one whose
+    ///     screen draws it under more than the row.
+    ///   - progress: what's on its way for a proposed person, under the tag; nil for nothing.
     public init(
         name: String, photo: Image? = nil, isViewer: Bool, days: String?,
-        proposal: Proposal? = nil, disclosure: Disclosure? = nil, separated: Bool = true
+        proposal: Proposal? = nil, disclosure: Disclosure? = nil, separated: Bool = true,
+        progress: String? = nil
     ) {
         self.name = name
         self.photo = photo
@@ -91,6 +101,7 @@ public struct RosterRow: View {
         self.proposal = proposal
         self.disclosure = disclosure
         self.separated = separated
+        self.progress = progress
     }
 
     public var body: some View {
@@ -119,6 +130,18 @@ public struct RosterRow: View {
                 if proposal != nil {
                     ProposedTag()
                         .padding(.top, Spacing.s - Spacing.xs)
+                    if let progress {
+                        HStack(spacing: Spacing.xs) {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .tint(Palette.secondaryText)
+                            Text(verbatim: progress)
+                                .textRole(.metadata)
+                                .foregroundStyle(Palette.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.top, Spacing.s - Spacing.xs)
+                    }
                 }
             }
             .multilineTextAlignment(.leading)

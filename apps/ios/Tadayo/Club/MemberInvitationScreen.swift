@@ -240,7 +240,7 @@ struct MemberInvitationScreen: View {
                 Text("revoke.cancel")
             }
         } message: {
-            Text(verbatim: Self.words("revoke.body", row.name, row.name))
+            Text(verbatim: Self.words("revoke.body", row.name, list.club.name))
         }
     }
 
@@ -294,6 +294,10 @@ struct MemberInvitationScreen: View {
                         }
                         .accessibilityLabel(
                             Text(verbatim: Self.words("invite.createNew.label", row.name)))
+                    case .removeInvitation:
+                        // The person's invitation page stays link-only: its rows never offer
+                        // Remove invitation (`docs/design/handoff-7/ios-lane-needs.md` item 82).
+                        EmptyView()
                     }
                 }
             } label: {

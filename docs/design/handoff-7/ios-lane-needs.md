@@ -197,3 +197,16 @@ Say for each: the type role of each line, the gaps, whether Retry is a text link
 `docs/plans/ios-b1-welcome.md` sections 8 and 9; `design/reference/INVENTORY.md`, `A01-welcome-xl`.
 
 84. **Welcome at the largest text** (`A01-welcome-xl`, handoff 9's frame 20). Frame 20 sets the brand line at 68/76, the explanation at 53/65, "Caption now" at 44/54 and the routes at 50. The app scales every type role with Dynamic Type through UIFontMetrics, relative to its text style, with no maximum (`TypeRole`; book p26, T47): `dayTitle` (31) with `.largeTitle`, so at accessibility 5 the brand line is about 54 and leads the explanation by about 1.12 times, where the frame keeps 1.28. Say whether Welcome's brand line should keep more lead at the accessibility sizes (a role or a scale of its own), or the frame follows the system's scale.
+
+## 19. From building handoff 11's removal (`ios/b1-remove-invitation`, 28 November 2026)
+
+`docs/plans/ios-b1-remove-invitation.md`; `design/reference/INVENTORY.md`, Known differences, handoff 11.
+
+85. **Where VoiceOver's focus goes after a removal from Members, and the removal's busy and failed forms there and on
+    the setup list** (`G05-members-with-proposed-remove`, `G05-members-removing`, `G05-members-remove-failed`,
+    `G01-invite-people-removing`). Handoff 11's section 3 sends the setup list's focus to Create an invitation, else
+    the row in the removed one's place, else the one before, else Done for now; Members has neither control. Built from
+    spec: the proposed row now in the place, else the one before, else the last member's row. Handoff 11 words the
+    busy and failed forms ("Removing…", 8 under the Proposed tag on Members; the failure line 24 under the row and the
+    footer 32 under it) and draws neither. Say where Members' focus goes, and draw the three states, each with `-dark`
+    and `-xl`.

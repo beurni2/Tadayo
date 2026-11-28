@@ -2,7 +2,11 @@
 """Tests for tools/ci/journal_check.py. Run: python3 tools/ci/journal_check_test.py
 
 Each test makes a scratch clone whose origin/main holds this repository's docs/JOURNAL.md, works
-on branches the way the lanes would, and runs the check there.
+on branches the way the lanes would, and runs the check there. GitHub's web-flow key signs the
+commits made on GitHub's website; the tests can't, so they make a key of their own and run the
+check with journal_check.WEB_FLOW_KEY and WEB_FLOW_FINGERPRINT set to it, and sign their "web"
+commits with it. WebFlowKeyTest checks the vendored key itself, and RealKeyTest runs the check as CI
+does, against the vendored key.
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
@@ -13,8 +17,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import journal_check  # noqa: E402
+
 CHECK = os.path.join(HERE, "journal_check.py")
 JOURNAL = os.path.join(HERE, "..", "..", "docs", "JOURNAL.md")
 LOG_SECTIONS = {"shared": "### 3.1 Shared and B0\n\n", "api": "### 3.2 api lane\n\n",
@@ -25,6 +33,64 @@ STATE_BLOCKS = {"shared": "### 1.1 ", "api": "### 1.2 ", "ios": "### 1.3 "}
 def read(path):
     with open(path, encoding="utf-8") as f:
         return f.read()
+
+
+class TestKeys:
+    """Two signing keys of the tests' own, made once: `web`, standing in for GitHub's web-flow key,
+    and `other`, any other key. Each public key is exported to a file of its own, and `both` holds
+    the two."""
+
+    def __init__(self):
+        self.root = tempfile.mkdtemp(prefix="journal-keys-")
+        self.home = os.path.join(self.root, "gnupg")
+        os.mkdir(self.home, 0o700)
+        self.fingerprints, self.files = {}, {}
+        for name in ("web", "other"):
+            self.gpg("--passphrase", "", "--quick-gen-key", f"{name} <noreply@github.com>", "ed25519",
+                     "sign", "never")
+            listed = self.gpg("--with-colons", "--list-secret-keys", f"{name} <noreply@github.com>")
+            fpr = next(l.split(":")[9] for l in listed.stdout.splitlines() if l.startswith("fpr:"))
+            self.fingerprints[name] = fpr
+            self.files[name] = self.export(name, fpr)
+        self.files["both"] = self.export("both", *self.fingerprints.values())
+
+    def gpg(self, *args):
+        result = subprocess.run(["gpg", "--batch", "--homedir", self.home, *args], capture_output=True,
+                                text=True)
+        if result.returncode != 0:
+            raise AssertionError(f"gpg {args} failed: {result.stderr}")
+        return result
+
+    def export(self, name, *fingerprints):
+        path = os.path.join(self.root, f"{name}.asc")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(self.gpg("--armor", "--export", *fingerprints).stdout)
+        return path
+
+    def cleanup(self):
+        subprocess.run(["gpgconf", "--homedir", self.home, "--kill", "all"], capture_output=True)
+        shutil.rmtree(self.root, ignore_errors=True)
+
+
+KEYS = None
+
+
+def setUpModule():
+    global KEYS
+    KEYS = TestKeys()
+
+
+def tearDownModule():
+    KEYS.cleanup()
+
+
+# Runs the check as journal_check.py's main does, with the web-flow key and fingerprint set.
+RUNNER = """import sys
+sys.path.insert(0, sys.argv[1])
+import journal_check
+journal_check.WEB_FLOW_KEY, journal_check.WEB_FLOW_FINGERPRINT = sys.argv[2], sys.argv[3]
+sys.exit(journal_check.main(["journal_check.py", *sys.argv[4:]]))
+"""
 
 
 def as_the_handoff_wrote_it(text):
@@ -107,12 +173,20 @@ class Clone:
     def add_entry(self, text, lane="shared"):
         self.edit_journal(LOG_SECTIONS[lane], LOG_SECTIONS[lane] + text)
 
-    def commit(self, message, web=False):
+    def commit(self, message, web=False, signed_by=None):
+        """A commit; `web` makes GitHub its committer and signs it with the tests' web-flow key, unless
+        `signed_by` names another key ("other") or None for no signature."""
         env = dict(self.env)
+        signer = signed_by if signed_by is not None or not web else "web"
         if web:
             env.update(GIT_COMMITTER_NAME="GitHub", GIT_COMMITTER_EMAIL="noreply@github.com")
+        sign = []
+        if signer and signer != "none":
+            env["GNUPGHOME"] = KEYS.home
+            sign = ["-c", "gpg.program=gpg", "-c", f"user.signingkey={KEYS.fingerprints[signer]}"]
         self.run("git", "add", "-A", env=env)
-        self.run("git", "commit", "-q", "--allow-empty", "-m", message, env=env)
+        self.run("git", *sign, "commit", "-q", "--allow-empty", *(["-S"] if sign else []), "-m", message,
+                 env=env)
 
     def work_commit(self, n, lane="shared", **entry_options):
         """One ordinary commit: a code change, the lane's state rewritten, one new entry."""
@@ -131,9 +205,15 @@ class Clone:
         self.run("git", "push", "-q", "origin", "HEAD:main")
         self.run("git", "fetch", "-q", "origin")
 
-    def check(self, mode="--branch"):
-        result = subprocess.run([sys.executable, "-I", CHECK, mode], cwd=self.work, env=self.env,
-                                capture_output=True, text=True)
+    def check(self, mode="--branch", key="web", fingerprint="web", real=False, env=None):
+        """Runs the check with the tests' web-flow key (or the files and fingerprint of `key` and
+        `fingerprint`), or as CI runs it, against the vendored key, when `real`."""
+        if real:
+            cmd = [sys.executable, "-I", CHECK, mode]
+        else:
+            cmd = [sys.executable, "-I", "-c", RUNNER, HERE, KEYS.files[key],
+                   KEYS.fingerprints.get(fingerprint, fingerprint), mode]
+        result = subprocess.run(cmd, cwd=self.work, env=env or self.env, capture_output=True, text=True)
         return result.returncode, result.stderr
 
     def cleanup(self):
@@ -174,6 +254,84 @@ class JournalCheckTest(unittest.TestCase):
         self.c.write(".github/workflows/ci.yml", "name: ci\n")
         self.c.commit("Create ci.yml", web=True)
         self.assertPasses()
+
+    def test_a_web_commit_needs_github_s_signature(self):
+        # The committer's email is what any client says (the outside audit's B6).
+        self.c.work_commit(1)
+        self.c.write(".github/workflows/ci.yml", "name: ci\n")
+        self.c.commit("Create ci.yml", web=True, signed_by="none")
+        self.assertFails("isn't signed by GitHub's web-flow key")
+        self.assertFails("2 commit(s) of its own but its log gained 1")
+
+    def test_a_web_commit_signed_by_another_key_counts(self):
+        self.c.work_commit(1)
+        self.c.write(".github/workflows/ci.yml", "name: ci\n")
+        self.c.commit("Create ci.yml", web=True, signed_by="other")
+        self.assertFails("isn't signed by GitHub's web-flow key")
+
+    def test_a_web_commit_changed_after_it_was_signed_counts(self):
+        c = self.c
+        c.work_commit(1)
+        c.write(".github/workflows/ci.yml", "name: ci\n")
+        c.commit("Create ci.yml", web=True)
+        self.assertPasses()
+        raw = c.run("git", "cat-file", "commit", "HEAD").stdout
+        self.assertIn("gpgsig ", raw)
+        forged = subprocess.run(["git", "hash-object", "-t", "commit", "-w", "--stdin"], cwd=c.work,
+                                env=c.env, input=raw.replace("Create ci.yml", "Create ci.yaml"),
+                                capture_output=True, text=True, check=True).stdout.strip()
+        c.run("git", "update-ref", "HEAD", forged)
+        self.assertFails("isn't signed by GitHub's web-flow key")
+
+    def test_github_s_signature_with_another_committer_counts(self):
+        self.c.work_commit(1)
+        self.c.write("src/extra.txt", "x\n")
+        self.c.commit("signed, but committed by a lane", signed_by="web")
+        self.assertFails("2 commit(s) of its own but its log gained 1")
+
+    def test_a_key_file_that_isnt_the_named_key_stops_the_check(self):
+        self.c.work_commit(1)
+        self.c.commit("Create ci.yml", web=True)
+        for key in ("other", "both"):
+            with self.subTest(key=key):
+                code, err = self.c.check(key=key)
+                self.assertEqual(code, 1, err)
+                self.assertIn("must hold GitHub's web-flow key", err)
+
+    def test_the_keyring_is_removed(self):
+        self.c.work_commit(1)
+        self.c.commit("Create ci.yml", web=True)
+        scratch = tempfile.mkdtemp(dir=self.c.root)
+        code, err = self.c.check(env=dict(self.c.env, TMPDIR=scratch))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(os.listdir(scratch), [])
+
+    def test_without_gpg_a_web_commit_stops_the_check(self):
+        self.c.work_commit(1)
+        self.c.commit("Create ci.yml", web=True)
+        bin_dir = os.path.join(self.c.root, "bin")
+        os.mkdir(bin_dir)
+        os.symlink(shutil.which("git"), os.path.join(bin_dir, "git"))
+        code, err = self.c.check(env=dict(self.c.env, PATH=bin_dir))
+        self.assertEqual(code, 1, err)
+        self.assertIn("gpg is missing", err)
+
+    def test_a_signer_s_user_id_that_isnt_utf_8_still_gets_the_message(self):
+        # gpg's status lines repeat the signer's user ID that a signature carries, which its signer
+        # chooses, byte for byte (round 1 of PR #156's review, nit 4).
+        wrapper = os.path.join(self.c.root, "gpg-sender")
+        with open(wrapper, "w", encoding="utf-8") as f:
+            f.write("#!/bin/sh\nexec gpg --sender \"$(printf 'a\\377@example.com')\" \"$@\"\n")
+        os.chmod(wrapper, 0o755)
+        self.c.work_commit(1)
+        env = dict(self.c.env, GIT_COMMITTER_NAME="GitHub", GIT_COMMITTER_EMAIL="noreply@github.com",
+                   GNUPGHOME=KEYS.home)
+        self.c.run("git", "-c", f"gpg.program={wrapper}", "-c", f"user.signingkey={KEYS.fingerprints['other']}",
+                   "commit", "-q", "--allow-empty", "-S", "-m", "Create ci.yml", env=env)
+        raw = subprocess.run(["git", "cat-file", "commit", "HEAD"], cwd=self.c.work, env=self.c.env,
+                             capture_output=True, check=True).stdout
+        self.assertIn(b"gpgsig ", raw)
+        self.assertFails("isn't signed by GitHub's web-flow key")
 
     def test_fields_with_code_blocks_and_lists(self):
         self.c.work_commit(1, extra={
@@ -338,6 +496,86 @@ class JournalCheckTest(unittest.TestCase):
     def test_usage(self):
         code, _ = self.c.check("--nothing")
         self.assertEqual(code, 2)
+
+
+class WebFlowKeyTest(unittest.TestCase):
+    def test_the_vendored_key_is_github_s_web_flow_key_alone(self):
+        # GitHub's web-flow key, created 2024-01-16; it verifies the signatures on main's squash merges.
+        self.assertEqual(journal_check.WEB_FLOW_FINGERPRINT, "968479A1AFF927E37D1A566BB5690EEEBB952194")
+        keyring = journal_check.WebFlowKeyring()
+        try:
+            keyring.open()  # raises unless the file holds that key and no other
+        finally:
+            keyring.close()
+
+
+    def test_a_signature_counts_only_under_the_named_fingerprint(self):
+        # The keyring can hold no other key (open() refuses one); signed() asks for the fingerprint as
+        # well, so a keyring holding two keys still takes the named one's signatures alone.
+        c, keyring, here = Clone(), None, os.getcwd()
+        try:
+            c.work_commit(1)
+            c.commit("signed by the other key", web=True, signed_by="other")
+            other = c.run("git", "rev-parse", "HEAD").stdout.strip()
+            c.commit("signed by the web key", web=True)
+            web = c.run("git", "rev-parse", "HEAD").stdout.strip()
+            keyring = journal_check.WebFlowKeyring(KEYS.files["both"], KEYS.fingerprints["web"])
+            keyring.home = tempfile.mkdtemp(prefix="web-flow-both-")
+            subprocess.run(["gpg", "--batch", "--homedir", keyring.home, "--import", KEYS.files["both"]],
+                           capture_output=True, check=True)
+            os.chdir(c.work)
+            self.assertTrue(keyring.signed(web))
+            self.assertFalse(keyring.signed(other))
+        finally:
+            os.chdir(here)
+            if keyring:
+                keyring.close()
+            c.cleanup()
+
+    def test_a_keyring_that_failed_to_open_is_never_used(self):
+        # open() keeps the keyring only once it holds the named key alone, so after a refusal signed()
+        # opens it afresh and is refused again, rather than verifying against keys nobody checked
+        # (round 1 of PR #156's review, nit 5).
+        c, here = Clone(), os.getcwd()
+        scratch = tempfile.mkdtemp(dir=c.root)
+        keyring = journal_check.WebFlowKeyring(KEYS.files["both"], KEYS.fingerprints["web"])
+        try:
+            c.work_commit(1)
+            c.commit("signed by the web key", web=True)
+            web = c.run("git", "rev-parse", "HEAD").stdout.strip()
+            os.chdir(c.work)
+            with mock.patch.object(tempfile, "tempdir", scratch):
+                for attempt in (keyring.open, lambda: keyring.signed(web)):
+                    with self.assertRaisesRegex(RuntimeError, "must hold GitHub's web-flow key"):
+                        attempt()
+                    self.assertIsNone(keyring.home)
+                    self.assertEqual(os.listdir(scratch), [])
+        finally:
+            os.chdir(here)
+            keyring.close()
+            c.cleanup()
+
+
+class RealKeyTest(unittest.TestCase):
+    """The check as CI runs it: the tests' own key isn't GitHub's."""
+
+    def setUp(self):
+        self.c = Clone()
+
+    def tearDown(self):
+        self.c.cleanup()
+
+    def test_a_commit_signed_by_the_tests_key_counts(self):
+        self.c.work_commit(1)
+        self.c.commit("Create ci.yml", web=True)
+        code, err = self.c.check(real=True)
+        self.assertEqual(code, 1, err)
+        self.assertIn("isn't signed by GitHub's web-flow key", err)
+
+    def test_a_branch_of_lane_commits_passes(self):
+        self.c.work_commit(1)
+        code, err = self.c.check(real=True)
+        self.assertEqual(code, 0, err)
 
 
 class FirstPullRequestTest(unittest.TestCase):
