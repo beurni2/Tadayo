@@ -283,15 +283,19 @@ describe("what a leave does to the club's open proposal (FQ121)", () => {
         facts: { current_id: next?.id },
       });
       // Sam's link shows only that it didn't go ahead, with the inviter by the name Ben had on leaving (FQ75),
-      // and accepting with it is told nothing of the roster that went on without Sam: not its id, not a version.
+      // and accepting with it is told nothing of the roster that went on without Sam, not its id: the revision
+      // Sam accepted answers as one that didn't go ahead would, a version conflict at the version it ended at and
+      // then nothing, so Sam can't tell a leave or a removal from a member's decline (FQ148; review G4, P2).
       expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
       // A name Ben takes after leaving reaches nobody he left: the link names him as the club last knew him, as
       // the list of invitations does.
       await tx`UPDATE app.users SET display_name = 'Benjamin' WHERE id = ${user(s.w, 0)}`;
       expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead", inviter_name: "Ben" });
       expect((await listClubs(tx, sam, NOW)).invitations.map((one) => one.inviterName)).toEqual(["Ben"]);
-      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 1))).toEqual(NONE);
-      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 7))).toEqual(NONE);
+      const asEnded = { code: "VERSION_CONFLICT", facts: { current_version: 2 } };
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 1))).toEqual(asEnded);
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 7))).toEqual(asEnded);
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 2))).toEqual(NONE);
       expect(await refusal(acceptWith(tx, clock, sam, samLink.token, next?.id ?? "", 1))).toEqual(NONE);
     });
   });

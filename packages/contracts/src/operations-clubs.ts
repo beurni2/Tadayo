@@ -20,6 +20,7 @@ import {
   LeftClub,
   Members,
   ProposeRosterRequest,
+  RemovedCandidate,
   RevokedInvitation,
   RosterDecisionRequest,
   RosterRevision,
@@ -159,6 +160,22 @@ export const CLUB_OPERATIONS: Operation[] = [
       "link's state (T14, handoff 1).",
     ok: { status: 200, json: RevokedInvitation },
     errors: ["NOT_ALLOWED"],
+  },
+  {
+    id: "removeCandidate",
+    method: "delete",
+    path: "/v1/candidates/{candidate_id}",
+    summary: "Remove someone invited who hasn't joined",
+    description:
+      "Only the member who proposed the candidate can remove them, while they haven't joined, whether or not " +
+      "they have accepted (FQ148, the outside audit's A10): a place of the club's six, members and open " +
+      "candidates together, is otherwise held until they join or a member declines the whole roster, since " +
+      "revoking ends only a link. Where the app offers it is design handoff 11's (G01-invite-people-remove, " +
+      "G05-members-with-proposed-remove). The answer says only that it is done; the revision it ended or " +
+      "replaced is read again with getClub's `open_revision_id`. Repeating the removal returns the same " +
+      "answer and changes nothing. Anyone but the candidate's proposer gets NOT_FOUND, whatever the " +
+      "candidate's state, and so does the proposer for a candidate who has joined, now a member (T14).",
+    ok: { status: 200, json: RemovedCandidate },
   },
   {
     id: "previewInvitationWeb",

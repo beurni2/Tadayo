@@ -37,6 +37,11 @@ export interface Targets {
   revision: string;
   /** The link Ben accepted that revision with, which Ana, who proposed Ben, made. */
   invitation: string;
+  /**
+   * Ben as that revision's candidate, whom Ana proposed: joined, so a member and no candidate to remove (FQ148). The
+   * matrix removes an open candidate in a scenario of its own (matrix.test.ts, the proposer's candidate).
+   */
+  candidate: string;
   /** A slot Ben held in the day and gave back (reservation.ts). */
   reservation: string;
   /** The photo's upload Ben started under that slot before giving it back, still pending (upload.ts). */
@@ -67,6 +72,7 @@ export const BINDINGS: Readonly<
   occurrence_id: (targets) => targets.day,
   proposal_id: (targets) => targets.proposal,
   invitation_id: (targets) => targets.invitation,
+  candidate_id: (targets) => targets.candidate,
   revision_id: (targets) => targets.revision,
   star: (targets) => targets.star,
   comment_id: "missing",
@@ -178,6 +184,7 @@ export const TABLES: Readonly<
   occurrence_id: { table: "app.occurrences", column: "id", via: [], club: "club_id" },
   proposal_id: { table: "app.schedule_proposals", column: "id", via: [], club: "club_id" },
   invitation_id: { table: "app.invitations", column: "id", via: [["candidate_id", "app.candidates"]], club: "club_id" },
+  candidate_id: { table: "app.candidates", column: "id", via: [], club: "club_id" },
   revision_id: { table: "app.roster_revisions", column: "id", via: [], club: "club_id" },
   star: { table: "app.memberships", column: "interval_id", via: [], club: "club_id" },
   comment_id: { table: "app.comments", column: "id", via: [["drop_id", "app.drops"]], club: "club_id" },

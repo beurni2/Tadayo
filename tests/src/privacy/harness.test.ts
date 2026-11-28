@@ -65,6 +65,7 @@ const here: Targets = {
   proposal: "spr_here",
   revision: "rev_here",
   invitation: "inv_here",
+  candidate: "cnd_here",
   reservation: "rsv_here",
   upload: "upl_here",
 };
@@ -78,6 +79,7 @@ const elsewhere: Targets = {
   proposal: "spr_there",
   revision: "rev_there",
   invitation: "inv_there",
+  candidate: "cnd_there",
   reservation: "rsv_there",
   upload: "upl_there",
 };
@@ -135,7 +137,7 @@ const built: ReadonlySet<string> = new Set(BUILT_OPERATIONS);
 
 describe("a route with no row fails (TECH-DESIGN section 8)", () => {
   it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the built routes'", () => {
-    expect(operations).toHaveLength(68);
+    expect(operations).toHaveLength(69);
     expect(rowProblems(operations, ROWS, { built })).toEqual([]);
   });
 
@@ -307,6 +309,7 @@ describe("a built route names objects of the world (the outside audit's A4)", ()
   it("names a table for every binding, and the bindings each built route names or acts on", () => {
     expect(Object.keys(TABLES).sort()).toEqual(Object.keys(BINDINGS).sort());
     expect(boundNames(operations, built).sort()).toEqual([
+      "candidate_id",
       "club_id",
       "invitation_id",
       "occurrence_id",
@@ -439,6 +442,7 @@ describe("the requests a cell makes, from the contract's parameters", () => {
     } as ContractOperation;
     expect(() => specsFor(planted, here, "Bearer planted")).toThrow(/no binding for the parameter week_id/);
     expect(Object.keys(BINDINGS).sort()).toEqual([
+      "candidate_id",
       "club_id",
       "comment_id",
       "drop_id",
