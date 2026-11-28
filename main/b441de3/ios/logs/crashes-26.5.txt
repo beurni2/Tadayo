@@ -1,0 +1,76 @@
+--- 05:39:19 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-28-053919.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-28 05:39:19.00 +0000
+pid: 99123
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.151B5369-D2DF-4695-9183-917F5D7463C7
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 99123, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 05:48:12 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-28-054058_sjc22-bt143-4b27b1b0-25c5-4437-8451-c81345dd3cfa-D28CB28D3FFE.diag
+Date/Time:        2026-11-28 05:36:43.651 +0000
+End time:         2026-11-28 05:38:21.448 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 03BCC9CD-3B1B-43DD-80F8-8C685B5B37C4
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x191c90000
+
+Command:          STExtractionService
+Path:             /private/var/run/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.151B5369-D2DF-4695-9183-917F5D7463C7"(2862)
+On Behalf Of:     77 samples nsurlsessiond [97570] (75 samples originated by UNKNOWN [97503, 97628], 2 samples originated by modelcatalogd [97627])
+Architecture:     arm64
+Parent:           UNKNOWN [97325]
+PID:              98603
+
+--- 05:52:27 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-28-054813_sjc22-bt143-4b27b1b0-25c5-4437-8451-c81345dd3cfa-D28CB28D3FFE.diag
+Date/Time:        2026-11-28 04:56:03.014 +0000
+End time:         2026-11-28 05:39:04.426 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 22D85A4A-593C-4816-BFF3-020DEC75B355
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x191c90000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18a9b4000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(786)
+On Behalf Of:     153 samples UNKNOWN [2468, 28685, 28693, 35558, 36345, 97234, 99148] (153 samples originated by UNKNOWN [212, 28685, 28693, 35558, 36345, 97234, 99148])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              650
+
+--- 06:03:22 UTC, /Library/Logs/DiagnosticReports/mds_stores_2026-11-28-060123_sjc22-bt143-4b27b1b0-25c5-4437-8451-c81345dd3cfa-D28CB28D3FFE.diag
+Date/Time:        2026-11-28 04:55:43.505 +0000
+End time:         2026-11-28 06:00:47.109 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 5C280A39-0F8B-4C81-9319-FBF0262329C5
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x191c90000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18a9b4000
+
+Command:          mds_stores
+Path:             /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+Resource Coalition: "com.apple.Spotlight"(441)
+On Behalf Of:     199 samples mds [123] (173 samples originated by UNKNOWN [1467, 1483, 5713, 10002, 11082, 25886, 30041, 30732, 30811, 30912, 32791, 32804], 26 samples originated by mds [123])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              386
+
+Event:            disk writes
+--- the simulator's log: not read, since logs/test-26.5.log names no ended service with a UTC time (SERVICE_ENDED, SERVICE_STAMP)
