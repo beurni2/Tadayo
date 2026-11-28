@@ -26,7 +26,8 @@ no package can lose a script that another keeps; the ratchet fails if a workspac
 RETIRED_TARGETS, in a CI-configuration PR of its own (T58). The other steps always have their
 targets:
 
-  setup-pnpm    installs the pnpm that package.json's `packageManager` names
+  setup-pnpm    installs the pnpm that package.json's `packageManager` names, from the tarballs
+                pnpm-lock.yaml pins (below)
   install       pnpm install --frozen-lockfile
   lint, typecheck, format, copy-lint   the root scripts of the same names (format: format:check)
   db-check      the Postgres service answers, at toolchain.POSTGRES_MAJOR
@@ -38,6 +39,15 @@ targets:
   verdict       the final `ci` job: fails unless every job in $NEEDS (the workflow's
                 `toJSON(needs)`) succeeded. ci_steps_test.py checks that ci.yml's `ci` job
                 needs every other job and runs `if: always()`.
+
+pnpm comes from npm as two tarballs: `pnpm`, a wrapper, and `@pnpm/exe.linux-x64`, the binary the
+wrapper's install script links in its place, which runs every pnpm step after it. pnpm-lock.yaml
+pins both, in its first document (pnpm's own: `packageManagerDependencies`), each with its sha512
+integrity. setup-pnpm packs the two with `npm pack` into a folder of its own, takes them only if
+each one's SHA-512 is the lockfile's, and installs them from the files with `npm install --global
+--offline`, so nothing the registry serves is taken on its own word (the outside audit's B6; the
+Dockerfile does the same). It fails on a lockfile with no such integrity, a tarball that differs, or
+a runner that isn't x86-64 Linux (GitHub's ubuntu-24.04 is).
 
 The package steps run `pnpm -r run <script>` without --if-present, so pnpm itself fails if it
 finds no package with the script that this file found. The database steps (db-tests, privacy)
@@ -64,9 +74,12 @@ Tests: python3 tools/ci/ci_steps_test.py
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
+import base64
 import glob
+import hashlib
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -141,6 +154,25 @@ PACKAGES_ENTRY = re.compile(r"""^  - (?:'([A-Za-z0-9_.*][A-Za-z0-9_./*-]*)'|"([A
 DENIED_BUILD = re.compile(r"""^  (?:'([^'\\\s${}]+)'|"([^"\\\s${}]+)"|([@A-Za-z0-9][@A-Za-z0-9._/|^~<>= -]*?))"""
                           r": +false(?: +#[ -~]*| *)$")
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
+# pnpm's two tarballs (above): the wrapper, and its binary for the one platform setup-pnpm runs on.
+PNPM_PACKAGES = ["pnpm", "@pnpm/exe.linux-x64"]
+PNPM_PLATFORM = ("Linux", "x86_64")
+
+
+def pnpm_digests(lockfile, version):
+    """The SHA-512 digest pnpm-lock.yaml's first document pins for each of PNPM_PACKAGES at the
+    version; ValueError unless it records each exactly once with a sha512 integrity."""
+    pnpm_document = lockfile.split("\n---\n")[0]
+    digests = {}
+    for name in PNPM_PACKAGES:
+        key = f"'{name}@{version}'" if name.startswith("@") else f"{name}@{version}"
+        found = re.findall(r"^  " + re.escape(key) + r":\n    resolution: \{integrity: sha512-"
+                           r"([A-Za-z0-9+/]{86}==)\}$", pnpm_document, re.M)
+        if len(found) != 1:
+            raise ValueError(f"pnpm-lock.yaml's first document must record {name}@{version} once with its "
+                             f"sha512 integrity; it records it {len(found)} time(s)")
+        digests[name] = base64.b64decode(found[0])
+    return digests
 
 
 def targets_of(step):
@@ -392,7 +424,42 @@ class Steps:
         if not match:
             print(f"ci: setup-pnpm: package.json's packageManager {manager!r} isn't pnpm@<x.y.z>")
             return 1
-        return self.shell.run(["npm", "install", "--global", f"pnpm@{match.group(1)}"])
+        version = match.group(1)
+        here = (platform.system(), platform.machine())
+        if here != PNPM_PLATFORM:
+            print(f"ci: setup-pnpm: pnpm's binary is taken for x86-64 Linux only, and this runner is "
+                  f"{here[0]} {here[1]}")
+            return 1
+        with open(self.path("pnpm-lock.yaml"), encoding="utf-8") as f:
+            try:
+                digests = pnpm_digests(f.read(), version)
+            except ValueError as error:
+                print(f"ci: setup-pnpm: {error}")
+                return 1
+        folder = tempfile.mkdtemp(prefix="pnpm-tarballs-")
+        try:
+            code = self.shell.run(["npm", "pack", "--silent", "--pack-destination", folder,
+                                   *[f"{name}@{version}" for name in PNPM_PACKAGES]])
+            if code != 0:
+                print("ci: setup-pnpm: npm pack failed")
+                return code
+            files = []
+            for name, digest in digests.items():
+                path = os.path.join(folder, f"{name.lstrip('@').replace('/', '-')}-{version}.tgz")
+                try:
+                    with open(path, "rb") as f:
+                        actual = hashlib.sha512(f.read()).digest()
+                except OSError:
+                    print(f"ci: setup-pnpm: npm pack wrote no {os.path.basename(path)}")
+                    return 1
+                if actual != digest:
+                    print(f"ci: setup-pnpm: {name}@{version}'s tarball isn't the one pnpm-lock.yaml pins "
+                          f"(sha512-{base64.b64encode(actual).decode()})")
+                    return 1
+                files.append(path)
+            return self.shell.run(["npm", "install", "--global", "--offline", *files])
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
 
     def install(self):
         return self.pnpm("install", ["install", "--frozen-lockfile"])
