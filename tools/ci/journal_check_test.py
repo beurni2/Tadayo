@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -315,6 +316,23 @@ class JournalCheckTest(unittest.TestCase):
         self.assertEqual(code, 1, err)
         self.assertIn("gpg is missing", err)
 
+    def test_a_signer_s_user_id_that_isnt_utf_8_still_gets_the_message(self):
+        # gpg's status lines repeat the signer's user ID that a signature carries, which its signer
+        # chooses, byte for byte (round 1 of PR #156's review, nit 4).
+        wrapper = os.path.join(self.c.root, "gpg-sender")
+        with open(wrapper, "w", encoding="utf-8") as f:
+            f.write("#!/bin/sh\nexec gpg --sender \"$(printf 'a\\377@example.com')\" \"$@\"\n")
+        os.chmod(wrapper, 0o755)
+        self.c.work_commit(1)
+        env = dict(self.c.env, GIT_COMMITTER_NAME="GitHub", GIT_COMMITTER_EMAIL="noreply@github.com",
+                   GNUPGHOME=KEYS.home)
+        self.c.run("git", "-c", f"gpg.program={wrapper}", "-c", f"user.signingkey={KEYS.fingerprints['other']}",
+                   "commit", "-q", "--allow-empty", "-S", "-m", "Create ci.yml", env=env)
+        raw = subprocess.run(["git", "cat-file", "commit", "HEAD"], cwd=self.c.work, env=self.c.env,
+                             capture_output=True, check=True).stdout
+        self.assertIn(b"gpgsig ", raw)
+        self.assertFails("isn't signed by GitHub's web-flow key")
+
     def test_fields_with_code_blocks_and_lists(self):
         self.c.work_commit(1, extra={
             "Verified": "\n```\n$ pnpm test\n## not a heading: inside the block\n3 passed\n```",
@@ -512,6 +530,29 @@ class WebFlowKeyTest(unittest.TestCase):
             os.chdir(here)
             if keyring:
                 keyring.close()
+            c.cleanup()
+
+    def test_a_keyring_that_failed_to_open_is_never_used(self):
+        # open() keeps the keyring only once it holds the named key alone, so after a refusal signed()
+        # opens it afresh and is refused again, rather than verifying against keys nobody checked
+        # (round 1 of PR #156's review, nit 5).
+        c, here = Clone(), os.getcwd()
+        scratch = tempfile.mkdtemp(dir=c.root)
+        keyring = journal_check.WebFlowKeyring(KEYS.files["both"], KEYS.fingerprints["web"])
+        try:
+            c.work_commit(1)
+            c.commit("signed by the web key", web=True)
+            web = c.run("git", "rev-parse", "HEAD").stdout.strip()
+            os.chdir(c.work)
+            with mock.patch.object(tempfile, "tempdir", scratch):
+                for attempt in (keyring.open, lambda: keyring.signed(web)):
+                    with self.assertRaisesRegex(RuntimeError, "must hold GitHub's web-flow key"):
+                        attempt()
+                    self.assertIsNone(keyring.home)
+                    self.assertEqual(os.listdir(scratch), [])
+        finally:
+            os.chdir(here)
+            keyring.close()
             c.cleanup()
 
 

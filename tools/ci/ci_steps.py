@@ -45,8 +45,8 @@ wrapper's install script links in its place, which runs every pnpm step after it
 pins both, in its first document (pnpm's own: `packageManagerDependencies`), each with its sha512
 integrity. setup-pnpm packs the two with `npm pack` into a folder of its own, takes them only if
 each one's SHA-512 is the lockfile's, and installs them from the files with `npm install --global
---offline`, so nothing the registry serves is taken on its own word (the outside audit's B6; the
-Dockerfile does the same). It fails on a lockfile with no such integrity, a tarball that differs, or
+--offline`, so nothing the registry serves is taken on its own word (the outside audit's B6; PR #154
+makes the Dockerfile do the same). It fails on a lockfile with no such integrity, a tarball that differs, or
 a runner that isn't x86-64 Linux (GitHub's ubuntu-24.04 is).
 
 The package steps run `pnpm -r run <script>` without --if-present, so pnpm itself fails if it
@@ -438,7 +438,7 @@ class Steps:
                 return 1
         folder = tempfile.mkdtemp(prefix="pnpm-tarballs-")
         try:
-            code = self.shell.run(["npm", "pack", "--silent", "--pack-destination", folder,
+            code = self.shell.run(["npm", "pack", "--loglevel=error", "--pack-destination", folder,
                                    *[f"{name}@{version}" for name in PNPM_PACKAGES]])
             if code != 0:
                 print("ci: setup-pnpm: npm pack failed")

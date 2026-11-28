@@ -527,8 +527,8 @@ class RootStepsTest(StepsTest):
         return code, out, shell
 
     def assertPacked(self, shell):
-        self.assertEqual(shell.commands[0], ["npm", "pack", "--silent", "--pack-destination", shell.folder,
-                                             "pnpm@12.16.1", "@pnpm/exe.linux-x64@12.16.1"])
+        self.assertEqual(shell.commands[0], ["npm", "pack", "--loglevel=error", "--pack-destination",
+                                             shell.folder, "pnpm@12.16.1", "@pnpm/exe.linux-x64@12.16.1"])
 
     def test_setup_pnpm_installs_both_tarballs_offline_once_checked(self):
         code, out, shell = self.setup_pnpm()

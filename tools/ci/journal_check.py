@@ -81,48 +81,62 @@ class WebFlowKeyring:
         self.fingerprint = fingerprint or WEB_FLOW_FINGERPRINT
         self.home = None
 
-    def _gpg(self, *args):
+    @staticmethod
+    def _gpg(home, *args):
+        # gpg's output can carry bytes a signer chose (a signature's signer's user ID): they never stop
+        # the check, so they're read with errors="replace".
         try:
-            return subprocess.run(["gpg", "--batch", "--no-autostart", "--homedir", self.home, *args],
-                                  capture_output=True, text=True)
+            return subprocess.run(["gpg", "--batch", "--no-autostart", "--homedir", home, *args],
+                                  capture_output=True, text=True, errors="replace")
         except FileNotFoundError:
             raise RuntimeError("gpg is missing: the check needs it to tell GitHub's own commits")
 
     def open(self):
+        """Makes the keyring, and keeps it only once it holds the named key and no other."""
         if self.home is not None:
             return
-        self.home = tempfile.mkdtemp(prefix="web-flow-")
-        imported = self._gpg("--quiet", "--import", self.key)
-        if imported.returncode != 0:
-            raise RuntimeError(f"gpg couldn't import {self.key}: {imported.stderr.strip()}")
-        listed = self._gpg("--with-colons", "--fingerprint")
-        primaries, previous = [], ""
-        for line in listed.stdout.splitlines():
-            if line.startswith("fpr:") and previous.startswith("pub:"):
-                primaries.append(line.split(":")[9])
-            previous = line
-        if listed.returncode != 0 or primaries != [self.fingerprint]:
-            raise RuntimeError(f"{self.key} must hold GitHub's web-flow key, {self.fingerprint}, and no "
-                               f"other; it holds {', '.join(primaries) or 'none'}")
+        home = tempfile.mkdtemp(prefix="web-flow-")
+        try:
+            imported = self._gpg(home, "--quiet", "--import", self.key)
+            if imported.returncode != 0:
+                raise RuntimeError(f"gpg couldn't import {self.key}: {imported.stderr.strip()}")
+            listed = self._gpg(home, "--with-colons", "--fingerprint")
+            primaries, previous = [], ""
+            for line in listed.stdout.splitlines():
+                if line.startswith("fpr:") and previous.startswith("pub:"):
+                    primaries.append(line.split(":")[9])
+                previous = line
+            if listed.returncode != 0 or primaries != [self.fingerprint]:
+                raise RuntimeError(f"{self.key} must hold GitHub's web-flow key, {self.fingerprint}, and "
+                                   f"no other; it holds {', '.join(primaries) or 'none'}")
+        except BaseException:
+            self._remove(home)
+            raise
+        self.home = home
 
     def signed(self, sha):
         """Whether the commit is signed by the web-flow key."""
         self.open()
         env = dict(os.environ, GNUPGHOME=self.home)
         result = subprocess.run(["git", "-c", "gpg.program=gpg", "-c", "gpg.openpgp.program=gpg",
-                                 "verify-commit", "--raw", sha], capture_output=True, text=True, env=env)
+                                 "verify-commit", "--raw", sha], capture_output=True, text=True,
+                                errors="replace", env=env)
         status = result.stdout + result.stderr
         return (result.returncode == 0 and not BAD_STATUS.search(status)
                 and any(primary == self.fingerprint for primary in VALIDSIG.findall(status)))
 
+    @staticmethod
+    def _remove(home):
+        try:
+            subprocess.run(["gpgconf", "--homedir", home, "--kill", "all"], capture_output=True)
+        except FileNotFoundError:
+            pass  # no gpg, so no agent to stop
+        shutil.rmtree(home, ignore_errors=True)
+
     def close(self):
         if self.home is None:
             return
-        try:
-            subprocess.run(["gpgconf", "--homedir", self.home, "--kill", "all"], capture_output=True)
-        except FileNotFoundError:
-            pass  # no gpg, so no agent to stop
-        shutil.rmtree(self.home, ignore_errors=True)
+        self._remove(self.home)
         self.home = None
 
 
