@@ -335,6 +335,106 @@ paths:
                   value:
                     code: RATE_LIMITED
                     retry_after_seconds: 30
+  /v1/candidates/{candidate_id}:
+    delete:
+      operationId: removeCandidate
+      summary: Remove someone invited who hasn't joined
+      description: "Only the member who proposed the candidate can remove them, while they haven't joined, whether or not they have accepted (FQ148, the outside audit's A10): a place of the club's six, members and open candidates together, is otherwise held until they join or a member declines the whole roster, since revoking ends only a link. Where the app offers it is design handoff 11's (G01-invite-people-remove, G05-members-with-proposed-remove). The answer says only that it is done; the revision it ended or replaced is read again with getClub's `open_revision_id`. Repeating the removal returns the same answer and changes nothing. Anyone but the candidate's proposer gets NOT_FOUND, whatever the candidate's state, and so does the proposer for a candidate who has joined, now a member (T14)."
+      parameters:
+        - name: candidate_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+      responses:
+        "200":
+          description: Remove someone invited who hasn't joined
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemovedCandidate"
+              examples:
+                removed:
+                  summary: Leila's invitation ended, and the place with it (FQ148)
+                  value:
+                    candidate_id: cnd_kt_leila
+                    state: removed
+        "400":
+          description: INVALID_REQUEST
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                INVALID_REQUEST:
+                  summary: The request doesn't match the contract. `field` names the first bad field, never its value.
+                  value:
+                    code: INVALID_REQUEST
+        "401":
+          description: UNAUTHENTICATED
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                UNAUTHENTICATED:
+                  summary: "No valid session: sign in again."
+                  value:
+                    code: UNAUTHENTICATED
+        "403":
+          description: PROFILE_INCOMPLETE
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                PROFILE_INCOMPLETE:
+                  summary: "The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first. Until then it can only finish setup or leave (FQ69)."
+                  value:
+                    code: PROFILE_INCOMPLETE
+        "404":
+          description: NOT_FOUND
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                NOT_FOUND:
+                  summary: "Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14)."
+                  value:
+                    code: NOT_FOUND
+        "429":
+          description: RATE_LIMITED
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                RATE_LIMITED:
+                  summary: "Too many requests: try again after `retry_after_seconds`."
+                  value:
+                    code: RATE_LIMITED
+                    retry_after_seconds: 30
   /v1/clubs:
     get:
       operationId: listClubs
@@ -13038,6 +13138,19 @@ components:
         - removal_secret
       additionalProperties: false
       description: "Remove the registration of the sign-in that made this secret, sent at logout and again until it ends (TECH-DESIGN section 6 (c), (d)). No session: the app deleted it at logout."
+    RemovedCandidate:
+      type: object
+      properties:
+        candidate_id:
+          $ref: "#/components/schemas/Id"
+        state:
+          type: string
+          enum:
+            - removed
+      required:
+        - candidate_id
+        - state
+      description: "The candidate's invitation ended, and their place with it (FQ148, the outside audit's A10). Every link of theirs stops working: an unused one answers as an unknown link does (FQ59), and an account that accepted sees only that the invitation didn't go ahead (G03-declined), never who or why. Anyone else still invited is carried into a revision the server makes, which every other member approves and each of them accepts again, their links still good, as after a leave (FQ121); with nobody else invited, the revision ends."
     RemovedDrop:
       type: object
       properties:

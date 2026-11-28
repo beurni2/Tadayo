@@ -23,7 +23,7 @@
 // itself are values the world keeps back.
 //
 // Each role's test prints the cells it ran and the answers it scanned, and asserts both: the cells
-// against the contract's 89 requests a world, the answers against what each step says it sends.
+// against the contract's 90 requests a world, the answers against what each step says it sends.
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { BUILT_OPERATIONS, buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
@@ -47,7 +47,7 @@ import {
   newWorld,
   type World,
 } from "../db/world.ts";
-import { PHASES, REVEAL, ROLES, STATES, type Phase } from "../matrix.ts";
+import { INVITE_TOKENS, LATER, PHASES, REVEAL, ROLES, STATES, invite, type Phase } from "../matrix.ts";
 import {
   CREATE_CLUB_NO_BODY,
   clubExpected,
@@ -170,6 +170,8 @@ import {
   replayedLink,
   revisionExpected,
   revisionFor,
+  candidateRemovalExpected,
+  candidateRemovalOutcome,
   revokeExpected,
   rosterWorldOf,
   sameAnswer,
@@ -238,7 +240,7 @@ const plain = (tx: WorldTx) => tx as unknown as Tx;
 const CLAIMED = PHASES.collecting.add({ hours: 24 });
 
 /** The requests each world gets from the contract's operations (specsFor), pinned. */
-const REQUESTS_PER_WORLD = 89;
+const REQUESTS_PER_WORLD = 90;
 /** What the roster's table did for each role (the role's test fills it; the last test reads it). */
 const ROSTER_TABLES = new Map<
   string,
@@ -246,6 +248,8 @@ const ROSTER_TABLES = new Map<
 >();
 /** The states each role's viewer left the cell's club in (the role's test fills it; a later test reads it). */
 const LEAVES = new Map<string, number>();
+/** By role: the leaves that met an open revision in the club, which the leave carried or ended (FQ121). */
+const LEAVES_MET_OPEN = new Map<string, number>();
 /** By role: the leaves after which the leaver lost a revision that listed them, read until then. */
 const REVISIONS_LOST = new Map<string, number>();
 /** By role: the drops the leaves withdrew and the reservations they ended (leave.ts's `contributionProblems`). */
@@ -303,6 +307,11 @@ const DROPS = new Map<
  * signed-out page twice, the link's holder ten times, another member three times.
  */
 const INVITATION_OTHER_ANSWERS = 15;
+/**
+ * The answers the proposer's removal of the candidate gives another member, for each revision whose invitation's
+ * table ran: their own removal, refused, and their read of the revision after it (FQ148).
+ */
+const REMOVAL_OTHER_ANSWERS = 2;
 
 /** A world's own suffix, so its names are no other world's. */
 const suffix = () => ` ${randomBytes(6).toString("hex")}`;
@@ -747,18 +756,23 @@ async function othersLiveSlot(tx: WorldTx, w: World, viewer: string): Promise<st
 }
 
 /**
- * The world's own roster revision and one of its links: the applied revision that brought Ben and Cleo in,
- * which lists Ana alone, and the link Ben accepted it with (world.ts's `joinByRoster`).
+ * The world's own roster revision, one of its links and its candidate: the applied revision that brought Ben and Cleo
+ * in, which lists Ana alone, the link Ben accepted it with, and Ben as its candidate, joined (world.ts's
+ * `joinByRoster`).
  */
-async function rosterTargets(tx: WorldTx, w: World): Promise<{ revision: string; invitation: string }> {
-  const [row] = await tx<{ revision: string; invitation: string | null }[]>`
-    SELECT m.joined_via_revision_id AS revision, rc.accepted_invitation_id AS invitation
+async function rosterTargets(
+  tx: WorldTx,
+  w: World,
+): Promise<{ revision: string; invitation: string; candidate: string }> {
+  const [row] = await tx<{ revision: string; invitation: string | null; candidate: string }[]>`
+    SELECT m.joined_via_revision_id AS revision, rc.accepted_invitation_id AS invitation,
+           m.joined_via_candidate_id AS candidate
       FROM app.memberships m
       JOIN app.roster_revision_candidates rc
         ON rc.revision_id = m.joined_via_revision_id AND rc.candidate_id = m.joined_via_candidate_id
      WHERE m.interval_id = ${w.ben.interval}`;
   if (row === undefined || row.invitation === null) throw new Error("the world's author joined by no roster");
-  return { revision: row.revision, invitation: row.invitation };
+  return { revision: row.revision, invitation: row.invitation, candidate: row.candidate };
 }
 
 beforeAll(async () => {
@@ -1247,10 +1261,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         otherAnswers: 0,
         invitations: 0,
         alone: 0,
+        removals: 0,
+        leftOpen: 0,
       };
       const memberStates = new Set<string>();
       // What the leave's step did for this role: the states it asked in, and those the judge said it left in.
-      const left = { asked: 0, left: 0, revisions: 0, withdrawn: 0, slotsEnded: 0 };
+      const left = { asked: 0, left: 0, revisions: 0, withdrawn: 0, slotsEnded: 0, metOpen: 0 };
       // What the reservations' table did for this role: the slots it held, and those it gave back that came
       // back released (still live), expired (lapsed at the reveal with no drop) and consumed (by the drop the
       // commit's table added under it). Asserted in the test after the roles.
@@ -1477,65 +1493,67 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                 ? revisionExpected(rosterSeen, cell.targets.revision)
                 : gate === undefined && id === "revokeInvitation"
                   ? revokeExpected(rosterSeen, cell.targets.invitation)
-                  : gate === undefined && id === "proposeRoster"
-                    ? genericProposalExpected(rosterSeen, cell.w.club)
-                    : gate === undefined && id === "createInvitation"
-                      ? NEUTRAL
-                      : gate === undefined && (id === "approveRoster" || id === "declineRoster")
-                        ? genericDecisionExpected(rosterSeen, cell.targets.revision)
-                        : gate === undefined && INVITATION_JUDGED.has(id)
-                          ? NEUTRAL
-                          : gate === undefined && id === "listMembers"
-                            ? membersExpected(membersSeen, cell.w.club)
-                            : gate === undefined && id === "getHome"
-                              ? homeExpected(homeSeen, cell.w.club)
-                              : gate === undefined && id === "getClub"
-                                ? clubExpected(clubSeen, cell.w.club)
-                                : gate === undefined && id === "createClub"
-                                  ? CREATE_CLUB_NO_BODY
-                                  : gate === undefined && id === "leaveClub"
-                                    ? LEAVE_NO_BODY
-                                    : gate === undefined && id === "createReservation"
-                                      ? RESERVE_NO_BODY
-                                      : gate === undefined && id === "createUpload"
-                                        ? UPLOAD_NO_BODY
-                                        : gate === undefined && id === "createDrop"
-                                          ? DROP_NO_BODY
-                                          : gate === undefined && id === "registerDevice"
-                                            ? DEVICE_NO_BODY
-                                            : gate === undefined && id === "getHealth"
-                                              ? healthExpected
-                                              : gate === undefined && id === "getUpload"
-                                                ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
-                                                : gate === undefined && id === "completeUpload"
-                                                  ? completeExpected(
-                                                      completeOutcome(
-                                                        facts.world,
-                                                        cell.viewer,
-                                                        cell.targets.upload,
-                                                        now,
-                                                        storage.objects,
-                                                      ),
-                                                    )
-                                                  : gate === undefined && id === "releaseReservation"
-                                                    ? releaseExpected(
-                                                        releaseOutcome(
+                  : gate === undefined && id === "removeCandidate"
+                    ? candidateRemovalExpected(rosterSeen, cell.targets.candidate)
+                    : gate === undefined && id === "proposeRoster"
+                      ? genericProposalExpected(rosterSeen, cell.w.club)
+                      : gate === undefined && id === "createInvitation"
+                        ? NEUTRAL
+                        : gate === undefined && (id === "approveRoster" || id === "declineRoster")
+                          ? genericDecisionExpected(rosterSeen, cell.targets.revision)
+                          : gate === undefined && INVITATION_JUDGED.has(id)
+                            ? NEUTRAL
+                            : gate === undefined && id === "listMembers"
+                              ? membersExpected(membersSeen, cell.w.club)
+                              : gate === undefined && id === "getHome"
+                                ? homeExpected(homeSeen, cell.w.club)
+                                : gate === undefined && id === "getClub"
+                                  ? clubExpected(clubSeen, cell.w.club)
+                                  : gate === undefined && id === "createClub"
+                                    ? CREATE_CLUB_NO_BODY
+                                    : gate === undefined && id === "leaveClub"
+                                      ? LEAVE_NO_BODY
+                                      : gate === undefined && id === "createReservation"
+                                        ? RESERVE_NO_BODY
+                                        : gate === undefined && id === "createUpload"
+                                          ? UPLOAD_NO_BODY
+                                          : gate === undefined && id === "createDrop"
+                                            ? DROP_NO_BODY
+                                            : gate === undefined && id === "registerDevice"
+                                              ? DEVICE_NO_BODY
+                                              : gate === undefined && id === "getHealth"
+                                                ? healthExpected
+                                                : gate === undefined && id === "getUpload"
+                                                  ? readExpected(facts.world, cell.viewer, cell.targets.upload, now)
+                                                  : gate === undefined && id === "completeUpload"
+                                                    ? completeExpected(
+                                                        completeOutcome(
                                                           facts.world,
                                                           cell.viewer,
-                                                          cell.targets.reservation,
+                                                          cell.targets.upload,
                                                           now,
+                                                          storage.objects,
                                                         ),
                                                       )
-                                                    : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                                                      ? cellExpected(session, spec.operation, seen)
-                                                      : id === "getSchedule"
-                                                        ? weekExpected(scheduleSeen, cell.w.club)
-                                                        : commandExpected(
-                                                            scheduleSeen,
-                                                            id as ScheduleCommand,
-                                                            cell.targets.proposal,
-                                                            startVersion,
-                                                          );
+                                                    : gate === undefined && id === "releaseReservation"
+                                                      ? releaseExpected(
+                                                          releaseOutcome(
+                                                            facts.world,
+                                                            cell.viewer,
+                                                            cell.targets.reservation,
+                                                            now,
+                                                          ),
+                                                        )
+                                                      : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                                                        ? cellExpected(session, spec.operation, seen)
+                                                        : id === "getSchedule"
+                                                          ? weekExpected(scheduleSeen, cell.w.club)
+                                                          : commandExpected(
+                                                              scheduleSeen,
+                                                              id as ScheduleCommand,
+                                                              cell.targets.proposal,
+                                                              startVersion,
+                                                            );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -2200,6 +2218,81 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               counted.expectedAnswers += 2;
               record(await cellStep(app, club, clubExpected(clubSeen, cell.w.club)));
               record(await cellStep(app, members, membersExpected(membersSeen, cell.w.club)));
+            }
+
+            // Who removes the candidate (FQ148; the outside audit's A10): the member who proposed them, and nobody
+            // else (T14). Someone of another club asks first, and another member where there is one; each gets the
+            // neutral not-found, and the rows read again after them must show that neither moved anything (review
+            // G1). Where the table ran, another member's decline has ended the candidate with its revision, so the
+            // proposer's removal finds them removed and moves nothing. Where it couldn't, nobody else in the club has
+            // a session, and the proposer's revision is left open, as it was before removing existed: a later phase's
+            // proposals carry its candidates, and the last phase's leave meets it and ends it (FQ121; review G3). An
+            // open candidate's removal is asked as each role in each state below ("who removes someone invited who
+            // hasn't joined"). A repeat is the first answer, byte for byte, and moves nothing more. Each answer is
+            // judged from the rows before its request, and what the removal wrote from the rows after.
+            await reload();
+            const remove: Spec = { ...byId("removeCandidate"), path: { candidate_id: candidate } };
+            const removalRows = () =>
+              canonical({
+                candidate: rosterWorld.candidates.get(candidate),
+                version: clubRows.get(cell.w.club)?.rosterVersion,
+                open: clubRows.get(cell.w.club)?.openRevision,
+                revisions: [...rosterWorld.revisions.values()].filter((one) => one.club === cell.w.club),
+              });
+            const beforeRefused = removalRows();
+            await judged(remove, await sendAs(remove, outsider), NEUTRAL, "a removal by someone of another club");
+            if (other !== undefined) {
+              await judged(
+                remove,
+                await sendAs(remove, other.authorization),
+                candidateRemovalExpected(rosterSeen, candidate, other.account),
+                "a removal by another member",
+                other.account,
+              );
+            }
+            await reload();
+            if (removalRows() !== beforeRefused)
+              wrong.push(`${state.name}, ${phase}, the removal: a refused removal changed the roster's rows`);
+            if (other === undefined) {
+              roster.leftOpen += 1;
+            } else {
+              const versionBefore = clubRows.get(cell.w.club)?.rosterVersion ?? -1;
+              const removable = candidateRemovalOutcome(schedule, rosterWorld, candidate, cell.viewer) === "removed";
+              const removedOnce = await sendAs(remove);
+              await judged(
+                remove,
+                removedOnce,
+                removable
+                  ? candidateRemovalExpected(rosterSeen, candidate)
+                  : ["the judge refuses its proposer the removal"],
+                "a removal",
+              );
+              await reload();
+              if (removable) roster.removals += 1;
+              const removedWhere = `${state.name}, ${phase}, the removal`;
+              if (rosterWorld.candidates.get(candidate)?.state !== "ended")
+                wrong.push(`${removedWhere}: the candidate isn't ended`);
+              if ((clubRows.get(cell.w.club)?.rosterVersion ?? -1) !== versionBefore)
+                wrong.push(`${removedWhere}: the removal of a candidate already ended moved the club's roster version`);
+              if (
+                [...rosterWorld.revisions.values()].some(
+                  (one) => one.state === "open" && one.candidates.some((listed) => listed.id === candidate),
+                )
+              )
+                wrong.push(`${removedWhere}: an open revision still lists the candidate`);
+              const removedTwice = await sendAs(remove);
+              await judged(
+                remove,
+                removedTwice,
+                candidateRemovalExpected(rosterSeen, candidate),
+                "the same removal again",
+              );
+              if (said(removedOnce) !== said(removedTwice)) wrong.push(`${removedWhere}: a repeat got another answer`);
+              if ((await loadClubRows()).get(cell.w.club)?.rosterVersion !== clubRows.get(cell.w.club)?.rosterVersion)
+                wrong.push(`${removedWhere}: a repeat moved the club's roster version`);
+              await readByAll("the revision after its candidate's removal");
+              counted.expectedAnswers += 1;
+              record(await cellStep(app, club, clubExpected(clubSeen, cell.w.club)));
             }
           }
           const last = index === phases.length - 1;
@@ -3130,6 +3223,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             } else {
               left.left += 1;
               if (readRevision) left.revisions += 1;
+              if ((before.clubs.get(cell.w.club)?.openRevision ?? null) !== null) left.metOpen += 1;
               const [row] = await db<
                 { state: string; left_at: Temporal.Instant | null; contributions: string | null; name: string | null }[]
               >`
@@ -3224,7 +3318,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       console.log(`${role.name}: ${String(counted.cells)} cells run, ${String(counted.answers)} answers scanned`);
       console.log(`${role.name}, the roster's table: ${JSON.stringify(roster)}`);
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-      // Every cell ran: the contract's 89 requests a world (each operation for each drop it names, with each value of a
+      // Every cell ran: the contract's 90 requests a world (each operation for each drop it names, with each value of a
       // required enum, and again with its optional ids), in each state and each phase the role has. And every answer was scanned, with the manipulated and guessed requests and the bodies.
       const specsPerWorld = operations.reduce(
         (sum, operation) => sum + specsFor(operation, elsewhere, "Bearer x").length,
@@ -3238,13 +3332,14 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // The roster's table ran, for every role: its eight proposals in every phase of every state. Every
       // proposal the judge said must make a revision made one. A viewer who is a member the club answers in
       // some phase of a state proposes in the first such phase at least (a later phase may find the club
-      // full of the candidates carried; a suspended club answers nobody, so it is no such state). Every
-      // revision got its link, and each was read, linked and revoked by another member too (three reads,
-      // one link, one revoke: five answers a revision).
+      // full; a suspended club answers nobody, so it is no such state). Every revision got its link, and each
+      // was read, linked and revoked by another member too (three reads, one link, one revoke: five answers a
+      // revision), before the invitation's table and the removal gave them theirs.
       ROSTER_TABLES.set(role.name, roster);
       // The leave ran once in every state, and the roles it left for are named in the test below.
       expect(left.asked).toBe(STATES.length);
       LEAVES.set(role.name, left.left);
+      LEAVES_MET_OPEN.set(role.name, left.metOpen);
       REVISIONS_LOST.set(role.name, left.revisions);
       CONTRIBUTIONS_SETTLED.set(role.name, { withdrawn: left.withdrawn, slotsEnded: left.slotsEnded });
       console.log(`${role.name}, the leave: ${JSON.stringify(left)}`);
@@ -3263,7 +3358,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       if (roster.memberPhases === 0) expect(roster.revisions).toBe(0);
       expect(roster.links).toBe(roster.revisions);
       expect(roster.invitations).toBe(roster.revisions - roster.alone);
-      expect(roster.otherAnswers).toBe(roster.invitations * (5 + INVITATION_OTHER_ANSWERS));
+      expect(roster.otherAnswers).toBe(roster.invitations * (5 + INVITATION_OTHER_ANSWERS + REMOVAL_OTHER_ANSWERS));
+      // Every revision whose invitation's table ran had its candidate, ended by that table's decline, removed again by
+      // its proposer at the end of its phase, which found them removed and moved nothing (FQ148). Where nobody else
+      // could run the table, the revision was left open, for the last phase's leave to meet (FQ121; review G3).
+      expect(roster.removals).toBe(roster.invitations);
+      expect(roster.leftOpen).toBe(roster.alone);
       expect(counted.answers).toBe(counted.expectedAnswers);
       expect(malformed.size).toBeGreaterThan(0);
     });
@@ -3318,6 +3418,13 @@ describe("the leave ran (tests/src/privacy/leave.ts)", () => {
     ]);
     // The world's revision lists the star alone: the star read it until the leave, and nothing after.
     expect([...REVISIONS_LOST].filter(([, states]) => states > 0)).toEqual([["star", 9 - 2]]);
+    // The leave met an open revision, which leave.ts's `leaveProblems` judged as FQ121 says, where the roster's table
+    // left the viewer's own revision open: the two states in which nobody else in the club has a session, for Cleo
+    // once the author has blocked Cleo and left by the block (the roster's table, below). Everywhere else the
+    // invitation's decline had ended the revision before the leave (review G3).
+    expect([...LEAVES_MET_OPEN].filter(([, states]) => states > 0)).toEqual([
+      ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 2],
+    ]);
   });
 
   it("withdrew the leaver's own drops on withdraw, and settled the leaver's slots left live, as the world has them", () => {
@@ -3740,6 +3847,214 @@ describe("Home while a drop of the open day has a comment (B6's reply previews; 
         ].map(([role, outcome]) => [target.name, role, outcome]),
       ),
     );
+  });
+});
+
+describe("who removes someone invited who hasn't joined, as each role in each state (FQ148; T14, T27; FQ80; the outside audit's A10)", () => {
+  // The cells ask every role to remove a candidate who has joined, whom nobody may remove, and remove an open
+  // candidate only where the viewer proposed someone, which no viewer can in a suspended club; so they never ask who
+  // may remove an open candidate (review P1). Here each world is made as a cell's is, up to the role and the state of
+  // the drop, with Mo invited by Ana and accepted, Mo's link live (../matrix.ts `invite`): the invited role is Mo, and
+  // every other role's world gets a Mo of its own once the role's rows are in, since a club has one open revision at a
+  // time. The slots, avatars and bound rows the cells add for other routes are left out, since the removal reads none
+  // of them. In each phase the role has, the viewer asks to remove Mo. The gate answers first (account.ts `gateOf`),
+  // then the judge (roster.ts `candidateRemovalOutcome`) from the rows before the request: "removed" for Ana while
+  // Ana is an active member of a club that isn't suspended, and the neutral not-found for everyone else. The rows
+  // after it say what moved: the first removal ends Mo and Mo's revision, `did_not_go_ahead` since nobody else was
+  // invited, and moves the club's roster version by one; a repeat is the first answer byte for byte, and neither a
+  // repeat nor a refusal moves anything. Then Mo previews the link (invitation.ts `previewExpected`), and once Mo is
+  // removed is told only that the roster didn't go ahead. Every answer is scanned with its caller's own facts. Who
+  // removed Mo, and what Ana got where Ana couldn't, are pinned by hand below.
+  it("removes Mo for Ana alone, while Ana is an active member of a club that isn't suspended", async () => {
+    const operation = operations.find((one) => one.id === "removeCandidate");
+    const previewOperation = operations.find((one) => one.id === "previewInvitation");
+    if (operation === undefined || previewOperation === undefined)
+      throw new Error("the contract has no removeCandidate or previewInvitation");
+    const wrong: string[] = [];
+    const counted = { answers: 0 };
+    let asked = 0;
+    let repeats = 0;
+    const removed: [string, string][] = [];
+    const starGot: [string, string][] = [];
+    const waiting = new Map<string, Set<string>>();
+    const stateOf = (answer: Answer): string => {
+      try {
+        const body = JSON.parse(answer.body) as Record<string, unknown>;
+        return typeof body["state"] === "string" ? body["state"] : `${String(answer.status)} ${answer.body}`;
+      } catch {
+        return `${String(answer.status)} ${answer.body}`;
+      }
+    };
+    for (const role of ROLES)
+      for (const state of STATES) {
+        const cell = await db.begin(async (tx) => {
+          const w = await newWorld(plain(tx), suffix());
+          await anaNextSaturday(tx, w);
+          const ben = await twoContributors(tx, w);
+          await addFirstDays(tx, w);
+          const viewer = await role.make(tx, w);
+          const mo = INVITE_TOKENS.has(viewer) ? viewer : await invite(tx, w, LATER);
+          await putInState(tx, w, state, ben);
+          await checkAsAtCommit(plain(tx));
+          const [candidate] = await tx<{ id: string }[]>`
+            SELECT candidate_id AS id FROM app.invitations WHERE bound_user_id = ${mo}`;
+          if (candidate === undefined) throw new Error("Mo has no candidate");
+          return { w, viewer, mo, candidate: candidate.id };
+        });
+        const accounts = await db<
+          { id: string; state: string; age_confirmed: boolean; name: string | null; subject: string | null }[]
+        >`
+          SELECT id, state, age_confirmed_at IS NOT NULL AS age_confirmed, display_name AS name, auth_subject AS subject
+            FROM app.users WHERE id IN (${cell.viewer}, ${cell.mo})`;
+        const row = (id: string) => {
+          const found = accounts.find((account) => account.id === id);
+          if (found === undefined || found.subject === null) throw new Error("an account has no sign-in subject");
+          return { ...found, subject: found.subject };
+        };
+        const viewerRow = row(cell.viewer);
+        const moRow = row(cell.mo);
+        const session = sessionOf({
+          state: viewerRow.state,
+          ageConfirmed: viewerRow.age_confirmed,
+          name: viewerRow.name,
+        });
+        if (sessionOf({ state: moRow.state, ageConfirmed: moRow.age_confirmed, name: moRow.name }) !== "active")
+          throw new Error("Mo has no session");
+        const authorization = bearer(await keys.signer.token(viewerRow.subject));
+        const moAuthorization = bearer(await keys.signer.token(moRow.subject));
+        const token = INVITE_TOKENS.get(cell.mo);
+        if (token === undefined) throw new Error("Mo's link token wasn't kept");
+        const clubs = [cell.w.club, elsewhere.club];
+        const world = db as unknown as WorldTx;
+        const secrets = [authorization, moAuthorization].map((one) => one.slice("Bearer ".length)).concat(token);
+        const remove: Spec = {
+          operation,
+          path: { candidate_id: cell.candidate },
+          query: {},
+          headers: { authorization },
+        };
+        const preview: Spec = {
+          operation: previewOperation,
+          path: {},
+          query: {},
+          headers: { authorization: moAuthorization, "content-type": "application/json" },
+          body: JSON.stringify({ token }),
+        };
+        const rowsOf = async () => {
+          const roster = await rosterWorldOf(world, clubs);
+          const rows = await clubRowsOf(world, clubs);
+          return {
+            schedule: await scheduleWorldOf(world, clubs),
+            roster,
+            rows,
+            said: canonical({
+              candidate: roster.candidates.get(cell.candidate),
+              version: rows.get(cell.w.club)?.rosterVersion,
+              open: rows.get(cell.w.club)?.openRevision,
+              revisions: [...roster.revisions.values()].filter((one) => one.club === cell.w.club),
+            }),
+          };
+        };
+        let first: string | undefined;
+        const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
+        for (const [index, phase] of phases.entries()) {
+          const now = PHASES[phase];
+          clock.set(now);
+          const where = `${role.name}, ${state.name}, ${phase}`;
+          const before = await rowsOf();
+          const gate = gateOf(session, operation);
+          const outcome = gate ?? candidateRemovalOutcome(before.schedule, before.roster, cell.candidate, cell.viewer);
+          const step = await cellStep(
+            app,
+            remove,
+            gate ?? candidateRemovalExpected(() => ({ ...before, account: cell.viewer, now }), cell.candidate),
+          );
+          asked += 1;
+          const facts = await factsOf(clubs, cell.viewer, { accounts: [cell.w.dan.user], secrets });
+          scanner(wrong, where, () => facts, now, counted)(step);
+          const answer = step.answers[0]?.answer;
+          if (answer === undefined) throw new Error("a step with no answer");
+          if (role.name === "star" && index === 0)
+            starGot.push([state.name, outcome === "removed" ? "removed" : stateOf(outcome)]);
+          const after = await rowsOf();
+          const was = before.roster.candidates.get(cell.candidate)?.state;
+          if (outcome === "removed" && was === "open") {
+            removed.push([role.name, state.name]);
+            first = said(answer);
+            const revisions = [...after.roster.revisions.values()].filter((one) =>
+              one.candidates.some((listed) => listed.id === cell.candidate),
+            );
+            if (after.roster.candidates.get(cell.candidate)?.state !== "ended") wrong.push(`${where}: Mo isn't ended`);
+            if (revisions.length !== 1 || revisions[0]?.state !== "did_not_go_ahead")
+              wrong.push(`${where}: Mo's revision didn't end did_not_go_ahead`);
+            if (after.rows.get(cell.w.club)?.openRevision !== null)
+              wrong.push(`${where}: the club still has an open revision`);
+            if (after.rows.get(cell.w.club)?.rosterVersion !== (before.rows.get(cell.w.club)?.rosterVersion ?? -1) + 1)
+              wrong.push(`${where}: the club's roster version didn't move by one`);
+          } else {
+            if (outcome === "removed") {
+              repeats += 1;
+              if (said(answer) !== first) wrong.push(`${where}: a repeat got another answer than the first removal`);
+            }
+            if (after.said !== before.said)
+              wrong.push(`${where}: a removal that removed nobody changed the roster's rows`);
+          }
+          // Mo previews the link, judged from the rows after the removal.
+          const previewStep = await cellStep(
+            app,
+            preview,
+            previewExpected(() => ({ schedule: after.schedule, roster: after.roster, now }), token, cell.mo),
+          );
+          const moFacts = await factsOf(clubs, cell.mo, { accounts: [cell.w.dan.user], secrets });
+          scanner(wrong, `${where}, Mo's preview`, () => moFacts, now, counted)(previewStep);
+          const previewed = previewStep.answers[0]?.answer;
+          if (previewed === undefined) throw new Error("a step with no answer");
+          const told = stateOf(previewed);
+          if (after.roster.candidates.get(cell.candidate)?.state === "ended") {
+            if (told !== "did_not_go_ahead") wrong.push(`${where}: Mo, removed, previewed ${told}`);
+          } else waiting.set(told, (waiting.get(told) ?? new Set()).add(`${role.name}, ${state.name}`));
+        }
+      }
+    expect(wrong).toEqual([]);
+    expect(counted.answers).toBe(asked * 2);
+    // Counted by hand from STATES (../matrix.ts): Ana removes Mo in every state but the three where Ana can't, in each
+    // of the star's four phases, the first time in the first phase and the same answer in the three after it.
+    const removable = [
+      "active",
+      "withdrawn",
+      "removed by moderation",
+      "held (T29)",
+      "its day suspended",
+      "its day cancelled",
+      "its author's account being deleted (T27)",
+    ];
+    expect(removed).toEqual(removable.map((state) => ["star", state]));
+    expect(repeats).toBe(removable.length * 3);
+    // Where Ana can't: a suspended club is nothing to remove from (FQ80), Ana gone is no member, and an account whose
+    // deletion has begun has no session (T27).
+    expect(starGot).toEqual([
+      ...removable.slice(0, 5).map((state) => [state, "removed"]),
+      ["its club suspended", `404 ${NEUTRAL.body}`],
+      ["its day cancelled", "removed"],
+      ["its author's account being deleted (T27)", "removed"],
+      ["its star gone before the reveal (FQ63)", `404 ${NEUTRAL.body}`],
+      ["its star's account deletion asked before the reveal (FQ63, T27)", `401 ${UNAUTHENTICATED.body}`],
+    ]);
+    // Where Mo isn't removed, Mo's preview is the roster Mo accepted, waiting for the members, in every world but a
+    // suspended club's, where it is the neutral not-found, as everything of a suspended club is (FQ80). (Where Ana
+    // removes Mo, it is in the first phase, before Mo's first preview.)
+    const worlds = (suspended: boolean) =>
+      ROLES.flatMap((role) =>
+        STATES.filter(
+          (state) =>
+            (state.name === "its club suspended") === suspended &&
+            !(role.name === "star" && removable.includes(state.name)),
+        ).map((state) => `${role.name}, ${state.name}`),
+      );
+    expect([...waiting].map(([told, where]) => [told, [...where]])).toEqual([
+      ["waiting", worlds(false)],
+      [`404 ${NEUTRAL.body}`, worlds(true)],
+    ]);
   });
 });
 

@@ -1,9 +1,9 @@
 /// <reference lib="esnext.temporal" />
 // The roster's rows of the privacy matrix (B1's second slice: `proposeRoster`, `getRosterRevision`,
-// `createInvitation` and `revokeInvitation`; B1's third: `approveRoster` and `declineRoster`; the contract's `RosterRevision`, `InvitationLink` and
-// `RevokedInvitation`; spec 04, 32; T7, T9, T14, T15, T19, T33, T55; handoff 1, handoff 4; FQ60, FQ71, FQ75,
-// FQ77, FQ80, FQ119): what each role must get, judged from the world's rows apart from the statements the
-// routes run.
+// `createInvitation` and `revokeInvitation`; B1's third: `approveRoster` and `declineRoster`; the outside audit's A10:
+// `removeCandidate`; the contract's `RosterRevision`, `InvitationLink`, `RevokedInvitation` and `RemovedCandidate`;
+// spec 04, 32; T7, T9, T14, T15, T19, T33, T55; handoff 1, handoff 4; FQ60, FQ71, FQ75, FQ77, FQ80, FQ119, FQ148):
+// what each role must get, judged from the world's rows apart from the statements the routes run.
 //
 // - Who reads a revision (FQ119's default): an account that is active, with an active interval in a club
 //   that isn't suspended (schedule.ts's `viewerIn`), whose interval is one of the revision's own members.
@@ -20,6 +20,9 @@
 //   club's, then six people to the club's members and open candidates (A01, T6).
 // - Who makes or revokes a link: the member who proposed its candidate, and nobody else, whatever the
 //   link's state (T14): a link an account accepted with can't be revoked or replaced (handoff 4).
+// - Who removes someone invited who hasn't joined (FQ148): the member who proposed them, by the same rule, and
+//   nobody else; a candidate who has joined is a member, so nobody can, and one already ended is answered as
+//   removed again (`candidateRemovalOutcome`).
 // - Who approves or declines: whoever reads the revision, by the same rule, and nobody else. A newer
 //   revision is ROSTER_CHANGED with the newest one's id, another version VERSION_CONFLICT with the
 //   revision's; then a member's own decision is taken once, on an open revision, and any other request is
@@ -44,6 +47,7 @@ export const ROSTER_JUDGED: ReadonlySet<string> = new Set([
   "revokeInvitation",
   "approveRoster",
   "declineRoster",
+  "removeCandidate",
 ]);
 
 /** A club holds at most six people, its candidates still open counted (A01, T6). */
@@ -453,6 +457,38 @@ export function revokeExpected(seen: () => RosterSeen, id: string, account?: str
     const outcome = revokeOutcome(schedule, roster, id, account ?? viewer);
     return outcome === "revoked"
       ? sameAnswer("the revoked link", 200, revokedBody(id))(answer)
+      : pinnedProblems(answer, outcome);
+  };
+}
+
+/**
+ * What a removal of the candidate `id` must get from the rows before it (FQ148): "removed" for the member who proposed
+ * them while they haven't joined, ended already or not, and the neutral not-found for everyone else, for a candidate
+ * who has joined and for an id nobody has (T14).
+ */
+export function candidateRemovalOutcome(
+  world: ScheduleWorld,
+  roster: RosterWorld,
+  id: string,
+  account: string | null,
+): Answer | "removed" {
+  const candidate = roster.candidates.get(id);
+  if (candidate === undefined) return NEUTRAL;
+  const viewer = viewerIn(world, candidate.club, account);
+  if (viewer === undefined || viewer !== candidate.proposer) return NEUTRAL;
+  return candidate.state === "joined" ? NEUTRAL : "removed";
+}
+
+/** The contract's RemovedCandidate for the candidate `id`. */
+export const removedCandidateBody = (id: string): Record<string, unknown> => ({ candidate_id: id, state: "removed" });
+
+/** removeCandidate's answer for the candidate `id` in a cell, asked for by `account` (the cell's viewer when absent). */
+export function candidateRemovalExpected(seen: () => RosterSeen, id: string, account?: string): Expected {
+  return (answer) => {
+    const { schedule, roster, account: viewer } = seen();
+    const outcome = candidateRemovalOutcome(schedule, roster, id, account ?? viewer);
+    return outcome === "removed"
+      ? sameAnswer("the removed candidate", 200, removedCandidateBody(id))(answer)
       : pinnedProblems(answer, outcome);
   };
 }
