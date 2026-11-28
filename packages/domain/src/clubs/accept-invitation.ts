@@ -20,9 +20,11 @@
 // c. Nothing when the account already holds another place in this club's roster, as the preview has it,
 //    whatever revision or version the request names.
 // d. The revision the request names: ROSTER_CHANGED with the newest revision's id when a newer one
-//    replaced it and still lists the candidate, and nothing when it doesn't (a leave ended the candidate
-//    and carried the others on); VERSION_CONFLICT with its version when `expected_version` isn't it, as when it ended or
-//    was applied since the caller read it. A revision that has ended, named at its last version, takes no
+//    replaced it and still lists the candidate; VERSION_CONFLICT with its version when `expected_version` isn't it, as
+//    when it ended or was applied since the caller read it. A replaced revision that no longer lists the candidate (a
+//    leave or a removal ended them and carried the others on: ./leave-club.ts, ./remove-candidate.ts) is answered as
+//    one that didn't go ahead, so the account the candidate's link bound learns only that the roster moved, never
+//    whether the others went on (FQ148). A revision that has ended, named at its last version, takes no
 //    acceptance: the account that joined by it is answered `joined`, which changes nothing; anything else
 //    is nothing.
 // e. CLUB_FULL when the club has six members.
@@ -161,14 +163,17 @@ async function standingOf(tx: QuerySql, input: AcceptInvitationInput, hash: stri
   const label = named["label"];
   if (typeof version !== "number" || typeof label !== "string") throw shape();
   if (state === "superseded") {
-    // Only a candidate the newest revision still lists is told of it: one a leave ended while the others
-    // were carried on (./leave-club.ts) is on no roster of the club now.
+    // Only a candidate the newest revision still lists is told of it. One a leave or a removal ended while the
+    // others were carried on (./leave-club.ts, ./remove-candidate.ts) is on no roster of the club now, and is
+    // answered below as a revision that didn't go ahead is: superseding moved its version, as ending one does, so
+    // the account their link bound can't tell whether the others went on (FQ148).
     const newest = await newestRevision(tx, revisionId);
     const [listed] = await bound(tx)`
       SELECT 1 AS found FROM app.roster_revision_candidates rc
        WHERE rc.revision_id = ${newest} AND rc.candidate_id = ${facts.candidateId}`;
-    if (listed === undefined) return { kind: "nothing" };
-    return { kind: "refused", facts, refusal: new Refused("ROSTER_CHANGED", { current_id: newest }) };
+    if (listed !== undefined) {
+      return { kind: "refused", facts, refusal: new Refused("ROSTER_CHANGED", { current_id: newest }) };
+    }
   }
   if (version !== input.expectedVersion) {
     return { kind: "refused", facts, refusal: new Refused("VERSION_CONFLICT", { current_version: version }) };
