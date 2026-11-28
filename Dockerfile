@@ -5,9 +5,10 @@
 #
 # The base is a tag for the reader and a digest for the build, and the two are changed together (the
 # build uses the digest). It is bumped by hand, in a pull request of its own, when Node's patch moves;
-# its major is .nvmrc's. 26.13.1 is the security release of 10 November 2026. The pnpm version is the root
-# package.json's `packageManager`. Both are checked by tools/ops/src/deploy-files.test.ts. There is no
-# `# syntax=` line: it would pull a floating frontend image at every build, and nothing here needs one.
+# its version is .nvmrc's. 26.13.1 is the security release of 10 November 2026. The pnpm version is the root
+# package.json's `packageManager`, and its tarball the one pnpm-lock.yaml pins. All three are checked by
+# tools/ops/src/deploy-files.test.ts. There is no `# syntax=` line: it would pull a floating frontend image at every
+# build, and nothing here needs one.
 #
 # The image starts as root only to drop (docs/plans/api-b2-worker-hardening.md section 2; ADR-038): it has no `USER`,
 # and each process group's command in fly.toml begins with `setpriv` (the worker's after `prlimit`, which sets its
@@ -25,8 +26,13 @@ ARG NODE_IMAGE=node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840ed
 
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
-# Node 26 ships no corepack, so pnpm comes from npm, at the version the repository pins.
-RUN npm install --global pnpm@12.16.1
+# Node 26 ships no corepack, so pnpm comes from npm, at the version the repository pins, and only once its tarball is
+# the one pnpm-lock.yaml pins (its `pnpm@12.16.1` integrity, here in hexadecimal): what the registry serves is checked
+# against the repository, not against the registry's own word (the outside audit's B6).
+RUN npm pack --silent pnpm@12.16.1 > /dev/null \
+    && echo "091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1  pnpm-12.16.1.tgz" | sha512sum --check --strict --quiet \
+    && npm install --global ./pnpm-12.16.1.tgz \
+    && rm pnpm-12.16.1.tgz
 # pnpm reads every workspace package's manifest before it installs any of them.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/

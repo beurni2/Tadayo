@@ -115,22 +115,42 @@ const NODE = "node --disable-sigusr1";
 // ---- The Dockerfile.
 
 describe("Dockerfile", () => {
-  it("has one base, pinned by digest, at the Node major .nvmrc names, for both stages", () => {
+  it("has one base, pinned by digest, at the Node version .nvmrc names, for both stages", () => {
     const [arg] = dockerfile().filter((instruction) => instruction.name === "ARG");
     expect(arg?.args).toMatch(/^NODE_IMAGE=node:\d+\.\d+\.\d+-[a-z0-9-]+@sha256:[0-9a-f]{64}$/);
-    const major = /^NODE_IMAGE=node:(\d+)\./.exec(arg?.args ?? "")?.[1];
-    expect(major).toBe(read(".nvmrc").trim());
+    const version = /^NODE_IMAGE=node:(\d+\.\d+\.\d+)-/.exec(arg?.args ?? "")?.[1];
+    // A whole version, so `ci`'s Node is the image's and moves only in a commit (the outside audit's B6).
+    expect(read(".nvmrc")).toMatch(/^\d+\.\d+\.\d+\n$/);
+    expect(version).toBe(read(".nvmrc").trim());
     const stages = dockerfile().filter((instruction) => instruction.name === "FROM");
     expect(stages.map((stage) => stage.args.split(/\s+/)[0])).toEqual(["${NODE_IMAGE}", "${NODE_IMAGE}"]);
   });
 
-  it("installs the pnpm the repository pins", () => {
+  it("installs the pnpm the repository pins, from the tarball the lockfile pins and nothing else", () => {
     const manifest = table(JSON.parse(read("package.json")), "package.json");
-    const pinned = /^pnpm@(\d+\.\d+\.\d+)/.exec(String(manifest["packageManager"]))?.[1];
-    const install = dockerfile().find(
-      (instruction) => instruction.name === "RUN" && instruction.args.includes("npm install"),
+    const pinned = /^pnpm@(\d+\.\d+\.\d+)$/.exec(String(manifest["packageManager"]))?.[1];
+    expect(pinned).toBeDefined();
+    const version = String(pinned);
+    // The lockfile's own record of pnpm (`packageManagerDependencies`), its integrity in base64, as hexadecimal.
+    const escaped = version.replaceAll(".", "\\.");
+    const locked = new RegExp(
+      `^  pnpm@${escaped}:\\n    resolution: \\{integrity: sha512-([A-Za-z0-9+/=]+)\\}`,
+      "m",
+    ).exec(read("pnpm-lock.yaml"))?.[1];
+    expect(locked).toBeDefined();
+    const hex = Buffer.from(String(locked), "base64").toString("hex");
+    expect(hex).toMatch(/^[0-9a-f]{128}$/);
+    const installs = dockerfile().filter(
+      (instruction) => instruction.name === "RUN" && /\bnpm (?:install|i|add|pack)\b/.test(instruction.args),
     );
-    expect(install?.args).toBe(`npm install --global pnpm@${String(pinned)}`);
+    // The parser joins words with one space; sha512sum --strict wants the file's two-space form, kept in the text.
+    expect(read("Dockerfile")).toContain(`echo "${hex}  pnpm-${version}.tgz" | sha512sum`);
+    expect(installs.map((instruction) => instruction.args)).toEqual([
+      `npm pack --silent pnpm@${version} > /dev/null ` +
+        `&& echo "${hex} pnpm-${version}.tgz" | sha512sum --check --strict --quiet ` +
+        `&& npm install --global ./pnpm-${version}.tgz ` +
+        `&& rm pnpm-${version}.tgz`,
+    ]);
   });
 
   it("installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile", () => {
