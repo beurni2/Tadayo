@@ -8,7 +8,9 @@ tools-tests' tests run real git and Python in scratch repositories, and one test
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
+import base64
 import contextlib
+import hashlib
 import io
 import json
 import os
@@ -61,11 +63,49 @@ class FakeShell:
         return self.outputs.get(cmd[0], (0, ""))
 
 
+# Stand-ins for pnpm's two tarballs, and a lockfile that pins them as pnpm 12 does: pnpm's own
+# document first (`packageManagerDependencies`), the project's second.
+TARBALLS = {"pnpm-12.16.1.tgz": b"the wrapper\n", "pnpm-exe.linux-x64-12.16.1.tgz": b"the binary\n"}
+
+
+def sri(data):
+    return "sha512-" + base64.b64encode(hashlib.sha512(data).digest()).decode()
+
+
+def lockfile(wrapper=TARBALLS["pnpm-12.16.1.tgz"], binary=TARBALLS["pnpm-exe.linux-x64-12.16.1.tgz"]):
+    return ("---\nlockfileVersion: '9.0'\n\nimporters:\n\n  .:\n    packageManagerDependencies:\n"
+            "      pnpm:\n        specifier: 12.16.1\n        version: 12.16.1\n\npackages:\n\n"
+            f"  '@pnpm/exe.linux-x64@12.16.1':\n    resolution: {{integrity: {sri(binary)}}}\n"
+            "    cpu: [x64]\n    os: [linux]\n\n"
+            f"  pnpm@12.16.1:\n    resolution: {{integrity: {sri(wrapper)}}}\n    hasBin: true\n\n"
+            "snapshots:\n\n  '@pnpm/exe.linux-x64@12.16.1': {}\n\n  pnpm@12.16.1: {}\n\n"
+            "---\nlockfileVersion: '9.0'\n\nimporters:\n\n  .: {}\n")
+
+
+class PackingShell(FakeShell):
+    """A fake shell whose `npm pack` writes the stand-in tarballs into its --pack-destination."""
+
+    def __init__(self, tarballs=None, **kwargs):
+        super().__init__(**kwargs)
+        self.tarballs = TARBALLS if tarballs is None else tarballs
+        self.folder = None
+
+    def run(self, cmd, env=None):
+        code = super().run(cmd, env)
+        if cmd[:2] == ["npm", "pack"] and code == 0:
+            self.folder = cmd[cmd.index("--pack-destination") + 1]
+            for name, data in self.tarballs.items():
+                with open(os.path.join(self.folder, name), "wb") as f:
+                    f.write(data)
+        return code
+
+
 class Repo:
     def __init__(self, parent=None):
         self.top = tempfile.mkdtemp(prefix="ci-steps-")
         self.root = os.path.join(self.top, parent) if parent else self.top
         self.write("package.json", json.dumps({"packageManager": "pnpm@12.16.1"}))
+        self.write("pnpm-lock.yaml", lockfile())
         self.write("pnpm-workspace.yaml", WORKSPACE)
         for directory in ["apps/web", "packages/domain", "packages/contracts", "services/api",
                           "tests"]:
@@ -479,21 +519,107 @@ class RootStepsTest(StepsTest):
         self.step("install")
         self.assertEqual(self.shell.commands, [["pnpm", "install", "--frozen-lockfile"]])
 
-    def test_setup_pnpm_installs_the_named_version(self):
-        self.step("setup-pnpm")
-        self.assertEqual(self.shell.commands, [["npm", "install", "--global", "pnpm@12.16.1"]])
+    def setup_pnpm(self, shell=None):
+        shell = shell or PackingShell()
+        with mock.patch("platform.system", return_value="Linux"), \
+                mock.patch("platform.machine", return_value="x86_64"):
+            code, out = self.step("setup-pnpm", shell=shell)
+        return code, out, shell
+
+    def assertPacked(self, shell):
+        self.assertEqual(shell.commands[0], ["npm", "pack", "--loglevel=error", "--pack-destination",
+                                             shell.folder, "pnpm@12.16.1", "@pnpm/exe.linux-x64@12.16.1"])
+
+    def test_setup_pnpm_installs_both_tarballs_offline_once_checked(self):
+        code, out, shell = self.setup_pnpm()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(shell.commands), 2)
+        self.assertPacked(shell)
+        self.assertEqual(shell.commands[1], [
+            "npm", "install", "--global", "--offline",
+            os.path.join(shell.folder, "pnpm-12.16.1.tgz"),
+            os.path.join(shell.folder, "pnpm-exe.linux-x64-12.16.1.tgz")])
+        self.assertFalse(os.path.exists(shell.folder))  # removed after the install
 
     def test_setup_pnpm_accepts_a_hash(self):
         self.repo.write("package.json", json.dumps({"packageManager": "pnpm@12.16.1+sha512.abc123"}))
-        self.step("setup-pnpm")
-        self.assertEqual(self.shell.commands, [["npm", "install", "--global", "pnpm@12.16.1"]])
+        code, out, shell = self.setup_pnpm()
+        self.assertEqual(code, 0, out)
+        self.assertPacked(shell)
 
     def test_setup_pnpm_refuses_anything_else(self):
         for manager in ["", "pnpm@latest", "yarn@4.0.0", "pnpm@1.2.3; curl x", "pnpm@12"]:
             with self.subTest(manager=manager):
                 self.repo.write("package.json", json.dumps({"packageManager": manager}))
-                shell = FakeShell()
-                self.assertEqual(self.step("setup-pnpm", shell=shell)[0], 1)
+                code, _, shell = self.setup_pnpm()
+                self.assertEqual(code, 1)
+                self.assertEqual(shell.commands, [])
+
+    def test_setup_pnpm_refuses_a_tarball_the_lockfile_doesnt_pin(self):
+        for name in TARBALLS:
+            with self.subTest(tarball=name):
+                code, out, shell = self.setup_pnpm(PackingShell(dict(TARBALLS, **{name: b"other\n"})))
+                self.assertEqual(code, 1)
+                self.assertIn("isn't the one pnpm-lock.yaml pins", out)
+                self.assertPacked(shell)
+                self.assertEqual(len(shell.commands), 1)  # nothing installed
+                self.assertFalse(os.path.exists(shell.folder))
+
+    def test_setup_pnpm_refuses_a_tarball_npm_pack_didnt_write(self):
+        for name in TARBALLS:
+            with self.subTest(tarball=name):
+                left = {other: data for other, data in TARBALLS.items() if other != name}
+                code, out, shell = self.setup_pnpm(PackingShell(left))
+                self.assertEqual(code, 1)
+                self.assertIn(f"npm pack wrote no {name}", out)
+                self.assertEqual(len(shell.commands), 1)
+
+    def test_setup_pnpm_stops_when_npm_pack_fails(self):
+        code, _, shell = self.setup_pnpm(PackingShell(codes={"@pnpm/exe.linux-x64@12.16.1": 3}))
+        self.assertEqual(code, 3)
+        self.assertEqual(len(shell.commands), 1)
+
+    def test_setup_pnpm_needs_each_integrity_once_in_pnpm_s_own_document(self):
+        whole = lockfile()
+        pnpm_document, rest = whole.split("\n---\n")
+        cases = {
+            "no wrapper": whole.replace("  pnpm@12.16.1:\n    resolution", "  pnpm@12.16.0:\n    resolution"),
+            "no binary": whole.replace("'@pnpm/exe.linux-x64@12.16.1':\n    resolution",
+                                       "'@pnpm/exe.linux-arm64@12.16.1':\n    resolution"),
+            "a sha1 integrity": whole.replace(sri(TARBALLS["pnpm-12.16.1.tgz"]), "sha1-AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+            "recorded twice": whole.replace("snapshots:", "  pnpm@12.16.1:\n    resolution: {integrity: "
+                                            + sri(TARBALLS["pnpm-12.16.1.tgz"]) + "}\n\nsnapshots:"),
+            "only in the project's document": pnpm_document.replace("  pnpm@12.16.1:\n    resolution",
+                                                                    "  pnpm@12.16.0:\n    resolution")
+            + "\n---\n" + rest + "\npackages:\n\n  pnpm@12.16.1:\n    resolution: {integrity: "
+            + sri(TARBALLS["pnpm-12.16.1.tgz"]) + "}\n",
+        }
+        for name, text in cases.items():
+            with self.subTest(case=name):
+                self.repo.write("pnpm-lock.yaml", text)
+                code, out, shell = self.setup_pnpm()
+                self.assertEqual(code, 1, out)
+                self.assertIn("must record", out)
+                self.assertEqual(shell.commands, [])
+
+    def test_the_repository_s_lockfile_pins_both_tarballs_of_its_pnpm(self):
+        root = os.path.join(HERE, "..", "..")
+        with open(os.path.join(root, "package.json"), encoding="utf-8") as f:
+            version = ci_steps.PACKAGE_MANAGER.match(json.load(f)["packageManager"]).group(1)
+        with open(os.path.join(root, "pnpm-lock.yaml"), encoding="utf-8") as f:
+            digests = ci_steps.pnpm_digests(f.read(), version)
+        self.assertEqual(sorted(digests), sorted(ci_steps.PNPM_PACKAGES))
+        self.assertTrue(all(len(digest) == 64 for digest in digests.values()))
+
+    def test_setup_pnpm_runs_on_x86_64_linux_alone(self):
+        for system, machine in [("Linux", "aarch64"), ("Darwin", "x86_64"), ("Darwin", "arm64")]:
+            with self.subTest(platform=(system, machine)):
+                shell = PackingShell()
+                with mock.patch("platform.system", return_value=system), \
+                        mock.patch("platform.machine", return_value=machine):
+                    code, out = self.step("setup-pnpm", shell=shell)
+                self.assertEqual(code, 1)
+                self.assertIn("x86-64 Linux only", out)
                 self.assertEqual(shell.commands, [])
 
 
