@@ -156,13 +156,21 @@ describe("Dockerfile", () => {
       (instruction) =>
         instruction.name === "RUN" && /\b(?:npm|npx|corepack|pnpm|pnpx|pnx|pn|yarn)\b/.test(instruction.args),
     );
-    expect(tools.map((instruction) => instruction.args)).toEqual([
+    const expected = [
       `npm pack --silent pnpm@${version} @pnpm/exe.linux-x64@${version} > /dev/null ` +
         `&& printf '%s\\n' "${wrapper} ${wrapperFile}" "${binary} ${binaryFile}" | sha512sum --check --strict --quiet ` +
         `&& npm install --global --offline ./${wrapperFile} ./${binaryFile} ` +
         `&& rm ${wrapperFile} ${binaryFile}`,
       expect.stringMatching(/^pnpm install --frozen-lockfile --prod(?: --filter "@tadayo\/[a-z]+\.\.\.")+$/),
-    ]);
+    ];
+    expect(tools.map((instruction) => instruction.args)).toEqual(expected);
+    // And the deps stage runs those two and nothing else, whatever tool another `RUN` would name (`node -e`, `curl`, a
+    // variable); the runtime stage's two are pinned by the photo user's test, and no `ADD` by the secrets test, so every
+    // command the image runs is one of the four (round 2 of PR #154's review, finding 4).
+    const deps = stages()[0] ?? [];
+    expect(deps.filter((instruction) => instruction.name === "RUN").map((instruction) => instruction.args)).toEqual(
+      expected,
+    );
   });
 
   it("installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile", () => {

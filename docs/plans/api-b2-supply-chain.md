@@ -99,6 +99,14 @@ wrapper's `pnpm` the same file (inode) as the checked binary's; the binary's has
 1; the wrapper's tarball installed alone with `--offline` and an empty cache fails, so the binary can't come from
 anywhere but the checked file.
 
+Round 2, the third commit, each planted alone and run against `deploy-files.test.ts`, each missed by the second
+commit's test, which looked only at `RUN`s naming a package tool:
+- K12. `RUN node -e "fetch('https://example.com/x')"` in the `deps` stage.
+- K13. `ARG T=npm` and `RUN $T i some-tool` in the `deps` stage.
+- K14. `RUN curl -fsSL https://example.com/i.sh | sh` in the `deps` stage.
+- K15, a control. `RUN node -e …` in the runtime stage, caught already by the photo user's test, which pins that stage's
+  two `RUN`s.
+
 ## 4. Records
 
 The journal (entry, block 1.2, table 4.1, the T58 row), `docs/PROGRESS.md`, `docs/LIMITATIONS.md`'s row of
@@ -123,3 +131,21 @@ second commit:
 5. **Nit, fixed in the records.** `setup-node` with `26` takes a Node 26 from the runner's tool cache before the newest,
    so `ci` could run a newer Node 26 than the image's, not always the newest.
 
+Round 2, one fresh subagent at `a803ad2` (the last round for a lower-risk PR). No blocker; each finding fixed or
+answered in the third commit:
+1. **Should-fix, fixed.** The records said nothing of `main` at `717bf4b` (#153) merged in as `a803ad2`, and still
+   asked for `ci` on the second commit `ad15d3d`, whose run that push cancelled (run 46112237686). The api block, step
+   11 (z) and `docs/PROGRESS.md` now say so and ask for `ci` on the third commit.
+2. **Nit, fixed in the third commit's entry.** The second commit's entry left "npm 26.13.1's handling of the install
+   scripts" unverified, and misnamed it: Node 26.13.1 ships npm 11.20.0 (nodejs.org/dist/index.json), the session's
+   own npm, and `ci`'s node job at `a803ad2` logged "Resolved .nvmrc as 26.13.1", `node: v26.13.1`, and the same
+   allowScripts notice, so the scripts run there as here.
+3. **Nit, answered.** The second commit's entry said `--offline` makes "a missing binary fail the build". That holds
+   while npm runs the install scripts: were they skipped, the wrapper's `bin/pnpm.mjs` would look for the binary
+   installed beside it, and download one only if none were there. Here the binary is one of the two files npm is told
+   to install, so it is there (the reviewer ran it with `--ignore-scripts` and dead proxies: `pnpm --version` gave
+   12.16.1 and nothing was fetched), and on any other platform npm refuses that file (`EBADPLATFORM`). The claim is
+   corrected in the third commit's entry; the log is append-only.
+4. **Nit, fixed.** The test pinned only the `RUN`s naming a package tool, so `node -e`, `curl` or a variable could
+   still fetch in the `deps` stage. It now also pins that stage's `RUN`s to the same two; the runtime stage's two were
+   pinned already, and `ADD` refused, so every command the image runs is one of four (K12 to K15).
