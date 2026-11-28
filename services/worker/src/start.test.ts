@@ -4,7 +4,7 @@
 // database URL's password or Storage's key.
 
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -59,6 +59,8 @@ const SUPABASE = {
 };
 /** The photo safety provider, as fly.toml names it for dev (FQ8; the outside audit's B7). */
 const SAFETY = { TADAYO_SAFETY_PROVIDER: "none" };
+/** Whether the worker sends the reveal push, as fly.toml says for dev until the spike's run (./push.ts). */
+const PUSH = { TADAYO_PUSH: "none" };
 
 // Each test starts the entry as a process, some of them several times, and each start is given 20 seconds
 // before it is killed (`run`); vitest's default of 5 seconds for a whole test is less than a few slow starts
@@ -70,6 +72,7 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
         DATABASE_URL: NOWHERE,
         ...SUPABASE,
         ...SAFETY,
+        ...PUSH,
         ...(environment === undefined ? {} : { TADAYO_ENVIRONMENT: environment }),
       });
       expect(result.code, String(environment)).toBe(1);
@@ -123,6 +126,91 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
     }
   });
 
+  it("stops before it connects when TADAYO_PUSH is missing, empty or neither none nor apns, echoing none", async () => {
+    // Each environment says whether its worker sends the reveal push (./push.ts): none of these does, and the database's
+    // URL leads nowhere, so a worker that took any of them would fail later and say something else.
+    const marker = `marker${randomBytes(8).toString("hex")}`;
+    for (const [setting, said] of [
+      [
+        {},
+        /^worker: TADAYO_PUSH isn't set: each environment says whether its worker sends the reveal push \(none or apns\)\n$/,
+      ],
+      [{ TADAYO_PUSH: "" }, /^worker: TADAYO_PUSH isn't set/],
+      [{ TADAYO_PUSH: "None" }, /^worker: TADAYO_PUSH is none or apns\n$/],
+      [{ TADAYO_PUSH: "apns " }, /^worker: TADAYO_PUSH is none or apns\n$/],
+      [{ TADAYO_PUSH: marker }, /^worker: TADAYO_PUSH is none or apns\n$/],
+    ] as const) {
+      const result = await run({
+        DATABASE_URL: NOWHERE,
+        TADAYO_ENVIRONMENT: "prod",
+        ...SUPABASE,
+        ...SAFETY,
+        ...setting,
+      });
+      expect(result.code, JSON.stringify(setting)).toBe(1);
+      expect(result.stderr, JSON.stringify(setting)).toMatch(said);
+      expect(result.stdout + result.stderr).not.toContain(marker);
+      expect(result.stdout).not.toMatch(/started/);
+    }
+  });
+
+  it("with TADAYO_PUSH apns, stops before it connects when the APNs key's settings are missing or aren't Apple's, echoing none", async () => {
+    // The founder's key (./apns.ts, apnsKeyFrom): a key id and a team id of ten capitals and digits, and a P-256 key in
+    // PEM. Each case below gets one of the three wrong; the marker is in each wrong value, and nothing may repeat it.
+    const marker = `marker${randomBytes(8).toString("hex")}`;
+    const ec = generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey.export({ type: "pkcs8", format: "pem" });
+    const rsa = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ type: "pkcs8", format: "pem" });
+    const key = { APNS_KEY_ID: "ABCDE12345", APPLE_TEAM_ID: "TEAM123456", APNS_KEY_P8: ec };
+    for (const [settings, said] of [
+      [
+        { ...key, APNS_KEY_ID: undefined },
+        /^worker: APNS_KEY_ID isn't set as Apple gives it, ten letters and digits\n$/,
+      ],
+      [{ ...key, APNS_KEY_ID: marker }, /^worker: APNS_KEY_ID isn't set as Apple gives it/],
+      [
+        { ...key, APPLE_TEAM_ID: undefined },
+        /^worker: APPLE_TEAM_ID isn't set as Apple gives it, ten letters and digits\n$/,
+      ],
+      [{ ...key, APPLE_TEAM_ID: `${marker}X` }, /^worker: APPLE_TEAM_ID isn't set as Apple gives it/],
+      [{ ...key, APNS_KEY_P8: undefined }, /^worker: APNS_KEY_P8 isn't set\n$/],
+      [
+        { ...key, APNS_KEY_P8: `-----BEGIN PRIVATE KEY-----\n${marker}\n-----END PRIVATE KEY-----\n` },
+        /^worker: APNS_KEY_P8 isn't a private key in PEM\n$/,
+      ],
+      [{ ...key, APNS_KEY_P8: rsa }, /^worker: APNS_KEY_P8 isn't an ES256 key, a P-256 curve's, as Apple's are\n$/],
+    ] as const) {
+      const given = Object.fromEntries(
+        Object.entries(settings).filter((entry): entry is [string, string] => entry[1] !== undefined),
+      );
+      const result = await run({
+        DATABASE_URL: NOWHERE,
+        TADAYO_ENVIRONMENT: "prod",
+        ...SUPABASE,
+        ...SAFETY,
+        TADAYO_PUSH: "apns",
+        ...given,
+      });
+      expect(result.code, String(said)).toBe(1);
+      expect(result.stderr, String(said)).toMatch(said);
+      expect(result.stdout + result.stderr).not.toContain(marker);
+      expect(result.stdout + result.stderr).not.toContain("PRIVATE KEY");
+      expect(result.stdout).not.toMatch(/started/);
+    }
+    // With the key whole, it goes on to the database, which isn't there, and still says nothing of the key.
+    const result = await run({
+      DATABASE_URL: NOWHERE,
+      TADAYO_ENVIRONMENT: "prod",
+      ...SUPABASE,
+      ...SAFETY,
+      TADAYO_PUSH: "apns",
+      ...key,
+    });
+    expect(result.code).toBe(1);
+    expect(result.stderr).not.toMatch(/APNS|APPLE|TADAYO_PUSH/);
+    expect(result.stdout + result.stderr).not.toContain("PRIVATE KEY");
+    expect(result.stdout).not.toMatch(/started/);
+  });
+
   it("stops before it connects when TADAYO_PHOTO_USER is set but it wasn't started as root with its own user effective", async () => {
     // This process is root (the session) or the runner's user (CI): neither is the start fly.toml gives the worker.
     const result = await run({
@@ -161,7 +249,7 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
       `postgres://tadayo_app:${marker}@[::1/tadayo`,
       `postgres://tadayo_app:${marker}@127.0.0.1:1/tadayo`,
     ]) {
-      const result = await run({ DATABASE_URL: url, TADAYO_ENVIRONMENT: "prod", ...SUPABASE, ...SAFETY });
+      const result = await run({ DATABASE_URL: url, TADAYO_ENVIRONMENT: "prod", ...SUPABASE, ...SAFETY, ...PUSH });
       expect(result.code, url).toBe(1);
       expect(result.stderr, url).not.toBe("");
       expect(result.stdout + result.stderr, url).not.toContain(marker);

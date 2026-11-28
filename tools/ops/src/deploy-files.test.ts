@@ -367,6 +367,7 @@ const ENV_NAMES = [
   "SUPABASE_PUBLISHABLE_KEY",
   "LOG_LEVEL",
   "TADAYO_SAFETY_PROVIDER",
+  "TADAYO_PUSH",
 ];
 
 describe("fly.toml", () => {
@@ -483,6 +484,10 @@ describe("fly.toml", () => {
     expect(env["TADAYO_SAFETY_PROVIDER"]).toBe("none");
     // Named by each environment's configuration alone: the image names none, so `prod`'s must name its own.
     expect(read("Dockerfile")).not.toContain("TADAYO_SAFETY_PROVIDER");
+    // The reveal push stays off on dev until the founder's yes to spike S4's run, which flips it to `apns` in a PR of
+    // its own (services/worker/src/push.ts; docs/plans/api-b2-spike-push.md, section 3); the image names neither.
+    expect(env["TADAYO_PUSH"]).toBe("none");
+    expect(read("Dockerfile")).not.toContain("TADAYO_PUSH");
     // The same project the app signs in to (apps/ios/project.yml, Dev), by the verifier's own rule for its URL.
     const dev = /^ {4}Dev:\n(?: {6}.*\n)+/m.exec(read("apps/ios/project.yml"))?.[0] ?? "";
     expect(projectUrl(String(env["SUPABASE_URL"]))).toBe(String(env["SUPABASE_URL"]));

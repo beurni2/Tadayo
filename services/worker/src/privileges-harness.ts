@@ -805,6 +805,7 @@ say({
         TADAYO_ENVIRONMENT: "dev",
         TADAYO_PHOTO_USER: "harness-photo",
         TADAYO_SAFETY_PROVIDER: "none",
+        TADAYO_PUSH: "none",
       },
       () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
     );
@@ -885,6 +886,7 @@ say({
         TADAYO_ENVIRONMENT: "dev",
         TADAYO_PHOTO_USER: "harness-photo",
         TADAYO_SAFETY_PROVIDER: "none",
+        TADAYO_PUSH: "none",
       },
       () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
     );

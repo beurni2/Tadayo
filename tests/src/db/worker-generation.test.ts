@@ -211,6 +211,7 @@ describe("the worker's process (T1)", () => {
           SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co",
           SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
           TADAYO_SAFETY_PROVIDER: "none",
+          TADAYO_PUSH: "none",
         },
       });
       let stdout = "";
@@ -223,7 +224,7 @@ describe("the worker's process (T1)", () => {
           await new Promise((resolve) => setTimeout(resolve, 50));
         }
         expect(stdout, stderr).toMatch(
-          /^worker: started, making days every minute and preparing uploads, each photo in the worker's own user, screened by no safety provider \(FQ8\)\nworker: made \d+ days?\n$/,
+          /^worker: started, making days every minute and preparing uploads, each photo in the worker's own user, screened by no safety provider \(FQ8\), with no reveal push \(TADAYO_PUSH is none\)\nworker: made \d+ days?\n$/,
         );
       } finally {
         child.kill("SIGTERM");

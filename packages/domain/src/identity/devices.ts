@@ -253,3 +253,79 @@ export async function removeDevice(
   await endSignIn(tx, signIn, now);
   return removed.length > 0 ? "removed" : "none";
 }
+
+/**
+ * Deletes the registration of the sign-in `signIn` (its hash, as hex) of the account `userId` if it still holds `token`,
+ * which APNs said is dead (the reveal push's answer; docs/plans/api-b2-spike-push.md, section 2.3): whether it did. The
+ * sign-in isn't ended, so the app's next registration, with the new token iOS gives it, is taken. The locks are 0017's
+ * order: the sign-in's, then the account's row, then the registration, whose deliveries the foreign key then sets null.
+ */
+export async function forgetDeadToken(tx: QuerySql, userId: string, signIn: string, token: string): Promise<boolean> {
+  if (typeof userId !== "string" || !ID.test(userId)) {
+    throw new InputFault("devices_7", "devices: the account id is an app.id");
+  }
+  if (typeof signIn !== "string" || !/^[0-9a-f]{64}$/.test(signIn)) {
+    throw new InputFault("devices_8", "devices: a sign-in is a SHA-256 hash, as hex");
+  }
+  const dead = apnsTokenOf(token);
+  await lock(tx, signInLock(signIn));
+  await bound(tx)`SELECT 1 FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;
+  const deleted = await bound(tx)`
+    DELETE FROM app.device_registrations
+     WHERE sign_in = pg_catalog.decode(${signIn}, 'hex') AND user_id = ${userId} AND apns_token = ${dead}
+    RETURNING 1 AS deleted`;
+  return deleted.length > 0;
+}
+
+/** A registration as the reveal push's plan reads it: whose, the sign-in's hash, and the device's zone. */
+export interface PlannedDevice {
+  readonly userId: string;
+  readonly signIn: Uint8Array;
+  readonly timezone: string;
+}
+
+/**
+ * The registrations of the accounts `userIds`, for the reveal push's plan (docs/plans/api-b2-spike-push.md, section
+ * 2.1), locked in 0017's order: each sign-in's lock, in the hashes' order, then the accounts' rows `FOR KEY SHARE`, in
+ * the "C" order of their ids, then the registrations `FOR KEY SHARE`, so a registration, a removal or a move of any of
+ * them waits for the plan or the plan for it, and neither deadlocks the other. A registration made after the first
+ * read, which takes no lock, is left out, as one made just after the plan would be; one deleted while the plan waited
+ * is left out too. In the sign-ins' order.
+ */
+export async function lockDevicesOf(tx: QuerySql, userIds: readonly string[]): Promise<PlannedDevice[]> {
+  for (const userId of userIds) {
+    if (typeof userId !== "string" || !ID.test(userId)) {
+      throw new InputFault("devices_9", "devices: the account id is an app.id");
+    }
+  }
+  const users = [...new Set(userIds)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const seen: { signIn: string; userId: string }[] = [];
+  for (const userId of users) {
+    const rows = await bound(tx)`
+      SELECT pg_catalog.encode(sign_in, 'hex') AS sign_in FROM app.device_registrations WHERE user_id = ${userId}`;
+    for (const row of rows) {
+      const signIn = row["sign_in"];
+      if (typeof signIn !== "string" || !/^[0-9a-f]{64}$/.test(signIn)) {
+        throw new Fault("devices_10", "devices: a sign-in came back in a shape the schema doesn't allow");
+      }
+      seen.push({ signIn, userId });
+    }
+  }
+  seen.sort((a, b) => (a.signIn < b.signIn ? -1 : a.signIn > b.signIn ? 1 : 0));
+  for (const one of seen) await lock(tx, signInLock(one.signIn));
+  for (const userId of users) await bound(tx)`SELECT 1 FROM app.users WHERE id = ${userId} FOR KEY SHARE`;
+  const devices: PlannedDevice[] = [];
+  for (const one of seen) {
+    const [row] = await bound(tx)`
+      SELECT sign_in, timezone FROM app.device_registrations
+       WHERE sign_in = pg_catalog.decode(${one.signIn}, 'hex') AND user_id = ${one.userId} FOR KEY SHARE`;
+    if (row === undefined) continue;
+    const signIn = row["sign_in"];
+    const timezone = row["timezone"];
+    if (!(signIn instanceof Uint8Array) || typeof timezone !== "string") {
+      throw new Fault("devices_11", "devices: a registration came back in a shape the schema doesn't allow");
+    }
+    devices.push({ userId: one.userId, signIn, timezone });
+  }
+  return devices;
+}

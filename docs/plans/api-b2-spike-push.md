@@ -111,8 +111,12 @@ of its reach: it names one sign-in by its hash.
 ### 1.5 Account deletion and suspended pushes
 
 A deletion's rows: `user_id` references `app.users` with `ON DELETE CASCADE`, and the push's dispatch reads the
-account's state (section 2.3), so a `deleting` account gets no push from the moment its deletion begins (T27). The
-removal of a deleting account's registrations is B8's account-deletion job; until it runs, the rows send nothing.
+account's state (section 2.3), so a `deleting` account gets no push decided once its deletion has begun (T27). A push
+decided just before can still go in the seconds until Apple answers, since the send reads no account state (PR #159's
+second review, R2-4). So B8's deletion removes the account's registrations in the transaction that sets `deleting`:
+each removal's foreign key then waits for a send in flight to that registration, as a logout's does (section 2.3),
+and no send finds one after it, so no push goes to Apple once the deletion has begun. Until B8 is built, `deleting`
+is set by nothing but the tests.
 
 ### 1.6 Tests first
 
@@ -137,13 +141,41 @@ removal of a deleting account's registrations is B8's account-deletion job; unti
 ### 2.1 When a day's push is made
 
 A day opens at its `reveal_at` (07:00 in the club's zone) by the server's clock alone (T1, T5): nothing is written
-then. The worker's loop (`services/worker/src/loop.ts`) gains a pass, after generation, that finds each day whose
-`reveal_at` has passed by the clock's sample and whose `close_at` hasn't, and whose pushes haven't been planned: one
-row per recipient and device in `app.push_deliveries` (migration `0018_push_deliveries.sql`), unique on the day, the
-account and the sign-in, so a pass that runs twice plans once (Q17). The dev clock moves the sample (S5), so a dev
-run reaches 07:00 and 08:00 when the founder asks. A row names a sign-in only while its registration lives: a
-removal, a move, a dead token or an account's deletion clears that sign-in from its rows in the same transaction, so
-nothing kept joins an ended sign-in, whose row holds no account, to an account ((b); PR #120's privacy review, P6).
+then. The worker's minute (`services/worker/src/main.ts`, the loop of `loop.ts` that runs generation) gains the
+push's part after generation (`pushMinute` in `services/worker/src/push.ts`): the purge, then, when `TADAYO_PUSH` is
+`apns`, the plan and the dispatch (2.3), each in a try of its own, so none of them stops another or the days (as built,
+after the first review's D5 and P2: the first draft purged only with `apns`, inside the pass). The plan finds each day
+whose `reveal_at` has passed by the clock's sample, whose `close_at` hasn't, and which has no row in `app.push_days`
+(migration `0021_push.sql`), and in one transaction per day writes that row and one row per recipient and
+registration in `app.push_deliveries`. A second pass, or a second worker, finds the day's row and plans nothing
+(Q17): the insert of `push_days` is `ON CONFLICT DO NOTHING`, so a plan that waits on another's uncommitted row
+plans nothing once that one commits. The dev clock moves the sample (S5), so a dev run reaches 07:00 and 08:00 when
+the founder asks.
+
+As built, a day is planned once, at the first pass that sees it open, even when nobody reads a drop of it then: its
+`push_days` row is written with no delivery. So a day nobody could read at the reveal (a club suspended then, or every
+drop withdrawn and a new one added later) gets no push when it becomes readable before its close. The day still opens
+in the app; the push says only that it is ready (`docs/LIMITATIONS.md`, 2026-11-28).
+
+A row names a sign-in only while its registration lives: `push_deliveries.sign_in` references
+`app.device_registrations` `ON DELETE SET NULL`, so a removal, a move, a dead token or an account's deletion clears
+that sign-in from its rows in the transaction that deletes the registration, and nothing kept joins an ended sign-in,
+whose row holds no account, to an account ((b); PR #120's privacy review, P6). The token itself stays in
+`device_registrations` alone (0017): a delivery reads it from there when it is sent, so a sign-in whose token iOS
+replaced is sent to at its new token, the same app on the same device. The plan takes its readers' registrations in
+0017's order (`lockDevicesOf`, `packages/domain/src/identity/devices.ts`): the sign-ins' advisory locks in their
+hashes' order, then the accounts' rows `FOR KEY SHARE` in their ids' order, then each registration `FOR KEY SHARE`. So
+a registration, a removal or a move of one of them waits for the plan, or the plan for it, and none deadlocks it, and a
+registration deleted while the plan waited is left out instead of failing the delivery's foreign key (as built, after
+the first review's D3 and D4: the first draft locked the registrations alone, reader by reader, and a move that held
+one sign-in's lock while it waited for another's row deadlocked it). A registration whose zone the server no longer
+resolves (a zone dropped from the time zone data since it was registered) is left out, named in the pass's failures and
+counted as `push.zone`, and the day's other devices are planned (the review's P11: the first draft rolled the whole
+day back each minute).
+
+The rows are kept until 48 hours after the day closes, by the clock's sample, so a spike's report can read them; the
+minute's purge then deletes them (`push_days`' rows, and their deliveries with them), whatever `TADAYO_PUSH` says. They hold an account, a day, a sign-in's
+hash while it is registered, times and codes, never a token, a name or a body.
 
 ### 2.2 Who gets it, and when
 
@@ -161,26 +193,92 @@ nothing kept joins an ended sign-in, whose row holds no account, to an account (
 
 ### 2.3 Dispatch
 
-The dispatcher claims due rows (`FOR UPDATE SKIP LOCKED`, a lease like the outbox's), and for each one, at the
-clock's sample:
+Each delivery goes through three short transactions (as built, after the first review's P1: the first draft sent
+outside any transaction, so a removal that landed between the decision and the send didn't stop it):
 
-1. **Rechecks** (T37, "dispatch rechecks access"): the account is active, the membership still holds, the recipient
-   still reads a drop of the day (a withdrawal or a removal since the plan can leave none), the registration is still
-   this sign-in's with the same token, and the day hasn't closed. Any of these failing ends the row as `skipped`, with
-   its code, and nothing is sent.
-2. **Budget** (T37): at most two ordinary pushes per account and device per device-local day, across clubs. The
-   reveal is the only ordinary push today, so the budget counts sent reveal pushes; a third day revealed the same
-   morning on the same device is `skipped` as `budget` and still opens in the app. Within the budget spec 21 puts
-   reveals first, so when two or more are due at once on one device, the earliest reveal goes first.
-3. **Switches:** the account's "Day is ready" and the club's switch (spec 21; contract `NotificationPreferences`) are
-   on by default and not yet stored: B8 builds the routes that set them, and the dispatcher reads them once they exist.
-   Until then every recipient has them on.
-4. **The payload** (2.4), sent through APNs (2.5), and the row ends as `sent`, or `failed` with APNs' reason. An APNs
-   answer that the token is dead (`410 Unregistered`, `400 BadDeviceToken`) deletes the registration, so nothing more
-   goes to it; its sign-in isn't ended, so the app's next registration with a new token is taken. That deletion keeps
-   the migration's order: the sign-in's advisory lock, then the account's row, then the registration, and only if it
-   still holds the token the push went to. A `429`, a `5xx` or a network failure is tried again with the outbox's
-   backoff, until the day closes.
+1. **The claim:** the clock's sample, then the earliest due row that this pass hasn't visited (`pending` and unleased
+   with `due_at` at or before the sample, or `sending` whose lease has passed: a send that never reported back),
+   `FOR UPDATE SKIP LOCKED`, leased until the sample plus `CLAIM_LEASE_SECONDS`. Two dispatchers never claim one row,
+   and a pass visits each row once at most, so a row whose decision keeps failing doesn't end the pass early (the
+   review's N3 and D7).
+2. **The decision:** the recipient's account row `FOR NO KEY UPDATE` first, then the delivery's row, still under the
+   claim's lease, then the clock's sample (T1, as T3 samples after its lock). The account's row is the lock every
+   writer of that account's registrations takes after its advisory locks (0017's order), so a registration of that
+   account waits for the decision, and two decisions for one member queue, which keeps the budget's count exact. A
+   removal or a move from another account takes no account row of this one, and deletes the registration whose rows it
+   then sets null, so it waits for this delivery's row; the decision never waits on it, so the two can't deadlock. A
+   day closed by the sample ends the row as `skipped`, `closed`, before anything else is read, so a row whose facts
+   can't be read (a zone the server no longer resolves, a fault) ends at its day's close instead of coming back each
+   minute (the review's D6). A decision or a send that throws is named in the pass's failures, counted as
+   `push.failed`, and left leased, so its lease brings it back. Then the decision reads:
+   - **Rechecks** (T37, "dispatch rechecks access"), in this order, the first that fails ending the row as `skipped`
+     with its code and nothing sent: the day hasn't closed (`closed`); the day is still one that opens, with a star to
+     name (`held`, by `placeable`, the authorization module's own rule); the account is active (`account`); the
+     recipient reads at least one drop of the day by the read predicate (`unreadable`: a withdrawal, a removal, a
+     block or a membership that ended since the plan can leave none; T9, T36); and the sign-in is still registered to
+     this account (`unregistered`).
+   - **Quiet hours** (T37), in the zone the registration holds now: inside 23:00 to 08:00 the row goes back to
+     `pending`, due at the next 08:00 in that zone; if that is past the day's close it ends as `skipped`, `quiet`.
+   - **Budget** (T37, FQ30's default): one budget per member, two ordinary pushes a day across clubs, the day counted
+     in the zone of the member's most recently registered device (the latest `registered_at`, which each launch's
+     registration refreshes). A push counts from the decision to send it, by its delivery's `sent_at`, whatever its
+     state since, unless Apple's answer says it took nothing (3.): a push whose fate is unknown may be on the phone, so
+     it counts (the review's P3 and D8). The decision counts the member's other days with a delivery whose `sent_at`
+     falls in that local day; a day already counted there, by this delivery's earlier decision or by one to another of
+     the member's devices, is the same push and is not counted again (the review's D2: the first draft counted another
+     device's send of the day whenever it was sent). A third day the same day ends as `skipped`, `budget`, and still
+     opens in the app. Within the budget spec 21 puts reveals first, and the reveal is the only ordinary push built, so
+     the claim takes the earliest due first.
+   - **Switches:** the account's "Day is ready" and the club's switch (spec 21; contract `NotificationPreferences`)
+     are on by default and not yet stored: B8 builds the routes that set them, and the dispatcher reads them once they
+     exist. Until then every recipient has them on.
+   A delivery that passes is `sending`, leased for `SEND_LEASE_SECONDS`, with `sent_at` the sample, or its earlier
+   decision's `sent_at` kept when that falls in the same budget day, so a send decided again after a lost answer counts
+   once and keeps its first time. The decision hands the send the payload (2.4) and the push's expiry: the day's close,
+   or the next 23:00 in the device's zone if that comes first, so a phone that is off when the push is sent isn't
+   woken by it in its quiet hours (`decideReveal`; the review's E1: the first draft's expiry was the close, which let
+   Apple deliver a stored push at 03:00).
+3. **The send**, in its own transaction: the delivery's row `FOR UPDATE`, still under the decision's lease (else the
+   decision is stale and nothing is sent) and still naming its sign-in. A registration deleted since the decision (a
+   removal, a move, a dead token, a deletion) has set that null, and the row ends as `skipped`, `unregistered`, with
+   nothing sent. Else the registration's token and environment are read and the push goes to Apple while the row is
+   held: a removal or a move of that registration, whose foreign key sets the row's sign-in null, waits until Apple has
+   answered and the answer is written, so no push is handed to Apple once a removal has landed. (A renewed token for
+   the same sign-in updates no key and doesn't wait; the push goes to the token read, the same phone's.) The hold
+   lasts at most the sender's 4 seconds (2.5), under the API's 5-second wait for a lock, so the removal that waits
+   isn't answered 503 (the second review's R2-3: at 10 seconds it was), the role's 15 seconds idle in a transaction
+   (0018) and the send's lease. After the clock's sample, Apple's answer is written in the same transaction:
+   - 200: `sent`.
+   - A dead token (`410` `Unregistered` or `ExpiredToken`, `400` `BadDeviceToken` or `DeviceTokenNotForTopic`):
+     `failed` with the reason. Once the transaction has let the row go, the registration is deleted if it still holds
+     the token the push went to, in a transaction of its own, in 0017's order (the sign-in's advisory lock, then the
+     account's row, then the registration), so nothing more goes to it; its sign-in isn't ended, so the app's next
+     registration with a new token is taken. A `410` is not counted: an app deleted from its phone is ordinary. A
+     `400` is counted as `push.<reason>`, since it means a token sent to the wrong environment or topic, which the
+     founder's alert should name (the review's E5).
+   - A `429`, a `5xx`, a `400` `IdleTimeout`, a lost stream, a timeout or a lost connection: `pending` again, due after
+     the outbox's backoff (`backoffSeconds`), and at least 15 minutes after a `5xx`, as Apple asks. Past the day's
+     close it ends as `failed`, `closed` (Apple would drop it by then: its expiry is the close or sooner), and is
+     counted as `push.closed`, so the founder's alert names pushes that Apple kept refusing until the day closed. The
+     backoff doubles from 30 seconds and the close ends it, so a delivery is tried about a dozen times at most. A `403`
+     `ExpiredProviderToken` makes a new provider token at once and is tried again the same way.
+   - Any other answer (a refused provider token, a bad topic, a payload too large): `failed` with the reason, and the
+     reason counted in `app.failure_counts` as `push.<reason>` (B7), so the founder's alert names a broken
+     configuration. A skip is not a failure and is not counted.
+   - `sent_at` is cleared only when Apple's answer says it took nothing (any status but 200, or a request refused or
+     unconnected before it left) and this decision set it; no answer in time and a lost stream leave it, since Apple
+     may have taken the push.
+   A send that never reports back (the worker stopped) is claimed again once its lease passes and decided again: its
+   `sent_at` is kept, so it is counted once, and a repeat on the device collapses into the same notification
+   (`apns-collapse-id`, 2.4). Delivery is at least once: a push Apple took whose answer was lost is sent again, which
+   the phone shows as the same notification replaced, and the spike checks on the founder's phone
+   (`docs/LIMITATIONS.md`, the review's E6).
+
+A push Apple has already taken can still reach a phone after the reader lost access: one that was off or out of
+signal when it was sent gets it when it comes back, up to its expiry, and a removal of the drop or of the member, or a
+block, isn't waited for by the send (only a removal of the registration is). The push says only that the day is
+ready, and the app rechecks access when it opens the day (T38), so nothing of the day shows. FQ151 asks the founder
+whether that is accepted for the trial (the review's P1 and D1; `docs/LIMITATIONS.md`).
 
 ### 2.4 The payload
 
@@ -189,13 +287,13 @@ table):
 
 ```json
 {
-  "aps": { "alert": { "body": "Debby's day is ready" }, "sound": "default", "thread-id": "<club id>" },
+  "aps": { "alert": { "body": "Debby’s day is ready" }, "sound": "default", "thread-id": "<club id>" },
   "tadayo": { "open": "day", "club_id": "<club id>", "occurrence_id": "<occurrence id>" }
 }
 ```
 
-- The body is spec 21's copy: "It's your day. Your collection is ready" to the star; "<name>'s day is ready" to the
-  others, with the star's name as the recipient sees it in that club (`starNameOf`), and the copy lint's rules (names,
+- The body is spec 21's copy, with the app's typographic apostrophe (every string of the app's catalog has it):
+  "It’s your day. Your collection is ready" to the star; "<name>’s day is ready" to the others, with the star's name as the recipient sees it in that club (`starNameOf`), and the copy lint's rules (names,
   never pronouns: T42).
 - `tadayo.open`, `club_id` and `occurrence_id` are the deep link: the app opens that club's day
   (`GET /v1/occurrences/{occurrence_id}`, in that club) after rechecking access (T38). Agreed with the ios lane
@@ -205,7 +303,10 @@ table):
 - No `badge` (T33: nothing is counted), and no `content-available` or `mutable-content`: the app has no notification
   extension (the ios lane, same message).
 - APNs headers: `apns-push-type: alert`, `apns-priority: 10`, `apns-topic: app.tadayo`, `apns-collapse-id` the day's
-  id (one ready message per day on a device), `apns-expiration` the day's `close_at`.
+  id (one ready message per day on a device), `apns-expiration` the decision's expiry (2.3): the day's `close_at`, or
+  the device's next 23:00 if that comes first. Priority 10 is Apple's for an alert shown at once; 5 lets Apple hold it
+  for the phone's power, and the push is the reveal itself (the review's N1). No `apns-id` is sent or kept: the row's
+  id is the worker's record, and Apple's id serves only Apple's support, which the spike doesn't need (N2).
 
 ### 2.5 The APNs sender (`services/worker/src/apns.ts`)
 
@@ -213,41 +314,126 @@ table):
   connection per host kept open (Apple's guidance), with Node's `http2` and no new dependency.
 - A provider token: an ES256 JWT with `kid` = `APNS_KEY_ID`, `iss` = `APPLE_TEAM_ID` and `iat`, signed with
   `APNS_KEY_P8` through `node:crypto`, made again every 50 minutes (Apple refuses one older than an hour, and one made
-  more often than every 20 minutes). Its `iat` is real time, not the server's clock: dev's clock leads real time, and
+  more often than every 20 minutes), or when real time steps back more than 5 minutes behind its making
+  (`STEP_BACK_SECONDS`): a smaller step keeps it, since a new token for each small correction of the clock would spend
+  Apple's refreshes (the review's N5). Its `iat` is real time, not the server's clock: dev's clock leads real time, and
   Apple would refuse the token (`one-clock.test.ts` keeps that line, with its reason).
-- The key is read from the environment once, at the worker's start, and the worker refuses to start pushes without
-  all three when it runs in `dev` or `prod`; the tests and the session run with none, and use a fake APNs.
+- Whether the worker sends at all is the required setting `TADAYO_PUSH` (`pushSettingFor` in
+  `services/worker/src/push.ts`, read by `start.ts`): `none` or `apns`, and nothing else; a worker without it refuses
+  to start, as with `TADAYO_SAFETY_PROVIDER`, so no environment sends, or stays silent, by accident. With `apns`, the
+  key is read from the environment once, at the worker's start (`apnsKeyFrom`), and the worker refuses to start
+  without all three, naming what is wrong and never a value. `fly.toml` sets `none` for `dev`: the switch to `apns`
+  for the spike (section 3) is its own PR, on the founder's yes. The tests and the session use a fake APNs.
 - Nothing about a push reaches a log but its row's id, the day's id and APNs' status and reason code (T52).
+- Apple's current documentation (read 2026-11-28: "Handling notification responses from APNs", "Sending
+  notification requests to APNs", "Establishing a token-based connection to APNs") gives the answers 2.3 sorts: never
+  retry `BadDeviceToken`, `DeviceTokenNotForTopic`, `Forbidden`, `ExpiredToken`, `Unregistered` or
+  `PayloadTooLarge`; retry `TooManyRequests` after a delay and a `5xx` after 15 minutes; a token at most an hour old,
+  made again no more often than every 20 minutes; a payload of 4 KB at most; a collapse id of 64 bytes at most (a
+  day's id is 64 characters at most, `app.id`). A team key can be limited to one environment. Every TestFlight build
+  registers `production` (section 0), so the founder's key must cover production; which environments it covers isn't
+  recorded, and a key that doesn't cover a registration's environment answers `403` `BadEnvironmentKeyIdInToken`,
+  which ends the delivery as `failed`, counts `push.BadEnvironmentKeyIdInToken` and so reaches the founder's alert.
+- An answer's body is kept up to 4,096 characters (`ANSWER_LIMIT`; it is read as UTF-8); past that the stream is
+  reset (`CANCEL`) and the status sorts the answer as above, with the reason `unknown`: a flood with a `410` is still a
+  dead token, with a `5xx` still a retry (the second review's R2-5). A 200 settles at once, without waiting for the
+  stream's end. A request whose answer hasn't ended 4 seconds after it was made (`REQUEST_TIMEOUT_MS`, a deadline from
+  the request, not a wait between bytes; 2.3 says why 4) is
+  cancelled, and its session is closed and forgotten, so the next push opens a new connection; it ends as
+  `network.timeout`, or `network.connection` if the session never connected, and is tried again (the review's P2 and
+  E2: the first draft's wait restarted at each byte, and reused a session that had gone dark). A session idle for 10
+  minutes (`SESSION_IDLE_MS`) is closed, and Apple's `GOAWAY` or a closed connection forgets it. TLS is verified
+  whatever `NODE_TLS_REJECT_UNAUTHORIZED` says (`rejectUnauthorized: true`; P4), and the `:path` header, which holds
+  the token, and `authorization` are marked sensitive, so HTTP/2's header compression never keeps them.
+- A push can be called off (`send`'s `AbortSignal`, passed to Node's `session.request`): the worker does when the
+  send's transaction loses its database connection (2.7). A request still waiting for its connection is then never
+  written, and ends as `network.connection`; one already written is cancelled, and ends as `network.stream`.
+- TECH-DESIGN's push row names Apple's production host because every TestFlight build registers `production`. The
+  contract also allows `sandbox`, and a sandbox token sent to the production host would be answered `BadDeviceToken`
+  and deleted, so the sender takes each registration's own host. In the trial every registration is `production`
+  (the review's N6).
 
 ### 2.6 Tests first
 
-- The fake APNs: an HTTP/2 server in the tests (`http2.createSecureServer` with a test certificate) that checks each
-  request's path, headers and JWT (with the test key's public half) and answers as told: 200, 400, 410, 429, 500, a
-  dropped stream.
+- The fake APNs: an HTTP/2 server in the tests, in clear text (`http2.createServer`; the sender takes its origin, and
+  TLS is Node's own), that checks each request's path, headers and JWT (with the test key's public half) and answers
+  as told: 200, 400, 403, 410, 429, 500, a dropped stream, no answer, an answer trickled a byte at a time, a 200 whose
+  body never ends, a body past 4 KB; and one over TLS with a certificate nobody signed, which the sender refuses
+  before it sends anything, even with `NODE_TLS_REJECT_UNAUTHORIZED=0`.
 - `services/worker`: the payload for each recipient with previews off (the body, the keys, no caption, URL or id but
   the club's and the day's), the JWT and its refresh, the backoff, the dead token's deletion.
-- `tests/src/db/push.test.ts` on Postgres, with the fake clock: the plan at the reveal (each member with a readable
-  drop, nobody without one, the star's own wording, each device), twice planned once, quiet hours in several device
-  zones (07:00 in New York held to 08:00; a device in London already past 08:00; a device in Tokyo at 21:00 sent at
-  once), the budget across three clubs, each recheck (a drop withdrawn, a member who left, a deleting account, a token
-  moved), a retry that reaches the day's close, and two dispatchers at once.
-- The privacy matrix's worker row: every payload the dispatcher builds, before and after the reveal and for every
-  role, holds no caption, media, URL, provider id or source.
+- `tests/src/db/worker-push.test.ts` on Postgres, with the fake clock (as built): the plan at the reveal (each member
+  with a readable drop, nobody without one, the star's own wording, each device), twice planned once, quiet hours in
+  several device zones (a reveal at 07:00 in London, 07:00Z: a device in New York, at 02:00, held to 08:00 there; one
+  in London, at 07:00, held to 08:00; one in Tokyo, at 16:00, sent at once), the zone a registration holds when it is
+  decided, not when it was planned, the budget with one and two other days spent over two clubs, each recheck (a deleting account, a removed
+  device, a removed drop), a dead token and a renewed one, the backoff, a retry that reaches the day's close, a refused
+  answer counted, a send that never reported back, and the purge. After the first review, as built: the expiry in
+  three zones, a zone left out of the plan, a registration deleted after the decision, a decision that keeps failing
+  until the close, the budget's zone in New York, a second phone after other clubs spent the budget, a push sent in an
+  earlier budget day on another phone (Tokyo and Los Angeles), a send whose fate is unknown counted whatever its state,
+  `sent_at` kept or cleared by the answer, the claim skipping rows it visited, the purge with `TADAYO_PUSH` `none`,
+  and, on two connections, a removal that waits while the send holds the row and lands after Apple's answer. After
+  the second review, as built: a retry's 429 or refusal, and a registration gone before a retry's send, each keeping
+  the first try's `sent_at`; a retry decided in the budget's next day dated afresh (a London phone whose budget is
+  Tokyo's); the hold under the API's wait for a lock; and a send whose connection is lost while Apple answers (2.7).
+  Two dispatchers at once are not tested: the claim is `FOR UPDATE SKIP LOCKED`, as the outbox's is.
+- `tests/src/db/devices.test.ts`: the plan's sign-in locks make a move wait, and a registration deleted while the plan
+  waited is left out.
+- The privacy matrix's push (`tests/src/db/push-matrix.test.ts`, as built): every role of the matrix
+  (`tests/src/matrix.ts`), in each of its states of the drop, before, during and after the day, through the worker's
+  whole pass, each two ways: planned by the pass, and planned for every phone before the role and the state applied,
+  so the dispatch's rechecks are proved and not only the plan's filter (the review's P6); the viewer is told only when
+  the role reads the drop, the state denies nothing and the day is open, and
+  every payload the dispatcher builds is exactly the day's words, its club and its id, with no caption, media, URL,
+  provider id, source, drop or upload id, or token.
+
+### 2.7 A connection lost during the send (PR #159's second review, R2-1)
+
+The send is the worker's one transaction that waits on something other than the database: Apple, for up to 4
+seconds. 0018's header says neither the API nor the worker does, and 0018 is applied and can't change, so 0021's
+header records the exception. If the send's connection is lost meanwhile (a pooler's restart, a terminated backend, a
+link gone), Postgres rolls the transaction back and lets the delivery's row go, so a removal waiting on it lands.
+postgres.js 3.4.9 then rejects the transaction at once with `CONNECTION_CLOSED`, but writes whatever the transaction's
+body sends next, its answer's `UPDATE` or even the `COMMIT` the driver adds when the body ends, on that connection:
+with its socket gone that throws from a later tick and ends the process (`docs/LIMITATIONS.md`, the row of
+2026-11-24), and once the pool has opened the connection again for another transaction (the worker's pool holds
+two), it runs inside that transaction and can commit it half done. Both were reproduced in the session against the
+local Postgres, the second with a pool of one: the late query ran on the new backend, inside the next transaction.
+
+So `sendDelivery`, when its transaction is rejected, aborts the push's signal: a request still waiting for its
+connection to Apple (a burst's first push, after the idle close) is never written, and one already written is
+cancelled. The body, once the sender answers, finds the signal aborted and sends nothing more, ever: it waits on a
+promise that never settles, so the driver never writes its `COMMIT`. The pass reports the delivery and counts
+`push.failed`; the delivery stays `sending` until its lease passes, and is then decided again, keeping its first
+decision's `sent_at` in the same budget day (2.3), so a push Apple took may show again (Q17, as for any lost answer;
+the collapse id keeps one notification). Each lost connection keeps one small closure alive until the worker
+restarts. A connection lost while a query of the body is in flight still ends the process, as for every transaction,
+until postgres.js 4.x or a guard of the driver's own (the 2026-11-24 row). Test:
+`tests/src/db/worker-push.test.ts`, "calls Apple's request off and sends nothing more on a connection lost while Apple
+answers, even once reopened" (its pool of one makes the next transaction take the same connection again; without the
+guard, that transaction's `now()` changed partway, which is the late `COMMIT`); `apns.test.ts`, "never writes a push
+called off before its connection is made…" and "cancels a push called off once Apple has it…".
 
 ## 3. The spike on `dev`, with the founder
 
 Once both PRs are merged and the ios lane's build registers and opens the payload:
 
 1. The founder's account is in S1's club on `dev`, with a day that has a drop they can read (S1's photo).
-2. With the founder's yes, the `dev` worker is started (`ops` `worker-scale --to started`), and the dev clock (S5)
+2. With the founder's yes, `TADAYO_PUSH` is set to `apns` for `dev` (its own PR), the `dev` worker is started (`ops`
+   `worker-scale --to started`), and the dev clock (S5)
    is set so that the founder's day reveals: at 07:00 in the club's zone (New York, inside quiet hours) the day opens in
    the app and no push comes; at 08:00 the push comes, previews off, and a tap opens that club and day.
+   With `apns`, the worker pushes every account registered on `dev` that reads a day that opens, and the dev clock
+   moves every club's days at once, so the spike's PR first limits the sender to the founder's own registrations on
+   `dev`, or lists `dev`'s registrations for the founder to clear, whichever it shows the founder (PR #159's first
+   review, P7). No test alert is sent and no device is pushed without the founder's yes.
 3. The report, `docs/spikes/S4-push.md`, records what the founder saw, the rows' times and codes, and the worker's
    lines, with no token and no name but the founder's own word for their phone.
 
 ## 4. Not in S4
 
 The other events of spec 21's table; the notification switches' routes and storage (B8); aggregation of arrivals
-(nothing arrives as a push yet); a push to a removed device's earlier account after the removal lands (TECH-DESIGN
-section 6 promises none, and none is possible once the row is gone); a rate limit on the public removal route (the
+(nothing arrives as a push yet); a push to a removed device's earlier account after the removal lands (none is handed
+to Apple once it has, 2.3, but one Apple took just before it can still be shown, FQ151); a rate limit on the public removal route (the
 API has none yet; `docs/LIMITATIONS.md` records it).

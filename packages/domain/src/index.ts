@@ -172,12 +172,15 @@ export { updateMe, type ProfileEdit, type UpdateMeInput } from "./identity/updat
 export {
   apnsTokenOf,
   ENDED_KEEP,
+  forgetDeadToken,
+  lockDevicesOf,
   PURGE_BATCH,
   registerDevice,
   removeDevice,
   signInOf,
   type ApnsEnvironment,
   type DeviceRegistration,
+  type PlannedDevice,
   type RegisterDeviceInput,
 } from "./identity/devices.ts";
 export { newId } from "./ids.ts";
@@ -233,3 +236,27 @@ export {
 export { prepareClock, type Clock, type ClockSql, type ServerNow } from "./time/clock.ts";
 export { contractInstant, INSTANT_TYPE } from "./time/instant.ts";
 export { stopwatch } from "./time/stopwatch.ts";
+export {
+  budgetDay,
+  dayClosed,
+  dayReaders,
+  decideReveal,
+  loadReveal,
+  plannedDueAt,
+  PUSH_BUDGET,
+  QUIET_END,
+  QUIET_START,
+  quietFrom,
+  quietUntil,
+  revealBody,
+  revealPayload,
+  SKIP_CODES,
+  STAR_BODY,
+  type BudgetDay,
+  type LoadedReveal,
+  type RevealDecision,
+  type RevealFacts,
+  type RevealPayload,
+  type RevealTarget,
+  type SkipCode,
+} from "./push/reveal.ts";
