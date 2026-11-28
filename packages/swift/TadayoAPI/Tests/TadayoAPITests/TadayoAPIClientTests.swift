@@ -249,10 +249,11 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
     }
 
     /// The contract's rule since PR #151 (the outside audit's B8): any operation may answer a
-    /// 500, or a 503, which no operation lists, each with no body and `Cache-Control: private,
-    /// no-store`, except a stopping server's 503, Fastify's own, with a short JSON body and no
-    /// `Cache-Control`; the app reads any 5xx as the service out of reach for now and reads no
-    /// 5xx's body. A 5xx from anything in front of the server is read the same way.
+    /// 500, or a 503, which no operation but `getHealth` lists, each with no body and
+    /// `Cache-Control: private, no-store`, except a stopping server's 503, Fastify's own, with a
+    /// short JSON body and no `Cache-Control`; the app reads any 5xx as the service out of reach
+    /// for now and reads no 5xx's body. A 5xx from anything in front of the server is read the
+    /// same way.
     @Test func anyFiveHundredIsTheServiceOutOfReachAndItsBodyIsNeverRead() async {
         for (status, body, headers) in Self.fiveHundreds {
             for operation in ["me", "clubs", "update"] {
@@ -269,14 +270,47 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
         }
     }
 
-    /// Fastify 5's answer while the server closes (its `lib/route.js`), byte for byte.
+    /// The watch the test above relies on sees a read: a 200's body, which `me()` reads.
+    @Test func theWatchSeesABodyThatIsRead() async throws {
+        let watch = BodyWatch()
+        let transport = CannedTransport([
+            .watched(
+                status: 200, body: ben,
+                headers: [
+                    "Content-Type": "application/json", "Cache-Control": "private, no-store",
+                ],
+                watch)
+        ])
+        _ = try await api(transport).me()
+        #expect(watch.wasRead)
+    }
+
+    /// A 5xx that answers the call sent again after a refreshed token is read the same way.
+    @Test func aFiveHundredAnsweringTheRetryAfterARefreshIsUnavailableUnread() async {
+        let auth = RefreshingAuth([.success(session(2, expiresIn: 7200))])
+        let watch = BodyWatch()
+        let transport = CannedTransport([
+            .json(401, #"{"code":"UNAUTHENTICATED"}"#),
+            .watched(
+                status: 503, body: Self.stopping,
+                headers: ["Content-Type": "application/json", "Content-Length": "80"], watch),
+        ])
+        await #expect(throws: APIFailure.unavailable) {
+            try await api(transport, auth: auth).me()
+        }
+        #expect(!watch.wasRead)
+        #expect(transport.sent.map(\.bearer) == ["Bearer access-1", "Bearer access-2"])
+        #expect(auth.refreshes == 1)
+    }
+
+    /// Fastify 5's body while the server closes (its `lib/route.js`), byte for byte.
     static let stopping =
         #"{"error":"Service Unavailable","message":"Service Unavailable","statusCode":503}"#
 
     /// The 5xx answers the server and what's in front of it can give, which no operation but the
     /// health check lists: the server's own 500 and 503 (`services/api/src/app.ts` `failed`,
     /// `services/api/src/answers.ts` `unavailable`), a stopping server's 503 as Fastify 5 writes
-    /// it (`return503OnClosing`), and a proxy's.
+    /// it (`return503OnClosing`), and a proxy's or gateway's.
     static let fiveHundreds: [(Int, String, [String: String])] = [
         (500, "", ["Cache-Control": "private, no-store"]),
         (503, "", ["Cache-Control": "private, no-store"]),
