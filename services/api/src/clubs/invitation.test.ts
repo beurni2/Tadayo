@@ -17,7 +17,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import { invitationAcceptanceBody, invitationPreviewBody } from "./invitation.ts";
-import { noStorage } from "../testing.ts";
+import { noStorage, uncounted } from "../testing.ts";
 
 type Body = Record<string, unknown>;
 
@@ -149,6 +149,7 @@ async function appFor(
       return Promise.resolve(options.signedIn === false ? null : account);
     },
     storage: noStorage,
+    failures: uncounted,
     log:
       options.lines === undefined
         ? { level: "silent" }

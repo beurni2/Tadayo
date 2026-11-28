@@ -12,9 +12,11 @@ import { connect, type AddressInfo } from "node:net";
 import { OPERATIONS } from "@tadayo/contracts";
 import type { Account, Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Fault } from "@tadayo/domain/fault";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { BODY_LIMIT, BUILT_OPERATIONS, bodyLimitOf, buildApp, routesOf, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
+import { KeysUnavailable } from "./identity/token.ts";
 import { END_SECONDS } from "./shutdown.ts";
 import { noStorage } from "./testing.ts";
 
@@ -243,6 +245,180 @@ describe("a database that ran out of time (the outside audit's A7)", () => {
         lines.some((line) => line.includes('"msg":"request failed"')),
         code,
       ).toBe(true);
+    }
+  });
+});
+
+describe("each 5xx, counted for the alert once the answer has gone (the outside audit's B7)", () => {
+  /**
+   * A pool whose statements are the counter's writes, each in a transaction of its own: each is kept, with what it
+   * would add, and finished as `writes` says (at once by default, never with "hold", failed with an error). A route
+   * fails with `routeFailure` (its own) where it first reaches the database: its clock's sample, or any statement of
+   * its own, in a transaction or not.
+   */
+  function counting(options: { routeFailure?: Error; writes?: "finish" | "hold" | Error } = {}) {
+    const writes: Record<string, number>[] = [];
+    const statement = (template: TemplateStringsArray, ...values: unknown[]) => {
+      if (!Array.isArray(template) || !template.join("").includes("app.failure_counts")) {
+        throw options.routeFailure ?? new Error("no route of these tests reaches the database");
+      }
+      writes.push(JSON.parse(values[1] as string) as Record<string, number>);
+      expect(values[0]).toBe("api");
+      const outcome = options.writes ?? "finish";
+      if (outcome === "finish") return Promise.resolve([]);
+      if (outcome === "hold") return new Promise(() => undefined);
+      return Promise.reject(outcome);
+    };
+    const pool = Object.assign(statement, {
+      end: (ending?: { timeout?: number }) => sql.end(ending),
+      begin: async (...args: unknown[]) => (args.at(-1) as (tx: typeof statement) => Promise<unknown>)(statement),
+    }) as unknown as ApiSql;
+    const clock = {
+      sample: () => Promise.reject(options.routeFailure ?? new Error("no route of these tests reaches the clock")),
+    } as unknown as Clock;
+    return { counted: { sql: pool, clock }, writes };
+  }
+
+  async function appWith(
+    counted: { sql: ApiSql; clock: Clock },
+    authenticate: Deps["authenticate"] = () => Promise.resolve(READY),
+    lines: string[] = [],
+  ): Promise<FastifyInstance> {
+    const other = buildApp({
+      ...deps,
+      sql: counted.sql,
+      clock: counted.clock,
+      authenticate,
+      log: { level: "info", stream: { write: (line) => void lines.push(line) } },
+    });
+    await other.ready();
+    return other;
+  }
+
+  const fault = () => new Fault("propose_roster_6", "the club vanished under its own lock: ana@example.invalid");
+
+  it("counts a 500 by its error's class and site code, once", async () => {
+    const { counted, writes } = counting();
+    const other = await appWith(counted, () => Promise.reject(fault()));
+    try {
+      expect((await other.inject({ method: "GET", url: "/v1/me" })).statusCode).toBe(500);
+      await vi.waitFor(() => {
+        expect(writes).toEqual([{ "Fault:propose_roster_6": 1 }]);
+      });
+    } finally {
+      await other.close();
+    }
+    // Still one once the app has closed: no second write came after the first.
+    expect(writes).toEqual([{ "Fault:propose_roster_6": 1 }]);
+  });
+
+  it("counts in the counter it's given, when it's given one, and writes no count of its own", async () => {
+    const { counted, writes } = counting();
+    const given = { codes: [] as string[], stopped: 0 };
+    const other = buildApp({
+      ...deps,
+      sql: counted.sql,
+      clock: counted.clock,
+      authenticate: () => Promise.reject(fault()),
+      failures: { count: (code) => void given.codes.push(code), stop: () => void (given.stopped += 1) },
+    });
+    try {
+      expect((await other.inject({ method: "GET", url: "/v1/me" })).statusCode).toBe(500);
+      expect(given.codes).toEqual(["Fault:propose_roster_6"]);
+    } finally {
+      await other.close();
+    }
+    expect(given.stopped).toBe(1);
+    expect(writes).toEqual([]);
+  });
+
+  it("counts a database out of time by its SQLSTATE, and a 503 with no error of its own by its status and operation", async () => {
+    const outOfTime = Object.assign(new Error("canceling statement due to lock timeout: Ana's row"), {
+      name: "PostgresError",
+      code: "55P03",
+    });
+    const { counted, writes } = counting({ routeFailure: outOfTime });
+    const keysAway = () => Promise.reject(new KeysUnavailable("timeout"));
+    const other = await appWith(counted);
+    const away = await appWith(counted, keysAway);
+    try {
+      expect((await other.inject({ method: "GET", url: "/v1/clubs" })).statusCode).toBe(503);
+      await vi.waitFor(() => {
+        expect(writes).toEqual([{ "PostgresError:55P03": 1 }]);
+      });
+      expect((await away.inject({ method: "GET", url: "/v1/me" })).statusCode).toBe(503);
+      await vi.waitFor(() => {
+        expect(writes).toEqual([{ "PostgresError:55P03": 1 }, { "503:getMe": 1 }]);
+      });
+    } finally {
+      await Promise.all([other.close(), away.close()]);
+    }
+  });
+
+  it("counts no 4xx: a body Fastify can't read, a refused session, an unknown path", async () => {
+    const { counted, writes } = counting();
+    let caller: "ready" | "none" | "failing" = "ready";
+    const other = await appWith(counted, () =>
+      caller === "failing" ? Promise.reject(fault()) : Promise.resolve(caller === "ready" ? READY : null),
+    );
+    try {
+      const json = { "content-type": "application/json" };
+      expect((await other.inject({ method: "PATCH", url: "/v1/me", headers: json, payload: "{" })).statusCode).toBe(
+        400,
+      );
+      expect((await other.inject({ method: "GET", url: "/v1/nothing-here" })).statusCode).toBe(404);
+      caller = "none";
+      expect((await other.inject({ method: "GET", url: "/v1/me" })).statusCode).toBe(401);
+      // One write at a time, in order: a 500 after them is counted after anything they could have been.
+      caller = "failing";
+      expect((await other.inject({ method: "GET", url: "/v1/me" })).statusCode).toBe(500);
+      await vi.waitFor(() => {
+        expect(writes.length).toBeGreaterThan(0);
+      });
+      expect(writes).toEqual([{ "Fault:propose_roster_6": 1 }]);
+    } finally {
+      await other.close();
+    }
+  });
+
+  it("answers a 500 at once while its count never finishes, and keeps one write going at a time", async () => {
+    const { counted, writes } = counting({ writes: "hold" });
+    const other = await appWith(counted, () => Promise.reject(fault()));
+    try {
+      for (let n = 0; n < 3; n += 1) {
+        const answered = await Promise.race([
+          other.inject({ method: "GET", url: "/v1/me" }).then((response) => response.statusCode),
+          new Promise((resolve) => setTimeout(resolve, 2_000, "still waiting")),
+        ]);
+        expect(answered, `request ${String(n + 1)}`).toBe(500);
+      }
+      await vi.waitFor(() => {
+        expect(writes).toEqual([{ "Fault:propose_roster_6": 1 }]);
+      });
+    } finally {
+      await other.close();
+    }
+  });
+
+  it("still answers the 500 when its count fails, and logs that by the error's class and code alone", async () => {
+    const lost = Object.assign(new Error("terminating connection: ana@example.invalid"), { code: "57P01" });
+    const { counted, writes } = counting({ writes: lost });
+    const lines: string[] = [];
+    const other = await appWith(counted, () => Promise.reject(fault()), lines);
+    try {
+      const response = await other.inject({ method: "GET", url: "/v1/me" });
+      expect([response.statusCode, response.body]).toEqual([500, ""]);
+      await vi.waitFor(() => {
+        expect(lines.some((line) => line.includes('"msg":"failure not counted"'))).toBe(true);
+      });
+      const line = lines
+        .map((text) => JSON.parse(text) as Record<string, unknown>)
+        .find((entry) => entry["msg"] === "failure not counted");
+      expect(line).toMatchObject({ level: 40, err: { type: "Error", code: "57P01" }, kept: 1 });
+      expect(lines.join("\n")).not.toContain("ana@example.invalid");
+      expect(writes).toEqual([{ "Fault:propose_roster_6": 1 }]);
+    } finally {
+      await other.close();
     }
   });
 });
