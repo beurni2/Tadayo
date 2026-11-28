@@ -126,30 +126,42 @@ describe("Dockerfile", () => {
     expect(stages.map((stage) => stage.args.split(/\s+/)[0])).toEqual(["${NODE_IMAGE}", "${NODE_IMAGE}"]);
   });
 
-  it("installs the pnpm the repository pins, from the tarball the lockfile pins and nothing else", () => {
+  it("installs pnpm and its x86-64 Linux binary only from the tarballs the lockfile pins, and runs no other package tool but the frozen install", () => {
     const manifest = table(JSON.parse(read("package.json")), "package.json");
     const pinned = /^pnpm@(\d+\.\d+\.\d+)$/.exec(String(manifest["packageManager"]))?.[1];
     expect(pinned).toBeDefined();
     const version = String(pinned);
-    // The lockfile's own record of pnpm (`packageManagerDependencies`), its integrity in base64, as hexadecimal.
-    const escaped = version.replaceAll(".", "\\.");
-    const locked = new RegExp(
-      `^  pnpm@${escaped}:\\n    resolution: \\{integrity: sha512-([A-Za-z0-9+/=]+)\\}`,
-      "m",
-    ).exec(read("pnpm-lock.yaml"))?.[1];
-    expect(locked).toBeDefined();
-    const hex = Buffer.from(String(locked), "base64").toString("hex");
-    expect(hex).toMatch(/^[0-9a-f]{128}$/);
-    const installs = dockerfile().filter(
-      (instruction) => instruction.name === "RUN" && /\bnpm (?:install|i|add|pack)\b/.test(instruction.args),
+    // The lockfile's own record of a package (pnpm itself is `packageManagerDependencies`), its integrity as hexadecimal.
+    const lockfile = read("pnpm-lock.yaml");
+    const integrity = (name: string): string => {
+      const key = name.startsWith("@") ? `'${name}@${version}'` : `${name}@${version}`;
+      const escaped = key.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+      const locked = new RegExp(`^  ${escaped}:\\n    resolution: \\{integrity: sha512-([A-Za-z0-9+/=]+)\\}`, "m").exec(
+        lockfile,
+      )?.[1];
+      expect(locked, name).toBeDefined();
+      const hex = Buffer.from(String(locked), "base64").toString("hex");
+      expect(hex, name).toMatch(/^[0-9a-f]{128}$/);
+      return hex;
+    };
+    // pnpm's package is a wrapper whose install script links the binary of its platform in its place: that binary is
+    // what runs `pnpm install` below, so it is checked too (PR #154's review, finding 1).
+    const wrapper = integrity("pnpm");
+    const binary = integrity("@pnpm/exe.linux-x64");
+    const wrapperFile = `pnpm-${version}.tgz`;
+    const binaryFile = `pnpm-exe.linux-x64-${version}.tgz`;
+    // The parser joins words with one space; the file keeps sha512sum's own two-space form.
+    expect(read("Dockerfile")).toContain(`"${wrapper}  ${wrapperFile}" \\\n        "${binary}  ${binaryFile}"`);
+    const tools = dockerfile().filter(
+      (instruction) =>
+        instruction.name === "RUN" && /\b(?:npm|npx|corepack|pnpm|pnpx|pnx|pn|yarn)\b/.test(instruction.args),
     );
-    // The parser joins words with one space; sha512sum --strict wants the file's two-space form, kept in the text.
-    expect(read("Dockerfile")).toContain(`echo "${hex}  pnpm-${version}.tgz" | sha512sum`);
-    expect(installs.map((instruction) => instruction.args)).toEqual([
-      `npm pack --silent pnpm@${version} > /dev/null ` +
-        `&& echo "${hex} pnpm-${version}.tgz" | sha512sum --check --strict --quiet ` +
-        `&& npm install --global ./pnpm-${version}.tgz ` +
-        `&& rm pnpm-${version}.tgz`,
+    expect(tools.map((instruction) => instruction.args)).toEqual([
+      `npm pack --silent pnpm@${version} @pnpm/exe.linux-x64@${version} > /dev/null ` +
+        `&& printf '%s\\n' "${wrapper} ${wrapperFile}" "${binary} ${binaryFile}" | sha512sum --check --strict --quiet ` +
+        `&& npm install --global --offline ./${wrapperFile} ./${binaryFile} ` +
+        `&& rm ${wrapperFile} ${binaryFile}`,
+      expect.stringMatching(/^pnpm install --frozen-lockfile --prod(?: --filter "@tadayo\/[a-z]+\.\.\.")+$/),
     ]);
   });
 

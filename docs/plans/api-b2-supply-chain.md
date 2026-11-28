@@ -39,15 +39,20 @@ branch that changes `tools/ci/` or `.github/` change nothing else but the logs.
 ## 1. What this lane does
 
 **PR 1, `api/b2-supply-chain` (this one; no CI configuration).**
-- `Dockerfile`: pnpm is `npm pack`ed, its tarball checked with `sha512sum --check --strict` against the lockfile's
-  integrity in hexadecimal, and only then installed from the file. A tarball that isn't the pinned one stops the build.
+- `Dockerfile`: pnpm's two tarballs are `npm pack`ed: `pnpm@12.16.1`, a wrapper, and `@pnpm/exe.linux-x64@12.16.1`, the
+  binary the wrapper's install script links in its place, which is what runs `pnpm install` (section 5, finding 1).
+  Both are checked with `sha512sum --check --strict` against the lockfile's integrity in hexadecimal, and only then
+  installed from the files with `npm install --global --offline`, so npm fetches nothing more. A tarball that isn't the
+  pinned one stops the build, and so does a builder that isn't x86-64 Linux (Fly's remote builder is).
 - `.nvmrc`: `26.13.1`, the image's Node, so `ci` runs the Node the image runs, and a Node or tzdata change is a commit.
-- `tools/ops/src/deploy-files.test.ts`: the image's Node version is `.nvmrc`'s whole version; the Dockerfile's only
-  `npm` install is that `pack`, check, install from the file and remove, with the hash the lockfile's own.
+- `tools/ops/src/deploy-files.test.ts`: the image's Node version is `.nvmrc`'s whole version; every `RUN` that names a
+  package tool (`npm`, `npx`, `corepack`, `pnpm`, `pnpx`, `pnx`, `pn`, `yarn`) is either that `pack`, check, offline
+  install from the files and remove, with both hashes read from the lockfile, or the frozen install with its filters.
 
 **PR 2, `api/b2-supply-chain-ci` (CI configuration, no freeze: no workflow file), after PR 1.**
-- `ci_steps.py` `setup_pnpm`: the same check, the hash read from `pnpm-lock.yaml`, before `npm install --global` from
-  the file; a lockfile with no such integrity, or a tarball that differs, fails the step.
+- `ci_steps.py` `setup_pnpm`: the same check of both tarballs (GitHub's `ubuntu-24.04` runner is x86-64 Linux), the
+  hashes read from `pnpm-lock.yaml`, before `npm install --global --offline` from the files; a lockfile with no such
+  integrity, or a tarball that differs, fails the step.
 - `journal_check.py`: a commit counts as GitHub's own only when its signature verifies under GitHub's web-flow key,
   vendored in `tools/ci/` with its fingerprint checked, in a keyring of its own; the committer's email alone no longer
   skips the check. Tests sign with a key of the test's own, given by the same constant.
@@ -73,11 +78,48 @@ PR 1, each planted alone and run against `deploy-files.test.ts`:
 - B4. `.nvmrc` back to `26`.
 - B5. `.nvmrc` at another patch than the image's.
 
-Rehearsed in the session (no Docker daemon): the Dockerfile's command, with Node 26.13.0's npm, packs, checks and
-installs pnpm 12.16.1 into a scratch prefix, as `npm install --global pnpm@12.16.1` did; a wrong hash makes
-`sha512sum` exit 1. `deploy-dev` builds the image at merge.
+Rehearsed in the session (no Docker daemon): the first commit's command, with Node 26.13.0's npm, packed, checked and
+installed pnpm 12.16.1 into a scratch prefix, but its install still fetched `@pnpm/exe.linux-x64` from the registry
+unchecked (section 5, finding 1). `deploy-dev` builds the image at merge.
+
+Round 1, the second commit, each planted alone and run against `deploy-files.test.ts`, B1 to B5 again with them:
+- K1. The binary's tarball left out: only the wrapper packed and checked, and installed online.
+- K2. The binary's hash one digit off.
+- K3. The install without `--offline`.
+- K4 to K7. A `RUN` of its own with `npx --yes some-tool`, `corepack enable pnpm`, `npm --global install pnpm@latest`
+  or `pnpm self-update` (the review's finding 3 found the first commit's test passed these).
+- K8. `&& pnpm self-update` after the frozen install, in its own `RUN`.
+- K9. The check moved after the install.
+- K10. `|| true` after the check.
+- K11. `npm ci` at the start of the runtime stage's first `RUN`.
+
+Rehearsed in the session: the second commit's `RUN` text, run by `/bin/sh` (dash) in a scratch folder with an empty
+npm cache and prefix and Node 26.13.0's npm, exits 0, leaves the folder empty, and `pnpm --version` gives 12.16.1, the
+wrapper's `pnpm` the same file (inode) as the checked binary's; the binary's hash one digit off makes `sha512sum` exit
+1; the wrapper's tarball installed alone with `--offline` and an empty cache fails, so the binary can't come from
+anywhere but the checked file.
 
 ## 4. Records
 
 The journal (entry, block 1.2, table 4.1, the T58 row), `docs/PROGRESS.md`, `docs/LIMITATIONS.md`'s row of
 2026-11-06 (its cause gone with a whole `.nvmrc`).
+
+## 5. Review
+
+Round 1, one fresh subagent at `c35abf0` (a lower-risk PR: at most two rounds). Each finding fixed or answered in the
+second commit:
+1. **Blocker, fixed.** The check covered pnpm's wrapper, not the binary that runs: `pnpm@12.16.1` has 14
+   `optionalDependencies` (`@pnpm/exe.*`), and its `preinstall` and `postinstall` (`node install.js`) link the
+   platform's binary over `pnpm`, `pn`, `pnpx` and `pnx`; the install fetched `@pnpm/exe.linux-x64` from the registry
+   unchecked. Now that tarball is packed and checked too, against the lockfile's `'@pnpm/exe.linux-x64@12.16.1'`
+   integrity, and the install is `--offline` from the two files. PR 2's `setup_pnpm` does the same (section 1).
+2. **Should-fix, fixed.** The records said more than the first commit did (the Dockerfile's comment, the T58 row, the
+   api block, `docs/PROGRESS.md`, the 4.1 row, the entry's rehearsal). Rewritten; the first commit's entry stays as it
+   is, and the second's says what it got wrong.
+3. **Should-fix, fixed.** "And nothing else" wasn't true of the test: it looked only at `npm install`, `i`, `add` and
+   `pack`. It now takes every `RUN` that names a package tool, and allows only the two expected ones (K4 to K8, K11).
+4. **Nit, fixed.** `sha512sum --check --strict` reads one space between the hash and the name as well as two (coreutils
+   9.4, checked). The file keeps the two-space form `sha512sum` writes; the test's comment no longer says it's needed.
+5. **Nit, fixed in the records.** `setup-node` with `26` takes a Node 26 from the runner's tool cache before the newest,
+   so `ci` could run a newer Node 26 than the image's, not always the newest.
+
