@@ -2,35 +2,102 @@ import SwiftUI
 import TadayoCore
 import TadayoDesign
 
-/// A02-email, then A02-code pushed on it (handoff 1's frames 1 and 2, as handoff 2 corrected
-/// them), in one navigation stack: the system's back button on A02-code is Change email address,
-/// and it hides while a code is being verified or sent, as that row is unavailable then. A02-email
-/// has no back in B0: Welcome (A01) comes in B1.
+/// The sign-in flow, in one navigation stack (`docs/plans/ios-b1-welcome.md` section 2): Welcome
+/// (`A01-welcome`) at its root, where the flow starts there (`SignInModel.showsWelcome`), then
+/// the screens its route pushes: I have an invite's paste step, signed out (`G02-link-entry`), and
+/// A02-email once Continue holds its link; Create a club and Already here? Sign in, A02-email.
+/// A02-code is pushed on A02-email (handoff 1's frames 1 and 2, as handoff 2 corrected them).
+/// Where the flow starts at A02-email, it is the root, with no back (handoff 7: "no Welcome back
+/// chevron").
+///
+/// Each screen's system back takes one step: A02-code's is Change email address, and hides while
+/// a code is being verified or sent, as that row is unavailable then; A02-email's returns to the
+/// paste step, letting its link go and keeping the field's text, or to Welcome, and hides while a
+/// code is on its way; the paste step's returns to Welcome, which holds no link and no route again.
+/// A paste step left stays drawn while it slides away.
 struct SignInFlow: View {
     @Bindable var model: SignInModel
     /// Draws the field focused, or not, whatever has focus: snapshots show focus with no
     /// keyboard. Nil in the app, where each screen focuses its field when it appears.
     var focus: Bool?
+    /// The paste step last pushed, drawn while it slides away after Back to Welcome, and let go
+    /// once it has.
+    @State private var shownEntry: InvitationLinkEntryModel?
 
     private enum Page: Hashable {
-        case code
+        case linkEntry, email, code
     }
 
     var body: some View {
         NavigationStack(path: path) {
-            EmailScreen(model: model, focus: focus)
-                .navigationDestination(for: Page.self) { _ in
-                    CodeScreen(model: model, focus: focus)
+            root
+                .navigationDestination(for: Page.self) { page in
+                    switch page {
+                    case .linkEntry:
+                        if let entry = model.linkEntry ?? shownEntry {
+                            LinkEntryScreen(
+                                model: entry, proceed: { await entry.proceed() }, focus: focus
+                            )
+                            // Slid away after Back to Welcome: nothing of it stays in memory.
+                            .onDisappear {
+                                if model.linkEntry == nil, shownEntry === entry { shownEntry = nil }
+                            }
+                        }
+                    case .email:
+                        EmailScreen(model: model, focus: focus)
+                            .navigationBarBackButtonHidden(model.isSending)
+                    case .code:
+                        CodeScreen(model: model, focus: focus)
+                    }
                 }
         }
         .tint(Palette.action)
+        .onChange(of: model.linkEntry.map(ObjectIdentifier.init), initial: true) {
+            if let entry = model.linkEntry { shownEntry = entry }
+        }
     }
 
+    @ViewBuilder private var root: some View {
+        if model.showsWelcome {
+            WelcomeScreen(choose: { model.choose($0) })
+        } else {
+            EmailScreen(model: model, focus: focus)
+        }
+    }
+
+    /// The screens pushed over the root, from the model.
+    private var pages: [Page] {
+        var pages: [Page] = []
+        if model.showsWelcome {
+            switch model.way {
+            case nil:
+                return []
+            case .invitation:
+                pages.append(.linkEntry)
+                if model.linkEntry?.isHeld == true { pages.append(.email) }
+            case .createClub, .signIn:
+                pages.append(.email)
+            }
+        }
+        if model.step == .code { pages.append(.code) }
+        return pages
+    }
+
+    /// Back, by a step or more (the back button's menu reaches further): to Welcome, to the paste
+    /// step, or from A02-code to A02-email.
     private var path: Binding<[Page]> {
         Binding(
-            get: { model.step == .code ? [.code] : [] },
-            set: { pages in
-                if pages.isEmpty, model.step == .code { model.changeEmail() }
+            get: { pages },
+            set: { now in
+                let was = pages
+                guard now.count < was.count else { return }
+                if now.isEmpty, model.showsWelcome {
+                    model.returnToWelcome()
+                } else if now.last == .linkEntry {
+                    model.returnToLinkEntry()
+                } else if was.last == .code {
+                    model.changeEmail()
+                }
             })
     }
 }

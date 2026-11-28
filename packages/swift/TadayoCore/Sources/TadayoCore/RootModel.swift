@@ -95,6 +95,21 @@ import Observation
     /// The invitation shown over the tabs, from a link opened or an accepted invitation the club
     /// list holds (`docs/plans/ios-b1-invitation.md` section 1), or nil.
     public private(set) var invitation: InvitationModel?
+    /// Welcome's Create a club led here: the tabs open `G01-create` on Home as they first show
+    /// (`arrivalCreate()`; handoff 8's route "A02-email, then age/profile if needed, then
+    /// G01-create"). Held in memory, for the first account that shows, as a link opened before
+    /// sign-in is; a newer link replaces it (`docs/plans/ios-b1-welcome.md` section 2).
+    public private(set) var createsClubOnArrival = false
+    /// Create a club, from the sign-in that took it until the tabs first show, in memory only:
+    /// through Retry after a session the phone couldn't keep, whose new sign-in starts at
+    /// A02-email with no route taken, and through a session the server ends during the age or the
+    /// profile, for that account alone, as a held link is (FQ135's default). Leave sign-in and
+    /// Welcome shown again forget it.
+    private struct HeldCreate {
+        /// The account it's for; nil until one shows.
+        let accountID: String?
+    }
+    private var createHeld: HeldCreate?
 
     /// Moves each time the app leaves an account. An answer to a call made before is dropped, so
     /// nothing that lands after Leave sign-in can route back into the account left (spec 23).
@@ -189,6 +204,12 @@ import Observation
     /// ADR-037). A keychain that refuses the read for a moment is neither: the account's failure,
     /// with Retry, and everything kept (FQ89).
     public func start() async {
+        await start(welcome: true)
+    }
+
+    /// `start()`, where a flow that finds no sign-in starts at Welcome only with `welcome`, and
+    /// only if no link is held.
+    private func start(welcome: Bool) async {
         guard leaving == nil else { return }
         route = .starting
         let signedIn: Bool
@@ -201,7 +222,7 @@ import Observation
         guard signedIn else {
             selection.forget()
             links.forget()
-            return showSignIn()
+            return showSignIn(welcome: welcome)
         }
         route = .reading
         await readAccount()
@@ -218,7 +239,8 @@ import Observation
         if route == .signInNotKept {
             guard (try? await session.isSignedIn) != nil else { return }
             let typed = signIn?.email ?? ""
-            await start()
+            // Only the code is asked for again: A02-email first, with no Welcome under it.
+            await start(welcome: false)
             if route == .signIn { signIn?.email = typed }
             return
         }
@@ -226,7 +248,7 @@ import Observation
     }
 
     /// Leave sign-in, on A02-age and the Lab's Log out: "Leaving sign-in…" while it ends the
-    /// session on the server and here, then A02-email, empty (Welcome, A01, comes in B1). If the
+    /// session on the server and here, then Welcome, with A02-email empty (handoff 1). If the
     /// device couldn't forget the session, the failure line says so, with Retry, rather than show
     /// sign-in over a session still kept. One Leave runs at a time, and the first one's reason
     /// stands. `left` purges what the account left behind (T11).
@@ -261,6 +283,7 @@ import Observation
             if let shown { pendingInvitation = shown }
         } else {
             pendingInvitation = nil
+            createHeld = nil
         }
         forgetClubs()
         selection.forget()
@@ -376,6 +399,14 @@ import Observation
             signedOut: { [weak self] in await self?.endedByServer() })
     }
 
+    /// `G01-create` as the tabs first show, once, after Welcome's Create a club
+    /// (`createsClubOnArrival`), or nil.
+    public func arrivalCreate() -> CreateClubModel? {
+        guard createsClubOnArrival else { return nil }
+        createsClubOnArrival = false
+        return createClub()
+    }
+
     /// Naming a new club (`G01-create`), while the tabs show an account. Its answers count only in
     /// the session it was made in. Once the club is made it becomes this account's selected club
     /// and the list is read again, so the tabs show it; a `signedOut` answer ends the session.
@@ -438,6 +469,8 @@ import Observation
     public func open(_ token: InvitationToken) async {
         guard route == .tabs, let account else {
             pendingInvitation = HeldInvitation(token: token, accountID: profile?.account.id)
+            // Welcome is skipped, or Create a club replaced (`SignInModel.received()`).
+            if route == .signIn { signIn?.received() }
             return
         }
         pendingInvitation = nil
@@ -689,11 +722,16 @@ import Observation
         home = .loading
         homeReads += 1
         proposing = ([:], epoch)
+        createsClubOnArrival = false
     }
 
-    /// A02-email, empty unless the server ended the sign-in before while the address was still
-    /// in memory (`Ending`).
-    private func showSignIn(after ending: Ending? = nil) {
+    /// Welcome, or A02-email first: empty unless the server ended the sign-in before while the
+    /// address was still in memory (`Ending`). The flow starts at Welcome with `welcome` and no
+    /// link held, and never after the server ended the sign-in, whose words are for someone
+    /// already here (`docs/plans/ios-b1-welcome.md` section 2). Its paste step's link is held
+    /// here, in memory, for the first account that shows, and let go when the person walks back
+    /// from it.
+    private func showSignIn(after ending: Ending? = nil, welcome: Bool = true) {
         profile = nil
         account = nil
         forgetClubs()
@@ -704,18 +742,38 @@ import Observation
             endedByServer = true
             address = typed
         }
+        let welcomes = welcome && !endedByServer && pendingInvitation == nil
+        // Welcome's routes are chosen again there.
+        if welcomes { createHeld = nil }
         let model = SignInModel(
             auth: auth,
             verified: { [weak self] verified in
                 guard let self, self.epoch == asked else { return }
                 await self.signedIn(verified)
-            }, signInEnded: endedByServer, now: now, sleep: sleep)
+            }, signInEnded: endedByServer,
+            welcome: welcomes,
+            hold: { [weak self] token in
+                guard let self, self.epoch == asked, self.route == .signIn else { return }
+                self.pendingInvitation = HeldInvitation(token: token, accountID: nil)
+            },
+            letGo: { [weak self] token in
+                guard let self, self.epoch == asked, let held = self.pendingInvitation else {
+                    return
+                }
+                if let token {
+                    if held.token == token { self.pendingInvitation = nil }
+                } else if held.accountID == nil {
+                    self.pendingInvitation = nil
+                }
+            },
+            now: now, sleep: sleep)
         if let address { model.email = address }
         signIn = model
         route = .signIn
     }
 
     private func signedIn(_ verified: AuthSession) async {
+        if signIn?.way == .createClub { createHeld = HeldCreate(accountID: nil) }
         do {
             try await session.begin(verified)
         } catch {
@@ -759,6 +817,12 @@ import Observation
                 pendingInvitation = HeldInvitation(token: held.token, accountID: account.id)
             }
         }
+        // Create a club the same way.
+        if let owner = createHeld?.accountID, owner != account.id {
+            createHeld = nil
+        } else if createHeld != nil {
+            createHeld = HeldCreate(accountID: account.id)
+        }
         guard Self.isComplete(account) else {
             self.account = nil
             // Nothing of a club while the account is incomplete: a shown invitation is held again,
@@ -782,6 +846,10 @@ import Observation
             route = account.ageConfirmed ? .profile : .confirmAge
             return
         }
+        // Create a club opens G01-create as the tabs first show, unless a link is held, which a
+        // newer intent replaced it with.
+        createsClubOnArrival = createHeld != nil && pendingInvitation == nil
+        createHeld = nil
         signIn = nil
         profile = nil
         self.account = account
