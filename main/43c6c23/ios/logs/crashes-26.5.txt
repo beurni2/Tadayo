@@ -1,0 +1,74 @@
+--- 07:11:21 UTC, /Users/runner/Library/Logs/DiagnosticReports/Family-2026-11-28-071121.ips
+name: Family
+app_name: Family
+bug_type: 309
+timestamp: 2026-11-28 07:11:21.00 +0000
+pid: 13434
+procName: Family
+procPath: /Volumes/VOLUME/*/Family.app/Family
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.D501772D-D926-4DF9-B426-D1A637A68DEA
+exception: {"codes": "0x0000000000000000, 0x0000000000000000", "rawCodes": [0, 0], "signal": "SIGABRT", "type": "EXC_CRASH"}
+termination: {"byPid": 13434, "byProc": "Family", "code": 6, "flags": 0, "indicator": "Abort trap: 6", "namespace": "SIGNAL"}
+--- 07:17:51 UTC, /Library/Logs/DiagnosticReports/coresymbolicationd_2026-11-28-071355_sat12-bq152-54cb73dc-ddf9-4df1-9bca-f55cb318152f-4ACBE98AC63A.diag
+Date/Time:        2026-11-28 06:23:32.327 +0000
+End time:         2026-11-28 07:11:14.216 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 76190025-0466-40D2-A3EB-2AFAE6CD09B7
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18b5c4000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x192ef8000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18c420000
+
+Command:          coresymbolicationd
+Path:             /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+Codesigning ID:   com.apple.coresymbolicationd
+Resource Coalition: "com.apple.coresymbolicationd"(768)
+On Behalf Of:     156 samples UNKNOWN [2587, 11007, 13500, 38370, 38374] (156 samples originated by UNKNOWN [195, 13500, 38370, 38374])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              635
+--- 07:17:55 UTC, /Library/Logs/DiagnosticReports/STExtractionService_2026-11-28-071751_sat12-bq152-54cb73dc-ddf9-4df1-9bca-f55cb318152f-4ACBE98AC63A.diag
+Date/Time:        2026-11-28 07:09:40.295 +0000
+End time:         2026-11-28 07:11:28.607 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: 851D816D-256A-4391-83D5-1988C9F22C7D
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18b5c4000
+
+Command:          STExtractionService
+Path:             /Volumes/VOLUME/*/StreamingExtractor.framework/XPCServices/STExtractionService.xpc/STExtractionService
+Identifier:       com.apple.STExtractionService
+Version:          1.0 (1)
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.D501772D-D926-4DF9-B426-D1A637A68DEA"(2954)
+On Behalf Of:     66 samples nsurlsessiond [12411] (65 samples originated by UNKNOWN [12358, 12504, 12511], 1 sample originated by trustd [12467])
+Architecture:     arm64
+Parent:           UNKNOWN [12281]
+PID:              14600
+
+--- 07:28:16 UTC, /Library/Logs/DiagnosticReports/mds_stores_2026-11-28-072738_sat12-bq152-54cb73dc-ddf9-4df1-9bca-f55cb318152f-4ACBE98AC63A.diag
+Date/Time:        2026-11-28 06:23:15.772 +0000
+End time:         2026-11-28 07:27:26.980 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: B936240E-2134-4814-BA21-87E57673596B
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18b5c4000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x192ef8000
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x18c420000
+
+Command:          mds_stores
+Path:             /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+Resource Coalition: "com.apple.Spotlight"(587)
+On Behalf Of:     199 samples mds [123] (181 samples originated by UNKNOWN [2078, 3579, 4485, 6134, 6185, 14792, 22124, 22407, 23215, 24068, 24077, 30823, 31128, 31547, 33186, 34474, 35052, 35089, 35859], 18 samples originated by mds [123])
+Architecture:     arm64e
+Parent:           launchd [1]
+PID:              470
