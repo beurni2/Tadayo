@@ -24,7 +24,7 @@ import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
-import { FAKE_SIGNED_SECONDS, fakeStorage, noStorage, type FakeStorage } from "../testing.ts";
+import { FAKE_SIGNED_SECONDS, fakeStorage, noStorage, uncounted, type FakeStorage } from "../testing.ts";
 import type { SignedPut, UploadStorage } from "./storage.ts";
 import { signedUploadBody, uploadBody } from "./uploads.ts";
 
@@ -180,6 +180,7 @@ async function appFor(begin: (...args: unknown[]) => Promise<unknown>, options: 
     clock: options.clock ?? ({} as Clock),
     authenticate: () => Promise.resolve(options.account ?? finished),
     storage: options.storage ?? noStorage,
+    failures: uncounted,
     log:
       lines === undefined
         ? { level: "silent" }

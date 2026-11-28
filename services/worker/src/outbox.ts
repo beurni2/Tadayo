@@ -39,7 +39,8 @@
 //
 // The dead-letter table is `app.outbox_events` with `state = 'dead'`. Its alert is twofold: a line on standard error,
 // which Fly's logs keep, and a count in `app.failure_counts`, as `<topic>:<code>` (`deadCode`), written in the same
-// transaction as the death, so an event that dies is counted once and a death that rolls back counts nothing; a check
+// transaction as the death, so an event that dies is counted once and a death that rolls back counts nothing (a count
+// that can't be written rolls its death back, for the lease to bring the event back: `outboxPass`); a check
 // every 15 minutes tells the founder what is new, as a GitHub issue (the outside audit's B7; FQ150;
 // tools/ops/src/failure-alert.ts). Every line, every `last_error` and every count holds codes and opaque ids, never an
 // error's message, which could quote a row or a URL (T52). Each line is written as soon as what it says is committed,
@@ -274,8 +275,11 @@ export interface OutboxPassOptions {
 
 /**
  * One pass: claims and works on due events of the handlers' topics, one at a time, until none is due or `stopping`
- * answers true. Throws only when the database can't be reached for a claim or a failure's record; the event's lease
- * then brings it back. Every line is already written when it throws.
+ * answers true. Throws only when the database can't be reached for a claim or a failure's record, or a death's count
+ * can't be written, which rolls the death back with it; the event's lease then brings it back. One that had used its
+ * last attempt dies when its lease has passed, written and counted then as `lease_lapsed`, the code of the failure
+ * whose record rolled back gone with it; one a handler failed for good with attempts left is worked again. Every line
+ * is already written when it throws.
  */
 export async function outboxPass(
   sql: WorkerSql,

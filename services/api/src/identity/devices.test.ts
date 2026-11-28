@@ -18,7 +18,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
 import type { Authenticate } from "../session.ts";
-import { noStorage } from "../testing.ts";
+import { noStorage, uncounted } from "../testing.ts";
 import { deviceRegistrationBody } from "./devices.ts";
 
 type Body = Record<string, unknown>;
@@ -65,6 +65,7 @@ async function appFor(
       return authenticate(header);
     },
     storage: noStorage,
+    failures: uncounted,
     log: { level: "debug", stream: { write: (line) => void lines.push(line) } },
   };
   const app = buildApp(deps);

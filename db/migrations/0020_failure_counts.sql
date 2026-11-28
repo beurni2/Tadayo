@@ -4,13 +4,14 @@
 -- One row a source and a code: the API's 5xx answers, by the class and code of the error behind each
 -- (services/api/src/failure-count.ts), and the worker's dead outbox events, by topic and code
 -- (services/worker/src/outbox.ts). `total` counts every failure so far; `reported` is the part an alert has told of
--- (tools/ops/src/failure-alert.ts). Both only grow (`failure_counts_grow`), so what is new is `total - reported`,
--- and neither a writer nor the check reads a clock (T1). A row holds a code and two numbers, never an id, a name, a
--- date or a message (T52).
+-- (tools/ops/src/failure-alert.ts). Both only grow (`failure_counts_grow`), a new row starts with nothing reported,
+-- and a row is never deleted (`failure_counts_no_delete`, `failure_counts_no_truncate`), so what is new is
+-- `total - reported`, a failure counted is never lost to a write, and neither a writer nor the check reads a clock
+-- (T1). A row holds a code and two numbers, never an id, a name, a date or a message (T52).
 --
 -- The writers: `countFailures` (packages/domain/src/failure-count.ts) adds to `total`, every code of one call in
--- one statement, in the codes' "C" order; the check marks `reported`, a row at a time in the same order, in one
--- transaction. Each takes its rows' locks in that one order, so none of them deadlocks another.
+-- one statement, in the codes' "C" order; the check marks `reported` in one statement that locks its rows in the same
+-- order first (`markReported`). Each takes its rows' locks in that one order, so none of them deadlocks another.
 
 CREATE TABLE app.failure_counts (
   source text NOT NULL CHECK (source IN ('api', 'worker')),
@@ -28,16 +29,26 @@ ALTER TABLE app.failure_counts ENABLE ROW LEVEL SECURITY;
 CREATE TRIGGER failure_counts_keep BEFORE UPDATE ON app.failure_counts
   FOR EACH ROW EXECUTE FUNCTION app.keep_columns('source', 'code');
 
--- A count is never taken back and a mark never lowered: an update that lowers either is refused.
+-- A count is never taken back and a mark never lowered: an update that lowers either is refused, and so is a new row
+-- that says some of its failures were already reported.
 CREATE FUNCTION app.failure_counts_grow() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
-  IF NEW.total < OLD.total OR NEW.reported < OLD.reported THEN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.reported <> 0 THEN
+      RAISE EXCEPTION 'app.failure_counts: a new count has nothing reported yet'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+  ELSIF NEW.total < OLD.total OR NEW.reported < OLD.reported THEN
     RAISE EXCEPTION 'app.failure_counts: a count and its mark only grow'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   RETURN NEW;
 END;
 $$;
-CREATE TRIGGER failure_counts_grow BEFORE UPDATE ON app.failure_counts
+CREATE TRIGGER failure_counts_grow BEFORE INSERT OR UPDATE ON app.failure_counts
   FOR EACH ROW EXECUTE FUNCTION app.failure_counts_grow();
+CREATE TRIGGER failure_counts_no_delete BEFORE DELETE ON app.failure_counts
+  FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a failure count is never deleted: what it holds may not be told yet');
+CREATE TRIGGER failure_counts_no_truncate BEFORE TRUNCATE ON app.failure_counts
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a failure count is never deleted: what it holds may not be told yet');

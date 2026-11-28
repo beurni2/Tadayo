@@ -1,8 +1,8 @@
 // The failure counts on Postgres as `tadayo_app` (the outside audit's B7; db/migrations/0020_failure_counts.sql;
 // packages/domain/src/failure-count.ts; docs/plans/api-b2-failure-alerts.md, sections 1.1 and 1.2): the first count of
 // a code makes its row and later ones add to it, counts made at once all land, the schema refuses what no writer may
-// write, the table is closed like every table of `app` (T53), and the API counts each 5xx it answers through its own
-// pool, after the answer.
+// write and keeps every row for good, the table is closed like every table of `app` (T53), and the API counts each 5xx
+// it answers through its own pool, as the answer goes out, once.
 //
 // Every code here carries a random part of its own, so the rows are this file's alone; they are removed at the end.
 
@@ -25,9 +25,14 @@ afterAll(async () => {
   if (!isPlainLoopback(process.env["DATABASE_ADMIN_URL"] ?? "")) {
     throw new Error("failure-counts: DATABASE_ADMIN_URL isn't a database on this machine, so nothing is removed");
   }
+  // A count is never deleted (0020): the superuser removes this file's rows with the table's triggers off, for that
+  // transaction alone.
   const admin = adminSql();
   try {
-    await admin`DELETE FROM app.failure_counts WHERE code IN ${admin(codes)}`;
+    await admin.begin(async (tx) => {
+      await tx`SET LOCAL session_replication_role = replica`;
+      await tx`DELETE FROM app.failure_counts WHERE code IN ${tx(codes)}`;
+    });
   } finally {
     await admin.end();
   }
@@ -142,12 +147,20 @@ describe("the table's own rules (db/migrations/0020_failure_counts.sql)", () => 
       ["a null total", (tx) => tx`INSERT INTO app.failure_counts (source, code, total) VALUES ('api', ${made}, NULL)`],
     ];
     for (const [name, statement] of cases) {
-      expect(await refusedWith(statement), name).toMatch(/^(23514|23502)$/);
+      // A new row's reported is refused by the trigger before any check reads it.
+      expect(await refusedWith(statement), name).toMatch(/^(23514|23502|23000)$/);
     }
-    // The longest code the pattern takes, and a row whose every count is reported, are taken.
+    expect(
+      await refusedWith(
+        (tx) => tx`INSERT INTO app.failure_counts (source, code, total, reported) VALUES ('api', ${made}, 2, 1)`,
+      ),
+      "a new row already reported",
+    ).toBe("23000");
+    // The longest code the pattern takes is taken, and a row may then be reported in full.
     const longest = `${made}${"x".repeat(200 - made.length)}`;
     codes.push(longest);
-    await app`INSERT INTO app.failure_counts (source, code, total, reported) VALUES ('api', ${longest}, 2, 2)`;
+    await app`INSERT INTO app.failure_counts (source, code, total) VALUES ('api', ${longest}, 2)`;
+    await app`UPDATE app.failure_counts SET reported = 2 WHERE source = 'api' AND code = ${longest}`;
     expect(await rowOf("api", longest)).toEqual({ total: "2", reported: "2" });
     // An update can't take reported past the total either, nor lower a count or a mark, nor move a row.
     const updates: [string, (tx: typeof app) => Promise<unknown>, string][] = [
@@ -179,6 +192,13 @@ describe("the table's own rules (db/migrations/0020_failure_counts.sql)", () => 
     ];
     for (const [name, statement, sqlstate] of updates) expect(await refusedWith(statement), name).toBe(sqlstate);
     expect(await rowOf("api", longest)).toEqual({ total: "2", reported: "2" });
+    // Nor is a row ever deleted, one at a time or all at once: what it holds may not be told yet.
+    expect(
+      await refusedWith((tx) => tx`DELETE FROM app.failure_counts WHERE source = 'api' AND code = ${longest}`),
+      "a delete",
+    ).toBe("23000");
+    expect(await refusedWith((tx) => tx`TRUNCATE app.failure_counts`), "a truncate").toBe("23000");
+    expect(await rowOf("api", longest)).toEqual({ total: "2", reported: "2" });
   });
 
   it("is closed like every table of app: row level security on, with no policy (T53)", async () => {
@@ -191,7 +211,7 @@ describe("the table's own rules (db/migrations/0020_failure_counts.sql)", () => 
 });
 
 describe("the API's 5xx, counted through its own pool (services/api/src/failure-count.ts)", () => {
-  it("counts each 500 by its error's class and site code, once the answer has gone", async () => {
+  it("counts each 500 by its error's class and site code, as the answer goes out, once", async () => {
     const siteCode = `test_${randomBytes(6).toString("hex")}_1`;
     const made = `Fault:${siteCode}`;
     codes.push(made);
@@ -217,5 +237,7 @@ describe("the API's 5xx, counted through its own pool (services/api/src/failure-
     } finally {
       await server.close();
     }
+    // Still two once the app has closed: neither 500 was counted twice.
+    expect(await rowOf("api", made)).toEqual({ total: "2", reported: "0" });
   });
 });

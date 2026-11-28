@@ -1,8 +1,8 @@
 // The failure alert's two reads and writes on Postgres as `tadayo_app` (the outside audit's B7;
 // tools/ops/src/failure-alert.ts; docs/plans/api-b2-failure-alerts.md, section 1.4): it reads the counts not yet
 // reported, and once GitHub has answered it marks each as reported up to the total it read, never the total there is
-// by then, and never lower than a mark already made. What it says to GitHub, with a fake GitHub, is
-// tools/ops/src/failure-alert.test.ts.
+// by then, and never lower than a mark already made, in one statement under its own time limits. What it says to
+// GitHub, with a fake GitHub, is tools/ops/src/failure-alert.test.ts.
 //
 // Every code here carries a random part of its own, so the rows are this file's alone; they are removed at the end.
 
@@ -21,9 +21,14 @@ afterAll(async () => {
   if (!isPlainLoopback(process.env["DATABASE_ADMIN_URL"] ?? "")) {
     throw new Error("ops-failure-alert: DATABASE_ADMIN_URL isn't a database on this machine, so nothing is removed");
   }
+  // A count is never deleted (0020): the superuser removes this file's rows with the table's triggers off, for that
+  // transaction alone.
   const admin = adminSql();
   try {
-    await admin`DELETE FROM app.failure_counts WHERE code IN ${admin(codes)}`;
+    await admin.begin(async (tx) => {
+      await tx`SET LOCAL session_replication_role = replica`;
+      await tx`DELETE FROM app.failure_counts WHERE code IN ${tx(codes)}`;
+    });
   } finally {
     await admin.end();
   }
@@ -138,4 +143,50 @@ describe("markReported", () => {
       SELECT total::text AS total FROM app.failure_counts WHERE source = 'api' AND code IN ${app(mine)}`;
     expect(totals.map((found) => found.total)).toEqual(Array.from({ length: 6 }, () => "21"));
   });
+
+  it("waits at most its own lock limit for a row another writer holds, whatever the session's defaults", async () => {
+    const [made] = codesOf(1) as [string];
+    await countFailures(app, "api", new Map([[made, 3]]));
+    const read = await unreportedOf([made]);
+    const url = process.env["DATABASE_URL"];
+    if (!url) throw new Error("set DATABASE_URL, as the ci step db-tests does (tools/ci/ci_steps.py)");
+    // A session whose own defaults would let it wait without end, and a writer that holds the row meanwhile.
+    const unbounded = postgres(url, { max: 1, onnotice: () => undefined });
+    await unbounded.unsafe(
+      "SET lock_timeout = 0; SET statement_timeout = 0; SET idle_in_transaction_session_timeout = 0",
+    );
+    const holding = Promise.withResolvers<undefined>();
+    const release = Promise.withResolvers<undefined>();
+    const holder = app.begin(async (tx) => {
+      await tx`SELECT 1 FROM app.failure_counts WHERE source = 'api' AND code = ${made} FOR UPDATE`;
+      holding.resolve(undefined);
+      await release.promise;
+    });
+    try {
+      await holding.promise;
+      const started = performance.now();
+      const refused: unknown = await markReported(unbounded, read).catch((error: unknown) => error);
+      const waited = performance.now() - started;
+      expect((refused as { code?: string }).code).toBe("55P03");
+      expect(waited).toBeGreaterThanOrEqual(4_500);
+      expect(waited).toBeLessThan(9_000);
+    } finally {
+      release.resolve(undefined);
+      await holder;
+    }
+    try {
+      expect(await reportedOf("api", made)).toBe("0");
+      // Once the row is free, the same session marks it; the limits were that transaction's own, so the session's
+      // own settings are as they were after it committed.
+      await markReported(unbounded, read);
+      expect(await reportedOf("api", made)).toBe("3");
+      const [after] = await unbounded<{ lock: string; statement: string; idle: string }[]>`
+        SELECT pg_catalog.current_setting('lock_timeout') AS lock,
+               pg_catalog.current_setting('statement_timeout') AS statement,
+               pg_catalog.current_setting('idle_in_transaction_session_timeout') AS idle`;
+      expect(after).toEqual({ lock: "0", statement: "0", idle: "0" });
+    } finally {
+      await unbounded.end();
+    }
+  }, 20_000);
 });

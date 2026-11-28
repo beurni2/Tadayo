@@ -257,7 +257,7 @@ export function buildApp(deps: Deps): FastifyInstance {
   installGate(app, deps.authenticate);
   logEachRequest(app);
   // Every 5xx, counted for the founder's alert once its answer has gone (the outside audit's B7).
-  countEachFailure(app, failureCounter(deps.sql, app.log));
+  countEachFailure(app, deps.failures ?? failureCounter(deps.sql, app.log));
   const handlers = handlersOf(deps);
   for (const operation of OPERATIONS) {
     const url = operation.path.replace(/\{([a-z_]+)\}/g, ":$1");

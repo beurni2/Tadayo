@@ -51,8 +51,13 @@ afterAll(async () => {
   const admin = adminSql();
   try {
     await admin`DELETE FROM app.outbox_events WHERE topic IN ${admin(topics)}`;
-    await admin`
-      DELETE FROM app.failure_counts WHERE source = 'worker' AND pg_catalog.split_part(code, ':', 1) IN ${admin(topics)}`;
+    // A count is never deleted (0020): the superuser removes this file's with the table's triggers off, for that
+    // transaction alone.
+    await admin.begin(async (tx) => {
+      await tx`SET LOCAL session_replication_role = replica`;
+      await tx`
+        DELETE FROM app.failure_counts WHERE source = 'worker' AND pg_catalog.split_part(code, ':', 1) IN ${tx(topics)}`;
+    });
   } finally {
     await admin.end();
   }
@@ -704,7 +709,7 @@ describe("a dead event is counted for the alert (the outside audit's B7; docs/pl
     expect(await countsOf(waiting)).toEqual({});
   });
 
-  it("counts in the event's own transaction: while the count waits, the event isn't dead to anyone else, and the two commit together", async () => {
+  it("counts in the event's own transaction: while the count waits, the event isn't dead to anyone else, the waiting transaction is the death's, and the two commit together", async () => {
     for (const [name, written, failure, code] of [
       ["a handler's last failure", {}, () => new FailedForGood("payload"), "payload"],
       ["a lapsed lease", { attempts: MAX_ATTEMPTS }, () => new ImageTimeout(), "lease_lapsed"],
@@ -735,6 +740,18 @@ describe("a dead event is counted for the alert (the outside audit's B7; docs/pl
       try {
         await untilBlockedBy(holder);
         expect((await row(id)).state, name).toBe("pending");
+        // The transaction that waits for the count is the one that wrote the death: it holds the event's row, so a
+        // count made on the pool apart from it, which would stay should the death roll back, is caught here.
+        const waiting = await db<{ event: boolean }[]>`
+          SELECT EXISTS (SELECT FROM pg_catalog.pg_locks l
+                          WHERE l.pid = a.pid AND l.relation = 'app.outbox_events'::pg_catalog.regclass
+                            AND l.mode = 'RowExclusiveLock' AND l.granted) AS event
+            FROM pg_catalog.pg_stat_activity a
+           WHERE ${holder}::int = ANY (pg_catalog.pg_blocking_pids(a.pid))`;
+        expect(
+          waiting.map((one) => one.event),
+          name,
+        ).toEqual([true]);
       } finally {
         letGo();
         await holding;

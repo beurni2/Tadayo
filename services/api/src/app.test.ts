@@ -251,13 +251,17 @@ describe("a database that ran out of time (the outside audit's A7)", () => {
 
 describe("each 5xx, counted for the alert once the answer has gone (the outside audit's B7)", () => {
   /**
-   * A pool whose transactions fail with `routeFailure` (the route's own), and whose statements are the counter's
-   * writes: each is kept, with what it would add, and finished as `writes` says (at once by default, never with
-   * "hold", failed with an error).
+   * A pool whose statements are the counter's writes, each in a transaction of its own: each is kept, with what it
+   * would add, and finished as `writes` says (at once by default, never with "hold", failed with an error). A route
+   * fails with `routeFailure` (its own) where it first reaches the database: its clock's sample, or any statement of
+   * its own, in a transaction or not.
    */
   function counting(options: { routeFailure?: Error; writes?: "finish" | "hold" | Error } = {}) {
     const writes: Record<string, number>[] = [];
-    const statement = (_template: TemplateStringsArray, ...values: unknown[]) => {
+    const statement = (template: TemplateStringsArray, ...values: unknown[]) => {
+      if (!Array.isArray(template) || !template.join("").includes("app.failure_counts")) {
+        throw options.routeFailure ?? new Error("no route of these tests reaches the database");
+      }
       writes.push(JSON.parse(values[1] as string) as Record<string, number>);
       expect(values[0]).toBe("api");
       const outcome = options.writes ?? "finish";
@@ -265,21 +269,25 @@ describe("each 5xx, counted for the alert once the answer has gone (the outside 
       if (outcome === "hold") return new Promise(() => undefined);
       return Promise.reject(outcome);
     };
-    const counted = Object.assign(statement, {
+    const pool = Object.assign(statement, {
       end: (ending?: { timeout?: number }) => sql.end(ending),
-      begin: () => Promise.reject(options.routeFailure ?? new Error("no route of these tests reaches a transaction")),
+      begin: async (...args: unknown[]) => (args.at(-1) as (tx: typeof statement) => Promise<unknown>)(statement),
     }) as unknown as ApiSql;
-    return { counted, writes };
+    const clock = {
+      sample: () => Promise.reject(options.routeFailure ?? new Error("no route of these tests reaches the clock")),
+    } as unknown as Clock;
+    return { counted: { sql: pool, clock }, writes };
   }
 
   async function appWith(
-    counted: ApiSql,
+    counted: { sql: ApiSql; clock: Clock },
     authenticate: Deps["authenticate"] = () => Promise.resolve(READY),
     lines: string[] = [],
   ): Promise<FastifyInstance> {
     const other = buildApp({
       ...deps,
-      sql: counted,
+      sql: counted.sql,
+      clock: counted.clock,
       authenticate,
       log: { level: "info", stream: { write: (line) => void lines.push(line) } },
     });
@@ -300,6 +308,28 @@ describe("each 5xx, counted for the alert once the answer has gone (the outside 
     } finally {
       await other.close();
     }
+    // Still one once the app has closed: no second write came after the first.
+    expect(writes).toEqual([{ "Fault:propose_roster_6": 1 }]);
+  });
+
+  it("counts in the counter it's given, when it's given one, and writes no count of its own", async () => {
+    const { counted, writes } = counting();
+    const given = { codes: [] as string[], stopped: 0 };
+    const other = buildApp({
+      ...deps,
+      sql: counted.sql,
+      clock: counted.clock,
+      authenticate: () => Promise.reject(fault()),
+      failures: { count: (code) => void given.codes.push(code), stop: () => void (given.stopped += 1) },
+    });
+    try {
+      expect((await other.inject({ method: "GET", url: "/v1/me" })).statusCode).toBe(500);
+      expect(given.codes).toEqual(["Fault:propose_roster_6"]);
+    } finally {
+      await other.close();
+    }
+    expect(given.stopped).toBe(1);
+    expect(writes).toEqual([]);
   });
 
   it("counts a database out of time by its SQLSTATE, and a 503 with no error of its own by its status and operation", async () => {

@@ -8,19 +8,28 @@
 //   1. It reads every count with failures it hasn't reported (`total > reported`). With none, it says so and ends,
 //      asking GitHub nothing.
 //   2. It looks for the open issue it opened: one of the Actions bot's (login and type), not a pull request, whose body
-//      carries ALERT_MARKER. It comments there with a table of each count's source, code, failures since the last
-//      alert and failures in all. With none open (none yet, or the founder closed the last one), it opens one, titled
-//      ALERT_TITLE, whose body names the founder's account once, so GitHub notifies the founder, and says how to read
-//      the table. The founder, named in the issue, is subscribed to it, so each later comment notifies them too.
+//      carries ALERT_MARKER, the oldest should there be more (GitHub's list, oldest first). It comments there with a
+//      table of each count's source, code, failures since the last alert and failures in all. With none open (none
+//      yet, or the founder closed the last one), it opens one, titled ALERT_TITLE, whose body names the founder's
+//      account once, so GitHub notifies the founder, and says how to read the table. The founder, named in the issue,
+//      is subscribed to it, so each later comment notifies them too. It reads at most PAGES pages of open issues; when
+//      all of them are full and none holds its own, it can't tell that there is none, so it opens nothing and fails,
+//      rather than open a new issue on every run.
 //   3. Only once GitHub has taken the comment or the issue, it marks each count reported up to the total it read
 //      (`markReported`), never the total there is by then, so a failure counted while it ran stays for the next alert.
 //      GitHub refusing, or not answering, leaves every count for the next run. A run that stops between GitHub's answer
 //      and its mark repeats those counts in the next alert, where they come again with the same number in all; none is
 //      ever lost.
+//   4. It locks the issue's conversation, if it isn't locked yet, so that only the repository's own accounts can write
+//      there: anyone can comment on an open issue of a public repository, and the founder, subscribed to it, would get
+//      a stranger's comment by email in the alert's own thread. GitHub's documentation says only accounts with write
+//      access comment on a locked issue, and doesn't say whether the run's own token is one; should GitHub refuse the
+//      bot's comment on its locked issue (403), the check opens a new issue for the alert instead, and locks that.
 //
 // The repository is public, and so is the issue: every word it writes, there and to the run's log, is fixed text, a
 // source, a code (0020's pattern: letters, digits and `_ . : -`) or a number, never an id, a name, a date or a
-// message (T52). GitHub's answers are read for the fields it needs, and its words are never printed.
+// message (T52). GitHub's answers are read for the fields it needs, and its words are never printed. Each request goes
+// to GitHub's API alone, with the token, and follows no redirect.
 
 import { FAILURE_CODE, FAILURE_SOURCES, type FailureSource } from "@tadayo/domain";
 import type postgres from "postgres";
@@ -37,7 +46,7 @@ export const FOUNDER_ACCOUNT = GITHUB_REPOSITORY.slice(0, GITHUB_REPOSITORY.inde
 
 const GITHUB = "https://api.github.com";
 const GITHUB_MS = 30_000;
-/** Open issues read at most: 1,000, ten pages of GitHub's largest. */
+/** Open issues read at most: 1,000, ten pages of GitHub's largest (the header's step 2). */
 const PAGES = 10;
 const PAGE_SIZE = 100;
 
@@ -71,23 +80,42 @@ export async function unreportedCounts(db: postgres.Sql | postgres.TransactionSq
 }
 
 /**
+ * The mark's own limits, whatever the session's defaults are (0018's role defaults reach only a session that starts
+ * after them): a wait for the rows' locks, the statement, and a transaction left idle by a runner that stopped between
+ * its statement and its commit, which would otherwise keep the rows locked from the API's and the worker's counts.
+ */
+export const MARK_LIMITS = { lockTimeout: "5s", statementTimeout: "10s", idleInTransaction: "15s" } as const;
+
+/**
  * Marks each of `counts` reported up to the total it was read with, never lowering a mark already made, in one
- * transaction, a row at a time in source and code order: the order `countFailures` locks rows in (0020's header).
+ * statement of a transaction with MARK_LIMITS, which locks the rows in source and code "C" order, the order
+ * `countFailures` locks them in (0020's header), and holds them for that statement and its commit alone.
  */
 export async function markReported(db: postgres.Sql, counts: readonly FailureCount[]): Promise<void> {
   if (counts.length === 0) return;
-  const ordered = [...counts].sort((a, b) => compare(a.source, b.source) || compare(a.code, b.code));
+  const marks = JSON.stringify(counts.map((count) => [count.source, count.code, count.total.toString()]));
   await db.begin(async (tx) => {
-    for (const count of ordered) {
-      await tx`
-        UPDATE app.failure_counts SET reported = GREATEST(reported, ${count.total.toString()}::pg_catalog.int8)
-         WHERE source = ${count.source} AND code = ${count.code}`;
-    }
+    await tx`
+      SELECT pg_catalog.set_config('lock_timeout', ${MARK_LIMITS.lockTimeout}, true),
+             pg_catalog.set_config('statement_timeout', ${MARK_LIMITS.statementTimeout}, true),
+             pg_catalog.set_config('idle_in_transaction_session_timeout', ${MARK_LIMITS.idleInTransaction}, true)`;
+    // Bound as text and cast, so that postgres.js sends the array's text, not a JSON string of it.
+    await tx`
+      WITH marks AS (
+        SELECT mark ->> 0 AS source, mark ->> 1 AS code, (mark ->> 2)::pg_catalog.int8 AS total
+          FROM pg_catalog.jsonb_array_elements(${marks}::pg_catalog.text::pg_catalog.jsonb) AS mark
+      ), locked AS MATERIALIZED (
+        SELECT f.source, f.code, marks.total
+          FROM app.failure_counts AS f
+          JOIN marks ON f.source = marks.source AND f.code = marks.code
+         ORDER BY f.source COLLATE "C", f.code COLLATE "C"
+           FOR UPDATE OF f
+      )
+      UPDATE app.failure_counts AS f SET reported = GREATEST(f.reported, locked.total)
+        FROM locked
+       WHERE f.source = locked.source AND f.code = locked.code`;
   });
 }
-
-/** Postgres's "C" order, which is JavaScript's for the ASCII a code is made of. */
-const compare = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 export interface FailureAlertInput {
   readonly store: FailureStore;
@@ -95,6 +123,15 @@ export interface FailureAlertInput {
   /** The run's own `GITHUB_TOKEN`, with `issues: write` and `contents: read` alone. */
   readonly githubToken: string;
   readonly say: (line: string) => void;
+}
+
+/** GitHub's answer when it isn't the one expected: its status, or 0 for no answer. */
+class GitHubRefused extends OpsError {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
 }
 
 const record = (value: unknown): Record<string, unknown> | undefined =>
@@ -134,7 +171,7 @@ function issueBody(counts: readonly FailureCount[]): string {
     "",
     "Each row is a failure's source, its code, how many times it happened since the last alert, and how many in all. A code names the line it came from: search the repository for it. Sections 1.2 and 1.3 of docs/plans/api-b2-failure-alerts.md say how the codes are made. The counts hold codes and numbers only: no id, name, date or message.",
     "",
-    "A check every 15 minutes adds new failures here as a comment while this issue is open. Close it once they are looked at, and the next failure opens a new one. A row that comes again with the same number in all means a check stopped after GitHub took its comment and before it marked the counts.",
+    "A check every 15 minutes adds new failures here as a comment while this issue is open. Close it once they are looked at, and the next failure opens a new one. A row that comes again with the same number in all means a check stopped after GitHub took its comment and before it marked the counts. The check locks this conversation, so only the repository's own accounts write here.",
     "",
   ].join("\n");
 }
@@ -155,7 +192,7 @@ export async function failureAlert(input: FailureAlertInput): Promise<void> {
     );
   }
 
-  const github = async (method: "GET" | "POST", path: string, what: string, body?: unknown) => {
+  const github = async (method: "GET" | "POST" | "PUT", path: string, what: string, body?: unknown) => {
     let response: Response;
     try {
       response = await input.fetch(`${GITHUB}/repos/${GITHUB_REPOSITORY}${path}`, {
@@ -167,15 +204,21 @@ export async function failureAlert(input: FailureAlertInput): Promise<void> {
           ...(body === undefined ? {} : { "content-type": "application/json" }),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        // The token goes to GitHub's API alone.
+        redirect: "error",
         signal: AbortSignal.timeout(GITHUB_MS),
       });
     } catch {
-      throw new OpsError(`failure-alert: no answer from GitHub to ${what}, so every count waits for the next run`);
+      throw new GitHubRefused(
+        `failure-alert: no answer from GitHub to ${what}, so every count waits for the next run`,
+        0,
+      );
     }
-    const expected = method === "GET" ? 200 : 201;
+    const expected = { GET: 200, POST: 201, PUT: 204 }[method];
     if (response.status !== expected) {
-      throw new OpsError(
+      throw new GitHubRefused(
         `failure-alert: GitHub answered HTTP ${String(response.status)} to ${what}, so every count waits for the next run`,
+        response.status,
       );
     }
     try {
@@ -185,12 +228,15 @@ export async function failureAlert(input: FailureAlertInput): Promise<void> {
     }
   };
 
-  // 2. The open issue the alert opened, if there is one: the lowest number, should there be more.
+  // 2. The open issue the alert opened, if there is one: the oldest, should there be more. GitHub lists the oldest
+  // first, so the first page that holds one holds the oldest.
   let open: number | undefined;
+  let locked = false;
+  let unread = false;
   for (let page = 1; page <= PAGES && open === undefined; page += 1) {
     const listed = await github(
       "GET",
-      `/issues?state=open&per_page=${String(PAGE_SIZE)}&page=${String(page)}`,
+      `/issues?state=open&sort=created&direction=asc&per_page=${String(PAGE_SIZE)}&page=${String(page)}`,
       "the list of open issues",
     );
     if (!Array.isArray(listed)) {
@@ -215,24 +261,44 @@ export async function failureAlert(input: FailureAlertInput): Promise<void> {
       ) {
         continue;
       }
-      if (open === undefined || number < open) open = number;
+      if (open === undefined || number < open) {
+        open = number;
+        locked = issue["locked"] === true;
+      }
     }
     if (listed.length < PAGE_SIZE) break;
+    unread = page === PAGES;
+  }
+  if (open === undefined && unread) {
+    throw new OpsError(
+      `failure-alert: ${String(PAGES * PAGE_SIZE)} or more issues are open and none of those read is the alert's, so it opens no new one and every count waits for the next run`,
+    );
   }
 
-  let where: string;
+  let where: string | undefined;
+  let lock: number | undefined;
   if (open !== undefined) {
-    await github("POST", `/issues/${String(open)}/comments`, `the comment on issue #${String(open)}`, {
-      body: commentBody(counts),
-    });
-    where = `issue #${String(open)}`;
-    say(`failure-alert: added them to ${where}`);
-  } else {
+    try {
+      await github("POST", `/issues/${String(open)}/comments`, `the comment on issue #${String(open)}`, {
+        body: commentBody(counts),
+      });
+      where = `issue #${String(open)}`;
+      if (!locked) lock = open;
+      say(`failure-alert: added them to ${where}`);
+    } catch (error) {
+      // Should GitHub keep the bot out of its own locked issue, a new issue carries the alert, and is locked in turn.
+      if (!(locked && error instanceof GitHubRefused && error.status === 403)) throw error;
+      say(`failure-alert: GitHub refused a comment on locked issue #${String(open)}, so it opens a new one`);
+    }
+  }
+  if (where === undefined) {
     const made = record(
       await github("POST", "/issues", "the new issue", { title: ALERT_TITLE, body: issueBody(counts) }),
     );
     const number = made?.["number"];
-    where = typeof number === "number" && Number.isSafeInteger(number) ? `issue #${String(number)}` : "the new issue";
+    const known = typeof number === "number" && Number.isSafeInteger(number);
+    where = known ? `issue #${String(number)}` : "the new issue";
+    if (known) lock = number;
     say(`failure-alert: opened ${where}`);
   }
 
@@ -245,4 +311,19 @@ export async function failureAlert(input: FailureAlertInput): Promise<void> {
     );
   }
   say(`failure-alert: marked ${String(counts.length)} counts reported`);
+
+  // 4. Only the repository's own accounts write in the alert's thread. A lock GitHub refuses fails the run, once its
+  // counts are marked: the alert is out, and the next run with new counts tries the lock again.
+  if (lock !== undefined) {
+    try {
+      await github("PUT", `/issues/${String(lock)}/lock`, `the lock of issue #${String(lock)}`, {});
+    } catch (error) {
+      if (!(error instanceof GitHubRefused)) throw error;
+      const answer = error.status === 0 ? "no answer" : `HTTP ${String(error.status)}`;
+      throw new OpsError(
+        `failure-alert: ${where} has the alert and its counts are marked, but GitHub answered ${answer} to its lock, so the next alert tries again`,
+      );
+    }
+    say(`failure-alert: locked ${where}`);
+  }
 }
