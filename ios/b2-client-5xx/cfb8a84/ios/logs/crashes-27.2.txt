@@ -1,0 +1,279 @@
+--- 05:19:18 UTC, /Library/Logs/DiagnosticReports/intelligenceplatformd_2026-11-28-051809_sjc22-bt144-99e1f1c6-fb42-443e-ad76-82043d1073a2-2EC701B5E71D.diag
+Date/Time:        2026-11-28 05:13:34.808 +0000
+End time:         2026-11-28 05:15:56.898 +0000
+OS Version:       macOS 27.0.1 (Build 26A434)
+Architecture:     arm64e
+Report Version:   73
+Incident Identifier: C1F799E2-9437-4C21-9E9F-4953EAC5A809
+
+Data Source:      Microstackshots
+Shared Cache:     C284A291-B68B-3D0D-A1A0-3F866F87EFDC slid base address 0x196ee0000
+
+Command:          intelligenceplatformd
+Path:             /Volumes/VOLUME/*/IntelligencePlatformCore.framework/intelligenceplatformd
+Codesigning ID:   com.apple.intelligenceplatformd
+Resource Coalition: "com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F"(2162)
+Architecture:     arm64
+Parent:           UNKNOWN [17839]
+PID:              18042
+
+Event:            disk writes
+Action taken:     none
+--- 05:24:48 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-28-052445.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-28 05:24:45.00 +0000
+pid: 23285
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 23285, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:24:51 UTC, /Library/Logs/DiagnosticReports/JetsamEvent-2026-11-28-052450.ips
+bug_type: 298
+timestamp: 2026-11-28 05:24:50.00 +0000
+largestProcess: xcodebuild
+killed: ReportCrashService, pid 35634 (per-process-limit)
+killed: ReportCrashService, pid 35620 (per-process-limit)
+--- 05:25:07 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052507.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:25:07.00 +0000
+pid: 36098
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36098, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:25:09 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052509.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:25:09.00 +0000
+pid: 36588
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36588, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:25:15 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052515.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:25:15.00 +0000
+pid: 36637
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36637, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:25:24 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052524.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:25:24.00 +0000
+pid: 36692
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36692, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:25:34 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052534.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:25:34.00 +0000
+pid: 36735
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36735, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:25:47 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052547.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:25:47.00 +0000
+pid: 36924
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36924, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:25:54 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052554.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:25:54.00 +0000
+pid: 36961
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 36961, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:26:03 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052603.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:26:03.00 +0000
+pid: 37225
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 37225, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:26:13 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052613.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:26:13.00 +0000
+pid: 37588
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 37588, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:26:25 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052625.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:26:25.00 +0000
+pid: 37819
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 37819, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:26:38 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052638.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:26:38.00 +0000
+pid: 37897
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 37897, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:26:47 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052647.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:26:47.00 +0000
+pid: 37967
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 37967, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:27:06 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052706.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:27:06.00 +0000
+pid: 38754
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 38754, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:27:47 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052747.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:27:47.00 +0000
+pid: 40257
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 40257, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:29:09 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-052909.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:29:09.00 +0000
+pid: 42895
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 42895, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:29:28 UTC, /Users/runner/Library/Logs/DiagnosticReports/AppIntentsLiveEntityService-2026-11-28-052928.ips
+name: AppIntentsLiveEntityService
+app_name: AppIntentsLiveEntityService
+bug_type: 309
+timestamp: 2026-11-28 05:29:28.00 +0000
+pid: 42868
+procName: AppIntentsLiveEntityService
+procPath: /Volumes/VOLUME/*/AppIntentsLiveEntitySupport.framework/XPCServices/AppIntentsLiveEntityService.xpc/AppIntentsLiveEntityService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 42868, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:29:57 UTC, /Users/runner/Library/Logs/DiagnosticReports/SettingsSearchReindexService-2026-11-28-052957.ips
+name: SettingsSearchReindexService
+app_name: SettingsSearchReindexService
+bug_type: 309
+timestamp: 2026-11-28 05:29:57.00 +0000
+pid: 44978
+procName: SettingsSearchReindexService
+procPath: /Volumes/VOLUME/*/SettingsServices.framework/XPCServices/SettingsSearchReindexService.xpc/SettingsSearchReindexService
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 44978, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:31:51 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-053151.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:31:51.00 +0000
+pid: 49527
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 49527, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:37:12 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-053712.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:37:12.00 +0000
+pid: 61612
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 61612, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
+--- 05:47:54 UTC, /Users/runner/Library/Logs/DiagnosticReports/intelligencetasksd-2026-11-28-054754.ips
+name: intelligencetasksd
+app_name: intelligencetasksd
+bug_type: 309
+timestamp: 2026-11-28 05:47:54.00 +0000
+pid: 83080
+procName: intelligencetasksd
+procPath: /Volumes/VOLUME/*/IntelligenceTasksEngine.framework/Support/intelligencetasksd
+parentProc: launchd_sim
+coalitionName: com.apple.CoreSimulator.SimDevice.79C39062-C95E-4A7E-AACE-1D4AE134039F
+exception: {"codes": "0x0000000000000001, 0x00000001c1694914", "rawCodes": [1, 7539869972], "signal": "SIGTRAP", "type": "EXC_BREAKPOINT"}
+termination: {"byPid": 83080, "byProc": "exc handler", "code": 5, "flags": 0, "indicator": "Trace/BPT trap: 5", "namespace": "SIGNAL"}
