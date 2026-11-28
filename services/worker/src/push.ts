@@ -419,7 +419,7 @@ export async function sendDelivery(
   id: string,
   decided: DecidedPush,
 ): Promise<{ readonly answered: Answered; readonly reason: string }> {
-  const { sentTo, ...answer } = await limited(sql, async (tx) => {
+  const result = await limited(sql, async (tx) => {
     const [row] = await tx<{ sign_in: Uint8Array | null; state: string; lease_until: Temporal.Instant | null }[]>`
       SELECT sign_in, state, lease_until FROM app.push_deliveries WHERE id = ${id} FOR UPDATE`;
     if (
@@ -452,6 +452,7 @@ export async function sendDelivery(
     const outcome = await sendOnce(sender, decided, to);
     return { ...(await writeAnswer(tx, id, decided, outcome, await clock.sample(tx))), sentTo: to.apns_token };
   });
+  const { sentTo, ...answer } = result;
   if (answer.answered === "dead" && sentTo !== null) {
     // The sign-in's lock and the account's row come first (0017's order), once the delivery's row is let go.
     await limited(sql, (tx) =>
