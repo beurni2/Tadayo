@@ -1,0 +1,2618 @@
+{
+  "G01-invite-people-remove": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Not shared",
+      "Share link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Done for now",
+      "Revoke link",
+      "Remove invitation"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Previous setup screen",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          262.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          262.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          262.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Maya",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          262.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Alex",
+        "target": [
+          237,
+          336.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          336.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          336.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Alex",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          336.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          410.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          410.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          410.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Sam",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          410.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Debby’s invitation",
+        "target": [
+          333,
+          484.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Debby",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          484.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          237,
+          558.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          558.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          558.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Nina",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          558.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Revoke link",
+        "voiceOver": "Revoke link for Nina",
+        "target": [
+          103,
+          610.0,
+          270,
+          48
+        ],
+        "kind": "native-menu-action",
+        "role": "default",
+        "candidate": "Nina",
+        "route": "Native revoke confirmation",
+        "viewportTarget": [
+          103,
+          610.0,
+          270,
+          48
+        ]
+      },
+      {
+        "label": "Remove invitation",
+        "voiceOver": "Remove invitation for Nina",
+        "target": [
+          103,
+          658.0,
+          270,
+          48
+        ],
+        "kind": "native-menu-action",
+        "role": "destructive",
+        "candidate": "Nina",
+        "route": "Native removal confirmation",
+        "viewportTarget": [
+          103,
+          658.0,
+          270,
+          48
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Maya. Shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          247,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Alex. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          321,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Sam. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          395,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Debby. Accepted.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          469,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Nina. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          543,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      }
+    ],
+    "modal": {
+      "kind": "native-menu",
+      "label": "Nina’s invitation",
+      "items": [
+        "Revoke link",
+        "Remove invitation"
+      ],
+      "rect": [
+        103,
+        610.0,
+        270,
+        96
+      ],
+      "anchor": [
+        333,
+        558.0,
+        44,
+        44
+      ],
+      "escape": "Dismiss menu and restore focus to More",
+      "nativePlacement": "Reference only; OS owns actual placement/material."
+    },
+    "viewportOffset": 0,
+    "notes": [
+      "Ben’s full setup list. Nina’s native More menu contrasts stopping the live link with removing the invitation. New More controls on accepted/used/expired rows are proposer-only and contain Remove invitation; link-state restrictions remain separate."
+    ]
+  },
+  "G01-invite-people-remove-confirm": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Not shared",
+      "Share link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Done for now",
+      "Remove Nina’s invitation?",
+      "Any links for Nina will stop working. Nina won’t be able to join Sunday people from this invitation.\n\nYou can invite Nina again later with a new invitation.\n\nAnyone else still invited will review and accept the updated roster again.",
+      "Remove invitation",
+      "Keep invitation"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Previous setup screen",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          262.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          262.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          262.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Maya",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          262.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Alex",
+        "target": [
+          237,
+          336.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          336.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          336.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Alex",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          336.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          410.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          410.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          410.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Sam",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          410.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Debby’s invitation",
+        "target": [
+          333,
+          484.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Debby",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          484.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          237,
+          558.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          558.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          558.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Nina",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          558.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Remove invitation",
+        "voiceOver": "Remove invitation for Nina",
+        "target": [
+          61.5,
+          500.0,
+          270,
+          44
+        ],
+        "kind": "native-alert-action",
+        "role": "destructive",
+        "candidate": "Nina",
+        "viewportTarget": [
+          61.5,
+          500.0,
+          270,
+          44
+        ]
+      },
+      {
+        "label": "Keep invitation",
+        "voiceOver": "Keep invitation",
+        "target": [
+          61.5,
+          544.0,
+          270,
+          44
+        ],
+        "kind": "native-alert-action",
+        "role": "cancel",
+        "candidate": "Nina",
+        "viewportTarget": [
+          61.5,
+          544.0,
+          270,
+          44
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Maya. Shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          247,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Alex. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          321,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Sam. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          395,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Debby. Accepted.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          469,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Nina. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          543,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      }
+    ],
+    "modal": {
+      "kind": "native-alert",
+      "title": "Remove Nina’s invitation?",
+      "body": "Any links for Nina will stop working. Nina won’t be able to join Sunday people from this invitation.\n\nYou can invite Nina again later with a new invitation.\n\nAnyone else still invited will review and accept the updated roster again.",
+      "rect": [
+        61.5,
+        264.0,
+        270,
+        324
+      ],
+      "actions": [
+        "Remove invitation",
+        "Keep invitation"
+      ],
+      "defaultFocus": "Native title/cancel conventions; destructive action never preselected."
+    },
+    "viewportOffset": 0,
+    "notes": [
+      "Native destructive confirmation, not a custom sheet. Names Nina and Sunday people, explains link invalidation and a future new invitation, plus re-review for other invitees. No acceptance, response or approval status for Nina is mentioned."
+    ]
+  },
+  "G01-invite-people-removed": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Not shared",
+      "Share link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Needs to accept again",
+      "Share again",
+      "Create an invitation",
+      "Only you can see this list.",
+      "Done for now"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Previous setup screen",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          262.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          262.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          262.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Maya",
+        "viewportTarget": [
+          333,
+          262.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Alex",
+        "target": [
+          237,
+          336.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          336.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          336.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Alex",
+        "viewportTarget": [
+          333,
+          336.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          410.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          410.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          410.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Sam",
+        "viewportTarget": [
+          333,
+          410.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Debby",
+        "target": [
+          237,
+          484.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          484.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Debby’s invitation",
+        "target": [
+          333,
+          484.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Debby",
+        "viewportTarget": [
+          333,
+          484.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Create an invitation",
+        "voiceOver": "Create an invitation",
+        "hint": null,
+        "target": [
+          20,
+          575,
+          353,
+          50
+        ],
+        "kind": "secondary",
+        "route": "G01-invite-name",
+        "viewportTarget": [
+          20,
+          575,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Maya. Shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          247,
+          198,
+          74
+        ]
+      },
+      {
+        "label": "Alex. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          321,
+          198,
+          74
+        ]
+      },
+      {
+        "label": "Sam. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          395,
+          198,
+          74
+        ]
+      },
+      {
+        "label": "Debby. Needs to accept again.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          469,
+          198,
+          74
+        ]
+      }
+    ],
+    "modal": null,
+    "viewportOffset": 0,
+    "notes": [
+      "Confirmed removal only: Nina’s row disappears immediately, without a Removed tombstone. Debby becomes Needs to accept again, because the roster changed; the original held link remains usable for the updated review. Create an invitation returns only after authoritative capacity is available. Local announcement: Nina’s invitation was removed."
+    ]
+  },
+  "G01-invite-people-remove-failed": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Not shared",
+      "Share link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Couldn’t confirm that Nina’s invitation to Sunday people was removed. Check your connection and try again.",
+      "Done for now"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Previous setup screen",
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          262.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          262.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          262.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Maya",
+        "viewportTarget": [
+          333,
+          262.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Alex",
+        "target": [
+          237,
+          336.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          336.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          336.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Alex",
+        "viewportTarget": [
+          333,
+          336.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          410.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          410.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          410.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Sam",
+        "viewportTarget": [
+          333,
+          410.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Debby’s invitation",
+        "target": [
+          333,
+          484.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Debby",
+        "viewportTarget": [
+          333,
+          484.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          237,
+          558.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "viewportTarget": [
+          237,
+          558.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          558.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Nina",
+        "viewportTarget": [
+          333,
+          558.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Maya. Shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          247,
+          198,
+          74
+        ]
+      },
+      {
+        "label": "Alex. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          321,
+          198,
+          74
+        ]
+      },
+      {
+        "label": "Sam. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          395,
+          198,
+          74
+        ]
+      },
+      {
+        "label": "Debby. Accepted.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          469,
+          198,
+          74
+        ]
+      },
+      {
+        "label": "Nina. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          543,
+          198,
+          74
+        ]
+      }
+    ],
+    "modal": null,
+    "viewportOffset": 0,
+    "notes": [
+      "No usable removal answer. Keep the last verified rows and controls, including Nina; do not claim removal or roll back a confirmed commit. Inline circle-error message ends24 above Done for now. Refusal variant uses Couldn’t remove Nina’s invitation to Sunday people. Try again."
+    ]
+  },
+  "G05-members-with-proposed-remove": {
+    "visible": [
+      "Members",
+      "Club details",
+      "Kitchen table",
+      "Each person has a day.",
+      "Ben · You",
+      "Monday",
+      "Maya",
+      "Tuesday",
+      "Alex",
+      "Wednesday",
+      "Sam",
+      "Thursday",
+      "Debby",
+      "Friday",
+      "Leila",
+      "Proposed by Ben",
+      "Proposed",
+      "5 members · New York",
+      "7 AM to 1 AM the next morning.",
+      "Remove invitation"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Club details",
+        "target": [
+          8,
+          56,
+          119.6015625,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Club details",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          8,
+          56,
+          119.6015625,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Leila’s invitation",
+        "target": [
+          333,
+          617,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Leila",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          617,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Remove invitation",
+        "voiceOver": "Remove invitation for Leila",
+        "target": [
+          103,
+          561,
+          270,
+          48
+        ],
+        "kind": "native-menu-action",
+        "role": "destructive",
+        "candidate": "Leila",
+        "route": "Native removal confirmation",
+        "viewportTarget": [
+          103,
+          561,
+          270,
+          48
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. You. Monday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          221,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Maya. Tuesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          297,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Alex. Wednesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          373,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Sam. Thursday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          449,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Debby. Friday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          525,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Leila. Proposed by Ben. Proposed.",
+        "kind": "static-proposed-member",
+        "target": [
+          20,
+          601,
+          301,
+          106
+        ],
+        "route": null,
+        "hiddenByModal": true
+      }
+    ],
+    "modal": {
+      "kind": "native-menu",
+      "label": "Leila’s invitation",
+      "items": [
+        "Remove invitation"
+      ],
+      "rect": [
+        103,
+        561,
+        270,
+        48
+      ],
+      "anchor": [
+        333,
+        617,
+        44,
+        44
+      ],
+      "escape": "Dismiss menu and restore focus to More",
+      "nativePlacement": "Reference only; OS owns actual placement/material."
+    },
+    "viewportOffset": 0,
+    "notes": [
+      "Ben is the viewer and Leila’s proposer. Leila’s row stays a static identity/tag group; its separate native More control exposes Remove invitation. No active-member row gets a menu or removal. The active-member footer remains five. The native menu is open; no link status for Leila is invented."
+    ]
+  },
+  "G01-invite-people-remove-dark": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Not shared",
+      "Share link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Done for now",
+      "Revoke link",
+      "Remove invitation"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Previous setup screen",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          237,
+          262.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          262.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          262.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Maya",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          262.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Alex",
+        "target": [
+          237,
+          336.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          336.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          336.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Alex",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          336.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          237,
+          410.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          410.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          410.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Sam",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          410.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Debby’s invitation",
+        "target": [
+          333,
+          484.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Debby",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          484.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          237,
+          558.0,
+          96,
+          44
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          237,
+          558.0,
+          96,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          558.0,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Nina",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          558.0,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "kind": "primary",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          20,
+          724,
+          353,
+          50
+        ]
+      },
+      {
+        "label": "Revoke link",
+        "voiceOver": "Revoke link for Nina",
+        "target": [
+          103,
+          610.0,
+          270,
+          48
+        ],
+        "kind": "native-menu-action",
+        "role": "default",
+        "candidate": "Nina",
+        "route": "Native revoke confirmation",
+        "viewportTarget": [
+          103,
+          610.0,
+          270,
+          48
+        ]
+      },
+      {
+        "label": "Remove invitation",
+        "voiceOver": "Remove invitation for Nina",
+        "target": [
+          103,
+          658.0,
+          270,
+          48
+        ],
+        "kind": "native-menu-action",
+        "role": "destructive",
+        "candidate": "Nina",
+        "route": "Native removal confirmation",
+        "viewportTarget": [
+          103,
+          658.0,
+          270,
+          48
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Maya. Shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          247,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Alex. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          321,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Sam. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          395,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Debby. Accepted.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          469,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Nina. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          543,
+          198,
+          74
+        ],
+        "hiddenByModal": true
+      }
+    ],
+    "modal": {
+      "kind": "native-menu",
+      "label": "Nina’s invitation",
+      "items": [
+        "Revoke link",
+        "Remove invitation"
+      ],
+      "rect": [
+        103,
+        610.0,
+        270,
+        96
+      ],
+      "anchor": [
+        333,
+        558.0,
+        44,
+        44
+      ],
+      "escape": "Dismiss menu and restore focus to More",
+      "nativePlacement": "Reference only; OS owns actual placement/material."
+    },
+    "viewportOffset": 0,
+    "notes": [
+      "Same proposer-only More menu in revision1.1 dark tokens; no brand value changes."
+    ]
+  },
+  "G01-invite-people-remove-xl": {
+    "visible": [
+      "Create a club",
+      "Invite your people",
+      "Sunday people",
+      "Each person gets a separate link.",
+      "Maya",
+      "Shared",
+      "Share again",
+      "Alex",
+      "Not shared",
+      "Share link",
+      "Sam",
+      "Not shared",
+      "Share link",
+      "Debby",
+      "Accepted",
+      "Nina",
+      "Not shared",
+      "Share link",
+      "Only you can see this list.",
+      "Done for now",
+      "Revoke link",
+      "Remove invitation"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back",
+        "target": [
+          8,
+          56,
+          44,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Previous setup screen",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          8,
+          56,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share again",
+        "voiceOver": "Share again for Maya",
+        "target": [
+          69,
+          815,
+          304,
+          84
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          69,
+          -535,
+          304,
+          84
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Maya’s invitation",
+        "target": [
+          333,
+          672,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Maya",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          -678,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Alex",
+        "target": [
+          69,
+          1074,
+          304,
+          84
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          69,
+          -276,
+          304,
+          84
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Alex’s invitation",
+        "target": [
+          333,
+          931,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Alex",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          -419,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Sam",
+        "target": [
+          69,
+          1333,
+          304,
+          84
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          69,
+          -17,
+          304,
+          84
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Sam’s invitation",
+        "target": [
+          333,
+          1190,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Sam",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          -160,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Debby’s invitation",
+        "target": [
+          333,
+          1449,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Debby",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          99,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Share link",
+        "voiceOver": "Share link for Nina",
+        "target": [
+          69,
+          1751,
+          304,
+          84
+        ],
+        "kind": "native-text-action",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          69,
+          401,
+          304,
+          84
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Nina’s invitation",
+        "target": [
+          333,
+          1608,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Revoke link",
+          "Remove invitation"
+        ],
+        "candidate": "Nina",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          258,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Done for now",
+        "voiceOver": "Done for now",
+        "hint": null,
+        "target": [
+          20,
+          689,
+          353,
+          85
+        ],
+        "kind": "primary",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          20,
+          689,
+          353,
+          85
+        ]
+      },
+      {
+        "label": "Revoke link",
+        "voiceOver": "Revoke link for Nina",
+        "target": [
+          20,
+          310,
+          353,
+          89
+        ],
+        "kind": "native-menu-action",
+        "role": "default",
+        "candidate": "Nina",
+        "route": "Native revoke confirmation",
+        "viewportTarget": [
+          20,
+          310,
+          353,
+          89
+        ]
+      },
+      {
+        "label": "Remove invitation",
+        "voiceOver": "Remove invitation for Nina",
+        "target": [
+          20,
+          399,
+          353,
+          154
+        ],
+        "kind": "native-menu-action",
+        "role": "destructive",
+        "candidate": "Nina",
+        "route": "Native removal confirmation",
+        "viewportTarget": [
+          20,
+          399,
+          353,
+          154
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Maya. Shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          656,
+          198,
+          259
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Alex. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          915,
+          198,
+          259
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Sam. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          1174,
+          198,
+          259
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Debby. Accepted.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          1433,
+          198,
+          159
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Nina. Not shared.",
+        "kind": "private-invitation-status",
+        "target": [
+          20,
+          1592,
+          198,
+          259
+        ],
+        "hiddenByModal": true
+      }
+    ],
+    "modal": {
+      "kind": "native-menu",
+      "label": "Nina’s invitation",
+      "items": [
+        "Revoke link",
+        "Remove invitation"
+      ],
+      "rect": [
+        20,
+        310,
+        353,
+        243
+      ],
+      "anchor": [
+        333,
+        258,
+        44,
+        44
+      ],
+      "escape": "Dismiss menu and restore focus to More",
+      "nativePlacement": "Reference only; OS owns actual placement/material."
+    },
+    "viewportOffset": 1350,
+    "notes": [
+      "Accessibility5. One intrinsic setup-list scroll above the growing Done footer, positioned at a legal end offset. Native menu labels wrap fully, without shrinking. Nina’s identity remains by its source control; the menu may cover lower row details, as a native menu does."
+    ]
+  },
+  "G05-members-with-proposed-remove-dark": {
+    "visible": [
+      "Members",
+      "Club details",
+      "Kitchen table",
+      "Each person has a day.",
+      "Ben · You",
+      "Monday",
+      "Maya",
+      "Tuesday",
+      "Alex",
+      "Wednesday",
+      "Sam",
+      "Thursday",
+      "Debby",
+      "Friday",
+      "Leila",
+      "Proposed by Ben",
+      "Proposed",
+      "5 members · New York",
+      "7 AM to 1 AM the next morning.",
+      "Remove invitation"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Club details",
+        "target": [
+          8,
+          56,
+          119.6015625,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Club details",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          8,
+          56,
+          119.6015625,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Leila’s invitation",
+        "target": [
+          333,
+          617,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Leila",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          617,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Remove invitation",
+        "voiceOver": "Remove invitation for Leila",
+        "target": [
+          103,
+          561,
+          270,
+          48
+        ],
+        "kind": "native-menu-action",
+        "role": "destructive",
+        "candidate": "Leila",
+        "route": "Native removal confirmation",
+        "viewportTarget": [
+          103,
+          561,
+          270,
+          48
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. You. Monday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          221,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Maya. Tuesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          297,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Alex. Wednesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          373,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Sam. Thursday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          449,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Debby. Friday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          525,
+          353,
+          76
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Leila. Proposed by Ben. Proposed.",
+        "kind": "static-proposed-member",
+        "target": [
+          20,
+          601,
+          301,
+          106
+        ],
+        "route": null,
+        "hiddenByModal": true
+      }
+    ],
+    "modal": {
+      "kind": "native-menu",
+      "label": "Leila’s invitation",
+      "items": [
+        "Remove invitation"
+      ],
+      "rect": [
+        103,
+        561,
+        270,
+        48
+      ],
+      "anchor": [
+        333,
+        617,
+        44,
+        44
+      ],
+      "escape": "Dismiss menu and restore focus to More",
+      "nativePlacement": "Reference only; OS owns actual placement/material."
+    },
+    "viewportOffset": 0,
+    "notes": [
+      "Ben is the viewer and Leila’s proposer. Leila’s row stays a static identity/tag group; its separate native More control exposes Remove invitation. No active-member row gets a menu or removal. The active-member footer remains five. The native menu is open; no link status for Leila is invented."
+    ]
+  },
+  "G05-members-with-proposed-remove-xl": {
+    "visible": [
+      "Members",
+      "Club details",
+      "Kitchen table",
+      "Each person has a day.",
+      "Ben · You",
+      "Monday",
+      "Maya",
+      "Tuesday",
+      "Alex",
+      "Wednesday",
+      "Sam",
+      "Thursday",
+      "Debby",
+      "Friday",
+      "Leila",
+      "Proposed by Ben",
+      "Proposed",
+      "5 members · New York",
+      "7 AM to 1 AM the next morning.",
+      "Remove invitation"
+    ],
+    "controls": [
+      {
+        "label": "Back",
+        "voiceOver": "Back to Club details",
+        "target": [
+          8,
+          56,
+          119.6015625,
+          44
+        ],
+        "kind": "native-navigation",
+        "route": "Club details",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          8,
+          56,
+          119.6015625,
+          44
+        ]
+      },
+      {
+        "label": "More",
+        "voiceOver": "More options for Leila’s invitation",
+        "target": [
+          333,
+          1256,
+          44,
+          44
+        ],
+        "kind": "native-menu",
+        "menu": [
+          "Remove invitation"
+        ],
+        "candidate": "Leila",
+        "hiddenByModal": true,
+        "viewportTarget": [
+          333,
+          275,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Remove invitation",
+        "voiceOver": "Remove invitation for Leila",
+        "target": [
+          20,
+          113,
+          353,
+          154
+        ],
+        "kind": "native-menu-action",
+        "role": "destructive",
+        "candidate": "Leila",
+        "route": "Native removal confirmation",
+        "viewportTarget": [
+          20,
+          113,
+          353,
+          154
+        ]
+      }
+    ],
+    "semantics": [
+      {
+        "label": "Ben. You. Monday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          445,
+          353,
+          159
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Maya. Tuesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          604,
+          353,
+          159
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Alex. Wednesday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          763,
+          353,
+          159
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Sam. Thursday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          922,
+          353,
+          159
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Debby. Friday.",
+        "kind": "static-member",
+        "target": [
+          20,
+          1081,
+          353,
+          159
+        ],
+        "hiddenByModal": true
+      },
+      {
+        "label": "Leila. Proposed by Ben. Proposed.",
+        "kind": "static-proposed-member",
+        "target": [
+          20,
+          1240,
+          301,
+          275
+        ],
+        "route": null,
+        "hiddenByModal": true
+      }
+    ],
+    "modal": {
+      "kind": "native-menu",
+      "label": "Leila’s invitation",
+      "items": [
+        "Remove invitation"
+      ],
+      "rect": [
+        20,
+        113,
+        353,
+        154
+      ],
+      "anchor": [
+        333,
+        275,
+        44,
+        44
+      ],
+      "escape": "Dismiss menu and restore focus to More",
+      "nativePlacement": "Reference only; OS owns actual placement/material."
+    },
+    "viewportOffset": 981,
+    "notes": [
+      "Ben is the viewer and Leila’s proposer. Leila’s row stays a static identity/tag group; its separate native More control exposes Remove invitation. No active-member row gets a menu or removal. The active-member footer remains five. AX5 proof is at the legal end of the same scroll; the menu sits above its source control, with Leila visible below."
+    ]
+  }
+}
