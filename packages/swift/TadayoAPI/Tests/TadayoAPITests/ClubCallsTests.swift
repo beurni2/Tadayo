@@ -671,6 +671,25 @@ import Testing
         }
     }
 
+    /// Every club call reads any 5xx, which none lists, as the service out of reach for now, and
+    /// reads none of its body, a stopping server's JSON included (the contract's rule since PR
+    /// #151, `TadayoAPIClientTests.anyFiveHundredIsTheServiceOutOfReachAndItsBodyIsNeverRead`).
+    @Test func everyClubCallReadsAnyFiveHundredAsUnavailableUnread() async {
+        for operation in ClubOperation.allCases {
+            for (status, body, headers) in TadayoAPIClientTests.fiveHundreds {
+                let watch = BodyWatch()
+                let transport = CannedTransport([
+                    .watched(status: status, body: body, headers: headers, watch)
+                ])
+                await #expect(throws: APIFailure.unavailable, "\(operation) \(status) \(body)") {
+                    try await operation.call(on: api(transport), self)
+                }
+                #expect(!watch.wasRead, "\(operation) \(status) \(body)")
+                #expect(transport.sent.count == 1, "\(operation) \(status): not sent again")
+            }
+        }
+    }
+
     @Test func aRetriedCommandSendsTheSameKeyAndBody() async throws {
         let unauthenticated = CannedTransport.Answer.json(401, #"{"code":"UNAUTHENTICATED"}"#)
         for operation in ClubOperation.allCases where operation.isCommand {

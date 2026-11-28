@@ -11,6 +11,8 @@ import Testing
 final class CannedTransport: ClientTransport, @unchecked Sendable {
     enum Answer {
         case response(status: Int, body: String, headers: [String: String])
+        /// An answer whose body says whether anything read it (`BodyWatch`).
+        case watched(status: Int, body: String, headers: [String: String], BodyWatch)
         case failure
 
         /// An answer as the contract has every one: JSON, for the caller alone.
@@ -57,9 +59,48 @@ final class CannedTransport: ClientTransport, @unchecked Sendable {
         case .failure:
             throw URLError(.notConnectedToInternet)
         case .response(let status, let body, let headers):
-            var fields = HTTPFields()
-            for (name, value) in headers { fields[HTTPField.Name(name)!] = value }
-            return (HTTPResponse(status: .init(code: status), headerFields: fields), HTTPBody(body))
+            return (Self.response(status, headers), HTTPBody(body))
+        case .watched(let status, let body, let headers, let watch):
+            return (Self.response(status, headers), watch.body(body))
+        }
+    }
+
+    private static func response(_ status: Int, _ headers: [String: String]) -> HTTPResponse {
+        var fields = HTTPFields()
+        for (name, value) in headers { fields[HTTPField.Name(name)!] = value }
+        return HTTPResponse(status: .init(code: status), headerFields: fields)
+    }
+}
+
+/// Whether an answer's body was read: the contract says an app reads no 5xx's body (its rule
+/// since PR #151, the outside audit's B8). Starting to iterate the body counts as reading it.
+final class BodyWatch: @unchecked Sendable {
+    private let lock = NSLock()
+    private var read = false
+
+    var wasRead: Bool { lock.withLock { read } }
+
+    func body(_ text: String) -> HTTPBody {
+        let bytes = Array(text.utf8)
+        return HTTPBody(
+            Bytes(bytes: bytes, watch: self), length: .known(Int64(bytes.count)),
+            iterationBehavior: .single)
+    }
+
+    private func reading() {
+        lock.withLock { read = true }
+    }
+
+    private struct Bytes: AsyncSequence, Sendable {
+        let bytes: [UInt8]
+        let watch: BodyWatch
+
+        func makeAsyncIterator() -> AsyncStream<ArraySlice<UInt8>>.Iterator {
+            watch.reading()
+            return AsyncStream { continuation in
+                continuation.yield(ArraySlice(bytes))
+                continuation.finish()
+            }.makeAsyncIterator()
         }
     }
 }
@@ -206,6 +247,46 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
             }
         }
     }
+
+    /// The contract's rule since PR #151 (the outside audit's B8): any operation may answer a
+    /// 500, or a 503, which no operation lists, each with no body and `Cache-Control: private,
+    /// no-store`, except a stopping server's 503, Fastify's own, with a short JSON body and no
+    /// `Cache-Control`; the app reads any 5xx as the service out of reach for now and reads no
+    /// 5xx's body. A 5xx from anything in front of the server is read the same way.
+    @Test func anyFiveHundredIsTheServiceOutOfReachAndItsBodyIsNeverRead() async {
+        for (status, body, headers) in Self.fiveHundreds {
+            for operation in ["me", "clubs", "update"] {
+                let watch = BodyWatch()
+                let transport = CannedTransport([
+                    .watched(status: status, body: body, headers: headers, watch)
+                ])
+                await #expect(throws: APIFailure.unavailable, "\(operation) \(status) \(body)") {
+                    try await call(operation, on: api(transport))
+                }
+                #expect(!watch.wasRead, "\(operation) \(status) \(body)")
+                #expect(transport.sent.count == 1, "\(operation) \(status): not sent again")
+            }
+        }
+    }
+
+    /// Fastify 5's answer while the server closes (its `lib/route.js`), byte for byte.
+    static let stopping =
+        #"{"error":"Service Unavailable","message":"Service Unavailable","statusCode":503}"#
+
+    /// The 5xx answers the server and what's in front of it can give, which no operation but the
+    /// health check lists: the server's own 500 and 503 (`services/api/src/app.ts` `failed`,
+    /// `services/api/src/answers.ts` `unavailable`), a stopping server's 503 as Fastify 5 writes
+    /// it (`return503OnClosing`), and a proxy's.
+    static let fiveHundreds: [(Int, String, [String: String])] = [
+        (500, "", ["Cache-Control": "private, no-store"]),
+        (503, "", ["Cache-Control": "private, no-store"]),
+        (
+            503, stopping,
+            ["Content-Type": "application/json", "Content-Length": "80", "Connection": "close"]
+        ),
+        (502, "<html><body>Bad Gateway</body></html>", ["Content-Type": "text/html"]),
+        (504, "", [:]),
+    ]
 
     @Test func anAnswerThatBreaksTheContractIsUnreadableNotTrusted() async {
         // Unreadable, not refused: the server answered 2xx, so it may have acted, and a command's
