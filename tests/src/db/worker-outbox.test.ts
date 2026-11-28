@@ -51,6 +51,13 @@ afterAll(async () => {
   const admin = adminSql();
   try {
     await admin`DELETE FROM app.outbox_events WHERE topic IN ${admin(topics)}`;
+    // A count is never deleted (0020): the superuser removes this file's with the table's triggers off, for that
+    // transaction alone.
+    await admin.begin(async (tx) => {
+      await tx`SET LOCAL session_replication_role = replica`;
+      await tx`
+        DELETE FROM app.failure_counts WHERE source = 'worker' AND pg_catalog.split_part(code, ':', 1) IN ${tx(topics)}`;
+    });
   } finally {
     await admin.end();
   }
@@ -619,5 +626,139 @@ describe("a pass (spec 34, T52, T54)", () => {
     });
     expect(await pass(clock, { [mine]: handler })).toEqual({ handled: 0, err: [] });
     expect(await row(id)).toMatchObject({ state: "done", attempts: 1, last_error: null, processed_at: T.toString() });
+  });
+});
+
+describe("a dead event is counted for the alert (the outside audit's B7; docs/plans/api-b2-failure-alerts.md)", () => {
+  /** The worker's count of `code` under `mine` in `app.failure_counts`, or null when there is no row. */
+  async function counted(mine: string, code: string): Promise<{ total: string; reported: string } | null> {
+    const [found] = await db<{ total: string; reported: string }[]>`
+      SELECT total::text AS total, reported::text AS reported FROM app.failure_counts
+       WHERE source = 'worker' AND code = ${`${mine}:${code}`}`;
+    return found ?? null;
+  }
+
+  /** Every worker count under `mine`. */
+  async function countsOf(mine: string): Promise<Record<string, string>> {
+    const rows = await db<{ code: string; total: string }[]>`
+      SELECT code, total::text AS total FROM app.failure_counts
+       WHERE source = 'worker' AND pg_catalog.split_part(code, ':', 1) = ${mine}`;
+    return Object.fromEntries(rows.map((found) => [found.code, found.total]));
+  }
+
+  /** Waits until a transaction is blocked by the backend `pid` (`pg_blocking_pids`), or fails after ten seconds. */
+  async function untilBlockedBy(pid: number): Promise<void> {
+    for (let tries = 0; tries < 500; tries += 1) {
+      const [found] = await db<{ n: number }[]>`
+        SELECT count(*)::int AS n FROM pg_catalog.pg_stat_activity
+         WHERE ${pid}::int = ANY (pg_catalog.pg_blocking_pids(pid))`;
+      if ((found?.n ?? 0) >= 1) return;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    throw new Error(`no transaction waited on backend ${String(pid)}`);
+  }
+
+  it("counts an event that dies after five attempts once, as its topic and its code, and its retries not at all", async () => {
+    const mine = topic();
+    await event(mine, T);
+    const clock = fakeClock(T);
+    const { handler } = recording(() => Promise.reject(new ImageTimeout()));
+    let now = T;
+    for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt += 1) {
+      await pass(clock, { [mine]: handler });
+      expect(await countsOf(mine), `attempt ${String(attempt)}`).toEqual({});
+      now = now.add({ seconds: BACKOFF_SECONDS * 2 ** (attempt - 1) });
+      clock.set(now);
+    }
+    expect((await pass(clock, { [mine]: handler })).err).toHaveLength(1);
+    expect(await countsOf(mine)).toEqual({ [`${mine}:image.timeout`]: "1" });
+    expect(await counted(mine, "image.timeout")).toEqual({ total: "1", reported: "0" });
+    // A dead event is never claimed again, so it is never counted again.
+    clock.set(now.add({ hours: 24 }));
+    await pass(clock, { [mine]: handler });
+    expect(await counted(mine, "image.timeout")).toEqual({ total: "1", reported: "0" });
+  });
+
+  it("counts an event that dies at once with its code, and one claimed with its attempts spent as lease_lapsed", async () => {
+    const mine = topic();
+    await event(mine, T.subtract({ minutes: 2 }), { attempts: MAX_ATTEMPTS });
+    await event(mine, T.subtract({ minutes: 1 }), { attempts: MAX_ATTEMPTS, lastError: "storage.unavailable" });
+    await event(mine, T);
+    const clock = fakeClock(T);
+    const { handler } = recording(() => Promise.reject(new FailedForGood("payload")));
+    expect((await pass(clock, { [mine]: handler })).err).toHaveLength(3);
+    expect(await countsOf(mine)).toEqual({ [`${mine}:lease_lapsed`]: "2", [`${mine}:payload`]: "1" });
+  });
+
+  it("counts nothing for a failure written over no claim of its own, nor for a wait or a retry", async () => {
+    const mine = topic();
+    const id = await event(mine, T);
+    const clock = fakeClock(T);
+    // The attempt outlives its lease, another claim takes the event, and then the first fails for good.
+    const late = recording(async () => {
+      clock.set(T.add({ seconds: LEASE_SECONDS }));
+      expect(await claimNext(worker, clock, [mine])).toMatchObject({ kind: "work", event: { id, attempts: 2 } });
+      throw new FailedForGood("payload");
+    });
+    expect(await pass(clock, { [mine]: late.handler })).toEqual({ handled: 0, err: [] });
+    const waiting = topic();
+    await event(waiting, T);
+    const away = recording(() => Promise.reject(new StorageUnavailable("got no answer")));
+    expect((await pass(fakeClock(T), { [waiting]: away.handler })).err).toHaveLength(1);
+    expect(await countsOf(mine)).toEqual({});
+    expect(await countsOf(waiting)).toEqual({});
+  });
+
+  it("counts in the event's own transaction: while the count waits, the event isn't dead to anyone else, the waiting transaction is the death's, and the two commit together", async () => {
+    for (const [name, written, failure, code] of [
+      ["a handler's last failure", {}, () => new FailedForGood("payload"), "payload"],
+      ["a lapsed lease", { attempts: MAX_ATTEMPTS }, () => new ImageTimeout(), "lease_lapsed"],
+    ] as const) {
+      const mine = topic();
+      const id = await event(mine, T, written);
+      // An earlier death's row, committed, then held by a transaction of the test's own.
+      await db`INSERT INTO app.failure_counts (source, code, total) VALUES ('worker', ${`${mine}:${code}`}, 1)`;
+      let letGo: () => void = () => undefined;
+      const released = new Promise<void>((resolve) => {
+        letGo = resolve;
+      });
+      let holder = 0;
+      let ready: () => void = () => undefined;
+      const held = new Promise<void>((resolve) => {
+        ready = resolve;
+      });
+      const holding = db.begin(async (tx) => {
+        const [me] = await tx<{ pid: number }[]>`SELECT pg_catalog.pg_backend_pid() AS pid`;
+        holder = me?.pid ?? 0;
+        await tx`SELECT FROM app.failure_counts WHERE source = 'worker' AND code = ${`${mine}:${code}`} FOR UPDATE`;
+        ready();
+        await released;
+      });
+      await held;
+      const { handler } = recording(() => Promise.reject(failure()));
+      const passing = pass(fakeClock(T), { [mine]: handler });
+      try {
+        await untilBlockedBy(holder);
+        expect((await row(id)).state, name).toBe("pending");
+        // The transaction that waits for the count is the one that wrote the death: it holds the event's row, so a
+        // count made on the pool apart from it, which would stay should the death roll back, is caught here.
+        const waiting = await db<{ event: boolean }[]>`
+          SELECT EXISTS (SELECT FROM pg_catalog.pg_locks l
+                          WHERE l.pid = a.pid AND l.relation = 'app.outbox_events'::pg_catalog.regclass
+                            AND l.mode = 'RowExclusiveLock' AND l.granted) AS event
+            FROM pg_catalog.pg_stat_activity a
+           WHERE ${holder}::int = ANY (pg_catalog.pg_blocking_pids(a.pid))`;
+        expect(
+          waiting.map((one) => one.event),
+          name,
+        ).toEqual([true]);
+      } finally {
+        letGo();
+        await holding;
+      }
+      expect((await passing).err, name).toHaveLength(1);
+      expect((await row(id)).state, name).toBe("dead");
+      expect(await counted(mine, code), name).toEqual({ total: "2", reported: "0" });
+    }
   });
 });

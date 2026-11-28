@@ -221,6 +221,7 @@ export {
 } from "./schedule/view.ts";
 export type { ProposalAnswer, SchedulePerson, SlotAnswer } from "./schedule/week.ts";
 export { Refused, type RefusalFacts } from "./refused.ts";
+export { countFailures, FAILURE_CODE, FAILURE_SOURCES, type FailureSource } from "./failure-count.ts";
 export {
   CLOSE_TIME,
   clubTimeZone,

@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { Fault, InputFault, RangeFault } from "@tadayo/domain/fault";
 import { ImageProcessFailed, ImageTimeout } from "./image-process.ts";
 import {
+  deadCode,
   BACKOFF_SECONDS,
   backoffSeconds,
   FailedForGood,
@@ -132,5 +133,15 @@ describe("a failure's code (T52)", () => {
     ]) {
       expect(code).toMatch(/^[A-Za-z0-9_.:-]{1,200}$/);
     }
+  });
+});
+
+describe("a dead event's count (the outside audit's B7)", () => {
+  it("is its topic and its code, the code alone past the count's pattern, else unknown", () => {
+    expect(deadCode("upload.prepare", "lease_lapsed")).toBe("upload.prepare:lease_lapsed");
+    expect(deadCode("upload.prepare", "db.57014")).toBe("upload.prepare:db.57014");
+    expect(deadCode(`a.${"b".repeat(200)}`, "payload")).toBe("payload");
+    expect(deadCode(`a.${"b".repeat(200)}`, "a b")).toBe("unknown");
+    expect(deadCode("upload.prepare", "x".repeat(200))).toBe("x".repeat(200));
   });
 });
