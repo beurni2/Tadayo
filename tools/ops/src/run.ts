@@ -25,6 +25,7 @@ import {
   readVariables,
   type DevDatabaseUrl,
 } from "./environment.ts";
+import { failureAlert, markReported, unreportedCounts } from "./failure-alert.ts";
 import { flyAppCreate } from "./fly-app-create.ts";
 import { flyOf } from "./fly.ts";
 import { migrate } from "./migrate.ts";
@@ -207,6 +208,24 @@ const devClockScript: Script = {
     ctx.say(
       `dev-clock: Postgres reads ${report.postgresNow.toString()}, and dev's clock reads ` +
         `${report.devNow.toString()}, ${microsecondsText(report.offsetMicroseconds)} ahead`,
+    );
+  },
+};
+
+const failureAlertScript: Script = {
+  about:
+    "tell the founder of the failures counted on dev since the last alert: a comment on the open alert issue, or a new issue (the outside audit's B7)",
+  async run(ctx) {
+    optionsOf(ctx.args, {}, "failure-alert");
+    const url = appUrl(ctx);
+    const { GITHUB_TOKEN: githubToken } = readVariables(ctx.env, ["GITHUB_TOKEN"]);
+    await withDatabase(ctx, { script: "failure-alert", variable: "DATABASE_URL" }, url, (db) =>
+      failureAlert({
+        store: { unreported: () => unreportedCounts(db), markReported: (counts) => markReported(db, counts) },
+        fetch: ctx.fetch,
+        githubToken,
+        say: ctx.say,
+      }),
     );
   },
 };
@@ -525,6 +544,7 @@ export const SCRIPTS: Readonly<Record<string, Script>> = {
   bootstrap: bootstrapScript,
   "deploy-branch": deployBranchScript,
   "dev-clock": devClockScript,
+  "failure-alert": failureAlertScript,
   "fly-app-create": flyAppCreateScript,
   migrate: migrateScript,
   seed: seedScript,

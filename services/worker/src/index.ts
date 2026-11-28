@@ -37,6 +37,7 @@ export {
   backoffSeconds,
   BACKOFF_SECONDS,
   claimNext,
+  deadCode,
   FailedForGood,
   failureCode,
   finishEvent,

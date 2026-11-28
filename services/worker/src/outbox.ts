@@ -37,13 +37,15 @@
 //    call that failed (Storage's 30 seconds); while every topic needs Storage, nothing that could run waits behind
 //    it, and the first topic that doesn't will need a topic's waiting events kept from holding it up.
 //
-// The dead-letter table is `app.outbox_events` with `state = 'dead'`, and its alert is a line on standard error,
-// which Fly's logs keep; nothing pages anyone before monitoring exists (docs/LIMITATIONS.md). Every line and every
-// `last_error` holds codes and opaque ids, never an error's message, which could quote a row or a URL (T52). Each line
-// is written as soon as what it says is committed, so a pass that then fails, or that runs on while events keep
-// coming, loses or holds back none.
+// The dead-letter table is `app.outbox_events` with `state = 'dead'`. Its alert is twofold: a line on standard error,
+// which Fly's logs keep, and a count in `app.failure_counts`, as `<topic>:<code>` (`deadCode`), written in the same
+// transaction as the death, so an event that dies is counted once and a death that rolls back counts nothing; a check
+// every 15 minutes tells the founder what is new, as a GitHub issue (the outside audit's B7; FQ150;
+// tools/ops/src/failure-alert.ts). Every line, every `last_error` and every count holds codes and opaque ids, never an
+// error's message, which could quote a row or a URL (T52). Each line is written as soon as what it says is committed,
+// so a pass that then fails, or that runs on while events keep coming, loses or holds back none.
 
-import type { Clock, ServerNow } from "@tadayo/domain";
+import { countFailures, FAILURE_CODE, type Clock, type ServerNow } from "@tadayo/domain";
 import type { WorkerSql, WorkerTx } from "./connection.ts";
 import { LOCK_WAIT_MS, STATEMENT_MS } from "./generation.ts";
 import { Fault, RangeFault } from "@tadayo/domain/fault";
@@ -138,6 +140,22 @@ export function failureCode(error: unknown): string {
   return SYSTEM.test(code) ? `sys.${code.toLowerCase()}` : "unknown";
 }
 
+/**
+ * What a dead event is counted as: its topic and its code (`upload.prepare:lease_lapsed`), or its code alone if the two
+ * would be past the count's pattern (0020), or `unknown`. A topic is one of the handlers' and a code one of
+ * `failureCode`'s, so the first is the one there is; the others keep a death that can't be named from rolling back.
+ */
+export function deadCode(topic: string, code: string): string {
+  const both = `${topic}:${code}`;
+  if (FAILURE_CODE.test(both)) return both;
+  return FAILURE_CODE.test(code) ? code : "unknown";
+}
+
+/** Counts the death of an event of `topic` with `code`, in the transaction that writes it. */
+async function countDeath(tx: WorkerTx, topic: string, code: string): Promise<void> {
+  await countFailures(tx, "worker", new Map([[deadCode(topic, code), 1]]));
+}
+
 /** `fn` in a transaction with generation's limits on lock waits and statements. */
 async function limited<T>(sql: WorkerSql, fn: (tx: WorkerTx) => Promise<T>): Promise<T> {
   return (await sql.begin(async (tx) => {
@@ -186,6 +204,7 @@ export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly s
       await tx`
         UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${LEASE_LAPSED}
          WHERE id = ${row.id}`;
+      await countDeath(tx, row.topic, LEASE_LAPSED);
       return { kind: "dead", event: { ...event, attempts: row.attempts } } as const;
     }
     const leaseUntil = at.add({ seconds: LEASE_SECONDS });
@@ -223,17 +242,21 @@ async function recordFailure(
       return { ending: { kind: "waiting", seconds }, changed: waited.count > 0 } as const;
     }
     const dies = error instanceof FailedForGood || event.attempts >= MAX_ATTEMPTS;
-    const changed = dies
-      ? await tx`
-          UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${code}
-           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}
-             AND available_at = ${leaseUntil}`
-      : await tx`
-          UPDATE app.outbox_events
-             SET last_error = ${code}, available_at = ${at.add({ seconds: backoffSeconds(event.attempts) })}
-           WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}
-             AND available_at = ${leaseUntil}`;
-    return { ending: { kind: dies ? "dead" : "retry" }, changed: changed.count > 0 } as const;
+    if (dies) {
+      const died = await tx`
+        UPDATE app.outbox_events SET state = 'dead', processed_at = ${at}, last_error = ${code}
+         WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}
+           AND available_at = ${leaseUntil}`;
+      // Counted only when this claim's write is the death: one written over no claim of its own changed nothing.
+      if (died.count > 0) await countDeath(tx, event.topic, code);
+      return { ending: { kind: "dead" }, changed: died.count > 0 } as const;
+    }
+    const retried = await tx`
+      UPDATE app.outbox_events
+         SET last_error = ${code}, available_at = ${at.add({ seconds: backoffSeconds(event.attempts) })}
+       WHERE id = ${event.id} AND state = 'pending' AND attempts = ${event.attempts}
+         AND available_at = ${leaseUntil}`;
+    return { ending: { kind: "retry" }, changed: retried.count > 0 } as const;
   });
 }
 

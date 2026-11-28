@@ -15,6 +15,17 @@ export {
   type DatabaseParts,
   type DevDatabaseUrl,
 } from "./environment.ts";
+export {
+  ALERT_MARKER,
+  ALERT_TITLE,
+  failureAlert,
+  FOUNDER_ACCOUNT,
+  markReported,
+  unreportedCounts,
+  type FailureAlertInput,
+  type FailureCount,
+  type FailureStore,
+} from "./failure-alert.ts";
 export { flyAppCreate, type FlyAppCreateInput } from "./fly-app-create.ts";
 export { flyOf, jsonOf, machines, why, type Fly, type FlyCallOptions, type Machine } from "./fly.ts";
 export {

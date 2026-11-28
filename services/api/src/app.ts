@@ -46,6 +46,7 @@ import { completeUploadHandler, createUploadHandler, getUploadHandler } from "./
 import { registerDeviceHandler, removeDeviceHandler } from "./identity/devices.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
+import { countEachFailure, failureCode, failureCounter } from "./failure-count.ts";
 import { fastifyLogging, logEachRequest, redactBindings, requestLine } from "./logging.ts";
 import { installGate } from "./session.ts";
 import { END_SECONDS } from "./shutdown.ts";
@@ -143,6 +144,9 @@ function failed(error: FastifyError, request: FastifyRequest, reply: FastifyRepl
   // transaction was rolled back, so nothing was committed and the same request under the same key commits
   // once later (T19): the bare 503, the answer for a service the API needs that can't give one now (the
   // outside audit's A7). A database that can't be reached at all is still the 500 below.
+  // Either answer below is counted for the founder's alert once it has gone, by the class and code its line shows
+  // (failure-count.ts; the outside audit's B7).
+  request.failure = failureCode(error);
   if (OUT_OF_TIME.has((error as { code?: unknown }).code as string)) {
     request.log.warn({ err: error }, "database out of time");
     return unavailable(reply);
@@ -249,9 +253,11 @@ export function buildApp(deps: Deps): FastifyInstance {
   app.addHook("onRoute", (route) => {
     for (const method of [route.method].flat()) routes.push(`${method} ${route.url}`);
   });
-  // The gate and the log line, before the routes, which then carry both.
+  // The gate, the log line and the count of a 5xx, before the routes, which then carry all three.
   installGate(app, deps.authenticate);
   logEachRequest(app);
+  // Every 5xx, counted for the founder's alert once its answer has gone (the outside audit's B7).
+  countEachFailure(app, failureCounter(deps.sql, app.log));
   const handlers = handlersOf(deps);
   for (const operation of OPERATIONS) {
     const url = operation.path.replace(/\{([a-z_]+)\}/g, ":$1");

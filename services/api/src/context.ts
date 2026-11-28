@@ -16,5 +16,7 @@ declare module "fastify" {
   interface FastifyRequest {
     /** The signed-in account, set by the gate on every route that isn't public; null on one that is. */
     account: Account | null;
+    /** The code `failed` (app.ts) gives the request's 5xx, counted once the answer has gone (failure-count.ts). */
+    failure: string | null;
   }
 }
