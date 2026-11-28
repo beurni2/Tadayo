@@ -141,6 +141,16 @@ public enum Size {
     /// The wordmark's width in the no-club header (handoff 2's `noClubRootHeader`: "outlined
     /// wordmark, width 96"; revision 1.1's `minimumWidth`).
     public static let headerWordmark: CGFloat = 96
+    /// The wordmark's width on Welcome (handoff 1: "G02-web and Welcome width 144"; handoff 8's
+    /// `welcome.wordmarkWidth`).
+    public static let welcomeWordmark: CGFloat = 144
+    /// Welcome's example at the default size (handoff 8's `welcome.defaultExampleGeometry`): two
+    /// columns 13 apart, which fill the 353-point column with two of 170, and each stage 172 high.
+    public static let exampleGap: CGFloat = 13
+    public static let exampleHeight: CGFloat = 172
+    /// The example's photograph at the accessibility sizes, the column's width and 300 high, as
+    /// handoff 9's frame 20 draws it.
+    public static let exampleStackedPhotoHeight: CGFloat = 300
     /// The wordmark's top, from the header's (handoff 7's `noClubRootHeader.wordmarkRect`,
     /// [20, 64, 96, 30.43] in a header that starts at 56).
     public static let headerWordmarkTop: CGFloat = 8
