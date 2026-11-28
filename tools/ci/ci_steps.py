@@ -123,7 +123,8 @@ RETIRED_TARGETS = set()
 # pnpm's own settings can change how every script runs (`scriptShell`, `nodeOptions`, a pnpmfile's
 # `updateConfig`), and pnpm-workspace.yaml and a root pnpmfile aren't CI configuration to guard 1.
 # So the pnpm steps refuse any pnpm-workspace.yaml setting not listed here, and any root pnpmfile:
-# adding one is a CI-configuration PR (T58). pnpm 12 ignores such settings in .npmrc.
+# adding one is a CI-configuration PR (T58). pnpm 12 ignores such settings in .npmrc, though not
+# `registry`, which the audit step overrides on its command line (AUDIT_REGISTRY).
 PNPM_SETTINGS = {"packages", "allowBuilds"}
 # pnpm-workspace.yaml is read line by line in a strict form that YAML reads one way only
 # (`workspace_settings`), and the pnpm steps refuse it unless pnpm's own reading of `packages` and
@@ -149,8 +150,13 @@ PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
 SEVERITIES = ("info", "low", "moderate", "high", "critical")
 FAILING_SEVERITIES = ("high", "critical")
 # Each `pnpm audit` asks the registry once; pnpm's own retries of a registry that doesn't answer
-# take several minutes, so the step gives up first, inside the node job's limit (ci.yml).
-AUDIT_SECONDS = 240
+# take several minutes, so the step gives up first: its two waits together take at most half the
+# node job's limit (ci.yml), the step being the job's last (ci_steps_test.py holds both).
+AUDIT_SECONDS = 150
+# The registry the audit asks, given on the command line, which wins over a repository's .npmrc:
+# pnpm 12 reads `registry` there, and a server that answers `{}` to the bulk advisory request
+# would make any audit clean (PR #157's review, S1). Installs are held by the lockfile's hashes.
+AUDIT_REGISTRY = "https://registry.npmjs.org/"
 
 
 def targets_of(step):
@@ -423,10 +429,15 @@ class Steps:
         or (None, why) when it gives no report this reads: it took too long, it isn't JSON, or a
         count or an advisory isn't where pnpm 12 puts it. The counts are pnpm's metadata, which
         an ignore setting leaves whole, as it leaves out only the advisory's entry (2026-11-28)."""
-        cmd = ["pnpm", "audit", *args, "--json"]
+        cmd = ["pnpm", "audit", *args, f"--registry={AUDIT_REGISTRY}", "--json"]
         code, out = self.shell.report(cmd, AUDIT_SECONDS)
         if code is None:
             return None, f"`{' '.join(cmd)}` gave no answer in {AUDIT_SECONDS} seconds"
+        if not out.strip():
+            # pnpm 12.16.1 says a registry's bad answer (ERR_PNPM_AUDIT_BAD_RESPONSE) on standard
+            # error alone, which the log shows just above, and prints no report.
+            return None, (f"`{' '.join(cmd)}` printed no report (exit {code}): pnpm's own error, "
+                          "if it gave one, is just above")
         try:
             report = json.loads(out)
         except ValueError:

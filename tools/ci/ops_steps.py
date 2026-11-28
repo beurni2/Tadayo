@@ -79,7 +79,9 @@ class Script:
     variables: tuple
     options: dict = field(default_factory=dict)
     flyctl: bool = False
-    workflow: str = "ops"  # the workflow file, .github/workflows/<workflow>.yml, whose job runs it
+    # The workflow file, .github/workflows/<workflow>.yml, that runs it by hand or on its schedule,
+    # whose whole-file test in ops_steps_test.py covers it (deploy-dev.yml runs some ops scripts too).
+    workflow: str = "ops"
 
 
 SCRIPTS = {
@@ -252,8 +254,8 @@ class Steps:
             return 1
         missing = [v for v in SCRIPTS[name].variables if not self.value(v)]
         for variable in missing:
-            # ops_steps_test.py holds ops.yml to giving every variable, so an empty one is most
-            # likely a repository secret that isn't set: say which, before node starts.
+            # ops_steps_test.py holds ops.yml and alerts.yml to giving every variable, so an empty
+            # one is most likely a repository secret that isn't set: say which, before node starts.
             if variable == JOB_TOKEN:
                 print(f"ops: {name} has no {variable}: its step in {SCRIPTS[name].workflow}.yml gives it "
                       "the job's token")

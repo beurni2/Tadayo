@@ -527,8 +527,10 @@ class AuditStepTest(StepsTest):
     """pnpm audit (the outside audit's B6): a high or critical advisory in a production dependency
     fails the step; the whole tree's are printed; a report the step can't read fails it."""
 
-    PRODUCTION = "audit --prod --json"
-    EVERYTHING = "audit --json"
+    PRODUCTION = "audit --prod --registry=https://registry.npmjs.org/ --json"
+    EVERYTHING = "audit --registry=https://registry.npmjs.org/ --json"
+    PRODUCTION_CMD = ["pnpm", *PRODUCTION.split()]
+    EVERYTHING_CMD = ["pnpm", *EVERYTHING.split()]
 
     def audit(self, production=None, everything=None):
         outputs = {}
@@ -543,7 +545,7 @@ class AuditStepTest(StepsTest):
     def test_a_clean_report_passes_after_both_audits(self):
         code, out, shell = self.audit()
         self.assertEqual(code, 0, out)
-        self.assertEqual(shell.commands, [["pnpm", "audit", "--prod", "--json"], ["pnpm", "audit", "--json"]])
+        self.assertEqual(shell.commands, [self.PRODUCTION_CMD, self.EVERYTHING_CMD])
         self.assertEqual(shell.timeouts, [ci_steps.AUDIT_SECONDS] * 2)
         self.assertEqual(out.splitlines(), [
             "ci: audit: the whole tree, dev tools' included, printed and not failed on: "
@@ -551,6 +553,18 @@ class AuditStepTest(StepsTest):
             "ci: audit: the production dependencies: 0 critical, 0 high, 0 moderate, 0 low, 0 info",
             "ci: audit: passed: no high or critical advisory in a production dependency",
         ])
+
+    def test_both_audits_ask_the_public_registry_whatever_npmrc_says(self):
+        # pnpm 12 reads `registry` from a repository's .npmrc, and a server answering `{}` makes an
+        # audit clean; the flag on the command line wins over it (PR #157's review, S1).
+        self.assertEqual(ci_steps.AUDIT_REGISTRY, "https://registry.npmjs.org/")
+        self.repo.write(".npmrc", "registry=http://127.0.0.1:9/\n")
+        code, out, shell = self.audit()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(shell.commands), 2)
+        for cmd in shell.commands:
+            self.assertEqual([a for a in cmd if a.startswith("--registry")],
+                             ["--registry=https://registry.npmjs.org/"])
 
     def test_a_high_or_critical_advisory_in_production_fails(self):
         for severity in ci_steps.FAILING_SEVERITIES:
@@ -608,7 +622,6 @@ class AuditStepTest(StepsTest):
             return json.dumps(report)
         cases = {
             "not json": (1, "ERR_PNPM_AUDIT_BAD_RESPONSE The audit endpoint responded with 500"),
-            "empty": (0, ""),
             "a list": (0, "[]"),
             "a warning before it": (0, "WARN something\n" + CLEAN_AUDIT),
             "no metadata": (0, json.dumps({"advisories": {}})),
@@ -625,16 +638,28 @@ class AuditStepTest(StepsTest):
             with self.subTest(case=name):
                 code, out, shell = self.audit(production=answer)
                 self.assertEqual(code, 1, out)
-                self.assertIn("ci: audit: `pnpm audit --prod --json` (exit", out)
+                self.assertIn(f"ci: audit: `pnpm {self.PRODUCTION}` (exit", out)
                 self.assertIn("gave no report this step reads", out)
                 self.assertIn("so the production dependencies are unchecked", out)
-                self.assertEqual(shell.commands, [["pnpm", "audit", "--prod", "--json"]])
+                self.assertEqual(shell.commands, [self.PRODUCTION_CMD])
+
+    def test_no_report_at_all_fails_and_points_at_pnpm_s_own_error(self):
+        # pnpm 12.16.1 says a registry's bad answer (ERR_PNPM_AUDIT_BAD_RESPONSE) on standard error
+        # alone and prints nothing on standard output, which is all the step reads.
+        for answer in [(1, ""), (0, ""), (1, "  \n")]:
+            with self.subTest(answer=answer):
+                code, out, shell = self.audit(production=answer)
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"ci: audit: `pnpm {self.PRODUCTION}` printed no report (exit {answer[0]}): "
+                              "pnpm's own error, if it gave one, is just above, "
+                              "so the production dependencies are unchecked", out)
+                self.assertEqual(shell.commands, [self.PRODUCTION_CMD])
 
     def test_pnpm_s_error_and_an_unknown_severity_and_no_answer_fail(self):
         code, out, _ = self.audit(production=(1, json.dumps({"error": {"code": "ERR_PNPM_FETCH_500",
                                                                        "message": "x"}})))
         self.assertEqual(code, 1, out)
-        self.assertIn("`pnpm audit --prod --json` failed (exit 1): pnpm's error 'ERR_PNPM_FETCH_500'", out)
+        self.assertIn(f"`pnpm {self.PRODUCTION}` failed (exit 1): pnpm's error 'ERR_PNPM_FETCH_500'", out)
         report = json.loads(audit_json({}, [("high", "GHSA-aaaa-bbbb-cccc", "x")]))
         next(iter(report["advisories"].values()))["severity"] = "severe"
         code, out, _ = self.audit(production=(1, json.dumps(report)))
@@ -642,7 +667,7 @@ class AuditStepTest(StepsTest):
         self.assertIn("lists an advisory whose severity 'severe' isn't one of info, low, moderate, high, critical", out)
         code, out, shell = self.audit(production=(None, ""))
         self.assertEqual(code, 1, out)
-        self.assertIn(f"`pnpm audit --prod --json` gave no answer in {ci_steps.AUDIT_SECONDS} seconds, "
+        self.assertIn(f"`pnpm {self.PRODUCTION}` gave no answer in {ci_steps.AUDIT_SECONDS} seconds, "
                       "so the production dependencies are unchecked", out)
         self.assertEqual(len(shell.commands), 1)
 
@@ -651,7 +676,7 @@ class AuditStepTest(StepsTest):
             with self.subTest(answer=answer):
                 code, out, _ = self.audit(everything=answer)
                 self.assertEqual(code, 0, out)
-                self.assertIn("ci: audit: the whole tree: `pnpm audit --json`", out)
+                self.assertIn(f"ci: audit: the whole tree: `pnpm {self.EVERYTHING}`", out)
                 self.assertIn("printed only, so the step goes on", out)
                 self.assertTrue(out.splitlines()[-1].startswith("ci: audit: passed"))
         # and a failing production report still fails beside it
@@ -1149,13 +1174,24 @@ class WorkflowTest(unittest.TestCase):
                  "          if: always()"]
         self.assertEqual(read_ci_job(lines), (["node", "ci"], ["node"], False))
 
-    def test_the_node_job_audits_once_its_packages_are_installed(self):
-        # The audit reads pnpm-lock.yaml and asks the registry; it runs once, in the node job.
+    def test_the_node_job_audits_last_once_its_packages_are_installed(self):
+        # The audit reads pnpm-lock.yaml and asks the registry; it runs once, as the node job's last
+        # step, so a registry that's down can't keep the job's other checks from running (PR #157's
+        # review, S2).
         text = self.ci_yml()
         self.assertEqual(text.count("ci_steps.py audit"), 1)
-        self.assertIn("      - run: python3 tools/ci/ci_steps.py install\n"
-                      "      - run: python3 tools/ci/ci_steps.py audit\n"
-                      "      - run: python3 tools/ci/ci_steps.py lint\n", text)
+        node = text[text.index("\n  node:\n"):text.index("\n  postgres:\n")]
+        steps = re.findall(r"^      - run: python3 tools/ci/ci_steps.py (\S+)$", node, re.M)
+        self.assertLess(steps.index("install"), steps.index("audit"))
+        self.assertEqual(steps[-1], "audit")
+        self.assertTrue(node.rstrip("\n").endswith("      - run: python3 tools/ci/ci_steps.py audit"))
+
+    def test_the_audit_s_two_waits_take_at_most_half_the_node_job_s_limit(self):
+        text = self.ci_yml()
+        node = text[text.index("\n  node:\n"):text.index("\n  postgres:\n")]
+        minutes = re.findall(r"^    timeout-minutes: (\d+)$", node, re.M)
+        self.assertEqual(len(minutes), 1, node)
+        self.assertLessEqual(2 * ci_steps.AUDIT_SECONDS, int(minutes[0]) * 60 // 2)
 
     def test_the_postgres_service_is_made_like_supabase_s(self):
         # ADR-026: the service's first role is supabase_admin, ADMIN_URL's user.

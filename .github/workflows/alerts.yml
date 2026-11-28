@@ -16,7 +16,8 @@ on:
 permissions: {}
 
 # A run never overlaps another, and one that has begun is never cancelled. The job holds no Fly
-# token and changes nothing ops changes, so it keeps out of ops-dev.
+# token, so it keeps out of ops-dev; an ops or deploy-dev run acting on dev's database meanwhile
+# can only make its mark wait, within the mark's own time limits (failure-alert.ts, MARK_LIMITS).
 concurrency:
   group: alerts-dev
   cancel-in-progress: false
