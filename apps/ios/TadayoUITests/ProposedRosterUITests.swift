@@ -52,12 +52,15 @@ final class ProposedRosterUITests: XCTestCase {
         // asks for a review.
         XCTAssertTrue(
             eventually(10) { !app.staticTexts["Proposed roster"].exists }, "the roster closed")
+        // Home read again: the club list is read first, and while it loads the header has no
+        // switcher and Home no review, so the end state is waited for whole
+        // (docs/plans/ios-b1-intermittents.md, row 11).
         XCTAssertTrue(
             eventually(10) {
-                !app.buttons["Review Sunday people’s updated members."].exists
+                app.buttons["Switch club. Sunday people selected."].exists
+                    && !app.buttons["Review Sunday people’s updated members."].exists
                     && !app.staticTexts["Review the updated members"].exists
             }, "Home read again")
-        XCTAssertTrue(app.buttons["Switch club. Sunday people selected."].exists)
     }
 
     @MainActor func testADeclineAfterALostApproveThatStartedTheClubClosesTheRoster() {
@@ -74,10 +77,13 @@ final class ProposedRosterUITests: XCTestCase {
         // date: the roster is read again and closes onto Home, read again, with no alert.
         XCTAssertTrue(
             eventually(10) { !app.staticTexts["Proposed roster"].exists }, "the roster closed")
+        // As above: the list's loading header has no switcher, so the end state is waited for
+        // whole (row 11).
         XCTAssertTrue(
-            eventually(10) { !app.buttons["Review Sunday people’s updated members."].exists },
-            "Home read again")
-        XCTAssertTrue(app.buttons["Switch club. Sunday people selected."].exists)
+            eventually(10) {
+                app.buttons["Switch club. Sunday people selected."].exists
+                    && !app.buttons["Review Sunday people’s updated members."].exists
+            }, "Home read again")
         XCTAssertFalse(app.alerts.firstMatch.exists, "no alert")
     }
 
