@@ -2,7 +2,8 @@
 // server of the test's own, in clear text, that reads each request as Apple would (its path, headers and provider
 // token, checked with the test key's public half) and answers as each test tells it: every answer Apple's
 // documentation lists that the sender sorts, a dropped stream, no answer, an answer that trickles or floods, a 200
-// that never ends, and no server at all; and one over TLS with a certificate nobody vouches for. The keys and the
+// that never ends, no server at all, and a push called off before its connection is made or once Apple has it; and
+// one over TLS with a certificate nobody vouches for. The keys and the
 // certificate are made here, so no secret is in the repository.
 
 import { execFileSync } from "node:child_process";
@@ -58,6 +59,8 @@ interface Seen {
 /** A fake APNs: it records each request and answers with the next of `answers`, 200 when there is none. */
 class FakeApns {
   readonly seen: Seen[] = [];
+  /** The streams opened, whole or not: a request the sender wrote, even one it then cancelled. */
+  streams = 0;
   answers: Answer[] = [];
   /** Each answered stream's reset code once it closed: the sender's cancel is NGHTTP2_CANCEL. */
   readonly resets: number[] = [];
@@ -65,6 +68,7 @@ class FakeApns {
   constructor(secure?: { key: Buffer; cert: Buffer }) {
     this.server = secure === undefined ? createServer() : createSecureServer({ ...secure, allowHTTP1: false });
     this.server.on("stream", (stream: ServerHttp2Stream, headers: IncomingHttpHeaders) => {
+      this.streams += 1;
       let body = "";
       // A stream the fake drops reports it on its own side too.
       stream.on("error", () => undefined);
@@ -122,6 +126,7 @@ beforeAll(async () => {
 afterEach(() => {
   for (const sender of senders.splice(0)) sender.close();
   production.seen.length = 0;
+  production.streams = 0;
   production.answers = [];
   production.resets.length = 0;
   sandbox.seen.length = 0;
@@ -386,7 +391,7 @@ describe("Apple's answers, sorted as its documentation says", () => {
       reason: "network.timeout",
       waitSeconds: 0,
     });
-    expect(REQUEST_TIMEOUT_MS).toBe(10_000);
+    expect(REQUEST_TIMEOUT_MS).toBe(4_000);
   });
 
   it("gives up at its deadline however the answer trickles, and opens a new connection for the next push", async () => {
@@ -482,6 +487,36 @@ describe("Apple's answers, sorted as its documentation says", () => {
       else process.env.NODE_TLS_REJECT_UNAUTHORIZED = before;
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("never writes a push called off before its connection is made, and says it never left", async () => {
+    const never = { kind: "retry", status: null, reason: "network.connection", waitSeconds: 0 };
+    // Called off before it is sent: no connection is even asked for.
+    const s = sender();
+    expect(await s.send(push(), AbortSignal.abort())).toEqual(never);
+    // Called off while its connection is being made, as when the worker's transaction loses its database connection
+    // during a burst's first push (push.ts): the request is never written.
+    const off = new AbortController();
+    const sending = s.send(push(), off.signal);
+    off.abort();
+    expect(await sending).toEqual(never);
+    await pause(200);
+    expect(production.streams).toBe(0);
+    // The connection itself was made, and the next push goes on it.
+    expect(await s.send(push())).toEqual({ kind: "sent" });
+    expect(production.streams).toBe(1);
+  });
+
+  it("cancels a push called off once Apple has it, and says Apple may have taken it", async () => {
+    production.answers = ["hang"];
+    const off = new AbortController();
+    const sending = sender().send(push(), off.signal);
+    for (let tries = 0; tries < 100 && production.seen.length === 0; tries += 1) await pause(10);
+    expect(production.seen).toHaveLength(1);
+    off.abort();
+    expect(await sending).toEqual({ kind: "retry", status: null, reason: "network.stream", waitSeconds: 0 });
+    for (let tries = 0; tries < 100 && production.resets.length === 0; tries += 1) await pause(10);
+    expect(production.resets).toHaveLength(1);
   });
 
   it("opens a new connection after Apple's GOAWAY", async () => {

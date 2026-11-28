@@ -34,7 +34,8 @@
 //      as skipped, `unregistered`, with nothing sent. Else the registration's token is read under the row's lock, not
 //      taken from the decision, and the push goes to Apple while the row is held, so a removal or a move of that
 //      registration, whose foreign key sets the row's sign-in null, waits until Apple has answered and the answer is
-//      written, and no push is handed to Apple once one has landed. The answer, in the same transaction after the
+//      written, and no push is handed to Apple once one has landed (a renewed token for the same sign-in updates no
+//      key, so it doesn't wait, and the push goes to the token read). The answer, in the same transaction after the
 //      clock's sample: `sent`; a dead token `failed` with Apple's reason; a retry `pending` again after the outbox's
 //      backoff, or Apple's wait after a `5xx`, or `failed` as `closed` when that is past the day's close; anything else
 //      `failed` with its reason. A failure that is no `410` is counted in `app.failure_counts` as `push.<reason>`, in
@@ -43,16 +44,29 @@
 //      own, in 0017's order).
 //
 // The budget (the domain's header): `sent_at` stays when an answer leaves the push's fate unknown (no answer in time,
-// a lost stream: Apple may have taken it, and Q17 may then show it twice), and is cleared only when Apple's answer
-// says it took nothing and this decision set it, so a push that may have reached the phone counts.
+// a lost stream: Apple may have taken it, and Q17 may then show it twice), and is cleared only when nothing went
+// (Apple's answer says it took nothing, or the registration was gone at the send) and this decision set it, so a push
+// that may have reached the phone counts.
 //
-// The locks: the decision takes the account's row, then the delivery's; the send takes the delivery's alone, across
-// APNs, for at most the sender's REQUEST_TIMEOUT_MS, under the role's 15 seconds idle in a transaction (0018) and the
-// SEND_LEASE_SECONDS lease; a registration or a removal of that sign-in in the API waits for it, and past the API's
-// 5-second wait for a lock answers 503, which the app tries again. 0021's header gives every writer's order. Each
+// The locks: the decision takes the account's row, then the delivery's; the send takes the delivery's row, across
+// APNs, for at most the sender's REQUEST_TIMEOUT_MS, under the role's 15 seconds idle in a transaction (0018), the
+// API's 5-second wait for a lock and the SEND_LEASE_SECONDS lease, and, when it writes a failure, last of all
+// `app.failure_counts`' row for its code; a removal, a move or a dead token's deletion of that sign-in's registration
+// waits for it through the foreign key. 0021's header gives every writer's order. Each
 // transaction has generation's limits on lock waits and statements (`limited`). A delivery whose decision or send
 // throws is reported, counted as `push.failed`, and left leased, so the pass goes on to the next and the lease brings
 // it back later; the pass visits each delivery once at most.
+//
+// The send is the one transaction of the worker's that waits on something other than the database (0018's header says
+// none does, and 0018 is applied, so 0021's header records the exception). Its connection can be lost during Apple's
+// answer (a pooler's restart, a terminated backend, a link gone): Postgres then rolls the transaction back and lets
+// the row go, so a waiting removal may land, and postgres.js 3.4.9 rejects the transaction at once with
+// `CONNECTION_CLOSED` but would write whatever the body sends next, even its COMMIT, on that connection: a socket
+// gone, which ends the process (docs/LIMITATIONS.md, the row of 2026-11-24), or, once the pool has opened it again
+// for another transaction, that transaction's (PR #159's second review, R2-1, reproduced in the session). So the
+// rejection calls off Apple's request, which is never written if it still waits for its connection, and the body,
+// once Apple has answered, sees it and sends nothing more, ever: it waits on a promise that never settles. The pass
+// reports the delivery and counts `push.failed`, and the lease brings it back to be decided again.
 //
 // What the pass reports holds counts, opaque delivery ids and codes, never a name, a body, a token or a message (T52).
 
@@ -78,7 +92,7 @@ import { backoffSeconds, limited } from "./outbox.ts";
 
 /** How long a claimed delivery is the claimer's alone before its decision, in seconds. */
 export const CLAIM_LEASE_SECONDS = 60;
-/** How long a decided delivery is the sender's alone, in seconds: past the sender's 10-second wait for Apple. */
+/** How long a decided delivery is the sender's alone, in seconds: well past the sender's REQUEST_TIMEOUT_MS. */
 export const SEND_LEASE_SECONDS = 60;
 /** How long a day's rows are kept after it closes, in hours (the plan's section 2.1). */
 export const KEEP_AFTER_CLOSE_HOURS = 48;
@@ -321,6 +335,9 @@ export async function decideDelivery(sql: WorkerSql, clock: Clock, claimed: Clai
   });
 }
 
+/** What the send's body waits on once its transaction's connection is lost: it never settles (the header). */
+const NEVER = new Promise<never>(() => undefined);
+
 /** How a send ended the delivery, if it was still the decision's to end. */
 type Answered = "sent" | "later" | "dead" | "failed" | "skipped" | "lost";
 
@@ -344,16 +361,27 @@ interface Address {
   readonly apns_environment: ApnsEnvironment;
 }
 
-/** The sender's answer, or a lost stream when the sender itself threw (it shouldn't: apns.ts resolves every failure). */
-async function sendOnce(sender: ApnsSender, decided: DecidedPush, to: Address): Promise<ApnsOutcome> {
+/**
+ * The sender's answer, or a lost stream when the sender itself threw (it shouldn't: apns.ts resolves every failure).
+ * `signal` calls the request off (the header's lost connection).
+ */
+async function sendOnce(
+  sender: ApnsSender,
+  decided: DecidedPush,
+  to: Address,
+  signal: AbortSignal,
+): Promise<ApnsOutcome> {
   try {
-    return await sender.send({
-      token: to.apns_token,
-      environment: to.apns_environment,
-      payload: decided.payload,
-      collapseId: decided.occurrenceId,
-      expiresAt: Math.floor(decided.expiresAt.epochMilliseconds / 1000),
-    });
+    return await sender.send(
+      {
+        token: to.apns_token,
+        environment: to.apns_environment,
+        payload: decided.payload,
+        collapseId: decided.occurrenceId,
+        expiresAt: Math.floor(decided.expiresAt.epochMilliseconds / 1000),
+      },
+      signal,
+    );
   } catch {
     return { kind: "retry", status: null, reason: "sender.failed", waitSeconds: 0 };
   }
@@ -419,6 +447,8 @@ export async function sendDelivery(
   id: string,
   decided: DecidedPush,
 ): Promise<{ readonly answered: Answered; readonly reason: string }> {
+  // Aborted when the transaction is rejected, as when its connection is lost (the header).
+  const lost = new AbortController();
   const result = await limited(sql, async (tx) => {
     const [row] = await tx<{ sign_in: Uint8Array | null; state: string; lease_until: Temporal.Instant | null }[]>`
       SELECT sign_in, state, lease_until FROM app.push_deliveries WHERE id = ${id} FOR UPDATE`;
@@ -432,7 +462,7 @@ export async function sendDelivery(
     }
     // The token is read here, under the delivery's lock, not taken from the decision: a token that moved to another
     // sign-in since then deleted this registration first, which set the row's sign-in null, and a move that comes now
-    // waits for this transaction, so the token read is this account's until Apple's answer is written (0021).
+    // waits for this transaction, so no push goes to the token once its move to another account has landed (0021).
     const [to] =
       row.sign_in === null
         ? []
@@ -449,12 +479,19 @@ export async function sendDelivery(
          WHERE id = ${id}`;
       return { answered: "skipped", reason: "unregistered", sentTo: null } as const;
     }
-    const outcome = await sendOnce(sender, decided, to);
+    const outcome = await sendOnce(sender, decided, to, lost.signal);
+    // The connection went during Apple's answer: the transaction is over, and nothing more may be sent on it.
+    if (lost.signal.aborted) return NEVER;
     return { ...(await writeAnswer(tx, id, decided, outcome, await clock.sample(tx))), sentTo: to.apns_token };
+  }).catch((error: unknown) => {
+    lost.abort();
+    throw error;
   });
   const { sentTo, ...answer } = result;
   if (answer.answered === "dead" && sentTo !== null) {
-    // The sign-in's lock and the account's row come first (0017's order), once the delivery's row is let go.
+    // The sign-in's lock and the account's row come first (0017's order), once the delivery's row is let go. If this
+    // throws, the pass reports and counts it as `push.failed` though the answer is written; the registration then goes
+    // at the next push to it, which Apple answers the same.
     await limited(sql, (tx) =>
       forgetDeadToken(tx, decided.userId, Buffer.from(decided.signIn).toString("hex"), sentTo),
     );

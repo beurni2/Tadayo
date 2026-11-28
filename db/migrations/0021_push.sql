@@ -21,11 +21,20 @@
 --   `app.users` rows `FOR KEY SHARE` in their ids' order and their registrations `FOR KEY SHARE`
 --   (`lockDevicesOf`, packages/domain/src/identity/devices.ts), then writes the deliveries. A registration deleted
 --   while it waited is left out. (PR #159's first review, D3 and D4: the first draft took the registrations alone,
---   reader by reader, and deadlocked a move that held one sign-in's lock while it waited for another's row.)
+--   reader by reader, and deadlocked a move that held one sign-in's lock while it waited for another's row.) Its
+--   `push_days` row takes the occurrence's row `FOR KEY SHARE` through the foreign key before the advisory locks,
+--   which 0017's header says no writer does after a row lock; it can't deadlock, since no writer waits for an
+--   occurrence's row in a mode key share blocks: the schedule's writers change its status, which is no key, the drops'
+--   take it `FOR SHARE`, and none deletes one or takes it `FOR UPDATE`.
 -- - The decision locks the recipient's `app.users` row `FOR NO KEY UPDATE`, then the delivery's row.
--- - The send locks the delivery's row alone, reads its registration's token under it, and holds the row across
---   Apple's answer, for at most the sender's 10 seconds: a removal or a move of that registration, whose foreign key
---   updates the row, waits for it after its own locks, and the send waits on nothing they hold.
+-- - The send locks the delivery's row, reads its registration's token under it, and holds the row across Apple's
+--   answer, for at most the sender's 4 seconds, under the API's 5-second wait for a lock: a removal, a move or a dead
+--   token's deletion of that registration, whose foreign key updates the row, waits for it after its own locks, and
+--   the send waits on nothing they hold. Writing a failure, it then takes last of all `app.failure_counts`' row for
+--   the failure's code, which nothing holds while it waits on another lock. (A renewed token for the same sign-in
+--   updates no key, so it doesn't wait.) It is the one transaction that waits on something other than the database,
+--   which 0018's header says none does; services/worker/src/push.ts says what it does when its connection is lost
+--   meanwhile (docs/plans/api-b2-spike-push.md section 2.7).
 -- - A dead token's deletion, in a transaction of its own once the send's has ended, takes the sign-in's advisory
 --   lock, then the account's row, then deletes the registration (whose deliveries the foreign key then sets null).
 -- - The purge deletes closed days' `push_days` rows, and their deliveries through the cascade.
@@ -82,7 +91,8 @@ CREATE TRIGGER push_deliveries_keep BEFORE UPDATE ON app.push_deliveries
 -- A delivery's sign-in only ever goes, never comes or changes: a row can't be pointed at another device. A delivery
 -- is planned only for a registration of its own account, and the send reads the token from that registration under
 -- the delivery's lock; a token that moves to another account's sign-in deletes this registration first, which waits
--- for the send and then sets this row's sign-in null. So a push never goes to another account's device.
+-- for the send and then sets this row's sign-in null. So no push goes to a token once its move to another account
+-- has landed (a move still waiting for the send lets that one push go to the phone it was registered from).
 CREATE FUNCTION app.push_deliveries_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN

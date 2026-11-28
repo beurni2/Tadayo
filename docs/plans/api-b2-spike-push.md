@@ -111,8 +111,12 @@ of its reach: it names one sign-in by its hash.
 ### 1.5 Account deletion and suspended pushes
 
 A deletion's rows: `user_id` references `app.users` with `ON DELETE CASCADE`, and the push's dispatch reads the
-account's state (section 2.3), so a `deleting` account gets no push from the moment its deletion begins (T27). The
-removal of a deleting account's registrations is B8's account-deletion job; until it runs, the rows send nothing.
+account's state (section 2.3), so a `deleting` account gets no push decided once its deletion has begun (T27). A push
+decided just before can still go in the seconds until Apple answers, since the send reads no account state (PR #159's
+second review, R2-4). So B8's deletion removes the account's registrations in the transaction that sets `deleting`:
+each removal's foreign key then waits for a send in flight to that registration, as a logout's does (section 2.3),
+and no send finds one after it, so no push goes to Apple once the deletion has begun. Until B8 is built, `deleting`
+is set by nothing but the tests.
 
 ### 1.6 Tests first
 
@@ -239,11 +243,11 @@ outside any transaction, so a removal that landed between the decision and the s
    removal, a move, a dead token, a deletion) has set that null, and the row ends as `skipped`, `unregistered`, with
    nothing sent. Else the registration's token and environment are read and the push goes to Apple while the row is
    held: a removal or a move of that registration, whose foreign key sets the row's sign-in null, waits until Apple has
-   answered and the answer is written, so no push is handed to Apple once a removal has landed. The hold lasts at most
-   the sender's 10 seconds (2.5), under the role's 15 seconds idle in a transaction (0018) and the send's lease; a
-   registration or a removal of that sign-in in the API waits for it, and past the API's 5-second wait for a lock
-   answers 503, which the app tries again. After the clock's sample, Apple's answer is written in the same
-   transaction:
+   answered and the answer is written, so no push is handed to Apple once a removal has landed. (A renewed token for
+   the same sign-in updates no key and doesn't wait; the push goes to the token read, the same phone's.) The hold
+   lasts at most the sender's 4 seconds (2.5), under the API's 5-second wait for a lock, so the removal that waits
+   isn't answered 503 (the second review's R2-3: at 10 seconds it was), the role's 15 seconds idle in a transaction
+   (0018) and the send's lease. After the clock's sample, Apple's answer is written in the same transaction:
    - 200: `sent`.
    - A dead token (`410` `Unregistered` or `ExpiredToken`, `400` `BadDeviceToken` or `DeviceTokenNotForTopic`):
      `failed` with the reason. Once the transaction has let the row go, the registration is deleted if it still holds
@@ -330,15 +334,20 @@ table):
   registers `production` (section 0), so the founder's key must cover production; which environments it covers isn't
   recorded, and a key that doesn't cover a registration's environment answers `403` `BadEnvironmentKeyIdInToken`,
   which ends the delivery as `failed`, counts `push.BadEnvironmentKeyIdInToken` and so reaches the founder's alert.
-- An answer's body is read up to 4 KB; past that the stream is reset (`CANCEL`) and the answer taken as refused, with
-  the reason `unknown`. A 200 settles at once, without waiting for the stream's end. A request whose answer hasn't
-  ended 10 seconds after it was made (`REQUEST_TIMEOUT_MS`, a deadline from the request, not a wait between bytes) is
+- An answer's body is kept up to 4,096 characters (`ANSWER_LIMIT`; it is read as UTF-8); past that the stream is
+  reset (`CANCEL`) and the status sorts the answer as above, with the reason `unknown`: a flood with a `410` is still a
+  dead token, with a `5xx` still a retry (the second review's R2-5). A 200 settles at once, without waiting for the
+  stream's end. A request whose answer hasn't ended 4 seconds after it was made (`REQUEST_TIMEOUT_MS`, a deadline from
+  the request, not a wait between bytes; 2.3 says why 4) is
   cancelled, and its session is closed and forgotten, so the next push opens a new connection; it ends as
   `network.timeout`, or `network.connection` if the session never connected, and is tried again (the review's P2 and
   E2: the first draft's wait restarted at each byte, and reused a session that had gone dark). A session idle for 10
   minutes (`SESSION_IDLE_MS`) is closed, and Apple's `GOAWAY` or a closed connection forgets it. TLS is verified
   whatever `NODE_TLS_REJECT_UNAUTHORIZED` says (`rejectUnauthorized: true`; P4), and the `:path` header, which holds
   the token, and `authorization` are marked sensitive, so HTTP/2's header compression never keeps them.
+- A push can be called off (`send`'s `AbortSignal`, passed to Node's `session.request`): the worker does when the
+  send's transaction loses its database connection (2.7). A request still waiting for its connection is then never
+  written, and ends as `network.connection`; one already written is cancelled, and ends as `network.stream`.
 - TECH-DESIGN's push row names Apple's production host because every TestFlight build registers `production`. The
   contract also allows `sandbox`, and a sandbox token sent to the production host would be answered `BadDeviceToken`
   and deleted, so the sender takes each registration's own host. In the trial every registration is `production`
@@ -364,8 +373,11 @@ table):
   until the close, the budget's zone in New York, a second phone after other clubs spent the budget, a push sent in an
   earlier budget day on another phone (Tokyo and Los Angeles), a send whose fate is unknown counted whatever its state,
   `sent_at` kept or cleared by the answer, the claim skipping rows it visited, the purge with `TADAYO_PUSH` `none`,
-  and, on two connections, a removal that waits while the send holds the row and lands after Apple's answer. Two
-  dispatchers at once are not tested: the claim is `FOR UPDATE SKIP LOCKED`, as the outbox's is.
+  and, on two connections, a removal that waits while the send holds the row and lands after Apple's answer. After
+  the second review, as built: a retry's 429 or refusal, and a registration gone before a retry's send, each keeping
+  the first try's `sent_at`; a retry decided in the budget's next day dated afresh (a London phone whose budget is
+  Tokyo's); the hold under the API's wait for a lock; and a send whose connection is lost while Apple answers (2.7).
+  Two dispatchers at once are not tested: the claim is `FOR UPDATE SKIP LOCKED`, as the outbox's is.
 - `tests/src/db/devices.test.ts`: the plan's sign-in locks make a move wait, and a registration deleted while the plan
   waited is left out.
 - The privacy matrix's push (`tests/src/db/push-matrix.test.ts`, as built): every role of the matrix
@@ -375,6 +387,33 @@ table):
   the role reads the drop, the state denies nothing and the day is open, and
   every payload the dispatcher builds is exactly the day's words, its club and its id, with no caption, media, URL,
   provider id, source, drop or upload id, or token.
+
+### 2.7 A connection lost during the send (PR #159's second review, R2-1)
+
+The send is the worker's one transaction that waits on something other than the database: Apple, for up to 4
+seconds. 0018's header says neither the API nor the worker does, and 0018 is applied and can't change, so 0021's
+header records the exception. If the send's connection is lost meanwhile (a pooler's restart, a terminated backend, a
+link gone), Postgres rolls the transaction back and lets the delivery's row go, so a removal waiting on it lands.
+postgres.js 3.4.9 then rejects the transaction at once with `CONNECTION_CLOSED`, but writes whatever the transaction's
+body sends next, its answer's `UPDATE` or even the `COMMIT` the driver adds when the body ends, on that connection:
+with its socket gone that throws from a later tick and ends the process (`docs/LIMITATIONS.md`, the row of
+2026-11-24), and once the pool has opened the connection again for another transaction (the worker's pool holds
+two), it runs inside that transaction and can commit it half done. Both were reproduced in the session against the
+local Postgres, the second with a pool of one: the late query ran on the new backend, inside the next transaction.
+
+So `sendDelivery`, when its transaction is rejected, aborts the push's signal: a request still waiting for its
+connection to Apple (a burst's first push, after the idle close) is never written, and one already written is
+cancelled. The body, once the sender answers, finds the signal aborted and sends nothing more, ever: it waits on a
+promise that never settles, so the driver never writes its `COMMIT`. The pass reports the delivery and counts
+`push.failed`; the delivery stays `sending` until its lease passes, and is then decided again, keeping its first
+decision's `sent_at` in the same budget day (2.3), so a push Apple took may show again (Q17, as for any lost answer;
+the collapse id keeps one notification). Each lost connection keeps one small closure alive until the worker
+restarts. A connection lost while a query of the body is in flight still ends the process, as for every transaction,
+until postgres.js 4.x or a guard of the driver's own (the 2026-11-24 row). Test:
+`tests/src/db/worker-push.test.ts`, "calls Apple's request off and sends nothing more on a connection lost while Apple
+answers, even once reopened" (its pool of one makes the next transaction take the same connection again; without the
+guard, that transaction's `now()` changed partway, which is the late `COMMIT`); `apns.test.ts`, "never writes a push
+called off before its connection is made…" and "cancels a push called off once Apple has it…".
 
 ## 3. The spike on `dev`, with the founder
 

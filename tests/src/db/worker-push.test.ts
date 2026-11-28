@@ -8,7 +8,7 @@
 // member's latest device, with a push whose fate is unknown counted; each answer of Apple's (sent, a dead token, a
 // retry, one past the close, a refusal); a send that never reported back, and its stale decision; a decision that
 // keeps failing; the purge, with the push on or off; and, committed on two connections, a removal that waits for a
-// send in flight.
+// send in flight, and a send whose connection is lost while Apple answers.
 //
 // Each test but the last is one rolled-back transaction: the worker's transactions are savepoints in it (`inside`), as
 // the prepare test's are, and every other day the database holds is set aside first (`aside`), so the pass plans and
@@ -79,14 +79,17 @@ async function aside(tx: WorldTx, keep: readonly string[]): Promise<void> {
      WHERE state IN ('pending', 'sending') AND occurrence_id <> ALL(${tx.array([...keep])})`;
 }
 
-/** A fake APNs sender: records each push, waits on `during` if set, then answers as `answer` says (sent by default). */
+/**
+ * A fake APNs sender: records each push, waits on `during` if set, given the push's signal, then answers as `answer`
+ * says (sent by default).
+ */
 class FakeSender implements ApnsSender {
   readonly pushes: ApnsPush[] = [];
   answer: (push: ApnsPush) => ApnsOutcome = () => ({ kind: "sent" });
-  during: (() => Promise<void>) | undefined;
-  async send(push: ApnsPush): Promise<ApnsOutcome> {
+  during: ((signal?: AbortSignal) => Promise<void>) | undefined;
+  async send(push: ApnsPush, signal?: AbortSignal): Promise<ApnsOutcome> {
     this.pushes.push(push);
-    if (this.during !== undefined) await this.during();
+    if (this.during !== undefined) await this.during(signal);
     return this.answer(push);
   }
   close(): void {
@@ -673,6 +676,75 @@ describe("Apple's answer (the plan's section 2.3, item 3)", () => {
     });
   });
 
+  it("keeps the first try's time when Apple then answers a retry with a 429 or a refusal: the first may be on the phone", async () => {
+    for (const second of [
+      { kind: "retry", status: 429, reason: "TooManyRequests", waitSeconds: 0 },
+      { kind: "refused", status: 403, reason: "InvalidProviderToken" },
+    ] as const) {
+      await rolledBack(db, async (tx) => {
+        const { w, ben, sender } = await tokyo(tx);
+        sender.answer = () => ({ kind: "retry", status: null, reason: "network.timeout", waitSeconds: 0 });
+        await passAt(tx, sender, OPEN);
+        sender.answer = () => second;
+        await passAt(tx, sender, OPEN.add({ seconds: 30 }));
+        expect(await deliveryTo(tx, w.day, ben), second.reason).toMatchObject({
+          state: second.kind === "retry" ? "pending" : "failed",
+          sent_at: OPEN,
+          attempts: 2,
+        });
+      });
+    }
+  });
+
+  it("keeps the first try's time when the registration goes before a retry's send: the first may be on the phone", async () => {
+    await rolledBack(db, async (tx) => {
+      const { w, ben, sender } = await tokyo(tx);
+      sender.answer = () => ({ kind: "retry", status: null, reason: "network.timeout", waitSeconds: 0 });
+      await passAt(tx, sender, OPEN);
+      clock.set(OPEN.add({ seconds: 30 }));
+      const claimed = await claimDelivery(inside(tx), clock);
+      if (claimed === null) throw new Error("nothing claimed");
+      const decided = await decideDelivery(inside(tx), clock, claimed);
+      if (decided.kind !== "send") throw new Error("not decided to send");
+      expect(decided.ownSentAt).toBe(false);
+      // Ben signs the phone out between the retry's decision and its send.
+      await tx.savepoint((sp) => removeDevice(sp, clock, ben.secret));
+      expect(await sendDelivery(inside(tx), clock, sender, claimed.id, decided)).toEqual({
+        answered: "skipped",
+        reason: "unregistered",
+      });
+      expect(sender.pushes).toHaveLength(1);
+      expect((await deliveries(tx, w.day))[0]).toMatchObject({
+        state: "skipped",
+        outcome: "unregistered",
+        sign_in: null,
+        sent_at: OPEN,
+      });
+    });
+  });
+
+  it("dates a retry decided in the budget's next day afresh, so the day's push counts in the day it may reach the phone", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await world(tx);
+      // Ben's phones: London's, then Tokyo's, the latest, whose zone names the budget's day. Midnight in Tokyo is
+      // 15:00 in London, outside London's quiet hours.
+      const london = await register(tx, w.ben, "Europe/London");
+      clock.set(EVENING.add({ minutes: 1 }));
+      await register(tx, w.ben, "Asia/Tokyo");
+      await aside(tx, [w.day]);
+      const sender = new FakeSender();
+      const lastTokyoMinute = at("2026-11-07T14:59:00Z");
+      sender.answer = () => ({ kind: "retry", status: null, reason: "network.timeout", waitSeconds: 0 });
+      await passAt(tx, sender, lastTokyoMinute);
+      expect(await deliveryTo(tx, w.day, london)).toMatchObject({ state: "pending", sent_at: lastTokyoMinute });
+      // The retry comes after midnight in Tokyo: the first try's time is the day before's, so the push is dated now.
+      const nextTokyoDay = at("2026-11-07T15:00:30Z");
+      sender.answer = () => ({ kind: "sent" });
+      await passAt(tx, sender, nextTokyoDay);
+      expect(await deliveryTo(tx, w.day, london)).toMatchObject({ state: "sent", sent_at: nextTokyoDay, attempts: 2 });
+    });
+  });
+
   it("ends a retry whose next try would come after the close as failed, closed, and counts it", async () => {
     await rolledBack(db, async (tx) => {
       const { w, ben, sender } = await tokyo(tx);
@@ -796,12 +868,16 @@ describe("Apple's answer (the plan's section 2.3, item 3)", () => {
     });
   });
 
-  it("holds the delivery's row across Apple for less than the role's idle limit and the send's lease", async () => {
+  it("holds the delivery's row across Apple for less than the role's idle limit, the API's lock wait and the send's lease", async () => {
     const [row] = await db<
-      { idle: string }[]
-    >`SELECT pg_catalog.current_setting('idle_in_transaction_session_timeout') AS idle`;
-    expect(row?.idle).toBe("15s");
+      { idle: string; wait: string }[]
+    >`SELECT pg_catalog.current_setting('idle_in_transaction_session_timeout') AS idle,
+             pg_catalog.current_setting('lock_timeout') AS wait`;
+    // The role's own wait for a lock (0018), which the API's transactions set again (TRANSACTION_LIMITS).
+    expect(row).toEqual({ idle: "15s", wait: "5s" });
     expect(REQUEST_TIMEOUT_MS).toBeLessThan(15_000);
+    // A removal of the device waits for the send under the API's 5 seconds, with a second to spare (R2-3).
+    expect(REQUEST_TIMEOUT_MS).toBeLessThanOrEqual(4_000);
     expect(REQUEST_TIMEOUT_MS).toBeLessThan(SEND_LEASE_SECONDS * 1000);
   });
 });
@@ -851,8 +927,8 @@ describe("the purge (the plan's section 2.1)", () => {
 });
 
 describe("a send in flight, committed on two connections (the plan's section 2.3)", () => {
-  it("holds the delivery's row across Apple, so a removal of its device waits until Apple's answer is written", async () => {
-    // A committed world with Ben's phone, and a delivery already decided to send, as the decision leaves it.
+  /** A committed world with Ben's phone, and a delivery already decided to send, as the decision leaves it. */
+  async function decidedAndCommitted() {
     committed = true;
     const w = await db.begin((tx) => newWorld(plain(tx)));
     clock.set(EVENING);
@@ -890,6 +966,11 @@ describe("a send in flight, committed on two connections (the plan's section 2.3
       leaseUntil,
       ownSentAt: true,
     };
+    return { ben, id, decided, leaseUntil };
+  }
+
+  it("holds the delivery's row across Apple, so a removal of its device waits until Apple's answer is written", async () => {
+    const { ben, id, decided } = await decidedAndCommitted();
     // Apple takes its time to answer, until the test lets it.
     let answer: () => void = () => undefined;
     const answered = new Promise<void>((resolve) => {
@@ -926,5 +1007,70 @@ describe("a send in flight, committed on two connections (the plan's section 2.3
       SELECT state, pg_catalog.encode(sign_in, 'hex') AS sign_in FROM app.push_deliveries WHERE id = ${id}`;
     expect(row).toEqual({ state: "sent", sign_in: null });
     expect(sender.pushes).toHaveLength(1);
+  });
+
+  it("calls Apple's request off and sends nothing more on a connection lost while Apple answers, even once reopened", async () => {
+    const { id, decided, leaseUntil } = await decidedAndCommitted();
+    // The worker's connection, one only, so the pool opens that same one again for the next transaction.
+    const worker = worldSql(1);
+    try {
+      const [first] = await worker<{ pid: number }[]>`SELECT pg_catalog.pg_backend_pid() AS pid`;
+      if (first === undefined) throw new Error("no backend");
+      let answer: () => void = () => undefined;
+      const answered = new Promise<void>((resolve) => {
+        answer = resolve;
+      });
+      let handed: () => void = () => undefined;
+      const atApple = new Promise<void>((resolve) => {
+        handed = resolve;
+      });
+      let calledOff: boolean | undefined;
+      const sender = new FakeSender();
+      sender.during = async (signal) => {
+        handed();
+        await answered;
+        calledOff = signal?.aborted;
+      };
+      clock.set(OPEN.add({ seconds: 1 }));
+      const sending = sendDelivery(worker, clock, sender, id, decided);
+      sending.catch(() => undefined);
+      await atApple;
+      // The send's backend ends while Apple holds the push (a pooler's restart, a link gone).
+      await db`SELECT pg_catalog.pg_terminate_backend(${first.pid})`;
+      await expect(sending).rejects.toMatchObject({ code: "CONNECTION_CLOSED" });
+      // The next transaction gets the connection again, a new backend, and is still open when Apple answers.
+      let opened: () => void = () => undefined;
+      const open = new Promise<void>((resolve) => {
+        opened = resolve;
+      });
+      let finish: () => void = () => undefined;
+      const finishing = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      const other = worker.begin(async (tx) => {
+        const [before] = await tx<{ pid: number; at: Temporal.Instant }[]>`
+          SELECT pg_catalog.pg_backend_pid() AS pid, pg_catalog.now() AS at`;
+        opened();
+        await finishing;
+        const [after] = await tx<{ at: Temporal.Instant }[]>`SELECT pg_catalog.now() AS at`;
+        return { before, after };
+      });
+      await open;
+      answer();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      finish();
+      const { before, after } = await other;
+      expect(before?.pid).not.toBe(first.pid);
+      // Nothing of the lost send ran in it: still one transaction, never committed early.
+      expect(after?.at).toEqual(before?.at);
+      expect(calledOff).toBe(true);
+      // The delivery is as the decision left it, for its lease to bring back: no answer was written for it.
+      const [row] = await db<{ state: string; lease_until: Temporal.Instant | null; outcome: string | null }[]>`
+        SELECT state, lease_until, outcome FROM app.push_deliveries WHERE id = ${id}`;
+      expect(row).toEqual({ state: "sending", lease_until: leaseUntil, outcome: null });
+      expect(sender.pushes).toHaveLength(1);
+    } finally {
+      await worker.end({ timeout: 1 });
+    }
   });
 });

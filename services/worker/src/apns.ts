@@ -19,11 +19,17 @@
 // - What Apple answers is sorted as its documentation says ("Handling notification responses from APNs", read
 //   2026-11-28): 200 is sent; a token Apple says is dead (`410`, or `400` `BadDeviceToken` or
 //   `DeviceTokenNotForTopic`) is `dead`, never retried; a `429`, a `5xx`, a `400` `IdleTimeout`, a lost stream, a lost
-//   connection or no whole answer within 10 seconds of the request, however it trickles, is `retry`; anything else is
-//   `refused`, never retried. `retry` after a `5xx` says to wait 15 minutes at least, as Apple asks. A `200` is `sent`
-//   as soon as its status comes; of any other answer at most ANSWER_LIMIT is read, and the stream is then cancelled.
+//   connection or no whole answer within REQUEST_TIMEOUT_MS of the request, however it trickles, is `retry`; anything
+//   else is `refused`, never retried. `retry` after a `5xx` says to wait 15 minutes at least, as Apple asks. A `200` is
+//   `sent` as soon as its status comes; of any other answer at most ANSWER_LIMIT characters are kept, the stream is
+//   then cancelled, and the status still decides as above (a long `410` is still a dead token), Apple's reason being
+//   `unknown` when what was kept isn't whole.
 // - A `retry` whose request never left (no connection was ever made) says `network.connection`; one that may have
 //   reached Apple says `network.stream` or `network.timeout` (the worker counts that push in the budget, push.ts).
+// - A push can be called off with an AbortSignal (`send`'s second argument): the worker's, when the database
+//   connection of the transaction that holds the push's delivery is lost (push.ts). A request still waiting for its
+//   connection is then never written, and says `network.connection`; one already written is cancelled, and says
+//   `network.stream`, since Apple may have it.
 //
 // Nothing here logs. An outcome holds a status and a code, Apple's reason or one of the sender's own, never a token, a
 // payload or a message (T52). The key is read once, at the worker's start (`apnsKeyFrom`), and an error about it
@@ -44,14 +50,17 @@ export type ApnsEnvironment = keyof typeof APNS_ORIGINS;
 export const APNS_TOPIC = "app.tadayo";
 /** How old a provider token gets before the next is made, in seconds: inside Apple's 20 to 60 minutes. */
 export const TOKEN_REFRESH_SECONDS = 50 * 60;
-/** How long a request waits for Apple's whole answer, in milliseconds, from the request: under the database role's 15
- * seconds idle in a transaction, since the worker holds the delivery's row across it (push.ts). */
-export const REQUEST_TIMEOUT_MS = 10_000;
+/** How long a request waits for Apple's whole answer, in milliseconds, from the request. The worker holds the
+ * delivery's row across it (push.ts), so it stays under the database role's 15 seconds idle in a transaction (0018)
+ * and, with a second to spare, under the API's 5-second wait for a lock (services/api/src/connection.ts
+ * TRANSACTION_LIMITS), so a removal of the device that waits for the send isn't answered 503 (PR #159's second
+ * review, R2-3). */
+export const REQUEST_TIMEOUT_MS = 4_000;
 /** How long a connection with no traffic stays open, in milliseconds. */
 export const SESSION_IDLE_MS = 10 * 60_000;
 /** How far the real time may go back, in seconds, before the provider token is made again. */
 export const STEP_BACK_SECONDS = 5 * 60;
-/** The most of an answer's body that is read, in bytes: Apple's are a short JSON object. */
+/** The most of an answer's body that is kept, in characters (it is read as UTF-8): Apple's is a short JSON object. */
 export const ANSWER_LIMIT = 4096;
 /** The largest payload Apple takes, in bytes. */
 export const PAYLOAD_LIMIT = 4096;
@@ -112,7 +121,8 @@ export interface ApnsPush {
   readonly payload: string;
   /** One notification per day on a device: the day's id. */
   readonly collapseId: string;
-  /** When APNs stops trying, in seconds since the epoch: the day's close. */
+  /** When APNs stops trying, in seconds since the epoch: the day's close or the device's next 23:00, whichever comes
+   * first (the domain's `decideReveal`). */
   readonly expiresAt: number;
 }
 
@@ -124,7 +134,8 @@ export type ApnsOutcome =
   | { readonly kind: "refused"; readonly status: number | null; readonly reason: string };
 
 export interface ApnsSender {
-  send(push: ApnsPush): Promise<ApnsOutcome>;
+  /** Sends `push`, unless `signal` calls it off first (above). Resolves every failure; never throws. */
+  send(push: ApnsPush, signal?: AbortSignal): Promise<ApnsOutcome>;
   /** Closes the connections, letting the process end. */
   close(): void;
 }
@@ -234,8 +245,10 @@ export function apnsSender(key: ApnsKey, options: ApnsOptions = {}): ApnsSender 
   };
 
   return {
-    send(push: ApnsPush): Promise<ApnsOutcome> {
+    send(push: ApnsPush, signal?: AbortSignal): Promise<ApnsOutcome> {
       if (!TOKEN.test(push.token)) return Promise.resolve({ kind: "refused", status: null, reason: "token.malformed" });
+      if (signal?.aborted === true)
+        return Promise.resolve({ kind: "retry", status: null, reason: "network.connection", waitSeconds: 0 });
       if (Buffer.byteLength(push.payload) > PAYLOAD_LIMIT)
         return Promise.resolve({ kind: "refused", status: null, reason: "payload.too_large" });
       return new Promise<ApnsOutcome>((resolve) => {
@@ -253,19 +266,23 @@ export function apnsSender(key: ApnsKey, options: ApnsOptions = {}): ApnsSender 
         let request: ClientHttp2Stream;
         try {
           open = sessionFor(push.environment);
-          request = open.session.request({
-            ":method": "POST",
-            ":path": `/3/device/${push.token}`,
-            authorization: `bearer ${currentToken()}`,
-            "apns-push-type": "alert",
-            "apns-priority": "10",
-            "apns-topic": APNS_TOPIC,
-            "apns-collapse-id": push.collapseId,
-            "apns-expiration": String(push.expiresAt),
-            "content-type": "application/json",
-            // Apple asks that the path and the token stay out of HPACK's table.
-            [sensitiveHeaders]: [":path", "authorization"],
-          });
+          request = open.session.request(
+            {
+              ":method": "POST",
+              ":path": `/3/device/${push.token}`,
+              authorization: `bearer ${currentToken()}`,
+              "apns-push-type": "alert",
+              "apns-priority": "10",
+              "apns-topic": APNS_TOPIC,
+              "apns-collapse-id": push.collapseId,
+              "apns-expiration": String(push.expiresAt),
+              "content-type": "application/json",
+              // Apple asks that the path and the token stay out of HPACK's table.
+              [sensitiveHeaders]: [":path", "authorization"],
+            },
+            // Called off, the stream is destroyed: never written if it still waits for the connection (above).
+            { signal },
+          );
         } catch {
           settle(lost("network.connection"));
           return;
