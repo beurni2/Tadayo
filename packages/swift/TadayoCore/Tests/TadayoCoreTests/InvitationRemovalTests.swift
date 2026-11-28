@@ -152,7 +152,7 @@ import Testing
     }
 
     @Test func createAnInvitationAndTheOthersRowsComeOnlyFromTheReadAgain() async {
-        // Debby accepted the earlier roster; the new one needs her acceptance again (frame 3).
+        // Debby accepted the earlier roster; the new one needs Debby's acceptance again (frame 3).
         for readAgain in [true, false] {
             let clubs = ScriptedClubs()
             clubs.clubAnswers = [
@@ -263,14 +263,13 @@ import Testing
             await list.remove("cand_nina")
             #expect(reads(clubs) == 2)
             if joined {
-                // Nina may have joined: the list never says she was removed.
+                // Nina may have joined: the list never says Nina was removed.
                 #expect(list.actionFailure == nil)
                 #expect(list.notice == .init(kind: .updated, sequence: 1))
                 #expect(row(list, "cand_nina") == nil)
             } else {
-                #expect(
-                    list.actionFailure
-                        == .remove(name: "Nina", club: "Sunday people", uncertain: false))
+                // The server's last word, so never "Try again" (handoff 11's section 4).
+                #expect(list.actionFailure == .removeUnavailable)
                 #expect(list.notice == nil)
                 #expect(row(list, "cand_nina") != nil)
             }
@@ -289,7 +288,7 @@ import Testing
         #expect(list.actionFailure == nil)
         #expect(list.notice == .init(kind: .updated, sequence: 1))
         #expect(row(list, "cand_maya") == nil)
-        // The members answer no longer lists Maya: her link goes as the read settles it.
+        // The members answer no longer lists Maya: Maya's link goes as the read settles it.
         #expect(book.link(for: "cand_maya", club: club, account: account) == nil)
     }
 
@@ -320,11 +319,15 @@ import Testing
         clubs.duringRevoke = { await revokeGate.wait() }
         let revoking = Task { await list.revoke("cand_maya") }
         await revokeGate.reached()
+        // Every row's Remove invitation waits (the screen's), not only Maya's.
+        #expect(!list.removalCanStart)
+        #expect(!list.canRemove("cand_nina") && !list.canRemove("cand_maya"))
         await list.remove("cand_nina")
         await list.remove("cand_maya")
         #expect(removals(clubs).isEmpty)
         revokeGate.open()
         await revoking.value
+        #expect(list.canRemove("cand_nina") && list.removalCanStart)
         // A removal on its way: no link action (Nina's first link, Maya's new one), no other
         // removal, and no name step.
         let removeGate = Gate()
@@ -383,7 +386,14 @@ import Testing
             await list.load()
             await list.remove("cand_maya")
             #expect(names(list) == ["Maya", "Nina", "Debby"], "\(answer)")
-            #expect(book.link(for: "cand_maya", club: club, account: account) != nil)
+            // The server's removal still takes the person's kept links: they stop working
+            // whatever the screen does (T24); any other answer keeps them.
+            let kept = book.link(for: "cand_maya", club: club, account: account)
+            if case .success = answer {
+                #expect(kept == nil)
+            } else {
+                #expect(kept != nil, "\(answer)")
+            }
             #expect(list.actionFailure == nil && list.notice == nil, "\(answer)")
             #expect(reads(clubs) == 1, "\(answer)")
             #expect(ended == 0, "\(answer)")

@@ -47,7 +47,8 @@ struct MembersDestination: View {
             members: asked ? model.members : .loading, retry: { await model.loadMembers() },
             openApproval: openApproval,
             openInvitation: model.opensInvitations ? openInvitation : nil,
-            removing: model.removing, removalFailure: model.removalFailure, notice: model.notice,
+            removing: model.removing, removalCanStart: model.removalCanStart,
+            removalFailure: model.removalFailure, notice: model.notice,
             remove: { proposed in Task { await remove(proposed) } }
         )
         .task {
@@ -58,10 +59,13 @@ struct MembersDestination: View {
         }
     }
 
+    /// Only a removal the model will start says it's starting; politely, so the confirmation's
+    /// own reading as it closes isn't cut off.
     private func remove(_ proposed: Roster.Proposed) async {
-        guard model.removing == nil else { return }
+        guard model.canRemove(proposed.id) else { return }
         Announcement.post(
-            InvitationsScreen.words("remove.busy.announcement", proposed.candidate.name))
+            InvitationsScreen.words("remove.busy.announcement", proposed.candidate.name),
+            politely: true)
         await model.remove(proposed.id)
     }
 }
@@ -150,9 +154,12 @@ struct InvitationsDestination: View {
         }
     }
 
+    /// Only a removal the model will start says it's starting; politely, so the confirmation's
+    /// own reading as it closes isn't cut off.
     private func remove(_ row: InvitationRow) async {
-        guard model.removing == nil else { return }
-        Announcement.post(InvitationsScreen.words("remove.busy.announcement", row.name))
+        guard model.canRemove(row.candidateID) else { return }
+        Announcement.post(
+            InvitationsScreen.words("remove.busy.announcement", row.name), politely: true)
         await model.remove(row.candidateID)
     }
 

@@ -54,10 +54,12 @@ reads it. No key: repeating the removal returns the same answer and changes noth
   "Revoking link…" stay.
 - **The removal** (`InvitationListModel.remove(_:)`), only for a row whose menu offers it, and only while nothing else
   of the list is on its way: one roster or link change at a time (section 8). While it's out (`removing`), the row
-  says "Removing…" with the system's indicator, its value "In progress", announced once as "Removing {name}’s
-  invitation."; every row's controls and Create an invitation wait; Done for now and Back don't.
+  says "Removing…" with the system's indicator, its value "In progress", announced once, politely, as "Removing
+  {name}’s invitation." only once the model starts it (`canRemove`); every row's controls and Create an invitation
+  wait; Done for now and Back don't. While any row's link action is out, every row's Remove invitation waits too.
 - **On the server's answer** (section 3): the row goes at once, every link kept for that person goes from the book
-  (`InvitationLinkBook.dropCandidate`), and the list is read again, which says whether Create an invitation is back and
+  (`InvitationLinkBook.dropCandidate`, even when the session or the selected club changed meanwhile: the book is the
+  account's, and after a sign-out or a switch it holds nothing to drop), and the list is read again, which says whether Create an invitation is back and
   what the others' rows read now (Debby's Needs to accept again in frame 3). A read requested before the answer can't
   bring the row back; one requested after it decides. Then "{name}’s invitation was removed." is said once
   (`removal`), and VoiceOver's focus goes to Create an invitation if it shows, else the row now in the removed one's
@@ -67,7 +69,9 @@ reads it. No key: repeating the removal returns the same answer and changes noth
     {name}’s invitation to {clubName} was removed. Check your connection and try again.";
   - any other failure but these two: "Couldn’t remove {name}’s invitation to {clubName}. Try again.";
   - not found (the person joined, or the club or the candidate is no longer the caller's): no line; the list is read
-    again, and if the row has gone, "Invitation list updated." is said once; a row still there gets the refusal's line;
+    again, and if the row has gone, "Invitation list updated." is said once; a row still there gets
+    `handoff11.remove.unavailable`, "This invitation is no longer available.", never "Try again" (the check's
+    section 4: no endless retry);
   - signed out: the session ends.
 
   The line sits above Done for now in handoff 9's form, said once, and goes as the other lines do: another action
@@ -82,11 +86,16 @@ reads it. No key: repeating the removal returns the same answer and changes noth
   or FQ147's opens G03-approve, the row keeps it and its chevron, and More comes after them (item 81, built from spec);
   the identity and More are separate elements.
 - **The same confirmation and words**, with the person's name and the club's.
-- **The removal** (`ClubDetailsModel.remove(_:)`): "Removing…" with the indicator 8 under the Proposed tag, More and
-  the row's route waiting; then the row goes at once, the members are read again quietly (`refreshMembers()`: what's
-  shown stays while the read is out, and stays if it fails), and "{name}’s invitation was removed." is said once. The
-  failure line, the same words, sits 24 under that row, the footer 32 under the line; it goes on another removal, a
-  read that no longer offers the removal for that person, or Members shown again (`loadMembers()`).
+- **The removal** (`ClubDetailsModel.remove(_:)`): "Removing…" with the indicator 8 under the Proposed tag, every
+  More and every proposed row's route waiting (section 8: one change in flight per club, so no approval or link
+  action starts meanwhile); every More also waits while the person's invitation page or the name step, left by Back,
+  has an action out (`removalCanStart`). Then the row goes at once, the members are read again quietly
+  (`refreshMembers()`: what's shown stays while the read is out, and stays if it fails), and "{name}’s invitation was
+  removed." is said once. The club's details are read again after any answer but a session's end, so Invite someone
+  shows again in Club details once the removal freed a place (FQ148). The failure line, the same words, sits 24 under
+  that row, the footer 32 under the line; it goes on another removal, a read that no longer offers the removal for
+  that person, or Members shown again (`loadMembers()`). "Members updated." is said only when a read after a failure
+  no longer lists the person; a not found with the person still listed gets the unavailable line, as the setup list's.
 - **VoiceOver's focus after the row goes** (built from spec; handoff 11 says where it goes only on the setup list):
   the proposed row now in its place, else the one before, else the last member's row (`Roster.focusAfterRemoval`),
   as the setup list's goes to the row in its place or the one before; Members has no Create an invitation or Done for

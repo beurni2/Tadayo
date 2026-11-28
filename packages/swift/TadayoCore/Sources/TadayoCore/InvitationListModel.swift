@@ -230,6 +230,10 @@ public struct InvitationList: Sendable, Equatable {
         /// was removed. Check your connection and try again." (handoff 11's
         /// `handoff11.remove.failed`).
         case remove(name: String, club: String, uncertain: Bool)
+        /// "This invitation is no longer available." (`handoff11.remove.unavailable`): a not
+        /// found, the server's last word on the person, while the list still shows their row,
+        /// so it never asks to try again (handoff 11's section 4).
+        case removeUnavailable
     }
 
     public let club: ClubRef
@@ -412,9 +416,7 @@ public struct InvitationList: Sendable, Equatable {
     /// remove) reads it again with no line, and says the list was updated once the row has gone.
     /// The removal takes no key: a repeat returns the same answer (`removeCandidate`).
     public func remove(_ candidateID: String) async {
-        guard removing == nil, busy.isEmpty, let candidate = mine(candidateID),
-            let row = row(for: candidate), row.menu.contains(.removeInvitation)
-        else { return }
+        guard canRemove(candidateID), let candidate = mine(candidateID) else { return }
         let clubName = answer?.members.club.name ?? club.name
         let position: Int =
             if case .loaded(let list) = state {
@@ -428,10 +430,14 @@ public struct InvitationList: Sendable, Equatable {
         }
         removing = nil
         busy.remove(candidateID)
+        // The person's links stop working on the server's answer, whatever this screen does
+        // next: the book is the account's, so after a sign-out or a switch this drops nothing.
+        if case .success = outcome {
+            book.dropCandidate(candidateID, club: club.id, account: accountID)
+        }
         guard current() else { return }
         switch outcome {
         case .success:
-            book.dropCandidate(candidateID, club: club.id, account: accountID)
             removed[candidateID] = reads
             relist()
             await refresh()
@@ -445,9 +451,7 @@ public struct InvitationList: Sendable, Equatable {
             if mine(candidateID) == nil {
                 say(.updated)
             } else {
-                fail(
-                    .remove(name: candidate.name, club: clubName, uncertain: false), candidateID,
-                    .remove)
+                fail(.removeUnavailable, candidateID, .remove)
             }
         case .failure(let failure):
             fail(
@@ -460,6 +464,19 @@ public struct InvitationList: Sendable, Equatable {
             if actionFailure == nil, mine(candidateID) == nil { say(.updated) }
         }
     }
+
+    /// Whether Remove invitation can start for this person now: nothing else of the list on its
+    /// way (a removal, or any row's link action: handoff 11's `busy.concurrency`), and their
+    /// row's More offering it. Every row's Remove invitation waits while it's false.
+    public func canRemove(_ candidateID: String) -> Bool {
+        guard removalCanStart, let candidate = mine(candidateID), let row = row(for: candidate)
+        else { return false }
+        return row.menu.contains(.removeInvitation)
+    }
+
+    /// Whether nothing of the list is on its way, so a removal could start: `busy` holds every
+    /// row whose action is out, a removal's included.
+    public var removalCanStart: Bool { busy.isEmpty }
 
     private func say(_ kind: RemovalNotice.Kind) {
         notices += 1

@@ -287,6 +287,15 @@ final class ClubCreateSnapshotTests: XCTestCase {
         if let line, let done { XCTAssertLessThan(line, done, "\(elements)") }
     }
 
+    func testANotFoundWhileTheRowStaysSaysTheInvitationIsNoLongerAvailable() {
+        let elements = AccessibilityElements.of(list(Invites.five, failure: .removeUnavailable))
+        let line = elements.firstIndex { $0.label == "This invitation is no longer available." }
+        let done = elements.firstIndex { $0.label == "Finish managing invitations for now." }
+        XCTAssertNotNil(line, "\(elements)")
+        if let line, let done { XCTAssertLessThan(line, done, "\(elements)") }
+        XCTAssertFalse(elements.contains { $0.label.contains("Try again") }, "\(elements)")
+    }
+
     func testWhileARevokeGoesTheRowSaysSoAndItsControlsWait() {
         let elements = AccessibilityElements.of(
             list(Invites.five, busy: ["cand_alex"], revoking: ["cand_alex"]))

@@ -51,7 +51,9 @@ import TadayoDesign
 /// invitation asks first, in the setup list's alert with the club's name (`last` when nobody
 /// else is proposed, `withOthers` otherwise), which closes if the row goes while it's open.
 /// While the removal is out (`removing`), the row says "Removing…" 8 under the tag with the
-/// system's indicator, its value "In progress", and every More and that row's route wait. On the
+/// system's indicator, its value "In progress", and every More and every proposed row's route
+/// wait (handoff 11's `busy.concurrency`: one roster or link change in flight per club); every
+/// More also waits while the person's invitation page or the name step has an action out. On the
 /// answer the row goes, "{name}’s invitation was removed." is said once and VoiceOver's focus
 /// goes to the proposed row now in its place, else the one before, else the last member's row
 /// (`Roster.focusAfterRemoval`). A failure's line (`removalFailure`), handoff 11's words, sits
@@ -65,6 +67,10 @@ struct MembersScreen: View {
     var openInvitation: ((String) -> Void)?
     /// The person whose removal is on its way.
     var removing: String?
+    /// Whether a removal can start now: none is out, and neither the person's invitation page
+    /// nor the name step has an action out (`ClubDetailsModel.removalCanStart`; one roster or link
+    /// change in flight per club, handoff 11's `busy.concurrency`).
+    var removalCanStart = true
     var removalFailure: ClubDetailsModel.RemovalFailure?
     /// The last thing a removal has VoiceOver say, and where its focus goes then.
     var notice: RemovalNotice?
@@ -219,8 +225,8 @@ struct MembersScreen: View {
     /// A button with the chevron and its hint that opens G03-approve when the viewer's decision is
     /// pending, a button with the chevron that opens the person's invitation page for their
     /// proposer, and otherwise the row alone, the chevron's room kept unless More takes the
-    /// trailing edge (frame 5: the words end 12 before More's target). The route waits while the
-    /// person's removal is out.
+    /// trailing edge (frame 5: the words end 12 before More's target). The route waits while any
+    /// removal is out, so nothing else changes the roster or a link meanwhile.
     @ViewBuilder private func opening(_ proposed: Roster.Proposed, in roster: Roster)
         -> some View
     {
@@ -240,7 +246,7 @@ struct MembersScreen: View {
                 row.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(busy)
+            .disabled(removing != nil)
             .accessibilityHint(
                 Text(verbatim: ApproveWords.words("members.proposed.hint", roster.club.name)))
         } else if invites {
@@ -250,14 +256,14 @@ struct MembersScreen: View {
                 row.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(busy)
+            .disabled(removing != nil)
         } else {
             row
         }
     }
 
-    /// The viewer's own candidate's More (frame 5): Remove invitation alone, unavailable while any
-    /// removal is out.
+    /// The viewer's own candidate's More (frame 5): Remove invitation alone, unavailable while a
+    /// removal can't start (`removalCanStart`).
     private func more(_ proposed: Roster.Proposed) -> some View {
         let name = proposed.candidate.name
         return Menu {
@@ -283,7 +289,7 @@ struct MembersScreen: View {
                 .frame(width: Size.touchTarget, height: Size.touchTarget)
                 .contentShape(Rectangle())
         }
-        .disabled(removing != nil)
+        .disabled(removing != nil || !removalCanStart)
         .accessibilityLabel(Text(verbatim: InvitationsScreen.words("invite.more.label", name)))
         .padding(.top, Spacing.m)
         .padding(.leading, Spacing.m)
@@ -300,9 +306,12 @@ struct MembersScreen: View {
 }
 
 extension ClubDetailsModel.RemovalFailure {
-    /// Handoff 11's words for the failure, with the person's name and the club's.
+    /// Handoff 11's words for the failure, with the person's name and the club's; a not found
+    /// while the roster still lists the person says the invitation is no longer available, never
+    /// "Try again" (`handoff11.remove.unavailable`).
     var words: String {
-        InvitationsScreen.words(
+        if unavailable { return String(localized: "remove.unavailable") }
+        return InvitationsScreen.words(
             uncertain ? "remove.failed.network" : "remove.failed.refused", name, club)
     }
 }

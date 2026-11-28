@@ -439,6 +439,34 @@ final class ApproveSnapshotTests: XCTestCase {
         XCTAssertFalse(elements.contains { $0.label == "Removing…" }, "\(elements)")
     }
 
+    func testWhileARemovalGoesNoOtherRouteOrMoreOpens() {
+        // Handoff 11's `busy.concurrency`, one roster or link change in flight per club: during
+        // Leila's removal, Nina's route to G03-approve waits, so Ben can't approve a revision
+        // the removal is about to replace.
+        let roster = ClubFixtures.kitchenRoster(
+            open: ClubFixtures.kitchenRevision(nina: true, decision: .pending), viewer: "Ben")
+        let removing = AccessibilityElements.of(
+            pushed(
+                MembersScreen(
+                    members: .loaded(roster), retry: {}, openApproval: { _ in },
+                    removing: "cand_leila")))
+        let nina = removing.first { $0.label == "Nina. Proposed by Alex. Proposed." }
+        XCTAssertTrue(nina?.traits.contains(.button) ?? false, "\(removing)")
+        XCTAssertTrue(nina?.traits.contains(.notEnabled) ?? false, "\(removing)")
+        // Leila's page or the name step with an action out: the More waits, the routes don't.
+        let held = AccessibilityElements.of(
+            pushed(
+                MembersScreen(
+                    members: .loaded(roster), retry: {}, openApproval: { _ in },
+                    removalCanStart: false)))
+        XCTAssertTrue(
+            held.first { $0.label == "More options for Leila’s invitation" }?.traits.contains(
+                .notEnabled) ?? false, "\(held)")
+        XCTAssertFalse(
+            held.first { $0.label == "Nina. Proposed by Alex. Proposed." }?.traits.contains(
+                .notEnabled) ?? true, "\(held)")
+    }
+
     func testAFailuresLineIsReadUnderTheRowAndBeforeTheFooter() {
         for uncertain in [true, false] {
             let elements = AccessibilityElements.of(
@@ -468,6 +496,19 @@ final class ApproveSnapshotTests: XCTestCase {
             "Any links for Leila will stop working. Leila won’t be able to join Kitchen table "
                 + "from this invitation.\n\nYou can invite Leila again later with a new invitation."
                 + "\n\nAnyone else still invited will review and accept the updated roster again.")
+    }
+
+    func testANotFoundWhileTheRowStaysSaysTheInvitationIsNoLongerAvailable() {
+        // The server's last word on Leila while Members still lists Leila: never "Try again"
+        // (`handoff11.remove.unavailable`).
+        let failure = ClubDetailsModel.RemovalFailure(
+            candidateID: "cand_leila", name: "Leila", club: "Kitchen table", uncertain: false,
+            unavailable: true)
+        let elements = AccessibilityElements.of(members(Self.asBen, failure: failure))
+        XCTAssertTrue(
+            elements.contains { $0.label == "This invitation is no longer available." },
+            "\(elements)")
+        XCTAssertFalse(elements.contains { $0.label.contains("Try again") }, "\(elements)")
     }
 
     // MARK: Helpers

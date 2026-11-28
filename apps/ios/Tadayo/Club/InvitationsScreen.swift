@@ -109,7 +109,8 @@ struct InvitationsScreen: View {
                         InvitationRowView(
                             row: row, busy: busy.contains(row.candidateID) || removing != nil,
                             revoking: revoking.contains(row.candidateID),
-                            removing: removing == row.candidateID, actions: actions,
+                            removing: removing == row.candidateID,
+                            removalWaits: !busy.isEmpty || removing != nil, actions: actions,
                             confirm: { confirming = $0 }, focus: $focus)
                     }
                 }
@@ -304,6 +305,10 @@ struct InvitationRowView: View {
     let busy: Bool
     let revoking: Bool
     var removing = false
+    /// Another row's link action, or a removal, is on its way: Remove invitation waits for it, as
+    /// the model does (`InvitationListModel.removalCanStart`; one roster or link change in flight
+    /// per club, handoff 11's section 8).
+    var removalWaits = false
     let actions: InvitationActions
     /// Revoke link's or Remove invitation's confirmation, for this row.
     let confirm: (InvitationsScreen.Confirming) -> Void
@@ -557,7 +562,9 @@ struct InvitationRowView: View {
                 }
             }
             .accessibilityLabel(
-                Text(verbatim: InvitationsScreen.words("remove.action.label", row.name)))
+                Text(verbatim: InvitationsScreen.words("remove.action.label", row.name))
+            )
+            .disabled(removalWaits)
         }
     }
 
@@ -713,6 +720,8 @@ extension InvitationListModel.ActionFailure {
         case .remove(let name, let club, let uncertain):
             InvitationsScreen.words(
                 uncertain ? "remove.failed.network" : "remove.failed.refused", name, club)
+        case .removeUnavailable:
+            String(localized: "remove.unavailable")
         }
     }
 }

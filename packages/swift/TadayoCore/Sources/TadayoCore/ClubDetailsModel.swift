@@ -66,18 +66,26 @@ import Observation
 
     /// "Couldn’t remove {name}’s invitation to {clubName}. Try again.", or, `uncertain`,
     /// "Couldn’t confirm that {name}’s invitation to {clubName} was removed. Check your
-    /// connection and try again." (handoff 11's section 5), under the person's row.
+    /// connection and try again." (handoff 11's section 5), under the person's row; or,
+    /// `unavailable`, "This invitation is no longer available." for a not found while Members
+    /// still lists them, so the server's last word isn't an endless "Try again" (handoff 11's
+    /// section 4: `handoff11.remove.unavailable`).
     public struct RemovalFailure: Sendable, Equatable {
         public let candidateID: String
         public let name: String
         public let club: String
         public let uncertain: Bool
+        public let unavailable: Bool
 
-        public init(candidateID: String, name: String, club: String, uncertain: Bool) {
+        public init(
+            candidateID: String, name: String, club: String, uncertain: Bool,
+            unavailable: Bool = false
+        ) {
             self.candidateID = candidateID
             self.name = name
             self.club = club
             self.uncertain = uncertain
+            self.unavailable = unavailable
         }
     }
 
@@ -203,15 +211,16 @@ import Observation
 
     /// Remove invitation from Members, after its confirmation (FQ148; handoff 11's sections 5 and
     /// 8): only for a proposed row whose candidate the viewer proposed (`Roster.Proposed.removable`),
-    /// whatever the viewer's decision on the revision, one at a time. On the server's answer the
-    /// row goes at once, every link kept for the person goes, Members is read again quietly, and
-    /// then "{name}’s invitation was removed." is said. A failure keeps the row with its line
-    /// and reads Members again; a not found reads them again with no line, and says Members was
-    /// updated once the row has gone. The removal takes no key (`removeCandidate`).
+    /// whatever the viewer's decision on the revision, and only while nothing else changing the
+    /// club is on its way (`removalCanStart`). On the server's answer every link kept for the
+    /// person goes, the row goes at once, Members is read again quietly, and then "{name}’s
+    /// invitation was removed." is said. A failure keeps the row with its line and reads Members
+    /// again; a not found reads them again, and says Members was updated once the row has gone,
+    /// or, while they're still listed, that the invitation is no longer available. The details
+    /// are read again after every answer. The removal takes no key (`removeCandidate`).
     public func remove(_ candidateID: String) async {
-        guard removing == nil, current(), case .loaded(let roster) = members,
-            let position = roster.proposed.firstIndex(where: { $0.id == candidateID }),
-            roster.proposed[position].removable
+        guard current(), canRemove(candidateID), case .loaded(let roster) = members,
+            let position = roster.proposed.firstIndex(where: { $0.id == candidateID })
         else { return }
         let name = roster.proposed[position].candidate.name
         let clubName = roster.club.name
@@ -221,12 +230,30 @@ import Observation
             try await service.removeCandidate(candidateID)
         }
         removing = nil
+        // The person's links stop working on the server's answer, whatever this screen does
+        // next: the book is the account's, so after a sign-out or a switch this drops nothing.
+        if case .success = outcome, let links {
+            links.book.dropCandidate(candidateID, club: club.id, account: links.accountID)
+        }
         guard current() else { return }
+        if case .failure(.signedOut) = outcome { return await signedOut() }
+        await settleRemoval(
+            outcome, of: candidateID, named: name, in: clubName, at: position)
+        // The details read again too, whose Invite someone shows again when the removal freed
+        // the club's last place (FQ148): after any answer, since one that never came may have
+        // removed them.
+        guard current(), !closed else { return }
+        await refreshDetails()
+    }
+
+    /// Members after a removal's answer, but a session ended: read again quietly, then what
+    /// VoiceOver is told, or the line under the person's row.
+    private func settleRemoval(
+        _ outcome: Result<Void, APIFailure>, of candidateID: String, named name: String,
+        in clubName: String, at position: Int
+    ) async {
         switch outcome {
         case .success:
-            if let links {
-                links.book.dropCandidate(candidateID, club: club.id, account: links.accountID)
-            }
             // A read asked before the answer is dropped as the read again starts, which
             // decides; until it answers, and if it fails, the row stays gone.
             if case .loaded(let shown) = members {
@@ -235,14 +262,14 @@ import Observation
             await refreshMembers()
             guard current(), !closed else { return }
             say(.removed(name: name, position: position))
-        case .failure(.signedOut):
-            await signedOut()
         case .failure(.notFound):
             await refreshMembers()
-            guard current(), !closed else { return }
-            if removable(candidateID) {
+            // Members loading again decides for itself, and says nothing.
+            guard current(), !closed, let listed = listing(candidateID) else { return }
+            if listed {
                 removalFailure = RemovalFailure(
-                    candidateID: candidateID, name: name, club: clubName, uncertain: false)
+                    candidateID: candidateID, name: name, club: clubName, uncertain: false,
+                    unavailable: true)
             } else {
                 say(.updated)
             }
@@ -252,14 +279,39 @@ import Observation
                 uncertain: failure.leavesRemovalUncertain)
             await refreshMembers()
             guard current(), !closed else { return }
-            if removalFailure == nil { say(.updated) }
+            // Only a roster that no longer lists them says Members changed: the line also goes
+            // when Members shows again or another removal starts.
+            if removalFailure == nil, listing(candidateID) == false { say(.updated) }
         }
+    }
+
+    /// Whether nothing else that changes the club's roster or its links is on its way: a
+    /// removal, or the person's invitation page's or the name step's action, which may have
+    /// been left by Back while it goes on (handoff 11's `busy.concurrency`: one change in flight
+    /// per club). Every More on Members waits while it's false, and so does every proposed
+    /// row's route while a removal is out.
+    public var removalCanStart: Bool {
+        removing == nil && (keptInvitation.map { $0.busy.isEmpty && $0.removing == nil } ?? true)
+            && keptNaming?.isCreating != true
+    }
+
+    /// Whether Remove invitation can start for this person now: nothing else on its way, and
+    /// Members as shown offering it (`Roster.Proposed.removable`).
+    public func canRemove(_ candidateID: String) -> Bool {
+        guard removalCanStart, case .loaded(let roster) = members else { return false }
+        return roster.proposed.contains { $0.id == candidateID && $0.removable }
     }
 
     /// Whether Members as shown offers the removal for this person.
     private func removable(_ candidateID: String) -> Bool {
         guard case .loaded(let roster) = members else { return false }
         return roster.proposed.contains { $0.id == candidateID && $0.removable }
+    }
+
+    /// Whether Members as shown lists this person among the proposed; nil while it isn't shown.
+    private func listing(_ candidateID: String) -> Bool? {
+        guard case .loaded(let roster) = members else { return nil }
+        return roster.proposed.contains { $0.id == candidateID }
     }
 
     private func say(_ kind: RemovalNotice.Kind) {

@@ -32,6 +32,13 @@ import Testing
 
     var week: ClubWeek { ClubWeek(serverClock: Sunday.clock, club: Self.ref, assignments: []) }
 
+    /// Kitchen table's details: `canPropose` while a place is free.
+    func detail(canPropose: Bool) -> ClubDetail {
+        ClubDetail(
+            serverClock: Sunday.clock, club: Self.summary, rosterVersion: 2,
+            canPropose: canPropose, openRevisionID: "rev_2")
+    }
+
     /// Leila's live link (`inv_leila`), kept on this phone.
     func keepingLeila() -> InvitationLinkBook {
         let book = InvitationLinkBook(vault: InMemoryInvitationLinkVault())
@@ -183,6 +190,9 @@ import Testing
         #expect(proposed(model) == ["Nina"])
     }
 
+    /// A not found is the server's last word on this person, so a row Members still lists (its
+    /// read failed, or raced) says the invitation is no longer available, never "Try again"
+    /// (handoff 11's section 4).
     @Test func aNotFoundReadsAgainAndSaysMembersWasUpdatedOnlyOnceTheRowHasGone() async {
         for joined in [true, false] {
             let clubs = FakeClubs(
@@ -203,10 +213,126 @@ import Testing
                     model.removalFailure
                         == .init(
                             candidateID: "cand_leila", name: "Leila", club: "Kitchen table",
-                            uncertain: false))
+                            uncertain: false, unavailable: true))
                 #expect(model.notice == nil)
             }
         }
+    }
+
+    @Test func aReadAskedBeforeTheAnswerCantBringTheRowBack() async {
+        let clubs = FakeClubs(
+            // Each read takes the next answer as it answers: the read again after the answer
+            // (the third) answers before the earlier one (the second), which is held.
+            members: [
+                .success(members()), .success(members(without: ["cand_leila"])),
+                .success(members()),
+            ],
+            schedule: Array(repeating: .success(week), count: 3), remove: [.success(())])
+        let model = model(clubs)
+        await model.loadMembers()
+        let gate = Gate()
+        clubs.duringMembers = { read in if read == 2 { await gate.wait() } }
+        let earlier = Task { await model.refreshMembers() }
+        await gate.reached()
+        await model.remove("cand_leila")
+        #expect(proposed(model) == ["Nina"])
+        // The read asked before the answer lists Leila; the one after it decided.
+        gate.open()
+        await earlier.value
+        #expect(proposed(model) == ["Nina"])
+    }
+
+    /// The probe of the review: Members shown again while a failure's read is out takes the
+    /// line, and a roster still listing Leila says nothing changed.
+    @Test func membersUpdatedIsSaidOnlyOnceTheRosterNoLongerListsThem() async {
+        let clubs = FakeClubs(
+            members: Array(repeating: .success(members()), count: 3),
+            schedule: Array(repeating: .success(week), count: 3),
+            remove: [.failure(.network)])
+        let model = model(clubs)
+        await model.loadMembers()
+        let gate = Gate()
+        clubs.duringMembers = { read in if read == 2 { await gate.wait() } }
+        let removing = Task { await model.remove("cand_leila") }
+        await gate.reached()
+        #expect(model.removalFailure?.uncertain == true)
+        await model.loadMembers()
+        #expect(model.removalFailure == nil)
+        gate.open()
+        await removing.value
+        #expect(proposed(model) == ["Leila", "Nina"])
+        #expect(model.notice == nil)
+    }
+
+    /// One change in flight per club (handoff 11's `busy.concurrency`): a link action on the
+    /// person's invitation page, or the name step's, left by Back while it goes on, holds every
+    /// removal, and a removal holds every proposed row's route (the screen) and More.
+    @Test func aRemovalWaitsForThePersonsPageAndTheNameStep() async throws {
+        // The details, the page's two reads and the name step's first read each read the club.
+        let clubs = FakeClubs(
+            club: Array(repeating: .success(detail(canPropose: true)), count: 6),
+            members: Array(repeating: .success(members()), count: 6),
+            schedule: Array(repeating: .success(week), count: 6))
+        let model = model(clubs, book: keepingLeila())
+        await model.loadDetails()
+        await model.loadMembers()
+        #expect(model.removalCanStart && model.canRemove("cand_leila"))
+        #expect(!model.canRemove("cand_nina"))
+        // Leila's page revoking Leila's link.
+        let page = try #require(model.invitation(for: "cand_leila"))
+        await page.load()
+        let revokeGate = Gate()
+        clubs.duringRevoke = { await revokeGate.wait() }
+        let revoking = Task { await page.revoke("cand_leila") }
+        await revokeGate.reached()
+        #expect(!model.removalCanStart && !model.canRemove("cand_leila"))
+        await model.remove("cand_leila")
+        #expect(removals(clubs).isEmpty)
+        revokeGate.open()
+        await revoking.value
+        #expect(model.canRemove("cand_leila"))
+        // The name step proposing someone.
+        let naming = try #require(model.makeInvite())
+        naming.name = "Omar"
+        let proposeGate = Gate()
+        clubs.duringPropose = { await proposeGate.wait() }
+        let proposing = Task { await naming.createLinkAndShare() }
+        await proposeGate.reached()
+        #expect(!model.removalCanStart && !model.canRemove("cand_leila"))
+        await model.remove("cand_leila")
+        #expect(removals(clubs).isEmpty)
+        proposeGate.open()
+        _ = await proposing.value
+        #expect(model.canRemove("cand_leila"))
+    }
+
+    /// Kitchen table full with Leila proposed: removing Leila frees the place, so the details read
+    /// again after the answer bring Invite someone back (FQ148), whatever the answer was.
+    @Test func theDetailsAreReadAgainAfterEveryAnswer() async {
+        for answer: Result<Void, APIFailure> in [
+            .success(()), .failure(.network), .failure(.notFound), .failure(.refused),
+        ] {
+            let clubs = FakeClubs(
+                club: [.success(detail(canPropose: false)), .success(detail(canPropose: true))],
+                members: Array(repeating: .success(members()), count: 2),
+                schedule: Array(repeating: .success(week), count: 2), remove: [answer])
+            let model = model(clubs)
+            await model.loadDetails()
+            await model.loadMembers()
+            #expect(!model.canInvite)
+            await model.remove("cand_leila")
+            #expect(model.canInvite, "\(answer)")
+            #expect(clubs.calls.filter { $0.hasPrefix("club ") }.count == 2, "\(answer)")
+        }
+        // A session ended reads nothing more.
+        let clubs = FakeClubs(
+            club: [.success(detail(canPropose: false))], members: [.success(members())],
+            schedule: [.success(week)], remove: [.failure(.signedOut)])
+        let model = model(clubs)
+        await model.loadDetails()
+        await model.loadMembers()
+        await model.remove("cand_leila")
+        #expect(clubs.calls.filter { $0.hasPrefix("club ") }.count == 1)
     }
 
     @Test func anotherMembersCandidateIsNeverRemovedAndOneRemovalAtATime() async {
@@ -257,7 +383,14 @@ import Testing
             await model.loadMembers()
             await model.remove("cand_leila")
             #expect(proposed(model) == ["Leila", "Nina"], "\(answer)")
-            #expect(book.link(for: "cand_leila", club: Self.ref.id, account: account) != nil)
+            // The server's removal still takes the person's kept links: they stop working
+            // whatever the screen does (T24); any other answer keeps them.
+            let kept = book.link(for: "cand_leila", club: Self.ref.id, account: account)
+            if case .success = answer {
+                #expect(kept == nil)
+            } else {
+                #expect(kept != nil, "\(answer)")
+            }
             #expect(model.removalFailure == nil && model.notice == nil, "\(answer)")
             #expect(reads(clubs) == 1 && ended == 0, "\(answer)")
             #expect(model.removing == nil)

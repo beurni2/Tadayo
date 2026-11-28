@@ -28,6 +28,9 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     var duringCreate: @Sendable () async -> Void = {}
     /// Run inside each candidate's removal, before it answers.
     var duringRemove: @Sendable () async -> Void = {}
+    /// Run inside each proposal and each revoke, before it answers.
+    var duringPropose: @Sendable () async -> Void = {}
+    var duringRevoke: @Sendable () async -> Void = {}
 
     /// `create` answers each club made, in order; with none left, a club made is refused. So is
     /// a removal with no `remove` answer left.
@@ -108,6 +111,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     func propose(
         _ names: [String], in clubID: String, expectedRosterVersion: Int, key: IdempotencyKey
     ) async throws(APIFailure) -> RosterRevision {
+        await duringPropose()
         record("propose")
         throw .refused
     }
@@ -120,6 +124,7 @@ final class FakeClubs: ClubService, @unchecked Sendable {
     }
 
     func revokeInvitation(_ invitationID: String) async throws(APIFailure) {
+        await duringRevoke()
         record("revokeInvitation")
         throw .refused
     }
