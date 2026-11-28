@@ -64,9 +64,18 @@ extension TadayoAPIClient: ClubService {
     }
 
     public func schedule(of clubID: String) async throws(APIFailure) -> ClubWeek {
+        let (schedule, receivedAt) = try await scheduleAnswer(of: clubID)
+        return try ClubWeek(schedule, receivedAt: receivedAt)
+    }
+
+    /// `getSchedule`'s answer and when it came, which `schedule(of:)` reads for the week alone and
+    /// `clubSchedule(of:)` whole.
+    func scheduleAnswer(of clubID: String) async throws(APIFailure)
+        -> (Components.Schemas.Schedule, ContinuousClock.Instant)
+    {
         try await call { client in
             switch try await client.getSchedule(path: .init(clubId: clubID)) {
-            case .ok(let answer): return try ClubWeek(answer.body.json, receivedAt: now())
+            case .ok(let answer): return (try answer.body.json, now())
             case .unauthorized: throw APIFailure.signedOut
             case .forbidden(let answer):
                 throw Self.failure(try answer.body.json.code, among: [.profileIncomplete])
@@ -267,6 +276,7 @@ extension TadayoAPIClient: ClubService {
         case .notAllowed: .notAllowed
         case .versionConflict: .versionConflict
         case .rosterChanged: .rosterChanged
+        case .membershipChanged: .membershipChanged
         case .clubFull: .clubFull
         default: .refused
         }

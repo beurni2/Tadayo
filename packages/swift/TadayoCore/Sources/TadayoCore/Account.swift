@@ -53,6 +53,9 @@ public enum APIFailure: Error, Sendable, Equatable {
     case notAllowed
     /// `ROSTER_CHANGED`: a newer roster replaced the one the person saw; read it again.
     case rosterChanged
+    /// `MEMBERSHIP_CHANGED`: a newer schedule proposal that includes the person replaced the one
+    /// they saw; read the schedule again.
+    case membershipChanged
     /// `CLUB_FULL`: the club already has six.
     case clubFull
     /// `INVITATION_EXPIRED`: the link expired before it was used.
