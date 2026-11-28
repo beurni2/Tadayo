@@ -115,22 +115,62 @@ const NODE = "node --disable-sigusr1";
 // ---- The Dockerfile.
 
 describe("Dockerfile", () => {
-  it("has one base, pinned by digest, at the Node major .nvmrc names, for both stages", () => {
+  it("has one base, pinned by digest, at the Node version .nvmrc names, for both stages", () => {
     const [arg] = dockerfile().filter((instruction) => instruction.name === "ARG");
     expect(arg?.args).toMatch(/^NODE_IMAGE=node:\d+\.\d+\.\d+-[a-z0-9-]+@sha256:[0-9a-f]{64}$/);
-    const major = /^NODE_IMAGE=node:(\d+)\./.exec(arg?.args ?? "")?.[1];
-    expect(major).toBe(read(".nvmrc").trim());
+    const version = /^NODE_IMAGE=node:(\d+\.\d+\.\d+)-/.exec(arg?.args ?? "")?.[1];
+    // A whole version, so `ci`'s Node is the image's and moves only in a commit (the outside audit's B6).
+    expect(read(".nvmrc")).toMatch(/^\d+\.\d+\.\d+\n$/);
+    expect(version).toBe(read(".nvmrc").trim());
     const stages = dockerfile().filter((instruction) => instruction.name === "FROM");
     expect(stages.map((stage) => stage.args.split(/\s+/)[0])).toEqual(["${NODE_IMAGE}", "${NODE_IMAGE}"]);
   });
 
-  it("installs the pnpm the repository pins", () => {
+  it("installs pnpm and its x86-64 Linux binary only from the tarballs the lockfile pins, and runs no other package tool but the frozen install", () => {
     const manifest = table(JSON.parse(read("package.json")), "package.json");
-    const pinned = /^pnpm@(\d+\.\d+\.\d+)/.exec(String(manifest["packageManager"]))?.[1];
-    const install = dockerfile().find(
-      (instruction) => instruction.name === "RUN" && instruction.args.includes("npm install"),
+    const pinned = /^pnpm@(\d+\.\d+\.\d+)$/.exec(String(manifest["packageManager"]))?.[1];
+    expect(pinned).toBeDefined();
+    const version = String(pinned);
+    // The lockfile's own record of a package (pnpm itself is `packageManagerDependencies`), its integrity as hexadecimal.
+    const lockfile = read("pnpm-lock.yaml");
+    const integrity = (name: string): string => {
+      const key = name.startsWith("@") ? `'${name}@${version}'` : `${name}@${version}`;
+      const escaped = key.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+      const locked = new RegExp(`^  ${escaped}:\\n    resolution: \\{integrity: sha512-([A-Za-z0-9+/=]+)\\}`, "m").exec(
+        lockfile,
+      )?.[1];
+      expect(locked, name).toBeDefined();
+      const hex = Buffer.from(String(locked), "base64").toString("hex");
+      expect(hex, name).toMatch(/^[0-9a-f]{128}$/);
+      return hex;
+    };
+    // pnpm's package is a wrapper whose install script links the binary of its platform in its place: that binary is
+    // what runs `pnpm install` below, so it is checked too (PR #154's review, finding 1).
+    const wrapper = integrity("pnpm");
+    const binary = integrity("@pnpm/exe.linux-x64");
+    const wrapperFile = `pnpm-${version}.tgz`;
+    const binaryFile = `pnpm-exe.linux-x64-${version}.tgz`;
+    // The parser joins words with one space; the file keeps sha512sum's own two-space form.
+    expect(read("Dockerfile")).toContain(`"${wrapper}  ${wrapperFile}" \\\n        "${binary}  ${binaryFile}"`);
+    const tools = dockerfile().filter(
+      (instruction) =>
+        instruction.name === "RUN" && /\b(?:npm|npx|corepack|pnpm|pnpx|pnx|pn|yarn)\b/.test(instruction.args),
     );
-    expect(install?.args).toBe(`npm install --global pnpm@${String(pinned)}`);
+    const expected = [
+      `npm pack --silent pnpm@${version} @pnpm/exe.linux-x64@${version} > /dev/null ` +
+        `&& printf '%s\\n' "${wrapper} ${wrapperFile}" "${binary} ${binaryFile}" | sha512sum --check --strict --quiet ` +
+        `&& npm install --global --offline ./${wrapperFile} ./${binaryFile} ` +
+        `&& rm ${wrapperFile} ${binaryFile}`,
+      expect.stringMatching(/^pnpm install --frozen-lockfile --prod(?: --filter "@tadayo\/[a-z]+\.\.\.")+$/),
+    ];
+    expect(tools.map((instruction) => instruction.args)).toEqual(expected);
+    // And the deps stage runs those two and nothing else, whatever tool another `RUN` would name (`node -e`, `curl`, a
+    // variable); the runtime stage's two are pinned by the photo user's test, and no `ADD` by the secrets test, so every
+    // command the image runs is one of the four (round 2 of PR #154's review, finding 4).
+    const deps = stages()[0] ?? [];
+    expect(deps.filter((instruction) => instruction.name === "RUN").map((instruction) => instruction.args)).toEqual(
+      expected,
+    );
   });
 
   it("installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile", () => {
