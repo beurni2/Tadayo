@@ -12,6 +12,8 @@
 // the jump whenever the time falls inside the gap rather than at its start (ADR-008). So that
 // rule is written out below. The occurrence rows store these instants; Postgres only compares them.
 
+import { Fault, RangeFault } from "../fault.ts";
+
 export const REVEAL_TIME = Temporal.PlainTime.from("07:00");
 export const CLOSE_TIME = Temporal.PlainTime.from("01:00");
 
@@ -35,7 +37,7 @@ const compareWall = (a: Temporal.PlainDateTime, b: Temporal.PlainDateTime) => Te
  * resolves must be the one given, apart from case, and not an offset.
  */
 export function clubTimeZone(zone: string): string {
-  const refused = () => new RangeError(`time: ${zone} isn't an IANA time zone (T2, FQ19)`);
+  const refused = () => new RangeFault("civil_1", `time: ${zone} isn't an IANA time zone (T2, FQ19)`);
   const id = Temporal.PlainDate.from("2026-01-01").toZonedDateTime(zone).timeZoneId;
   if (id.toLowerCase() !== zone.toLowerCase() || /^[+-]/.test(id)) throw refused();
   return id;
@@ -55,7 +57,7 @@ export function resolveCivilTime(date: Temporal.PlainDate, time: Temporal.PlainT
     compareWall(jump.subtract({ nanoseconds: 1 }).toPlainDateTime(), wall) >= 0 ||
     compareWall(jump.toPlainDateTime(), wall) <= 0
   ) {
-    throw new Error(`time: no next valid instant for ${wall.toString()} in ${zone}`);
+    throw new Fault("civil_2", `time: no next valid instant for ${wall.toString()} in ${zone}`);
   }
   return jump.toInstant();
 }

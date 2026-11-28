@@ -35,6 +35,7 @@ import { created, IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 import { personBody } from "../schedule/routes.ts";
+import { Fault } from "@tadayo/domain/fault";
 
 /** The contract's `RosterRevision` as its caller sees it: a link only where the domain's read put one. */
 export function rosterRevisionBody(revision: RevisionSight): { readonly [key: string]: Json } {
@@ -206,7 +207,7 @@ export function createInvitationHandler(deps: Deps): Handler {
     }
     const { answer, token } = made;
     if (typeof answer !== "object" || answer === null || Array.isArray(answer)) {
-      throw new Error("clubs: a link's stored answer isn't an object");
+      throw new Fault("api_roster_1", "clubs: a link's stored answer isn't an object");
     }
     const stored = answer as Readonly<Record<string, Json>>;
     // The first answer alone carries the link; a replay is the stored answer, which never held it (FQ77).

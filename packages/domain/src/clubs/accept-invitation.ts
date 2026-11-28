@@ -59,6 +59,7 @@ import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import { applyIfReady, writeRevision } from "./apply-roster.ts";
 import { CLUB_SIZE } from "./club.ts";
 import { linkFacts, namesNothing, tokenHash, type LinkFacts } from "./invitation-facts.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export interface AcceptInvitationInput {
   /** The account the gate loaded. */
@@ -97,18 +98,18 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: AcceptInvitationInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("clubs: the caller is an account id");
+    throw new InputFault("accept_invitation_1", "clubs: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("clubs: the idempotency key is a UUID");
+    throw new InputFault("accept_invitation_2", "clubs: the idempotency key is a UUID");
   }
   if (!Number.isInteger(input.expectedVersion) || input.expectedVersion < 0) {
-    throw new TypeError("clubs: expected_version is a whole number from 0");
+    throw new InputFault("accept_invitation_3", "clubs: expected_version is a whole number from 0");
   }
 }
 
 function shape(): Error {
-  return new Error("clubs: the roster came back in a shape the schema doesn't allow");
+  return new Fault("accept_invitation_4", "clubs: the roster came back in a shape the schema doesn't allow");
 }
 
 /** The newest revision of the chain that replaced `revisionId`: the one nothing has superseded. */

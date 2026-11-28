@@ -27,6 +27,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
 import type { ServerNow } from "../time/clock.ts";
 import type { CounterRow, MediaClass } from "./allowance.ts";
+import { Fault } from "../fault.ts";
 
 /** Whose counter, in which day: a membership interval's in one occurrence of one club (ND04). */
 export interface CounterKey {
@@ -42,12 +43,13 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 }
 
 function count(value: unknown, what: string): number {
-  if (typeof value !== "number" || !Number.isInteger(value)) throw new Error(`counter: ${what} came back as no count`);
+  if (typeof value !== "number" || !Number.isInteger(value))
+    throw new Fault("counter_1", `counter: ${what} came back as no count`);
   return value;
 }
 
 function rowOf(row: Readonly<Record<string, unknown>> | undefined): CounterRow {
-  if (row === undefined) throw new Error("counter: the row this command holds is gone");
+  if (row === undefined) throw new Fault("counter_2", "counter: the row this command holds is gone");
   return {
     committedTotal: count(row["committed_total"], "committed_total"),
     committedExternal: count(row["committed_external"], "committed_external"),
@@ -76,7 +78,7 @@ export async function lockCounter(tx: QuerySql, key: CounterKey): Promise<void> 
     SELECT 1 AS held FROM app.contribution_counters
      WHERE occurrence_id = ${key.day} AND interval_id = ${key.interval} AND club_id = ${key.club}
        FOR NO KEY UPDATE`;
-  if (rows.length !== 1) throw new Error("counter: no row to hold");
+  if (rows.length !== 1) throw new Fault("counter_3", "counter: no row to hold");
 }
 
 /**
@@ -166,7 +168,8 @@ export async function freeSlot(tx: QuerySql, key: CounterKey, id: string, at: Se
        AND EXISTS (SELECT FROM freed)
     RETURNING committed_total, committed_external, reserved_total, reserved_external,
               total_limit, photo_limit, external_limit`;
-  if (rows[0] === undefined) throw new Error("counter: the reservation to give back isn't live in this counter");
+  if (rows[0] === undefined)
+    throw new Fault("counter_4", "counter: the reservation to give back isn't live in this counter");
   return rowOf(rows[0]);
 }
 
@@ -200,7 +203,7 @@ export async function consumeSlot(
        AND EXISTS (SELECT FROM used)
     RETURNING committed_total, committed_external, reserved_total, reserved_external,
               total_limit, photo_limit, external_limit`;
-  if (rows[0] === undefined) throw new Error("counter: the reservation to use isn't live in this counter");
+  if (rows[0] === undefined) throw new Fault("counter_5", "counter: the reservation to use isn't live in this counter");
   return rowOf(rows[0]);
 }
 

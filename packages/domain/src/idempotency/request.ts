@@ -11,6 +11,7 @@
 // the same request.
 
 import { createHash } from "node:crypto";
+import { Fault } from "../fault.ts";
 
 export type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
 
@@ -29,7 +30,8 @@ export interface IdempotentRequest {
 function canonical(value: Json, at: string): string {
   if (value === null || typeof value === "boolean" || typeof value === "string") return JSON.stringify(value);
   if (typeof value === "number") {
-    if (!Number.isFinite(value)) throw new Error(`idempotency: ${at} is ${String(value)}, which JSON can't carry`);
+    if (!Number.isFinite(value))
+      throw new Fault("request_1", `idempotency: ${at} is ${String(value)}, which JSON can't carry`);
     return JSON.stringify(value);
   }
   if (Array.isArray(value)) {
@@ -41,12 +43,13 @@ function canonical(value: Json, at: string): string {
     return `{${keys
       .map((key) => {
         const item = record[key];
-        if (item === undefined) throw new Error(`idempotency: ${at}.${key} is undefined, which JSON can't carry`);
+        if (item === undefined)
+          throw new Fault("request_2", `idempotency: ${at}.${key} is undefined, which JSON can't carry`);
         return `${JSON.stringify(key)}:${canonical(item, `${at}.${key}`)}`;
       })
       .join(",")}}`;
   }
-  throw new Error(`idempotency: ${at} is a ${typeof value}, which JSON can't carry`);
+  throw new Fault("request_3", `idempotency: ${at} is a ${typeof value}, which JSON can't carry`);
 }
 
 /** The receipt's `request_hash`: SHA-256, in hex, of the operation, path, query and body. */

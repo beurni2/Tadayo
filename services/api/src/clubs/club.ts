@@ -25,6 +25,7 @@ import { created, IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 import { occurrenceBody } from "../bodies.ts";
+import { Fault } from "@tadayo/domain/fault";
 
 /** The contract's `ClubDetail` without `server_now`: what `createClub`'s receipt keeps. */
 export function clubDetailBody(detail: ClubDetail): { readonly [key: string]: Json } {
@@ -49,7 +50,7 @@ export function clubDetailBody(detail: ClubDetail): { readonly [key: string]: Js
 /** The whole `ClubDetail`: `now` is the clock's sample, whole seconds, rounded down. */
 export function withServerNow(now: ServerNow, body: Json): Json {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
-    throw new Error("clubs: a club's stored answer isn't an object");
+    throw new Fault("api_club_1", "clubs: a club's stored answer isn't an object");
   }
   return { server_now: contractInstant(now), ...(body as { readonly [key: string]: Json }) };
 }

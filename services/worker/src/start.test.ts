@@ -57,6 +57,8 @@ const SUPABASE = {
   SUPABASE_URL: "https://tadayotestprojectref.supabase.co",
   SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
 };
+/** The photo safety provider, as fly.toml names it for dev (FQ8; the outside audit's B7). */
+const SAFETY = { TADAYO_SAFETY_PROVIDER: "none" };
 
 // Each test starts the entry as a process, some of them several times, and each start is given 20 seconds
 // before it is killed (`run`); vitest's default of 5 seconds for a whole test is less than a few slow starts
@@ -67,6 +69,7 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
       const result = await run({
         DATABASE_URL: NOWHERE,
         ...SUPABASE,
+        ...SAFETY,
         ...(environment === undefined ? {} : { TADAYO_ENVIRONMENT: environment }),
       });
       expect(result.code, String(environment)).toBe(1);
@@ -92,6 +95,29 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
       const result = await run({ DATABASE_URL: NOWHERE, TADAYO_ENVIRONMENT: "prod", ...settings });
       expect(result.code).toBe(1);
       expect(result.stderr).toMatch(said);
+      expect(result.stdout + result.stderr).not.toContain(marker);
+      expect(result.stdout).not.toMatch(/started/);
+    }
+  });
+
+  it("stops before it connects when TADAYO_SAFETY_PROVIDER is missing, empty or names no provider it knows, echoing none", async () => {
+    // Each environment names the provider that screens its photos (the outside audit's B7): none of these is one, and
+    // the database's URL leads nowhere, so a worker that took any of them would fail later and say something else.
+    const marker = `marker${randomBytes(8).toString("hex")}`;
+    for (const [setting, said] of [
+      [
+        {},
+        /^worker: TADAYO_SAFETY_PROVIDER isn't set: each environment names its photo safety provider \(none for the closed trial, FQ8\)\n$/,
+      ],
+      [{ TADAYO_SAFETY_PROVIDER: "" }, /^worker: TADAYO_SAFETY_PROVIDER isn't set/],
+      [{ TADAYO_SAFETY_PROVIDER: "None" }, /^worker: TADAYO_SAFETY_PROVIDER names no provider the worker knows\n$/],
+      [{ TADAYO_SAFETY_PROVIDER: " none" }, /^worker: TADAYO_SAFETY_PROVIDER names no provider the worker knows\n$/],
+      [{ TADAYO_SAFETY_PROVIDER: "toString" }, /^worker: TADAYO_SAFETY_PROVIDER names no provider the worker knows\n$/],
+      [{ TADAYO_SAFETY_PROVIDER: marker }, /^worker: TADAYO_SAFETY_PROVIDER names no provider the worker knows\n$/],
+    ] as const) {
+      const result = await run({ DATABASE_URL: NOWHERE, TADAYO_ENVIRONMENT: "prod", ...SUPABASE, ...setting });
+      expect(result.code, JSON.stringify(setting)).toBe(1);
+      expect(result.stderr, JSON.stringify(setting)).toMatch(said);
       expect(result.stdout + result.stderr).not.toContain(marker);
       expect(result.stdout).not.toMatch(/started/);
     }
@@ -135,7 +161,7 @@ describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
       `postgres://tadayo_app:${marker}@[::1/tadayo`,
       `postgres://tadayo_app:${marker}@127.0.0.1:1/tadayo`,
     ]) {
-      const result = await run({ DATABASE_URL: url, TADAYO_ENVIRONMENT: "prod", ...SUPABASE });
+      const result = await run({ DATABASE_URL: url, TADAYO_ENVIRONMENT: "prod", ...SUPABASE, ...SAFETY });
       expect(result.code, url).toBe(1);
       expect(result.stderr, url).not.toBe("");
       expect(result.stdout + result.stderr, url).not.toContain(marker);

@@ -32,6 +32,7 @@ import { Refused } from "../refused.ts";
 import { clubTimeZone } from "../time/civil.ts";
 import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import { readClub, type ClubDetail } from "./club.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export interface CreateClubInput {
   /** The account the gate loaded. */
@@ -63,13 +64,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: CreateClubInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("clubs: the caller is an account id");
+    throw new InputFault("create_club_1", "clubs: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("clubs: the idempotency key is a UUID");
+    throw new InputFault("create_club_2", "clubs: the idempotency key is a UUID");
   }
   if (typeof input.name !== "string" || typeof input.timezone !== "string") {
-    throw new TypeError("clubs: a club has a name and a time zone");
+    throw new InputFault("create_club_3", "clubs: a club has a name and a time zone");
   }
 }
 
@@ -125,6 +126,6 @@ export async function createClub(
 
   // 6. The answer.
   const detail = await readClub(tx, userId, clubId, at);
-  if (detail === null) throw new Error("clubs: the club its creator just made can't be read");
+  if (detail === null) throw new Fault("create_club_4", "clubs: the club its creator just made can't be read");
   return { answer: await completeReceipt(tx, receipt, render(detail), 201), at };
 }

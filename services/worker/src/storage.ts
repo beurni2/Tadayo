@@ -38,6 +38,7 @@ import {
   UPLOAD_MAX_BYTES,
 } from "@tadayo/domain";
 import type { RenditionKind } from "./image-process.ts";
+import { InputFault } from "@tadayo/domain/fault";
 import { Unavailable } from "./outbox.ts";
 
 /** The bucket of originals, private (tools/ops/src/storage-setup.ts). */
@@ -87,7 +88,8 @@ export class StorageRefused extends Error {
  * day or the bytes; and B3's purge finds every rendition of an upload from the upload alone.
  */
 export function renditionKey(objectKey: string, kind: RenditionKind): string {
-  if (!OBJECT_KEY.test(objectKey)) throw new TypeError("storage: an object key is 32 base64url characters");
+  if (!OBJECT_KEY.test(objectKey))
+    throw new InputFault("worker_storage_1", "storage: an object key is 32 base64url characters");
   return `${objectKey}/${kind}`;
 }
 
@@ -145,7 +147,8 @@ export function workerStorage(options: WorkerStorageOptions): WorkerStorage {
 
   return {
     async readOriginal(objectKey) {
-      if (!OBJECT_KEY.test(objectKey)) throw new TypeError("storage: an object key is 32 base64url characters");
+      if (!OBJECT_KEY.test(objectKey))
+        throw new InputFault("worker_storage_2", "storage: an object key is 32 base64url characters");
       const response = await call(
         `/storage/v1/object/authenticated/${UPLOADS_BUCKET}/${objectKey}`,
         { method: "GET", headers: auth },
@@ -168,7 +171,7 @@ export function workerStorage(options: WorkerStorageOptions): WorkerStorage {
 
     async putRendition(renditionAt, bytes) {
       if (!RENDITION_KEY.test(renditionAt))
-        throw new TypeError("storage: a rendition's key is its upload's key and kind");
+        throw new InputFault("worker_storage_3", "storage: a rendition's key is its upload's key and kind");
       const response = await call(
         `/storage/v1/object/${RENDITIONS_BUCKET}/${renditionAt}`,
         {

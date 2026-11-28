@@ -56,6 +56,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import { Refused } from "../refused.ts";
 import { clubTimeZone } from "../time/civil.ts";
 import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /**
  * How long an ended sign-in is kept: longer than the longest life Supabase gives an access token (one week),
@@ -81,7 +82,7 @@ export type ApnsEnvironment = "sandbox" | "production";
 /** The sign-in a removal secret names: its SHA-256, as hex. Throws on anything but the contract's secret. */
 export function signInOf(secret: string): string {
   if (typeof secret !== "string" || !SECRET.test(secret)) {
-    throw new TypeError("devices: a removal secret is base64url, 43 to 128 characters");
+    throw new InputFault("devices_1", "devices: a removal secret is base64url, 43 to 128 characters");
   }
   return createHash("sha256").update(secret, "ascii").digest("hex");
 }
@@ -89,7 +90,7 @@ export function signInOf(secret: string): string {
 /** The token as the database keeps it: lowercase hex, so one device's token is one key whatever its case. */
 export function apnsTokenOf(token: string): string {
   if (typeof token !== "string" || !TOKEN.test(token)) {
-    throw new TypeError("devices: an APNs token is hex, 16 to 512 characters");
+    throw new InputFault("devices_2", "devices: an APNs token is hex, 16 to 512 characters");
   }
   return token.toLowerCase();
 }
@@ -158,7 +159,8 @@ async function holderOf(tx: QuerySql, token: string): Promise<string | null> {
     SELECT pg_catalog.encode(sign_in, 'hex') AS sign_in FROM app.device_registrations WHERE apns_token = ${token}`;
   const holder = row?.["sign_in"];
   if (row === undefined) return null;
-  if (typeof holder !== "string") throw new Error("devices: a sign-in came back in a shape the schema doesn't allow");
+  if (typeof holder !== "string")
+    throw new Fault("devices_3", "devices: a sign-in came back in a shape the schema doesn't allow");
   return holder;
 }
 
@@ -169,10 +171,10 @@ export async function registerDevice(
   input: RegisterDeviceInput,
 ): Promise<DeviceRegistration> {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("devices: the account id is an app.id");
+    throw new InputFault("devices_4", "devices: the account id is an app.id");
   }
   if (!ENVIRONMENTS.has(input.apnsEnvironment)) {
-    throw new TypeError("devices: the APNs environment is sandbox or production");
+    throw new InputFault("devices_5", "devices: the APNs environment is sandbox or production");
   }
   const token = apnsTokenOf(input.apnsToken);
   const signIn = signInOf(input.removalSecret);
@@ -193,7 +195,7 @@ export async function registerDevice(
   const holder = await holderOf(tx, token);
   if (holder !== null && !signIns.includes(holder)) {
     // Only a registration of this token gives it to a sign-in, and that one would wait on the token's lock.
-    throw new Error("devices: the token's holder changed under its lock");
+    throw new Fault("devices_6", "devices: the token's holder changed under its lock");
   }
 
   // 1. The account, which a deletion may have changed since the gate read it (T27).

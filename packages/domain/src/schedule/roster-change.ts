@@ -18,6 +18,7 @@
 //   new first days").
 
 import { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./propose.ts";
+import { Fault, RangeFault } from "../fault.ts";
 
 /** One member the open first days include. */
 export interface FirstDaysMember {
@@ -68,16 +69,20 @@ const fromMonday = (days: readonly Weekday[]): Weekday[] => WEEKDAYS.filter((wee
 
 export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
   const { active, open } = facts;
-  if (active.length > 6) throw new RangeError("schedule: a club has at most six members (A01)");
-  if (new Set(active).size !== active.length) throw new Error("schedule: each active member is listed once");
+  if (active.length > 6) throw new RangeFault("roster_change_1", "schedule: a club has at most six members (A01)");
+  if (new Set(active).size !== active.length)
+    throw new Fault("roster_change_2", "schedule: each active member is listed once");
 
   if (open === null) {
     return facts.endedWithoutSuccessor && active.length >= 2 ? { kind: "open" } : { kind: "nothing" };
   }
-  if (open.members.length === 0) throw new Error("schedule: an open proposal includes its members");
+  if (open.members.length === 0) throw new Fault("roster_change_3", "schedule: an open proposal includes its members");
   const included = open.members.filter((member) => member.active);
   if (included.some((member) => !active.includes(member.id))) {
-    throw new Error("schedule: a member the proposal has as active isn't among the club's active members");
+    throw new Fault(
+      "roster_change_4",
+      "schedule: a member the proposal has as active isn't among the club's active members",
+    );
   }
 
   if (open.members.some((member) => member.confirmed)) {
@@ -111,7 +116,8 @@ export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
       taken.add(weekday);
       days.push(weekday);
     }
-    if (days.length !== per) throw new Error("schedule: the week has no free day left for a new member");
+    if (days.length !== per)
+      throw new Fault("roster_change_5", "schedule: the week has no free day left for a new member");
     return { id, days: fromMonday(days) };
   });
   return { kind: "revise", daysPerMember: per, newWeek: false, added, proposed };

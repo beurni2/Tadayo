@@ -28,6 +28,7 @@ import type { ClockSql, ServerNow } from "../time/clock.ts";
 import { openFirstDays } from "./open.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 import { firstDaysAfter, type FirstDaysChange, type FirstDaysMember } from "./roster-change.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
 
@@ -39,7 +40,7 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 function shape(): Error {
-  return new Error("schedule: the club's first days came back in a shape the schema doesn't allow");
+  return new Fault("settle_1", "schedule: the club's first days came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -77,7 +78,8 @@ export async function settleFirstDays(
   at: ServerNow,
   clubId: string,
 ): Promise<FirstDaysChange["kind"]> {
-  if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeError("schedule: the club is a club id");
+  if (typeof clubId !== "string" || !ID.test(clubId))
+    throw new InputFault("settle_2", "schedule: the club is a club id");
   const [row] = await bound(tx)`
     SELECT (SELECT coalesce(pg_catalog.jsonb_agg(m.interval_id ORDER BY m.joined_at, m.interval_id COLLATE "C"),
                             '[]'::pg_catalog.jsonb)
@@ -108,7 +110,7 @@ export async function settleFirstDays(
                                      OR p.replaced_by IS NOT NULL)) AS ended
       FROM app.clubs c
      WHERE c.id = ${clubId}`;
-  if (row === undefined) throw new Error("schedule: no such club to settle the first days of");
+  if (row === undefined) throw new Fault("settle_3", "schedule: no such club to settle the first days of");
   const active = list(row["active"]).map(text);
   const found = row["open"] === null ? null : record(row["open"]);
   // An open new member's pick is ./settle-change.ts's: nothing of the first days is open then.
@@ -137,7 +139,7 @@ export async function settleFirstDays(
     await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
     return change.kind;
   }
-  if (found === null) throw new Error("schedule: the rule changed first days that aren't open");
+  if (found === null) throw new Fault("settle_4", "schedule: the rule changed first days that aren't open");
   const proposalId = text(found["id"]);
 
   if (change.kind === "apply") {

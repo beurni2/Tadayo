@@ -40,6 +40,7 @@ import { Refused } from "../refused.ts";
 import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import { allowanceOf, limitRefusal, MEDIA_CLASSES, type Allowance, type MediaClass } from "./allowance.ts";
 import { holdSlot, lockCounter, settleLapsed, type CounterKey } from "./counter.ts";
+import { InputFault } from "../fault.ts";
 
 /** How long a reservation holds its slot before it lapses, at most: never past the day's reveal (T18). */
 export const RESERVATION_MINUTES = 30;
@@ -78,14 +79,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: CreateReservationInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("drops: the caller is an account id");
+    throw new InputFault("reserve_1", "drops: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("drops: the idempotency key is a UUID");
+    throw new InputFault("reserve_2", "drops: the idempotency key is a UUID");
   }
   if (!MEDIA_CLASSES.includes(input.mediaClass))
-    throw new TypeError("drops: the media class is photo or external_video");
-  if (typeof input.occurrenceId !== "string") throw new TypeError("drops: the day is an id");
+    throw new InputFault("reserve_3", "drops: the media class is photo or external_video");
+  if (typeof input.occurrenceId !== "string") throw new InputFault("reserve_4", "drops: the day is an id");
 }
 
 /** When a slot held at `at` lapses: 30 minutes on, or the day's reveal if that comes first (T18). */

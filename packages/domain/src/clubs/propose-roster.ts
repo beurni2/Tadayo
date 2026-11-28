@@ -46,6 +46,7 @@ import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
 import { CLUB_SIZE } from "./club.ts";
 import { readRevision, type RevisionSight } from "./roster-revision.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export interface ProposeRosterInput {
   /** The account the gate loaded. */
@@ -72,13 +73,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: ProposeRosterInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("clubs: the caller is an account id");
+    throw new InputFault("propose_roster_1", "clubs: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("clubs: the idempotency key is a UUID");
+    throw new InputFault("propose_roster_2", "clubs: the idempotency key is a UUID");
   }
   if (!Number.isInteger(input.expectedRosterVersion) || input.expectedRosterVersion < 0) {
-    throw new TypeError("clubs: expected_roster_version is a whole number from 0");
+    throw new InputFault("propose_roster_3", "clubs: expected_roster_version is a whole number from 0");
   }
   if (
     !Array.isArray(input.add) ||
@@ -86,13 +87,13 @@ function check(input: ProposeRosterInput): void {
     input.add.length >= CLUB_SIZE ||
     input.add.some((one: unknown) => typeof (one as { label?: unknown } | null)?.label !== "string")
   ) {
-    throw new TypeError("clubs: a proposal adds one to five people, each by a label");
+    throw new InputFault("propose_roster_4", "clubs: a proposal adds one to five people, each by a label");
   }
 }
 
 function count(value: unknown): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
-    throw new Error("clubs: the roster came back in a shape the schema doesn't allow");
+    throw new Fault("propose_roster_5", "clubs: the roster came back in a shape the schema doesn't allow");
   }
   return value;
 }
@@ -149,7 +150,7 @@ export async function proposeRoster(
              WHERE k.club_id = c.id AND k.state = 'open') AS open_candidates,
            (SELECT r.id FROM app.roster_revisions r WHERE r.club_id = c.id AND r.state = 'open') AS open_revision_id
       FROM app.clubs c WHERE c.id = ${clubId}`;
-  if (roster === undefined) throw new Error("clubs: the club vanished under its own lock");
+  if (roster === undefined) throw new Fault("propose_roster_6", "clubs: the club vanished under its own lock");
   const version = count(roster["roster_version"]);
   if (version !== input.expectedRosterVersion) throw new Refused("VERSION_CONFLICT", { current_version: version });
   if (count(roster["members"]) + count(roster["open_candidates"]) + input.add.length > CLUB_SIZE) {
@@ -157,7 +158,7 @@ export async function proposeRoster(
   }
   const earlier = roster["open_revision_id"];
   if (earlier !== null && typeof earlier !== "string") {
-    throw new Error("clubs: the roster came back in a shape the schema doesn't allow");
+    throw new Fault("propose_roster_7", "clubs: the roster came back in a shape the schema doesn't allow");
   }
 
   // 6. The clock, after the lock.
@@ -210,6 +211,7 @@ export async function proposeRoster(
 
   // 8. The answer.
   const revision = await readRevision(tx, userId, revisionId, at);
-  if (revision === null) throw new Error("clubs: the revision its proposer just made can't be read");
+  if (revision === null)
+    throw new Fault("propose_roster_8", "clubs: the revision its proposer just made can't be read");
   return completeReceipt(tx, receipt, render(revision), 201);
 }

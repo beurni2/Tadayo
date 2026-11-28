@@ -804,6 +804,7 @@ say({
         SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
         TADAYO_ENVIRONMENT: "dev",
         TADAYO_PHOTO_USER: "harness-photo",
+        TADAYO_SAFETY_PROVIDER: "none",
       },
       () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
     );
@@ -812,6 +813,54 @@ say({
   }
   const endedBy = (await within(200, () => ended(pid))) ? "start" : "never";
   say({ case: "start-sweep", wasRunning, endedBy, failedAt, euid: geteuid() });
+}
+
+// The worker's start with no TADAYO_SAFETY_PROVIDER, with a process a photo left still running: it stops at the
+// setting, before it sweeps (./start.ts; the outside audit's B7), so the process is still there. The harness ends it.
+{
+  const left = asRoot(() =>
+    spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
+      uid: PHOTO.uid,
+      gid: PHOTO.gid,
+      detached: true,
+      stdio: "ignore",
+      env: {},
+    }),
+  );
+  left.unref();
+  const pid = left.pid ?? -1;
+  const wasRunning = await within(2000, () => liveOf(PHOTO.uid).includes(pid));
+  let failedAt = "nowhere";
+  try {
+    await startWorker(
+      {
+        DATABASE_URL: "postgres://tadayo_app:password@127.0.0.1:1/tadayo",
+        SUPABASE_URL: "https://tadayotestprojectref.supabase.co",
+        SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
+        TADAYO_ENVIRONMENT: "dev",
+        TADAYO_PHOTO_USER: "harness-photo",
+      },
+      () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
+    );
+  } catch (error) {
+    const code = error instanceof Error && "code" in error ? error.code : undefined;
+    failedAt =
+      code === "worker_safety_1"
+        ? "the safety provider"
+        : error instanceof Error && error.message.includes("as it started")
+          ? "the sweep"
+          : "the database";
+  }
+  const stillRunning = !ended(pid) && liveOf(PHOTO.uid).includes(pid);
+  asRoot(() => {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {
+      // Already gone, as when a start swept it: the case still reports, and the cases after it still run.
+    }
+  });
+  const endedAfter = await within(2000, () => ended(pid));
+  say({ case: "start-no-provider", wasRunning, failedAt, stillRunning, endedAfter, euid: geteuid() });
 }
 
 // The worker's start, when its sweep can't finish: it stops before it connects (./start.ts), saying what was left. A
@@ -835,6 +884,7 @@ say({
         SUPABASE_SERVICE_KEY: "sb_secret_testkeynotreal0000",
         TADAYO_ENVIRONMENT: "dev",
         TADAYO_PHOTO_USER: "harness-photo",
+        TADAYO_SAFETY_PROVIDER: "none",
       },
       () => `harness-photo:x:${String(PHOTO.uid)}:${String(PHOTO.gid)}::/nonexistent:/usr/sbin/nologin\n`,
     );

@@ -20,6 +20,7 @@
 // force first opened long ago, and its date says nothing to a new member.
 
 import { WEEKDAYS, type Weekday } from "./propose.ts";
+import { Fault } from "../fault.ts";
 
 /** One member a first-days proposal includes. */
 export interface ProposalMember {
@@ -98,7 +99,7 @@ export function includedMember(facts: WeekFacts, id: string): ProposalMember | u
 export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
   const viewer = includedMember(facts, viewerId);
   if (viewer === undefined) {
-    throw new Error("schedule: the proposal doesn't include the viewer as an active member (FQ100, T14)");
+    throw new Fault("view_1", "schedule: the proposal doesn't include the viewer as an active member (FQ100, T14)");
   }
   const slots = WEEKDAYS.map((weekday): SlotView => {
     const suggested = viewer.suggested.includes(weekday);

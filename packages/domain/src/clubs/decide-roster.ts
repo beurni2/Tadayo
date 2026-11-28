@@ -36,6 +36,7 @@ import type { Clock, ClockSql } from "../time/clock.ts";
 import { newestRevision } from "./accept-invitation.ts";
 import { applyIfReady } from "./apply-roster.ts";
 import { readRevision, type RevisionSight } from "./roster-revision.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export interface RosterDecisionInput {
   /** The account the gate loaded. */
@@ -60,13 +61,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check(input: RosterDecisionInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("clubs: the caller is an account id");
+    throw new InputFault("decide_roster_1", "clubs: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("clubs: the idempotency key is a UUID");
+    throw new InputFault("decide_roster_2", "clubs: the idempotency key is a UUID");
   }
   if (!Number.isInteger(input.expectedVersion) || input.expectedVersion < 0) {
-    throw new TypeError("clubs: expected_version is a whole number from 0");
+    throw new InputFault("decide_roster_3", "clubs: expected_version is a whole number from 0");
   }
 }
 
@@ -142,7 +143,7 @@ async function decideRoster(
 
   // 8. The answer.
   const after = await readRevision(tx, userId, revisionId, at);
-  if (after === null) throw new Error("clubs: the revision its member just decided can't be read");
+  if (after === null) throw new Fault("decide_roster_4", "clubs: the revision its member just decided can't be read");
   return completeReceipt(tx, receipt, render(after));
 }
 

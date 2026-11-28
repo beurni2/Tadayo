@@ -46,6 +46,7 @@ import { firstDate } from "./first-date.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 import { settleChange } from "./settle-change.ts";
 import type { LoadedProposal, LoadedWeek, ProposalAnswer } from "./week.ts";
+import { Fault } from "../fault.ts";
 
 type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant)[]) => R;
 
@@ -67,9 +68,11 @@ export function confirmScheduleDays(
       await confirmNewMemberDays(tx, at, week, proposal, callerId, judged.days);
       return;
     }
-    if (proposal.scheduleVersionId === null) throw new Error("schedule: the first days have no week of their own");
+    if (proposal.scheduleVersionId === null)
+      throw new Fault("confirm_days_1", "schedule: the first days have no week of their own");
     const joins = week.versions.find((version) => version.id === proposal.scheduleVersionId);
-    if (joins === undefined) throw new Error("schedule: the first days' own week isn't among the club's");
+    if (joins === undefined)
+      throw new Fault("confirm_days_2", "schedule: the first days' own week isn't among the club's");
     const start = Temporal.PlainDate.from(joins.effectiveFrom);
     await bound(tx)`
         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}::pg_catalog.timestamptz
@@ -118,7 +121,7 @@ async function confirmNewMemberDays(
   const clubId = week.club.id;
   const zone = week.club.timezone;
   const latest = week.versions.at(-1);
-  if (latest === undefined) throw new Error("schedule: a membership change in a club with no week");
+  if (latest === undefined) throw new Fault("confirm_days_3", "schedule: a membership change in a club with no week");
   const today = at.toZonedDateTimeISO(clubTimeZone(zone)).toPlainDate();
   const start = nextWeekStart(today, Temporal.PlainDate.from(latest.effectiveFrom));
   await bound(tx)`

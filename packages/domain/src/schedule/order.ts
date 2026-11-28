@@ -12,6 +12,7 @@
 // as the first days' proposal takes them (./open.ts).
 
 import { WEEKDAYS, type Weekday } from "./propose.ts";
+import { Fault, RangeFault } from "../fault.ts";
 
 export interface OrderFacts {
   /** The active members' intervals, in the order they joined. */
@@ -25,12 +26,12 @@ export interface OrderFacts {
 /** The members' intervals in roster order: position 1 first. */
 export function rosterOrder(facts: OrderFacts): string[] {
   const joined = [...facts.joined];
-  if (new Set(joined).size !== joined.length) throw new Error("schedule: a member is in the roster twice");
+  if (new Set(joined).size !== joined.length) throw new Fault("order_1", "schedule: a member is in the roster twice");
   if (facts.firstDaysOpen || facts.inForce === null) return joined;
   const earliest = new Map<string, number>();
   for (const day of facts.inForce) {
     const index = WEEKDAYS.indexOf(day.weekday);
-    if (index < 0) throw new RangeError(`schedule: ${day.weekday} can't be someone's day (T6)`);
+    if (index < 0) throw new RangeFault("order_2", `schedule: ${day.weekday} can't be someone's day (T6)`);
     const known = earliest.get(day.starInterval);
     if (known === undefined || index < known) earliest.set(day.starInterval, index);
   }

@@ -27,6 +27,7 @@ import { activeMemberships } from "../authorization/member.ts";
 import type { FragmentSql, QuerySql } from "../authorization/read-sql.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 import { pickViewFor, pickWeekFacts, viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./view.ts";
+import { Fault } from "../fault.ts";
 
 /** The contract's Person. */
 export interface SchedulePerson {
@@ -105,7 +106,7 @@ export function person<F>(sql: FragmentSql<F>): F {
 }
 
 function shape(): Error {
-  return new Error("schedule: the week came back in a shape the schema doesn't allow");
+  return new Fault("week_1", "schedule: the week came back in a shape the schema doesn't allow");
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -355,7 +356,7 @@ export function answerOf(proposal: LoadedProposal, viewerId: string): ProposalAn
   // Someone who holds a day is an active member, and an active member has a name (spec 23).
   const named = (id: string): SchedulePerson => {
     const found = proposal.people.get(id);
-    if (found === undefined) throw new Error("schedule: a member who holds a day has no name to show");
+    if (found === undefined) throw new Fault("week_2", "schedule: a member who holds a day has no name to show");
     return found;
   };
   return {

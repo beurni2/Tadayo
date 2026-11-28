@@ -46,6 +46,7 @@
 import type { Clock, ServerNow } from "@tadayo/domain";
 import type { WorkerSql, WorkerTx } from "./connection.ts";
 import { LOCK_WAIT_MS, STATEMENT_MS } from "./generation.ts";
+import { Fault, RangeFault } from "@tadayo/domain/fault";
 
 /** How long a claimed event is the claimer's alone, in seconds: longer than the slowest work (prepare.ts). */
 export const LEASE_SECONDS = 300;
@@ -104,7 +105,8 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** The wait before the retry after attempt `attempts`, in seconds: 30, 60, 120, 240. */
 export function backoffSeconds(attempts: number): number {
-  if (!Number.isInteger(attempts) || attempts < 1) throw new RangeError("outbox: attempts count from 1");
+  if (!Number.isInteger(attempts) || attempts < 1)
+    throw new RangeFault("worker_outbox_1", "outbox: attempts count from 1");
   return BACKOFF_SECONDS * 2 ** (attempts - 1);
 }
 
@@ -115,7 +117,8 @@ export function backoffSeconds(attempts: number): number {
  * written, a clock behind its row's, is none.
  */
 export function outageWaitSeconds(ageSeconds: number): number {
-  if (Number.isNaN(ageSeconds)) throw new RangeError("outbox: an event's age is a number of seconds");
+  if (Number.isNaN(ageSeconds))
+    throw new RangeFault("worker_outbox_3", "outbox: an event's age is a number of seconds");
   return Math.min(OUTAGE_WAIT_SECONDS, Math.max(BACKOFF_SECONDS, Math.floor(ageSeconds)));
 }
 
@@ -177,7 +180,7 @@ export async function claimNext(sql: WorkerSql, clock: Clock, topics: readonly s
        FOR UPDATE SKIP LOCKED`;
     const row = rows[0];
     if (row === undefined) return null;
-    if (!ID.test(row.id)) throw new Error("outbox: an event came back with no id");
+    if (!ID.test(row.id)) throw new Fault("worker_outbox_2", "outbox: an event came back with no id");
     const event = { id: row.id, topic: row.topic, payload: row.payload, createdAt: row.created_at };
     if (row.attempts >= MAX_ATTEMPTS) {
       await tx`

@@ -35,6 +35,10 @@ kill_timeout = 30
   SUPABASE_URL = "https://rhsycmycocbzakrydahi.supabase.co"
   SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5kJcQ8JCyWiHHMGjucf00w_8ehpABvL"
   LOG_LEVEL = "info"
+  # The provider that screens each photo the worker prepares (services/worker/src/safety.ts): `none` for the closed
+  # trial (FQ8), named here because no image or code names it, so an environment that leaves it out has no worker
+  # (the outside audit's B7).
+  TADAYO_SAFETY_PROVIDER = "none"
 
 # Each command starts as root and drops with `setpriv` (the Dockerfile's header; ADR-038). The API, at once, becomes
 # `node` for good: real, effective and saved ids, no capability, no way to gain one. The worker becomes `node` in

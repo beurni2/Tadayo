@@ -34,6 +34,7 @@ import type { ServerNow } from "../time/clock.ts";
 import { firstDate } from "./first-date.ts";
 import { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./propose.ts";
 import type { ProposedDays } from "./roster-change.ts";
+import { Fault, RangeFault } from "../fault.ts";
 
 /** One day of the club's latest week: its star by membership interval, a member still or not. */
 export interface WeekDay {
@@ -85,8 +86,9 @@ export interface PickChange {
 const NOTHING: PickChange = { freed: [], proposal: { kind: "nothing" } };
 
 function check(active: readonly string[]): void {
-  if (active.length > 6) throw new RangeError("schedule: a club has at most six members (A01)");
-  if (new Set(active).size !== active.length) throw new Error("schedule: each active member is listed once");
+  if (active.length > 6) throw new RangeFault("change_1", "schedule: a club has at most six members (A01)");
+  if (new Set(active).size !== active.length)
+    throw new Fault("change_2", "schedule: each active member is listed once");
 }
 
 const fromMonday = (days: readonly Weekday[]): Weekday[] => WEEKDAYS.filter((weekday) => days.includes(weekday));
@@ -125,7 +127,7 @@ function firstHolds(
       days.push(weekday);
     }
     // Spec 05's numbers leave enough free days: two each for up to three members, one each for up to six.
-    if (days.length !== per) throw new Error("schedule: the week has no free day left for a new member");
+    if (days.length !== per) throw new Fault("change_3", "schedule: the week has no free day left for a new member");
     return { id, days: fromMonday(days) };
   });
 }

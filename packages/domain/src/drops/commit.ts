@@ -53,6 +53,7 @@ import type { Clock, ClockSql } from "../time/clock.ts";
 import { allowanceOf, limitRefusal, type Allowance } from "./allowance.ts";
 import { consumeSlot, lockCounter, settleLapsed, takeSlot, type CounterKey } from "./counter.ts";
 import { lockDay, nextTarget } from "./reserve.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 /** What the drop holds, as the body names it: a photo upload of the caller's, or a source they resolved. */
 export type DropMediaInput =
@@ -108,24 +109,24 @@ const SLOT_STATES = ["live", "released", "expired", "consumed"] as const;
 
 function check(input: CreateDropInput): void {
   if (typeof input.userId !== "string" || !ID.test(input.userId)) {
-    throw new TypeError("drops: the caller is an account id");
+    throw new InputFault("commit_1", "drops: the caller is an account id");
   }
   if (typeof input.key !== "string" || !UUID.test(input.key)) {
-    throw new TypeError("drops: the idempotency key is a UUID");
+    throw new InputFault("commit_2", "drops: the idempotency key is a UUID");
   }
-  if (typeof input.occurrenceId !== "string") throw new TypeError("drops: the day is an id");
+  if (typeof input.occurrenceId !== "string") throw new InputFault("commit_3", "drops: the day is an id");
   if (input.reservationId !== undefined && typeof input.reservationId !== "string") {
-    throw new TypeError("drops: the reservation is an id");
+    throw new InputFault("commit_4", "drops: the reservation is an id");
   }
   const { media } = input;
   if (!(
     (media.kind === "photo" && typeof media.uploadId === "string") ||
     (media.kind === "external_video" && typeof media.sourceId === "string")
   )) {
-    throw new TypeError("drops: the media is a photo's upload or a link's source");
+    throw new InputFault("commit_5", "drops: the media is a photo's upload or a link's source");
   }
   if (input.caption !== undefined && typeof input.caption !== "string") {
-    throw new TypeError("drops: the caption is text");
+    throw new InputFault("commit_6", "drops: the caption is text");
   }
 }
 
@@ -145,7 +146,7 @@ function isRecord(value: Json | undefined): value is { readonly [key: string]: J
 function withStar(body: Json, star: Json): Json {
   const occurrence = isRecord(body) ? body["occurrence"] : undefined;
   if (!isRecord(body) || !isRecord(occurrence) || !isRecord(occurrence["star"])) {
-    throw new Error("drops: a receipt names no day and star");
+    throw new Fault("commit_7", "drops: a receipt names no day and star");
   }
   return { ...body, occurrence: { ...occurrence, star } };
 }
@@ -155,7 +156,7 @@ function keptStar(body: Json): string {
   const occurrence = isRecord(body) ? body["occurrence"] : undefined;
   const star = isRecord(occurrence) ? occurrence["star"] : undefined;
   const id = isRecord(star) ? star["membership_id"] : undefined;
-  if (typeof id !== "string") throw new Error("drops: a receipt names no star");
+  if (typeof id !== "string") throw new Fault("commit_8", "drops: a receipt names no star");
   return id;
 }
 
@@ -191,7 +192,7 @@ function uploadOf(row: Readonly<Record<string, unknown>> | undefined): UploadFac
     !(UPLOAD_STATES as readonly string[]).includes(state) ||
     !(reservation === null || typeof reservation === "string")
   ) {
-    throw new Error("drops: an upload came back in a shape the command doesn't know");
+    throw new Fault("commit_9", "drops: an upload came back in a shape the command doesn't know");
   }
   return { owner, expiresAt, purpose, state: state as UploadFacts["state"], reservation };
 }
@@ -212,7 +213,7 @@ function slotOf(row: Readonly<Record<string, unknown>> | undefined): SlotFacts |
     typeof state !== "string" ||
     !(SLOT_STATES as readonly string[]).includes(state)
   ) {
-    throw new Error("drops: a reservation came back in a shape the command doesn't know");
+    throw new Fault("commit_10", "drops: a reservation came back in a shape the command doesn't know");
   }
   return { day, interval, state: state as SlotFacts["state"] };
 }
@@ -252,7 +253,8 @@ export async function createDrop(
   //    this day's.
   const stored = await reserveAsMember(tx, receipt, first, interval);
   if (stored !== null) {
-    if (keptStar(stored.replay) !== seen.day.starInterval) throw new Error("drops: a receipt names another star");
+    if (keptStar(stored.replay) !== seen.day.starInterval)
+      throw new Fault("commit_11", "drops: a receipt names another star");
     const star = placedStar(seen.day);
     if (star === null) throw new Refused("MEMBERSHIP_CHANGED");
     return withStar(stored.replay, render.star(star));
@@ -328,7 +330,7 @@ export async function createDrop(
   }
   const before = await settleLapsed(tx, key, at);
   const slot = await readSlot(tx, slotId);
-  if (slot === null) throw new Error("drops: the reservation this command holds is gone");
+  if (slot === null) throw new Fault("commit_12", "drops: the reservation this command holds is gone");
   const live = slot.state === "live";
   if (!live) {
     const refusal = limitRefusal(allowanceOf(before, outcome.isStar), "photo");
@@ -369,7 +371,7 @@ export async function createDrop(
     pointer !== undefined &&
     (!(highlighted === null || typeof highlighted === "string") || typeof version !== "number")
   ) {
-    throw new Error("drops: a highlight came back in a shape the command doesn't know");
+    throw new Fault("commit_13", "drops: a highlight came back in a shape the command doesn't know");
   }
 
   // 7. The answer.

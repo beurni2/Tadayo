@@ -162,6 +162,32 @@ export class SweepFailed extends Error {
   }
 }
 
+/**
+ * The site code's shape (packages/domain/src/fault.ts `SITE_CODE`), kept here because this module imports only Node's
+ * own (./turn.ts); privileges.test.ts holds it to that one.
+ */
+export const PRIVILEGE_SITE_CODE = /^[a-z][a-z0-9_]*_[0-9]+$/;
+
+/**
+ * A failure of this module's own, with its site code, as packages/domain's `Fault` is elsewhere (the outside audit's
+ * B7): a line about it carries its class and code, never its message.
+ */
+export class PrivilegeFault extends Error {
+  readonly code: string;
+  constructor(code: string, message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "PrivilegeFault";
+    if (code.length > 32 || !PRIVILEGE_SITE_CODE.test(code)) {
+      // A site code that isn't one is a mistake in this module, refused under a code that is.
+      throw new PrivilegeFault(
+        "worker_privileges_0",
+        "worker: a site code is lower-case letters, digits and _, ending in _ and a number, 32 at most",
+      );
+    }
+    this.code = code;
+  }
+}
+
 /** POSIX's identity calls, which Node has on Linux only. */
 function posix(): {
   getuid: () => number;
@@ -178,7 +204,7 @@ function posix(): {
     seteuid === undefined ||
     setegid === undefined
   ) {
-    throw new Error("worker: this platform has no user ids");
+    throw new PrivilegeFault("worker_privileges_1", "worker: this platform has no user ids");
   }
   return { getuid, geteuid, getegid, seteuid, setegid };
 }
@@ -358,7 +384,7 @@ export const NO_THREAD_COUNT = "worker: its status has no thread count";
  */
 export function threadCount(status: string = readFileSync("/proc/self/status", "latin1")): number {
   const count = statusField(status, "Threads");
-  if (count === undefined || !/^\d{1,7}$/.test(count)) throw new Error(NO_THREAD_COUNT);
+  if (count === undefined || !/^\d{1,7}$/.test(count)) throw new PrivilegeFault("worker_privileges_2", NO_THREAD_COUNT);
   return Number(count);
 }
 
@@ -453,7 +479,8 @@ export function turnToWorkerUser(
   image: () => boolean = () => inImage(),
 ): boolean {
   if (inWorkerMode(ids) && image()) {
-    throw new Error(
+    throw new PrivilegeFault(
+      "worker_privileges_3",
       `worker: in production it starts as root, as fly.toml's worker command leaves it, and takes ${WORKER_USER}'s effective group and user itself, never started with them (it found ${startFactsSaid(ids, status)})`,
     );
   }
@@ -462,23 +489,31 @@ export function turnToWorkerUser(
   try {
     users = passwd();
   } catch {
-    throw new Error("worker: it couldn't read /etc/passwd as it started");
+    throw new PrivilegeFault("worker_privileges_4", "worker: it couldn't read /etc/passwd as it started");
   }
   const entry = users
     .split("\n")
     .map((line) => line.split(":"))
     .find((fields) => fields.length === 7 && fields[0] === WORKER_USER);
   if (entry === undefined) {
-    throw new Error(`worker: ${WORKER_USER}, the user fly.toml's worker command names, isn't in /etc/passwd`);
+    throw new PrivilegeFault(
+      "worker_privileges_5",
+      `worker: ${WORKER_USER}, the user fly.toml's worker command names, isn't in /etc/passwd`,
+    );
   }
   const [, , uid, gid] = entry;
   if (!isId(uid) || !isId(gid)) {
-    throw new Error(`worker: ${WORKER_USER}'s entry in /etc/passwd isn't a user's id and group`);
+    throw new PrivilegeFault(
+      "worker_privileges_6",
+      `worker: ${WORKER_USER}'s entry in /etc/passwd isn't a user's id and group`,
+    );
   }
   const user = { uid: Number(uid), gid: Number(gid) };
-  if (user.uid === 0 || user.gid === 0) throw new Error(`worker: ${WORKER_USER} is root, or in root's group`);
+  if (user.uid === 0 || user.gid === 0)
+    throw new PrivilegeFault("worker_privileges_7", `worker: ${WORKER_USER} is root, or in root's group`);
   if (!same(words(status, "Groups"), [String(user.gid)])) {
-    throw new Error(
+    throw new PrivilegeFault(
+      "worker_privileges_8",
       `worker: its groups aren't ${WORKER_USER}'s group alone, as fly.toml's worker command leaves them (it found ${turnFactsSaid(status)})`,
     );
   }
@@ -490,7 +525,9 @@ export function turnToWorkerUser(
     try {
       call(id);
     } catch (error) {
-      throw new Error(`${failed} (${name} failed: ${errorCode(error)})`, { cause: error });
+      throw new PrivilegeFault("worker_privileges_9", `${failed} (${name} failed: ${errorCode(error)})`, {
+        cause: error,
+      });
     }
   }
   for (let reading = 1; ; reading += 1) {
@@ -505,14 +542,16 @@ export function turnToWorkerUser(
         error instanceof Error && error.message === NO_THREAD_COUNT
           ? "its status had no thread count"
           : `its threads' status couldn't be read: ${errorCode(error)}`;
-      throw new Error(`${failed} (${said})`, { cause: error });
+      throw new PrivilegeFault("worker_privileges_10", `${failed} (${said})`, { cause: error });
     }
-    if (statuses.length === 0) throw new Error(`${failed} (it found no thread's status)`);
+    if (statuses.length === 0)
+      throw new PrivilegeFault("worker_privileges_11", `${failed} (it found no thread's status)`);
     const wrong = statuses.find((each) => !turnedAsFly(each, user));
     const whole = counts.every((count) => count === statuses.length);
     if (wrong === undefined && whole) return true;
     if (reading === TURN_READINGS) {
-      throw new Error(
+      throw new PrivilegeFault(
+        "worker_privileges_12",
         wrong === undefined
           ? `${failed} (it read ${String(statuses.length)} threads' statuses where the process had ${counts.map(String).join(", then ")} threads)`
           : `${failed} (it found ${turnFactsSaid(wrong)})`,
@@ -559,16 +598,21 @@ export function photoUserFor(
   const started = inWorkerMode(ids);
   const { marked, status } = facts();
   if (inImage(env, () => marked) && !(started && startedAsFly(status))) {
-    throw new Error(
+    throw new PrivilegeFault(
+      "worker_privileges_13",
       `worker: in production it starts only as fly.toml's worker command starts it, root turned to its own user, never as root alone or as one user alone (it found ${startFactsSaid(ids, status)})`,
     );
   }
   if (!named && !started) return undefined;
   if (!named) {
-    throw new Error("worker: started to prepare each photo under a user of its own, but TADAYO_PHOTO_USER isn't set");
+    throw new PrivilegeFault(
+      "worker_privileges_14",
+      "worker: started to prepare each photo under a user of its own, but TADAYO_PHOTO_USER isn't set",
+    );
   }
   if (!started) {
-    throw new Error(
+    throw new PrivilegeFault(
+      "worker_privileges_15",
       "worker: TADAYO_PHOTO_USER is set, but the worker wasn't started as root with its own user effective (fly.toml's worker command)",
     );
   }
@@ -576,13 +620,16 @@ export function photoUserFor(
     .split("\n")
     .map((line) => line.split(":"))
     .find((fields) => fields.length === 7 && fields[0] === name);
-  if (entry === undefined) throw new Error("worker: TADAYO_PHOTO_USER names no user in /etc/passwd");
+  if (entry === undefined)
+    throw new PrivilegeFault("worker_privileges_16", "worker: TADAYO_PHOTO_USER names no user in /etc/passwd");
   const [, , uid, gid] = entry;
-  if (!isId(uid) || !isId(gid)) throw new Error("worker: TADAYO_PHOTO_USER's entry isn't a user's id and group");
+  if (!isId(uid) || !isId(gid))
+    throw new PrivilegeFault("worker_privileges_17", "worker: TADAYO_PHOTO_USER's entry isn't a user's id and group");
   const user = { uid: Number(uid), gid: Number(gid) };
-  if (user.uid === 0 || user.gid === 0) throw new Error("worker: TADAYO_PHOTO_USER is root, or in root's group");
+  if (user.uid === 0 || user.gid === 0)
+    throw new PrivilegeFault("worker_privileges_18", "worker: TADAYO_PHOTO_USER is root, or in root's group");
   if (user.uid === ids.euid || user.gid === ids.egid) {
-    throw new Error("worker: TADAYO_PHOTO_USER is the worker's own user or group");
+    throw new PrivilegeFault("worker_privileges_19", "worker: TADAYO_PHOTO_USER is the worker's own user or group");
   }
   return user;
 }
@@ -595,7 +642,10 @@ export function asRoot<T>(fn: () => T): T {
   const calls = posix();
   const before = idsOf();
   if (!inWorkerMode(before)) {
-    throw new Error("worker: asRoot is only for a worker started as root with its own user effective");
+    throw new PrivilegeFault(
+      "worker_privileges_20",
+      "worker: asRoot is only for a worker started as root with its own user effective",
+    );
   }
   calls.seteuid(0);
   try {

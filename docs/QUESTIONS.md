@@ -849,3 +849,11 @@ The ios lane reserved FQ149 at 22:42 UTC on 2026-11-26, the next free number, fr
     - Default (Claude Code's): as built. A button with no hint; the page's title, "Nina’s invitation", says where it went.
     - The other reading: a hint in Claude Design's words, such as one naming the person's invitation, asked in the next invitation handoff.
     - Needed by: B1 PR 7c (`ios/b1-invite-later`), before Gate A. The answer adds one string, nothing in the contract.
+
+## Raised by the outside audit's B7: failure signals (`api/b2-failure-signals`)
+
+- **FQ150. Where an alert about a failure in the trial reaches the founder.** Spec 34 asks for "a dead letter queue with alerts", and TECH-DESIGN section 5 for "a dead-letter table that raises an alert" (T54). Today a dead outbox event and an API 500 are each a line in Fly's log, which nobody reads unless they look (the outside audit's B7: "send dead events and 5xx counts somewhere you see"). No source says where an alert goes, and each way out sends something to a real person or brings a service in.
+    - Default (Claude Code's): nothing is sent, as now; the lines stay in Fly's log with their codes (`docs/plans/api-b2-failure-signals.md`), and the alert's slice waits for the answer.
+    - The readings put to the founder: a GitHub issue that a check every 15 minutes opens or updates, one per environment, with error codes and counts only, which GitHub emails (no new service, secret or address; recommended); an email through Resend with codes and counts (a new secret, and the founder's address stored as one); or logs only until Gate D, before anyone outside the trial joins.
+    - Asked on a card in the api thread at 02:09 UTC on 27 November 2026 ("Choose where alerts for lost photos and server errors reach you").
+    - Needed by: Gate D (trial readiness). The answer changes where the next slice sends its alert, nothing in the contract.

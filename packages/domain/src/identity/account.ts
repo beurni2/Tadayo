@@ -14,6 +14,7 @@ import type { AccountState } from "../authorization/read.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
+import { Fault, InputFault } from "../fault.ts";
 
 export interface Account {
   readonly id: string;
@@ -33,7 +34,7 @@ const SUBJECT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 function checkSubject(subject: unknown): string {
   if (typeof subject !== "string" || !SUBJECT.test(subject)) {
-    throw new TypeError("identity: the subject is a lowercase UUID");
+    throw new InputFault("account_1", "identity: the subject is a lowercase UUID");
   }
   return subject;
 }
@@ -54,7 +55,7 @@ function account(row: Record<string, unknown>): Account {
     typeof version !== "number" ||
     (avatar_version !== null && typeof avatar_version !== "string")
   ) {
-    throw new Error("identity: an account came back in a shape the schema doesn't allow");
+    throw new Fault("account_2", "identity: an account came back in a shape the schema doesn't allow");
   }
   return { id, state, displayName: display_name, ageConfirmed: age_confirmed, version, avatarVersion: avatar_version };
 }
@@ -76,7 +77,8 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** The account with id `id`, or null when there is none: what a command reads back after it has written. */
 export async function accountById(sql: QuerySql, id: string): Promise<Account | null> {
-  if (typeof id !== "string" || !ID.test(id)) throw new TypeError("identity: the account id is an app.id");
+  if (typeof id !== "string" || !ID.test(id))
+    throw new InputFault("account_3", "identity: the account id is an app.id");
   const rows = await bound(sql)`
     SELECT u.id, u.state, u.display_name, u.age_confirmed_at IS NOT NULL AS age_confirmed, u.version,
            (SELECT up.content_version FROM app.uploads up
