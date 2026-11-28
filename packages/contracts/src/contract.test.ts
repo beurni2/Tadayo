@@ -318,6 +318,23 @@ describe("the document", () => {
     }
   });
 
+  it("says in its rules that any operation may answer a 500 or a 503, and lists no 5xx but the health check's own 503 (the outside audit's B8)", () => {
+    const description = (document.info as JsonObject).description as string;
+    const rule = description.split("\n").filter((line) => line.startsWith("- Any operation may also answer"));
+    expect(rule).toEqual([
+      "- Any operation may also answer 500 when the server fails, or 503 when something it depends on is out of reach for now (sign-in's keys, Storage, or the database out of time on a lock or a statement) or the server is stopping. Each comes with no body and with Cache-Control: private, no-store, except the stopping server's 503, which has a short JSON body in Fastify's own words and no Cache-Control. No operation lists them except getHealth, which lists its own 503. An app reads any 5xx, listed or not, as the service out of reach for now, and reads no 5xx's body.",
+    ]);
+    expect(operations.map((operation) => operation.operationId)).toContain("getHealth");
+    for (const operation of operations) {
+      const fiveHundreds = Object.keys(operation.responses as JsonObject).filter(
+        (status) => status.startsWith("5") || status === "default",
+      );
+      expect(fiveHundreds, operation.operationId as string).toEqual(
+        operation.operationId === "getHealth" ? ["503"] : [],
+      );
+    }
+  });
+
   it("works before the profile is complete for exactly the account's own setup routes (FQ13, FQ69)", () => {
     expect(
       OPERATIONS.filter((op) => op.beforeProfile)
